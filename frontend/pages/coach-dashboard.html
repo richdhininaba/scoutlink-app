@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Coach Dashboard – ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><button style="background:none;border:none;color:#B0BEC5;font-size:22px;cursor:pointer;display:none" id="sidebarToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><span class="topbar-title" id="coachTitle">Coach Dashboard</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">My Players</div><div class="kpi-value green" id="kpiPlayers">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Scouts Interested</div><div class="kpi-value" id="kpiInterest">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Top Rated Player</div><div class="kpi-value green" id="kpiTop">—</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Value</div><div class="kpi-value" id="kpiValue">—</div></div>
+  </div>
+  <div class="table-card" style="margin-bottom:20px">
+    <div class="table-header"><h3>My Squad</h3><div style="display:flex;gap:8px"><a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk Import</a><a href="add-player.html" class="btn btn-sm btn-primary">+ Add Player</a></div></div>
+    <div id="myPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
+  </div>
+</div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
+<script src="../js/main.js"></script>
+<script>
+const NAV_ITEMS={Coach:[{icon:'🏠',label:'Dashboard',href:'coach-dashboard.html'},{icon:'👥',label:'My Players',href:'player-search.html'},{icon:'➕',label:'Add Player',href:'add-player.html'},{icon:'📊',label:'Bulk Import',href:'bulk-add-players.html'},{icon:'📋',label:'Match Facts',href:'match-facts.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
+function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}const items=NAV_ITEMS.Coach;const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Coach</div></div></div>';updateNotifBadge();}
+function logout(){Auth.clear();window.location.href='../index.html';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+document.addEventListener('DOMContentLoaded',async()=>{
+  initNav();
+  const u=Auth.user;if(u)document.getElementById('coachTitle').textContent='Welcome, '+u.firstName;
+  try{
+    const d=await api('GET','/api/coaches/my-players');const players=d.data||[];
+    document.getElementById('kpiPlayers').textContent=players.length;
+    const top=players.reduce((a,p)=>(!a||p.overall_rating>a.overall_rating)?p:a,null);
+    document.getElementById('kpiTop').textContent=top?Math.round(top.overall_rating||0):'—';
+    const totalVal=players.reduce((s,p)=>s+(p.transfer_value||0),0);
+    document.getElementById('kpiValue').textContent=formatValue(totalVal);
+    document.getElementById('kpiInterest').textContent='—';
+    document.getElementById('myPlayers').innerHTML=players.length?'<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Height</th><th>Build</th><th>Transfer Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>'+players.map(p=>'<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><div><b>'+p.first_name+' '+p.last_name+'</b><div style="font-size:11px;color:#546E7A">'+p.age+' yrs</div></div></div></td><td>'+p.specific_position+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+Math.round(p.overall_rating||0)+'</td><td><span class="badge badge-blue">'+p.height_category+'</span></td><td>'+p.build_category+'</td><td>'+formatValue(p.transfer_value||0)+'</td><td>'+formatSalary(p.predicted_salary_weekly||0)+'</td><td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td></tr>').join('')+'</tbody></table>':'<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';
+  } catch(e){console.error(e);}
+});
+</script>
+</body></html>
