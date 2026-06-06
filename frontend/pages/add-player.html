@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Add Player – ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Add Player</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+<div class="form-container wide" style="background:transparent;border:none;padding:0;max-width:100%">
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:24px">
+    <div>
+      <div class="table-card" style="padding:28px;margin-bottom:20px">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:20px">Personal Details</h3>
+        <div class="form-row">
+          <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="firstName" placeholder="First name"></div>
+          <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="lastName" placeholder="Last name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Email (or Parent Email if U16)</label><input type="email" id="email" placeholder="player@email.com"></div>
+          <div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div>
+        </div>
+        <div class="form-group"><label>Nationality</label>
+          <select id="nationality">
+            <option value="England">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</option><option value="Scotland">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland</option><option value="Wales">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales</option>
+            <option value="Northern Ireland">🇬🇧 Northern Ireland</option><option value="Ireland">🇮🇪 Ireland</option>
+            <option value="Nigeria">🇳🇬 Nigeria</option><option value="Ghana">🇬🇭 Ghana</option>
+            <option value="Brazil">🇧🇷 Brazil</option><option value="France">🇫🇷 France</option>
+            <option value="Spain">🇪🇸 Spain</option><option value="Portugal">🇵🇹 Portugal</option>
+            <option value="Jamaica">🇯🇲 Jamaica</option><option value="Somalia">🇸🇴 Somalia</option>
+            <option value="Other">🌍 Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-card" style="padding:28px;margin-bottom:20px">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:20px">Position</h3>
+        <div class="form-row">
+          <div class="form-group"><label>Position Group <span class="required">*</span></label>
+            <select id="positionGroup" onchange="updateSpecPos()"><option value="">Select group</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select>
+          </div>
+          <div class="form-group"><label>Specific Position</label><select id="specificPosition"><option value="">—</option></select></div>
+          <div class="form-group"><label>Preferred Foot</label><select id="foot"><option>Right</option><option>Left</option><option>Both</option></select></div>
+        </div>
+      </div>
+      <div class="table-card" style="padding:28px;margin-bottom:20px">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Physical</h3>
+        <p style="color:#546E7A;font-size:13px;margin-bottom:20px">Select the range that best describes the player. This helps scouts without requiring precise measurements.</p>
+        <div class="form-group"><label>Height</label>
+          <div class="range-grid">
+            <div class="range-option" data-value="very_short" onclick="selectRange(this,'heightCategory')"><div class="range-label">Very Short</div><div class="range-value">155–163 cm</div></div>
+            <div class="range-option" data-value="short" onclick="selectRange(this,'heightCategory')"><div class="range-label">Short</div><div class="range-value">163–170 cm</div></div>
+            <div class="range-option active" data-value="average" onclick="selectRange(this,'heightCategory')"><div class="range-label">Average</div><div class="range-value">170–178 cm</div></div>
+            <div class="range-option" data-value="tall" onclick="selectRange(this,'heightCategory')"><div class="range-label">Tall</div><div class="range-value">178–185 cm</div></div>
+            <div class="range-option" data-value="very_tall" onclick="selectRange(this,'heightCategory')"><div class="range-label">Very Tall</div><div class="range-value">185+ cm</div></div>
+          </div><input type="hidden" id="heightCategory" value="average">
+        </div>
+        <div class="form-group" style="margin-top:16px"><label>Build</label>
+          <div class="range-grid" style="grid-template-columns:repeat(4,1fr)">
+            <div class="range-option" data-value="very_slight" onclick="selectRange(this,'buildCategory')"><div class="range-label">Very Slight</div><div class="range-value">50–58 kg</div></div>
+            <div class="range-option" data-value="slight" onclick="selectRange(this,'buildCategory')"><div class="range-label">Slight</div><div class="range-value">58–65 kg</div></div>
+            <div class="range-option" data-value="lean" onclick="selectRange(this,'buildCategory')"><div class="range-label">Lean</div><div class="range-value">65–72 kg</div></div>
+            <div class="range-option active" data-value="athletic" onclick="selectRange(this,'buildCategory')"><div class="range-label">Athletic</div><div class="range-value">72–80 kg</div></div>
+            <div class="range-option" data-value="stocky" onclick="selectRange(this,'buildCategory')"><div class="range-label">Stocky</div><div class="range-value">80–88 kg</div></div>
+            <div class="range-option" data-value="powerful" onclick="selectRange(this,'buildCategory')"><div class="range-label">Powerful</div><div class="range-value">88–96 kg</div></div>
+            <div class="range-option" data-value="very_powerful" onclick="selectRange(this,'buildCategory')"><div class="range-label">Very Powerful</div><div class="range-value">96+ kg</div></div>
+          </div><input type="hidden" id="buildCategory" value="athletic">
+        </div>
+      </div>
+      <div class="table-card" style="padding:28px;margin-bottom:20px" id="metricsSection">
+        <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">Performance Metrics</h3>
+        <p style="color:#546E7A;font-size:13px;margin-bottom:20px">Rate 1–99. Leave blank if unknown.</p>
+        <div id="universalMetrics">
+          <div class="form-row cols-3">
+            <div class="form-group"><label>Pace <button class="info-btn" title="How quickly the player moves. 99=sprinting elite, 50=average youth.">ℹ</button></label><input type="number" id="pace" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Agility <button class="info-btn" title="Ability to change direction quickly.">ℹ</button></label><input type="number" id="agility" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Strength <button class="info-btn" title="Physical strength in duels and challenges.">ℹ</button></label><input type="number" id="strength" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Stamina <button class="info-btn" title="Ability to maintain performance for 90+ minutes.">ℹ</button></label><input type="number" id="stamina" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Jumping</label><input type="number" id="jumping" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Composure <button class="info-btn" title="Ability to perform under pressure.">ℹ</button></label><input type="number" id="composure" min="1" max="99" placeholder="—" class="rating-input"></div>
+          </div>
+        </div>
+        <div id="outfieldMetrics">
+          <div class="form-row cols-3">
+            <div class="form-group"><label>Shooting</label><input type="number" id="shooting" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Passing</label><input type="number" id="passing" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Dribbling</label><input type="number" id="dribbling" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Defending</label><input type="number" id="defending" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Crossing</label><input type="number" id="crossing" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Vision</label><input type="number" id="vision" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Positioning</label><input type="number" id="positioning" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Heading</label><input type="number" id="heading" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Tackling</label><input type="number" id="tackling" min="1" max="99" placeholder="—" class="rating-input"></div>
+          </div>
+        </div>
+        <div id="gkMetrics" style="display:none">
+          <p style="color:#00E676;font-size:13px;font-weight:600;margin-bottom:14px">🧤 Goalkeeper Specific Metrics</p>
+          <div class="form-row cols-3">
+            <div class="form-group"><label>Diving <button class="info-btn" title="Ability to dive and stop low shots.">ℹ</button></label><input type="number" id="gkDiving" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Reflexes <button class="info-btn" title="Reaction speed to shots.">ℹ</button></label><input type="number" id="gkReflexes" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Handling <button class="info-btn" title="Ball control with hands.">ℹ</button></label><input type="number" id="gkHandling" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Kicking</label><input type="number" id="gkKicking" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>GK Positioning <button class="info-btn" title="Positioning within the goal and penalty area.">ℹ</button></label><input type="number" id="gkPositioning" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Distribution</label><input type="number" id="gkDistribution" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Communication</label><input type="number" id="gkCommunication" min="1" max="99" placeholder="—" class="rating-input"></div>
+            <div class="form-group"><label>Sweeping</label><input type="number" id="gkSweeping" min="1" max="99" placeholder="—" class="rating-input"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-error" id="formError"></div>
+      <div class="form-success" id="formSuccess"></div>
+      <button class="btn btn-primary btn-lg btn-full" onclick="submitPlayer()">Add Player & Calculate Rating</button>
+    </div>
+    <div>
+      <div class="table-card" style="padding:20px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">🎨 Player Avatar</h3>
+        <p style="color:#546E7A;font-size:12px;margin-bottom:16px">Create a cartoon avatar. No real photos are used.</p>
+        <div class="avatar-builder">
+          <div class="avatar-preview"><canvas id="avatarCanvas" width="100" height="100"></canvas></div>
+          <div class="avatar-options">
+            <div class="avatar-row">
+              <label>Skin</label>
+              <div class="avatar-swatches" id="skinSwatches"></div>
+            </div>
+            <div class="avatar-row">
+              <label>Hair</label>
+              <div class="avatar-swatches" id="hairSwatches"></div>
+            </div>
+            <div class="avatar-row">
+              <label>Style</label>
+              <div class="avatar-opts" id="hairStyleOpts"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="table-card" style="padding:20px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:14px">Team</h3>
+        <div class="form-group"><label>Team Name</label><input type="text" id="teamName" placeholder="Leave blank to use your registered team"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+<script src="../js/main.js"></script>
+<script>
+const NAV_ITEMS={Coach:[{icon:'🏠',label:'Dashboard',href:'coach-dashboard.html'},{icon:'👥',label:'My Players',href:'player-search.html'},{icon:'➕',label:'Add Player',href:'add-player.html'},{icon:'📊',label:'Bulk Import',href:'bulk-add-players.html'},{icon:'📋',label:'Match Facts',href:'match-facts.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}],Stratex:[{icon:'🏠',label:'Dashboard',href:'stratex-dashboard.html'},{icon:'📋',label:'Registrations',href:'stratex-registrations.html'},{icon:'🔍',label:'All Players',href:'player-search.html'},{icon:'➕',label:'Add Player',href:'add-player.html'},{icon:'📊',label:'Bulk Import',href:'bulk-add-players.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
+function initNav(){if(!Auth.isLoggedIn()){window.location.href='login.html';return;}const t=Auth.type;const items=NAV_ITEMS[t]||[];const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';updateNotifBadge();}
+function logout(){Auth.clear();window.location.href='../index.html';}
+function toggleNotifPanel(){}
+
+const POS_BY_GROUP={Goalkeeper:['GK'],Defender:['CB','LCB','RCB','LB','RB','LWB','RWB','SW'],Midfielder:['CDM','CM','LCM','RCM','LDM','RDM','LM','RM','CAM','LAM','RAM','B2B'],Forward:['ST','LS','RS','LW','RW','CF','SS']};
+
+function selectRange(el, hiddenId) {
+  const parent=el.parentElement;
+  parent.querySelectorAll('.range-option').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(hiddenId).value=el.dataset.value;
+}
+function updateSpecPos(){
+  const g=document.getElementById('positionGroup').value;
+  const sp=document.getElementById('specificPosition');
+  sp.innerHTML='<option value="">—</option>'+(POS_BY_GROUP[g]||[]).map(p=>'<option value="'+p+'">'+p+'</option>').join('');
+  document.getElementById('gkMetrics').style.display=g==='Goalkeeper'?'block':'none';
+  document.getElementById('outfieldMetrics').style.display=g==='Goalkeeper'?'none':'block';
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  initNav();
+  AvatarBuilder.init('avatarCanvas');
+  const skinTones=['#FDBCB4','#E8A887','#C68642','#8D5524','#4A2912','#FFDFC4'];
+  const hairColors=['#2C1810','#5C3317','#C4A35A','#E8D5B0','#FF6B35','#1A1A1A','#E0E0E0'];
+  const hairStyles=['Buzz','Short','Medium','Long','Curly','Afro','Braids'];
+  document.getElementById('skinSwatches').innerHTML=skinTones.map((c,i)=>'<div class="swatch'+(i===0?' active':'')+'" style="background:'+c+'" onclick="setSkin(\'' + c + '\',this)"></div>').join('');
+  document.getElementById('hairSwatches').innerHTML=hairColors.map((c,i)=>'<div class="swatch'+(i===0?' active':'')+'" style="background:'+c+'" onclick="setHair(\'' + c + '\',this)"></div>').join('');
+  document.getElementById('hairStyleOpts').innerHTML=hairStyles.map((s,i)=>'<button class="avatar-opt-btn'+(i===1?' active':'')+'" onclick="setHairStyle(\'' + s + '\',this)">'+s+'</button>').join('');
+});
+function setSkin(c,el){document.querySelectorAll('#skinSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');AvatarBuilder.config.skin=c;AvatarBuilder.render();}
+function setHair(c,el){document.querySelectorAll('#hairSwatches .swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');AvatarBuilder.config.hair=c;AvatarBuilder.render();}
+function setHairStyle(s,el){document.querySelectorAll('#hairStyleOpts .avatar-opt-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');AvatarBuilder.config.hairStyle=s;AvatarBuilder.render();}
+function g(id){const el=document.getElementById(id);return el?el.value:null;}
+function n(id){const v=g(id);return v&&v!==''?Number(v):null;}
+async function submitPlayer(){
+  const err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
+  err.classList.remove('show');suc.classList.remove('show');
+  if(!g('firstName')||!g('lastName')){err.textContent='First Name and Last Name required.';err.classList.add('show');return;}
+  if(!g('positionGroup')){err.textContent='Please select a position group.';err.classList.add('show');return;}
+  const pg=g('positionGroup');
+  const body={
+    firstName:g('firstName'),lastName:g('lastName'),email:g('email')||null,
+    dateOfBirth:g('dob')||null,nationality:g('nationality'),
+    positionGroup:pg,specificPosition:g('specificPosition')||null,
+    positions:g('specificPosition')?[g('specificPosition')]:[],
+    foot:g('foot'),heightCategory:g('heightCategory'),buildCategory:g('buildCategory'),
+    teamName:g('teamName')||null,
+    pace:n('pace'),agility:n('agility'),strength:n('strength'),stamina:n('stamina'),
+    jumping:n('jumping'),composure:n('composure'),
+  };
+  if(pg!=='Goalkeeper'){
+    Object.assign(body,{shooting:n('shooting'),passing:n('passing'),dribbling:n('dribbling'),defending:n('defending'),crossing:n('crossing'),vision:n('vision'),positioning:n('positioning'),heading:n('heading'),tackling:n('tackling')});
+  } else {
+    Object.assign(body,{gkDiving:n('gkDiving'),gkReflexes:n('gkReflexes'),gkHandling:n('gkHandling'),gkKicking:n('gkKicking'),gkPositioning:n('gkPositioning'),gkDistribution:n('gkDistribution'),gkCommunication:n('gkCommunication'),gkSweeping:n('gkSweeping')});
+  }
+  body.avatarConfig=AvatarBuilder.getConfig();
+  const btn=document.querySelector('.btn-primary.btn-full');btn.textContent='Adding...';btn.disabled=true;
+  try{
+    const d=await api('POST','/api/players',body);
+    suc.textContent='✅ '+d.player.first_name+' '+d.player.last_name+' added! Overall: '+Math.round(d.player.overall_rating||0)+' · Value: '+formatValue(d.player.transfer_value||0)+' · Salary: '+formatSalary(d.player.predicted_salary_weekly||0);
+    suc.classList.add('show');btn.textContent='Add Another Player';btn.disabled=false;
+    document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date]').forEach(i=>i.value='');
+  } catch(e){err.textContent=e.message;err.classList.add('show');btn.textContent='Add Player & Calculate Rating';btn.disabled=false;}
+}
+</script>
+</body></html>
