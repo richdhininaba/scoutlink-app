@@ -1,83 +1,170 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Sign In – ScoutLink</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - ScoutLink</title>
 <link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head><body class="form-page">
-<div class="form-page-inner">
-<div class="form-container">
-  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
-  <h1 class="form-title">Welcome back</h1>
-  <p class="form-subtitle">Sign in to your ScoutLink account</p>
-  <div class="form-error" id="formError"></div>
-  <div class="form-group">
-    <label>Account Type <span class="required">*</span></label>
-    <div class="tab-bar" style="margin-bottom:0">
-      <button class="tab-btn active" data-type="Player">Player</button>
-      <button class="tab-btn" data-type="Coach">Coach</button>
-      <button class="tab-btn" data-type="Scout">Scout</button>
-      <button class="tab-btn" data-type="Stratex">Stratex</button>
-    </div>
-    <input type="hidden" id="accountType" value="Player">
+<style>
+:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-wrap{width:100%;max-width:420px;}
+.brand{text-align:center;margin-bottom:2rem;}
+.brand h1{font-size:2.5rem;font-weight:900;color:var(--sl-green);letter-spacing:-1px;}
+.brand h1 span{color:var(--sl-text);}
+.brand p{color:var(--sl-muted);margin-top:0.5rem;}
+.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;}
+.form-group{margin-bottom:1.25rem;}
+label{display:block;font-size:0.875rem;font-weight:600;color:var(--sl-muted);margin-bottom:0.5rem;}
+input{width:100%;padding:0.75rem 1rem;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-text);font-size:0.95rem;transition:border-color 0.2s;}
+input:focus{outline:none;border-color:var(--sl-green);}
+.btn{width:100%;padding:0.875rem;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:1rem;transition:all 0.2s;}
+.btn-primary{background:var(--sl-green);color:#000;}
+.btn-primary:hover{background:#00b548;}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+.links{margin-top:1.5rem;text-align:center;font-size:0.875rem;color:var(--sl-muted);}
+.links a{color:var(--sl-green);text-decoration:none;}
+.links a:hover{text-decoration:underline;}
+.divider{border:none;border-top:1px solid var(--sl-border);margin:1.5rem 0;}
+.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:8px;padding:0.75rem 1rem;font-size:0.875rem;margin-bottom:1rem;display:none;}
+.error.show{display:block;}
+.spinner{display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.role-tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
+.role-tab{flex:1;padding:0.5rem;background:transparent;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-muted);cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;text-align:center;}
+.role-tab.active{background:rgba(0,200,83,0.1);border-color:var(--sl-green);color:var(--sl-green);}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="brand">
+    <h1>Scout<span>Link</span></h1>
+    <p>Football Player Intelligence Platform</p>
   </div>
-  <div class="form-group">
-    <label for="email">Email Address <span class="required">*</span></label>
-    <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
-  </div>
-  <div id="loginCodeSection" style="display:none">
+  <div class="card">
+    <div id="errorMsg" class="error"></div>
     <div class="form-group">
-      <label for="loginCode">Login Code <span class="required">*</span></label>
-      <input type="text" id="loginCode" placeholder="Enter 6-character code" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;font-size:20px;text-align:center">
-      <p style="font-size:12px;color:#546E7A;margin-top:6px">Use the login code emailed to you.</p>
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
     </div>
-  </div>
-  <div id="passwordSection">
     <div class="form-group">
-      <label for="password">Password <span class="required">*</span></label>
-      <input type="password" id="password" placeholder="Your password" autocomplete="current-password">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
+      <span id="btnText">Sign In</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <div class="links">
+      <a href="forgot-password.html">Forgot password?</a>
+    </div>
+    <hr class="divider">
+    <div class="links">
+      New coach? <a href="register-coach.html">Register here</a><br><br>
+      New scout organisation? <a href="register-scout.html">Apply for access</a>
     </div>
   </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#B0BEC5;margin:0;cursor:pointer">
-      <input type="checkbox" id="useCode" style="width:auto;accent-color:#00E676"> Use login code instead
-    </label>
-    <a href="forgot-password.html" style="font-size:13px;color:#00E676">Forgot password?</a>
-  </div>
-  <button class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">Sign In</button>
-  <div class="form-divider"></div>
-  <div class="form-link">Don't have an account? <a href="register-coach.html">Register as Coach</a> or <a href="register-scout.html">Register as Scout</a></div>
 </div>
-</div>
-<script src="../js/main.js"></script>
+
 <script>
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('accountType').value = btn.dataset.type;
-  });
-});
-document.getElementById('useCode').addEventListener('change', function() {
-  document.getElementById('loginCodeSection').style.display = this.checked ? 'block' : 'none';
-  document.getElementById('passwordSection').style.display  = this.checked ? 'none' : 'block';
-});
-async function handleLogin() {
-  const btn = document.getElementById('loginBtn');
-  const err = document.getElementById('formError');
-  err.classList.remove('show');
-  btn.textContent = 'Signing in...'; btn.disabled = true;
+const SUPABASE_URL = 'https://fwxnggklfsgrydcoeiuh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDgwOTMsImV4cCI6MjA5NjMyNDA5M30.lV6TCjabEHevU5woLHLa0cCwBvm-0dFpce09ialfpKw';
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideError() { document.getElementById('errorMsg').classList.remove('show'); }
+function setLoading(on) {
+  document.getElementById('loginBtn').disabled = on;
+  document.getElementById('btnText').style.display = on ? 'none' : 'inline';
+  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+}
+
+document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  hideError();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if (!email || !password) { showError('Please enter your email and password.'); return; }
+  setLoading(true);
   try {
-    const body = { email: document.getElementById('email').value, accountType: document.getElementById('accountType').value };
-    if (document.getElementById('useCode').checked) body.loginCode = document.getElementById('loginCode').value.toUpperCase();
-    else body.password = document.getElementById('password').value;
-    const data = await api('POST', '/api/auth/login', body);
-    Auth.set(data.token, data.user, data.accountType);
-    if (data.needsPreferences) { window.location.href = 'scout-preferences.html'; return; }
-    Auth.redirectToDashboard();
+    // Step 1: Auth with Supabase
+    const authResp = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const authData = await authResp.json();
+    if (!authData.access_token) {
+      throw new Error(authData.error_description || authData.msg || 'Invalid email or password');
+    }
+    localStorage.setItem('sl_session', JSON.stringify(authData));
+    localStorage.setItem('sl_user_email', email);
+
+    const bearerToken = authData.access_token;
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearerToken };
+
+    // Step 2: Find user role
+    const tables = [
+      { table: 'stratex', role: 'stratex' },
+      { table: 'scouts', role: 'scout' },
+      { table: 'coaches', role: 'coach' },
+      { table: 'players', role: 'player' }
+    ];
+    let profile = null;
+    let userRole = null;
+    for (const t of tables) {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + t.table + '?email=eq.' + encodeURIComponent(email) + '&select=*', { headers });
+      const data = await r.json();
+      if (Array.isArray(data) && data.length > 0) {
+        profile = data[0];
+        userRole = t.role;
+        break;
+      }
+    }
+
+    if (!profile) {
+      throw new Error('Account not found. Please register or contact Stratex.');
+    }
+
+    localStorage.setItem('sl_user_role', userRole);
+    localStorage.setItem('sl_user_data', JSON.stringify(profile));
+    localStorage.setItem('sl_user_id', profile.id);
+
+    // Step 3: Redirect by role
+    const base = '/scoutlink-app/frontend/pages/';
+    if (userRole === 'stratex') {
+      window.location.href = base + 'stratex-dashboard.html';
+    } else if (userRole === 'scout') {
+      const hasPrefs = profile.preferred_positions || profile.target_formation;
+      window.location.href = base + (hasPrefs ? 'scout-dashboard.html' : 'scout-preferences.html');
+    } else if (userRole === 'coach') {
+      window.location.href = base + 'coach-dashboard.html';
+    } else if (userRole === 'player') {
+      window.location.href = base + 'player-dashboard.html';
+    }
   } catch(e) {
-    err.textContent = e.message; err.classList.add('show');
-    btn.textContent = 'Sign In'; btn.disabled = false;
+    showError(e.message || 'Login failed. Please try again.');
+    setLoading(false);
   }
 }
+
+// Check if already logged in
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('sl_session'));
+    if (s?.access_token && s?.expires_at && Date.now()/1000 < s.expires_at) {
+      const role = localStorage.getItem('sl_user_role');
+      const base = '/scoutlink-app/frontend/pages/';
+      const map = { stratex:'stratex-dashboard.html', scout:'scout-dashboard.html', coach:'coach-dashboard.html', player:'player-dashboard.html' };
+      if (role && map[role]) window.location.href = base + map[role];
+    }
+  } catch(e) {}
+})();
 </script>
-</body></html>
+</body>
+</html>
