@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Sign In – ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body class="form-page">
+<div class="form-page-inner">
+<div class="form-container">
+  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <h1 class="form-title">Welcome back</h1>
+  <p class="form-subtitle">Sign in to your ScoutLink account</p>
+  <div class="form-error" id="formError"></div>
+  <div class="form-group">
+    <label>Account Type <span class="required">*</span></label>
+    <div class="tab-bar" style="margin-bottom:0">
+      <button class="tab-btn active" data-type="Player">Player</button>
+      <button class="tab-btn" data-type="Coach">Coach</button>
+      <button class="tab-btn" data-type="Scout">Scout</button>
+      <button class="tab-btn" data-type="Stratex">Stratex</button>
+    </div>
+    <input type="hidden" id="accountType" value="Player">
+  </div>
+  <div class="form-group">
+    <label for="email">Email Address <span class="required">*</span></label>
+    <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+  </div>
+  <div id="loginCodeSection" style="display:none">
+    <div class="form-group">
+      <label for="loginCode">Login Code <span class="required">*</span></label>
+      <input type="text" id="loginCode" placeholder="Enter 6-character code" maxlength="6" style="text-transform:uppercase;letter-spacing:0.2em;font-size:20px;text-align:center">
+      <p style="font-size:12px;color:#546E7A;margin-top:6px">Use the login code emailed to you.</p>
+    </div>
+  </div>
+  <div id="passwordSection">
+    <div class="form-group">
+      <label for="password">Password <span class="required">*</span></label>
+      <input type="password" id="password" placeholder="Your password" autocomplete="current-password">
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#B0BEC5;margin:0;cursor:pointer">
+      <input type="checkbox" id="useCode" style="width:auto;accent-color:#00E676"> Use login code instead
+    </label>
+    <a href="forgot-password.html" style="font-size:13px;color:#00E676">Forgot password?</a>
+  </div>
+  <button class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">Sign In</button>
+  <div class="form-divider"></div>
+  <div class="form-link">Don't have an account? <a href="register-coach.html">Register as Coach</a> or <a href="register-scout.html">Register as Scout</a></div>
+</div>
+</div>
+<script src="../js/main.js"></script>
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('accountType').value = btn.dataset.type;
+  });
+});
+document.getElementById('useCode').addEventListener('change', function() {
+  document.getElementById('loginCodeSection').style.display = this.checked ? 'block' : 'none';
+  document.getElementById('passwordSection').style.display  = this.checked ? 'none' : 'block';
+});
+async function handleLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('formError');
+  err.classList.remove('show');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  try {
+    const body = { email: document.getElementById('email').value, accountType: document.getElementById('accountType').value };
+    if (document.getElementById('useCode').checked) body.loginCode = document.getElementById('loginCode').value.toUpperCase();
+    else body.password = document.getElementById('password').value;
+    const data = await api('POST', '/api/auth/login', body);
+    Auth.set(data.token, data.user, data.accountType);
+    if (data.needsPreferences) { window.location.href = 'scout-preferences.html'; return; }
+    Auth.redirectToDashboard();
+  } catch(e) {
+    err.textContent = e.message; err.classList.add('show');
+    btn.textContent = 'Sign In'; btn.disabled = false;
+  }
+}
+</script>
+</body></html>
