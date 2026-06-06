@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Profile - ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;--sl-accent:#3b82f6;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;}
+.nav{background:#0d1424;border-bottom:1px solid var(--sl-border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-brand{font-size:1.4rem;font-weight:800;color:var(--sl-green);letter-spacing:-0.5px;}
+.nav-brand span{color:var(--sl-text);}
+.nav-actions{display:flex;gap:1rem;align-items:center;}
+.btn{padding:0.5rem 1.25rem;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:0.875rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.2s;}
+.btn-primary{background:var(--sl-green);color:#000;}
+.btn-secondary{background:transparent;color:var(--sl-text);border:1px solid var(--sl-border);}
+.btn-accent{background:var(--sl-accent);color:#fff;}
+.btn-danger{background:#ef4444;color:#fff;}
+.btn:hover{opacity:0.85;transform:translateY(-1px);}
+.container{max-width:1200px;margin:0 auto;padding:2rem;}
+.profile-hero{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;margin-bottom:2rem;display:grid;grid-template-columns:auto 1fr auto;gap:2rem;align-items:start;}
+.avatar-section{text-align:center;}
+.player-avatar-display{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#1e3a5f,#0a1628);border:3px solid var(--sl-green);display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto 1rem;}
+.position-badge{display:inline-block;background:rgba(0,200,83,0.15);color:var(--sl-green);border:1px solid var(--sl-green);border-radius:20px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.player-info h1{font-size:2rem;font-weight:800;margin-bottom:0.5rem;}
+.player-info .nationality{display:flex;align-items:center;gap:0.5rem;color:var(--sl-muted);margin-bottom:1rem;font-size:0.95rem;}
+.meta-grid{display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:1rem;}
+.meta-item{display:flex;flex-direction:column;gap:0.25rem;}
+.meta-label{font-size:0.75rem;color:var(--sl-muted);text-transform:uppercase;letter-spacing:0.5px;}
+.meta-value{font-size:0.95rem;font-weight:600;color:var(--sl-text);}
+.score-panel{text-align:center;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:12px;padding:1.5rem;min-width:160px;}
+.big-score{font-size:3rem;font-weight:900;line-height:1;}
+.score-excellent{color:var(--sl-green);}
+.score-good{color:#3b82f6;}
+.score-average{color:#f59e0b;}
+.score-poor{color:#ef4444;}
+.score-label{font-size:0.8rem;color:var(--sl-muted);margin-top:0.5rem;text-transform:uppercase;letter-spacing:0.5px;}
+.tabs{display:flex;gap:0.5rem;margin-bottom:2rem;border-bottom:1px solid var(--sl-border);padding-bottom:0;}
+.tab-btn{padding:0.75rem 1.5rem;background:transparent;border:none;color:var(--sl-muted);cursor:pointer;font-weight:600;font-size:0.875rem;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s;}
+.tab-btn.active{color:var(--sl-green);border-bottom-color:var(--sl-green);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.section-title{font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem;}
+.section-title::before{content:'';width:4px;height:1.2em;background:var(--sl-green);border-radius:2px;}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;}
+.metric-card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:12px;padding:1.25rem;position:relative;}
+.metric-name{font-size:0.8rem;color:var(--sl-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;}
+.metric-value{font-size:2rem;font-weight:800;}
+.metric-bar{height:4px;background:#1e2a3a;border-radius:2px;margin-top:0.75rem;}
+.metric-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sl-green),#00e676);transition:width 0.6s ease;}
+.info-btn{background:none;border:none;color:var(--sl-muted);cursor:pointer;font-size:0.8rem;padding:0.1rem 0.3rem;border-radius:50%;transition:color 0.2s;}
+.info-btn:hover{color:var(--sl-accent);}
+.tooltip-popup{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1e2a3a;border:1px solid var(--sl-border);border-radius:8px;padding:0.75rem 1rem;font-size:0.8rem;color:var(--sl-text);z-index:50;width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.metric-card:hover .tooltip-popup{display:block;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;}
+.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:12px;padding:1.5rem;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--sl-border);}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--sl-muted);font-size:0.875rem;}
+.info-val{font-weight:600;font-size:0.875rem;}
+.range-tag{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:0.2rem 0.65rem;font-size:0.75rem;font-weight:600;}
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;}
+.video-card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:12px;overflow:hidden;}
+.video-thumb{background:#0d1424;height:160px;display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--sl-muted);position:relative;cursor:pointer;}
+.video-thumb:hover .play-overlay{opacity:1;}
+.play-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
+.play-btn{width:56px;height:56px;background:var(--sl-green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-size:1.25rem;}
+.video-meta{padding:1rem;}
+.video-title{font-weight:600;margin-bottom:0.5rem;}
+.video-date{color:var(--sl-muted);font-size:0.8rem;}
+.match-table{width:100%;border-collapse:collapse;}
+.match-table th{text-align:left;padding:0.75rem 1rem;font-size:0.75rem;color:var(--sl-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--sl-border);}
+.match-table td{padding:0.75rem 1rem;border-bottom:1px solid rgba(30,42,58,0.5);font-size:0.875rem;}
+.match-table tr:hover td{background:rgba(255,255,255,0.02);}
+.rating-pill{display:inline-block;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700;}
+.r-exc{background:rgba(0,200,83,0.2);color:#00e676;}
+.r-good{background:rgba(59,130,246,0.2);color:#93c5fd;}
+.r-avg{background:rgba(245,158,11,0.2);color:#fbbf24;}
+.r-poor{background:rgba(239,68,68,0.2);color:#fca5a5;}
+.action-bar{display:flex;gap:1rem;flex-wrap:wrap;}
+.pipeline-stage{display:inline-block;padding:0.25rem 0.75rem;border-radius:20px;font-size:0.75rem;font-weight:700;text-transform:uppercase;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);}
+.salary-pred{background:rgba(0,200,83,0.1);border:1px solid rgba(0,200,83,0.3);border-radius:12px;padding:1.25rem;text-align:center;}
+.salary-amount{font-size:1.75rem;font-weight:800;color:var(--sl-green);}
+.salary-label{font-size:0.8rem;color:var(--sl-muted);margin-top:0.25rem;}
+@media(max-width:768px){
+  .profile-hero{grid-template-columns:1fr;text-align:center;}
+  .score-panel{margin:0 auto;}
+  .two-col{grid-template-columns:1fr;}
+  .metrics-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-brand">Scout<span>Link</span></div>
+  <div class="nav-actions">
+    <a href="player-search.html" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Search</a>
+    <a href="compare-players.html" class="btn btn-secondary" id="compareBtn"><i class="fas fa-code-compare"></i> Compare</a>
+    <button class="btn btn-primary" id="scoutInterestBtn" onclick="toggleScoutInterest()"><i class="fas fa-star"></i> <span id="interestBtnText">Express Interest</span></button>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Hero Section -->
+  <div class="profile-hero" id="profileHero">
+    <div class="avatar-section">
+      <div class="player-avatar-display" id="playerAvatar">⚽</div>
+      <div class="position-badge" id="positionBadge">Forward</div>
+      <div style="margin-top:0.75rem;">
+        <div class="pipeline-stage" id="pipelineStage">Watchlist</div>
+      </div>
+    </div>
+    <div class="player-info">
+      <h1 id="playerName">Loading...</h1>
+      <div class="nationality"><span id="playerFlag">🌍</span><span id="playerNationality">Loading...</span></div>
+      <div class="meta-grid">
+        <div class="meta-item"><span class="meta-label">Age</span><span class="meta-value" id="playerAge">-</span></div>
+        <div class="meta-item"><span class="meta-label">Height</span><span class="meta-value" id="playerHeight">-</span></div>
+        <div class="meta-item"><span class="meta-label">Build</span><span class="meta-value" id="playerBuild">-</span></div>
+        <div class="meta-item"><span class="meta-label">School / Academy</span><span class="meta-value" id="playerSchool">-</span></div>
+        <div class="meta-item"><span class="meta-label">Preferred Foot</span><span class="meta-value" id="playerFoot">-</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="score-panel">
+        <div class="big-score" id="compatScore">--</div>
+        <div class="score-label">Compatibility</div>
+      </div>
+      <div class="salary-pred">
+        <div class="salary-amount" id="salaryPred">-</div>
+        <div class="salary-label">Predicted Salary</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('metrics')"><i class="fas fa-chart-bar"></i> Metrics</button>
+    <button class="tab-btn" onclick="showTab('videos')"><i class="fas fa-video"></i> Videos</button>
+    <button class="tab-btn" onclick="showTab('matches')"><i class="fas fa-futbol"></i> Match History</button>
+    <button class="tab-btn" onclick="showTab('profile')"><i class="fas fa-user"></i> Profile</button>
+  </div>
+
+  <!-- Metrics Tab -->
+  <div class="tab-content active" id="tab-metrics">
+    <div class="section-title">Player Metrics</div>
+    <div class="metrics-grid" id="metricsGrid">
+      <!-- Dynamically generated -->
+    </div>
+    <div class="section-title">Physical Profile</div>
+    <div class="metrics-grid" id="physicalGrid">
+      <!-- Dynamically generated -->
+    </div>
+  </div>
+
+  <!-- Videos Tab -->
+  <div class="tab-content" id="tab-videos">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <div class="section-title" style="margin:0;">Video Reels</div>
+    </div>
+    <div class="video-grid" id="videoGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--sl-muted);">
+        <i class="fas fa-video" style="font-size:3rem;margin-bottom:1rem;display:block;"></i>
+        <p>No videos uploaded yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match History Tab -->
+  <div class="tab-content" id="tab-matches">
+    <div class="section-title">Recent Match Facts</div>
+    <div class="card">
+      <table class="match-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Opponent</th><th>Position</th><th>Goals</th><th>Assists</th><th>Rating</th><th>Minutes</th>
+          </tr>
+        </thead>
+        <tbody id="matchTableBody">
+          <tr><td colspan="7" style="text-align:center;color:var(--sl-muted);padding:2rem;">No match data available</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Profile Tab -->
+  <div class="tab-content" id="tab-profile">
+    <div class="two-col">
+      <div class="card">
+        <div class="section-title">Personal Details</div>
+        <div id="personalDetails">
+          <div class="info-row"><span class="info-key">Date of Birth</span><span class="info-val" id="dob">-</span></div>
+          <div class="info-row"><span class="info-key">Nationality</span><span class="info-val" id="profNat">-</span></div>
+          <div class="info-row"><span class="info-key">Height Range</span><span class="info-val"><span class="range-tag" id="profHeight">-</span></span></div>
+          <div class="info-row"><span class="info-key">Build / Weight</span><span class="info-val"><span class="range-tag" id="profBuild">-</span></span></div>
+          <div class="info-row"><span class="info-key">Preferred Foot</span><span class="info-val" id="profFoot">-</span></div>
+          <div class="info-row"><span class="info-key">Playing Since</span><span class="info-val" id="profSince">-</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title">Playing Profile</div>
+        <div id="playingDetails">
+          <div class="info-row"><span class="info-key">Position Group</span><span class="info-val" id="profPosGroup">-</span></div>
+          <div class="info-row"><span class="info-key">Specific Role</span><span class="info-val" id="profRole">-</span></div>
+          <div class="info-row"><span class="info-key">School / Academy</span><span class="info-val" id="profSchool">-</span></div>
+          <div class="info-row"><span class="info-key">Transfer Value</span><span class="info-val" id="profTransfer">-</span></div>
+          <div class="info-row"><span class="info-key">Predicted Salary</span><span class="info-val" id="profSalary">-</span></div>
+          <div class="info-row"><span class="info-key">Overall Rating</span><span class="info-val" id="profOverall">-</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://fwxnggklfsgrydcoeiuh.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.placeholder';
+
+const params = new URLSearchParams(window.location.search);
+const playerId = params.get('id');
+let currentPlayer = null;
+let isInterested = false;
+
+const METRIC_INFO = {
+  pace: 'Pace measures the player's top speed and acceleration. 10 = elite sprinter (top 1%), 8 = very fast, 6 = average, 4 = below average.',
+  shooting: 'Shooting covers accuracy, power and technique when striking the ball. 10 = clinical finisher, 8 = reliable scorer, 6 = occasional threats.',
+  passing: 'Passing rates accuracy, range and decision making when distributing the ball. 10 = exceptional playmaker, 8 = reliable distributor.',
+  dribbling: 'Dribbling rates ball control, skill moves and ability to beat opponents. 10 = mesmeric dribbler, 8 = regularly beats defenders.',
+  defending: 'Defending covers tackling, positioning, and reading the game defensively. 10 = top-tier defender, 8 = solid and reliable.',
+  physical: 'Physical rates strength, stamina and aerial ability. 10 = dominant physically, 8 = strong and hard-working.',
+  agility: 'Agility measures balance, coordination and quickness of movement. 10 = razor sharp reactions, 8 = highly agile.',
+  vision: 'Vision rates ability to spot passes and read the game offensively. 10 = exceptional football intelligence, 8 = very creative.',
+  leadership: 'Leadership covers communication, decision-making under pressure, and organising teammates. 10 = natural captain.',
+  work_rate: 'Work rate measures pressing intensity, tracking back, and off-ball effort. 10 = relentless engine.',
+  // GK metrics
+  diving: 'Diving rates the goalkeeper's ability to make saves by diving to stop shots. 10 = world-class shot stopper.',
+  reflexes: 'Reflexes measures reaction speed to close-range shots. 10 = lightning fast reactions.',
+  handling: 'Handling rates reliability in catching or collecting the ball. 10 = safe hands, very reliable.',
+  kicking: 'Kicking covers the accuracy and range of goal kicks and distribution. 10 = exceptional distribution.',
+  gk_positioning: 'GK Positioning rates how well the keeper reads the game and positions in the goal. 10 = excellent angles.',
+  distribution: 'Distribution covers short and long passing accuracy from the goalkeeper. 10 = elite ball-playing keeper.',
+  communication: 'Communication rates how well the keeper organises and directs their defence. 10 = commanding presence.',
+  sweeping: 'Sweeping rates the ability to act as a sweeper-keeper, coming out to claim through balls. 10 = dominant off the line.'
+};
+
+const HEIGHT_LABELS = {
+  very_short: 'Very Short (under 163cm)', short: 'Short (163-170cm)',
+  average: 'Average (170-178cm)', tall: 'Tall (178-185cm)', very_tall: 'Very Tall (185cm+)'
+};
+const BUILD_LABELS = {
+  very_slight: 'Very Slight (under 58kg)', slight: 'Slight (58-65kg)',
+  lean: 'Lean (65-72kg)', athletic: 'Athletic (72-80kg)',
+  stocky: 'Stocky (80-88kg)', powerful: 'Powerful (88-96kg)', very_powerful: 'Very Powerful (96kg+)'
+};
+
+const AVATAR_EMOJIS = {'default':'⚽','face_1':'😊','face_2':'😎','face_3':'🤩'};
+
+async function loadPlayer() {
+  if (!playerId) {
+    document.getElementById('playerName').textContent = 'Player not found';
+    return;
+  }
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/players?id=eq.${playerId}&select=*`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+    });
+    const data = await resp.json();
+    if (!data || data.length === 0) {
+      document.getElementById('playerName').textContent = 'Player not found';
+      return;
+    }
+    currentPlayer = data[0];
+    renderPlayer(currentPlayer);
+    loadVideos(playerId);
+    loadMatches(playerId);
+    loadCompatibility(playerId);
+  } catch(e) {
+    console.error('Load player error:', e);
+  }
+}
+
+function renderPlayer(p) {
+  document.title = `${p.first_name} ${p.last_name} - ScoutLink`;
+  document.getElementById('playerName').textContent = `${p.first_name} ${p.last_name}`;
+  document.getElementById('playerFlag').textContent = p.nationality_flag || '🌍';
+  document.getElementById('playerNationality').textContent = p.nationality || '-';
+  document.getElementById('playerAge').textContent = p.dob ? calcAge(p.dob) + ' yrs' : '-';
+  document.getElementById('playerHeight').textContent = HEIGHT_LABELS[p.height_category] || p.height_category || '-';
+  document.getElementById('playerBuild').textContent = BUILD_LABELS[p.build_category] || p.build_category || '-';
+  document.getElementById('playerSchool').textContent = p.school_name || '-';
+  document.getElementById('playerFoot').textContent = p.preferred_foot || '-';
+  document.getElementById('positionBadge').textContent = p.specific_position || p.position_group || '-';
+  
+  // Salary prediction
+  if (p.predicted_salary_min && p.predicted_salary_max) {
+    document.getElementById('salaryPred').textContent = `£${p.predicted_salary_min.toLocaleString()} - £${p.predicted_salary_max.toLocaleString()}/wk`;
+    document.getElementById('profSalary').textContent = `£${p.predicted_salary_min.toLocaleString()} - £${p.predicted_salary_max.toLocaleString()}/wk`;
+  }
+  if (p.transfer_value) {
+    document.getElementById('profTransfer').textContent = `£${parseInt(p.transfer_value).toLocaleString()}`;
+  }
+  if (p.overall_rating) {
+    document.getElementById('profOverall').textContent = `${p.overall_rating}/10`;
+  }
+  
+  // Avatar
+  document.getElementById('playerAvatar').textContent = AVATAR_EMOJIS[p.avatar_type] || '⚽';
+  
+  // Profile tab
+  document.getElementById('dob').textContent = p.dob ? new Date(p.dob).toLocaleDateString('en-GB') : '-';
+  document.getElementById('profNat').textContent = p.nationality || '-';
+  document.getElementById('profHeight').textContent = HEIGHT_LABELS[p.height_category] || '-';
+  document.getElementById('profBuild').textContent = BUILD_LABELS[p.build_category] || '-';
+  document.getElementById('profFoot').textContent = p.preferred_foot || '-';
+  document.getElementById('profPosGroup').textContent = p.position_group || '-';
+  document.getElementById('profRole').textContent = p.specific_position || '-';
+  document.getElementById('profSchool').textContent = p.school_name || '-';
+  
+  // Render metrics
+  renderMetrics(p);
+}
+
+function renderMetrics(p) {
+  const isGK = p.position_group === 'Goalkeeper';
+  const metricsGrid = document.getElementById('metricsGrid');
+  
+  let metrics = isGK 
+    ? [
+        {key:'diving',label:'Diving',val:p.gk_diving},
+        {key:'reflexes',label:'Reflexes',val:p.gk_reflexes},
+        {key:'handling',label:'Handling',val:p.gk_handling},
+        {key:'kicking',label:'Kicking',val:p.gk_kicking},
+        {key:'gk_positioning',label:'Positioning',val:p.gk_positioning},
+        {key:'distribution',label:'Distribution',val:p.gk_distribution},
+        {key:'communication',label:'Communication',val:p.gk_communication},
+        {key:'sweeping',label:'Sweeping',val:p.gk_sweeping}
+      ]
+    : [
+        {key:'pace',label:'Pace',val:p.pace},
+        {key:'shooting',label:'Shooting',val:p.shooting},
+        {key:'passing',label:'Passing',val:p.passing},
+        {key:'dribbling',label:'Dribbling',val:p.dribbling},
+        {key:'defending',label:'Defending',val:p.defending},
+        {key:'physical',label:'Physical',val:p.physical},
+        {key:'vision',label:'Vision',val:p.vision},
+        {key:'leadership',label:'Leadership',val:p.leadership},
+        {key:'work_rate',label:'Work Rate',val:p.work_rate}
+      ];
+  
+  metricsGrid.innerHTML = metrics.map(m => {
+    const val = m.val || 0;
+    const scoreClass = val >= 8 ? 'score-excellent' : val >= 6 ? 'score-good' : val >= 4 ? 'score-average' : 'score-poor';
+    const pct = (val / 10) * 100;
+    const info = METRIC_INFO[m.key] || 'Player metric rating from 1-10.';
+    return `<div class="metric-card">
+      <div class="metric-name">
+        ${m.label}
+        <button class="info-btn" title="${info}"><i class="fas fa-info-circle"></i></button>
+        <div class="tooltip-popup">${info}</div>
+      </div>
+      <div class="metric-value ${scoreClass}">${val > 0 ? val : '-'}</div>
+      <div class="metric-bar"><div class="metric-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  
+  // Physical grid (always shown)
+  document.getElementById('physicalGrid').innerHTML = [
+    {key:'agility',label:'Agility / Quickness',val:p.agility || p.gk_reflexes},
+    {key:'pace',label:'Speed / Pace',val:isGK ? null : p.pace}
+  ].filter(m => m.val).map(m => {
+    const val = m.val || 0;
+    const scoreClass = val >= 8 ? 'score-excellent' : val >= 6 ? 'score-good' : val >= 4 ? 'score-average' : 'score-poor';
+    const info = METRIC_INFO[m.key] || '';
+    return `<div class="metric-card">
+      <div class="metric-name">${m.label} <button class="info-btn"><i class="fas fa-info-circle"></i></button><div class="tooltip-popup">${info}</div></div>
+      <div class="metric-value ${scoreClass}">${val}</div>
+      <div class="metric-bar"><div class="metric-bar-fill" style="width:${(val/10)*100}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+async function loadVideos(playerId) {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/player_videos?player_id=eq.${playerId}&select=*&order=created_at.desc`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+    });
+    const videos = await resp.json();
+    const grid = document.getElementById('videoGrid');
+    if (!videos || videos.length === 0) return;
+    grid.innerHTML = videos.map(v => `
+      <div class="video-card">
+        <div class="video-thumb" onclick="openVideo('${v.video_url || '#'}')">
+          <i class="fas fa-play-circle"></i>
+          <div class="play-overlay"><div class="play-btn"><i class="fas fa-play"></i></div></div>
+        </div>
+        <div class="video-meta">
+          <div class="video-title">${v.title || 'Video Reel'}</div>
+          <div class="video-date">${v.created_at ? new Date(v.created_at).toLocaleDateString('en-GB') : ''}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function loadMatches(playerId) {
+  try {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/match_facts?player_id=eq.${playerId}&select=*&order=match_date.desc&limit=10`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+    });
+    const matches = await resp.json();
+    const tbody = document.getElementById('matchTableBody');
+    if (!matches || matches.length === 0) return;
+    tbody.innerHTML = matches.map(m => {
+      const r = m.performance_rating || 0;
+      const rClass = r >= 8 ? 'r-exc' : r >= 6 ? 'r-good' : r >= 4 ? 'r-avg' : 'r-poor';
+      return `<tr>
+        <td>${m.match_date ? new Date(m.match_date).toLocaleDateString('en-GB') : '-'}</td>
+        <td>${m.opponent || '-'}</td>
+        <td>${m.position_played || '-'}</td>
+        <td>${m.goals || 0}</td>
+        <td>${m.assists || 0}</td>
+        <td><span class="rating-pill ${rClass}">${r}/10</span></td>
+        <td>${m.minutes_played || '-'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function loadCompatibility(playerId) {
+  try {
+    const scoutId = localStorage.getItem('sl_user_id');
+    if (!scoutId) return;
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/compatibility_scores?player_id=eq.${playerId}&scout_id=eq.${scoutId}&select=*`, {
+      headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+    });
+    const scores = await resp.json();
+    if (scores && scores.length > 0) {
+      const s = scores[0].overall_score || 0;
+      const el = document.getElementById('compatScore');
+      el.textContent = s;
+      el.className = 'big-score ' + (s >= 80 ? 'score-excellent' : s >= 60 ? 'score-good' : s >= 40 ? 'score-average' : 'score-poor');
+    }
+  } catch(e) {}
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function calcAge(dob) {
+  const today = new Date();
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function openVideo(url) {
+  if (url && url !== '#') window.open(url, '_blank');
+}
+
+function toggleScoutInterest() {
+  isInterested = !isInterested;
+  const btn = document.getElementById('scoutInterestBtn');
+  const txt = document.getElementById('interestBtnText');
+  if (isInterested) {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-accent');
+    txt.textContent = 'Interest Noted ✓';
+    document.getElementById('pipelineStage').textContent = 'Scouted';
+  } else {
+    btn.classList.remove('btn-accent');
+    btn.classList.add('btn-primary');
+    txt.textContent = 'Express Interest';
+    document.getElementById('pipelineStage').textContent = 'Watchlist';
+  }
+}
+
+loadPlayer();
+</script>
+</body>
+</html>
