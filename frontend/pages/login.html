@@ -31,9 +31,6 @@ input:focus{outline:none;border-color:var(--sl-green);}
 .error.show{display:block;}
 .spinner{display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.role-tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem;}
-.role-tab{flex:1;padding:0.5rem;background:transparent;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-muted);cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s;text-align:center;}
-.role-tab.active{background:rgba(0,200,83,0.1);border-color:var(--sl-green);color:var(--sl-green);}
 </style>
 </head>
 <body>
@@ -70,6 +67,7 @@ input:focus{outline:none;border-color:var(--sl-green);}
 <script>
 const SUPABASE_URL = 'https://fwxnggklfsgrydcoeiuh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDgwOTMsImV4cCI6MjA5NjMyNDA5M30.lV6TCjabEHevU5woLHLa0cCwBvm-0dFpce09ialfpKw';
+const ROLE_TYPE_MAP = { stratex:'Stratex', scout:'Scout', coach:'Coach', player:'Player' };
 
 function showError(msg) {
   const el = document.getElementById('errorMsg');
@@ -92,7 +90,6 @@ async function doLogin() {
   if (!email || !password) { showError('Please enter your email and password.'); return; }
   setLoading(true);
   try {
-    // Step 1: Auth with Supabase
     const authResp = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
@@ -102,13 +99,8 @@ async function doLogin() {
     if (!authData.access_token) {
       throw new Error(authData.error_description || authData.msg || 'Invalid email or password');
     }
-    localStorage.setItem('sl_session', JSON.stringify(authData));
-    localStorage.setItem('sl_user_email', email);
-
     const bearerToken = authData.access_token;
     const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearerToken };
-
-    // Step 2: Find user role
     const tables = [
       { table: 'stratex', role: 'stratex' },
       { table: 'scouts', role: 'scout' },
@@ -120,48 +112,45 @@ async function doLogin() {
     for (const t of tables) {
       const r = await fetch(SUPABASE_URL + '/rest/v1/' + t.table + '?email=eq.' + encodeURIComponent(email) + '&select=*', { headers });
       const data = await r.json();
-      if (Array.isArray(data) && data.length > 0) {
-        profile = data[0];
-        userRole = t.role;
-        break;
-      }
+      if (Array.isArray(data) && data.length > 0) { profile = data[0]; userRole = t.role; break; }
     }
+    if (!profile) throw new Error('Account not found. Please register or contact Stratex.');
 
-    if (!profile) {
-      throw new Error('Account not found. Please register or contact Stratex.');
-    }
-
+    localStorage.setItem('sl_session', JSON.stringify(authData));
+    localStorage.setItem('sl_user_email', email);
     localStorage.setItem('sl_user_role', userRole);
     localStorage.setItem('sl_user_data', JSON.stringify(profile));
     localStorage.setItem('sl_user_id', profile.id);
+    localStorage.setItem('sl_token', bearerToken);
+    localStorage.setItem('sl_user', JSON.stringify({ id: profile.id, firstName: profile.first_name, lastName: profile.last_name, email: email }));
+    localStorage.setItem('sl_type', ROLE_TYPE_MAP[userRole] || userRole);
 
-    // Step 3: Redirect by role
     const base = '/scoutlink-app/frontend/pages/';
-    if (userRole === 'stratex') {
-      window.location.href = base + 'stratex-dashboard.html';
-    } else if (userRole === 'scout') {
-      const hasPrefs = profile.preferred_positions || profile.target_formation;
-      window.location.href = base + (hasPrefs ? 'scout-dashboard.html' : 'scout-preferences.html');
-    } else if (userRole === 'coach') {
-      window.location.href = base + 'coach-dashboard.html';
-    } else if (userRole === 'player') {
-      window.location.href = base + 'player-dashboard.html';
-    }
+    if (userRole === 'stratex') window.location.href = base + 'stratex-dashboard.html';
+    else if (userRole === 'scout') window.location.href = base + (profile.preferences_set ? 'scout-dashboard.html' : 'scout-preferences.html');
+    else if (userRole === 'coach') window.location.href = base + 'coach-dashboard.html';
+    else if (userRole === 'player') window.location.href = base + 'player-dashboard.html';
   } catch(e) {
     showError(e.message || 'Login failed. Please try again.');
     setLoading(false);
   }
 }
 
-// Check if already logged in
 (function(){
   try {
     const s = JSON.parse(localStorage.getItem('sl_session'));
-    if (s?.access_token && s?.expires_at && Date.now()/1000 < s.expires_at) {
+    if (s && s.access_token && s.expires_at && Date.now()/1000 < s.expires_at) {
       const role = localStorage.getItem('sl_user_role');
       const base = '/scoutlink-app/frontend/pages/';
       const map = { stratex:'stratex-dashboard.html', scout:'scout-dashboard.html', coach:'coach-dashboard.html', player:'player-dashboard.html' };
-      if (role && map[role]) window.location.href = base + map[role];
+      if (role && map[role]) { window.location.href = base + map[role]; return; }
+    }
+    const token = localStorage.getItem('sl_token');
+    const type = localStorage.getItem('sl_type');
+    if (token && type) {
+      const base = '/scoutlink-app/frontend/pages/';
+      const map2 = { Stratex:'stratex-dashboard.html', Scout:'scout-dashboard.html', Coach:'coach-dashboard.html', Player:'player-dashboard.html' };
+      if (map2[type]) window.location.href = base + map2[type];
     }
   } catch(e) {}
 })();
