@@ -1,0 +1,303 @@
+'use strict';
+/**
+ * ScoutLink Analytics Engine v2.0
+ * Handles: Goalkeeper-specific metrics, physical ranges, position KPIs
+ */
+
+// Position definitions
+const FORWARD_POS  = ['ST','LS','RS','LW','RW','CF','SS'];
+const MIDFIELD_POS = ['CDM','CM','RCM','LCM','RDM','LDM','LM','RM','CAM','LAM','RAM','DM','AM','B2B'];
+const DEFENDER_POS = ['CB','RCB','LCB','RB','LB','RWB','LWB','SW','BPD'];
+const GK_POS       = ['GK'];
+
+function normalisePos(p) {
+  if (!p) return [];
+  if (Array.isArray(p)) return p.map(x => String(x).trim().toUpperCase()).filter(Boolean);
+  return String(p).split(/[,\/|]/g).map(x => x.trim().toUpperCase()).filter(Boolean);
+}
+
+function getPosGroup(pos) {
+  const pp = normalisePos(pos);
+  if (!pp.length) return 'Midfielder';
+  if (pp.some(p => GK_POS.includes(p)))       return 'Goalkeeper';
+  if (pp.some(p => FORWARD_POS.includes(p)))  return 'Forward';
+  if (pp.some(p => DEFENDER_POS.includes(p))) return 'Defender';
+  return 'Midfielder';
+}
+
+function clamp(n, mn=0, mx=100) { return Math.max(mn, Math.min(mx, n)); }
+
+function calcAge(dob) {
+  if (!dob) return null;
+  const d = new Date(dob); if (isNaN(d)) return null;
+  const n = new Date();
+  let a = n.getFullYear() - d.getFullYear();
+  if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--;
+  return a;
+}
+
+// Convert range string "170-175" to midpoint
+function rangeMidpoint(rangeStr, fallback = 50) {
+  if (!rangeStr) return fallback;
+  const m = String(rangeStr).match(/(\d+(?:\.\d+)?)[^\d]+(\d+(?:\.\d+)?)/);
+  if (!m) return parseFloat(rangeStr) || fallback;
+  return (parseFloat(m[1]) + parseFloat(m[2])) / 2;
+}
+
+// Height descriptor -> cm midpoint
+const HEIGHT_MAP = {
+  very_short: 160, short: 167, average: 174, tall: 181, very_tall: 188
+};
+// Build descriptor -> kg midpoint
+const BUILD_MAP = {
+  very_slight: 57, slight: 63, lean: 68, athletic: 74, stocky: 80, powerful: 87, very_powerful: 95
+};
+
+function getHeightMid(player) {
+  if (player.height_range_cm) return rangeMidpoint(player.height_range_cm, 174);
+  if (player.height_category && HEIGHT_MAP[player.height_category]) return HEIGHT_MAP[player.height_category];
+  return 174;
+}
+function getBuildMid(player) {
+  if (player.weight_range_kg) return rangeMidpoint(player.weight_range_kg, 74);
+  if (player.build_category && BUILD_MAP[player.build_category]) return BUILD_MAP[player.build_category];
+  return 74;
+}
+
+function attr(player, key, fallback = 50) {
+  return parseFloat(player[key]) || fallback;
+}
+function norm(val, min=0, max=100) {
+  return clamp((val - min) / (max - min), 0, 1);
+}
+
+// Position-weighted overall rating
+function computeOverall(player) {
+  const group = getPosGroup(player.positions || player.primary_position);
+  const a = (key, fb=50) => norm(attr(player, key, fb));
+
+  if (group === 'Goalkeeper') {
+    return clamp((
+      a('gk_diving')        * 0.20 +
+      a('gk_reflexes')      * 0.22 +
+      a('gk_handling')      * 0.18 +
+      a('gk_positioning')   * 0.15 +
+      a('gk_kicking')       * 0.10 +
+      a('gk_distribution')  * 0.08 +
+      a('gk_communication') * 0.04 +
+      a('gk_sweeping')      * 0.03
+    ) * 100);
+  }
+  if (group === 'Forward') {
+    return clamp((
+      a('pace')        * 0.18 +
+      a('shooting')    * 0.26 +
+      a('dribbling')   * 0.18 +
+      a('agility')     * 0.10 +
+      a('composure')   * 0.12 +
+      a('passing')     * 0.08 +
+      a('strength')    * 0.08
+    ) * 100);
+  }
+  if (group === 'Midfielder') {
+    return clamp((
+      a('passing')     * 0.24 +
+      a('vision')      * 0.16 +
+      a('dribbling')   * 0.14 +
+      a('stamina')     * 0.14 +
+      a('defending')   * 0.12 +
+      a('pace')        * 0.10 +
+      a('composure')   * 0.10
+    ) * 100);
+  }
+  // Defender
+  return clamp((
+    a('defending')   * 0.28 +
+    a('strength')    * 0.18 +
+    a('tackling')    * 0.16 +
+    a('heading')     * 0.12 +
+    a('pace')        * 0.12 +
+    a('positioning') * 0.08 +
+    a('passing')     * 0.06
+  ) * 100);
+}
+
+// Physical fit bonus based on position
+function physicalFitBonus(player, group) {
+  const h = getHeightMid(player);
+  const b = getBuildMid(player);
+  let bonus = 0;
+  if (group === 'Goalkeeper') {
+    bonus += h >= 185 ? 5 : h >= 180 ? 3 : h >= 175 ? 0 : -3;
+    bonus += b >= 78 ? 2 : 0;
+  } else if (group === 'Defender') {
+    bonus += h >= 180 ? 4 : h >= 175 ? 2 : 0;
+    bonus += b >= 74 ? 2 : 0;
+  } else if (group === 'Forward') {
+    bonus += h >= 170 && h <= 182 ? 2 : 0;
+  }
+  return clamp(bonus, -5, 8);
+}
+
+// ── COMPATIBILITY SCORE ──────────────────────────────────────────────────────
+function compatibilityScore(player, team, prefs = {}) {
+  const group   = getPosGroup(player.positions || player.primary_position);
+  const age     = calcAge(player.date_of_birth) ?? 17;
+  const tier    = Number(team?.tier) || 5;
+  const overall = computeOverall(player);
+
+  // 1. Technical (38%)
+  const technical = overall;
+
+  // 2. Tier fit (22%)
+  const tierReq = Math.max(0, 100 - (tier - 1) * 10);
+  const tierFit = clamp(100 - Math.abs(overall - tierReq) * 1.1);
+
+  // 3. Age fit (18%)
+  let ageFit;
+  if      (age <= 14) ageFit = 55;
+  else if (age <= 18) ageFit = 100;
+  else if (age <= 21) ageFit = 92;
+  else if (age <= 24) ageFit = 78;
+  else if (age <= 27) ageFit = 62;
+  else if (age <= 30) ageFit = 44;
+  else                ageFit = 25;
+
+  // 4. Physical fit (10%)
+  const physScore = clamp(70 + physicalFitBonus(player, group));
+
+  // 5. Stats (7%)
+  const apps   = Number(player.appearances) || 0;
+  const goals  = Number(player.goals)       || 0;
+  const assts  = Number(player.assists)     || 0;
+  let statsScore = 50;
+  if (apps > 0) {
+    if      (group === 'Forward')    statsScore = clamp(50 + (goals/apps)*40 + (assts/apps)*15);
+    else if (group === 'Midfielder') statsScore = clamp(50 + (goals/apps)*15 + (assts/apps)*30);
+    else if (group === 'Goalkeeper') statsScore = clamp(50 + (Number(player.clean_sheets)||0)/Math.max(apps,1)*45);
+    else                             statsScore = clamp(50 + (Number(player.clean_sheets)||0)/Math.max(apps,1)*30);
+  }
+
+  // 6. Scout preference match (5%)
+  let prefScore = 70;
+  if (prefs.preferredPositions && prefs.preferredPositions.length) {
+    const pp = normalisePos(player.positions || player.primary_position);
+    const match = prefs.preferredPositions.some(p => pp.includes(p.toUpperCase()));
+    prefScore = match ? 95 : 40;
+  }
+
+  const score = clamp(
+    technical * 0.38 + tierFit * 0.22 + ageFit * 0.18 +
+    physScore * 0.10 + statsScore * 0.07 + prefScore * 0.05
+  );
+
+  return {
+    score: Math.round(score * 10) / 10,
+    breakdown: { technical: Math.round(technical*10)/10, tierFit: Math.round(tierFit*10)/10,
+      ageFit: Math.round(ageFit*10)/10, physScore: Math.round(physScore*10)/10,
+      statsScore: Math.round(statsScore*10)/10, prefScore: Math.round(prefScore*10)/10,
+      group, overall: Math.round(overall*10)/10, age, tier }
+  };
+}
+
+// ── PREDICTION SCORE ─────────────────────────────────────────────────────────
+function predictionScore(player, matchHistory = []) {
+  const age     = calcAge(player.date_of_birth) ?? 17;
+  const group   = getPosGroup(player.positions || player.primary_position);
+  const overall = computeOverall(player);
+
+  let ageMulti;
+  if      (age <= 14) ageMulti = 1.38;
+  else if (age <= 16) ageMulti = 1.30;
+  else if (age <= 18) ageMulti = 1.22;
+  else if (age <= 20) ageMulti = 1.14;
+  else if (age <= 22) ageMulti = 1.07;
+  else if (age <= 24) ageMulti = 1.02;
+  else                ageMulti = 0.93;
+
+  let formTrend = 0;
+  if (matchHistory.length >= 3) {
+    const recent = [...matchHistory].sort((a,b) => new Date(b.match_date)-new Date(a.match_date)).slice(0,5);
+    const avg = recent.reduce((s,m) => s + (Number(m.performance_score)||50), 0) / recent.length;
+    formTrend = (avg - 50) * 0.28;
+  }
+
+  const physBonus = physicalFitBonus(player, group) * 0.5;
+  const rawPot = clamp(overall * ageMulti + formTrend + physBonus);
+
+  const peakAge = group === 'Goalkeeper' ? 29 : group === 'Defender' ? 27 : group === 'Midfielder' ? 27 : 25;
+  const trajectory = formTrend > 4 ? 'rising' : formTrend < -4 ? 'declining' : 'stable';
+
+  return {
+    score: Math.round(rawPot * 10) / 10, peakAge, trajectory,
+    currentOverall: Math.round(overall*10)/10,
+    potentialOverall: Math.round(rawPot*10)/10,
+    formTrend: Math.round(formTrend*10)/10,
+  };
+}
+
+// ── TRANSFER VALUE ────────────────────────────────────────────────────────────
+const TIER_BASE = { 1:50000000,2:15000000,3:5000000,4:1500000,5:500000,6:150000,7:40000,8:15000,9:5000,10:1000 };
+
+function transferValue(player, team, compatibility = 50) {
+  const age    = calcAge(player.date_of_birth) ?? 17;
+  const group  = getPosGroup(player.positions || player.primary_position);
+  const tier   = Math.min(10, Math.max(1, Number(team?.tier) || 5));
+  const base   = TIER_BASE[tier] || 50000;
+  const overall= computeOverall(player);
+
+  let ratingF;
+  if      (overall >= 90) ratingF = 1.0;
+  else if (overall >= 80) ratingF = 0.4  + (overall-80)/10*0.6;
+  else if (overall >= 70) ratingF = 0.10 + (overall-70)/10*0.3;
+  else if (overall >= 60) ratingF = 0.02 + (overall-60)/10*0.08;
+  else                    ratingF = (overall/60)*0.02;
+
+  let ageFactor;
+  if      (age <= 14) ageFactor = 0.45;
+  else if (age <= 16) ageFactor = 0.80;
+  else if (age <= 18) ageFactor = 1.15;
+  else if (age <= 21) ageFactor = 1.25;
+  else if (age <= 24) ageFactor = 1.18;
+  else if (age <= 27) ageFactor = 1.00;
+  else if (age <= 30) ageFactor = 0.72;
+  else if (age <= 33) ageFactor = 0.42;
+  else                ageFactor = 0.18;
+
+  const gkPremium   = group === 'Goalkeeper' ? 1.06 : 1.0;
+  const compatFactor = 0.80 + (compatibility/100)*0.40;
+  const raw  = base * ratingF * ageFactor * gkPremium * compatFactor;
+  const val  = Math.round(raw/500)*500;
+  const fmt  = val >= 1000000 ? '£'+(val/1000000).toFixed(2)+'M' : val >= 1000 ? '£'+(val/1000).toFixed(0)+'K' : '£'+val;
+  return { value: val, valueFormatted: fmt,
+    breakdown: { base, ratingF: Math.round(ratingF*1000)/1000, ageFactor, gkPremium, compatFactor: Math.round(compatFactor*1000)/1000, overall: Math.round(overall*10)/10, age, group, tier } };
+}
+
+// ── PREDICTED SALARY ─────────────────────────────────────────────────────────
+function predictedSalary(player, team) {
+  const tv = transferValue(player, team, 50);
+  const weekly = Math.round((tv.value * 0.0018) / 100) * 100;
+  const fmt = weekly >= 1000 ? '£'+(weekly/1000).toFixed(1)+'K/week' : '£'+weekly+'/week';
+  return { weeklyGross: weekly, weeklyFormatted: fmt, transferValue: tv.value };
+}
+
+// ── FULL ANALYSIS ─────────────────────────────────────────────────────────────
+function analysePlayer(player, team, matchHistory = [], scoutPrefs = {}) {
+  const compat  = compatibilityScore(player, team, scoutPrefs);
+  const predict = predictionScore(player, matchHistory);
+  const value   = transferValue(player, team, compat.score);
+  const salary  = predictedSalary(player, team);
+  return {
+    compatibilityScore:    compat.score,
+    compatibilityBreakdown: compat.breakdown,
+    predictionScore:       predict.score,
+    predictionDetails:     predict,
+    transferValue:         value.value,
+    transferValueFormatted: value.valueFormatted,
+    transferValueBreakdown: value.breakdown,
+    predictedSalaryWeekly: salary.weeklyGross,
+    predictedSalaryFormatted: salary.weeklyFormatted,
+  };
+}
+
+module.exports = { compatibilityScore, predictionScore, transferValue, predictedSalary, analysePlayer, computeOverall, getPosGroup, calcAge, getHeightMid, getBuildMid };
