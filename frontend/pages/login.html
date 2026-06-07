@@ -35,44 +35,65 @@ input:focus{outline:none;border-color:var(--sl-green);}
 </head>
 <body>
 <div class="login-wrap">
-  <div class="brand">
-    <h1>Scout<span>Link</span></h1>
-    <p>Football Player Intelligence Platform</p>
-  </div>
-  <div class="card">
-    <div id="errorMsg" class="error"></div>
-    <div class="form-group">
-      <label>Email Address</label>
-      <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
-    </div>
-    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
-      <span id="btnText">Sign In</span>
-      <div class="spinner" id="spinner"></div>
-    </button>
-    <div class="links">
-      <a href="forgot-password.html">Forgot password?</a>
-    </div>
-    <hr class="divider">
-    <div class="links">
-      New coach? <a href="register-coach.html">Register here</a><br><br>
-      New scout organisation? <a href="register-scout.html">Apply for access</a>
-    </div>
-  </div>
+<div class="brand">
+<h1>Scout<span>Link</span></h1>
+<p>Football Player Intelligence Platform</p>
+</div>
+<div class="card">
+<div id="errorMsg" class="error"></div>
+<div class="form-group">
+<label>Email Address</label>
+<input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+</div>
+<div class="form-group">
+<label>Password</label>
+<input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+</div>
+<button class="btn btn-primary" id="loginBtn" onclick="doLogin()">
+<span id="btnText">Sign In</span>
+<div class="spinner" id="spinner"></div>
+</button>
+<div class="links">
+<a href="forgot-password.html">Forgot password?</a>
+</div>
+<hr class="divider">
+<div class="links">
+New to ScoutLink? <a href="register.html">Register here</a>
+</div>
+</div>
 </div>
 
 <script>
 const SUPABASE_URL = 'https://fwxnggklfsgrydcoeiuh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDgwOTMsImV4cCI6MjA5NjMyNDA5M30.lV6TCjabEHevU5woLHLa0cCwBvm-0dFpce09ialfpKw';
 const ROLE_TYPE_MAP = { stratex:'Stratex', scout:'Scout', coach:'Coach', player:'Player' };
+const BASE = '/scoutlink-app/frontend/pages/';
+
+// Only auto-redirect if NOT coming from a logout (check URL param)
+const params = new URLSearchParams(window.location.search);
+const justLoggedOut = params.get('logout') === '1';
+
+if (!justLoggedOut) {
+  try {
+    const s = JSON.parse(localStorage.getItem('sl_session') || 'null');
+    if (s && s.access_token && s.expires_at && Date.now()/1000 < s.expires_at) {
+      const role = localStorage.getItem('sl_user_role');
+      const map = { stratex:'stratex-dashboard.html', scout:'scout-dashboard.html', coach:'coach-dashboard.html', player:'player-dashboard.html' };
+      if (role && map[role]) { window.location.replace(BASE + map[role]); }
+    } else {
+      const token = localStorage.getItem('sl_token');
+      const type = localStorage.getItem('sl_type');
+      if (token && type) {
+        const map2 = { Stratex:'stratex-dashboard.html', Scout:'scout-dashboard.html', Coach:'coach-dashboard.html', Player:'player-dashboard.html' };
+        if (map2[type]) window.location.replace(BASE + map2[type]);
+      }
+    }
+  } catch(e) {}
+}
 
 function showError(msg) {
   const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent = msg; el.classList.add('show');
 }
 function hideError() { document.getElementById('errorMsg').classList.remove('show'); }
 function setLoading(on) {
@@ -107,8 +128,7 @@ async function doLogin() {
       { table: 'coaches', role: 'coach' },
       { table: 'players', role: 'player' }
     ];
-    let profile = null;
-    let userRole = null;
+    let profile = null, userRole = null;
     for (const t of tables) {
       const r = await fetch(SUPABASE_URL + '/rest/v1/' + t.table + '?email=eq.' + encodeURIComponent(email) + '&select=*', { headers });
       const data = await r.json();
@@ -125,35 +145,15 @@ async function doLogin() {
     localStorage.setItem('sl_user', JSON.stringify({ id: profile.id, firstName: profile.first_name, lastName: profile.last_name, email: email }));
     localStorage.setItem('sl_type', ROLE_TYPE_MAP[userRole] || userRole);
 
-    const base = '/scoutlink-app/frontend/pages/';
-    if (userRole === 'stratex') window.location.href = base + 'stratex-dashboard.html';
-    else if (userRole === 'scout') window.location.href = base + (profile.preferences_set ? 'scout-dashboard.html' : 'scout-preferences.html');
-    else if (userRole === 'coach') window.location.href = base + 'coach-dashboard.html';
-    else if (userRole === 'player') window.location.href = base + 'player-dashboard.html';
+    if (userRole === 'stratex') window.location.href = BASE + 'stratex-dashboard.html';
+    else if (userRole === 'scout') window.location.href = BASE + (profile.preferences_set ? 'scout-dashboard.html' : 'scout-preferences.html');
+    else if (userRole === 'coach') window.location.href = BASE + 'coach-dashboard.html';
+    else if (userRole === 'player') window.location.href = BASE + 'player-dashboard.html';
   } catch(e) {
     showError(e.message || 'Login failed. Please try again.');
     setLoading(false);
   }
 }
-
-(function(){
-  try {
-    const s = JSON.parse(localStorage.getItem('sl_session'));
-    if (s && s.access_token && s.expires_at && Date.now()/1000 < s.expires_at) {
-      const role = localStorage.getItem('sl_user_role');
-      const base = '/scoutlink-app/frontend/pages/';
-      const map = { stratex:'stratex-dashboard.html', scout:'scout-dashboard.html', coach:'coach-dashboard.html', player:'player-dashboard.html' };
-      if (role && map[role]) { window.location.href = base + map[role]; return; }
-    }
-    const token = localStorage.getItem('sl_token');
-    const type = localStorage.getItem('sl_type');
-    if (token && type) {
-      const base = '/scoutlink-app/frontend/pages/';
-      const map2 = { Stratex:'stratex-dashboard.html', Scout:'scout-dashboard.html', Coach:'coach-dashboard.html', Player:'player-dashboard.html' };
-      if (map2[type]) window.location.href = base + map2[type];
-    }
-  } catch(e) {}
-})();
 </script>
 </body>
 </html>
