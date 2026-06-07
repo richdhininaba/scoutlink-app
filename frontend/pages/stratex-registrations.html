@@ -47,9 +47,9 @@
 <div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
-const NAV_ITEMS={Stratex:[{icon:'🏠',label:'Dashboard',href:'stratex-dashboard.html'},{icon:'📋',label:'Registrations',href:'stratex-registrations.html'},{icon:'🔍',label:'All Players',href:'player-search.html'},{icon:'🏆',label:'Rankings',href:'player-rankings.html'},{icon:'⚡',label:'Compare',href:'compare-players.html'},{icon:'📊',label:'Pipeline',href:'recruitment-pipeline.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
+const NAV_ITEMS={Stratex:[{icon:'🏠',label:'Dashboard',href:'stratex-dashboard.html'},{icon:'📋',label:'Registrations',href:'stratex-registrations.html'},{icon:'🔍',label:'All Players',href:'player-search.html'},{icon:'📊',label:'Pipeline',href:'recruitment-pipeline.html'},{icon:'📋',label:'Bulk Import',href:'bulk-add-players.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}const items=NAV_ITEMS.Stratex;const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Stratex</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='../index.html';}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 let currentStatus='pending';
 let pendingDeclineId=null;
