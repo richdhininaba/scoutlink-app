@@ -1,7 +1,7 @@
 'use strict';
 // ScoutLink Frontend v2.0
 // API base - update this to your deployed backend URL
-const API = localStorage.getItem('sl_api_url') || 'http://localhost:3000';
+const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 const Auth = {
