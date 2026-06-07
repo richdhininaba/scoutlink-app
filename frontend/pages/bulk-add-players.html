@@ -4,181 +4,88 @@
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  .bulk-table-wrap{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;}
-  .bulk-table{border-collapse:collapse;white-space:nowrap;}
-  .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
-  .bulk-table th{background:var(--card-alt,#1e2a35);color:#B0BEC5;font-weight:600;position:sticky;top:0;z-index:1;}
-  .bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);color:#fff;border-radius:4px;font-size:12px;}
-  .bulk-table input[type=number]{min-width:55px;}
-  .bulk-table input[type=date]{min-width:120px;}
-  .bulk-row-num{color:#546E7A;text-align:center;font-weight:600;}
-  .bulk-remove{background:none;border:none;color:#f44336;cursor:pointer;font-size:16px;padding:2px 6px;}
-  </style>
+.bulk-table-wrap{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;}
+.bulk-table{border-collapse:collapse;white-space:nowrap;}
+.bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
+.bulk-table th{background:var(--card-alt,#1e2a35);color:#B0BEC5;font-weight:600;position:sticky;top:0;z-index:1;}
+.bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);color:#fff;border-radius:4px;font-size:12px;}
+.bulk-table input[type=number]{min-width:55px;}
+.bulk-table input[type=date]{min-width:120px;}
+.bulk-row-num{color:#546E7A;text-align:center;font-weight:600;}
+.bulk-remove{background:none;border:none;color:#f44336;cursor:pointer;font-size:16px;padding:2px 6px;}
+</style>
 </head><body>
-  <div class="dashboard">
-    <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">SL Scout<span style="color:#00E676">Link</span>span></a>a></div>div><div class="sidebar-nav" id="sidebarNav"></div>div><div class="sidebar-user" id="sidebarUser"></div>div></nav>nav>
-    <div class="dashboard-main">
-      <div class="topbar"><span class="topbar-title">Bulk Add Players</span>span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">SL<span class="notif-badge" id="notifBadge" style="display:none">0</span>span></button>button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>button></div>div></div>div>
-      <div class="page-content">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div><h2 style="font-size:22px;font-weight:700">Bulk Player Import</h2>h2><p style="color:#B0BEC5;font-size:14px;margin-top:4px">Add up to 50 players. Scroll right in the table to see all fields.</p>p></div>
-        <div style="display:flex;gap:10px"><button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button>button><button class="btn btn-primary" onclick="submitAll()">Submit All Players</button>button></div>
-        </div>
-      <div class="form-group" id="teamSelectGroup"><label>Team Name (applies to all players)</label><select id="teamNameSelect" style="width:100%;max-width:400px"><option value="">Loading teams...</option>option></select>select><input type="text" id="teamNameInput" placeholder="Or type a new team name..." style="margin-top:8px;display:none;max-width:400px"></div>
-      <div class="form-error" id="formError" style="margin-bottom:12px"></div>
-      <div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
-      <div class="table-card">
-      <div style="padding:12px 16px;background:rgba(0,230,118,0.05);border-bottom:1px solid var(--border);font-size:12px;color:#546E7A">Scroll the table horizontally to see all columns including stats and GK ratings. Player ratings must be between 1 and 99.</div>
-      <div class="bulk-table-wrap">
-      <table class="bulk-table" id="bulkTable">
-      <thead><tr>
-        <th>#</th><th>First Name *</th><th>Last Name *</th><th>Email</th><th>Date of Birth</th><th>Nationality</th>
-      <th>Position Group *</th><th>Specific Position</th><th>Foot</th><th>Height</th><th>Build</th>
-      <th>Pace (1-99)</th><th>Agility (1-99)</th><th>Composure (1-99)</th><th>Shooting (1-99)</th><th>Passing (1-99)</th>
-      <th>Dribbling (1-99)</th><th>Defending (1-99)</th><th>Strength (1-99)</th><th>Stamina (1-99)</th>
-      <th>GK Diving (1-99)</th><th>GK Reflexes (1-99)</th><th>GK Handling (1-99)</th><th></th>
-      </tr></thead>
-      <tbody id="bulkBody"></tbody>tbody>
-      </table>table>
-      </div>
-      <div style="padding:12px 16px"><button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Another Player</button>button></div>
-      </div>
-      <div id="resultsBox" style="display:none;margin-top:20px"></div>
-      </div>
-    </div>
-  </div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button>button></div><div class="notif-list" id="notifList"></div></div>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Bulk Add Players</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+<div><h2 style="font-size:22px;font-weight:700">Bulk Player Import</h2><p style="color:#B0BEC5;font-size:14px;margin-top:4px">Add up to 50 players. Scroll right in the table to see all fields.</p></div>
+<div style="display:flex;gap:10px"><button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Row</button><button class="btn btn-primary" onclick="submitAll()">Submit All Players</button></div>
+</div>
+<div class="form-group" id="teamSelectGroup"><label>Team Name (applies to all players)</label><select id="teamNameSelect" style="width:100%;max-width:400px"><option value="">Loading teams...</option></select><input type="text" id="teamNameInput" placeholder="Or type a new team name..." style="margin-top:8px;display:none;max-width:400px"></div>
+<div class="form-error" id="formError" style="margin-bottom:12px"></div>
+<div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
+<div class="table-card">
+<div style="padding:12px 16px;background:rgba(0,230,118,0.05);border-bottom:1px solid var(--border);font-size:12px;color:#546E7A">Scroll the table horizontally to see all columns. Player ratings must be between 1 and 99.</div>
+<div class="bulk-table-wrap">
+<table class="bulk-table" id="bulkTable">
+<thead><tr>
+<th>#</th><th>First Name *</th><th>Last Name *</th><th>Email</th><th>Date of Birth</th><th>Nationality</th>
+<th>Position Group *</th><th>Specific Position</th><th>Foot</th><th>Height</th><th>Build</th>
+<th>Pace (1-99)</th><th>Agility (1-99)</th><th>Composure (1-99)</th><th>Shooting (1-99)</th><th>Passing (1-99)</th>
+<th>Dribbling (1-99)</th><th>Defending (1-99)</th><th>Strength (1-99)</th><th>Stamina (1-99)</th>
+<th>GK Diving (1-99)</th><th>GK Reflexes (1-99)</th><th>GK Handling (1-99)</th><th></th>
+</tr></thead>
+<tbody id="bulkBody"></tbody>
+</table>
+</div>
+<div style="padding:12px 16px"><button class="btn btn-outline btn-sm" onclick="addRow()">+ Add Another Player</button></div>
+</div>
+<div id="resultsBox" style="display:none;margin-top:20px"></div>
+</div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
-  var NAV_ITEMS = {
-      Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'player-search.html'},{label:'Add Player',href:'add-player.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}],
-      Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'All Players',href:'player-search.html'},{label:'Add Users',href:'stratex-users.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]
-  };
-  function initNav(){
-      if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
-      var t=Auth.type;var items=NAV_ITEMS[t]||[];
-      var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();
-      if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
-      var u=Auth.user;var uel=document.getElementById('sidebarUser');
-      if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';
-      updateNotifBadge();
-  }
-  function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-  function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-
-  var POS_BY_GROUP = {Goalkeeper:['GK'],Defender:['CB','LCB','RCB','LB','RB','LWB','RWB','SW'],Midfielder:['CDM','CM','LCM','RCM','CAM','LM','RM','B2B'],Forward:['ST','LS','RS','LW','RW','CF','SS']};
-  var HEIGHT_OPTS = ['very_short','short','average','tall','very_tall'];
-  var HEIGHT_LABELS = {very_short:'Very Short (155-163cm)',short:'Short (163-170cm)',average:'Average (170-178cm)',tall:'Tall (178-185cm)',very_tall:'Very Tall (185cm+)'};
-  var BUILD_OPTS = ['very_slight','slight','lean','athletic','stocky','powerful','very_powerful'];
-  var BUILD_LABELS = {very_slight:'Very Slight (50-58kg)',slight:'Slight (58-65kg)',lean:'Lean (65-72kg)',athletic:'Athletic (72-80kg)',stocky:'Stocky (80-88kg)',powerful:'Powerful (88-96kg)',very_powerful:'Very Powerful (96kg+)'};
-
-  var rowCount = 0;
-  function posOpts(g){return (POS_BY_GROUP[g]||[]).map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');}
-  function addRow(){
-      rowCount++;
-      var tr=document.createElement('tr');
-      tr.id='row-'+rowCount;
-      tr.innerHTML='<td class="bulk-row-num">'+rowCount+'</td>'+
-          '<td><input placeholder="First" data-f="firstName"></td>'+
-          '<td><input placeholder="Last" data-f="lastName"></td>'+
-          '<td><input placeholder="Email" data-f="email" style="min-width:140px"></td>'+
-          '<td><input type="date" data-f="dateOfBirth"></td>'+
-          '<td><select data-f="nationality"><option value="England">England</option><option value="Scotland">Scotland</option><option value="Wales">Wales</option><option value="Ireland">Ireland</option><option value="Nigeria">Nigeria</option><option value="Ghana">Ghana</option><option value="Brazil">Brazil</option><option value="France">France</option><option value="Spain">Spain</option><option value="Portugal">Portugal</option><option value="Jamaica">Jamaica</option><option value="Other">Other</option></select></td>'+
-          '<td><select data-f="positionGroup" onchange="updateSpecPos(this,'+rowCount+')"><option value="">Select</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></td>'+
-          '<td><select data-f="specificPosition" id="specPos-'+rowCount+'"><option value="">--</option></select></td>'+
-          '<td><select data-f="foot"><option>Right</option><option>Left</option><option>Both</option></select></td>'+
-          '<td><select data-f="heightCategory">'+HEIGHT_OPTS.map(function(h){return'<option value="'+h+'"'+(h==='average'?' selected':'')+'>'+HEIGHT_LABELS[h]+'</option>';}).join('')+'</select></td>'+
-          '<td><select data-f="buildCategory">'+BUILD_OPTS.map(function(b){return'<option value="'+b+'"'+(b==='athletic'?' selected':'')+'>'+BUILD_LABELS[b]+'</option>';}).join('')+'</select></td>'+
-          '<td><input type="number" data-f="pace" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="agility" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="composure" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="shooting" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="passing" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="dribbling" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="defending" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="strength" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="stamina" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="gkDiving" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="gkReflexes" min="1" max="99" placeholder="--"></td>'+
-          '<td><input type="number" data-f="gkHandling" min="1" max="99" placeholder="--"></td>'+
-          '<td><button class="bulk-remove" onclick="removeRow('+rowCount+')">x</button></td>';
-      document.getElementById('bulkBody').appendChild(tr);
-  }
-  function updateSpecPos(sel,rowId){var sp=document.getElementById('specPos-'+rowId);if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(sel.value);}
-  function removeRow(id){var r=document.getElementById('row-'+id);if(r)r.remove();}
-  function getRowData(tr){
-      var data={};
-      tr.querySelectorAll('[data-f]').forEach(function(el){
-            var v=el.value.trim();
-            if(v){
-                    if(el.type==='number'){
-                              var n=Number(v);
-                              if(n>=1&&n<=99) data[el.dataset.f]=n;
-                    } else {
-                              data[el.dataset.f]=v;
-                    }
-            }
-      });
-      if(data.positionGroup) data.positions=data.specificPosition?[data.specificPosition]:[];
-      return data;
-  }
-  function getTeamName(){
-      var sel=document.getElementById('teamNameSelect');
-      var inp=document.getElementById('teamNameInput');
-      if(sel&&sel.value&&sel.value!=='__new__') return sel.value;
-      if(inp&&inp.style.display!=='none') return inp.value.trim();
-      return '';
-  }
-  async function submitAll(){
-      var err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
-      err.classList.remove('show');suc.classList.remove('show');
-      var teamName=getTeamName();
-      var rows=Array.from(document.getElementById('bulkBody').querySelectorAll('tr'));
-      if(!rows.length){err.textContent='Add at least one player.';err.classList.add('show');return;}
-      var players=rows.map(getRowData).filter(function(p){return p.firstName&&p.lastName;});
-      if(!players.length){err.textContent='Fill in at least First Name and Last Name for each row.';err.classList.add('show');return;}
-      var btn=document.querySelector('.btn-primary');btn.textContent='Submitting...';btn.disabled=true;
-      try{
-            var res=await api('POST','/api/players/bulk',{players:players,teamName:teamName});
-            suc.textContent=res.message;suc.classList.add('show');
-            var rb=document.getElementById('resultsBox');rb.style.display='block';
-            rb.innerHTML='<div class="table-card"><div class="table-header"><h3>Import Results</h3></div><div style="padding:20px"><p style="color:#00E676;margin-bottom:12px">'+res.created.length+' players added successfully.</p>'+(res.errors.length?'<p style="color:#ff6666">'+res.errors.length+' errors: '+res.errors.map(function(e){return e.player+' ('+e.error+')';}).join(', ')+'</p>':'')+'<a href="player-search.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex">View All Players</a></div></div>';
-            btn.textContent='Submit All Players';btn.disabled=false;
-      } catch(e){err.textContent=e.message;err.classList.add('show');btn.textContent='Submit All Players';btn.disabled=false;}
-  }
-  async function loadTeams(){
-      var sel=document.getElementById('teamNameSelect');
-      var inp=document.getElementById('teamNameInput');
-      var t=Auth.type;
-      if(t==='Coach'){
-            try{
-                    var d=await api('GET','/api/coaches/profile');
-                    var teamName=d.coach&&d.coach.team_name?d.coach.team_name:'';
-                    sel.innerHTML='<option value="'+teamName+'">'+teamName+'</option>';
-                    sel.disabled=true;
-                    inp.style.display='none';
-            } catch(e){sel.innerHTML='<option value="">My Team</option>';}
-      } else {
-            try{
-                    var d2=await api('GET','/api/stratex/teams');
-                    var teams=d2.teams||[];
-                    sel.innerHTML='<option value="">-- No team (individual) --</option>'+
-                              teams.map(function(t){return'<option value="'+t+'">'+t+'</option>';}).join('')+
-                              '<option value="__new__">+ Type a new team name...</option>';
-                    sel.addEventListener('change',function(){
-                              inp.style.display=this.value==='__new__'?'block':'none';
-                    });
-            } catch(e){sel.innerHTML='<option value="">Type team name below</option>';inp.style.display='block';}
-      }
-  }
-  document.addEventListener('DOMContentLoaded',function(){
-      initNav();
-      loadTeams();
-      addRow();addRow();addRow();
-  });
+var NAV_ITEMS = {
+Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'player-search.html'},{label:'Add Player',href:'add-player.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}],
+Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'All Players',href:'player-search.html'},{label:'Add Users',href:'stratex-users.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]
+};
+function initNav(){if(!Auth.isLoggedIn()){window.location.href='login.html';return;}var t=Auth.type;var items=NAV_ITEMS[t]||[];var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';updateNotifBadge();}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+var POS_BY_GROUP={Goalkeeper:['GK'],Defender:['CB','LCB','RCB','LB','RB','LWB','RWB','SW'],Midfielder:['CDM','CM','LCM','RCM','CAM','LM','RM','B2B'],Forward:['ST','LS','RS','LW','RW','CF','SS']};
+var HEIGHT_OPTS=['very_short','short','average','tall','very_tall'];
+var HEIGHT_LABELS={very_short:'Very Short (155-163cm)',short:'Short (163-170cm)',average:'Average (170-178cm)',tall:'Tall (178-185cm)',very_tall:'Very Tall (185cm+)'};
+var BUILD_OPTS=['very_slight','slight','lean','athletic','stocky','powerful','very_powerful'];
+var BUILD_LABELS={very_slight:'Very Slight (50-58kg)',slight:'Slight (58-65kg)',lean:'Lean (65-72kg)',athletic:'Athletic (72-80kg)',stocky:'Stocky (80-88kg)',powerful:'Powerful (88-96kg)',very_powerful:'Very Powerful (96kg+)'};
+var rowCount=0;
+function posOpts(g){return(POS_BY_GROUP[g]||[]).map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');}
+function addRow(){rowCount++;var tr=document.createElement('tr');tr.id='row-'+rowCount;tr.innerHTML='<td class="bulk-row-num">'+rowCount+'</td><td><input placeholder="First" data-f="firstName"></td><td><input placeholder="Last" data-f="lastName"></td><td><input placeholder="Email" data-f="email" style="min-width:140px"></td><td><input type="date" data-f="dateOfBirth"></td><td><select data-f="nationality"><option value="England">England</option><option value="Scotland">Scotland</option><option value="Wales">Wales</option><option value="Ireland">Ireland</option><option value="Nigeria">Nigeria</option><option value="Ghana">Ghana</option><option value="Brazil">Brazil</option><option value="France">France</option><option value="Spain">Spain</option><option value="Portugal">Portugal</option><option value="Jamaica">Jamaica</option><option value="Other">Other</option></select></td><td><select data-f="positionGroup" onchange="updateSpecPos(this,'+rowCount+')"><option value="">Select</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></td><td><select data-f="specificPosition" id="specPos-'+rowCount+'"><option value="">--</option></select></td><td><select data-f="foot"><option>Right</option><option>Left</option><option>Both</option></select></td><td><select data-f="heightCategory">'+HEIGHT_OPTS.map(function(h){return'<option value="'+h+'"'+(h==='average'?' selected':'')+'>'+HEIGHT_LABELS[h]+'</option>';}).join('')+'</select></td><td><select data-f="buildCategory">'+BUILD_OPTS.map(function(b){return'<option value="'+b+'"'+(b==='athletic'?' selected':'')+'>'+BUILD_LABELS[b]+'</option>';}).join('')+'</select></td><td><input type="number" data-f="pace" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="agility" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="composure" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="shooting" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="passing" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="dribbling" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="defending" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="strength" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="stamina" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="gkDiving" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="gkReflexes" min="1" max="99" placeholder="--"></td><td><input type="number" data-f="gkHandling" min="1" max="99" placeholder="--"></td><td><button class="bulk-remove" onclick="removeRow('+rowCount+')">X</button></td>';document.getElementById('bulkBody').appendChild(tr);}
+function updateSpecPos(sel,rowId){var sp=document.getElementById('specPos-'+rowId);if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(sel.value);}
+function removeRow(id){var r=document.getElementById('row-'+id);if(r)r.remove();}
+function getRowData(tr){var data={};tr.querySelectorAll('[data-f]').forEach(function(el){var v=el.value.trim();if(v){if(el.type==='number'){var n=Number(v);if(n>=1&&n<=99)data[el.dataset.f]=n;}else{data[el.dataset.f]=v;}}});if(data.positionGroup)data.positions=data.specificPosition?[data.specificPosition]:[];return data;}
+function getTeamName(){var sel=document.getElementById('teamNameSelect');var inp=document.getElementById('teamNameInput');if(sel&&sel.value&&sel.value!=='__new__')return sel.value;if(inp&&inp.style.display!=='none')return inp.value.trim();return'';}
+async function submitAll(){
+var err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
+err.classList.remove('show');suc.classList.remove('show');
+var tn=getTeamName();
+var rows=Array.from(document.getElementById('bulkBody').querySelectorAll('tr'));
+if(!rows.length){err.textContent='Add at least one player.';err.classList.add('show');return;}
+var players=rows.map(getRowData).filter(function(p){return p.firstName&&p.lastName;});
+if(!players.length){err.textContent='Fill in at least First Name and Last Name for each row.';err.classList.add('show');return;}
+var btn=document.querySelector('.btn-primary');btn.textContent='Submitting...';btn.disabled=true;
+try{var res=await api('POST','/api/players/bulk',{players:players,teamName:tn});suc.textContent=res.message;suc.classList.add('show');var rb=document.getElementById('resultsBox');rb.style.display='block';rb.innerHTML='<div class="table-card"><div class="table-header"><h3>Import Results</h3></div><div style="padding:20px"><p style="color:#00E676;margin-bottom:12px">'+res.created.length+' players added successfully.</p>'+(res.errors.length?'<p style="color:#ff6666">'+res.errors.length+' errors: '+res.errors.map(function(e){return e.player+' ('+e.error+')';}).join(', ')+'</p>':'')+'<a href="player-search.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex">View All Players</a></div></div>';btn.textContent='Submit All Players';btn.disabled=false;}
+catch(e){err.textContent=e.message;err.classList.add('show');btn.textContent='Submit All Players';btn.disabled=false;}
+}
+async function loadTeams(){
+var sel=document.getElementById('teamNameSelect');var inp=document.getElementById('teamNameInput');var t=Auth.type;
+if(t==='Coach'){try{var d=await api('GET','/api/coaches/profile');var tn=d.coach&&d.coach.team_name?d.coach.team_name:'';sel.innerHTML='<option value="'+tn+'">'+tn+'</option>';sel.disabled=true;inp.style.display='none';}catch(e){sel.innerHTML='<option value="">My Team</option>';}}
+else{try{var d2=await api('GET','/api/stratex/teams');var teams=d2.teams||[];sel.innerHTML='<option value="">-- No team (individual) --</option>'+teams.map(function(t){return'<option value="'+t+'">'+t+'</option>';}).join('')+'<option value="__new__">+ Type a new team name...</option>';sel.addEventListener('change',function(){inp.style.display=this.value==='__new__'?'block':'none';});}catch(e){sel.innerHTML='<option value="">Type team name below</option>';inp.style.display='block';}}
+}
+document.addEventListener('DOMContentLoaded',function(){initNav();loadTeams();addRow();addRow();addRow();});
 </script>
-</body></html>html>
-</script></h3></th></th>
-      </tr></thead></label></div>
-</body>
-</style></title></head>
+</body></html>
