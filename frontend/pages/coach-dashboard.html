@@ -27,7 +27,7 @@
 <script>
 const NAV_ITEMS={Coach:[{icon:'🏠',label:'Dashboard',href:'coach-dashboard.html'},{icon:'👥',label:'My Players',href:'player-search.html'},{icon:'➕',label:'Add Player',href:'add-player.html'},{icon:'📊',label:'Bulk Import',href:'bulk-add-players.html'},{icon:'📋',label:'Match Facts',href:'match-facts.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}const items=NAV_ITEMS.Coach;const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Coach</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='../index.html';}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',async()=>{
   initNav();
