@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const config = require('./config');
+const config = require('../config');
 
 function generateLoginCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
