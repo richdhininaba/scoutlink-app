@@ -1,6 +1,6 @@
 'use strict';
 const sgMail = require('@sendgrid/mail');
-const config = require('./config');
+const config = require('../config');
 sgMail.setApiKey(config.sendgrid.apiKey);
 
 async function send({ to, templateId, data }) {
