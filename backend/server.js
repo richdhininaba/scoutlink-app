@@ -20,7 +20,7 @@ const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30, message: { error:
 
 app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.0.0', timestamp: new Date().toISOString() }));
 
-app.get('/debug-env', (_, res) => res.json({ hasSupabaseUrl: !!process.env.SUPABASE_URL, supabaseUrlPrefix: (process.env.SUPABASE_URL||'').substring(0,30), hasAnonKey: !!process.env.SUPABASE_ANON_KEY, anonKeyLength: (process.env.SUPABASE_ANON_KEY||'').length, anonKeyPrefix: (process.env.SUPABASE_ANON_KEY||'').substring(0,20), nodeEnv: process.env.NODE_ENV }));
+app.get('/debug-env', (_, res) => res.json({ hasSupabaseUrl: !!process.env.SUPABASE_URL, supabaseUrlPrefix: (process.env.SUPABASE_URL||'').substring(0,30), hasAnonKey: !!process.env.SUPABASE_ANON_KEY, anonKeyLength: (process.env.SUPABASE_ANON_KEY||'').length, anonKeyPrefix: (process.env.SUPABASE_ANON_KEY||'').substring(0,20), hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY, serviceKeyLength: (process.env.SUPABASE_SERVICE_ROLE_KEY||'').length, serviceKeyPrefix: (process.env.SUPABASE_SERVICE_ROLE_KEY||'').substring(0,20), nodeEnv: process.env.NODE_ENV }));
 
 // Routes
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
