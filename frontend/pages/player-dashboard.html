@@ -16,7 +16,7 @@
 <script>
 const NAV_ITEMS=[{icon:'🏠',label:'My Profile',href:'player-dashboard.html'},{icon:'🎥',label:'My Videos',href:'player-videos.html'},{icon:'📊',label:'My Stats',href:'player-stats.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}];
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=NAV_ITEMS.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='../index.html';}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',async()=>{
   initNav();
