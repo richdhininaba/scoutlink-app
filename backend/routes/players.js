@@ -24,6 +24,28 @@ const BUILD_RANGES = {
   very_powerful:{ label:'Very Powerful', range:'96+ kg', min:96, max:120 },
 };
 
+
+// Calculate age and age group from date_of_birth
+function calcAgeGroup(dob) {
+  if (!dob) return null;
+  const d = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  if (today.getMonth() < d.getMonth() || (today.getMonth() === d.getMonth() && today.getDate() < d.getDate())) age--;
+  if (age <= 6) return { age, group: 'U6' };
+  if (age <= 7) return { age, group: 'U7' };
+  if (age <= 8) return { age, group: 'U8' };
+  if (age <= 9) return { age, group: 'U9' };
+  if (age <= 10) return { age, group: 'U10' };
+  if (age <= 11) return { age, group: 'U11' };
+  if (age <= 12) return { age, group: 'U12' };
+  if (age <= 13) return { age, group: 'U13' };
+  if (age <= 14) return { age, group: 'U14' };
+  if (age <= 15) return { age, group: 'U15' };
+  if (age <= 16) return { age, group: 'U16' };
+  return { age, group: null }; // Aged out
+}
+
 router.get('/height-ranges', (_, res) => res.json(HEIGHT_RANGES));
 router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
 // Count active players
