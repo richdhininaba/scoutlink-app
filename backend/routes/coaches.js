@@ -130,4 +130,74 @@ res.json({ message: 'Player assigned to coach' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
+// GET /api/coaches/dashboard - coach dashboard stats
+router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const coachId = req.user.id;
+    // Get coach record to find team_id
+    const { data: coach } = await supabase.from('coaches').select('team_id,team_name').eq('id', coachId).single();
+    if (!coach) return res.status(404).json({ error: 'Coach not found' });
+    
+    const teamId = coach.team_id;
+    if (!teamId) {
+      return res.json({ totalPlayers: 0, topRatedPlayer: null, totalSquadValue: 0, scoutsInterested: 0, teamName: coach.team_name || '' });
+    }
+    
+    // Get all players for this team
+    const { data: players, error: pErr } = await supabase.from('players')
+      .select('id,first_name,last_name,overall_rating,transfer_value,position_group,appearances')
+      .eq('team_id', teamId).eq('is_active', true);
+    if (pErr) throw pErr;
+    
+    const playerList = players || [];
+    const totalPlayers = playerList.length;
+    
+    // Top rated player
+    const sorted = [...playerList].sort((a,b) => (parseFloat(b.overall_rating)||0) - (parseFloat(a.overall_rating)||0));
+    const topRated = sorted[0] || null;
+    
+    // Total squad value (sum transfer_value)
+    const totalSquadValue = playerList.reduce((sum, p) => sum + (Number(p.transfer_value)||0), 0);
+    
+    // Scouts interested (distinct scouts in recruitment_pipeline for these players)
+    let scoutsInterested = 0;
+    if (playerList.length > 0) {
+      const playerIds = playerList.map(p => p.id);
+      const { data: pipeline } = await supabase.from('recruitment_pipeline')
+        .select('scout_id').in('player_id', playerIds);
+      if (pipeline) {
+        scoutsInterested = new Set(pipeline.map(r => r.scout_id)).size;
+      }
+    }
+    
+    res.json({
+      totalPlayers, totalSquadValue, scoutsInterested,
+      topRatedPlayer: topRated ? { name: (topRated.first_name||'') + ' ' + (topRated.last_name||''), overall_rating: topRated.overall_rating } : null,
+      teamName: coach.team_name || ''
+    });
+  } catch(err) { console.error('[CoachDashboard]', err); res.status(500).json({ error: err.message || 'Internal server error' }); }
+});
+
+// GET /api/coaches/profile - coach profile
+router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const { data: coach, error } = await supabase.from('coaches').select('*').eq('id', req.user.id).single();
+    if (error || !coach) return res.status(404).json({ error: 'Coach not found' });
+    res.json({ coach });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/coaches/players/:playerId - delete a player
+router.delete('/players/:playerId', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const { data: player } = await supabase.from('players').select('team_id').eq('id', req.params.playerId).single();
+    const { data: coach } = await supabase.from('coaches').select('team_id').eq('id', req.user.id).single();
+    if (!player || !coach || player.team_id !== coach.team_id) return res.status(403).json({ error: 'Not authorised' });
+    const { error } = await supabase.from('players').update({ is_active: false }).eq('id', req.params.playerId);
+    if (error) throw error;
+    res.json({ message: 'Player removed from squad' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;
