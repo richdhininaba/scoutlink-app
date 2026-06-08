@@ -11,14 +11,14 @@
 .attr-name{font-weight:600;color:#94a3b8;text-transform:capitalize;}
 .attr-val{font-weight:700;}
 .attr-bar{background:#1e2a3a;border-radius:4px;height:6px;overflow:hidden;}
-.attr-bar-fill{height:100%;border-radius:4px;background:#00E676;transition:width 0.5s;}
+.attr-bar-fill{height:100%;border-radius:4px;background:var(--accent,#1d9e75);transition:width 0.5s;}
 .attr-bar-fill.amber{background:#FFC107;}
 .attr-bar-fill.red{background:#f44336;}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       '</div>' +
       '<div class="kpi-card">' +
         '<div class="kpi-label">Predicted Value</div>' +
-        '<div style="font-size:26px;font-weight:800;color:#00E676;margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
+        '<div style="font-size:26px;font-weight:800;color:var(--accent,#1d9e75);margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
         '<div style="color:#546E7A;font-size:13px">Predicted Salary: ' + formatSalary(p.predicted_salary_weekly || 0) + '</div>' +
       '</div>' +
       '</div>' +
