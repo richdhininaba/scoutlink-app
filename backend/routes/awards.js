@@ -34,7 +34,7 @@ function playerNomEmail(playerFirstName, awardName, year) {
     '<h2 style="color:#fff;margin:0">' + awardName + '</h2>' +
     '<p style="color:#8b949e;margin:8px 0 0">Stratex Football Honours ' + year + '</p></div>' +
     '<p>Further details about the awards ceremony will be shared with you soon. Well done on this recognition!</p>' +
-    '<p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics — ScoutLink Platform</p></div>';
+    '<p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics â ScoutLink Platform</p></div>';
 }
 
 function coachNomEmail(playerFullName, awardName, year) {
@@ -47,10 +47,10 @@ function coachNomEmail(playerFullName, awardName, year) {
     '<p style="color:#8b949e;margin:8px 0 0">Stratex Football Honours ' + year + '</p></div>' +
     '<p>This is a great achievement for ' + playerFullName + ' and reflects the excellent coaching and development at your club. ' +
     'Further details about the awards ceremony will be sent in due course.</p>' +
-    '<p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics — ScoutLink Platform</p></div>';
+    '<p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics â ScoutLink Platform</p></div>';
 }
 
-// GET /api/awards — list nominations with optional year filter
+// GET /api/awards â list nominations with optional year filter
 router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     const year = req.query.year ? parseInt(req.query.year) : null;
@@ -64,18 +64,18 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// GET /api/awards/players — all active players for nomination table
+// GET /api/awards/players â all active players for nomination table
 router.get('/players', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     const { data, error } = await supabase.from('players')
-      .select('id,first_name,last_name,age,age_group,team_name,team_id,overall_rating,position_group,specific_position,appearances,parent_email,email')
+      .select('id,first_name,last_name,age,age_group,date_of_birth,team_name,team_id,overall_rating,position_group,specific_position,primary_position,positions,appearances,transfer_value,parent_email,email')
       .eq('is_active', true).order('overall_rating', { ascending: false });
     if (error) throw error;
     res.json({ data: data||[] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST /api/awards/nominate — full nomination flow with emails and notifications
+// POST /api/awards/nominate â full nomination flow with emails and notifications
 router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     const { playerId, awardName } = req.body;
@@ -165,7 +165,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
   } catch(e) { console.error('[Awards Nominate]', e); res.status(500).json({ error: e.message }); }
 });
 
-// PATCH /api/awards/:id/withdraw — withdraw a nomination
+// PATCH /api/awards/:id/withdraw â withdraw a nomination
 router.patch('/:id/withdraw', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     const { error } = await supabase.from('award_nominations').update({ status: 'withdrawn' }).eq('id', req.params.id);
