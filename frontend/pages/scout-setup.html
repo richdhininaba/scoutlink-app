@@ -6,43 +6,35 @@
 <style>
 .setup-section{background:var(--bg1);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
 .setup-section h3{font-size:16px;font-weight:800;color:#00E676;margin-bottom:4px}
-.setup-section p.desc{font-size:12px;color:#546E7A;margin-bottom:20px}
+.setup-section .desc{font-size:12px;color:#546E7A;margin-bottom:16px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.form-row.single{grid-template-columns:1fr}
-.form-row.triple{grid-template-columns:1fr 1fr 1fr}
-.form-group{display:flex;flex-direction:column;gap:6px}
-.form-group label{font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px}
-.form-group input,.form-group select{background:#0a0f1e;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#E2E8F0;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
-.form-group input:focus,.form-group select:focus{border-color:#00E676}
-.checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:8px}
-.check-item{display:flex;align-items:center;gap:10px;background:#0a0f1e;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;user-select:none}
-.check-item:hover{border-color:#00E676;background:rgba(0,230,118,.04)}
-.check-item.selected{border-color:#00E676;background:rgba(0,230,118,.08)}
-.check-item input[type=checkbox]{display:none}
-.check-dot{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.check-item.selected .check-dot{background:#00E676;border-color:#00E676}
-.check-item.selected .check-dot::after{content:'✓';font-size:10px;color:#000;font-weight:900}
-.check-label{font-size:13px;font-weight:600;color:#B0BEC5}
-.check-item.selected .check-label{color:#E2E8F0}
-.limit-note{font-size:11px;color:#FF9800;margin-top:8px;display:flex;align-items:center;gap:4px}
-.age-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.age-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:700;color:#546E7A;cursor:pointer;transition:all .2s;background:#0a0f1e}
-.age-chip:hover{border-color:#00E676;color:#00E676}
-.age-chip.selected{border-color:#00E676;background:rgba(0,230,118,.1);color:#00E676}
-.pos-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.pos-chip{padding:5px 12px;border-radius:6px;border:1.5px solid var(--border);font-size:12px;font-weight:700;color:#546E7A;cursor:pointer;transition:all .2s;background:#0a0f1e}
-.pos-chip:hover{border-color:#00BCD4;color:#00BCD4}
-.pos-chip.selected{border-color:#00BCD4;background:rgba(0,188,212,.1);color:#00BCD4}
-.save-bar{position:sticky;bottom:0;background:var(--bg0);border-top:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;z-index:10}
-.save-msg{font-size:13px;font-weight:600}
-.save-msg.success{color:#00E676}
-.save-msg.error{color:#f44336}
-@media(max-width:600px){.form-row,.form-row.triple{grid-template-columns:1fr}.checkbox-grid{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select{background:#0a0f1e;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#E2E8F0;font-size:14px;font-family:inherit;outline:none}
+.fg input:focus,.fg select:focus{border-color:#00E676}
+.chk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:8px}
+.chk-item{display:flex;align-items:center;gap:10px;background:#0a0f1e;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;user-select:none}
+.chk-item:hover{border-color:#00E676;background:rgba(0,230,118,.04)}
+.chk-item.sel{border-color:#00E676;background:rgba(0,230,118,.08)}
+.chk-dot{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:10px;font-weight:900;color:transparent}
+.chk-item.sel .chk-dot{background:#00E676;border-color:#00E676;color:#000}
+.chk-lbl{font-size:13px;font-weight:600;color:#B0BEC5}
+.chk-item.sel .chk-lbl{color:#E2E8F0}
+.limit-note{font-size:11px;color:#FF9800;margin-top:6px}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:700;color:#546E7A;cursor:pointer;background:#0a0f1e;transition:all .2s}
+.chip:hover,.chip.sel{border-color:#00E676;background:rgba(0,230,118,.1);color:#00E676}
+.pos-chip{padding:5px 12px;border-radius:6px;border:1.5px solid var(--border);font-size:12px;font-weight:700;color:#546E7A;cursor:pointer;background:#0a0f1e;transition:all .2s}
+.pos-chip:hover,.pos-chip.sel{border-color:#00BCD4;background:rgba(0,188,212,.1);color:#00BCD4}
+.save-bar{position:sticky;bottom:0;background:var(--bg0);border-top:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.save-msg.success{color:#00E676;font-size:13px;font-weight:600}
+.save-msg.error{color:#f44336;font-size:13px;font-weight:600}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}.chk-grid{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">&#9889; Scout<span style="color:#00E676">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -50,265 +42,231 @@
 <div class="topbar">
 <span class="topbar-title">My Team Setup</span>
 <div class="topbar-right">
-<button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="notif-btn" onclick="toggleNotifPanel()">&#128276;<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
 <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
 </div>
 </div>
-<div class="page-content">
-<div style="max-width:900px">
+<div class="page-content"><div style="max-width:900px">
 
-<!-- Section 1: Team Profile -->
 <div class="setup-section">
-<h3>🏟️ Section 1 — Your Team Profile</h3>
+<h3>&#127967; Section 1 &#8212; Your Team Profile</h3>
 <p class="desc">Tell us about the team you scout for. This context helps personalise everything.</p>
 <div class="form-row">
-<div class="form-group"><label>Team Name</label><input type="text" id="teamName" placeholder="e.g. Riverside Rangers FC"></div>
-<div class="form-group"><label>Club / Organisation</label><input type="text" id="clubName" placeholder="e.g. Riverside FC Academy"></div>
+<div class="fg"><label>Team Name</label><input type="text" id="teamName" placeholder="e.g. Riverside Rangers FC"></div>
+<div class="fg"><label>Club / Organisation</label><input type="text" id="clubName" placeholder="e.g. Riverside FC Academy"></div>
 </div>
 <div class="form-row">
-<div class="form-group"><label>Country</label><input type="text" id="country" placeholder="e.g. England" value="England"></div>
-<div class="form-group"><label>Scout Region</label>
-<select id="scoutRegion">
-<option value="">Select region...</option>
-<option>London</option><option>Greater Manchester</option><option>Liverpool</option>
-<option>West Yorkshire</option><option>West Midlands</option><option>Nottingham</option><option>Other</option>
-</select></div>
+<div class="fg"><label>Country</label><input type="text" id="country" value="England"></div>
+<div class="fg"><label>Scout Region</label>
+<select id="scoutRegion"><option value="">Select region...</option><option>London</option><option>Greater Manchester</option><option>Liverpool</option><option>West Yorkshire</option><option>West Midlands</option><option>Nottingham</option><option>Other</option></select>
+</div>
 </div>
 <div class="form-row">
-<div class="form-group"><label>Formation</label>
-<select id="formation">
-<option value="">Select formation...</option>
-<option>4-4-2</option><option>4-3-3</option><option>3-5-2</option><option>5-3-2</option>
-<option>4-2-3-1</option><option>4-1-4-1</option><option>4-5-1</option><option>3-4-3</option>
-<option>3-4-2-1</option><option>4-1-2-1-2</option><option>4-4-1-1</option><option>3-6-1</option>
-<option>4-2-2-2</option><option>5-4-1</option>
-</select></div>
-<div class="form-group"><label>Playing Style</label>
-<select id="playingStyle">
-<option value="">Select playing style...</option>
-<option>Possession-Based Play</option><option>Counter-Attacking</option><option>High Press</option>
-<option>Low Block</option><option>Direct Play</option><option>Wing Play</option><option>Tiki-Taka</option>
-<option>Gegenpressing</option><option>Build-Up from the Back</option><option>Long Ball</option>
-<option>Total Football</option><option>Compact Defence</option><option>Vertical Play</option>
-</select></div>
+<div class="fg"><label>Formation</label>
+<select id="formation"><option value="">Select formation...</option><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option><option>5-3-2</option><option>4-2-3-1</option><option>4-1-4-1</option><option>4-5-1</option><option>3-4-3</option><option>3-4-2-1</option><option>4-1-2-1-2</option><option>4-4-1-1</option><option>3-6-1</option><option>4-2-2-2</option><option>5-4-1</option></select>
+</div>
+<div class="fg"><label>Playing Style</label>
+<select id="playingStyle"><option value="">Select playing style...</option><option>Possession-Based Play</option><option>Counter-Attacking</option><option>High Press</option><option>Low Block</option><option>Direct Play</option><option>Wing Play</option><option>Tiki-Taka</option><option>Gegenpressing</option><option>Build-Up from the Back</option><option>Long Ball</option><option>Total Football</option><option>Compact Defence</option><option>Vertical Play</option></select>
+</div>
 </div>
 </div>
 
-<!-- Section 2: Team Weaknesses -->
 <div class="setup-section">
-<h3>⚠️ Section 2 — Team Weaknesses</h3>
-<p class="desc">Select up to 3 weaknesses. These are the gaps your scouting should address. Players who can fix these weaknesses score higher compatibility.</p>
-<div class="limit-note" id="weaknessNote">⚠️ Select 1–3 weaknesses</div>
-<div class="checkbox-grid" id="weaknessGrid"></div>
+<h3>&#9888; Section 2 &#8212; Team Weaknesses</h3>
+<p class="desc">Select up to 3 weaknesses. Players who can fix these score higher compatibility.</p>
+<div class="limit-note" id="wLimitNote">Select 1&#8211;3 weaknesses</div>
+<div class="chk-grid" id="weaknessGrid"></div>
 </div>
 
-<!-- Section 3: Role Expectations -->
 <div class="setup-section">
-<h3>🎯 Section 3 — Role Expectations</h3>
-<p class="desc">What qualities do you need most from players? Select up to 3. These weight the compatibility score for incoming players.</p>
-<div class="limit-note" id="roleNote">⚠️ Select 1–3 role expectations</div>
-<div class="checkbox-grid" id="roleGrid"></div>
+<h3>&#127919; Section 3 &#8212; Role Expectations</h3>
+<p class="desc">What qualities do you need most? Select up to 3. These weight compatibility scores.</p>
+<div class="limit-note" id="rLimitNote">Select 1&#8211;3 role expectations</div>
+<div class="chk-grid" id="roleGrid"></div>
 </div>
 
-<!-- Section 4: Long-Term Goals -->
 <div class="setup-section">
-<h3>📈 Section 4 — Long-Term Goals</h3>
-<p class="desc">What are the club's strategic objectives? Select up to 3. These influence how future potential is weighed in scores.</p>
-<div class="limit-note" id="goalNote">⚠️ Select 1–3 long-term goals</div>
-<div class="checkbox-grid" id="goalGrid"></div>
+<h3>&#128200; Section 4 &#8212; Long-Term Goals</h3>
+<p class="desc">Strategic objectives. Select up to 3. These influence how future potential is weighed.</p>
+<div class="limit-note" id="gLimitNote">Select 1&#8211;3 long-term goals</div>
+<div class="chk-grid" id="goalGrid"></div>
 </div>
 
-<!-- Section 5: Search Preferences -->
 <div class="setup-section">
-<h3>🔍 Section 5 — Search Preferences</h3>
-<p class="desc">Narrow your player pool. These filters apply when browsing recommended players.</p>
-<div style="margin-bottom:20px">
-<label style="font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Age Groups</label>
-<div class="age-grid" id="ageGrid"></div>
+<h3>&#128269; Section 5 &#8212; Search Preferences</h3>
+<p class="desc">Narrow your player pool. Age groups, positions, salary cap, and minimum appearances.</p>
+<div style="margin-bottom:16px">
+<label style="font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Age Groups</label>
+<div class="chip-row" id="ageGrid"></div>
 </div>
-<div style="margin-bottom:20px">
-<label style="font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Preferred Positions</label>
-<div class="pos-grid" id="posGrid"></div>
+<div style="margin-bottom:16px">
+<label style="font-size:12px;font-weight:700;color:#546E7A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Preferred Positions</label>
+<div class="chip-row" id="posGrid"></div>
 </div>
 <div class="form-row">
-<div class="form-group">
-<label>Salary Cap (GBP / week)</label>
-<input type="number" id="salaryCap" placeholder="e.g. 500" min="0">
-</div>
-<div class="form-group">
-<label>Minimum Appearances</label>
-<input type="number" id="minAppearances" placeholder="e.g. 5 — FA minimum for reliable assessment" min="0" max="100">
-</div>
+<div class="fg"><label>Salary Cap (GBP/week)</label><input type="number" id="salaryCap" placeholder="e.g. 500" min="0"></div>
+<div class="fg"><label>Min. Appearances</label><input type="number" id="minAppearances" placeholder="FA minimum: 5 for reliable data" min="0" max="100"></div>
 </div>
 </div>
 
-</div><!-- /max-width -->
-</div><!-- /page-content -->
+</div></div><!-- /page-content /max-width -->
 
 <div class="save-bar">
 <div id="saveMsg" class="save-msg"></div>
 <div style="display:flex;gap:12px">
 <a href="scout-dashboard.html" class="btn btn-ghost">Cancel</a>
-<button class="btn btn-primary" onclick="saveSetup()" id="saveBtn">💾 Save & Apply</button>
+<button class="btn btn-primary" onclick="saveSetup()" id="saveBtn">&#128190; Save &amp; Apply</button>
 </div>
 </div>
-
 </div><!-- /dashboard-main -->
 </div><!-- /dashboard -->
 
 <script src="../js/main.js"></script>
 <script>
-var SCOUT_NAV = [
-  {icon:'🏠',label:'Dashboard',href:'scout-dashboard.html'},
-  {icon:'🔍',label:'Player Search',href:'player-search.html'},
-  {icon:'📋',label:'My Pipeline',href:'scout-pipeline.html'},
-  {icon:'🏆',label:'Rankings',href:'scout-rankings.html'},
-  {icon:'📅',label:'Fixtures',href:'scout-fixtures.html'},
-  {icon:'🔮',label:'Predictions',href:'scout-predictions.html'},
-  {icon:'📊',label:'Exports',href:'scout-exports.html'},
-  {icon:'⚙️',label:'My Team Setup',href:'scout-setup.html'},
-  {icon:'🔔',label:'Notifications',href:'scout-notifications.html'},
-  {icon:'👤',label:'Settings',href:'scout-settings.html'},
+var SCOUT_NAV=[
+  {icon:'&#127968;',label:'Dashboard',href:'scout-dashboard.html'},
+  {icon:'&#128269;',label:'Player Search',href:'player-search.html'},
+  {icon:'&#128203;',label:'My Pipeline',href:'scout-pipeline.html'},
+  {icon:'&#127942;',label:'Rankings',href:'scout-rankings.html'},
+  {icon:'&#128197;',label:'Fixtures',href:'scout-fixtures.html'},
+  {icon:'&#128302;',label:'Predictions',href:'scout-predictions.html'},
+  {icon:'&#128202;',label:'Exports',href:'scout-exports.html'},
+  {icon:'&#9881;',label:'My Team Setup',href:'scout-setup.html'},
+  {icon:'&#128276;',label:'Notifications',href:'scout-notifications.html'},
+  {icon:'&#128100;',label:'Settings',href:'scout-settings.html'},
 ];
 
-var WEAKNESSES = ['Insufficient Game Pace and Speed','Physical Fragility and Injury Risk','Lack of Physical Presence','Weak Defensive Base','Poor Defensive Output','Low Team Chemistry and Leadership','Technical Deficiencies Under Pressure','Tactical Awareness Gaps','Poor Goal Output'];
-var ROLES = ['Aerial Dominance','Vision and Creativity','Speed and Agility','Tactical Intelligence','Ball Retention Under Pressure','Physical Resilience Work Rate','Defensive Impact','Offensive Impact','Progression and Carrying','Leadership and Communication'];
-var GOALS = ['Physical Growth Potential','Tactical Role Maturity','Leadership and Coachability','Injury Risk and Physical Resilience','Positional Depth Advantage','Goal Contribution Potential','Financial Viability'];
-var AGE_GROUPS = ['U12','U13','U14','U15','U16'];
-var POSITIONS = ['GK','CB','RB','LB','RWB','LWB','CDM','CM','CAM','LM','RM','LW','RW','ST'];
+var WEAKNESSES=['Insufficient Game Pace and Speed','Physical Fragility and Injury Risk','Lack of Physical Presence','Weak Defensive Base','Poor Defensive Output','Low Team Chemistry and Leadership','Technical Deficiencies Under Pressure','Tactical Awareness Gaps','Poor Goal Output'];
+var ROLES=['Aerial Dominance','Vision and Creativity','Speed and Agility','Tactical Intelligence','Ball Retention Under Pressure','Physical Resilience Work Rate','Defensive Impact','Offensive Impact','Progression and Carrying','Leadership and Communication'];
+var GOALS=['Physical Growth Potential','Tactical Role Maturity','Leadership and Coachability','Injury Risk and Physical Resilience','Positional Depth Advantage','Goal Contribution Potential','Financial Viability'];
+var AGES=['U12','U13','U14','U15','U16'];
+var POSITIONS=['GK','CB','RB','LB','RWB','LWB','CDM','CM','CAM','LM','RM','LW','RW','ST'];
 
-var selectedWeaknesses = [], selectedRoles = [], selectedGoals = [], selectedAgeGroups = [], selectedPositions = [];
+var selW=[], selR=[], selG=[], selA=[], selP=[];
 
-function initNav() {
-  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
-  var nav = document.getElementById('sidebarNav');
-  var cur = window.location.pathname.split('/').pop();
-  if (nav) nav.innerHTML = SCOUT_NAV.map(function(i) {
-    return '<a class="nav-item'+(cur===i.href?' active':'') + '" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';
-  }).join('');
-  var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel&&u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  var nav=document.getElementById('sidebarNav');
+  var cur=window.location.pathname.split('/').pop();
+  if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';}).join('');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
-function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
-function toggleNotifPanel() {}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){}
 
-function buildCheckGrid(containerId, items, selectedArr, limit) {
-  var c = document.getElementById(containerId);
-  c.innerHTML = items.map(function(item) {
-    var sel = selectedArr.indexOf(item) >= 0;
-    return '<label class="check-item'+(sel?' selected':'')+'" onclick="toggleCheck(this,''+containerId+'',''+item.replace(/'/g,'\'\'')+'','+limit+')">'+'<div class="check-dot"></div><span class="check-label">'+item+'</span></label>';
-  }).join('');
+function buildGrid(id, items, selArr, limit){
+  var c=document.getElementById(id);
+  if(!c)return;
+  c.innerHTML='';
+  items.forEach(function(item){
+    var div=document.createElement('div');
+    div.className='chk-item'+(selArr.indexOf(item)>=0?' sel':'');
+    div.setAttribute('data-val',item);
+    div.setAttribute('data-grid',id);
+    div.setAttribute('data-limit',limit);
+    div.innerHTML='<div class="chk-dot">&#10003;</div><span class="chk-lbl">'+item+'</span>';
+    div.addEventListener('click',function(){toggleChk(this,selArr,limit,id);});
+    c.appendChild(div);
+  });
 }
 
-function toggleCheck(el, gridId, value, limit) {
-  var noteId = {weaknessGrid:'weaknessNote',roleGrid:'roleNote',goalGrid:'goalNote'}[gridId];
-  var arr = {weaknessGrid:selectedWeaknesses,roleGrid:selectedRoles,goalGrid:selectedGoals}[gridId];
-  if (!arr) return;
-  var idx = arr.indexOf(value);
-  if (idx >= 0) { arr.splice(idx,1); el.classList.remove('selected'); }
-  else if (arr.length < limit) { arr.push(value); el.classList.add('selected'); }
-  else {
-    var note = document.getElementById(noteId);
-    if (note) { note.textContent = '⚠️ Maximum '+limit+' selections reached'; note.style.color='#f44336'; setTimeout(function(){note.style.color='#FF9800';note.textContent='⚠️ Select 1–'+limit;},2000); }
+function toggleChk(el, arr, limit, gridId){
+  var val=el.getAttribute('data-val');
+  var idx=arr.indexOf(val);
+  var noteIds={weaknessGrid:'wLimitNote',roleGrid:'rLimitNote',goalGrid:'gLimitNote'};
+  if(idx>=0){arr.splice(idx,1);el.classList.remove('sel');}
+  else if(arr.length<limit){arr.push(val);el.classList.add('sel');}
+  else{
+    var note=document.getElementById(noteIds[gridId]);
+    if(note){note.textContent='Max '+limit+' selections';note.style.color='#f44336';setTimeout(function(){note.style.color='#FF9800';note.textContent='Select 1–3';},2000);}
   }
 }
 
-function buildAgeGrid() {
-  var c = document.getElementById('ageGrid');
-  c.innerHTML = AGE_GROUPS.map(function(ag) {
-    var sel = selectedAgeGroups.indexOf(ag) >= 0;
-    return '<div class="age-chip'+(sel?' selected':'')+'" onclick="toggleAgeGroup(this,''+ag+'')">' + ag + '</div>';
-  }).join('');
-}
-function toggleAgeGroup(el, ag) {
-  var idx = selectedAgeGroups.indexOf(ag);
-  if (idx >= 0) { selectedAgeGroups.splice(idx,1); el.classList.remove('selected'); }
-  else { selectedAgeGroups.push(ag); el.classList.add('selected'); }
-}
-
-function buildPosGrid() {
-  var c = document.getElementById('posGrid');
-  c.innerHTML = POSITIONS.map(function(pos) {
-    var sel = selectedPositions.indexOf(pos) >= 0;
-    return '<div class="pos-chip'+(sel?' selected':'')+'" onclick="togglePos(this,''+pos+'')">' + pos + '</div>';
-  }).join('');
-}
-function togglePos(el, pos) {
-  var idx = selectedPositions.indexOf(pos);
-  if (idx >= 0) { selectedPositions.splice(idx,1); el.classList.remove('selected'); }
-  else { selectedPositions.push(pos); el.classList.add('selected'); }
+function buildChipRow(id, items, selArr, chipClass){
+  var c=document.getElementById(id);
+  if(!c)return;
+  c.innerHTML='';
+  items.forEach(function(item){
+    var div=document.createElement('div');
+    div.className=(chipClass||'chip')+(selArr.indexOf(item)>=0?' sel':'');
+    div.textContent=item;
+    div.addEventListener('click',function(){
+      var idx=selArr.indexOf(item);
+      if(idx>=0){selArr.splice(idx,1);div.classList.remove('sel');}
+      else{selArr.push(item);div.classList.add('sel');}
+    });
+    c.appendChild(div);
+  });
 }
 
-function setVal(id, val) { var el = document.getElementById(id); if (el && val !== null && val !== undefined) el.value = val; }
-function populateFromPrefs(prefs, scoutTeam) {
-  if (!prefs) return;
-  setVal('teamName', prefs.teamName || (scoutTeam && scoutTeam.team_name) || '');
-  setVal('clubName', prefs.clubName || (scoutTeam && scoutTeam.club_name) || '');
-  setVal('country', prefs.country || '');
-  setVal('scoutRegion', prefs.scoutRegion || (scoutTeam && scoutTeam.scout_region) || '');
-  setVal('formation', prefs.formation || (scoutTeam && scoutTeam.formation) || '');
-  setVal('playingStyle', prefs.playingStyle || (scoutTeam && scoutTeam.playing_style) || '');
-  setVal('salaryCap', prefs.salaryCap || (scoutTeam && scoutTeam.salary_cap) || '');
-  setVal('minAppearances', prefs.minAppearances || (scoutTeam && scoutTeam.min_appearances) || '');
-  selectedWeaknesses = (prefs.teamWeaknesses || (scoutTeam && scoutTeam.team_weaknesses) || []).slice();
-  selectedRoles = (prefs.roleExpectations || (scoutTeam && scoutTeam.role_expectations) || []).slice();
-  selectedGoals = (prefs.longTermGoals || (scoutTeam && scoutTeam.long_term_goals) || []).slice();
-  selectedAgeGroups = (prefs.ageGroups || (scoutTeam && scoutTeam.age_groups) || []).slice();
-  selectedPositions = (prefs.preferredPositions || (scoutTeam && scoutTeam.preferred_positions) || []).slice();
-  buildCheckGrid('weaknessGrid', WEAKNESSES, selectedWeaknesses, 3);
-  buildCheckGrid('roleGrid', ROLES, selectedRoles, 3);
-  buildCheckGrid('goalGrid', GOALS, selectedGoals, 3);
-  buildAgeGrid();
-  buildPosGrid();
+function setSelectVal(id,val){var el=document.getElementById(id);if(!el||!val)return;for(var i=0;i<el.options.length;i++){if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;break;}}}
+
+function populateForm(prefs,team){
+  if(!prefs)prefs={};
+  var t=team||{};
+  document.getElementById('teamName').value=prefs.teamName||t.team_name||'';
+  document.getElementById('clubName').value=prefs.clubName||t.club_name||'';
+  document.getElementById('country').value=prefs.country||'England';
+  setSelectVal('scoutRegion',prefs.scoutRegion||t.scout_region||'');
+  setSelectVal('formation',prefs.formation||t.formation||'');
+  setSelectVal('playingStyle',prefs.playingStyle||t.playing_style||'');
+  document.getElementById('salaryCap').value=prefs.salaryCap||t.salary_cap||'';
+  document.getElementById('minAppearances').value=prefs.minAppearances||t.min_appearances||'';
+  selW=(prefs.teamWeaknesses||t.team_weaknesses||[]).slice();
+  selR=(prefs.roleExpectations||t.role_expectations||[]).slice();
+  selG=(prefs.longTermGoals||t.long_term_goals||[]).slice();
+  selA=(prefs.ageGroups||t.age_groups||[]).slice();
+  selP=(prefs.preferredPositions||t.preferred_positions||[]).slice();
+  buildGrid('weaknessGrid',WEAKNESSES,selW,3);
+  buildGrid('roleGrid',ROLES,selR,3);
+  buildGrid('goalGrid',GOALS,selG,3);
+  buildChipRow('ageGrid',AGES,selA,'chip');
+  buildChipRow('posGrid',POSITIONS,selP,'pos-chip');
 }
 
-async function loadExisting() {
-  try {
-    var d = await api('GET', '/api/scouts/setup');
-    populateFromPrefs(d.preferences, d.scoutTeam);
-  } catch(e) {
-    buildCheckGrid('weaknessGrid', WEAKNESSES, selectedWeaknesses, 3);
-    buildCheckGrid('roleGrid', ROLES, selectedRoles, 3);
-    buildCheckGrid('goalGrid', GOALS, selectedGoals, 3);
-    buildAgeGrid(); buildPosGrid();
+async function loadExisting(){
+  try{
+    var d=await api('GET','/api/scouts/setup');
+    populateForm(d.preferences,d.scoutTeam);
+  }catch(e){
+    console.warn('Could not load existing setup:',e.message);
+    populateForm({},{});
   }
 }
 
-async function saveSetup() {
-  var btn = document.getElementById('saveBtn');
-  var msg = document.getElementById('saveMsg');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  msg.textContent = ''; msg.className = 'save-msg';
-  try {
-    var payload = {
-      teamName: document.getElementById('teamName').value.trim(),
-      clubName: document.getElementById('clubName').value.trim(),
-      country: document.getElementById('country').value.trim(),
-      scoutRegion: document.getElementById('scoutRegion').value,
-      formation: document.getElementById('formation').value,
-      playingStyle: document.getElementById('playingStyle').value,
-      teamWeaknesses: selectedWeaknesses.slice(),
-      roleExpectations: selectedRoles.slice(),
-      longTermGoals: selectedGoals.slice(),
-      ageGroups: selectedAgeGroups.slice(),
-      preferredPositions: selectedPositions.slice(),
-      salaryCap: document.getElementById('salaryCap').value ? Number(document.getElementById('salaryCap').value) : null,
-      minAppearances: document.getElementById('minAppearances').value ? Number(document.getElementById('minAppearances').value) : 0,
+async function saveSetup(){
+  var btn=document.getElementById('saveBtn');
+  var msg=document.getElementById('saveMsg');
+  btn.disabled=true;btn.textContent='Saving...';
+  msg.textContent='';msg.className='save-msg';
+  try{
+    if(!selW.length){msg.textContent='Please select at least 1 team weakness';msg.className='save-msg error';btn.disabled=false;btn.innerHTML='&#128190; Save &amp; Apply';return;}
+    var payload={
+      teamName:document.getElementById('teamName').value.trim(),
+      clubName:document.getElementById('clubName').value.trim(),
+      country:document.getElementById('country').value.trim(),
+      scoutRegion:document.getElementById('scoutRegion').value,
+      formation:document.getElementById('formation').value,
+      playingStyle:document.getElementById('playingStyle').value,
+      teamWeaknesses:selW.slice(),
+      roleExpectations:selR.slice(),
+      longTermGoals:selG.slice(),
+      ageGroups:selA.slice(),
+      preferredPositions:selP.slice(),
+      salaryCap:document.getElementById('salaryCap').value?Number(document.getElementById('salaryCap').value):null,
+      minAppearances:document.getElementById('minAppearances').value?Number(document.getElementById('minAppearances').value):0,
     };
-    if (!payload.teamWeaknesses.length) { msg.textContent = 'Please select at least 1 team weakness'; msg.className = 'save-msg error'; btn.disabled = false; btn.textContent = '💾 Save & Apply'; return; }
-    await api('POST', '/api/scouts/setup', payload);
-    msg.textContent = '✓ Setup saved! Recommended players updated.'; msg.className = 'save-msg success';
-    setTimeout(function() { window.location.href = 'scout-dashboard.html'; }, 1500);
-  } catch(e) {
-    msg.textContent = 'Error: ' + e.message; msg.className = 'save-msg error';
-    btn.disabled = false; btn.textContent = '💾 Save & Apply';
+    await api('POST','/api/scouts/setup',payload);
+    msg.textContent='Setup saved! Redirecting to dashboard...';msg.className='save-msg success';
+    setTimeout(function(){window.location.href='scout-dashboard.html';},1500);
+  }catch(e){
+    msg.textContent='Error: '+e.message;msg.className='save-msg error';
+    btn.disabled=false;btn.innerHTML='&#128190; Save &amp; Apply';
   }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  initNav();
-  loadExisting();
-});
+document.addEventListener('DOMContentLoaded',function(){initNav();loadExisting();});
 </script>
 </body></html>
