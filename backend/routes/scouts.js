@@ -306,4 +306,96 @@ router.post('/showcase-response', requireAuth, requireRole('Scout'), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// GET /api/scouts/fixtures — upcoming fixtures for pipeline players
+router.get('/fixtures', requireAuth, requireRole('Scout'), async (req, res) => {
+try {
+  // Get scout's pipeline player IDs
+  const { data: pipeline } = await supabase.from('recruitment_pipeline')
+    .select('player_id, stage, players(id,first_name,last_name,team_id,team_name,position_group,specific_position,primary_position,age_group)')
+    .eq('scout_id', req.user.id).eq('is_active', true).limit(100);
+  
+  if (!pipeline || !pipeline.length) return res.json({ data: [], total: 0, message: 'No players in pipeline' });
+  
+  const teamIds = [...new Set((pipeline||[]).map(p => p.players?.team_id).filter(Boolean))];
+  const playerMap = {};
+  (pipeline||[]).forEach(p => { if (p.players) playerMap[p.players.id] = p.players; });
+  
+  let fixtures = [];
+  if (teamIds.length) {
+    const { data: fx } = await supabase.from('fixtures')
+      .select('*')
+      .in('team_id', teamIds)
+      .gte('fixture_date', new Date().toISOString().slice(0,10))
+      .order('fixture_date', { ascending: true })
+      .limit(50);
+    fixtures = fx || [];
+  }
+  
+  // Enrich with player info
+  const enriched = fixtures.map(fx => {
+    const teamPlayers = (pipeline||[]).filter(p => p.players?.team_id === fx.team_id).map(p => p.players).filter(Boolean);
+    return { ...fx, players: teamPlayers };
+  });
+  
+  res.json({ data: enriched, total: enriched.length });
+} catch(err) { console.error('[Scout Fixtures]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// GET /api/scouts/predictions — prediction history for this scout
+router.get('/predictions', requireAuth, requireRole('Scout'), async (req, res) => {
+try {
+  const { data: scout } = await supabase.from('scouts')
+    .select('predictions_remaining, subscription_plan')
+    .eq('id', req.user.id).single();
+  
+  const LIMITS = { Core: 120, Plus: 600, Elite: 1200 };
+  const plan = scout?.subscription_plan || 'Core';
+  const limit = LIMITS[plan] || 120;
+  const remaining = scout?.predictions_remaining ?? limit;
+  
+  const { data: predictions } = await supabase.from('scout_predictions')
+    .select('id, player_id, training_plan, yr1_rating, yr2_rating, yr3_rating, created_at, players(first_name, last_name, position_group, team_name)')
+    .eq('scout_id', req.user.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  
+  res.json({ 
+    data: predictions || [], 
+    total: (predictions||[]).length,
+    remaining, 
+    planLimit: limit, 
+    plan 
+  });
+} catch(err) { console.error('[Scout Predictions]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// GET /api/scouts/exports — export history for this scout
+router.get('/exports', requireAuth, requireRole('Scout'), async (req, res) => {
+try {
+  const { data: scout } = await supabase.from('scouts')
+    .select('exports_remaining, subscription_plan')
+    .eq('id', req.user.id).single();
+  
+  const LIMITS = { Core: 30, Plus: 120, Elite: 500 };
+  const plan = scout?.subscription_plan || 'Core';
+  const limit = LIMITS[plan] || 30;
+  const remaining = scout?.exports_remaining ?? limit;
+  
+  const { data: exports_ } = await supabase.from('scout_exports')
+    .select('id, player_id, export_type, file_url, created_at, players(first_name, last_name, position_group, team_name)')
+    .eq('scout_id', req.user.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  
+  res.json({ 
+    data: exports_ || [], 
+    total: (exports_||[]).length,
+    remaining, 
+    planLimit: limit, 
+    plan 
+  });
+} catch(err) { console.error('[Scout Exports]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
 module.exports = router;
