@@ -398,4 +398,47 @@ try {
 } catch(err) { console.error('[Scout Exports]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
+// GET /api/scouts/rankings — 5 leaderboards: top scorers, assisters, clean sheets, most interested, most expensive
+router.get('/rankings', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
+  try {
+    const [
+      { data: topScorers },
+      { data: topAssisters },
+      { data: topCleanSheets },
+      { data: topExpensive },
+    ] = await Promise.all([
+      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,goals,overall_rating,transfer_value').eq('is_active', true).order('goals', { ascending: false }).limit(5),
+      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,assists,overall_rating,transfer_value').eq('is_active', true).order('assists', { ascending: false }).limit(5),
+      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,clean_sheets,overall_rating,transfer_value').eq('is_active', true).in('position_group', ['Goalkeeper','Defender']).order('clean_sheets', { ascending: false }).limit(5),
+      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,transfer_value,overall_rating').eq('is_active', true).not('transfer_value', 'is', null).order('transfer_value', { ascending: false }).limit(5),
+    ]);
+    
+    // Most interested: count scouts per player in recruitment_pipeline
+    const { data: interestData } = await supabase
+      .from('recruitment_pipeline')
+      .select('player_id, players(id,first_name,last_name,team_name,age_group,position_group,overall_rating,transfer_value)')
+      .eq('is_active', true);
+    
+    const interestCounts = {};
+    (interestData || []).forEach(row => {
+      if (!row.player_id) return;
+      if (!interestCounts[row.player_id]) interestCounts[row.player_id] = { count: 0, player: row.players };
+      interestCounts[row.player_id].count++;
+    });
+    const topInterested = Object.entries(interestCounts)
+      .map(([pid, v]) => ({ ...v.player, interest_count: v.count }))
+      .sort((a, b) => b.interest_count - a.interest_count)
+      .slice(0, 5);
+    
+    res.json({
+      topScorers: topScorers || [],
+      topAssisters: topAssisters || [],
+      topCleanSheets: topCleanSheets || [],
+      topInterested,
+      topExpensive: topExpensive || []
+    });
+  } catch(err) { console.error('[Rankings]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
 module.exports = router;
