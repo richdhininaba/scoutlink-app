@@ -1,58 +1,99 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Profile - ScoutLink</title>
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
-<div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">My Profile</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div class="table-card" style="max-width:600px">
-  <div class="table-header"><h3>My Profile</h3></div>
-  <div id="profileEditContent" style="padding:20px"><div class="loading-state"><div class="spinner"></div></div></div>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.data-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.data-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:#1a1a2e}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.stat-box .val{font-size:28px;font-weight:700;color:#4f46e5}
+.stat-box .lbl{font-size:12px;color:#666;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fa;padding:10px 14px;text-align:left;font-size:13px;color:#666;font-weight:600}
+td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px}
+tr:hover td{background:#f8f9fa}
+.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-purple{background:#ede9fe;color:#5b21b6}
+.badge-yellow{background:#fef3c7;color:#92400e}
+.btn-primary{background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e0e0e0;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer}
+.empty-state{text-align:center;padding:60px 20px;color:#666}
+.empty-icon{font-size:64px;color:#e0e0e0;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
+    <nav class="sidebar-nav"><a href="player-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="player-profile-edit.html" class="active"><i class="fas fa-user"></i> My Profile</a><a href="player-video-reels.html"><i class="fas fa-video"></i> Video Reels</a><a href="player-notifications.html"><i class="fas fa-bell"></i> Notifications</a><a href="player-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
+    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-header"><h1><i class="fas fa-user-edit" style="color:#4f46e5;margin-right:8px"></i>My Profile</h1></div>
+    
+<div class="data-card">
+  <h3>Personal Information</h3>
+  <div style="display:flex;gap:16px;margin-bottom:20px">
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">First Name</label>
+      <input type="text" id="firstName" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box" placeholder="First name">
+    </div>
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Last Name</label>
+      <input type="text" id="lastName" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box" placeholder="Last name">
+    </div>
+  </div>
+  <div style="display:flex;gap:16px;margin-bottom:20px">
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Date of Birth</label>
+      <input type="date" id="dob" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box">
+    </div>
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Nationality</label>
+      <input type="text" id="nationality" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box" placeholder="e.g. English">
+    </div>
+  </div>
 </div>
+<div class="data-card">
+  <h3>Football Details</h3>
+  <div style="display:flex;gap:16px;margin-bottom:20px">
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Primary Position</label>
+      <select id="position" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px">
+        <option>Forward</option><option>Midfielder</option><option>Defender</option><option>Goalkeeper</option>
+      </select>
+    </div>
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Preferred Foot</label>
+      <select id="foot" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px">
+        <option>Right</option><option>Left</option><option>Both</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:16px;margin-bottom:20px">
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Height (cm)</label>
+      <input type="number" id="height" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box" placeholder="e.g. 172">
+    </div>
+    <div style="flex:1">
+      <label style="display:block;font-size:13px;color:#666;margin-bottom:6px">Weight (kg)</label>
+      <input type="number" id="weight" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;box-sizing:border-box" placeholder="e.g. 65">
+    </div>
+  </div>
+  <button onclick="saveProfile()" style="background:#4f46e5;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Save Profile</button>
+</div>
+  </main>
+</div>
+<script src="../js/auth.js"></script>
 <script>
-async function loadPage() {
-  var u = Auth.user;
-  if (!u) return;
-  try {
-    var d = await api('GET', '/api/players/' + u.id);
-    var p = d.player;
-    var el = document.getElementById('profileEditContent');
-    el.innerHTML = 
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
-      '<div class="form-group"><label>First Name</label><input type="text" id="pFirst" value="'+p.first_name+'" readonly style="opacity:0.6"></div>' +
-      '<div class="form-group"><label>Last Name</label><input type="text" id="pLast" value="'+p.last_name+'" readonly style="opacity:0.6"></div>' +
-      '<div class="form-group"><label>Age</label><div class="kpi-value green">'+p.age+'</div></div>' +
-      '<div class="form-group"><label>Position</label><div style="font-weight:600">'+(p.specific_position||p.primary_position||'--')+'</div></div>' +
-      '<div class="form-group"><label>Team</label><div style="font-weight:600">'+(p.team_name||'--')+'</div></div>' +
-      '<div class="form-group"><label>Foot</label><div style="font-weight:600">'+(p.foot||'--')+'</div></div>' +
-      '</div>' +
-      '<div style="margin-top:20px;padding:16px;background:rgba(0,230,118,0.08);border-radius:8px;border:1px solid rgba(0,230,118,0.2)">' +
-        '<div style="font-weight:700;margin-bottom:8px">Your Stats</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">' +
-          '<div><div class="kpi-value green">'+Math.round(p.overall_rating||0)+'</div><div style="font-size:12px;color:#546E7A">Overall</div></div>' +
-          '<div><div class="kpi-value">'+formatValue(p.transfer_value||0)+'</div><div style="font-size:12px;color:#546E7A">Est. Value</div></div>' +
-          '<div><div class="kpi-value">'+( p.goals||0)+'</div><div style="font-size:12px;color:#546E7A">Goals</div></div>' +
-          '<div><div class="kpi-value">'+( p.assists||0)+'</div><div style="font-size:12px;color:#546E7A">Assists</div></div>' +
-        '</div>' +
-      '</div>' +
-      '<p style="margin-top:16px;color:#546E7A;font-size:13px">Profile data is managed by your coach. Contact them to update your details.</p>';
-  } catch(e) {
-    document.getElementById('profileEditContent').innerHTML = '<div style="color:#546E7A">Unable to load profile data.</div>';
-  }
-}
-</script></div>
-</div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
-<script src="../js/main.js"></script>
-<script>
-var PLAYER_NAV=[{label:'Dashboard',href:'player-dashboard.html'},{label:'My Profile',href:'player-profile-edit.html'},{label:'Video Reels',href:'player-video-reels.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'player-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=PLAYER_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
 </script>
-</body></html>
+</body>
+</html>
