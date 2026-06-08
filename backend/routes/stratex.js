@@ -6,6 +6,38 @@ const { requireAuth, requireRole, generateLoginCode, generateId } = require('../
 const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
 
+
+// Generate login code unique across all user tables
+async function generateUniqueCode() {
+const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+let attempts = 0;
+while (attempts < 20) {
+let c = '';
+for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random()*chars.length)];
+const [s,co,p] = await Promise.all([
+supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),
+supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),
+supabase.from('players').select('id').eq('login_code',c).maybeSingle()
+]);
+if (!s.data && !co.data && !p.data) return c;
+attempts++;
+}
+throw new Error('Could not generate unique login code');
+}
+async function checkDuplicates(emailAddr, phone) {
+const em = emailAddr.toLowerCase().trim();
+for (const t of ['scouts','coaches','players']) {
+const { data } = await supabase.from(t).select('id').eq('email', em).maybeSingle();
+if (data) return { duplicate: true, field: 'email' };
+}
+if (phone && phone.trim()) {
+for (const t of ['scouts','coaches']) {
+const { data } = await supabase.from(t).select('id').eq('phone', phone.trim()).maybeSingle();
+if (data) return { duplicate: true, field: 'phone' };
+}
+}
+return { duplicate: false };
+}
 router.get('/dashboard', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const [{ count: totalPlayers }, { count: totalCoaches }, { count: totalScouts }, { count: pendingReqs }, { data: recentReqs }] = await Promise.all([
@@ -82,7 +114,9 @@ router.post('/scouts', requireAuth, requireRole('Stratex'), async (req, res) => 
 try {
 const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, subscriptionPlan } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
-const loginCode = generateLoginCode();
+const dupS = await checkDuplicates(emailAddr, phone);
+if (dupS.duplicate) return res.status(409).json({ error: 'This ' + dupS.field + ' is already registered.' });
+const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 365*24*60*60*1000);
 const planStart = new Date();
 const planEnd = new Date(Date.now() + 365*24*60*60*1000);
