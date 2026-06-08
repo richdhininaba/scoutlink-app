@@ -240,4 +240,53 @@ router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
+// PATCH ratings (Stratex admin only)
+router.patch('/:id/ratings', requireAuth, requireRole('Stratex','Coach'), async (req, res) => {
+try {
+const allowed = ['pace','shooting','passing','dribbling','defending','physical','vision','leadership','agility','strength','stamina','jumping','composure','crossing','positioning','heading','tackling'];
+const updates = {};
+allowed.forEach(function(k){ if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+const { data: existing } = await supabase.from('players').select('*').eq('id', req.params.id).single();
+if (!existing) return res.status(404).json({ error: 'Player not found' });
+const merged = Object.assign({}, existing, updates);
+const overall100 = computeOverall(merged);
+updates.overall_rating = Math.round(overall100 * 10) / 100;
+const salary = predictedSalary(merged, { tier: 5 });
+updates.predicted_salary_weekly = salary.weeklyGross;
+const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
+if (error) throw error;
+res.json({ player: data, message: 'Ratings updated' });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// PATCH team assignment
+router.patch('/:id/team', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { team_id } = req.body;
+let teamName = null;
+if (team_id) {
+const { data: t } = await supabase.from('school_academy_teams').select('team_name').eq('id', team_id).single();
+teamName = t ? t.team_name : null;
+}
+const { error } = await supabase.from('players').update({ team_id: team_id||null, team_name: teamName }).eq('id', req.params.id);
+if (error) throw error;
+res.json({ message: 'Team assignment updated' });
+} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// DELETE player (Stratex admin only)
+router.delete('/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+await supabase.from('match_facts').delete().eq('player_id', req.params.id);
+await supabase.from('player_videos').delete().eq('player_id', req.params.id);
+await supabase.from('recruitment_pipeline').delete().eq('player_id', req.params.id);
+await supabase.from('compatibility_scores').delete().eq('player_id', req.params.id);
+await supabase.from('notifications').delete().eq('recipient_id', req.params.id);
+const { error } = await supabase.from('players').update({ is_active: false }).eq('id', req.params.id);
+if (error) throw error;
+res.json({ message: 'Player deleted' });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
 module.exports = router;
