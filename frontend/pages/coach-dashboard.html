@@ -113,42 +113,78 @@ document.getElementById('seasonSummaryModal').style.display='none';
 });
 
 async function loadCoachData(){
-try{
-var d=await api('GET','/api/coaches/my-players');
-var players=d.data||[];
-document.getElementById('kpiPlayers').textContent=players.length;
-var top=players.reduce(function(a,p){return(!a||parseFloat(p.overall_rating||0)>parseFloat(a.overall_rating||0))?p:a;},null);
-document.getElementById('kpiTop').textContent=top?dispOverall(top.overall_rating)+'/10':'--';
-var totalVal=players.reduce(function(s,p){return s+(p.transfer_value||0);},0);
-document.getElementById('kpiValue').textContent=formatValue(totalVal);
-document.getElementById('kpiInterest').textContent='--';
-if(players.length){
-document.getElementById('myPlayers').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Appearances</th><th>Goals</th><th>Assists</th><th>Est. value</th><th></th></tr></thead><tbody>'+
-players.map(function(p){
-var ovNum=parseFloat(p.overall_rating||0),ovPct=ovNum>10?ovNum:ovNum*10;
-var pCol=posGroupColor(p.position_group);
-return '<tr>'+
-'<td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div>'+
-'<div><b>'+p.first_name+' '+p.last_name+'</b><div style="font-size:11px;color:#546E7A">'+(p.age||'--')+' yrs</div></div></div></td>'+
-'<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
-'<td style="color:'+ratingCol(ovPct)+';font-weight:700">'+dispOverall(p.overall_rating)+'</td>'+
-'<td>'+(p.appearances||0)+'</td>'+
-'<td style="color:#1d9e75">'+(p.goals||0)+'</td>'+
-'<td>'+(p.assists||0)+'</td>'+
-'<td style="color:#1d9e75;font-weight:700">'+(p.transfer_value?'Estimated value: '+formatValue(p.transfer_value):'Calculating...')+'</td>'+
-'<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td>'+
-'</tr>';
-}).join('')+
-'</tbody></table>';
-}else{
-document.getElementById('myPlayers').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add your squad</a></div>';
-}
-}catch(e){
-document.getElementById('kpiPlayers').textContent='0';
-document.getElementById('kpiTop').textContent='--';
-document.getElementById('kpiValue').textContent='--';
-document.getElementById('myPlayers').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>Could not load player data.</p></div>';
-}
+  try{
+    // Load player list AND dashboard stats in parallel
+    var [playersRes, statsRes] = await Promise.all([
+      api('GET','/api/coaches/my-players'),
+      api('GET','/api/coaches/dashboard').catch(function(){return {};})
+    ]);
+    var players = playersRes.data||[];
+    var stats = statsRes||{};
+    
+    // KPI: Total Players
+    var kpiP=document.getElementById('kpiPlayers');
+    if(kpiP) kpiP.textContent = stats.totalPlayers!==undefined ? stats.totalPlayers : players.length;
+    
+    // KPI: Top Rated Player
+    var kpiT=document.getElementById('kpiTop');
+    if(kpiT){
+      if(stats.topRatedPlayer){
+        var ov=parseFloat(stats.topRatedPlayer.overall_rating||0);
+        var ovDisp=ov>10?ov.toFixed(0):(ov*10).toFixed(0);
+        kpiT.textContent=stats.topRatedPlayer.name||'N/A';
+        var kpiTSub=document.getElementById('kpiTopSub');
+        if(kpiTSub) kpiTSub.textContent='Overall: '+ovDisp+'/100';
+      } else if(players.length){
+        var sorted=[...players].sort(function(a,b){return (parseFloat(b.overall_rating)||0)-(parseFloat(a.overall_rating)||0);});
+        var top=sorted[0];
+        kpiT.textContent=(top.first_name||'')+' '+(top.last_name||'');
+      } else {
+        kpiT.textContent='No players yet';
+      }
+    }
+    
+    // KPI: Total Squad Value
+    var kpiV=document.getElementById('kpiValue');
+    if(kpiV){
+      var val = stats.totalSquadValue !== undefined ? stats.totalSquadValue : players.reduce(function(s,p){return s+(Number(p.transfer_value)||0);},0);
+      kpiV.textContent = val ? '\xA3'+Number(val).toLocaleString('en-GB',{maximumFractionDigits:0}) : '\xA30';
+    }
+    
+    // KPI: Scouts Interested
+    var kpiI=document.getElementById('kpiInterest');
+    if(kpiI) kpiI.textContent = stats.scoutsInterested !== undefined ? stats.scoutsInterested : '0';
+    
+    // Render players list
+    var listEl=document.getElementById('myPlayers');
+    if(!listEl) return;
+    if(!players.length){
+      listEl.innerHTML='<div style="text-align:center;padding:32px;color:#546E7A"><p style="margin-bottom:16px">No players in your squad yet.</p><a href="add-player.html" class="btn btn-primary">Add your first player</a></div>';
+      return;
+    }
+    listEl.innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Age group</th><th>Position</th><th>Overall</th><th>Value</th><th>Apps</th><th>Goals</th><th>Assists</th></tr></thead><tbody>'+
+    players.map(function(p){
+      var ov=parseFloat(p.overall_rating||0);
+      var ovPct=ov>10?ov:ov*10;
+      var ovDisp=ovPct.toFixed(0);
+      var ovCol=ovPct>=80?'#1d9e75':ovPct>=65?'#FFC107':'#FF9800';
+      var val=p.transfer_value?('\xA3'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0})):'Calculating...';
+      return '<tr>'+
+      '<td><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b></td>'+
+      '<td>'+(p.age_group||'--')+'</td>'+
+      '<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
+      '<td style="font-weight:800;color:'+ovCol+'">'+ovDisp+'</td>'+
+      '<td style="color:#1d9e75">'+val+'</td>'+
+      '<td>'+(p.appearances||0)+'</td>'+
+      '<td>'+(p.goals||0)+'</td>'+
+      '<td>'+(p.assists||0)+'</td>'+
+      '</tr>';
+    }).join('')+'</tbody></table></div>';
+  }catch(e){
+    console.error('loadCoachData error:',e);
+    var listEl=document.getElementById('myPlayers');
+    if(listEl) listEl.innerHTML='<div style="padding:16px;color:#f44336">Could not load data: '+(e.message||'Unknown error')+'</div>';
+  }
 }
 
 async function endSeason(){
