@@ -39,6 +39,8 @@ app.use('/api/scout', require('./routes/scouts')); // alias for frontend scout r
 app.use('/api/coaches', require('./routes/coaches'));
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/awards', require('./routes/awards'));
+app.use('/api/predictions', require('./routes/predictions'));
+app.use('/api/season', require('./routes/season'));
 app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/fixtures', require('./routes/fixtures'));
 
