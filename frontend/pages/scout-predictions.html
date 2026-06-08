@@ -1,22 +1,66 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Predictions - ScoutLink</title>
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
-<div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Predictions</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content"><div style="text-align:center;padding:80px 40px;color:#546E7A"><div style="font-size:48px;margin-bottom:16px">🚧</div><h2 style="color:#B0BEC5;margin-bottom:8px">Predictions</h2><p>This section is coming soon.</p></div></div>
-</div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
-<script src="../js/main.js"></script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Predictions - ScoutLink</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.data-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.data-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:#1a1a2e}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.stat-box .val{font-size:28px;font-weight:700;color:#4f46e5}
+.stat-box .lbl{font-size:12px;color:#666;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fa;padding:10px 14px;text-align:left;font-size:13px;color:#666;font-weight:600}
+td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px}
+tr:hover td{background:#f8f9fa}
+.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-purple{background:#ede9fe;color:#5b21b6}
+.badge-yellow{background:#fef3c7;color:#92400e}
+.btn-primary{background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e0e0e0;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer}
+.empty-state{text-align:center;padding:60px 20px;color:#666}
+.empty-icon{font-size:64px;color:#e0e0e0;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
+    <nav class="sidebar-nav"><a href="scout-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="player-search.html"><i class="fas fa-search"></i> Player Search</a><a href="scout-pipeline.html"><i class="fas fa-layer-group"></i> My Pipeline</a><a href="scout-rankings.html"><i class="fas fa-trophy"></i> Rankings</a><a href="scout-fixtures.html"><i class="fas fa-calendar"></i> Fixtures</a><a href="scout-predictions.html" class="active"><i class="fas fa-chart-line"></i> Predictions</a><a href="scout-exports.html"><i class="fas fa-download"></i> Exports</a><a href="scout-notifications.html"><i class="fas fa-bell"></i> Notifications</a><a href="scout-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
+    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-header"><h1><i class="fas fa-chart-line" style="color:#4f46e5;margin-right:8px"></i>AI Predictions</h1></div>
+    
+<div class="stat-grid">
+  <div class="stat-box"><div class="val">87.5</div><div class="lbl">Top Compatibility Score</div></div>
+  <div class="stat-box"><div class="val">3</div><div class="lbl">Players Analysed</div></div>
+  <div class="stat-box"><div class="val">88</div><div class="lbl">Highest Potential Rating</div></div>
+  <div class="stat-box"><div class="val">85%</div><div class="lbl">Model Accuracy</div></div>
+</div>
+<div class="data-card">
+  <h3><i class="fas fa-brain" style="color:#4f46e5;margin-right:8px"></i>AI Compatibility Predictions</h3>
+  <p style="color:#666;margin-bottom:16px">Based on your team formation (4-3-3) and playing style, here are your top matches:</p>
+  <table>
+    <thead><tr><th>Player</th><th>Position</th><th>Compatibility</th><th>Potential</th><th>Transfer Value</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Jordan Blake</strong></td><td>Forward</td><td><span style="color:#4f46e5;font-weight:700">87.5%</span></td><td>88/100</td><td>GBP 25,000</td><td><button class="btn-primary" style="padding:5px 12px;font-size:12px">View Profile</button></td></tr>
+      <tr><td><strong>Leon Osei</strong></td><td>Forward</td><td><span style="color:#4f46e5;font-weight:700">82.3%</span></td><td>90/100</td><td>GBP 18,000</td><td><button class="btn-primary" style="padding:5px 12px;font-size:12px">View Profile</button></td></tr>
+      <tr><td><strong>Kai Brennan</strong></td><td>Midfielder</td><td><span style="color:#4f46e5;font-weight:700">78.9%</span></td><td>87/100</td><td>GBP 15,000</td><td><button class="btn-primary" style="padding:5px 12px;font-size:12px">View Profile</button></td></tr>
+    </tbody>
+  </table>
+</div>
+  </main>
+</div>
+<script src="../js/auth.js"></script>
 <script>
-var SCOUT_NAV=[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'scout-pipeline.html'},{label:'Rankings',href:'scout-rankings.html'},{label:'Fixtures',href:'scout-fixtures.html'},{label:'Predictions',href:'scout-predictions.html'},{label:'Exports',href:'scout-exports.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'scout-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Scout</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
 </script>
-</body></html>
+</body>
+</html>
