@@ -1,5 +1,5 @@
 'use strict';
-// ScoutLink Frontend v2.1
+// ScoutLink Frontend v2.2 - All experiences complete
 const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
 
 // Auth
