@@ -280,7 +280,14 @@ function updateComparison(){
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
 
-  api('GET','/api/scouts/setup').then(function(d){_scoutTeam=d.scoutTeam||null;}).catch(function(){});
+  api('GET','/api/scouts/setup').then(function(d){
+    _scoutTeam=d.scoutTeam||null;
+    // Merge team weaknesses from preferences into scoutTeam
+    var prefs = d.preferences||{};
+    var weakSlugs = prefs.teamWeaknesses||[];
+    var WMAP = {'insufficient_game_pace_and_speed':'Insufficient Game Pace and Speed','physical_fragility_and_injury_risk':'Physical Fragility and Injury Risk','lack_of_physical_presence':'Lack of Physical Presence','weak_defensive_base':'Weak Defensive Base','poor_defensive_output':'Poor Defensive Output','low_team_chemistry_and_leadership':'Low Team Chemistry and Leadership','technical_deficiencies_under_pressure':'Technical Deficiencies Under Pressure','tactical_awareness_gaps':'Tactical Awareness Gaps','poor_goal_output':'Poor Goal Output','poor_set_pieces':'Insufficient Game Pace and Speed','high_defensive_line':'Weak Defensive Base','slow_build_up':'Tactical Awareness Gaps','weak_left_flank':'Lack of Physical Presence','pace_exploitable':'Insufficient Game Pace and Speed','poor_second_ball':'Tactical Awareness Gaps'};
+    if(_scoutTeam) _scoutTeam.team_weaknesses = weakSlugs.map(function(s){return WMAP[s]||s;});
+  }).catch(function(){});
 
   api('GET','/api/scouts/pipeline?limit=200').then(function(d){
     _pipelineIds=(d.data||[]).map(function(r){return r.player_id||((r.players||{}).id);}).filter(Boolean);
