@@ -5,125 +5,109 @@
 <link rel="stylesheet" href="../css/main.css">
 <link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
+.btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);}
+.btn-sm{padding:6px 12px;font-size:13px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:900;color:var(--text);}
+.kpi-value.green{color:var(--accent);}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+</style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
-<div class="sidebar-nav" id="sidebarNav"></div>
-<div class="sidebar-user" id="sidebarUser"></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent)">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">Fixtures</span>
-<div class="topbar-right">
-<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
-</div>
+  <span class="topbar-title">Fixtures</span>
+  <div class="topbar-right">
+    <button class="notif-btn" id="notifToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign Out</button>
+  </div>
 </div>
 <div class="page-content">
-
 <div class="kpi-grid" style="margin-bottom:20px">
-<div class="kpi-card">
-<div class="kpi-label">Upcoming Fixtures</div>
-<div class="kpi-value green" id="kpiTotal">-</div>
+  <div class="kpi-card"><div class="kpi-label">Upcoming Fixtures</div><div class="kpi-value green" id="kpiTotal">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Pipeline Players</div><div class="kpi-value" id="kpiPlayers">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Teams Covered</div><div class="kpi-value" id="kpiTeams">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Next Match</div><div class="kpi-value" id="kpiNext" style="font-size:16px">-</div></div>
 </div>
-<div class="kpi-card">
-<div class="kpi-label">Pipeline Players</div>
-<div class="kpi-value" id="kpiPlayers">-</div>
-</div>
-<div class="kpi-card">
-<div class="kpi-label">Teams Covered</div>
-<div class="kpi-value" id="kpiTeams">-</div>
-</div>
-<div class="kpi-card">
-<div class="kpi-label">Next Match</div>
-<div class="kpi-value" id="kpiNext" style="font-size:16px">-</div>
-</div>
-</div>
-
 <div class="table-card">
-<div class="table-header">
-<div><h3>Upcoming Fixtures</h3><p style="font-size:12px;color:var(--text3);margin-top:2px">Fixtures for players in your pipeline</p></div>
-<a href="scout-pipeline.html" class="btn btn-sm btn-outline">My Pipeline</a>
-</div>
-<div id="fixturesList"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading fixtures...</span></div></div>
-</div>
-
+  <div class="table-header">
+    <div><h3 style="font-size:16px;font-weight:700">Upcoming Fixtures</h3><p style="font-size:12px;color:var(--text-secondary);margin-top:2px">Fixtures for players in your pipeline</p></div>
+    <a href="scout-pipeline.html" class="btn btn-sm btn-outline" style="text-decoration:none">My Pipeline</a>
+  </div>
+  <div id="fixturesList"><div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Loading fixtures...</span></div></div>
 </div>
 </div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button id="closeNotifBtn" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">x</button></div>
+  <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-function initNav() {
-  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
-  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
-  var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
-  updateNotifBadge();
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function initNav(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u){
+    var ini=(u.firstName||'?')[0]+(u.lastName||'?')[0];
+    uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">'+ini.toUpperCase()+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role" style="color:var(--text-secondary);font-size:12px">Scout</div></div></div>';
+  }
+  if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){}
+function initials(f,l){return((f||'')[0]||(l||'')[0]||'?').toUpperCase()+((l||'')[0]||'').toUpperCase();}
+function formatDate(d){if(!d)return '--';try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}catch(e){return d;}}
 
-function formatDate(d){
-  if(!d)return '--';
-  try{
-    var dt=new Date(d);
-    return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-  }catch(e){return d;}
-}
-
-document.addEventListener('DOMContentLoaded',async function(){
-  initNav();
-  try{
-    var d=await api('GET','/api/scouts/fixtures');
+function loadFixtures(){
+  if(typeof api!=='function')return;
+  api('GET','/api/scouts/fixtures').then(function(d){
     var fixtures=d.data||[];
-    
-    var total=fixtures.length;
     var allPlayers=[];
     fixtures.forEach(function(fx){(fx.players||[]).forEach(function(p){if(allPlayers.indexOf(p.id)<0)allPlayers.push(p.id);});});
     var teams=new Set(fixtures.map(function(fx){return fx.team_id;}).filter(Boolean));
-    
-    document.getElementById('kpiTotal').textContent=total;
+    document.getElementById('kpiTotal').textContent=fixtures.length;
     document.getElementById('kpiPlayers').textContent=allPlayers.length;
     document.getElementById('kpiTeams').textContent=teams.size;
-    
-    if(fixtures.length&&fixtures[0].fixture_date){
-      document.getElementById('kpiNext').textContent=formatDate(fixtures[0].fixture_date);
-    }else{
-      document.getElementById('kpiNext').textContent='None';
-    }
-    
+    document.getElementById('kpiNext').textContent=fixtures.length&&fixtures[0].fixture_date?formatDate(fixtures[0].fixture_date):'None';
     if(!fixtures.length){
-      document.getElementById('fixturesList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">&#128197;</div><h3 style="color:var(--text2);margin-bottom:8px">No upcoming fixtures</h3><p>No upcoming fixtures found for players in your pipeline.</p><p style="margin-top:8px;font-size:13px">Add players to your pipeline to see their upcoming fixtures here.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Find Players</a></div>';
+      document.getElementById('fixturesList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128197;</div><h3 style="margin-bottom:8px">No upcoming fixtures</h3><p style="font-size:13px">Add players to your pipeline to see their fixtures here.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Find Players</a></div>';
       return;
     }
-    
     var html='<div style="padding:16px">';
     fixtures.forEach(function(fx){
       var players=fx.players||[];
       var date=formatDate(fx.fixture_date);
       var time=fx.fixture_time?(' at '+fx.fixture_time):'';
       var venue=fx.venue?(' &bull; '+fx.venue):'';
-      var format=fx.format?('<span style="font-size:11px;padding:2px 8px;background:rgba(0,230,118,.12);color:#00E676;border-radius:4px;margin-left:8px">'+fx.format+'-a-side</span>'):'';
-      var homeAway=fx.home_or_away?('<span style="font-size:11px;color:var(--text3)">'+fx.home_or_away+'</span>'):'';
-      
-      html+='<div style="background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px">';
+      var format=fx.format?('<span style="font-size:11px;padding:2px 8px;background:rgba(29,158,117,.12);color:var(--accent);border-radius:4px;margin-left:8px">'+fx.format+'-a-side</span>'):'';
+      html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px">';
       html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">';
-      html+='<div>';
-      html+='<div style="font-size:16px;font-weight:700;margin-bottom:4px">'+(fx.opponent||'Unknown Opponent')+format+'</div>';
-      html+='<div style="font-size:13px;color:var(--text2)">'+date+time+venue+'</div>';
-      if(fx.notes)html+='<div style="font-size:12px;color:var(--text3);margin-top:4px">'+fx.notes+'</div>';
-      html+='</div>';
-      html+=homeAway;
-      html+='</div>';
-      
+      html+='<div><div style="font-size:16px;font-weight:700;margin-bottom:4px">'+(fx.opponent||'Unknown Opponent')+format+'</div>';
+      html+='<div style="font-size:13px;color:var(--text-secondary)">'+date+time+venue+'</div>';
+      if(fx.notes)html+='<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">'+fx.notes+'</div>';
+      html+='</div></div>';
       if(players.length){
         html+='<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">';
         players.forEach(function(p){
-          var pcolor={Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[p.position_group]||'#00E676';
-          html+='<a href="player-profile.html?id='+p.id+'" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);text-decoration:none">';
-          html+='<div style="width:22px;height:22px;border-radius:50%;background:'+pcolor+';color:'+(pcolor==='#FFC107'?'#000':'#fff')+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+initials(p.first_name,p.last_name)+'</div>';
+          var pc={Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#17a2b8',Forward:'#ff6b35'}[p.position_group]||'var(--accent)';
+          html+='<a href="player-profile.html?id='+p.id+'" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:#fff;text-decoration:none">';
+          html+='<div style="width:22px;height:22px;border-radius:50%;background:'+pc+';color:'+(pc==='#FFC107'?'#000':'#fff')+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">'+initials(p.first_name,p.last_name)+'</div>';
           html+=(p.first_name||'')+' '+(p.last_name||'')+'</a>';
         });
         html+='</div>';
@@ -132,11 +116,17 @@ document.addEventListener('DOMContentLoaded',async function(){
     });
     html+='</div>';
     document.getElementById('fixturesList').innerHTML=html;
-    
-  }catch(e){
-    document.getElementById('fixturesList').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load fixtures.</p><p style="font-size:12px;margin-top:8px">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Browse Players</a></div>';
+  }).catch(function(e){
     document.getElementById('kpiTotal').textContent='0';document.getElementById('kpiPlayers').textContent='0';document.getElementById('kpiTeams').textContent='0';document.getElementById('kpiNext').textContent='None';
-  }
+    document.getElementById('fixturesList').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)"><p>Could not load fixtures.</p><p style="font-size:12px;margin-top:8px">'+e.message+'</p></div>';
+  });
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();loadFixtures();
+  document.getElementById('notifToggle').addEventListener('click',toggleNotifPanel);
+  document.getElementById('closeNotifBtn').addEventListener('click',toggleNotifPanel);
+  document.getElementById('logoutBtn').addEventListener('click',logout);
 });
 </script>
 <script src="../js/mobile.js"></script>
