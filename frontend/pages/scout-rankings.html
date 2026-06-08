@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Player Rankings - ScoutLink</title>
+<title>Player rankings - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
-.sl-table{width:100%;border-collapse:collapse;}
-.sl-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);border-bottom:1px solid var(--border);}
-.sl-table td{padding:12px;border-bottom:1px solid var(--border);font-size:14px;}
-.sl-table tr:hover td{background:rgba(255,255,255,0.02);}
+.leaderboard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.leaderboard-header{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);}
+.leaderboard-icon{font-size:20px;}
+.leaderboard-title{font-size:16px;font-weight:700;}
+.leaderboard-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);}
+.leaderboard-row:last-child{border-bottom:none;}
+.leaderboard-row:hover{background:rgba(255,255,255,0.02);}
+.rank-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
+.rank-1{background:#FFD700;color:#000;}
+.rank-2{background:#C0C0C0;color:#000;}
+.rank-3{background:#CD7F32;color:#fff;}
+.rank-other{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border);}
+.stat-val{font-size:20px;font-weight:900;margin-left:auto;flex-shrink:0;}
 .btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
-.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);}
-.btn-sm{padding:6px 12px;font-size:13px;}
-.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
-.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);text-decoration:none;}
+.btn-sm{padding:5px 10px;font-size:12px;}
+.ranking-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
+@media(max-width:700px){.ranking-grid{grid-template-columns:1fr;}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -28,31 +35,22 @@
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-  <span class="topbar-title">Player Rankings</span>
+  <span class="topbar-title">Player rankings</span>
   <div class="topbar-right">
-    <button class="notif-btn" id="notifToggle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
-    </button>
-    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign Out</button>
+    <button class="notif-btn" id="notifToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign out</button>
   </div>
 </div>
 <div class="page-content">
-<div class="table-card">
-  <div class="table-header">
-    <div><h3 style="font-size:16px;font-weight:700">Player Rankings</h3><p style="font-size:12px;color:var(--text-secondary);margin-top:2px">Top players by compatibility with your team profile</p></div>
-    <a href="scout-setup.html" class="btn btn-sm btn-outline" style="text-decoration:none">Edit Team Setup</a>
+  <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:800">Player leaderboards</h2><p style="color:var(--text-secondary);font-size:14px;margin-top:4px">Top 5 in each category across the entire platform</p></div>
+  <div class="ranking-grid" id="rankingsGrid">
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Loading rankings...</span></div>
   </div>
-  <div id="rankContent"><div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Loading rankings...</span></div></div>
-</div>
 </div>
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header">
-    <h3>Notifications</h3>
-    <button id="closeNotifBtn" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">x</button>
-  </div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button id="closeNotifBtn" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">x</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/scout-nav.js"></script>
@@ -60,7 +58,6 @@
 <script>
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
-
 function initNav(){
   if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
   if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
@@ -71,53 +68,54 @@ function initNav(){
   }
   if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
+function fmtVal(v){if(!v||v<1000)return '—';if(v>=1000000)return '£'+(v/1000000).toFixed(1)+'M';return '£'+Math.round(v/1000)+'K';}
+function initials(f,l){return((f||'?')[0]+(l||'?')[0]).toUpperCase();}
+function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#17a2b8',Forward:'#ff6b35'}[g]||'var(--accent)';}
+function rankBadge(i){var cls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';return '<div class="rank-badge '+cls+'">'+(i+1)+'</div>';}
 
-function dOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
-function cColor(s){return s>=80?'#1d9e75':s>=65?'#FFC107':s>=50?'#FF9800':'#f85149';}
-function pColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#17a2b8',Forward:'#ff6b35'}[g]||'#1d9e75';}
-function fmtVal(v){if(!v||v<1000)return '-';if(v>=1000000)return (''+Math.round(v/1000000*10)/10).replace(/\.0$/,'')+'M';return Math.round(v/1000)+'K';}
-function initials(f,l){return((f||'')[0]||(l||'')[0]||'?').toUpperCase()+((l||'')[0]||'').toUpperCase();}
+function buildLeaderboard(title, icon, players, statKey, statLabel, statFmt) {
+  if(!players||!players.length) return '<div class="leaderboard"><div class="leaderboard-header"><span class="leaderboard-icon">'+icon+'</span><span class="leaderboard-title">'+title+'</span></div><div style="padding:24px;color:var(--text-secondary);text-align:center">No data yet</div></div>';
+  return '<div class="leaderboard">'+
+    '<div class="leaderboard-header"><span class="leaderboard-icon">'+icon+'</span><span class="leaderboard-title">'+title+'</span></div>'+
+    players.map(function(p,i){
+      var val = statFmt ? statFmt(p[statKey]) : (p[statKey]||0);
+      var pCol = pColor(p.position_group);
+      return '<div class="leaderboard-row">'+
+        rankBadge(i)+
+        '<div style="width:30px;height:30px;border-radius:50%;background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.first_name+' '+p.last_name+'</div>'+
+          '<div style="font-size:11px;color:var(--text-secondary)">'+(p.age_group||'')+(p.team_name?' &middot; '+p.team_name:'')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0">'+
+          '<div class="stat-val" style="color:var(--accent)">'+val+'</div>'+
+          '<div style="font-size:10px;color:var(--text-secondary)">'+statLabel+'</div>'+
+        '</div>'+
+        '<a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="text-decoration:none;flex-shrink:0">View</a>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+function loadRankings(){
+  if(typeof api!=='function')return;
+  api('GET','/api/scouts/rankings').then(function(d){
+    document.getElementById('rankingsGrid').innerHTML =
+      buildLeaderboard('Top scorers','&#9917;', d.topScorers, 'goals', 'goals', null) +
+      buildLeaderboard('Top assisters','&#127381;', d.topAssisters, 'assists', 'assists', null) +
+      buildLeaderboard('Top clean sheets','&#128274;', d.topCleanSheets, 'clean_sheets', 'clean sheets', null) +
+      buildLeaderboard('Most scouted','&#128269;', d.topInterested, 'interest_count', 'scouts', null) +
+      buildLeaderboard('Most valuable','&#128181;', d.topExpensive, 'transfer_value', 'est. value', fmtVal);
+  }).catch(function(e){
+    document.getElementById('rankingsGrid').innerHTML='<div style="grid-column:1/-1;padding:32px;color:var(--text-secondary);text-align:center">Could not load rankings. '+e.message+'</div>';
+  });
+}
 
 document.addEventListener('DOMContentLoaded',function(){
-  initNav();
+  initNav();loadRankings();
   document.getElementById('notifToggle').addEventListener('click',toggleNotifPanel);
   document.getElementById('closeNotifBtn').addEventListener('click',toggleNotifPanel);
   document.getElementById('logoutBtn').addEventListener('click',logout);
-  if(typeof api==='function'){
-    api('GET','/api/scouts/recommended-players').then(function(d){
-      if(d.setupRequired){
-        document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><p style="font-size:16px;font-weight:600;margin-bottom:8px">Team setup required</p><p style="font-size:13px;margin-bottom:16px">Complete your team setup to see personalised rankings.</p><a href="scout-setup.html" class="btn btn-primary" style="text-decoration:none">Set Up My Team</a></div>';
-        return;
-      }
-      var players=d.data||[];
-      if(!players.length){
-        document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><p>No players found. Adjust your search preferences.</p><a href="scout-setup.html" class="btn btn-outline" style="margin-top:14px;display:inline-block;text-decoration:none">Edit Setup</a></div>';
-        return;
-      }
-      var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>#</th><th>Player</th><th>Position</th><th>Age Group</th><th>Club</th><th>Compat.</th><th>Overall</th><th>Value</th><th></th></tr></thead><tbody>';
-      players.slice(0,50).forEach(function(p,i){
-        var ov=dOv(p.overall_rating);
-        var ovN=parseFloat(p.overall_rating||0);var ovP=ovN>10?ovN:ovN*10;
-        var cs=Math.round(p.compatibilityScore||0);
-        var pCol=pColor(p.position_group);
-        html+='<tr>'+
-          '<td style="color:var(--text-secondary);font-weight:700;font-size:16px">#'+(i+1)+'</td>'+
-          '<td><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b></div></td>'+
-          '<td style="font-size:12px">'+(p.specific_position||p.primary_position||'--')+'</td>'+
-          '<td><span style="font-size:11px;padding:2px 8px;background:rgba(29,158,117,.1);color:var(--accent);border-radius:4px">'+(p.age_group||'--')+'</span></td>'+
-          '<td style="color:var(--text-secondary);font-size:12px">'+(p.team_name||'--')+'</td>'+
-          '<td style="font-weight:800;color:'+cColor(cs)+'">'+cs+'</td>'+
-          '<td style="font-weight:800;color:'+cColor(ovP)+'">'+ov+'</td>'+
-          '<td style="color:var(--accent);font-size:12px">'+fmtVal(p.transfer_value||0)+'</td>'+
-          '<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="text-decoration:none">View</a></td>'+
-          '</tr>';
-      });
-      html+='</tbody></table></div>';
-      document.getElementById('rankContent').innerHTML=html;
-    }).catch(function(e){
-      document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)">Could not load rankings.<br><small>'+e.message+'</small></div>';
-    });
-  }
 });
 </script>
 <script src="../js/mobile.js"></script>
