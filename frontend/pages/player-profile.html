@@ -43,6 +43,7 @@
   <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">ÃÂ</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
@@ -65,14 +66,10 @@ var NAV_COACH=[
   {label:'Ã°ÂÂÂ Notifications',href:'#',action:'toggleNotifPanel'},{label:'Ã¢ÂÂÃ¯Â¸Â Settings',href:'coach-settings.html'}
 ];
 function initNav(){
-  if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
-  var nav=document.getElementById('sidebarNav');
-  var cur=window.location.pathname.split('/').pop();
-  var navItems = (Auth.type==='Scout')?NAV_SCOUT:NAV_COACH;
-  if(nav) nav.innerHTML=navItems.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
-  var u=Auth.user;
-  var uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+Auth.type+'</div></div></div>';
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
