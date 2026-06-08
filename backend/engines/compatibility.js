@@ -70,55 +70,59 @@ function norm(val, min=0, max=100) {
   return clamp((val - min) / (max - min), 0, 1);
 }
 
-// Position-weighted overall rating (returns 0-100)
+// Position-weighted overall rating (returns 0-100) with age maturity modifier
+// Sections 3 & 4: position-aware weighted formula
 function computeOverall(player) {
-  const group = getPosGroup(player.positions || player.primary_position);
-  const a = (key, fb=50) => norm(attr(player, key, fb));
+const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
+const a = (key, fb=5) => {
+  const v = parseFloat(player[key]);
+  if (isNaN(v)) return fb * 10; // fallback on 0-100 scale
+  return v <= 10 ? v * 10 : v; // normalise 0-10 to 0-100
+};
 
-  if (group === 'Goalkeeper') {
-    return clamp((
-      a('gk_diving')       * 0.20 +
-      a('gk_reflexes')     * 0.22 +
-      a('gk_handling')     * 0.18 +
-      a('gk_positioning')  * 0.15 +
-      a('gk_kicking')      * 0.10 +
-      a('gk_distribution') * 0.08 +
-      a('gk_communication')* 0.04 +
-      a('gk_sweeping')     * 0.03
-    ) * 100);
+let base;
+if (group === 'Goalkeeper') {
+  base = clamp(
+    a('gk_diving') * 0.20 + a('gk_reflexes') * 0.22 + a('gk_handling') * 0.18 +
+    a('gk_positioning') * 0.15 + a('gk_kicking') * 0.10 +
+    a('gk_distribution') * 0.08 + a('gk_communication') * 0.04 + a('gk_sweeping') * 0.03
+  );
+  // Fallback: use outfield attrs if GK-specific not set
+  const hasGK = ['gk_diving','gk_reflexes','gk_handling','gk_positioning','gk_kicking','gk_distribution','gk_communication','gk_sweeping'].some(k => parseFloat(player[k]) > 0);
+  if (!hasGK) {
+    base = clamp(a('positioning')*0.20+a('composure')*0.18+a('jumping')*0.16+a('strength')*0.14+a('stamina')*0.12+a('passing')*0.10+a('vision')*0.10);
   }
-  if (group === 'Forward') {
-    return clamp((
-      a('pace')      * 0.18 +
-      a('shooting')  * 0.26 +
-      a('dribbling') * 0.18 +
-      a('agility')   * 0.10 +
-      a('composure') * 0.12 +
-      a('passing')   * 0.08 +
-      a('strength')  * 0.08
-    ) * 100);
-  }
-  if (group === 'Midfielder') {
-    return clamp((
-      a('passing')   * 0.24 +
-      a('vision')    * 0.16 +
-      a('dribbling') * 0.14 +
-      a('stamina')   * 0.14 +
-      a('defending') * 0.12 +
-      a('pace')      * 0.10 +
-      a('composure') * 0.10
-    ) * 100);
-  }
-  // Defender
-  return clamp((
-    a('defending')   * 0.28 +
-    a('strength')    * 0.18 +
-    a('tackling')    * 0.16 +
-    a('heading')     * 0.12 +
-    a('pace')        * 0.12 +
-    a('positioning') * 0.08 +
-    a('passing')     * 0.06
-  ) * 100);
+} else if (group === 'Forward') {
+  // Spec: pace 14, shooting 18, dribbling 14, positioning 12, composure 10, agility 10, crossing 8, vision 8, passing 6
+  base = clamp(
+    a('pace')*0.14 + a('shooting')*0.18 + a('dribbling')*0.14 + a('positioning')*0.12 +
+    a('composure')*0.10 + a('agility')*0.10 + a('crossing')*0.08 + a('vision')*0.08 + a('passing')*0.06
+  );
+} else if (group === 'Midfielder') {
+  // Spec: passing 18, vision 16, composure 14, dribbling 12, positioning 12, stamina 10, agility 10, crossing 8
+  base = clamp(
+    a('passing')*0.18 + a('vision')*0.16 + a('composure')*0.14 + a('dribbling')*0.12 +
+    a('positioning')*0.12 + a('stamina')*0.10 + a('agility')*0.10 + a('crossing')*0.08
+  );
+} else {
+  // Defender: defending 20, positioning 18, tackling 16, strength 12, stamina 12, heading 10, composure 8, pace 4
+  base = clamp(
+    a('defending')*0.20 + a('positioning')*0.18 + a('tackling')*0.16 + a('strength')*0.12 +
+    a('stamina')*0.12 + a('heading')*0.10 + a('composure')*0.08 + a('pace')*0.04
+  );
+}
+
+// Age maturity modifier per Section 3
+const age = calcAge(player.date_of_birth);
+let ageModifier = 1.0;
+if (age !== null) {
+  if (age <= 9) ageModifier = 0.85;
+  else if (age <= 12) ageModifier = 0.90;
+  else if (age <= 14) ageModifier = 0.95;
+  // 15-16: 1.0 (no change)
+}
+
+return clamp(Math.round(base * ageModifier));
 }
 
 function physicalFitBonus(player, group) {
@@ -366,6 +370,47 @@ function analysePlayer(player, team, matchHistory = [], scoutPrefs = {}) {
     predictedSalaryWeekly:   salary.weeklyGross,
     predictedSalaryFormatted:salary.weeklyFormatted,
   };
+}
+
+
+// Grassroots transfer value (Section 4) — U6-U16 specific ranges
+function grassrootsTransferValue(player) {
+const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
+const age = calcAge(player.date_of_birth) ?? 12;
+const overall = computeOverall(player); // 0-100
+
+// Base values by position
+const BASE = { Forward: 70000, Midfielder: 60000, Defender: 52000, Goalkeeper: 52000 };
+const base = BASE[group] || 52000;
+
+// Rating multiplier
+let ratingMult;
+if (overall >= 96) ratingMult = 1.5;
+else if (overall >= 86) ratingMult = 1.3;
+else if (overall >= 76) ratingMult = 1.1;
+else if (overall >= 61) ratingMult = 0.9;
+else if (overall >= 41) ratingMult = 0.7;
+else ratingMult = 0.4;
+
+// Age runway bonus
+let ageBonus = 1.0;
+if (age <= 9) ageBonus = 1.08;
+else if (age <= 12) ageBonus = 1.05;
+else if (age <= 14) ageBonus = 1.02;
+
+// Appearances confidence
+const apps = Number(player.appearances) || 0;
+let appsMult;
+if (apps === 0) appsMult = 0.5;
+else if (apps <= 4) appsMult = 0.7;
+else if (apps <= 9) appsMult = 0.85;
+else appsMult = 1.0;
+
+let value = base * ratingMult * ageBonus * appsMult;
+value = Math.max(5000, Math.min(200000, value));
+value = Math.round(value / 1000) * 1000;
+const fmt = value >= 1000 ? '\u00a3' + (value/1000).toFixed(0) + 'K' : '\u00a3' + value;
+return { value, valueFormatted: fmt };
 }
 
 module.exports = { compatibilityScore, predictionScore, transferValue, predictedSalary,
