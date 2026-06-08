@@ -24,13 +24,24 @@ router.get('/', requireAuth, requireRole('Player','Coach','Scout','Stratex'), as
 // Add video for a player (coaches can add for their players)
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const { playerId, title, videoUrl, videoType, description } = req.body;
-    if (!playerId || !title || !videoUrl) return res.status(400).json({ error: 'playerId, title and videoUrl required' });
-    const { data, error } = await supabase.from('player_videos').insert({
-      player_id: playerId, title, video_url: videoUrl, url: videoUrl,
-      video_type: videoType || 'highlight', description: description || null,
-      uploaded_by: req.user.id, uploaded_by_type: req.user.accountType
-    }).select().single();
+    const { playerId, title, videoUrl, videoType, category, description } = req.body;
+    if (!title || !videoUrl) return res.status(400).json({ error: 'title and videoUrl required' });
+    // Get coach_id and team_id from the auth user
+    let coachTeamId = null;
+    if (req.user.accountType === 'Coach') {
+      const { data: coachData } = await supabase.from('coaches').select('id,team_id').eq('id', req.user.id).maybeSingle();
+      coachTeamId = coachData?.team_id || null;
+    }
+    const insertData = {
+      player_id: playerId || null,
+      coach_id: req.user.accountType === 'Coach' ? req.user.id : null,
+      team_id: coachTeamId,
+      title,
+      video_url: videoUrl,
+      category: category || videoType || 'Highlight',
+      description: description || null
+    };
+    const { data, error } = await supabase.from('player_videos').insert(insertData).select().single();
     if (error) throw error;
     res.status(201).json({ message: 'Video added', video: data });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
