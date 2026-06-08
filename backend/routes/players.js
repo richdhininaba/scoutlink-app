@@ -26,6 +26,15 @@ const BUILD_RANGES = {
 
 router.get('/height-ranges', (_, res) => res.json(HEIGHT_RANGES));
 router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
+// Count active players
+router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
+  try {
+    const { count, error } = await supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    if (error) throw error;
+    res.json({ count: count || 0 });
+  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
 
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
