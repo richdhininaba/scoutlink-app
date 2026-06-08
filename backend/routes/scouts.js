@@ -172,6 +172,13 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
     const scored = (players||[]).map(p => { const r = calcFullCompatibility(p, scoutTeam); return { ...p, compatibilityScore: r.score, compatibilityBreakdown: r.breakdown }; });
     scored.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
     let filtered = scored;
+    
+    // Filter by age groups if set
+    if (prefs.ageGroups && prefs.ageGroups.length) {
+      const ag = prefs.ageGroups;
+      const agFiltered = filtered.filter(p => !p.age_group || ag.includes(p.age_group));
+      if (agFiltered.length > 0) filtered = agFiltered;
+    }
     if (prefs.preferredPositions && prefs.preferredPositions.length) {
       const pp = prefs.preferredPositions.map(p => p.toUpperCase());
       const pf = scored.filter(p => { const pos = Array.isArray(p.positions) ? p.positions : [p.specific_position||p.primary_position||'']; return pos.some(x => pp.includes(String(x).toUpperCase())); });
@@ -243,7 +250,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
 });
 
 
-// ─── NOMINATION RESPONSE ─────────────────────────────────────────────────
+// âââ NOMINATION RESPONSE âââââââââââââââââââââââââââââââââââââââââââââââââ
 router.post('/nomination-response', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { nominationId, response } = req.body;
@@ -254,7 +261,7 @@ router.post('/nomination-response', requireAuth, requireRole('Scout'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── SHOWCASE ATTENDANCE ─────────────────────────────────────────────────
+// âââ SHOWCASE ATTENDANCE âââââââââââââââââââââââââââââââââââââââââââââââââ
 router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -271,7 +278,7 @@ router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── SHOWCASE CANCEL ─────────────────────────────────────────────────────
+// âââ SHOWCASE CANCEL âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -288,7 +295,7 @@ router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── SHOWCASE RESPONSE (player notification accept/decline) ──────────────
+// âââ SHOWCASE RESPONSE (player notification accept/decline) ââââââââââââââ
 router.post('/showcase-response', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId, playerId, response } = req.body;
