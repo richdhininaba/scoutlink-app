@@ -52,7 +52,6 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       title,
       video_url: videoUrl,
       category: category || videoType || 'Highlight',
-      description: description || null
     };
 
     console.log('[Videos POST] inserting:', JSON.stringify(insertData));
