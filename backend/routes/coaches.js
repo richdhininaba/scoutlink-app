@@ -14,7 +14,7 @@ const { data: coach } = await supabase.from('coaches').select('id,team_name,team
 if (!coach) return res.status(404).json({ error: 'Coach not found' });
 
 let q = supabase.from('players')
-.select('id,first_name,last_name,age,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config')
+.select('id,first_name,last_name,age,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config,appearances,goals,assists,clean_sheets,yellow_cards,red_cards')
 .eq('is_active', true)
 .order('last_name');
 
