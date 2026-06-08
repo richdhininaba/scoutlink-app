@@ -9,13 +9,13 @@
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Settings</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="topbar"><span class="topbar-title">Settings</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
 <div id="toast" style="display:none;position:fixed;top:20px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)"></div>
 <div style="max-width:700px;margin:0 auto">
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ð Change Password</h3></div>
+<div class="table-header"><h3>&times;°ÂÂÂ Change Password</h3></div>
 <div style="padding:0 20px 20px">
 <div style="margin-bottom:14px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
 <div style="margin-bottom:16px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
@@ -23,7 +23,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ð Notification Preferences</h3></div>
+<div class="table-header"><h3>&times;°ÂÂÂ Notification Preferences</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n1" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">Email Notifications</div><div style="font-size:12px;color:#546E7A">Receive admin updates via email</div></div></div>
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n2" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">New Registrations</div><div style="font-size:12px;color:#546E7A">Alert when new registrations are submitted</div></div></div>
@@ -32,7 +32,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>âï¸ Platform Settings</h3></div>
+<div class="table-header"><h3>&times;¢ÂÂ&times;¯Â¸Â Platform Settings</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;gap:16px;flex-wrap:wrap">
 <div style="flex:1;min-width:200px;margin-bottom:14px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Default Player Rating Scale</label><select id="ratingScale" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px"><option>0-10</option></select></div>
@@ -42,7 +42,7 @@
 </div></div>
 
 <div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
-<div class="table-header"><h3 style="color:#EF5350">â ï¸ Danger Zone</h3></div>
+<div class="table-header"><h3 style="color:#EF5350">&times;¢ÂÂ &times;¯Â¸Â Danger Zone</h3></div>
 <div style="padding:0 20px 20px">
 <p style="color:#546E7A;margin-bottom:16px;font-size:14px">These actions are permanent and affect all platform data.</p>
 <button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="showToast('Contact Stratex Engineering to reset platform data.','error')">Reset Platform Data</button>
@@ -50,22 +50,23 @@
 
 </div></div></div></div>
 
+<script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <style>.tgl{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}.tgl input{opacity:0;width:0;height:0}.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#2d3f55;border-radius:24px;transition:.3s}.tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#546E7A;border-radius:50%;transition:.3s}input:checked+.tgl-slider{background:#5C6BC0}input:checked+.tgl-slider:before{transform:translateX(20px);background:#fff}</style>
 <script>
 var STRATEX_NAV = [
-{label:'🏠 Dashboard',href:'stratex-dashboard.html'},
-{label:'📋 Registrations',href:'stratex-registrations.html'},
-{label:'👥 Users',href:'stratex-users.html'},
-{label:'⚽ Players',href:'stratex-players.html'},
-{label:'🔍 Scouts',href:'stratex-scouts.html'},
-{label:'🏋️ Coaches',href:'stratex-coaches.html'},
-{label:'🏆 Scout Teams',href:'stratex-scout-teams.html'},
-{label:'🏫 School Teams',href:'stratex-school-teams.html'},
-{label:'🎖️ Award Nominations',href:'stratex-award-nominations.html'},
-{label:'🎪 Showcase Events',href:'stratex-showcase-events.html'},
-{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-{label:'⚙️ Settings',href:'stratex-settings.html'}
+{label:'ð  Dashboard',href:'stratex-dashboard.html'},
+{label:'ð Registrations',href:'stratex-registrations.html'},
+{label:'ð¥ Users',href:'stratex-users.html'},
+{label:'â½ Players',href:'stratex-players.html'},
+{label:'ð Scouts',href:'stratex-scouts.html'},
+{label:'ðï¸ Coaches',href:'stratex-coaches.html'},
+{label:'ð Scout Teams',href:'stratex-scout-teams.html'},
+{label:'ð« School Teams',href:'stratex-school-teams.html'},
+{label:'ðï¸ Award Nominations',href:'stratex-award-nominations.html'},
+{label:'ðª Showcase Events',href:'stratex-showcase-events.html'},
+{label:'ð Notifications',href:'#',action:'toggleNotifPanel'},
+{label:'âï¸ Settings',href:'stratex-settings.html'}
 ];
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=STRATEX_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Stratex Admin</div></div></div>';}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},4000);}
