@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Profile - ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">My Profile</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+<div class="table-card" style="max-width:600px">
+  <div class="table-header"><h3>My Profile</h3></div>
+  <div id="profileEditContent" style="padding:20px"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+<script>
+async function loadPage() {
+  var u = Auth.user;
+  if (!u) return;
+  try {
+    var d = await api('GET', '/api/players/' + u.id);
+    var p = d.player;
+    var el = document.getElementById('profileEditContent');
+    el.innerHTML = 
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+      '<div class="form-group"><label>First Name</label><input type="text" id="pFirst" value="'+p.first_name+'" readonly style="opacity:0.6"></div>' +
+      '<div class="form-group"><label>Last Name</label><input type="text" id="pLast" value="'+p.last_name+'" readonly style="opacity:0.6"></div>' +
+      '<div class="form-group"><label>Age</label><div class="kpi-value green">'+p.age+'</div></div>' +
+      '<div class="form-group"><label>Position</label><div style="font-weight:600">'+(p.specific_position||p.primary_position||'--')+'</div></div>' +
+      '<div class="form-group"><label>Team</label><div style="font-weight:600">'+(p.team_name||'--')+'</div></div>' +
+      '<div class="form-group"><label>Foot</label><div style="font-weight:600">'+(p.foot||'--')+'</div></div>' +
+      '</div>' +
+      '<div style="margin-top:20px;padding:16px;background:rgba(0,230,118,0.08);border-radius:8px;border:1px solid rgba(0,230,118,0.2)">' +
+        '<div style="font-weight:700;margin-bottom:8px">Your Stats</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">' +
+          '<div><div class="kpi-value green">'+Math.round(p.overall_rating||0)+'</div><div style="font-size:12px;color:#546E7A">Overall</div></div>' +
+          '<div><div class="kpi-value">'+formatValue(p.transfer_value||0)+'</div><div style="font-size:12px;color:#546E7A">Est. Value</div></div>' +
+          '<div><div class="kpi-value">'+( p.goals||0)+'</div><div style="font-size:12px;color:#546E7A">Goals</div></div>' +
+          '<div><div class="kpi-value">'+( p.assists||0)+'</div><div style="font-size:12px;color:#546E7A">Assists</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<p style="margin-top:16px;color:#546E7A;font-size:13px">Profile data is managed by your coach. Contact them to update your details.</p>';
+  } catch(e) {
+    document.getElementById('profileEditContent').innerHTML = '<div style="color:#546E7A">Unable to load profile data.</div>';
+  }
+}
+</script></div>
+</div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
+<script src="../js/main.js"></script>
+<script>
+var PLAYER_NAV=[{label:'Dashboard',href:'player-dashboard.html'},{label:'My Profile',href:'player-profile-edit.html'},{label:'Video Reels',href:'player-video-reels.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'player-settings.html'}];
+function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=PLAYER_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';updateNotifBadge();}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+</script>
+</body></html>
