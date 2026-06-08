@@ -6,3 +6,8 @@
 - Pipeline: VERIFIED
 - Team setup checkboxes: VERIFIED
 - Compare players recommendation: VERIFIED
+
+## Session 3 — June 8, 2026
+- fix-scout-interest-upsert-with-check-decrement (687749c)
+- fix-player-profile-predictions-correct-endpoint (af32067)
+- fix-player-profile-complete-rewrite-predictions-fixtures-interest (f6090ec)
