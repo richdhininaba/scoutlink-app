@@ -6,15 +6,15 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">🏆 Player Rankings</span>
+<span class="topbar-title">ð Player Rankings</span>
 <div class="topbar-right">
-<button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="notif-btn" onclick="toggleNotifPanel()">ð<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
 <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
 </div>
 </div>
@@ -23,8 +23,8 @@
 <div class="table-card">
 <div class="table-header"><div><h3>Player Rankings</h3><p style="font-size:12px;color:#546E7A">Top players by compatibility with your team profile</p></div><a href="scout-setup.html" class="btn btn-sm btn-outline">Edit Team Setup</a></div>
 <div style="text-align:center;padding:60px 20px;color:#546E7A">
-<div style="font-size:48px;margin-bottom:16px">🏆</div>
-<h3 style="color:#B0BEC5;margin-bottom:8px">Rankings — Coming Soon</h3>
+<div style="font-size:48px;margin-bottom:16px">ð</div>
+<h3 style="color:#B0BEC5;margin-bottom:8px">Rankings â Coming Soon</h3>
 <p style="margin-bottom:20px">Full league and academy rankings powered by the FA/UEFA compatibility engine are coming soon.</p>
 <a href="scout-dashboard.html" class="btn btn-primary">Back to Dashboard</a>
 </div>
@@ -35,16 +35,16 @@
 <script src="../js/main.js"></script>
 <script>
 var SCOUT_NAV=[
-  {icon:'🏠',label:'Dashboard',href:'scout-dashboard.html'},
-  {icon:'🔍',label:'Player Search',href:'player-search.html'},
-  {icon:'📋',label:'My Pipeline',href:'scout-pipeline.html'},
-  {icon:'🏆',label:'Rankings',href:'scout-rankings.html'},
-  {icon:'📅',label:'Fixtures',href:'scout-fixtures.html'},
-  {icon:'🔮',label:'Predictions',href:'scout-predictions.html'},
-  {icon:'📊',label:'Exports',href:'scout-exports.html'},
-  {icon:'⚙️',label:'My Team Setup',href:'scout-setup.html'},
-  {icon:'🔔',label:'Notifications',href:'scout-notifications.html'},
-  {icon:'👤',label:'Settings',href:'scout-settings.html'},
+  {icon:'ð ',label:'Dashboard',href:'scout-dashboard.html'},
+  {icon:'ð',label:'Player Search',href:'player-search.html'},
+  {icon:'ð',label:'My Pipeline',href:'scout-pipeline.html'},
+  {icon:'ð',label:'Rankings',href:'scout-rankings.html'},
+  {icon:'ð',label:'Fixtures',href:'scout-fixtures.html'},
+  {icon:'ð®',label:'Predictions',href:'scout-predictions.html'},
+  {icon:'ð',label:'Exports',href:'scout-exports.html'},
+  {icon:'âï¸',label:'My Team Setup',href:'scout-setup.html'},
+  {icon:'ð',label:'Notifications',href:'scout-events.html'},{icon:'&#127914;',label:'Events',href:'scout-events.html'},{icon:'&#128276;',label:'Notifications',href:'scout-notifications.html'},
+  {icon:'ð¤',label:'Settings',href:'scout-settings.html'},
 ];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
