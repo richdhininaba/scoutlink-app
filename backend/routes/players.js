@@ -241,6 +241,18 @@ router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req
 });
 
 
+
+// PATCH avatar config (player)
+router.patch('/:id/avatar', requireAuth, requireRole('Player','Coach','Stratex'), async (req, res) => {
+try {
+if (req.user.accountType === 'Player' && req.user.id !== req.params.id) return res.status(403).json({ error: 'Forbidden' });
+const { avatar_config } = req.body;
+const { error } = await supabase.from('players').update({ avatar_config }).eq('id', req.params.id);
+if (error) throw error;
+res.json({ message: 'Avatar updated' });
+} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
 // PATCH ratings (Stratex admin only)
 router.patch('/:id/ratings', requireAuth, requireRole('Stratex','Coach'), async (req, res) => {
 try {
