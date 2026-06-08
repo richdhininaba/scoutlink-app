@@ -6,15 +6,15 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Ã¢ÂÂ¡ Scout<span style="color:#00E676">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">ð Notifications</span>
+<span class="topbar-title">Ã°ÂÂÂ Notifications</span>
 <div class="topbar-right">
-<button class="notif-btn" onclick="toggleNotifPanel()">ð<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="notif-btn" onclick="toggleNotifPanel()">Ã°ÂÂÂ<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
 <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
 </div>
 </div>
@@ -31,7 +31,7 @@ var d=await api('GET','/api/notifications?limit=50');
 var rows=d.data||[];
 if(!rows.length){document.getElementById('notifContent').innerHTML='<div style="text-align:center;padding:40px;color:#546E7A">No notifications yet.</div>';return;}
 document.getElementById('notifContent').innerHTML='<div style="padding:8px">'+rows.map(function(n){
-var icon=n.notification_type==='scout_interest'?'â­':n.notification_type==='system'?'â¹ï¸':'ð';
+var icon=n.notification_type==='scout_interest'?'Ã¢Â­Â':n.notification_type==='system'?'Ã¢ÂÂ¹Ã¯Â¸Â':'Ã°ÂÂÂ';
 return '<div class="notif-item'+(n.is_read?'':' unread')+'" style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="markRead(\''+n.id+'\')">'+
 '<div style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:20px">'+icon+'</span><div style="flex:1"><div style="font-weight:700;color:#E2E8F0;margin-bottom:2px">'+n.title+'</div><div style="font-size:13px;color:#B0BEC5;margin-bottom:4px">'+n.body+'</div><div style="font-size:11px;color:#546E7A">'+relTime(n.created_at)+'</div></div>'+(n.is_read?'':'<div style="width:8px;height:8px;border-radius:50%;background:#00E676;margin-top:6px;flex-shrink:0"></div>')+'</div></div>';
 }).join('')+'</div>';
@@ -47,16 +47,16 @@ document.addEventListener('DOMContentLoaded',loadNotifications);
 <script src="../js/main.js"></script>
 <script>
 var SCOUT_NAV=[
-  {icon:'ð ',label:'Dashboard',href:'scout-dashboard.html'},
-  {icon:'ð',label:'Player Search',href:'player-search.html'},
-  {icon:'ð',label:'My Pipeline',href:'scout-pipeline.html'},
-  {icon:'ð',label:'Rankings',href:'scout-rankings.html'},
-  {icon:'ð',label:'Fixtures',href:'scout-fixtures.html'},
-  {icon:'ð®',label:'Predictions',href:'scout-predictions.html'},
-  {icon:'ð',label:'Exports',href:'scout-exports.html'},
-  {icon:'âï¸',label:'My Team Setup',href:'scout-setup.html'},
-  {icon:'ð',label:'Notifications',href:'scout-notifications.html'},
-  {icon:'ð¤',label:'Settings',href:'scout-settings.html'},
+  {icon:'Ã°ÂÂÂ ',label:'Dashboard',href:'scout-dashboard.html'},
+  {icon:'Ã°ÂÂÂ',label:'Player Search',href:'player-search.html'},
+  {icon:'Ã°ÂÂÂ',label:'My Pipeline',href:'scout-pipeline.html'},
+  {icon:'Ã°ÂÂÂ',label:'Rankings',href:'scout-rankings.html'},
+  {icon:'Ã°ÂÂÂ',label:'Fixtures',href:'scout-fixtures.html'},
+  {icon:'Ã°ÂÂÂ®',label:'Predictions',href:'scout-predictions.html'},
+  {icon:'Ã°ÂÂÂ',label:'Exports',href:'scout-exports.html'},
+  {icon:'Ã¢ÂÂÃ¯Â¸Â',label:'My Team Setup',href:'scout-setup.html'},
+  {icon:'Ã°ÂÂÂ',label:'Notifications',href:'scout-notifications.html'},
+  {icon:'Ã°ÂÂÂ¤',label:'Settings',href:'scout-settings.html'},
 ];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
