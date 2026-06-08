@@ -1,63 +1,111 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>My Profile – ScoutLink</title>
+<title>My Profile - ScoutLink</title>
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body>
 <div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">My Profile</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content" id="profileContent"><div class="loading-state"><div class="spinner"></div></div></div>
+  <div class="topbar">
+    <span class="topbar-title">My Profile</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content" id="profileContent"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
 </div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"></div>
+</div>
 <script src="../js/main.js"></script>
 <script>
-const NAV_ITEMS=[{icon:'🏠',label:'My Profile',href:'player-dashboard.html'},{icon:'🎥',label:'My Videos',href:'player-videos.html'},{icon:'📊',label:'My Stats',href:'player-stats.html'},{icon:'🔔',label:'Notifications',href:'#',action:'toggleNotifPanel'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}const nav=document.getElementById('sidebarNav');const cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=NAV_ITEMS.map(i=>'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>').join('');const u=Auth.user;const uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',async()=>{
+var PLAYER_NAV = [
+  {label:'Dashboard', href:'player-dashboard.html'},
+  {label:'My Profile', href:'player-profile-edit.html'},
+  {label:'Video Reels', href:'player-video-reels.html'},
+  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'Settings', href:'player-settings.html'}
+];
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Player') { window.location.href = 'login.html'; return; }
+  var nav = document.getElementById('sidebarNav');
+  var cur = window.location.pathname.split('/').pop();
+  if (nav) nav.innerHTML = PLAYER_NAV.map(function(i) {
+    return '<a class="nav-item' + (cur === i.href ? ' active' : '') + '" href="' + i.href + '" ' +
+      (i.action ? 'onclick="' + i.action + '();return false"' : '') + '>' + i.label + '</a>';
+  }).join('');
+  var u = Auth.user;
+  var uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Player</div></div></div>';
+  updateNotifBadge();
+}
+function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+
+document.addEventListener('DOMContentLoaded', async function() {
   initNav();
-  const u=Auth.user;if(!u){window.location.href='login.html';return;}
-  try{
-    const d=await api('GET','/api/players/'+u.id);const p=d.player;const m=d.recentMatches||[];const v=d.videos||[];
-    const el=document.getElementById('profileContent');
-    el.innerHTML='<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">'+
-      '<div>'+
-        '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">'+
-          '<div style="width:80px;height:80px;border-radius:50%;background:'+posGroupColor(p.position_group)+';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">'+initials(p.first_name,p.last_name)+'</div>'+
-          '<div style="font-size:22px;font-weight:800">'+p.first_name+' '+p.last_name+'</div>'+
-          '<div style="color:#546E7A;font-size:14px;margin:6px 0">'+p.specific_position+' · '+p.position_group+'</div>'+
-          '<div style="font-size:44px;font-weight:900;color:#00E676;margin:10px 0">'+Math.round(p.overall_rating||0)+'</div>'+
-          '<div style="color:#546E7A;font-size:12px">Overall Rating</div>'+
-        '</div>'+
-        '<div class="kpi-card" style="margin-bottom:16px">'+
-          '<div class="kpi-label">Physical</div>'+
-          '<div style="display:flex;justify-content:space-between;margin-top:10px"><div style="text-align:center"><div style="font-size:13px;font-weight:700">'+p.height_category+'</div><div style="font-size:11px;color:#546E7A">Height</div></div><div style="text-align:center"><div style="font-size:13px;font-weight:700">'+p.build_category+'</div><div style="font-size:11px;color:#546E7A">Build</div></div><div style="text-align:center"><div style="font-size:13px;font-weight:700">'+p.foot+'</div><div style="font-size:11px;color:#546E7A">Foot</div></div></div>'+
-          '<div style="font-size:11px;color:#546E7A;margin-top:10px;background:rgba(0,230,118,0.06);border-radius:6px;padding:6px 8px">Height: '+p.height_range_cm+' · Weight: '+p.weight_range_kg+'</div>'+
-        '</div>'+
-        '<div class="kpi-card">'+
-          '<div class="kpi-label">Predicted Value</div>'+
-          '<div style="font-size:26px;font-weight:800;color:#00E676;margin:8px 0">'+formatValue(p.transfer_value||0)+'</div>'+
-          '<div style="color:#546E7A;font-size:13px">Predicted Salary: '+formatSalary(p.predicted_salary_weekly||0)+'</div>'+
-        '</div>'+
-      '</div>'+
-      '<div>'+
-        '<div class="kpi-grid" style="margin-bottom:16px">'+
-          '<div class="kpi-card"><div class="kpi-label">Appearances</div><div class="kpi-value">'+p.appearances+'</div></div>'+
-          '<div class="kpi-card"><div class="kpi-label">Goals</div><div class="kpi-value green">'+p.goals+'</div></div>'+
-          '<div class="kpi-card"><div class="kpi-label">Assists</div><div class="kpi-value">'+p.assists+'</div></div>'+
-          '<div class="kpi-card"><div class="kpi-label">Clean Sheets</div><div class="kpi-value">'+p.clean_sheets+'</div></div>'+
-        '</div>'+
-        '<div class="table-card" style="margin-bottom:16px"><div class="table-header"><h3>Attribute Ratings</h3></div><div style="padding:20px">'+
-          (['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure'].map(a=>'<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">'+a.charAt(0).toUpperCase()+a.slice(1)+'</span><span class="attr-val" style="color:'+ratingColor(p[a]||0)+'">'+Math.round(p[a]||0)+'</span></div><div class="attr-bar"><div class="attr-bar-fill'+(p[a]>=80?'':p[a]>=60?' amber':' red')+'" style="width:'+Math.round(p[a]||0)+'%"></div></div></div>').join(''))+
-        '</div></div>'+
-        (v.length?'<div class="table-card"><div class="table-header"><h3>🎥 My Videos</h3><a href="player-videos.html" class="btn btn-sm btn-outline">Manage Videos</a></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">'+v.map(vid=>'<div style="background:var(--bg2);border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">'+vid.title+'</div><a href="'+vid.url+'" target="_blank" class="btn btn-sm btn-outline">Watch ↗</a></div>').join('')+'</div></div>':'<div class="table-card"><div class="table-header"><h3>🎥 No Videos Yet</h3><a href="player-videos.html" class="btn btn-sm btn-primary">Add Video</a></div></div>')+
-      '</div>'+
+  var u = Auth.user;
+  if (!u) { window.location.href = 'login.html'; return; }
+  try {
+    var d = await api('GET', '/api/players/' + u.id);
+    var p = d.player;
+    var v = d.videos || [];
+    var el = document.getElementById('profileContent');
+    el.innerHTML = '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
+      '<div>' +
+        '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">' +
+          '<div style="width:80px;height:80px;border-radius:50%;background:' + posGroupColor(p.position_group) + ';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">' + initials(p.first_name, p.last_name) + '</div>' +
+          '<div style="font-size:22px;font-weight:800">' + p.first_name + ' ' + p.last_name + '</div>' +
+          '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' · ' + (p.position_group || '') + '</div>' +
+          '<div style="font-size:44px;font-weight:900;color:#00E676;margin:10px 0">' + Math.round(p.overall_rating || 0) + '</div>' +
+          '<div style="color:#546E7A;font-size:12px">Overall Rating</div>' +
+        '</div>' +
+        '<div class="kpi-card" style="margin-bottom:16px">' +
+          '<div class="kpi-label">Physical</div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:10px">' +
+            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.height_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Height</div></div>' +
+            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.build_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Build</div></div>' +
+            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.foot || '--') + '</div><div style="font-size:11px;color:#546E7A">Foot</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kpi-card">' +
+          '<div class="kpi-label">Predicted Value</div>' +
+          '<div style="font-size:26px;font-weight:800;color:#00E676;margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
+          '<div style="color:#546E7A;font-size:13px">Predicted Salary: ' + formatSalary(p.predicted_salary_weekly || 0) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="kpi-grid" style="margin-bottom:16px">' +
+          '<div class="kpi-card"><div class="kpi-label">Appearances</div><div class="kpi-value">' + (p.appearances || 0) + '</div></div>' +
+          '<div class="kpi-card"><div class="kpi-label">Goals</div><div class="kpi-value green">' + (p.goals || 0) + '</div></div>' +
+          '<div class="kpi-card"><div class="kpi-label">Assists</div><div class="kpi-value">' + (p.assists || 0) + '</div></div>' +
+          '<div class="kpi-card"><div class="kpi-label">Clean Sheets</div><div class="kpi-value">' + (p.clean_sheets || 0) + '</div></div>' +
+        '</div>' +
+        '<div class="table-card" style="margin-bottom:16px"><div class="table-header"><h3>Attribute Ratings</h3></div><div style="padding:20px">' +
+          ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure'].map(function(a) {
+            var val = p[a] || 0;
+            return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + a.charAt(0).toUpperCase() + a.slice(1) + '</span><span class="attr-val" style="color:' + ratingColor(val) + '">' + Math.round(val) + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + (val >= 80 ? '' : val >= 60 ? ' amber' : ' red') + '" style="width:' + Math.round(val) + '%"></div></div></div>';
+          }).join('') +
+        '</div></div>' +
+        (v.length ?
+          '<div class="table-card"><div class="table-header"><h3>My Videos</h3><a href="player-video-reels.html" class="btn btn-sm btn-outline">Manage Videos</a></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
+            v.map(function(vid) { return '<div style="background:var(--bg2);border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">' + vid.title + '</div><a href="' + vid.url + '" target="_blank" class="btn btn-sm btn-outline">Watch</a></div>'; }).join('') +
+          '</div></div>' :
+          '<div class="table-card"><div class="table-header"><h3>No Videos Yet</h3><a href="player-video-reels.html" class="btn btn-sm btn-primary">Add Video</a></div></div>') +
+      '</div>' +
     '</div>';
-  } catch(e){console.error(e);}
+  } catch(e) {
+    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Unable to load profile data.</p></div>';
+    console.error(e);
+  }
 });
 </script>
 </body></html>
