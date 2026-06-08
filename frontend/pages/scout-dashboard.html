@@ -5,50 +5,149 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body>
 <div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title" id="pageTitle">Scout Dashboard</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div id="prefsBanner" style="display:none;background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);border-radius:12px;padding:16px 20px;margin-bottom:20px;align-items:center;justify-content:space-between">
-<div><b>Set your player criteria</b><p style="font-size:13px;color:#B0BEC5;margin-top:4px">Tell us what kind of player you are looking for to get personalised matches.</p></div>
-<a href="scout-preferences.html" class="btn btn-primary">Set Preferences</a>
+  <div class="topbar">
+    <span class="topbar-title" id="pageTitle">Scout Dashboard</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div id="prefsBanner" style="display:none;background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.3);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><b>Set your player criteria</b><p style="font-size:13px;color:#B0BEC5;margin-top:4px">Tell us what kind of player you are looking for to get personalised matches.</p></div>
+        <a href="scout-preferences.html" class="btn btn-primary">Set Preferences</a>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Players in Database</div><div class="kpi-value green" id="kpiTotal">-</div><div class="kpi-sub">Total available</div></div>
+      <div class="kpi-card"><div class="kpi-label">My Pipeline</div><div class="kpi-value" id="kpiPipeline">-</div><div class="kpi-sub">Players tracked</div></div>
+      <div class="kpi-card"><div class="kpi-label">Top Player Rating</div><div class="kpi-value green" id="kpiTopScore">-</div><div class="kpi-sub">Best overall</div></div>
+      <div class="kpi-card"><div class="kpi-label">Preferences</div><div class="kpi-value" id="kpiPrefs">-</div></div>
+    </div>
+    <div class="table-card" style="margin-bottom:20px">
+      <div class="table-header"><h3>Top Recommended Players</h3><a href="player-search.html" class="btn btn-sm btn-outline">View All</a></div>
+      <div id="recommendedPlayers"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><h3>My Recent Pipeline</h3><a href="scout-pipeline.html" class="btn btn-sm btn-outline">Full Pipeline</a></div>
+      <div id="pipelinePreview"><div class="loading-state"><div class="spinner"></div></div></div>
+    </div>
+  </div>
 </div>
-<div class="kpi-grid">
-<div class="kpi-card"><div class="kpi-label">Players in Database</div><div class="kpi-value green" id="kpiWatched">-</div><div class="kpi-sub">Total available</div></div>
-<div class="kpi-card"><div class="kpi-label">My Pipeline</div><div class="kpi-value" id="kpiShortlisted">-</div><div class="kpi-sub">Players tracked</div></div>
-<div class="kpi-card"><div class="kpi-label">Top Player Rating</div><div class="kpi-value green" id="kpiTopScore">-</div><div class="kpi-sub">Best overall</div></div>
-<div class="kpi-card"><div class="kpi-label">Preferences</div><div class="kpi-value" id="kpiPrefs">-</div></div>
 </div>
-<div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>Top Recommended Players</h3><a href="player-search.html" class="btn btn-sm btn-outline">View All</a></div>
-<div id="recommendedPlayers"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
-<div class="table-card">
-<div class="table-header"><h3>My Recent Pipeline</h3><a href="recruitment-pipeline.html" class="btn btn-sm btn-outline">Full Pipeline</a></div>
-<div id="pipelinePreview"><div class="loading-state"><div class="spinner"></div></div></div>
-</div>
-</div>
-</div>
-</div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button></div><div class="notif-list" id="notifList"><div class="loading-state"><div class="spinner"></div></div></div></div>
 <script src="../js/main.js"></script>
 <script>
-var NAV_ITEMS = {
-Scout:[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'recruitment-pipeline.html'},{label:'Rankings',href:'player-rankings.html'},{label:'Compare Players',href:'compare-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'My Preferences',href:'scout-preferences.html'}],
-Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'player-search.html'},{label:'Add Player',href:'add-player.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}],
-Player:[{label:'My Profile',href:'player-dashboard.html'},{label:'My Videos',href:'player-videos.html'},{label:'My Stats',href:'player-stats.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}],
-Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'All Players',href:'player-search.html'},{label:'Add Users',href:'stratex-users.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]
-};
-function initNav(){if(!Auth.isLoggedIn()){window.location.href='login.html';return;}var u=Auth.user,t=Auth.type;var items=NAV_ITEMS[t]||[];var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');loadNotifs();}
-async function loadNotifs(){try{var d=await api('GET','/api/notifications?limit=20');var list=document.getElementById('notifList');if(!d.data||!d.data.length){list.innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">No notifications yet</div>';return;}list.innerHTML=d.data.map(function(n){return'<div class="notif-item'+(n.is_read?'':' unread')+'" onclick="markRead(''+n.id+'')"><div class="notif-title">'+n.title+'</div><div class="notif-body">'+n.body+'</div><div class="notif-time">'+relTime(n.created_at)+'</div></div>';}).join('');}catch(e){}}
-async function markRead(id){try{await api('PATCH','/api/notifications/'+id+'/read');updateNotifBadge();loadNotifs();}catch(e){}}
-document.addEventListener('DOMContentLoaded',function(){initNav();loadDashboard();});
-async function loadDashboard(){
-try{var pl=await api('GET','/api/players?limit=6');var players=pl.data||[];document.getElementById('kpiWatched').textContent=pl.total||0;document.getElementById('kpiTopScore').textContent=players[0]?Math.round(players[0].overall_rating||0):'--';if(players.length){var grid=document.createElement('div');grid.className='player-grid';grid.style.padding='20px';grid.innerHTML=players.map(function(p){return'<div class="player-card" onclick="location.href='player-profile.html?id='+p.id+''"><div class="player-card-top"><div class="player-avatar-lg" style="background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><div><div class="player-card-name">'+p.first_name+' '+p.last_name+'</div><div class="player-card-meta">'+p.specific_position+' Age '+p.age+'</div></div></div><div class="player-card-ratings"><div class="rating-pill"><div class="r-val" style="color:'+ratingColor(p.overall_rating)+'">'+Math.round(p.overall_rating||0)+'</div><div class="r-lab">Overall</div></div><div class="rating-pill"><div class="r-val">'+p.age+'</div><div class="r-lab">Age</div></div></div><div class="player-card-footer"><div class="transfer-val">'+formatValue(p.transfer_value||0)+'</div></div></div>';}).join('');document.getElementById('recommendedPlayers').innerHTML='';document.getElementById('recommendedPlayers').appendChild(grid);}else{document.getElementById('recommendedPlayers').innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">No players in the database yet. <a href="player-search.html" style="color:#00E676">Search players</a></div>';}}catch(e){document.getElementById('recommendedPlayers').innerHTML='<div style="padding:16px;color:#546E7A">Unable to load players</div>';console.error(e);}
-try{var pr=await api('GET','/api/scouts/preferences').catch(function(){return{preferencesSet:false};});if(!pr.preferencesSet){document.getElementById('prefsBanner').style.display='flex';document.getElementById('kpiPrefs').textContent='Not set';}else{document.getElementById('kpiPrefs').textContent='Set';}}catch(e){document.getElementById('kpiPrefs').textContent='--';}
-try{var pipe=await api('GET','/api/scouts/pipeline?limit=5').catch(function(){return{data:[]};});var pipeData=pipe.data||[];document.getElementById('kpiShortlisted').textContent=pipe.total||pipeData.length||0;if(pipeData.length){document.getElementById('pipelinePreview').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Stage</th><th>Value</th></tr></thead><tbody>'+pipeData.map(function(p){return'<tr><td><b>'+(p.players?p.players.first_name+' '+p.players.last_name:'Unknown')+'</b></td><td>'+(p.players?p.players.primary_position:'--')+'</td><td style="color:#00E676;font-weight:700">'+Math.round(p.players?p.players.overall_rating||0:0)+'</td><td><span class="badge badge-blue">'+p.stage+'</span></td><td>'+formatValue(p.players?p.players.transfer_value||0:0)+'</td></tr>';}).join('')+'</tbody></table>';}else{document.getElementById('pipelinePreview').innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">No players in pipeline yet. <a href="player-search.html" style="color:#00E676">Search players</a></div>';}}catch(e){document.getElementById('pipelinePreview').innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">No pipeline data yet</div>';}
+var SCOUT_NAV = [
+  {label:'Dashboard', href:'scout-dashboard.html'},
+  {label:'Player Search', href:'player-search.html'},
+  {label:'My Pipeline', href:'scout-pipeline.html'},
+  {label:'Rankings', href:'scout-rankings.html'},
+  {label:'Fixtures', href:'scout-fixtures.html'},
+  {label:'Predictions', href:'scout-predictions.html'},
+  {label:'Exports', href:'scout-exports.html'},
+  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'Settings', href:'scout-settings.html'}
+];
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  var nav = document.getElementById('sidebarNav');
+  var cur = window.location.pathname.split('/').pop();
+  if (nav) nav.innerHTML = SCOUT_NAV.map(function(i) {
+    return '<a class="nav-item' + (cur === i.href ? ' active' : '') + '" href="' + i.href + '" ' +
+      (i.action ? 'onclick="' + i.action + '();return false"' : '') + '>' + i.label + '</a>';
+  }).join('');
+  var u = Auth.user;
+  var uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
+function toggleNotifPanel() {
+  document.getElementById('notifPanel').classList.toggle('open');
+  loadNotifs();
+}
+async function loadNotifs() {
+  try {
+    var d = await api('GET', '/api/notifications?limit=20');
+    var list = document.getElementById('notifList');
+    if (!d.data || !d.data.length) { list.innerHTML = '<div style="text-align:center;padding:32px;color:#546E7A">No notifications yet</div>'; return; }
+    list.innerHTML = d.data.map(function(n) {
+      return '<div class="notif-item' + (n.is_read ? '' : ' unread') + '" onclick="markRead(\'' + n.id + '\')">' +
+        '<div class="notif-title">' + n.title + '</div>' +
+        '<div class="notif-body">' + n.body + '</div>' +
+        '<div class="notif-time">' + relTime(n.created_at) + '</div></div>';
+    }).join('');
+  } catch(e) {}
+}
+async function markRead(id) {
+  try { await api('PATCH', '/api/notifications/' + id + '/read'); updateNotifBadge(); loadNotifs(); } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', function() { initNav(); loadDashboard(); });
+async function loadDashboard() {
+  try {
+    var pl = await api('GET', '/api/players?limit=6&orderBy=overall_rating');
+    var players = pl.data || [];
+    document.getElementById('kpiTotal').textContent = pl.total || 0;
+    document.getElementById('kpiTopScore').textContent = players[0] ? Math.round(players[0].overall_rating || 0) : '--';
+    if (players.length) {
+      var grid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:20px">';
+      grid += players.map(function(p) {
+        return '<div class="player-card" onclick="location.href=\'player-profile.html?id=' + p.id + '\'">'+
+          '<div class="player-card-top"><div class="player-avatar-lg" style="background:' + posGroupColor(p.position_group) + '">' + initials(p.first_name, p.last_name) + '</div>' +
+          '<div><div class="player-card-name">' + p.first_name + ' ' + p.last_name + '</div><div class="player-card-meta">' + (p.specific_position||p.primary_position||'') + ' Age ' + p.age + '</div></div></div>' +
+          '<div class="player-card-ratings"><div class="rating-pill"><div class="r-val" style="color:' + ratingColor(p.overall_rating) + '">' + Math.round(p.overall_rating || 0) + '</div><div class="r-lab">Overall</div></div>' +
+          '<div class="rating-pill"><div class="r-val">' + p.age + '</div><div class="r-lab">Age</div></div></div>' +
+          '<div class="player-card-footer"><div class="transfer-val">' + formatValue(p.transfer_value || 0) + '</div></div></div>';
+      }).join('');
+      grid += '</div>';
+      document.getElementById('recommendedPlayers').innerHTML = grid;
+    } else {
+      document.getElementById('recommendedPlayers').innerHTML = '<div style="text-align:center;padding:32px;color:#546E7A">No players in the database yet.</div>';
+    }
+  } catch(e) {
+    document.getElementById('recommendedPlayers').innerHTML = '<div style="padding:16px;color:#546E7A">Unable to load players</div>';
+    console.error(e);
+  }
+  try {
+    var pr = await api('GET', '/api/scouts/preferences').catch(function() { return {preferencesSet: false}; });
+    if (!pr.preferencesSet) {
+      document.getElementById('prefsBanner').style.display = 'block';
+      document.getElementById('kpiPrefs').textContent = 'Not set';
+    } else {
+      document.getElementById('kpiPrefs').textContent = 'Set';
+    }
+  } catch(e) { document.getElementById('kpiPrefs').textContent = '--'; }
+  try {
+    var pipe = await api('GET', '/api/scouts/pipeline?limit=5').catch(function() { return {data: []}; });
+    var pipeData = pipe.data || [];
+    document.getElementById('kpiPipeline').textContent = pipe.total || pipeData.length || 0;
+    if (pipeData.length) {
+      document.getElementById('pipelinePreview').innerHTML = '<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Stage</th><th>Value</th></tr></thead><tbody>' +
+        pipeData.map(function(p) {
+          var player = p.players || {};
+          return '<tr><td><b>' + (player.first_name || '') + ' ' + (player.last_name || '') + '</b></td>' +
+            '<td>' + (player.specific_position || player.primary_position || '--') + '</td>' +
+            '<td style="color:#00E676;font-weight:700">' + Math.round(player.overall_rating || 0) + '</td>' +
+            '<td><span class="badge badge-blue">' + (p.stage || '--') + '</span></td>' +
+            '<td>' + formatValue(player.transfer_value || 0) + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    } else {
+      document.getElementById('pipelinePreview').innerHTML = '<div style="text-align:center;padding:32px;color:#546E7A">No players in pipeline yet. <a href="player-search.html" style="color:#00E676">Search players</a></div>';
+    }
+  } catch(e) {
+    document.getElementById('pipelinePreview').innerHTML = '<div style="text-align:center;padding:32px;color:#546E7A">No pipeline data yet</div>';
+  }
 }
 </script>
 </body></html>
