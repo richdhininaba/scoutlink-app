@@ -18,7 +18,7 @@ router.get('/', requireAuth, requireRole('Player','Coach','Scout','Stratex'), as
     const { data, error, count } = await q;
     if (error) throw error;
     res.json({ data: data || [], total: count || 0 });
-  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { console.error('[Videos POST]', err.message, err.code, err.details); res.status(500).json({ error: 'Internal server error', detail: err.message }); }
 });
 
 // Add video for a player (coaches can add for their players)
