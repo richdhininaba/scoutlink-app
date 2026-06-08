@@ -5,34 +5,110 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body>
 <div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title" id="coachTitle">Coach Dashboard</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div class="kpi-grid">
-<div class="kpi-card"><div class="kpi-label">My Players</div><div class="kpi-value green" id="kpiPlayers">-</div></div>
-<div class="kpi-card"><div class="kpi-label">Scouts Interested</div><div class="kpi-value" id="kpiInterest">-</div></div>
-<div class="kpi-card"><div class="kpi-label">Top Rated Player</div><div class="kpi-value green" id="kpiTop">-</div></div>
-<div class="kpi-card"><div class="kpi-label">Total Squad Value</div><div class="kpi-value" id="kpiValue">-</div></div>
+  <div class="topbar">
+    <span class="topbar-title" id="coachTitle">Coach Dashboard</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">My Players</div><div class="kpi-value green" id="kpiPlayers">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Scouts Interested</div><div class="kpi-value" id="kpiInterest">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Top Rated Player</div><div class="kpi-value green" id="kpiTop">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Squad Value</div><div class="kpi-value" id="kpiValue">-</div></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>My Squad</h3>
+        <div style="display:flex;gap:8px">
+          <a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk Import</a>
+          <a href="add-player.html" class="btn btn-sm btn-primary">+ Add Player</a>
+        </div>
+      </div>
+      <div id="myPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
+    </div>
+  </div>
 </div>
-<div class="table-card">
-<div class="table-header"><h3>My Squad</h3><div style="display:flex;gap:8px"><a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk Import</a><a href="add-player.html" class="btn btn-sm btn-primary">+ Add Player</a></div></div>
-<div id="myPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"></div>
 </div>
-</div>
-</div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
-var NAV_ITEMS = {Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'player-search.html'},{label:'Add Player',href:'add-player.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}var items=NAV_ITEMS.Coach;var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Coach</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',function(){initNav();var u=Auth.user;if(u)document.getElementById('coachTitle').textContent='Welcome, '+u.firstName;loadCoachData();});
-async function loadCoachData(){
-try{var d=await api('GET','/api/coaches/my-players');var players=d.data||[];document.getElementById('kpiPlayers').textContent=players.length;var top=players.reduce(function(a,p){return(!a||p.overall_rating>a.overall_rating)?p:a;},null);document.getElementById('kpiTop').textContent=top?Math.round(top.overall_rating||0):'--';var totalVal=players.reduce(function(s,p){return s+(p.transfer_value||0);},0);document.getElementById('kpiValue').textContent=formatValue(totalVal);document.getElementById('kpiInterest').textContent='--';if(players.length){document.getElementById('myPlayers').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Height</th><th>Build</th><th>Transfer Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>'+players.map(function(p){return'<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><div><b>'+p.first_name+' '+p.last_name+'</b><div style="font-size:11px;color:#546E7A">'+p.age+' yrs</div></div></div></td><td>'+p.specific_position+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+Math.round(p.overall_rating||0)+'</td><td><span class="badge badge-blue">'+p.height_category+'</span></td><td>'+p.build_category+'</td><td>'+formatValue(p.transfer_value||0)+'</td><td>'+formatSalary(p.predicted_salary_weekly||0)+'</td><td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td></tr>';}).join('')+'</tbody></table>';}else{document.getElementById('myPlayers').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';}}
-catch(e){document.getElementById('kpiPlayers').textContent='0';document.getElementById('kpiTop').textContent='--';document.getElementById('kpiValue').textContent='--';document.getElementById('myPlayers').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';console.error(e);}
+var COACH_NAV = [
+  {label:'Dashboard', href:'coach-dashboard.html'},
+  {label:'My Players', href:'coach-my-players.html'},
+  {label:'Add Players', href:'add-player.html'},
+  {label:'Bulk Add Players', href:'bulk-add-players.html'},
+  {label:'Match Facts', href:'match-facts.html'},
+  {label:'Fixtures', href:'coach-fixtures.html'},
+  {label:'Video Reels', href:'coach-video-reels.html'},
+  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'Settings', href:'coach-settings.html'}
+];
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Coach') { window.location.href = 'login.html'; return; }
+  var nav = document.getElementById('sidebarNav');
+  var cur = window.location.pathname.split('/').pop();
+  if (nav) nav.innerHTML = COACH_NAV.map(function(i) {
+    return '<a class="nav-item' + (cur === i.href ? ' active' : '') + '" href="' + i.href + '" ' +
+      (i.action ? 'onclick="' + i.action + '();return false"' : '') + '>' + i.label + '</a>';
+  }).join('');
+  var u = Auth.user;
+  var uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Coach</div></div></div>';
+  updateNotifBadge();
+}
+function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+document.addEventListener('DOMContentLoaded', function() {
+  initNav();
+  var u = Auth.user;
+  if (u) document.getElementById('coachTitle').textContent = 'Welcome, ' + u.firstName;
+  loadCoachData();
+});
+async function loadCoachData() {
+  try {
+    var d = await api('GET', '/api/coaches/my-players');
+    var players = d.data || [];
+    document.getElementById('kpiPlayers').textContent = players.length;
+    var top = players.reduce(function(a, p) { return (!a || p.overall_rating > a.overall_rating) ? p : a; }, null);
+    document.getElementById('kpiTop').textContent = top ? Math.round(top.overall_rating || 0) : '--';
+    var totalVal = players.reduce(function(s, p) { return s + (p.transfer_value || 0); }, 0);
+    document.getElementById('kpiValue').textContent = formatValue(totalVal);
+    document.getElementById('kpiInterest').textContent = '--';
+    if (players.length) {
+      document.getElementById('myPlayers').innerHTML = '<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Height</th><th>Build</th><th>Transfer Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>' +
+        players.map(function(p) {
+          return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:' + posGroupColor(p.position_group) + '">' + initials(p.first_name, p.last_name) + '</div>' +
+            '<div><b>' + p.first_name + ' ' + p.last_name + '</b><div style="font-size:11px;color:#546E7A">' + p.age + ' yrs</div></div></div></td>' +
+            '<td>' + (p.specific_position || p.primary_position || '--') + '</td>' +
+            '<td style="color:' + ratingColor(p.overall_rating) + ';font-weight:700">' + Math.round(p.overall_rating || 0) + '</td>' +
+            '<td><span class="badge badge-blue">' + (p.height_category || '--') + '</span></td>' +
+            '<td>' + (p.build_category || '--') + '</td>' +
+            '<td>' + formatValue(p.transfer_value || 0) + '</td>' +
+            '<td>' + formatSalary(p.predicted_salary_weekly || 0) + '</td>' +
+            '<td><a href="player-profile.html?id=' + p.id + '" class="btn btn-sm btn-outline">View</a></td></tr>';
+        }).join('') + '</tbody></table>';
+    } else {
+      document.getElementById('myPlayers').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';
+    }
+  } catch(e) {
+    document.getElementById('kpiPlayers').textContent = '0';
+    document.getElementById('kpiTop').textContent = '--';
+    document.getElementById('kpiValue').textContent = '--';
+    document.getElementById('myPlayers').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';
+    console.error(e);
+  }
 }
 </script>
 </body></html>
