@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Register – ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .toggle-row{display:flex;gap:0;border:2px solid #1e2a3a;border-radius:12px;overflow:hidden;margin-bottom:28px;}
@@ -132,5 +134,6 @@ async function submitCoach() {
   } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Coach Registration'; }
 }
 </script>
+<script src="../js/mobile.js"></script>
 </body>
 </html>
