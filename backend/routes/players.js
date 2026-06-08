@@ -396,8 +396,7 @@ return res.status(402).json({ error: 'You have used all your interests for this 
 // Insert into pipeline
 const { error: insertErr } = await supabase.from('recruitment_pipeline').insert({
 scout_id: req.user.id, player_id: req.params.id,
-scout_team_id: scout.scout_team_id, notes: notes||null, interest_level: interestLevel, stage: 'watching',
-is_active: true
+scout_team_id: scout.scout_team_id, notes: notes||null, interest_level: interestLevel, stage: 'watching'
 });
 if (insertErr) {
 // If unique constraint violation, treat as already in pipeline
@@ -415,7 +414,7 @@ recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout
 title: 'A scout is interested in you!',
 body: scout.first_name + ' ' + scout.last_name + ' from ' + scout.club_name + ' has expressed interest in your profile.',
 data: { scoutId: scout.id, scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }
-}).catch(()=>{});
+}).then(()=>{}).catch(()=>{});
 if (player.email) {
 email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
 playerName: player.first_name + ' ' + player.last_name,
