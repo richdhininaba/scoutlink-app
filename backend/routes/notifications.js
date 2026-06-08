@@ -24,4 +24,12 @@ router.patch('/:id/read', requireAuth, requireRole('Player','Coach','Scout','Str
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
+// Mark all notifications as read for current user
+router.patch('/read-all', requireAuth, requireRole('Player','Coach','Scout','Stratex'), async (req, res) => {
+  try {
+    await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', req.user.id).eq('is_read', false);
+    res.json({ message: 'All notifications marked as read' });
+  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
 module.exports = router;
