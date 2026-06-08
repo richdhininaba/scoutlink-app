@@ -10,16 +10,15 @@
 body{background:var(--bg);color:var(--text);}
 .bulk-table-wrap{
   overflow-x:scroll;
+  overflow-y:visible;
   width:100%;
-  max-width:100%;
-  max-height:400px;
-  overflow-y:hidden;
+  max-width:calc(100vw - 220px);
   -webkit-overflow-scrolling:touch;
   position:relative;
-  scrollbar-width:thin;
+  scrollbar-width:auto;
   scrollbar-color:#1d9e75 #30363d;
 }
-.bulk-table-wrap::-webkit-scrollbar{height:8px;width:8px;}
+.bulk-table-wrap::-webkit-scrollbar{height:10px;width:10px;}
 .bulk-table-wrap::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
 .bulk-table-wrap::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
 .bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
