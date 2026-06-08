@@ -39,7 +39,7 @@ async function updatePlayerStats(playerId) {
   } catch(e) { console.error('[updatePlayerStats]', e.message); }
 }
 
-// GET /api/match-facts — list
+// GET /api/match-facts â list
 router.get('/', requireAuth, requireRole('Coach','Stratex','Scout','Player'), async (req, res) => {
   try {
     const { playerId, coachId, teamId, limit = 20 } = req.query;
@@ -56,7 +56,7 @@ router.get('/', requireAuth, requireRole('Coach','Stratex','Scout','Player'), as
   } catch(err) { console.error('[MatchFacts GET]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// POST /api/match-facts — submit match (supports single player or team submission)
+// POST /api/match-facts â submit match (supports single player or team submission)
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
     const {
@@ -89,7 +89,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     const effectiveCoachId = coachId || (req.user.accountType === 'Coach' ? req.user.id : null);
     const effectiveTeamId = teamId || null;
 
-    // ── MULTI-PLAYER SUBMISSION ──
+    // ââ MULTI-PLAYER SUBMISSION ââ
     if (Array.isArray(playersList) && playersList.length > 0) {
       const results = [];
       for (const pp of playersList) {
@@ -140,13 +140,14 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       return res.status(201).json({ message: 'Match facts saved for ' + results.length + ' players', matchFacts: results });
     }
 
-    // ── SINGLE PLAYER SUBMISSION ──
+    // ââ SINGLE PLAYER SUBMISSION ââ
     if (!playerId) return res.status(400).json({ error: 'playerId required (or players array for multi-player)' });
 
     const ratings = {};
     const ratingKeys = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
     const body = req.body;
-    ratingKeys.forEach(k => { if (body[k] !== undefined && body[k] !== null) ratings[k] = Number(body[k]); });
+const ratingsObj = (body.ratings && typeof body.ratings === 'object') ? body.ratings : {};
+    ratingKeys.forEach(k => { if (body[k] !== undefined && body[k] !== null) ratings[k] = Number(body[k]); else if (ratingsObj[k] !== undefined) ratings[k] = Number(ratingsObj[k]); });
 
     // Auto clean sheet for GK/Def
     let cs = !!cleanSheet;
