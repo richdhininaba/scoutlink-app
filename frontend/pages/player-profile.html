@@ -26,6 +26,19 @@
 .action-btn{min-height:40px;padding:8px 14px;font-size:13px;}
 .video-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:14px;}
 .prediction-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.overall-gauge{text-align:center;padding:28px 20px;background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:14px;margin-bottom:20px}
+.gauge-ring{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:6px solid;}
+.gauge-score{font-size:40px;font-weight:900;line-height:1}
+.gauge-desc-lbl{font-size:11px;color:var(--text-secondary,#8b949e);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.gauge-desc-val{font-size:15px;font-weight:700}
+.stats-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:10px;padding:14px;text-align:center}
+.stat-val{font-size:22px;font-weight:800}
+.stat-lbl{font-size:11px;color:var(--text-secondary,#8b949e);text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.attr-details summary{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;cursor:pointer;font-size:14px;font-weight:700;color:var(--text,#fff);background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:10px;list-style:none}
+.attr-details summary::-webkit-details-marker{display:none}
+.attr-details[open] summary{border-radius:10px 10px 0 0;border-bottom-color:transparent}
+.attr-details .attr-inner{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-top:none;border-radius:0 0 10px 10px;padding:16px 18px;margin-bottom:20px}
 </style>
 </head><body>
 <div class="dashboard">
@@ -74,6 +87,30 @@ function attrLabel(k){
   return m[k]||k;
 }
 
+
+function overallGaugeHtml(ovRaw, apps, goals, assists, cleanSheets) {
+  var ov = parseFloat(ovRaw)||0;
+  var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov*10);
+  var rColor = ov100>=90?'#7ee8a2':ov100>=80?'#1d9e75':ov100>=70?'#FFC107':ov100>=55?'#FF9800':'#f85149';
+  var descs = [[90,'Elite grassroots'],[80,'Excellent'],[70,'Strong'],[55,'Promising'],[40,'Emerging'],[0,'Developing']];
+  var desc = descs.find(function(d){return ov100>=d[0];})||descs[descs.length-1];
+  var ap = parseInt(apps)||0;
+  var gpg = ap>0?(parseFloat(goals)||0)/ap:0;
+  var apg = ap>0?(parseFloat(assists)||0)/ap:0;
+  var cspg = ap>0?(parseFloat(cleanSheets)||0)/ap:0;
+  return '<div class="overall-gauge">' +
+    '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
+    '<div class="gauge-ring" style="border-color:'+rColor+'">' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+ov100+'</div><div style="font-size:10px;color:var(--text-secondary,#8b949e)">/100</div></div>' +
+    '</div>' +
+    '<div class="gauge-desc-val" style="color:'+rColor+'">'+desc[1]+'</div>' +
+    '</div>' +
+    '<div class="stats-trio">' +
+    '<div class="stat-box"><div class="stat-val" style="color:var(--accent,#1d9e75)">'+gpg.toFixed(2)+'</div><div class="stat-lbl">Goals per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#58a6ff">'+apg.toFixed(2)+'</div><div class="stat-lbl">Assists per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#FFC107">'+cspg.toFixed(2)+'</div><div class="stat-lbl">Clean sheets per game</div></div>' +
+    '</div>';
+}
 function initNav(){
   if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
   var role=Auth.type;
@@ -266,7 +303,102 @@ document.addEventListener('DOMContentLoaded',function(){
     document.getElementById('profileContent').innerHTML=
       ageOutBanner+
       '<div class="profile-hero">'+
-      '<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">'+
+      '<div style="display:flex;
+// Post-render: inject overall performance gauge and collapsible attrs
+(function() {
+  if (typeof player === 'undefined') return;
+  var container = document.getElementById('profileContent');
+  if (!container) return;
+  var ov = parseFloat(player.overall_rating)||0;
+  var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov*10);
+  var ap = parseInt(player.appearances)||0;
+  var gpg = ap>0?(parseFloat(player.goals)||0)/ap:0;
+  var apg = ap>0?(parseFloat(player.assists)||0)/ap:0;
+  var cspg = ap>0?(parseFloat(player.clean_sheets)||0)/ap:0;
+  var rColor = ov100>=90?'#7ee8a2':ov100>=80?'#1d9e75':ov100>=70?'#FFC107':ov100>=55?'#FF9800':'#f85149';
+  var descs = [[90,'Elite grassroots'],[80,'Excellent'],[70,'Strong'],[55,'Promising'],[40,'Emerging'],[0,'Developing']];
+  var desc = (descs.find(function(d){return ov100>=d[0];})||descs[descs.length-1])[1];
+  var apMsg = ap===0?'No match data recorded yet for this season.':'';
+  var gaugeDiv = document.createElement('div');
+  gaugeDiv.className = 'overall-gauge';
+  gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
+    '<div class="gauge-ring" style="border-color:'+rColor+'">' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'—')+'</div>' +
+    '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
+    '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
+    (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
+  var statsDiv = document.createElement('div');
+  statsDiv.className = 'stats-trio';
+  statsDiv.innerHTML = ap>0 ?
+    '<div class="stat-box"><div class="stat-val" style="color:var(--accent,#1d9e75)">'+gpg.toFixed(2)+'</div><div class="stat-lbl">Goals per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#58a6ff">'+apg.toFixed(2)+'</div><div class="stat-lbl">Assists per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#FFC107">'+cspg.toFixed(2)+'</div><div class="stat-lbl">Clean sheets per game</div></div>' :
+    '<div class="stat-box" style="grid-column:1/-1"><p style="color:var(--text-secondary,#8b949e);font-size:13px">No match data recorded yet for this season.</p></div>';
+  var attrRows = container.querySelectorAll('.attr-row');
+  if (attrRows.length > 0) {
+    var attrParent = attrRows[0].parentElement;
+    if (attrParent && attrParent !== container) {
+      var details = document.createElement('details');
+      details.className = 'attr-details';
+      var summary = document.createElement('summary');
+      summary.innerHTML = '<span style="font-weight:700">Detailed attribute breakdown</span><span style="font-size:12px;color:var(--text-secondary,#8b949e)">Click to expand</span>';
+      var inner = document.createElement('div');
+      inner.className = 'attr-inner';
+      while (attrParent.firstChild) inner.appendChild(attrParent.firstChild);
+      details.appendChild(summary);
+      details.appendChild(inner);
+      attrParent.replaceWith(details);
+    }
+  }
+  container.insertBefore(statsDiv, container.firstChild);
+  container.insertBefore(gaugeDiv, container.firstChild);
+})();
+// Post-render: inject overall performance gauge
+(function injectOverallGauge(p) {
+  var container = document.getElementById('profileContent');
+  if (!container) return;
+  var ov = parseFloat(p.overall_rating)||0;
+  var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov*10);
+  var ap = parseInt(p.appearances)||0;
+  var gpg = ap>0?(parseFloat(p.goals)||0)/ap:0;
+  var apg = ap>0?(parseFloat(p.assists)||0)/ap:0;
+  var cspg = ap>0?(parseFloat(p.clean_sheets)||0)/ap:0;
+  var rColor = ov100>=90?'#7ee8a2':ov100>=80?'#1d9e75':ov100>=70?'#FFC107':ov100>=55?'#FF9800':'#f85149';
+  var descs = [[90,'Elite grassroots'],[80,'Excellent'],[70,'Strong'],[55,'Promising'],[40,'Emerging'],[0,'Developing']];
+  var desc = (descs.find(function(d){return ov100>=d[0];})||descs[descs.length-1])[1];
+  var gaugeDiv = document.createElement('div');
+  gaugeDiv.className = 'overall-gauge';
+  gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
+    '<div class="gauge-ring" style="border-color:'+rColor+'"><div>' +
+    '<div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'—')+'</div>' +
+    '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div>' +
+    '</div></div>' +
+    '<div class="gauge-desc-val" style="color:'+rColor+'">'+desc+'</div>';
+  var statsDiv = document.createElement('div');
+  statsDiv.className = 'stats-trio';
+  statsDiv.innerHTML = '<div class="stat-box"><div class="stat-val" style="color:var(--accent,#1d9e75)">'+gpg.toFixed(2)+'</div><div class="stat-lbl">Goals per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#58a6ff">'+apg.toFixed(2)+'</div><div class="stat-lbl">Assists per game</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#FFC107">'+cspg.toFixed(2)+'</div><div class="stat-lbl">Clean sheets per game</div></div>';
+  // Wrap attr rows in collapsible
+  var attrRows = container.querySelectorAll('.attr-row');
+  if (attrRows.length > 0) {
+    var attrParent = attrRows[0].parentElement;
+    if (attrParent) {
+      var details = document.createElement('details');
+      details.className = 'attr-details';
+      var summary = document.createElement('summary');
+      summary.innerHTML = '<span>Detailed attribute breakdown</span><span style="font-size:12px;color:var(--text-secondary,#8b949e)">Click to expand</span>';
+      var inner = document.createElement('div');
+      inner.className = 'attr-inner';
+      inner.innerHTML = attrParent.innerHTML;
+      details.appendChild(summary);
+      details.appendChild(inner);
+      attrParent.replaceWith(details);
+    }
+  }
+  container.insertBefore(statsDiv, container.firstChild);
+  container.insertBefore(gaugeDiv, container.firstChild);
+})(p);align-items:flex-start;gap:20px;flex-wrap:wrap">'+
       '<div class="big-avatar" style="background:'+pgColor+';color:'+(pgColor==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div>'+
       '<div style="flex:1;min-width:180px">'+
       '<div style="font-size:26px;font-weight:900">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
