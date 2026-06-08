@@ -13,7 +13,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -21,7 +21,7 @@
   <div class="topbar">
     <span class="topbar-title">Player Database</span>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="notif-btn" onclick="toggleNotifPanel()">ð<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
       <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -30,17 +30,17 @@
     <div style="background:#111827;border:1px solid #1e2a3a;border-radius:12px;padding:20px;margin-bottom:20px">
       <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
         <div class="form-group" style="margin:0">
-          <label>🔍 Search Player</label>
+          <label>ð Search Player</label>
           <input type="text" id="searchInput" placeholder="Name..." oninput="debouncedSearch()">
         </div>
         <div class="form-group" style="margin:0">
           <label>Position</label>
           <select id="posFilter" onchange="loadPlayers()">
             <option value="">All Positions</option>
-            <option value="Goalkeeper">🧤 Goalkeeper</option>
-            <option value="Defender">🛡️ Defender</option>
-            <option value="Midfielder">🔄 Midfielder</option>
-            <option value="Forward">⚡ Forward</option>
+            <option value="Goalkeeper">ð§¤ Goalkeeper</option>
+            <option value="Defender">ð¡ï¸ Defender</option>
+            <option value="Midfielder">ð Midfielder</option>
+            <option value="Forward">â¡ Forward</option>
           </select>
         </div>
         <div class="form-group" style="margin:0">
@@ -58,8 +58,8 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <span id="resultCount" style="color:#546E7A;font-size:13px"></span>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-sm btn-outline active-tab" id="tabCards" onclick="setView('cards')">🃏 Cards</button>
-        <button class="btn btn-sm btn-ghost" id="tabTable" onclick="setView('table')">📋 Table</button>
+        <button class="btn btn-sm btn-outline active-tab" id="tabCards" onclick="setView('cards')">ð Cards</button>
+        <button class="btn btn-sm btn-ghost" id="tabTable" onclick="setView('table')">ð Table</button>
       </div>
     </div>
 
@@ -69,7 +69,7 @@
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/main.js"></script>
@@ -82,24 +82,24 @@ function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:
 
 var NAV_MAP = {
   Scout:[
-    {label:'🏠 Dashboard',href:'scout-dashboard.html'},{label:'🔍 Player Search',href:'player-search.html'},
-    {label:'📋 My Pipeline',href:'scout-pipeline.html'},{label:'🏆 Rankings',href:'scout-rankings.html'},
-    {label:'📅 Fixtures',href:'scout-fixtures.html'},{label:'🔮 Predictions',href:'scout-predictions.html'},
-    {label:'📊 Exports',href:'scout-exports.html'},{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-    {label:'⚙️ Settings',href:'scout-settings.html'}
+    {label:'ð  Dashboard',href:'scout-dashboard.html'},{label:'ð Player Search',href:'player-search.html'},
+    {label:'ð My Pipeline',href:'scout-pipeline.html'},{label:'ð Rankings',href:'scout-rankings.html'},
+    {label:'ð Fixtures',href:'scout-fixtures.html'},{label:'ð® Predictions',href:'scout-predictions.html'},
+    {label:'ð Exports',href:'scout-exports.html'},{label:'ð Notifications',href:'#',action:'toggleNotifPanel'},
+    {label:'âï¸ Settings',href:'scout-settings.html'}
   ],
   Coach:[
-    {label:'🏠 Dashboard',href:'coach-dashboard.html'},{label:'👥 My Players',href:'coach-my-players.html'},
-    {label:'➕ Add Player',href:'add-player.html'},{label:'📦 Bulk Import',href:'bulk-add-players.html'},
-    {label:'📝 Match Facts',href:'match-facts.html'},{label:'📅 Fixtures',href:'coach-fixtures.html'},
-    {label:'🎥 Video Reels',href:'coach-video-reels.html'},
-    {label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},{label:'⚙️ Settings',href:'coach-settings.html'}
+    {label:'ð  Dashboard',href:'coach-dashboard.html'},{label:'ð¥ My Players',href:'coach-my-players.html'},
+    {label:'â Add Player',href:'add-player.html'},{label:'ð¦ Bulk Import',href:'bulk-add-players.html'},
+    {label:'ð Match Facts',href:'match-facts.html'},{label:'ð Fixtures',href:'coach-fixtures.html'},
+    {label:'ð¥ Video Reels',href:'coach-video-reels.html'},
+    {label:'ð Notifications',href:'#',action:'toggleNotifPanel'},{label:'âï¸ Settings',href:'coach-settings.html'}
   ],
   Stratex:[
-    {label:'🏠 Dashboard',href:'stratex-dashboard.html'},{label:'📋 Registrations',href:'stratex-registrations.html'},
-    {label:'👤 Players',href:'stratex-players.html'},{label:'🔍 Scouts',href:'stratex-scouts.html'},
-    {label:'🏋️ Coaches',href:'stratex-coaches.html'},{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-    {label:'⚙️ Settings',href:'stratex-settings.html'}
+    {label:'ð  Dashboard',href:'stratex-dashboard.html'},{label:'ð Registrations',href:'stratex-registrations.html'},
+    {label:'ð¤ Players',href:'stratex-players.html'},{label:'ð Scouts',href:'stratex-scouts.html'},
+    {label:'ðï¸ Coaches',href:'stratex-coaches.html'},{label:'ð Notifications',href:'#',action:'toggleNotifPanel'},
+    {label:'âï¸ Settings',href:'stratex-settings.html'}
   ]
 };
 
@@ -161,7 +161,7 @@ async function loadPlayers(page){
             '<div style="display:flex;align-items:center;gap:10px">' +
               '<div class="user-avatar" style="background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div>' +
               '<div><div style="font-weight:700">'+p.first_name+' '+p.last_name+'</div>' +
-              '<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' · '+p.age+' yrs</div></div>' +
+              '<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' Â· '+p.age+' yrs</div></div>' +
             '</div>' +
             '<div style="font-size:22px;font-weight:900;color:'+ovColor+'">'+ov+'</div>' +
           '</div>' +
