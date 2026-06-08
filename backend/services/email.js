@@ -51,6 +51,22 @@ module.exports = {
   sendRegDeclined: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regDeclined, data: d }),
   sendScoutInterest: (d) => send({ to: d.to, templateId: config.sendgrid.templates.scoutInterest, data: d }),
   sendNotification: (d) => send({ to: d.to, templateId: config.sendgrid.templates.notification, data: d }),
+  sendPlayerLoginCode: async (d) => {
+    if (!d.to) return { success: false, error: 'No recipient' };
+    try {
+      const config = require('../config');
+      if (!config.sendgrid || !config.sendgrid.apiKey) return { success: false, error: 'No SendGrid key' };
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(config.sendgrid.apiKey);
+      await sgMail.send({
+        to: d.to,
+        from: { email: config.sendgrid.fromEmail || 'noreply@scoutlink.app', name: 'ScoutLink' },
+        subject: 'Your ScoutLink account is ready',
+        html: '<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:24px;background:#0d1117;color:#fff"><h1 style="color:#1d9e75">Welcome to ScoutLink!</h1><p>Hi ' + (d.playerFirstName || 'Player') + ',</p><p>Your coach has added you to ScoutLink. Use the code below to access your profile:</p><div style="background:#161b22;border:2px solid #1d9e75;border-radius:12px;padding:24px;margin:20px 0;text-align:center"><h2 style="color:#1d9e75;font-size:32px;letter-spacing:8px;margin:0">' + (d.loginCode || '') + '</h2></div><p>Log in at: <a href="' + (d.loginUrl || 'https://scoutlink.app/frontend/pages/login.html') + '" style="color:#1d9e75">' + (d.loginUrl || 'https://scoutlink.app/frontend/pages/login.html') + '</a></p><p>Select <b>Player</b> as your account type and click <b>Login with Code</b>.</p><p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics — ScoutLink Platform</p></div>'
+      });
+      return { success: true };
+    } catch(err) { return { success: false, error: err.message }; }
+  },
   sendResetPassword: (d) => send({ to: d.to, templateId: config.sendgrid.templates.resetPassword, data: d }),
   sendCompleteSignup: (d) => send({ to: d.to, templateId: config.sendgrid.templates.completeSignup, data: d }),
 };
