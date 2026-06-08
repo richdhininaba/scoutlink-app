@@ -19,7 +19,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Ã¢ÂÂ¡ Scout<span style="color:#00E676">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -27,8 +27,8 @@
   <div class="topbar">
     <span class="topbar-title">Player Profile</span>
     <div class="topbar-right">
-      <a href="javascript:history.back()" class="btn btn-sm btn-outline">â Back</a>
-      <button class="notif-btn" onclick="toggleNotifPanel()">ð<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <a href="javascript:history.back()" class="btn btn-sm btn-outline">Ã¢ÂÂ Back</a>
+      <button class="notif-btn" onclick="toggleNotifPanel()">Ã°ÂÂÂ<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
       <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -38,7 +38,7 @@
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">ÃÂ</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/main.js"></script>
@@ -51,16 +51,16 @@ function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
 var currentRole = (localStorage.getItem('sl_type')||'').toLowerCase();
 var NAV_SCOUT=[
-  {label:'ð  Dashboard',href:'scout-dashboard.html'},{label:'ð Player Search',href:'player-search.html'},
-  {label:'ð My Pipeline',href:'scout-pipeline.html'},{label:'ð Rankings',href:'scout-rankings.html'},
-  {label:'ð Fixtures',href:'scout-fixtures.html'},{label:'ð® Predictions',href:'scout-predictions.html'},
-  {label:'ð Exports',href:'scout-exports.html'},{label:'ð Notifications',href:'#',action:'toggleNotifPanel'},
-  {label:'âï¸ Settings',href:'scout-settings.html'}
+  {label:'Ã°ÂÂÂ  Dashboard',href:'scout-dashboard.html'},{label:'Ã°ÂÂÂ Player Search',href:'player-search.html'},
+  {label:'Ã°ÂÂÂ My Pipeline',href:'scout-pipeline.html'},{label:'Ã°ÂÂÂ Rankings',href:'scout-rankings.html'},
+  {label:'Ã°ÂÂÂ Fixtures',href:'scout-fixtures.html'},{label:'Ã°ÂÂÂ® Predictions',href:'scout-predictions.html'},
+  {label:'Ã°ÂÂÂ Exports',href:'scout-exports.html'},{label:'Ã°ÂÂÂ Notifications',href:'#',action:'toggleNotifPanel'},
+  {label:'Ã¢ÂÂÃ¯Â¸Â Settings',href:'scout-settings.html'}
 ];
 var NAV_COACH=[
-  {label:'ð  Dashboard',href:'coach-dashboard.html'},{label:'ð¥ My Players',href:'coach-my-players.html'},
-  {label:'â Add Player',href:'add-player.html'},{label:'ð Fixtures',href:'coach-fixtures.html'},
-  {label:'ð Notifications',href:'#',action:'toggleNotifPanel'},{label:'âï¸ Settings',href:'coach-settings.html'}
+  {label:'Ã°ÂÂÂ  Dashboard',href:'coach-dashboard.html'},{label:'Ã°ÂÂÂ¥ My Players',href:'coach-my-players.html'},
+  {label:'Ã¢ÂÂ Add Player',href:'add-player.html'},{label:'Ã°ÂÂÂ Fixtures',href:'coach-fixtures.html'},
+  {label:'Ã°ÂÂÂ Notifications',href:'#',action:'toggleNotifPanel'},{label:'Ã¢ÂÂÃ¯Â¸Â Settings',href:'coach-settings.html'}
 ];
 function initNav(){
   if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
@@ -98,7 +98,7 @@ if (p.date_of_birth) {
   if (turnsAge === 17) {
     var daysUntil = Math.ceil((next17 - today) / (1000*60*60*24));
     if (daysUntil <= 30) {
-      ageOutBanner = '<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">⚠️</span><div><div style="font-weight:700;color:#FF9800">Age Out Warning</div><div style="font-size:13px;color:#E2E8F0">This player turns 17 in <strong>' + daysUntil + ' day' + (daysUntil===1?'':'s') + '</strong> and will age out of the platform.</div></div></div>';
+      ageOutBanner = '<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">â ï¸</span><div><div style="font-weight:700;color:#FF9800">Age Out Warning</div><div style="font-size:13px;color:#E2E8F0">This player turns 17 in <strong>' + daysUntil + ' day' + (daysUntil===1?'':'s') + '</strong> and will age out of the platform.</div></div></div>';
     }
   }
 }
@@ -135,7 +135,7 @@ if (p.date_of_birth) {
         return '<div class="match-row"><div style="display:flex;align-items:center;gap:10px">' +
           '<div class="perf-badge" style="background:'+pCol2+'22;color:'+pCol2+'">'+perf+'</div>' +
           '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+(m.opponent_name||'Unknown Opponent')+'</div>' +
-          '<div style="font-size:11px;color:#546E7A">'+(m.competition||'Match')+' Â· '+(m.match_date?m.match_date.slice(0,10):'--')+'</div></div>' +
+          '<div style="font-size:11px;color:#546E7A">'+(m.competition||'Match')+' ÃÂ· '+(m.match_date?m.match_date.slice(0,10):'--')+'</div></div>' +
           '<div style="text-align:right;font-size:12px">' +
             '<span style="color:#00E676;font-weight:700">'+(m.goals||0)+'G</span> ' +
             '<span style="color:#42A5F5;font-weight:700">'+(m.assists||0)+'A</span>' +
@@ -148,7 +148,7 @@ if (p.date_of_birth) {
     if(Auth.type==='Scout'){
       scoutActions = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">' +
         '<button class="btn btn-primary" onclick="addToPipeline(''+p.id+'')">+ Add to Pipeline</button>' +
-        '<button class="btn btn-outline" onclick="showCompatibility(''+p.id+'')">ð® Analyse Compatibility</button>' +
+        '<button class="btn btn-outline" onclick="showCompatibility(''+p.id+'')">Ã°ÂÂÂ® Analyse Compatibility</button>' +
       '</div>';
     }
 
@@ -158,7 +158,7 @@ if (p.date_of_birth) {
           '<div class="big-avatar" style="background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+';flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>' +
           '<div style="flex:1;min-width:200px">' +
             '<div style="font-size:26px;font-weight:900">'+p.first_name+' '+p.last_name+'</div>' +
-            '<div style="color:#546E7A;font-size:14px;margin:6px 0">'+(p.specific_position||p.primary_position||'--')+' Â· '+(p.position_group||'--')+' Â· '+(p.age||'--')+' yrs Â· '+(p.nationality||'England')+'</div>' +
+            '<div style="color:#546E7A;font-size:14px;margin:6px 0">'+(p.specific_position||p.primary_position||'--')+' ÃÂ· '+(p.position_group||'--')+' ÃÂ· '+(p.age||'--')+' yrs ÃÂ· '+(p.nationality||'England')+'</div>' +
             '<div style="font-size:12px;color:#546E7A">Club: '+(p.team_name||'Free Agent')+'</div>' +
             scoutActions +
           '</div>' +
@@ -219,9 +219,9 @@ if (p.date_of_birth) {
 
       (videos.length?
         '<div class="table-card">' +
-          '<div class="table-header"><h3>ð¹ Video Highlights</h3></div>' +
+          '<div class="table-header"><h3>Ã°ÂÂÂ¹ Video Highlights</h3></div>' +
           '<div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
-          videos.map(function(v){return '<div style="background:#0a0f1e;border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">'+v.title+'</div><a href="'+v.url+'" target="_blank" class="btn btn-sm btn-outline">â¶ Watch</a></div>';}).join('') +
+          videos.map(function(v){return '<div style="background:#0a0f1e;border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">'+v.title+'</div><a href="'+v.url+'" target="_blank" class="btn btn-sm btn-outline">Ã¢ÂÂ¶ Watch</a></div>';}).join('') +
           '</div></div>' : '') +
 
       '<div id="compatResult"></div>';
@@ -248,7 +248,7 @@ async function showCompatibility(playerId){
     var sColor = compatColor(score);
     document.getElementById('compatResult').innerHTML=
       '<div class="table-card" style="margin-top:20px">' +
-        '<div class="table-header"><h3>ð® Compatibility vs Riverside Rangers</h3></div>' +
+        '<div class="table-header"><h3>Ã°ÂÂÂ® Compatibility vs Riverside Rangers</h3></div>' +
         '<div style="padding:20px">' +
           '<div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">' +
             '<div style="font-size:72px;font-weight:900;color:'+sColor+';line-height:1">'+Math.round(score)+'</div>' +
