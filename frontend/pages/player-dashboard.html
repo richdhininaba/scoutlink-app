@@ -3,10 +3,20 @@
 <title>My Profile - ScoutLink</title>
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.attr-meter{margin-bottom:10px;}
+.attr-meter-header{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;}
+.attr-name{font-weight:600;color:#94a3b8;text-transform:capitalize;}
+.attr-val{font-weight:700;}
+.attr-bar{background:#1e2a3a;border-radius:4px;height:6px;overflow:hidden;}
+.attr-bar-fill{height:100%;border-radius:4px;background:#00E676;transition:width 0.5s;}
+.attr-bar-fill.amber{background:#FFC107;}
+.attr-bar-fill.red{background:#f44336;}
+</style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -14,7 +24,7 @@
   <div class="topbar">
     <span class="topbar-title">My Profile</span>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
       <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -44,7 +54,7 @@ function initNav() {
   }).join('');
   var u = Auth.user;
   var uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Player</div></div></div>';
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName||'') + ' ' + (u.lastName||'') + '</div><div class="user-role">Player</div></div></div>';
   updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
@@ -59,51 +69,89 @@ document.addEventListener('DOMContentLoaded', async function() {
     var p = d.player;
     var v = d.videos || [];
     var el = document.getElementById('profileContent');
+
+    // Helper: display a 0-10 attribute value
+    function dispAttr(val) {
+      if (val === null || val === undefined) return '--';
+      var v = parseFloat(val);
+      if (isNaN(v)) return '--';
+      // If > 10, it's on old 0-100 scale
+      return (v > 10 ? v / 10 : v).toFixed(1);
+    }
+    function dispOverall(val) {
+      if (val === null || val === undefined) return '--';
+      var v = parseFloat(val);
+      if (isNaN(v)) return '--';
+      return (v > 10 ? v / 10 : v).toFixed(1);
+    }
+    // Bar width as % of 10
+    function barPct(val) {
+      if (val === null || val === undefined) return 0;
+      var v = parseFloat(val);
+      if (isNaN(v)) return 0;
+      return Math.round(v > 10 ? v : v * 10);
+    }
+    function barClass(val) {
+      var pct = barPct(val);
+      return pct >= 80 ? '' : pct >= 60 ? ' amber' : ' red';
+    }
+    function attrColor(val) {
+      var pct = barPct(val);
+      return pct >= 80 ? '#00E676' : pct >= 60 ? '#FFC107' : pct >= 50 ? '#FF9800' : '#f44336';
+    }
+
+    var overallVal = dispOverall(p.overall_rating);
+    var overallColor = p.overall_rating >= 8 ? '#00E676' : p.overall_rating >= 6 ? '#FFC107' : '#FF9800';
+
     el.innerHTML = '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
       '<div>' +
-        '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">' +
-          '<div style="width:80px;height:80px;border-radius:50%;background:' + posGroupColor(p.position_group) + ';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">' + initials(p.first_name, p.last_name) + '</div>' +
-          '<div style="font-size:22px;font-weight:800">' + p.first_name + ' ' + p.last_name + '</div>' +
-          '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' · ' + (p.position_group || '') + '</div>' +
-          '<div style="font-size:44px;font-weight:900;color:#00E676;margin:10px 0">' + Math.round(p.overall_rating || 0) + '</div>' +
-          '<div style="color:#546E7A;font-size:12px">Overall Rating</div>' +
+      '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">' +
+        '<div style="width:80px;height:80px;border-radius:50%;background:' + posGroupColor(p.position_group) + ';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">' + initials(p.first_name, p.last_name) + '</div>' +
+        '<div style="font-size:22px;font-weight:800">' + p.first_name + ' ' + p.last_name + '</div>' +
+        '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' · ' + (p.position_group || '') + '</div>' +
+        '<div style="font-size:52px;font-weight:900;color:' + overallColor + ';margin:10px 0">' + overallVal + '</div>' +
+        '<div style="color:#546E7A;font-size:12px">Overall Rating / 10</div>' +
+      '</div>' +
+      '<div class="kpi-card" style="margin-bottom:16px">' +
+        '<div class="kpi-label">Physical</div>' +
+        '<div style="display:flex;justify-content:space-between;margin-top:10px">' +
+          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.height_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Height</div></div>' +
+          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.build_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Build</div></div>' +
+          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.foot || '--') + '</div><div style="font-size:11px;color:#546E7A">Foot</div></div>' +
         '</div>' +
-        '<div class="kpi-card" style="margin-bottom:16px">' +
-          '<div class="kpi-label">Physical</div>' +
-          '<div style="display:flex;justify-content:space-between;margin-top:10px">' +
-            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.height_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Height</div></div>' +
-            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.build_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Build</div></div>' +
-            '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.foot || '--') + '</div><div style="font-size:11px;color:#546E7A">Foot</div></div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="kpi-card">' +
-          '<div class="kpi-label">Predicted Value</div>' +
-          '<div style="font-size:26px;font-weight:800;color:#00E676;margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
-          '<div style="color:#546E7A;font-size:13px">Predicted Salary: ' + formatSalary(p.predicted_salary_weekly || 0) + '</div>' +
-        '</div>' +
+      '</div>' +
+      '<div class="kpi-card">' +
+        '<div class="kpi-label">Predicted Value</div>' +
+        '<div style="font-size:26px;font-weight:800;color:#00E676;margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
+        '<div style="color:#546E7A;font-size:13px">Predicted Salary: ' + formatSalary(p.predicted_salary_weekly || 0) + '</div>' +
+      '</div>' +
       '</div>' +
       '<div>' +
-        '<div class="kpi-grid" style="margin-bottom:16px">' +
-          '<div class="kpi-card"><div class="kpi-label">Appearances</div><div class="kpi-value">' + (p.appearances || 0) + '</div></div>' +
-          '<div class="kpi-card"><div class="kpi-label">Goals</div><div class="kpi-value green">' + (p.goals || 0) + '</div></div>' +
-          '<div class="kpi-card"><div class="kpi-label">Assists</div><div class="kpi-value">' + (p.assists || 0) + '</div></div>' +
-          '<div class="kpi-card"><div class="kpi-label">Clean Sheets</div><div class="kpi-value">' + (p.clean_sheets || 0) + '</div></div>' +
-        '</div>' +
-        '<div class="table-card" style="margin-bottom:16px"><div class="table-header"><h3>Attribute Ratings</h3></div><div style="padding:20px">' +
-          ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure'].map(function(a) {
-            var val = p[a] || 0;
-            return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + a.charAt(0).toUpperCase() + a.slice(1) + '</span><span class="attr-val" style="color:' + ratingColor(val) + '">' + Math.round(val) + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + (val >= 80 ? '' : val >= 60 ? ' amber' : ' red') + '" style="width:' + Math.round(val) + '%"></div></div></div>';
-          }).join('') +
-        '</div></div>' +
-        (v.length ?
-          '<div class="table-card"><div class="table-header"><h3>My Videos</h3><a href="player-video-reels.html" class="btn btn-sm btn-outline">Manage Videos</a></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
-            v.map(function(vid) { return '<div style="background:var(--bg2);border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">' + vid.title + '</div><a href="' + vid.url + '" target="_blank" class="btn btn-sm btn-outline">Watch</a></div>'; }).join('') +
-          '</div></div>' :
-          '<div class="table-card"><div class="table-header"><h3>No Videos Yet</h3><a href="player-video-reels.html" class="btn btn-sm btn-primary">Add Video</a></div></div>') +
+      '<div class="kpi-grid" style="margin-bottom:16px">' +
+        '<div class="kpi-card"><div class="kpi-label">Appearances</div><div class="kpi-value">' + (p.appearances || 0) + '</div></div>' +
+        '<div class="kpi-card"><div class="kpi-label">Goals</div><div class="kpi-value green">' + (p.goals || 0) + '</div></div>' +
+        '<div class="kpi-card"><div class="kpi-label">Assists</div><div class="kpi-value">' + (p.assists || 0) + '</div></div>' +
+        '<div class="kpi-card"><div class="kpi-label">Clean Sheets</div><div class="kpi-value">' + (p.clean_sheets || 0) + '</div></div>' +
       '</div>' +
-    '</div>';
+      '<div class="table-card" style="margin-bottom:16px"><div class="table-header"><h3>Attribute Ratings <span style="font-size:12px;font-weight:400;color:#546E7A">/ 10</span></h3></div><div style="padding:20px">' +
+      ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure'].map(function(a) {
+        var val = p[a];
+        var display = dispAttr(val);
+        var pct = barPct(val);
+        var cls = barClass(val);
+        var color = attrColor(val);
+        return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + a.charAt(0).toUpperCase() + a.slice(1) + '</span><span class="attr-val" style="color:' + color + '">' + display + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + cls + '" style="width:' + pct + '%"></div></div></div>';
+      }).join('') +
+      '</div></div>' +
+      (v.length ?
+        '<div class="table-card"><div class="table-header"><h3>My Videos</h3><a href="player-video-reels.html" class="btn btn-sm btn-outline">Manage Videos</a></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
+        v.map(function(vid) { return '<div style="background:var(--bg2);border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">' + vid.title + '</div><a href="' + vid.url + '" target="_blank" class="btn btn-sm btn-outline">Watch</a></div>'; }).join('') +
+        '</div></div>' :
+        '<div class="table-card"><div class="table-header"><h3>No Videos Yet</h3><a href="player-video-reels.html" class="btn btn-sm btn-primary">Add Video</a></div></div>') +
+      '</div>' +
+      '</div>';
   } catch(e) {
-    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Unable to load profile data.</p></div>';
+    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Unable to load profile data.</p><p style="font-size:12px;margin-top:8px">' + e.message + '</p></div>';
     console.error(e);
   }
 });
