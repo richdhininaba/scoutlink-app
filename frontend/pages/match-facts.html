@@ -75,10 +75,17 @@ async function saveMatchFact() {
 </script></div>
 </div></div>
 <div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 var COACH_NAV=[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'coach-my-players.html'},{label:'Add Players',href:'add-player.html'},{label:'Bulk Add Players',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Fixtures',href:'coach-fixtures.html'},{label:'Video Reels',href:'coach-video-reels.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'coach-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=COACH_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Coach</div></div></div>';updateNotifBadge();}
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#42A5F5;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+  updateNotifBadge();
+}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
