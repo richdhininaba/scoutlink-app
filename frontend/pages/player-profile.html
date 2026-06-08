@@ -69,6 +69,8 @@
 <script src="../js/main.js"></script>
 <script>
 function safe(v){return v!=null&&v!==undefined&&v!=='null'&&v!=='undefined'?String(v):'--';}
+function buildAttrBar(label,val){var n=parseFloat(val);var pct=isNaN(n)?0:Math.min(100,Math.round(n>10?n:n*10));var col=pct>=70?'#1d9e75':pct>=50?'#FFC107':'#f44336';return '<div class="attr-row"><span class="attr-label">'+label+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+(!isNaN(n)?(n>10?n/10:n).toFixed(1):'--')+'</span></div>';}
+function statBadge(label,val){return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-lbl">'+label+'</div></div>';}
 function dOv(v){var n=parseFloat(v);if(isNaN(n))return '--';return(n>10?n/10:n).toFixed(1);}
 function dAttr(v){var n=parseFloat(v);if(isNaN(n))return '--';return(n>10?n/10:n).toFixed(1);}
 function aPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.min(100,Math.round(n>10?n:n*10));}
@@ -316,7 +318,7 @@ document.addEventListener('DOMContentLoaded',function(){
             '</div>'+
           '</div>'+
           '<div style="text-align:right">'+
-            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'ÃÂÃÂ£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
+            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'ÃÂÃÂÃÂÃÂ£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
             '<div style="font-size:11px;color:#8b949e">Est. transfer value</div>'+
           '</div>'+
         '</div>'+
@@ -364,7 +366,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'">' +
-    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ')+'</div>' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
     (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
