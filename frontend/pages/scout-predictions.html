@@ -74,27 +74,33 @@ function initNav(){
   if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
 function dispOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
+function fmtDate(str){if(!str)return '--';var d=new Date(str);var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();}
 
 function showEmpty(){
   document.getElementById('kpiRemaining').textContent='--';
   document.getElementById('kpiLimit').textContent='--';
   document.getElementById('kpiPlan').textContent='Core';
   document.getElementById('kpiRun').textContent='0';
-  document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128202;</div><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse Players</a></div>';
+  document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128202;</div><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
 }
 
 function loadPredictions(){
   if(typeof api!=='function')return;
   api('GET','/api/scouts/predictions').then(function(d){
     var preds=d.data||[];
-    var remaining=d.remaining!==undefined?d.remaining:'--';
+    var remaining=d.remaining!==undefined?d.remaining:null;
     var planLimit=d.planLimit||120;
     var plan=d.plan||'Core';
-    document.getElementById('kpiRemaining').textContent=remaining;
-    document.getElementById('kpiLimit').textContent=planLimit;
+
+    var dispRemaining=remaining!==null?(plan==='Elite'?'Unlimited':remaining):'--';
+    var dispLimit=plan==='Elite'?'Unlimited':planLimit;
+    document.getElementById('kpiRemaining').textContent=dispRemaining;
+    document.getElementById('kpiLimit').textContent=dispLimit;
     document.getElementById('kpiPlan').textContent=plan;
     document.getElementById('kpiRun').textContent=preds.length;
-    if(typeof remaining==='number'&&planLimit){
+
+    // Usage bar
+    if(remaining!==null && plan!=='Elite'){
       var used=planLimit-remaining;
       var pct=Math.round((used/planLimit)*100);
       var barColor=remaining<10?'#f85149':remaining<30?'#FF9800':'var(--accent)';
@@ -102,19 +108,32 @@ function loadPredictions(){
         '<div style="margin-bottom:20px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px"><span>Predictions used</span><span style="font-weight:700;color:var(--text)">'+used+' / '+planLimit+'</span></div><div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s"></div></div></div>'
       );
     }
-    if(!preds.length){showEmpty();return;}
-    document.getElementById('predList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Date Run</th><th>Year 1</th><th>Year 2</th><th>Year 3</th><th></th></tr></thead><tbody>'+
+
+    // Zero credits banner
+    if(remaining===0 && plan!=='Elite'){
+      document.getElementById('predSummary').insertAdjacentHTML('afterend',
+        '<div style="margin-bottom:20px;padding:16px 18px;background:rgba(255,152,0,.1);border:1px solid #FF9800;border-radius:10px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">&#9888;</span><div><div style="font-weight:700;color:#FF9800;margin-bottom:2px">All prediction credits used</div><div style="font-size:13px;color:#E2E8F0">You have used all your prediction credits for this plan. Contact us to upgrade.</div></div></div>'
+      );
+    }
+
+    if(!preds.length){
+      document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128202;</div><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
+      return;
+    }
+
+    document.getElementById('predList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Prediction type</th><th>Date run</th><th>Year 1</th><th>Year 2</th><th>Year 3</th><th></th></tr></thead><tbody>'+
       preds.map(function(pred){
         var pl=pred.players||{};
         return '<tr>'+
           '<td><b>'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</b></td>'+
           '<td style="color:var(--text-secondary);font-size:12px">'+(pl.team_name||'--')+'</td>'+
           '<td><span style="font-size:11px;padding:2px 8px;background:rgba(23,162,186,.12);color:#17a2b8;border-radius:4px">'+(pl.position_group||'--')+'</span></td>'+
-          '<td style="color:var(--text-secondary);font-size:12px">'+(pred.created_at?pred.created_at.slice(0,10):'--')+'</td>'+
+          '<td style="font-size:12px;color:var(--text-secondary)">'+(pred.prediction_type||'Performance prediction')+'</td>'+
+          '<td style="color:var(--text-secondary);font-size:12px">'+fmtDate(pred.run_at||pred.created_at)+'</td>'+
           '<td style="font-weight:700;color:#FFC107">'+dispOv(pred.yr1_rating)+'</td>'+
           '<td style="font-weight:700;color:#17a2b8">'+dispOv(pred.yr2_rating)+'</td>'+
           '<td style="font-weight:700;color:var(--accent)">'+dispOv(pred.yr3_rating)+'</td>'+
-          '<td><a href="player-profile.html?id='+pred.player_id+'" class="btn btn-sm btn-outline" style="text-decoration:none">View Player</a></td>'+
+          '<td><a href="player-profile.html?id='+pred.player_id+'" class="btn btn-sm btn-outline" style="text-decoration:none">View player</a></td>'+
           '</tr>';
       }).join('')+'</tbody></table></div>';
   }).catch(function(){showEmpty();});
