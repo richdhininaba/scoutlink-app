@@ -8,7 +8,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -47,19 +47,19 @@
     <div style="margin-top:20px;background:#111827;border:1px solid #1e2a3a;border-radius:12px;padding:20px">
       <h3 style="margin-bottom:16px;color:#94a3b8;font-size:13px;text-transform:uppercase;letter-spacing:.5px">Platform Overview</h3>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-        <div style="background:#0a0f1e;border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:28px;font-weight:900;color:#00E676" id="statPlayers">-</div>
+        <div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:900;color:var(--accent,#1d9e75)" id="statPlayers">-</div>
           <div style="font-size:12px;color:#546E7A">Players Registered</div>
         </div>
-        <div style="background:#0a0f1e;border-radius:8px;padding:14px;text-align:center">
+        <div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
           <div style="font-size:28px;font-weight:900;color:#42A5F5" id="statCoaches">-</div>
           <div style="font-size:12px;color:#546E7A">Coaches Active</div>
         </div>
-        <div style="background:#0a0f1e;border-radius:8px;padding:14px;text-align:center">
+        <div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
           <div style="font-size:28px;font-weight:900;color:#FFC107" id="statScouts">-</div>
           <div style="font-size:12px;color:#546E7A">Scouts Active</div>
         </div>
-        <div style="background:#0a0f1e;border-radius:8px;padding:14px;text-align:center">
+        <div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
           <div style="font-size:28px;font-weight:900;color:#FF7043" id="statPending">-</div>
           <div style="font-size:12px;color:#546E7A">Awaiting Review</div>
         </div>
@@ -124,7 +124,7 @@ async function loadDashboard(){
     document.getElementById('statPending').textContent = pending;
     if(pending>0){
       document.getElementById('kpiPending').className='kpi-value green';
-      document.getElementById('kpiPendingSub').innerHTML='<a href="stratex-registrations.html" style="color:#00E676">Review now â</a>';
+      document.getElementById('kpiPendingSub').innerHTML='<a href="stratex-registrations.html" style="color:var(--accent,#1d9e75)">Review now â</a>';
     } else {
       document.getElementById('kpiPendingSub').textContent='All reviewed';
     }
@@ -160,7 +160,7 @@ async function loadDashboard(){
             '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:28px;height:28px;font-size:10px;background:'+posColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><b>'+p.first_name+' '+p.last_name+'</b></div></td>'+
             '<td style="font-size:12px">'+(p.specific_position||p.primary_position||'--')+'</td>'+
             '<td style="font-weight:800;color:'+ovCol+'">'+ov+'</td>'+
-            '<td style="color:#00E676;font-weight:700">'+formatValue(p.transfer_value||0)+'</td>'+
+            '<td style="color:var(--accent,#1d9e75);font-weight:700">'+formatValue(p.transfer_value||0)+'</td>'+
           '</tr>';
         }).join('')+'</tbody></table>';
     } else {
