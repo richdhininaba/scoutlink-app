@@ -6,7 +6,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -14,7 +14,7 @@
   <div class="topbar">
     <span class="topbar-title" id="dashTitle">Stratex Admin</span>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="notif-btn" onclick="toggleNotifPanel()">ð<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
       <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -67,7 +67,7 @@
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/main.js"></script>
@@ -75,14 +75,18 @@
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
 var STRATEX_NAV = [
-  {label:'🏠 Dashboard',href:'stratex-dashboard.html'},
-  {label:'📋 Registrations',href:'stratex-registrations.html'},
-  {label:'👥 Users',href:'stratex-users.html'},
-  {label:'⚽ Players',href:'stratex-players.html'},
-  {label:'🔍 Scouts',href:'stratex-scouts.html'},
-  {label:'🏋️ Coaches',href:'stratex-coaches.html'},
-  {label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-  {label:'⚙️ Settings',href:'stratex-settings.html'}
+{label:'🏠 Dashboard',href:'stratex-dashboard.html'},
+{label:'📋 Registrations',href:'stratex-registrations.html'},
+{label:'👥 Users',href:'stratex-users.html'},
+{label:'⚽ Players',href:'stratex-players.html'},
+{label:'🔍 Scouts',href:'stratex-scouts.html'},
+{label:'🏋️ Coaches',href:'stratex-coaches.html'},
+{label:'🏆 Scout Teams',href:'stratex-scout-teams.html'},
+{label:'🏫 School Teams',href:'stratex-school-teams.html'},
+{label:'🎖️ Award Nominations',href:'stratex-award-nominations.html'},
+{label:'🎪 Showcase Events',href:'stratex-showcase-events.html'},
+{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
+{label:'⚙️ Settings',href:'stratex-settings.html'}
 ];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
@@ -118,7 +122,7 @@ async function loadDashboard(){
     document.getElementById('statPending').textContent = pending;
     if(pending>0){
       document.getElementById('kpiPending').className='kpi-value green';
-      document.getElementById('kpiPendingSub').innerHTML='<a href="stratex-registrations.html" style="color:#00E676">Review now →</a>';
+      document.getElementById('kpiPendingSub').innerHTML='<a href="stratex-registrations.html" style="color:#00E676">Review now â</a>';
     } else {
       document.getElementById('kpiPendingSub').textContent='All reviewed';
     }
@@ -129,11 +133,11 @@ async function loadDashboard(){
           var tc=r.account_type==='Coach'?'badge-blue':'badge-green';
           return '<tr><td><b>'+r.first_name+' '+r.last_name+'</b><br><span style="font-size:11px;color:#546E7A">'+r.email+'</span></td>'+
             '<td><span class="badge '+tc+'">'+r.account_type+'</span></td>'+
-            '<td style="font-size:12px">'+(r.team_name||r.scout_club||'—')+'</td>'+
+            '<td style="font-size:12px">'+(r.team_name||r.scout_club||'â')+'</td>'+
             '<td><a href="stratex-registrations.html" class="btn btn-sm btn-primary">Review</a></td></tr>';
         }).join('')+'</tbody></table>';
     } else {
-      document.getElementById('pendingRegs').innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">✅ No pending registrations</div>';
+      document.getElementById('pendingRegs').innerHTML='<div style="text-align:center;padding:32px;color:#546E7A">â No pending registrations</div>';
     }
   } catch(e) {
     ['kpiPlayers','kpiCoaches','kpiScouts','kpiPending','statPlayers','statCoaches','statScouts','statPending'].forEach(function(id){document.getElementById(id).textContent='0';});
