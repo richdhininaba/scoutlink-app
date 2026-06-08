@@ -72,26 +72,18 @@
   <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
+<script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
-var STRATEX_NAV = [
-{label:'🏠 Dashboard',href:'stratex-dashboard.html'},
-{label:'📋 Registrations',href:'stratex-registrations.html'},
-{label:'👥 Users',href:'stratex-users.html'},
-{label:'⚽ Players',href:'stratex-players.html'},
-{label:'🔍 Scouts',href:'stratex-scouts.html'},
-{label:'🏋️ Coaches',href:'stratex-coaches.html'},
-{label:'🏆 Scout Teams',href:'stratex-scout-teams.html'},
-{label:'🏫 School Teams',href:'stratex-school-teams.html'},
-{label:'🎖️ Award Nominations',href:'stratex-award-nominations.html'},
-{label:'🎪 Showcase Events',href:'stratex-showcase-events.html'},
-{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-{label:'⚙️ Settings',href:'stratex-settings.html'}
-];
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  if(typeof buildStratexNav==='function')buildStratexNav('sidebarNav',Auth.user);
+  var u=Auth.user,dt=document.getElementById('dashTitle');
+  if(dt&&u)dt.textContent='Welcome, '+(u.firstName||'Admin');
+  if(typeof updateNotifBadge==='function')updateNotifBadge();
+}
   var nav=document.getElementById('sidebarNav');
   var cur=window.location.pathname.split('/').pop();
   if(nav) nav.innerHTML=STRATEX_NAV.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
