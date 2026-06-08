@@ -8,29 +8,47 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">ð Exports</span>
+<span class="topbar-title">Exports</span>
 <div class="topbar-right">
 <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
 </div>
 </div>
 <div class="page-content">
 
+<div id="expSummary" class="kpi-grid" style="margin-bottom:20px">
+<div class="kpi-card">
+<div class="kpi-label">Exports Remaining</div>
+<div class="kpi-value green" id="kpiRemaining">-</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">Plan Limit</div>
+<div class="kpi-value" id="kpiLimit">-</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">Current Plan</div>
+<div class="kpi-value" id="kpiPlan" style="font-size:20px">-</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-label">Total Exports</div>
+<div class="kpi-value" id="kpiTotal">-</div>
+</div>
+</div>
+
 <div class="table-card">
-<div class="table-header"><div><h3>Export Reports</h3><p style="font-size:12px;color:#546E7A">Download scouting reports and player shortlists</p></div></div>
-<div style="text-align:center;padding:60px 20px;color:#546E7A">
-<div style="font-size:48px;margin-bottom:16px">ð</div>
-<h3 style="color:#B0BEC5;margin-bottom:8px">Exports â Coming Soon</h3>
-<p style="margin-bottom:20px">PDF scouting reports, CSV player shortlists and branded exports are coming soon.</p>
-<a href="scout-dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+<div class="table-header">
+<div><h3>Export History</h3><p style="font-size:12px;color:var(--text3);margin-top:2px">All profile dossiers you have generated</p></div>
+<a href="player-search.html" class="btn btn-sm btn-outline">Find Players</a>
 </div>
+<div id="expList"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading export history...</span></div></div>
 </div>
+
 </div>
 </div>
 </div>
@@ -41,12 +59,65 @@ function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){}
-document.addEventListener('DOMContentLoaded',function(){initNav();});
+
+async function redownload(expId, fileUrl){
+  if(fileUrl){window.open(fileUrl,'_blank');return;}
+  alert('Re-download: Export file not available. Please re-generate from the player profile.');
+}
+
+document.addEventListener('DOMContentLoaded',async function(){
+  initNav();
+  try{
+    var d=await api('GET','/api/scouts/exports');
+    var exports_=d.data||[];
+    var remaining=d.remaining??'--';
+    var planLimit=d.planLimit||30;
+    var plan=d.plan||'Core';
+    
+    document.getElementById('kpiRemaining').textContent=remaining;
+    document.getElementById('kpiLimit').textContent=planLimit;
+    document.getElementById('kpiPlan').textContent=plan;
+    document.getElementById('kpiTotal').textContent=exports_.length;
+    
+    if(typeof remaining==='number'&&planLimit){
+      var used=planLimit-remaining;
+      var pct=Math.round((used/planLimit)*100);
+      var barColor=remaining<3?'#f44336':remaining<10?'#FF9800':'#00E676';
+      document.getElementById('expSummary').insertAdjacentHTML('afterend',
+        '<div style="margin-bottom:20px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px"><span>Exports used</span><span style="font-weight:700;color:var(--text2)">'+used+' / '+planLimit+'</span></div><div style="height:8px;background:#1e2a3a;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s ease"></div></div></div>'
+      );
+    }
+    
+    if(!exports_.length){
+      document.getElementById('expList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">&#128196;</div><h3 style="color:var(--text2);margin-bottom:8px">No exports yet</h3><p>You have not generated any player dossiers yet.</p><p style="font-size:13px;margin-top:8px">Go to a player profile to export your first dossier.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
+      return;
+    }
+    
+    document.getElementById('expList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Export Type</th><th>Date</th><th></th></tr></thead><tbody>'+
+    exports_.map(function(exp){
+      var pl=exp.players||{};
+      var typeBadge=exp.export_type==='PDF'?'badge-red':'badge-green';
+      return '<tr>'+
+        '<td><a href="player-profile.html?id='+exp.player_id+'" style="color:var(--text);font-weight:600">'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</a></td>'+
+        '<td style="color:var(--text3);font-size:12px">'+(pl.team_name||'--')+'</td>'+
+        '<td><span class="badge '+(typeBadge)+'">'+( exp.export_type||'PDF')+'</span></td>'+
+        '<td style="color:var(--text3);font-size:12px">'+(exp.created_at?exp.created_at.slice(0,10):'--')+'</td>'+
+        '<td><button class="btn btn-sm btn-outline" style="min-height:36px" onclick="redownload(''+exp.id+'',''+( exp.file_url||'')+'')">Re-download</button></td>'+
+        '</tr>';
+    }).join('')+'</tbody></table></div>';
+  }catch(e){
+    document.getElementById('kpiRemaining').textContent='--';
+    document.getElementById('kpiLimit').textContent='--';
+    document.getElementById('kpiPlan').textContent='Core';
+    document.getElementById('kpiTotal').textContent='0';
+    document.getElementById('expList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">&#128196;</div><h3 style="color:var(--text2);margin-bottom:8px">No exports yet</h3><p>Go to a player profile to export your first dossier.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
+  }
+});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
