@@ -1,87 +1,154 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Add Users - ScoutLink Stratex</title>
+<title>Users - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body>
 <div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Add Users</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div class="tab-bar" style="max-width:300px;margin-bottom:24px">
-<button class="tab-btn active" onclick="switchTab('scouts',this)">Add Scout</button>
-<button class="tab-btn" onclick="switchTab('coaches',this)">Add Coach</button>
+  <div class="topbar">
+    <span class="topbar-title">Add Users</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="tab-bar" style="max-width:300px;margin-bottom:24px">
+      <button class="tab-btn active" onclick="switchTab('scouts',this)">Add Scout</button>
+      <button class="tab-btn" onclick="switchTab('coaches',this)">Add Coach</button>
+    </div>
+    <div class="form-error" id="formError" style="margin-bottom:12px"></div>
+    <div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
+    <div id="scoutsPanel">
+      <div class="table-card" style="max-width:600px">
+        <div class="table-header"><h3>Add Scout Directly</h3></div>
+        <div style="padding:20px">
+          <p style="color:#B0BEC5;font-size:14px;margin-bottom:20px">Add a scout without requiring them to register. They will receive a login code immediately by email.</p>
+          <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="scoutFirst" placeholder="First name"></div>
+          <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="scoutLast" placeholder="Last name"></div>
+          <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="scoutEmail" placeholder="scout@example.com"></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="scoutPhone" placeholder="+44..."></div>
+          <div class="form-group"><label>Club / Organisation</label><input type="text" id="scoutClub" placeholder="e.g. Liverpool FC"></div>
+          <div class="form-group"><label>League / Region</label><input type="text" id="scoutLeague" placeholder="e.g. Premier League"></div>
+          <div class="form-group"><label>Subscription Plan <span class="required">*</span></label>
+            <select id="scoutPlan">
+              <option value="Core">Core - 1 seat, 30 exports/yr, 120 predictions/yr</option>
+              <option value="Plus">Plus - 3 seats, 120 exports/yr, 600 predictions/yr</option>
+              <option value="Elite">Elite - 10 seats, 500 exports/yr, 1200 predictions/yr</option>
+              <option value="Enterprise">Enterprise - Custom</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="addScout()">Add Scout and Send Login Code</button>
+        </div>
+      </div>
+    </div>
+    <div id="coachesPanel" style="display:none">
+      <div class="table-card" style="max-width:600px">
+        <div class="table-header"><h3>Add Coach Directly</h3></div>
+        <div style="padding:20px">
+          <p style="color:#B0BEC5;font-size:14px;margin-bottom:20px">Add a coach team directly. They will receive a login code immediately by email.</p>
+          <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="coachFirst" placeholder="First name"></div>
+          <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="coachLast" placeholder="Last name"></div>
+          <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="coachEmail" placeholder="coach@example.com"></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="coachPhone" placeholder="+44..."></div>
+          <div class="form-group"><label>Team Name <span class="required">*</span></label><input type="text" id="coachTeam" placeholder="e.g. Manchester City U18"></div>
+          <div class="form-group"><label>Role at Club</label><input type="text" id="coachRole" placeholder="e.g. Head Coach"></div>
+          <div class="form-group"><label>County</label><input type="text" id="coachCounty" placeholder="e.g. Greater Manchester"></div>
+          <div class="form-group"><label>League</label><input type="text" id="coachLeague" placeholder="e.g. North West Youth League"></div>
+          <button class="btn btn-primary" onclick="addCoach()">Add Coach and Send Login Code</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="form-error" id="formError" style="margin-bottom:12px"></div>
-<div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
-<div id="scoutsPanel">
-<div class="table-card" style="max-width:600px">
-<div class="table-header"><h3>Add Scout Directly</h3></div>
-<div style="padding:20px">
-<p style="color:#B0BEC5;font-size:14px;margin-bottom:20px">Add a scout without requiring them to register. They will receive a login code immediately by email.</p>
-<div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="scoutFirst" placeholder="First name"></div>
-<div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="scoutLast" placeholder="Last name"></div>
-<div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="scoutEmail" placeholder="scout@example.com"></div>
-<div class="form-group"><label>Phone</label><input type="text" id="scoutPhone" placeholder="+44..."></div>
-<div class="form-group"><label>Club / Organisation</label><input type="text" id="scoutClub" placeholder="e.g. Liverpool FC"></div>
-<div class="form-group"><label>League / Region</label><input type="text" id="scoutLeague" placeholder="e.g. Premier League"></div>
-<div class="form-group"><label>Subscription Plan <span class="required">*</span></label>
-<select id="scoutPlan">
-<option value="Core">Core - 1 seat, 30 exports/yr, 120 predictions/yr, 200 interests/yr</option>
-<option value="Plus">Plus - 3 seats, 120 exports/yr, 600 predictions/yr, 1000 interests/yr</option>
-<option value="Elite">Elite - 10 seats, 500 exports/yr, 1200 predictions/yr, unlimited interests/yr</option>
-<option value="Enterprise">Enterprise - Custom seats and allowances</option>
-</select>
 </div>
-<button class="btn btn-primary" onclick="addScout()">Add Scout and Send Login Code</button>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"></div>
 </div>
-</div>
-</div>
-<div id="coachesPanel" style="display:none">
-<div class="table-card" style="max-width:600px">
-<div class="table-header"><h3>Add Coach Directly</h3></div>
-<div style="padding:20px">
-<p style="color:#B0BEC5;font-size:14px;margin-bottom:20px">Add a coach team directly. They will receive a login code immediately by email.</p>
-<div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="coachFirst" placeholder="First name"></div>
-<div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="coachLast" placeholder="Last name"></div>
-<div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="coachEmail" placeholder="coach@example.com"></div>
-<div class="form-group"><label>Phone</label><input type="text" id="coachPhone" placeholder="+44..."></div>
-<div class="form-group"><label>Team Name <span class="required">*</span></label><input type="text" id="coachTeam" placeholder="e.g. Manchester City U18"></div>
-<div class="form-group"><label>Role at Club</label><input type="text" id="coachRole" placeholder="e.g. Head Coach"></div>
-<div class="form-group"><label>County</label><input type="text" id="coachCounty" placeholder="e.g. Greater Manchester"></div>
-<div class="form-group"><label>League</label><input type="text" id="coachLeague" placeholder="e.g. North West Youth League"></div>
-<button class="btn btn-primary" onclick="addCoach()">Add Coach and Send Login Code</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
-var NAV_ITEMS = {Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'All Players',href:'player-search.html'},{label:'Add Users',href:'stratex-users.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]};
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}var items=NAV_ITEMS.Stratex;var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Stratex Admin</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-var activeTab='scouts';
-function switchTab(tab,btn){activeTab=tab;document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');document.getElementById('scoutsPanel').style.display=tab==='scouts'?'block':'none';document.getElementById('coachesPanel').style.display=tab==='coaches'?'block':'none';clearMessages();}
-function clearMessages(){var err=document.getElementById('formError'),suc=document.getElementById('formSuccess');err.classList.remove('show');suc.classList.remove('show');}
-async function addScout(){
-clearMessages();var err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
-var fn=document.getElementById('scoutFirst').value.trim(),ln=document.getElementById('scoutLast').value.trim(),em=document.getElementById('scoutEmail').value.trim();
-if(!fn||!ln||!em){err.textContent='First name, last name and email are required.';err.classList.add('show');return;}
-try{var res=await api('POST','/api/stratex/scouts',{firstName:fn,lastName:ln,emailAddr:em,phone:document.getElementById('scoutPhone').value.trim()||null,scoutClub:document.getElementById('scoutClub').value.trim()||null,scoutLeague:document.getElementById('scoutLeague').value.trim()||null,subscriptionPlan:document.getElementById('scoutPlan').value});suc.textContent=res.message;suc.classList.add('show');document.getElementById('scoutFirst').value='';document.getElementById('scoutLast').value='';document.getElementById('scoutEmail').value='';document.getElementById('scoutPhone').value='';document.getElementById('scoutClub').value='';document.getElementById('scoutLeague').value='';}
-catch(e){err.textContent=e.message;err.classList.add('show');}
+var STRATEX_NAV = [
+  {label:'Dashboard', href:'stratex-dashboard.html'},
+  {label:'Registrations', href:'stratex-registrations.html'},
+  {label:'Users', href:'stratex-users.html'},
+  {label:'Players', href:'stratex-players.html'},
+  {label:'Scouts', href:'stratex-scouts.html'},
+  {label:'Coaches', href:'stratex-coaches.html'},
+  {label:'Scout Teams', href:'stratex-scout-teams.html'},
+  {label:'School Teams', href:'stratex-school-teams.html'},
+  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'Settings', href:'stratex-settings.html'}
+];
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Stratex') { window.location.href = 'login.html'; return; }
+  var nav = document.getElementById('sidebarNav');
+  var cur = window.location.pathname.split('/').pop();
+  if (nav) nav.innerHTML = STRATEX_NAV.map(function(i) {
+    return '<a class="nav-item' + (cur === i.href ? ' active' : '') + '" href="' + i.href + '" ' +
+      (i.action ? 'onclick="' + i.action + '();return false"' : '') + '>' + i.label + '</a>';
+  }).join('');
+  var u = Auth.user;
+  var uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Stratex Admin</div></div></div>';
+  updateNotifBadge();
 }
-async function addCoach(){
-clearMessages();var err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
-var fn=document.getElementById('coachFirst').value.trim(),ln=document.getElementById('coachLast').value.trim(),em=document.getElementById('coachEmail').value.trim(),tn=document.getElementById('coachTeam').value.trim();
-if(!fn||!ln||!em||!tn){err.textContent='First name, last name, email and team name are required.';err.classList.add('show');return;}
-try{var res=await api('POST','/api/stratex/coaches',{firstName:fn,lastName:ln,emailAddr:em,phone:document.getElementById('coachPhone').value.trim()||null,teamName:tn,roleAtClub:document.getElementById('coachRole').value.trim()||'Coach',county:document.getElementById('coachCounty').value.trim()||null,league:document.getElementById('coachLeague').value.trim()||null});suc.textContent=res.message;suc.classList.add('show');document.getElementById('coachFirst').value='';document.getElementById('coachLast').value='';document.getElementById('coachEmail').value='';document.getElementById('coachPhone').value='';document.getElementById('coachTeam').value='';document.getElementById('coachRole').value='';document.getElementById('coachCounty').value='';document.getElementById('coachLeague').value='';}
-catch(e){err.textContent=e.message;err.classList.add('show');}
+function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+var activeTab = 'scouts';
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('scoutsPanel').style.display = tab === 'scouts' ? 'block' : 'none';
+  document.getElementById('coachesPanel').style.display = tab === 'coaches' ? 'block' : 'none';
+  clearMessages();
 }
-document.addEventListener('DOMContentLoaded',function(){initNav();});
+function clearMessages() {
+  var err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  err.classList.remove('show'); suc.classList.remove('show');
+}
+async function addScout() {
+  clearMessages();
+  var err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  var fn = document.getElementById('scoutFirst').value.trim(), ln = document.getElementById('scoutLast').value.trim(), em = document.getElementById('scoutEmail').value.trim();
+  if (!fn || !ln || !em) { err.textContent = 'First name, last name and email are required.'; err.classList.add('show'); return; }
+  try {
+    var res = await api('POST', '/api/stratex/scouts', {
+      firstName: fn, lastName: ln, emailAddr: em,
+      phone: document.getElementById('scoutPhone').value.trim() || null,
+      scoutClub: document.getElementById('scoutClub').value.trim() || null,
+      scoutLeague: document.getElementById('scoutLeague').value.trim() || null,
+      subscriptionPlan: document.getElementById('scoutPlan').value
+    });
+    suc.textContent = res.message; suc.classList.add('show');
+    ['scoutFirst','scoutLast','scoutEmail','scoutPhone','scoutClub','scoutLeague'].forEach(function(id) { document.getElementById(id).value = ''; });
+  } catch(e) { err.textContent = e.message; err.classList.add('show'); }
+}
+async function addCoach() {
+  clearMessages();
+  var err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  var fn = document.getElementById('coachFirst').value.trim(), ln = document.getElementById('coachLast').value.trim(),
+      em = document.getElementById('coachEmail').value.trim(), tn = document.getElementById('coachTeam').value.trim();
+  if (!fn || !ln || !em || !tn) { err.textContent = 'First name, last name, email and team name are required.'; err.classList.add('show'); return; }
+  try {
+    var res = await api('POST', '/api/stratex/coaches', {
+      firstName: fn, lastName: ln, emailAddr: em,
+      phone: document.getElementById('coachPhone').value.trim() || null,
+      teamName: tn, roleAtClub: document.getElementById('coachRole').value.trim() || 'Coach',
+      county: document.getElementById('coachCounty').value.trim() || null,
+      league: document.getElementById('coachLeague').value.trim() || null
+    });
+    suc.textContent = res.message; suc.classList.add('show');
+    ['coachFirst','coachLast','coachEmail','coachPhone','coachTeam','coachRole','coachCounty','coachLeague'].forEach(function(id) { document.getElementById(id).value = ''; });
+  } catch(e) { err.textContent = e.message; err.classList.add('show'); }
+}
+document.addEventListener('DOMContentLoaded', function() { initNav(); });
 </script>
 </body></html>
