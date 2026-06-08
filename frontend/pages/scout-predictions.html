@@ -34,25 +34,12 @@
 </div>
 </div>
 </div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var SCOUT_NAV=[
-  {icon:'ð ',label:'Dashboard',href:'scout-dashboard.html'},
-  {icon:'ð',label:'Player Search',href:'player-search.html'},
-  {icon:'ð',label:'My Pipeline',href:'scout-pipeline.html'},
-  {icon:'ð',label:'Rankings',href:'scout-rankings.html'},
-  {icon:'ð',label:'Fixtures',href:'scout-fixtures.html'},
-  {icon:'ð®',label:'Predictions',href:'scout-predictions.html'},
-  {icon:'ð',label:'Exports',href:'scout-exports.html'},
-  {icon:'âï¸',label:'My Team Setup',href:'scout-setup.html'},
-  {icon:'ð',label:'Notifications',href:'scout-events.html'},{icon:'&#127914;',label:'Events',href:'scout-events.html'},{icon:'&#128276;',label:'Notifications',href:'scout-notifications.html'},
-  {icon:'ð¤',label:'Settings',href:'scout-settings.html'},
-];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
-  var nav=document.getElementById('sidebarNav');
-  var cur=window.location.pathname.split('/').pop();
-  if(nav) nav.innerHTML=SCOUT_NAV.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';}).join('');
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
