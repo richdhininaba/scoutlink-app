@@ -7,6 +7,7 @@ const email = require('../services/email');
 const config = require('../config');
 
 // My players - coaches only see players assigned to them (assigned_coach_id)
+// NOTE: coaches table requires is_super_user column (boolean, default false) - added via migration
 // Super user coaches see ALL players on their team
 router.get('/my-players', requireAuth, requireRole('Coach'), async (req, res) => {
 try {
