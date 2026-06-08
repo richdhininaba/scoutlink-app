@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 
 const app = express();
+app.set('trust proxy', 1); // Required for Vercel/Heroku: trust first proxy for rate limiting
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: [
