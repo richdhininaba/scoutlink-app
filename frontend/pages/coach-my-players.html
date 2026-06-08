@@ -1,39 +1,140 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>My Players - ScoutLink</title>
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
-<div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">My Players</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div class="table-card">
-  <div class="table-header"><h3>My Players</h3><div style="display:flex;gap:8px"><a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk Import</a><a href="add-player.html" class="btn btn-sm btn-primary">+ Add Player</a></div></div>
-  <div id="myPlayersTable"><div class="loading-state"><div class="spinner"></div></div></div>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Players - ScoutLink Coach</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.search-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-input{flex:1;min-width:200px;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px}
+.search-input:focus{border-color:#4f46e5;outline:none}
+.filter-select{padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;cursor:pointer}
+.players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.player-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s;cursor:pointer}
+.player-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.player-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;margin-bottom:12px}
+.player-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.player-pos{font-size:12px;color:#4f46e5;font-weight:600;margin-bottom:8px}
+.stat-row{display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px}
+.stat-val{font-weight:600;color:#1a1a2e}
+.rating-bar{height:6px;background:#f0f0f0;border-radius:3px;margin-top:12px;overflow:hidden}
+.rating-fill{height:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed);border-radius:3px;transition:width .6s}
+.badge{padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-forward{background:#fef3c7;color:#92400e}
+.badge-midfielder{background:#dbeafe;color:#1e40af}
+.badge-defender{background:#d1fae5;color:#065f46}
+.badge-goalkeeper{background:#ede9fe;color:#5b21b6}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-box{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.stat-box .val{font-size:24px;font-weight:700;color:#4f46e5}
+.stat-box .lbl{font-size:12px;color:#666;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
+    <nav class="sidebar-nav"><a href="coach-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="coach-my-players.html" class="active"><i class="fas fa-users"></i> My Players</a><a href="add-player.html"><i class="fas fa-user-plus"></i> Add Players</a><a href="bulk-add-players.html"><i class="fas fa-file-import"></i> Bulk Add Players</a><a href="match-facts.html"><i class="fas fa-clipboard"></i> Match Facts</a><a href="coach-fixtures.html"><i class="fas fa-calendar"></i> Fixtures</a><a href="coach-video-reels.html"><i class="fas fa-video"></i> Video Reels</a><a href="coach-notifications.html"><i class="fas fa-bell"></i> Notifications</a><a href="coach-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
+    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div><h1><i class="fas fa-users" style="color:#4f46e5;margin-right:8px"></i>My Players</h1><p style="color:#666">Northgate FC Academy Squad</p></div>
+      <div><a href="add-player.html" class="btn-primary" style="text-decoration:none;background:#4f46e5;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600"><i class="fas fa-plus"></i> Add Player</a></div>
+    </div>
+    <div class="stat-grid" id="teamStats">
+      <div class="stat-box"><div class="val" id="totalPlayers">-</div><div class="lbl">Squad Size</div></div>
+      <div class="stat-box"><div class="val" id="avgRating">-</div><div class="lbl">Avg Rating</div></div>
+      <div class="stat-box"><div class="val" id="totalGoals">-</div><div class="lbl">Total Goals</div></div>
+      <div class="stat-box"><div class="val" id="totalAssists">-</div><div class="lbl">Total Assists</div></div>
+    </div>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search players..." oninput="filterPlayers()">
+      <select class="filter-select" id="posFilter" onchange="filterPlayers()">
+        <option value="">All Positions</option>
+        <option value="Forward">Forward</option>
+        <option value="Midfielder">Midfielder</option>
+        <option value="Defender">Defender</option>
+        <option value="Goalkeeper">Goalkeeper</option>
+      </select>
+    </div>
+    <div class="players-grid" id="playersGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:#4f46e5"></i><p>Loading players...</p></div>
+    </div>
+  </main>
 </div>
+<script src="../js/auth.js"></script>
 <script>
-async function loadPage() {
-  try {
-    var d = await api('GET', '/api/coaches/my-players');
-    var players = d.data || [];
-    if (!players.length) { document.getElementById('myPlayersTable').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>'; return; }
-    document.getElementById('myPlayersTable').innerHTML = '<table class="sl-table"><thead><tr><th>Player</th><th>Age</th><th>Position</th><th>Overall</th><th>Height</th><th>Build</th><th>Value</th><th></th></tr></thead><tbody>' +
-      players.map(function(p) {
-        return '<tr><td><b>'+p.first_name+' '+p.last_name+'</b></td><td>'+p.age+'</td><td>'+(p.specific_position||p.primary_position||'--')+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+Math.round(p.overall_rating||0)+'</td><td>'+(p.height_category||'--')+'</td><td>'+(p.build_category||'--')+'</td><td>'+formatValue(p.transfer_value||0)+'</td><td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td></tr>';
-      }).join('') + '</tbody></table>';
-  } catch(e) { document.getElementById('myPlayersTable').innerHTML = '<div style="padding:16px;color:#ff6666">Error: ' + e.message + '</div>'; }
+const API = window.SCOUTLINK_API || 'https://scoutlink-api.vercel.app';
+let allPlayers = [];
+
+function getPosBadge(pos) {
+  const cls = pos ? pos.toLowerCase() : 'midfielder';
+  return '<span class="badge badge-' + cls + '">' + (pos || 'Unknown') + '</span>';
 }
-</script></div>
-</div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
-<script src="../js/main.js"></script>
-<script>
-var COACH_NAV=[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'coach-my-players.html'},{label:'Add Players',href:'add-player.html'},{label:'Bulk Add Players',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Fixtures',href:'coach-fixtures.html'},{label:'Video Reels',href:'coach-video-reels.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'coach-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=COACH_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Coach</div></div></div>';updateNotifBadge();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+
+function getInitials(first, last) { return ((first||'?')[0] + (last||'?')[0]).toUpperCase(); }
+
+function renderPlayers(players) {
+  const grid = document.getElementById('playersGrid');
+  if (!players.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px"><i class="fas fa-users" style="font-size:48px;color:#e0e0e0;display:block;margin-bottom:12px"></i><h3 style="color:#666">No players found</h3><p style="color:#999"><a href="add-player.html" style="color:#4f46e5">Add your first player</a></p></div>';
+    return;
+  }
+  const totalGoals = players.reduce((a,p) => a + (p.goals||0), 0);
+  const totalAssists = players.reduce((a,p) => a + (p.assists||0), 0);
+  const avgRating = Math.round(players.reduce((a,p) => a + (p.overall_rating||0), 0) / players.length);
+  document.getElementById('totalPlayers').textContent = players.length;
+  document.getElementById('avgRating').textContent = avgRating || '-';
+  document.getElementById('totalGoals').textContent = totalGoals;
+  document.getElementById('totalAssists').textContent = totalAssists;
+  
+  grid.innerHTML = players.map(p => {
+    const rating = p.overall_rating || 0;
+    return '<div class="player-card" onclick="window.location.href='player-profile.html?id=' + p.id + ''">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+      '<div class="player-avatar">' + getInitials(p.first_name, p.last_name) + '</div>' +
+      '<div><div class="player-name">' + (p.first_name||'') + ' ' + (p.last_name||'') + '</div>' +
+      getPosBadge(p.primary_position) + '</div></div>' +
+      '<div class="stat-row"><span>Goals</span><span class="stat-val">' + (p.goals||0) + '</span></div>' +
+      '<div class="stat-row"><span>Assists</span><span class="stat-val">' + (p.assists||0) + '</span></div>' +
+      '<div class="stat-row"><span>Appearances</span><span class="stat-val">' + (p.appearances||0) + '</span></div>' +
+      '<div class="stat-row"><span>Rating</span><span class="stat-val">' + rating + '/100</span></div>' +
+      '<div class="rating-bar"><div class="rating-fill" style="width:' + rating + '%"></div></div></div>';
+  }).join('');
+}
+
+function filterPlayers() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const pos = document.getElementById('posFilter').value;
+  const filtered = allPlayers.filter(p => {
+    const name = ((p.first_name||'') + ' ' + (p.last_name||'')).toLowerCase();
+    return (!q || name.includes(q)) && (!pos || p.primary_position === pos);
+  });
+  renderPlayers(filtered);
+}
+
+async function loadPlayers() {
+  const token = localStorage.getItem('sl_token');
+  if (!token) return;
+  try {
+    const r = await fetch(API + '/api/coaches/players', {headers:{'Authorization':'Bearer '+token}});
+    if (r.ok) {
+      const data = await r.json();
+      allPlayers = data.players || data || [];
+      renderPlayers(allPlayers);
+    } else {
+      document.getElementById('playersGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px"><p style="color:#666">Could not load players. <a href="add-player.html" style="color:#4f46e5">Add your first player</a></p></div>';
+    }
+  } catch(e) {
+    document.getElementById('playersGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px"><p style="color:#666">Connection error. Please try again later.</p></div>';
+  }
+}
+
+function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
+document.addEventListener('DOMContentLoaded', loadPlayers);
 </script>
-</body></html>
+</body>
+</html>
