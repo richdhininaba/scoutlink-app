@@ -1,6 +1,6 @@
 'use strict';
 const express = require('express');
-const router  = express.Router();
+const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 
@@ -28,14 +28,16 @@ router.get('/preferences', requireAuth, requireRole('Scout'), async (req, res) =
 
 router.get('/pipeline', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
   try {
-    const scoutId = req.user.accountType==='Scout' ? req.user.id : req.query.scoutId;
-    let q = supabase.from('recruitment_pipeline').select('id,stage,notes,interest_level,created_at,players(id,first_name,last_name,primary_position,overall_rating,transfer_value,team_name,age),scouts(id,first_name,last_name,club_name)', { count:'exact' });
+    const scoutId = req.user.accountType === 'Scout' ? req.user.id : req.query.scoutId;
+    let q = supabase.from('recruitment_pipeline')
+      .select('id,stage,notes,interest_level,created_at,players(id,first_name,last_name,specific_position,primary_position,overall_rating,transfer_value,team_name,age,position_group),scouts(id,first_name,last_name,club_name)', { count:'exact' });
     if (scoutId) q = q.eq('scout_id', scoutId);
     if (req.query.stage) q = q.eq('stage', req.query.stage);
-    q = q.order('updated_at',{ascending:false});
+    const { limit = 50 } = req.query;
+    q = q.order('updated_at',{ascending:false}).limit(Number(limit));
     const { data, error, count } = await q;
     if (error) throw error;
-    res.json({ data, total: count });
+    res.json({ data: data || [], total: count || 0 });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
