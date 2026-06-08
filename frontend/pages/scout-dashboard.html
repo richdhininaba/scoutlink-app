@@ -108,6 +108,15 @@
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
+
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
+  var u = Auth.user, uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+
 function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
 function posGroupColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
 function stageClass(s){var m={'watching':'stage-watching','shortlisted':'stage-shortlisted','interested':'stage-interested','approached':'stage-approached','trial_pending':'stage-trial_pending','negotiating':'stage-negotiating'};return m[(s||'').toLowerCase().replace(/ /g,'_')]||'stage-watching';}
@@ -115,9 +124,13 @@ function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10
 
 function initNav() {
   if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
-  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
+  var nav = document.getElementById('sidebarNav');
+  var cur = window.location.pathname.split('/').pop();
+  if (nav) nav.innerHTML = SCOUT_NAV.map(function(i) {
+    return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';
+  }).join('');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  if (uel&&u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
