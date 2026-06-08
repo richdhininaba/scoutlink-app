@@ -6,7 +6,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -14,7 +14,7 @@
   <div class="topbar">
     <span class="topbar-title" id="coachTitle">Coach Dashboard</span>
     <div class="topbar-right">
-      <button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
       <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -44,6 +44,7 @@
 </div>
 <script src="../js/main.js"></script>
 <script>
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 var COACH_NAV = [
   {label:'Dashboard', href:'coach-dashboard.html'},
   {label:'My Players', href:'coach-my-players.html'},
@@ -65,7 +66,7 @@ function initNav() {
   }).join('');
   var u = Auth.user;
   var uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + u.firstName + ' ' + u.lastName + '</div><div class="user-role">Coach</div></div></div>';
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName||'') + ' ' + (u.lastName||'') + '</div><div class="user-role">Coach</div></div></div>';
   updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
@@ -73,7 +74,7 @@ function toggleNotifPanel() { document.getElementById('notifPanel').classList.to
 document.addEventListener('DOMContentLoaded', function() {
   initNav();
   var u = Auth.user;
-  if (u) document.getElementById('coachTitle').textContent = 'Welcome, ' + u.firstName;
+  if (u) document.getElementById('coachTitle').textContent = 'Welcome, ' + (u.firstName||'Coach');
   loadCoachData();
 });
 async function loadCoachData() {
@@ -81,18 +82,20 @@ async function loadCoachData() {
     var d = await api('GET', '/api/coaches/my-players');
     var players = d.data || [];
     document.getElementById('kpiPlayers').textContent = players.length;
-    var top = players.reduce(function(a, p) { return (!a || p.overall_rating > a.overall_rating) ? p : a; }, null);
-    document.getElementById('kpiTop').textContent = top ? Math.round(top.overall_rating || 0) : '--';
+    var top = players.reduce(function(a, p) { return (!a || parseFloat(p.overall_rating||0) > parseFloat(a.overall_rating||0)) ? p : a; }, null);
+    document.getElementById('kpiTop').textContent = top ? dispOverall(top.overall_rating) + '/10' : '--';
     var totalVal = players.reduce(function(s, p) { return s + (p.transfer_value || 0); }, 0);
     document.getElementById('kpiValue').textContent = formatValue(totalVal);
     document.getElementById('kpiInterest').textContent = '--';
     if (players.length) {
       document.getElementById('myPlayers').innerHTML = '<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Height</th><th>Build</th><th>Transfer Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>' +
         players.map(function(p) {
+          var ov = dispOverall(p.overall_rating);
+          var ovNum = parseFloat(p.overall_rating||0); var ovPct = ovNum > 10 ? ovNum : ovNum*10;
           return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:' + posGroupColor(p.position_group) + '">' + initials(p.first_name, p.last_name) + '</div>' +
-            '<div><b>' + p.first_name + ' ' + p.last_name + '</b><div style="font-size:11px;color:#546E7A">' + p.age + ' yrs</div></div></div></td>' +
+            '<div><b>' + p.first_name + ' ' + p.last_name + '</b><div style="font-size:11px;color:#546E7A">' + (p.age||'--') + ' yrs</div></div></div></td>' +
             '<td>' + (p.specific_position || p.primary_position || '--') + '</td>' +
-            '<td style="color:' + ratingColor(p.overall_rating) + ';font-weight:700">' + Math.round(p.overall_rating || 0) + '</td>' +
+            '<td style="color:' + ratingColor(ovPct) + ';font-weight:700">' + ov + '</td>' +
             '<td><span class="badge badge-blue">' + (p.height_category || '--') + '</span></td>' +
             '<td>' + (p.build_category || '--') + '</td>' +
             '<td>' + formatValue(p.transfer_value || 0) + '</td>' +
@@ -106,7 +109,7 @@ async function loadCoachData() {
     document.getElementById('kpiPlayers').textContent = '0';
     document.getElementById('kpiTop').textContent = '--';
     document.getElementById('kpiValue').textContent = '--';
-    document.getElementById('myPlayers').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:16px">Add Your Squad</a></div>';
+    document.getElementById('myPlayers').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Could not load player data.</p></div>';
     console.error(e);
   }
 }
