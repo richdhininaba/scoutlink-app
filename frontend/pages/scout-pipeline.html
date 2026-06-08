@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Pipeline - ScoutLink</title>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">My Pipeline</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+<div class="table-card">
+  <div class="table-header"><h3>My Recruitment Pipeline</h3><span id="pipelineCount" style="color:#546E7A;font-size:13px"></span></div>
+  <div class="tab-bar" style="padding:16px 16px 0;max-width:500px">
+    <button class="tab-btn active" onclick="filterStage('',this)">All</button>
+    <button class="tab-btn" onclick="filterStage('Interested',this)">Interested</button>
+    <button class="tab-btn" onclick="filterStage('Shortlisted',this)">Shortlisted</button>
+    <button class="tab-btn" onclick="filterStage('Approached',this)">Approached</button>
+    <button class="tab-btn" onclick="filterStage('Signed',this)">Signed</button>
+  </div>
+  <div id="pipelineTable"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+<script>
+var allPipeline = [];
+async function loadPage() {
+  try {
+    var d = await api('GET', '/api/scouts/pipeline?limit=100');
+    allPipeline = d.data || [];
+    document.getElementById('pipelineCount').textContent = (d.total || 0) + ' players tracked';
+    renderPipeline('');
+  } catch(e) { document.getElementById('pipelineTable').innerHTML = '<div style="padding:16px;color:#ff6666">Error: ' + e.message + '</div>'; }
+}
+function filterStage(stage, btn) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderPipeline(stage);
+}
+function renderPipeline(stage) {
+  var items = stage ? allPipeline.filter(function(p) { return p.stage === stage; }) : allPipeline;
+  if (!items.length) { document.getElementById('pipelineTable').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A">No players in ' + (stage || 'pipeline') + ' yet. <a href="player-search.html" style="color:#00E676">Search players</a></div>'; return; }
+  document.getElementById('pipelineTable').innerHTML = '<table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Overall</th><th>Stage</th><th>Value</th><th>Notes</th><th></th></tr></thead><tbody>' +
+    items.map(function(p) {
+      var pl = p.players || {};
+      return '<tr><td><b>'+(pl.first_name||'')+(pl.last_name?' '+pl.last_name:'')+'</b></td>' +
+        '<td>'+(pl.specific_position||pl.primary_position||'--')+'</td>' +
+        '<td>'+(pl.age||'--')+'</td>' +
+        '<td style="color:#00E676;font-weight:700">'+Math.round(pl.overall_rating||0)+'</td>' +
+        '<td><span class="badge badge-blue">'+(p.stage||'--')+'</span></td>' +
+        '<td>'+formatValue(pl.transfer_value||0)+'</td>' +
+        '<td style="font-size:12px;color:#546E7A">'+(p.notes||'')+'</td>' +
+        '<td><a href="player-profile.html?id='+(pl.id||'')+'" class="btn btn-sm btn-outline">View</a></td></tr>';
+    }).join('') + '</tbody></table>';
+}
+</script></div>
+</div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
+<script src="../js/main.js"></script>
+<script>
+var SCOUT_NAV=[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'scout-pipeline.html'},{label:'Rankings',href:'scout-rankings.html'},{label:'Fixtures',href:'scout-fixtures.html'},{label:'Predictions',href:'scout-predictions.html'},{label:'Exports',href:'scout-exports.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'scout-settings.html'}];
+function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Scout</div></div></div>';updateNotifBadge();}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+</script>
+</body></html>
