@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded',function(){
             '</div>'+
           '</div>'+
           '<div style="text-align:right">'+
-            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
+            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'Â£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
             '<div style="font-size:11px;color:#8b949e">Est. transfer value</div>'+
           '</div>'+
         '</div>'+
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'">' +
-    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'Ã¢ÂÂ')+'</div>' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂ¢ÃÂÃÂ')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
     (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
@@ -393,121 +393,6 @@ document.addEventListener('DOMContentLoaded',function(){
   container.insertBefore(statsDiv, container.firstChild);
   container.insertBefore(gaugeDiv, container.firstChild);
 })();
-// Post-render: inject overall performance gauge
-(function injectOverallGauge(p) {
-  var container = document.getElementById('profileContent');
-  if (!container) return;
-  var ov = parseFloat(p.overall_rating)||0;
-  var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov*10);
-  var ap = parseInt(p.appearances)||0;
-  var gpg = ap>0?(parseFloat(p.goals)||0)/ap:0;
-  var apg = ap>0?(parseFloat(p.assists)||0)/ap:0;
-  var cspg = ap>0?(parseFloat(p.clean_sheets)||0)/ap:0;
-  var rColor = ov100>=90?'#7ee8a2':ov100>=80?'#1d9e75':ov100>=70?'#FFC107':ov100>=55?'#FF9800':'#f85149';
-  var descs = [[90,'Elite grassroots'],[80,'Excellent'],[70,'Strong'],[55,'Promising'],[40,'Emerging'],[0,'Developing']];
-  var desc = (descs.find(function(d){return ov100>=d[0];})||descs[descs.length-1])[1];
-  var gaugeDiv = document.createElement('div');
-  gaugeDiv.className = 'overall-gauge';
-  gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
-    '<div class="gauge-ring" style="border-color:'+rColor+'"><div>' +
-    '<div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'Ã¢ÂÂ')+'</div>' +
-    '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div>' +
-    '</div></div>' +
-    '<div class="gauge-desc-val" style="color:'+rColor+'">'+desc+'</div>';
-  var statsDiv = document.createElement('div');
-  statsDiv.className = 'stats-trio';
-  statsDiv.innerHTML = '<div class="stat-box"><div class="stat-val" style="color:var(--accent,#1d9e75)">'+gpg.toFixed(2)+'</div><div class="stat-lbl">Goals per game</div></div>' +
-    '<div class="stat-box"><div class="stat-val" style="color:#58a6ff">'+apg.toFixed(2)+'</div><div class="stat-lbl">Assists per game</div></div>' +
-    '<div class="stat-box"><div class="stat-val" style="color:#FFC107">'+cspg.toFixed(2)+'</div><div class="stat-lbl">Clean sheets per game</div></div>';
-  // Wrap attr rows in collapsible
-  var attrRows = container.querySelectorAll('.attr-row');
-  if (attrRows.length > 0) {
-    var attrParent = attrRows[0].parentElement;
-    if (attrParent) {
-      var details = document.createElement('details');
-      details.className = 'attr-details';
-      var summary = document.createElement('summary');
-      summary.innerHTML = '<span>Detailed attribute breakdown</span><span style="font-size:12px;color:var(--text-secondary,#8b949e)">Click to expand</span>';
-      var inner = document.createElement('div');
-      inner.className = 'attr-inner';
-      inner.innerHTML = attrParent.innerHTML;
-      details.appendChild(summary);
-      details.appendChild(inner);
-      attrParent.replaceWith(details);
-    }
-  }
-  container.insertBefore(statsDiv, container.firstChild);
-  container.insertBefore(gaugeDiv, container.firstChild);
-})(p);align-items:flex-start;gap:20px;flex-wrap:wrap">'+
-      '<div class="big-avatar" style="background:'+pgColor+';color:'+(pgColor==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div>'+
-      '<div style="flex:1;min-width:180px">'+
-      '<div style="font-size:26px;font-weight:900">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
-      '<div style="color:var(--text3);font-size:13px;margin:6px 0">'+(p.age_group||((p.age||'')+'yrs')||'--')+' &bull; '+(p.specific_position||p.primary_position||'--')+' &bull; '+(p.position_group||'--')+'</div>'+
-      '<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text2);margin:8px 0">'+
-      '<span>Club: <strong>'+(p.team_name||'Free Agent')+'</strong></span>'+
-      '<span>Nationality: <strong>'+(p.nationality||'England')+'</strong></span>'+
-      '<span>Foot: <strong>'+(p.foot||'Right')+'</strong></span>'+
-      '<span>Height: <strong>'+(p.height_range_cm||p.height_category||'--')+'</strong></span>'+
-      '<span>Build: <strong>'+(p.weight_range_kg||p.build_category||'--')+'</strong></span>'+
-      '</div>'+
-      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
-      '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700">Confidence: '+conf.label+'</span>'+
-      '<span style="color:var(--text3);font-size:12px">'+apps+' appearances</span>'+
-      '</div>'+
-      actionBtns+
-      '</div>'+
-      '<div style="text-align:center;min-width:100px">'+
-      '<div style="font-size:64px;font-weight:900;color:'+ovColor+';line-height:1">'+ov+'</div>'+
-      '<div style="font-size:12px;color:var(--text3)">Overall / 10</div>'+
-      '<div style="font-size:18px;font-weight:800;color:#1d9e75;margin-top:8px">'+tv+'</div>'+
-      '<div style="font-size:12px;color:var(--text3)">Transfer Value</div>'+
-      '</div>'+
-      '</div></div>'+
-
-      (Auth.type==='Scout'?'<div id="compatBreakdown"><div style="padding:16px;text-align:center"><button class="btn btn-outline" id="btnShowCompat">Show Compatibility Analysis</button></div></div>':'')+
-
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">'+
-      '<div class="table-card">'+
-      '<div class="table-header"><h3>Attribute Ratings <span style="font-size:12px;font-weight:400;color:var(--text3)">/ 10</span></h3></div>'+
-      '<div style="padding:16px">'+attrHtml+'</div>'+
-      '</div>'+
-      '<div>'+
-      '<div class="table-card" style="margin-bottom:16px">'+
-      '<div class="table-header"><h3>Season Statistics</h3></div>'+
-      '<div style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'+
-      '<div class="stat-box"><div class="stat-num">'+apps+'</div><div class="stat-lbl">Apps</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="color:#1d9e75">'+goals+'</div><div class="stat-lbl">Goals</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="color:#42A5F5">'+assts+'</div><div class="stat-lbl">Assists</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="color:#FFC107">'+cs+'</div><div class="stat-lbl">Clean Sheets</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="color:#FFC107">'+yc+'</div><div class="stat-lbl">Yellow</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="color:#f44336">'+rc+'</div><div class="stat-lbl">Red</div></div>'+
-      '</div>'+
-      '<div style="padding:0 16px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'+
-      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+gpg+'</div><div class="stat-lbl">G/Game</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+apg+'</div><div class="stat-lbl">A/Game</div></div>'+
-      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+cspg+'</div><div class="stat-lbl">CS/Game</div></div>'+
-      '</div></div>'+
-      '<div class="table-card">'+
-      '<div class="table-header"><h3>Physical Profile</h3></div>'+
-      '<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.height_category||'--')+'</div>'+(p.height_range_cm?'<div style="font-size:11px;color:#94a3b8">'+p.height_range_cm+'</div>':'')+'<div class="stat-lbl">Height</div></div>'+
-      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.build_category||'--')+'</div>'+(p.weight_range_kg?'<div style="font-size:11px;color:#94a3b8">'+p.weight_range_kg+'</div>':'')+'<div class="stat-lbl">Build</div></div>'+
-      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.foot||'Right')+'</div><div class="stat-lbl">Preferred Foot</div></div>'+
-      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.work_rate||'Med/Med')+'</div><div class="stat-lbl">Work Rate</div></div>'+
-      '</div></div>'+
-      '</div>'+
-      '</div>'+
-
-      (matches.length?
-        '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Latest Match Facts</h3><span style="font-size:12px;color:var(--text3)">Last '+Math.min(5,matches.length)+' matches</span></div><div style="padding:16px">'+matchHtml+'</div></div>'
-        :'<div class="table-card" style="margin-bottom:20px"><div style="padding:32px;text-align:center;color:var(--text3)">No match records yet.</div></div>')+
-
-      '<div id="videoSection" class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Video Reels</h3></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">'+videoHtml+'</div></div>'+
-
-      (Auth.type==='Scout'?
-        '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Prediction Analysis</h3></div><div style="padding:16px"><div id="predictionResult"><button class="btn btn-primary" id="btnRunPrediction">Run Prediction Analysis</button><p style="font-size:12px;color:var(--text3);margin-top:8px">Uses the compatibility engine to forecast attribute growth over 3 years.</p></div></div></div>'
-      :'');
-
     // Attach event listeners after DOM is built
     var btnInterest=document.getElementById('btnInterest');
     if(btnInterest) btnInterest.addEventListener('click',function(){registerInterest(playerId);});
@@ -520,9 +405,6 @@ document.addEventListener('DOMContentLoaded',function(){
 
     var btnPred=document.getElementById('btnRunPrediction');
     if(btnPred) btnPred.addEventListener('click',function(){runPrediction(playerId);});
-
-  }).catch(function(e){
-    document.getElementById('profileContent').innerHTML='<div style="text-align:center
 
 // Add predictions section and your-estimated-value after profile renders
 (function() {
@@ -591,7 +473,10 @@ document.addEventListener('DOMContentLoaded',function(){
       }
     }
   }
-})();;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';
+})();
+  }).catch(function(e){
+    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';';
+
     console.error('[PlayerProfile]',e);
   });
 });
