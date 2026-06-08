@@ -1,60 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>My Pipeline - ScoutLink</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-.data-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.data-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:#1a1a2e}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
-.stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-.stat-box .val{font-size:28px;font-weight:700;color:#4f46e5}
-.stat-box .lbl{font-size:12px;color:#666;margin-top:4px}
-table{width:100%;border-collapse:collapse}
-th{background:#f8f9fa;padding:10px 14px;text-align:left;font-size:13px;color:#666;font-weight:600}
-td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px}
-tr:hover td{background:#f8f9fa}
-.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
-.badge-green{background:#d1fae5;color:#065f46}
-.badge-blue{background:#dbeafe;color:#1e40af}
-.badge-purple{background:#ede9fe;color:#5b21b6}
-.badge-yellow{background:#fef3c7;color:#92400e}
-.btn-primary{background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
-.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e0e0e0;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer}
-.empty-state{text-align:center;padding:60px 20px;color:#666}
-.empty-icon{font-size:64px;color:#e0e0e0;margin-bottom:16px}
+.pipeline-stage{border-radius:12px;padding:20px;border:1px solid var(--border);margin-bottom:20px;}
+.stage-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.stage-dot{width:12px;height:12px;border-radius:50%;}
+.player-row{display:flex;align-items:center;gap:12px;padding:12px;background:#0a0f1e;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .15s;}
+.player-row:hover{background:#111827;}
+.compat-score{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid;}
+.interest-bar{height:4px;background:#1e2a3a;border-radius:2px;overflow:hidden;width:60px;}
+.interest-fill{height:100%;border-radius:2px;background:#00E676;}
+.stage-move-btn{padding:3px 10px;border-radius:4px;border:1px solid #1e2a3a;background:transparent;color:#94a3b8;font-size:11px;cursor:pointer;}
+.stage-move-btn:hover{border-color:#00E676;color:#00E676;}
 </style>
-</head>
-<body>
-<div class="layout">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
-    <nav class="sidebar-nav"><a href="scout-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="player-search.html"><i class="fas fa-search"></i> Player Search</a><a href="scout-pipeline.html" class="active"><i class="fas fa-layer-group"></i> My Pipeline</a><a href="scout-rankings.html"><i class="fas fa-trophy"></i> Rankings</a><a href="scout-fixtures.html"><i class="fas fa-calendar"></i> Fixtures</a><a href="scout-predictions.html"><i class="fas fa-chart-line"></i> Predictions</a><a href="scout-exports.html"><i class="fas fa-download"></i> Exports</a><a href="scout-notifications.html"><i class="fas fa-bell"></i> Notifications</a><a href="scout-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
-    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
-  </aside>
-  <main class="main-content">
-    <div class="page-header"><h1><i class="fas fa-layer-group" style="color:#4f46e5;margin-right:8px"></i>My Pipeline</h1></div>
-    
-<div class="stat-grid">
-  <div class="stat-box" id="totalTracked"><div class="val">-</div><div class="lbl">Total Tracked</div></div>
-  <div class="stat-box" id="shortlisted"><div class="val">-</div><div class="lbl">Shortlisted</div></div>
-  <div class="stat-box" id="trialSched"><div class="val">-</div><div class="lbl">Trials Scheduled</div></div>
-  <div class="stat-box" id="contracted"><div class="val">-</div><div class="lbl">Contracted</div></div>
-</div>
-<div class="data-card">
-  <h3>Recruitment Pipeline</h3>
-  <div id="pipelineTable">
-    <div style="text-align:center;padding:40px"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:#4f46e5"></i><p>Loading pipeline data...</p></div>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+  <div class="topbar">
+    <span class="topbar-title">My Recruitment Pipeline</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- Pipeline KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">
+      <div class="kpi-card"><div class="kpi-label">Total Tracked</div><div class="kpi-value green" id="kpiTotal">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Watching</div><div class="kpi-value" id="kpiWatching">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Shortlisted</div><div class="kpi-value" id="kpiShortlisted">-</div></div>
+      <div class="kpi-card"><div class="kpi-label">Approached</div><div class="kpi-value green" id="kpiApproached">-</div></div>
+    </div>
+
+    <!-- Pipeline stages info -->
+    <div class="table-card" style="margin-bottom:20px;padding:16px 20px">
+      <p style="font-size:12px;color:#546E7A;line-height:1.6">
+        <b style="color:#B0BEC5">FA/UEFA Recruitment Stages:</b>
+        🔵 <b>Watching</b> — Initial identification &amp; observation ·
+        🟡 <b>Shortlisted</b> — Meets position &amp; technical criteria ·
+        🟢 <b>Approached</b> — Club/player contact initiated ·
+        🔴 <b>Negotiating</b> — Terms under discussion
+      </p>
+    </div>
+
+    <div id="pipelineContent"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading pipeline...</span></div></div>
   </div>
 </div>
-  </main>
 </div>
-<script src="../js/auth.js"></script>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+<script src="../js/main.js"></script>
 <script>
-function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
+var STAGES = [
+  {key:'watching',   label:'👁️ Watching',    color:'#42A5F5', bg:'rgba(33,150,243,.06)'},
+  {key:'shortlisted',label:'⭐ Shortlisted', color:'#FFD54F', bg:'rgba(255,213,79,.06)'},
+  {key:'approached', label:'📞 Approached',  color:'#00E676', bg:'rgba(0,230,118,.06)'},
+  {key:'negotiating',label:'🤝 Negotiating', color:'#FF7043', bg:'rgba(255,112,67,.06)'}
+];
+
+var SCOUT_NAV = [
+  {label:'🏠 Dashboard', href:'scout-dashboard.html'},
+  {label:'🔍 Player Search', href:'player-search.html'},
+  {label:'📋 My Pipeline', href:'scout-pipeline.html'},
+  {label:'🏆 Rankings', href:'scout-rankings.html'},
+  {label:'📅 Fixtures', href:'scout-fixtures.html'},
+  {label:'🔮 Predictions', href:'scout-predictions.html'},
+  {label:'📊 Exports', href:'scout-exports.html'},
+  {label:'🔔 Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'⚙️ Settings', href:'scout-settings.html'}
+];
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  var nav=document.getElementById('sidebarNav');
+  var cur=window.location.pathname.split('/').pop();
+  if(nav) nav.innerHTML=SCOUT_NAV.map(function(i){
+    return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';
+  }).join('');
+  var u=Auth.user;
+  var uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+
+document.addEventListener('DOMContentLoaded', function(){ initNav(); loadPipeline(); });
+
+async function loadPipeline(){
+  try {
+    var d = await api('GET', '/api/scouts/pipeline?limit=100');
+    var all = d.data||[];
+    document.getElementById('kpiTotal').textContent = d.total||all.length||0;
+    var watching=0, shortlisted=0, approached=0, negotiating=0;
+    all.forEach(function(r){ var s=(r.stage||'').toLowerCase(); if(s==='watching')watching++; else if(s==='shortlisted')shortlisted++; else if(s==='approached')approached++; else if(s==='negotiating')negotiating++; });
+    document.getElementById('kpiWatching').textContent=watching;
+    document.getElementById('kpiShortlisted').textContent=shortlisted;
+    document.getElementById('kpiApproached').textContent=approached;
+
+    var byStage = {};
+    STAGES.forEach(function(s){ byStage[s.key] = all.filter(function(r){ return (r.stage||'watching').toLowerCase()===s.key; }); });
+
+    var html = '';
+    STAGES.forEach(function(stg){
+      var rows = byStage[stg.key]||[];
+      html += '<div class="pipeline-stage" style="background:'+stg.bg+';border-color:'+stg.color+'22">' +
+        '<div class="stage-header">' +
+          '<div class="stage-dot" style="background:'+stg.color+'"></div>' +
+          '<h3 style="color:'+stg.color+'">'+stg.label+'</h3>' +
+          '<span style="font-size:12px;color:#546E7A;margin-left:auto">'+rows.length+' players</span>' +
+        '</div>';
+      if(!rows.length){
+        html += '<div style="text-align:center;padding:20px;color:#546E7A;font-size:13px">No players at this stage</div>';
+      } else {
+        rows.forEach(function(row){
+          var pl = row.players||{};
+          var ov = dispOverall(pl.overall_rating);
+          var ovNum = parseFloat(pl.overall_rating||0); var ovPct = ovNum>10?ovNum:ovNum*10;
+          var ovColor = compatColor(ovPct);
+          var pCol = posColor(pl.position_group);
+          var interest = row.interest_level||5;
+          html += '<div class="player-row" onclick="location.href='player-profile.html?id='+pl.id+''">' +
+            '<div class="user-avatar" style="width:38px;height:38px;font-size:13px;background:'+pCol+';flex-shrink:0">'+initials(pl.first_name,pl.last_name)+'</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-weight:700;font-size:14px">'+(pl.first_name||'')+' '+(pl.last_name||'')+'</div>' +
+              '<div style="font-size:12px;color:#546E7A">'+(pl.specific_position||pl.primary_position||'--')+' · '+(pl.age||'--')+' yrs · '+(pl.team_name||'--')+'</div>' +
+              (row.notes?'<div style="font-size:11px;color:#94a3b8;margin-top:3px">📝 '+row.notes+'</div>':'') +
+            '</div>' +
+            '<div style="text-align:center;flex-shrink:0">' +
+              '<div class="compat-score" style="color:'+ovColor+';border-color:'+ovColor+'">'+ov+'</div>' +
+              '<div style="font-size:9px;color:#546E7A;margin-top:2px">Overall</div>' +
+            '</div>' +
+            '<div style="text-align:right;flex-shrink:0">' +
+              '<div style="font-size:13px;font-weight:700;color:#00E676">'+formatValue(pl.transfer_value||0)+'</div>' +
+              '<div style="font-size:10px;color:#546E7A">Interest: '+interest+'/10</div>' +
+              '<div class="interest-bar"><div class="interest-fill" style="width:'+(interest*10)+'%"></div></div>' +
+            '</div>' +
+          '</div>';
+        });
+      }
+      html += '</div>';
+    });
+    document.getElementById('pipelineContent').innerHTML = html || '<div style="text-align:center;padding:48px;color:#546E7A"><p>Your pipeline is empty.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px">Find Players</a></div>';
+  } catch(e) {
+    document.getElementById('pipelineContent').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Could not load pipeline data.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px">Browse Players</a></div>';
+    console.error(e);
+  }
+}
 </script>
-</body>
-</html>
+</body></html>
