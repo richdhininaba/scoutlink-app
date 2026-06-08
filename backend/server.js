@@ -1,22 +1,19 @@
 'use strict';
 require('dotenv').config();
-const express    = require('express');
-const cors       = require('cors');
-const helmet     = require('helmet');
-const morgan     = require('morgan');
-const rateLimit  = require('express-rate-limit');
-const config     = require('./config');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const config = require('./config');
 
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: [
-    'https://scoutlink.app',
-    'https://www.scoutlink.app',
+    'https://scoutlink.app', 'https://www.scoutlink.app',
     'https://richdhininaba.github.io',
-    'http://localhost:5500',
-    'http://localhost:3000',
-    'http://localhost:8080'
+    'http://localhost:5500', 'http://localhost:3000', 'http://localhost:8080'
   ],
   credentials: true
 }));
@@ -24,28 +21,29 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
-const limiter     = rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: 'Too many requests' } });
-const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30,  message: { error: 'Too many auth attempts' } });
+const limiter = rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: 'Too many requests' } });
+const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30, message: { error: 'Too many auth attempts' } });
 app.use(limiter);
 
-app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.0.0', timestamp: new Date().toISOString() }));
+app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.1.0', timestamp: new Date().toISOString() }));
 
 // Routes
-app.use('/api/auth',          authLimiter, require('./routes/auth'));
-app.use('/api/registrations',             require('./routes/registrations'));
-app.use('/api/players',                   require('./routes/players'));
-app.use('/api/match-facts',               require('./routes/matchFacts'));
-app.use('/api/notifications',             require('./routes/notifications'));
-app.use('/api/stratex',                   require('./routes/stratex'));
-app.use('/api/scouts',                    require('./routes/scouts'));
-app.use('/api/coaches',                   require('./routes/coaches'));
-app.use('/api/videos',                    require('./routes/videos'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/registrations', require('./routes/registrations'));
+app.use('/api/players', require('./routes/players'));
+app.use('/api/match-facts', require('./routes/matchFacts'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/stratex', require('./routes/stratex'));
+app.use('/api/scouts', require('./routes/scouts'));
+app.use('/api/scout', require('./routes/scouts')); // alias for frontend scout routes
+app.use('/api/coaches', require('./routes/coaches'));
+app.use('/api/videos', require('./routes/videos'));
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });
 
 app.listen(config.port, () => {
-  console.log('\u26a1 ScoutLink API v2.0 on http://localhost:' + config.port);
+  console.log('\u26a1 ScoutLink API v2.1 on http://localhost:' + config.port);
 });
 
 module.exports = app;
