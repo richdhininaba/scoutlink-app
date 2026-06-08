@@ -116,6 +116,17 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     q = q.order('overall_rating', { ascending: false }).range(off, off+Number(limit)-1);
     const { data, error, count } = await q;
     if (error) throw error;
+    // Auto-calc transfer_value for players where it is 0 or null
+    const needsCalc = (data||[]).filter(p => !p.transfer_value || p.transfer_value === 0);
+    if (needsCalc.length > 0) {
+      await Promise.all(needsCalc.map(async p => {
+        try {
+          const overall100 = p.overall_rating ? (p.overall_rating > 10 ? p.overall_rating : p.overall_rating * 10) : 50;
+          const tv = calcTransferValue(p, overall100);
+          if (tv > 0) { await supabase.from('players').update({ transfer_value: tv }).eq('id', p.id); p.transfer_value = tv; }
+        } catch(e) {}
+      }));
+    }
     res.json({ data, total: count, page: Number(page), limit: Number(limit) });
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
