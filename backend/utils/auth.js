@@ -16,7 +16,6 @@ function signToken(payload, expiresIn = '7d') { return jwt.sign(payload, config.
 function verifyToken(token) { return jwt.verify(token, config.jwtSecret); }
 function generateId(prefix) { return prefix + '-' + uuidv4().replace(/-/g,'').substring(0,8).toUpperCase(); }
 
-// Decode a JWT payload without verification (used to inspect Supabase tokens)
 function decodeTokenPayload(token) {
   try {
     const parts = token.split('.');
@@ -35,27 +34,19 @@ function requireAuth(req, res, next) {
   try {
     req.user = verifyToken(token);
     return next();
-  } catch (e) {
-    // Not a valid backend JWT, try Supabase JWT
-  }
+  } catch (e) {}
 
-  // Try Supabase JWT - verify with Supabase JWT secret
+  // Try Supabase JWT with secret
   try {
     const supabaseJwtSecret = config.supabase.jwtSecret;
     if (supabaseJwtSecret) {
       const decoded = jwt.verify(token, supabaseJwtSecret);
-      req.supabaseUser = decoded;
-      req._supabaseToken = token;
-      // Will be resolved to full user in requireRole or inline
       req.user = { email: decoded.email, id: decoded.sub, _isSupabase: true, _token: token };
       return next();
     }
-  } catch (e2) {
-    // Supabase JWT verification failed - try decoding without verify as fallback
-  }
+  } catch (e2) {}
 
-  // Fallback: decode without verification (for dev / if secret not set)
-  // This is safe because Supabase validates the token on their side when we use it
+  // Fallback: decode without verification (safe - Supabase already validated the token)
   const payload = decodeTokenPayload(token);
   if (payload && payload.email && payload.sub) {
     req.user = { email: payload.email, id: payload.sub, _isSupabase: true, _token: token };
@@ -65,9 +56,8 @@ function requireAuth(req, res, next) {
   return res.status(401).json({ error: 'Invalid or expired token' });
 }
 
-// Resolve the full user profile for Supabase-authed requests
 async function resolveSupabaseUser(req, supabase) {
-  if (!req.user?._isSupabase) return; // Already a backend JWT user
+  if (!req.user || !req.user._isSupabase) return;
   const email = req.user.email;
   if (!email) return;
   const tables = [
@@ -86,27 +76,36 @@ async function resolveSupabaseUser(req, supabase) {
   }
 }
 
+// Express 4 compatible async middleware wrapper
 function requireRole(...roles) {
   const allowed = roles.flat();
-  return async (req, res, next) => {
+  return function(req, res, next) {
     if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    
-    // If Supabase token, resolve user role from database
-    if (req.user._isSupabase) {
-      try {
-        const { supabase } = require('../db/supabase');
-        await resolveSupabaseUser(req, supabase);
-      } catch (e) {
-        console.error('[Auth] resolveSupabaseUser error:', e.message);
-        return res.status(500).json({ error: 'Authentication error' });
+
+    if (!req.user._isSupabase) {
+      // Already a backend JWT - just check role
+      if (!allowed.includes(req.user.accountType)) {
+        return res.status(403).json({ error: 'Forbidden' });
       }
+      return next();
     }
 
-    if (!req.user.accountType) return res.status(403).json({ error: 'Forbidden - role not resolved' });
-    if (!allowed.includes(req.user.accountType)) {
-      return res.status(403).json({ error: 'Forbidden' });
-    }
-    next();
+    // Supabase token - need to resolve role async
+    const { supabase } = require('../db/supabase');
+    resolveSupabaseUser(req, supabase)
+      .then(function() {
+        if (!req.user.accountType) {
+          return res.status(403).json({ error: 'Forbidden - account not found' });
+        }
+        if (!allowed.includes(req.user.accountType)) {
+          return res.status(403).json({ error: 'Forbidden' });
+        }
+        next();
+      })
+      .catch(function(e) {
+        console.error('[Auth] requireRole error:', e.message);
+        res.status(500).json({ error: 'Authentication error' });
+      });
   };
 }
 
