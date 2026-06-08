@@ -132,7 +132,8 @@ var SCOUT_NAV=[
   {icon:'&#128302;',label:'Predictions',href:'scout-predictions.html'},
   {icon:'&#128202;',label:'Exports',href:'scout-exports.html'},
   {icon:'&#9881;',label:'My Team Setup',href:'scout-setup.html'},
-  {icon:'&#128276;',label:'Notifications',href:'scout-notifications.html'},
+  {icon:'&#127914;',label:'Events',href:'scout-events.html'},
+{icon:'&#128276;',label:'Notifications',href:'scout-notifications.html'},
   {icon:'&#128100;',label:'Settings',href:'scout-settings.html'},
 ];
 
@@ -180,7 +181,7 @@ function toggleChk(el, arr, limit, gridId){
   else if(arr.length<limit){arr.push(val);el.classList.add('sel');}
   else{
     var note=document.getElementById(noteIds[gridId]);
-    if(note){note.textContent='Max '+limit+' selections';note.style.color='#f44336';setTimeout(function(){note.style.color='#FF9800';note.textContent='Select 1â3';},2000);}
+    if(note){note.textContent='Max '+limit+' selections';note.style.color='#f44336';setTimeout(function(){note.style.color='#FF9800';note.textContent='Select 1Ã¢ÂÂ3';},2000);}
   }
 }
 
