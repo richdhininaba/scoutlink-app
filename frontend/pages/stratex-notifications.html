@@ -1,46 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Notifications - ScoutLink Admin</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-.notif-card{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);display:flex;align-items:flex-start;gap:16px;border-left:4px solid #4f46e5}
-.notif-card.read{border-left-color:#e0e0e0;opacity:.8}
-.notif-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.notif-icon.reg{background:#dbeafe;color:#1d4ed8}
-.notif-icon.system{background:#fef3c7;color:#d97706}
-.notif-icon.user{background:#d1fae5;color:#059669}
-.badge{background:#ef4444;color:#fff;border-radius:50%;padding:2px 7px;font-size:12px;font-weight:700}
-</style>
-</head>
-<body>
-<div class="layout">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
-    <nav class="sidebar-nav"><a href="stratex-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="stratex-registrations.html"><i class="fas fa-clipboard-list"></i> Registrations</a><a href="stratex-users.html"><i class="fas fa-users"></i> Users</a><a href="stratex-players.html"><i class="fas fa-futbol"></i> Players</a><a href="stratex-scouts.html"><i class="fas fa-binoculars"></i> Scouts</a><a href="stratex-coaches.html"><i class="fas fa-chalkboard-teacher"></i> Coaches</a><a href="stratex-scout-teams.html"><i class="fas fa-shield-alt"></i> Scout Teams</a><a href="stratex-school-teams.html"><i class="fas fa-school"></i> School Teams</a><a href="stratex-notifications.html" class="active"><i class="fas fa-bell"></i> Notifications</a><a href="stratex-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
-    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
-  </aside>
-  <main class="main-content">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <div><h1><i class="fas fa-bell" style="color:#4f46e5;margin-right:8px"></i>Admin Notifications <span class="badge" id="badge">5</span></h1><p style="color:#666">System alerts and registration notifications</p></div>
-      <button onclick="markAllRead()" style="background:#f3f4f6;border:1px solid #e0e0e0;padding:8px 16px;border-radius:8px;cursor:pointer"><i class="fas fa-check-double"></i> Mark all read</button>
-    </div>
-    <div id="notifsContainer">
-      <div class="notif-card"><div class="notif-icon reg"><i class="fas fa-user-plus"></i></div><div><h4>New Registration Request</h4><p style="color:#666;font-size:13px">Jamie Williams (Coach) has submitted a registration request for Northgate FC Academy</p><span style="font-size:12px;color:#999"><i class="fas fa-clock" style="margin-right:4px"></i>2 hours ago</span></div></div>
-      <div class="notif-card"><div class="notif-icon reg"><i class="fas fa-user-plus"></i></div><div><h4>New Registration Request</h4><p style="color:#666;font-size:13px">Alex Thompson (Scout) has submitted a registration request</p><span style="font-size:12px;color:#999"><i class="fas fa-clock" style="margin-right:4px"></i>5 hours ago</span></div></div>
-      <div class="notif-card"><div class="notif-icon user"><i class="fas fa-check-circle"></i></div><div><h4>Registration Approved</h4><p style="color:#666;font-size:13px">Jordan Blake (Player) registration was successfully approved</p><span style="font-size:12px;color:#999"><i class="fas fa-clock" style="margin-right:4px"></i>1 day ago</span></div></div>
-      <div class="notif-card read"><div class="notif-icon system"><i class="fas fa-server"></i></div><div><h4>System Update</h4><p style="color:#666;font-size:13px">ScoutLink platform updated to v2.2 - new match facts analysis features added</p><span style="font-size:12px;color:#999"><i class="fas fa-clock" style="margin-right:4px"></i>2 days ago</span></div></div>
-      <div class="notif-card read"><div class="notif-icon user"><i class="fas fa-chart-bar"></i></div><div><h4>Weekly Report Ready</h4><p style="color:#666;font-size:13px">Your weekly platform activity report is ready to view</p><span style="font-size:12px;color:#999"><i class="fas fa-clock" style="margin-right:4px"></i>5 days ago</span></div></div>
-    </div>
-  </main>
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">&#9889; Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">&#128276; Admin Notifications</span>
+<div class="topbar-right">
+<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
 </div>
-<script src="../js/auth.js"></script>
+</div>
+<div class="page-content">
+<div class="table-card">
+<div class="table-header"><h3>Notifications</h3><button class="btn btn-sm btn-outline" onclick="markAllRead()">Mark All Read</button></div>
+<div id="notifContent"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div>
+</div>
+</div>
+<script src="../js/main.js"></script>
 <script>
-function markAllRead(){document.querySelectorAll('.notif-card').forEach(c=>c.classList.add('read'));document.getElementById('badge').textContent='';}
-function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
+var STRATEX_NAV=[
+{label:'&#127968; Dashboard',href:'stratex-dashboard.html'},
+{label:'&#128203; Registrations',href:'stratex-registrations.html'},
+{label:'&#128101; Users',href:'stratex-users.html'},
+{label:'&#9917; Players',href:'stratex-players.html'},
+{label:'&#128269; Scouts',href:'stratex-scouts.html'},
+{label:'&#127947; Coaches',href:'stratex-coaches.html'},
+{label:'&#127942; Scout Teams',href:'stratex-scout-teams.html'},
+{label:'&#127979; School Teams',href:'stratex-school-teams.html'},
+{label:'&#127894; Award Nominations',href:'stratex-award-nominations.html'},
+{label:'&#127914; Showcase Events',href:'stratex-showcase-events.html'},
+{label:'&#128276; Notifications',href:'stratex-notifications.html'},
+{label:'&#9881; Settings',href:'stratex-settings.html'}
+];
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  var nav=document.getElementById('sidebarNav');
+  var cur=window.location.pathname.split('/').pop();
+  if(nav) nav.innerHTML=STRATEX_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.label+'</a>';}).join('');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#FF5722;color:#fff">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Stratex Admin</div></div></div>';
+}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+
+async function loadNotifications(){
+  try{
+    var d=await api('GET','/api/notifications?limit=50');
+    var rows=d.data||[];
+    if(!rows.length){document.getElementById('notifContent').innerHTML='<div style="text-align:center;padding:40px;color:#546E7A">No notifications yet.</div>';return;}
+    document.getElementById('notifContent').innerHTML='<div style="padding:8px">'+rows.map(function(n){
+      var icon='&#128276;';
+      if(n.notification_type==='scout_interest') icon='&#11088;';
+      if(n.notification_type==='system') icon='&#8505;';
+      return'<div class="notif-item'+(n.is_read?'':' unread')+'" style="padding:14px 16px;border-bottom:1px solid var(--border)">'+
+      '<div style="display:flex;gap:12px;align-items:flex-start"><span style="font-size:20px">'+icon+'</span><div style="flex:1"><div style="font-weight:700;color:#E2E8F0;margin-bottom:2px">'+n.title+'</div><div style="font-size:13px;color:#B0BEC5;margin-bottom:4px">'+n.body+'</div><div style="font-size:11px;color:#546E7A">'+relTime(n.created_at)+'</div></div>'+(n.is_read?'':'<div style="width:8px;height:8px;border-radius:50%;background:#00E676;margin-top:6px;flex-shrink:0;cursor:pointer" onclick="markRead(''+n.id+'')"></div>')+'</div></div>';
+    }).join('')+'</div>';
+  }catch(e){document.getElementById('notifContent').innerHTML='<div style="text-align:center;padding:40px;color:#546E7A">Could not load notifications.</div>';}
+}
+async function markRead(id){try{await api('PATCH','/api/notifications/'+id+'/read');loadNotifications();}catch(e){}}
+async function markAllRead(){try{await api('PATCH','/api/notifications/read-all');loadNotifications();}catch(e){}}
+document.addEventListener('DOMContentLoaded',function(){initNav();loadNotifications();});
 </script>
-</body>
-</html>
+</body></html>
