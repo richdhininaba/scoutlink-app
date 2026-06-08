@@ -87,7 +87,7 @@
 <script src="../js/main.js"></script>
 <script>
 /* =====================================================================
-   MATCH FACTS — LIVE FORMATION PITCH + POST-GAME MODE
+   MATCH FACTS â LIVE FORMATION PITCH + POST-GAME MODE
    ===================================================================== */
 'use strict';
 
@@ -112,7 +112,7 @@ var state = {
 var myPlayers = [];
 var currentStep = 1;
 
-// ---- Formation definitions — slot positions as % top, % left ----
+// ---- Formation definitions â slot positions as % top, % left ----
 // Pitch orientation: GK at bottom (high top %), forwards at top (low top %)
 // For 11-a-side, 9, 7, 5
 var FORMATION_SLOTS = {
@@ -285,7 +285,7 @@ function playerName(id){var p=myPlayers.find(function(x){return x.id===id;});ret
 function playerInitials(id){var p=myPlayers.find(function(x){return x.id===id;});return p?initials(p.first_name,p.last_name):'??';}
 
 /* =====================================================================
-   STEP 1 — MODE AND SETUP
+   STEP 1 â MODE AND SETUP
    ===================================================================== */
 function renderStep1(){
   setStep(1);
@@ -342,7 +342,7 @@ function renderStep1(){
   if(!state.matchDate) document.getElementById('mfDate').value=new Date().toISOString().split('T')[0];
 }
 /* =====================================================================
-   STEP 2 — FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
+   STEP 2 â FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
    ===================================================================== */
 function goToStep2(){
   state.opponent=document.getElementById('mfOpponent').value.trim();
@@ -540,7 +540,7 @@ function updateAssignStatus(slots){
   if(nextBtn) nextBtn.disabled=!allDone;
 }
 /* =====================================================================
-   STEP 3 — LIVE MATCH WITH TIMER AND PITCH
+   STEP 3 â LIVE MATCH WITH TIMER AND PITCH
    ===================================================================== */
 function renderStep3Live(){
   setStep(3);
@@ -752,16 +752,16 @@ function updateEventsLog(){
   if(!state.events.length){el.textContent='No events yet';return;}
   el.innerHTML=state.events.map(function(e){
     var min=(e.minute||0)+'min';
-    if(e.type==='goal') return '<div style="padding:3px 0">&#9917; '+min+' Goal — '+playerName(e.playerId)+'</div>';
-    if(e.type==='assist') return '<div style="padding:3px 0">&#128314; '+min+' Assist — '+playerName(e.playerId)+'</div>';
-    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">&#9646; '+min+' Yellow card — '+playerName(e.playerId)+'</div>';
-    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">&#9646; '+min+' Red card — '+playerName(e.playerId)+'</div>';
-    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">&#8645; '+min+' Sub — '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
+    if(e.type==='goal') return '<div style="padding:3px 0">&#9917; '+min+' Goal â '+playerName(e.playerId)+'</div>';
+    if(e.type==='assist') return '<div style="padding:3px 0">&#128314; '+min+' Assist â '+playerName(e.playerId)+'</div>';
+    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">&#9646; '+min+' Yellow card â '+playerName(e.playerId)+'</div>';
+    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">&#9646; '+min+' Red card â '+playerName(e.playerId)+'</div>';
+    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">&#8645; '+min+' Sub â '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
     return '';
   }).join('');
 }
 /* =====================================================================
-   POST-GAME MODE — STEP 2 (EVENTS)
+   POST-GAME MODE â STEP 2 (EVENTS)
    ===================================================================== */
 function renderStep2Post(){
   setStep(2);
@@ -850,54 +850,57 @@ function goToStep3Post(){
 }
 
 /* =====================================================================
-   STEP 4 — PLAYER RATINGS
+   STEP 4 â PLAYER RATINGS
    ===================================================================== */
 function renderStep4(){
   setStep(4);
   if(!state.players.length){
-    document.getElementById('stepContent').innerHTML='<div class="table-card"><div style="padding:32px;text-align:center;color:#8b949e"><p>No players selected to rate. Go back and select players.</p><button class="btn btn-outline" id="backBtn" style="margin-top:14px">&#8592; Back</button></div></div>';
-    document.getElementById('backBtn').addEventListener('click',function(){state.mode==='live'?renderStep3Live():renderStep2Post();});
+    document.getElementById('stepContent').innerHTML='<div class="table-card"><div style="padding:32px;text-align:center;color:#8b949e"><p>No players selected to rate. Go back and select players.</p><button class="btn btn-outline" id="backToEventsBtn" style="margin-top:14px">&#8592; Back</button></div></div>';
+    document.getElementById('backToEventsBtn').addEventListener('click',function(){state.mode==='live'?renderStep3Live():renderStep2Post();});
     return;
   }
   var html='';
   state.players.forEach(function(p){
-    var saved=state.ratings&&state.ratings[p.id]||{};
-    var slot=Object.keys(state.playerPositions).find(function(k){return state.playerPositions[k]===p.id;})||'';
-    html+='<div class="player-rating-card"><div style="font-size:15px;font-weight:700;margin-bottom:14px">'+p.name+'<span style="font-size:12px;color:#8b949e;margin-left:8px">'+(slot||p.position)+'</span></div>';
-    RATING_ATTRS.forEach(function(attr){
-      var val=saved[attr]||5;
-      html+='<div class="rating-row"><div class="rating-label">'+attr.charAt(0).toUpperCase()+attr.slice(1)+'</div>'+
-      '<input type="range" min="1" max="10" value="'+val+'" class="rating-slider" data-player="'+p.id+'" data-attr="'+attr+'" oninput="this.nextElementSibling.textContent=this.value">'+
-      '<div class="rating-val">'+val+'</div></div>';
-    });
-    html+='</div>';
+    var slotKey=Object.keys(state.playerPositions||{}).find(function(k){return (state.playerPositions||{})[k]===p.id;})||'';
+    var savedPerf=(state.overallPerformance&&state.overallPerformance[p.id])||5;
+    html+='<div class="player-rating-card">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'+
+    '<div style="font-size:15px;font-weight:700">'+p.name+'<span style="font-size:12px;color:#8b949e;margin-left:8px">'+(slotKey||p.position)+'</span></div>'+
+    '</div>'+
+    '<label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:10px">Overall match performance</label>'+
+    '<div style="display:flex;align-items:center;gap:12px">'+
+    '<span style="font-size:11px;color:#8b949e;white-space:nowrap">Poor</span>'+
+    '<input type="range" min="1" max="10" value="'+savedPerf+'" class="rating-slider perf-slider" data-player="'+p.id+'" style="flex:1" oninput="this.nextElementSibling.textContent=this.value">'+
+    '<span class="rating-val" style="min-width:24px;text-align:center">'+savedPerf+'</span>'+
+    '<span style="font-size:11px;color:#8b949e;white-space:nowrap">Outstanding</span>'+
+    '</div>'+
+    '</div>';
   });
   document.getElementById('stepContent').innerHTML=
-  '<div class="table-card"><div class="table-header"><h3>Player ratings</h3><span style="font-size:12px;color:#8b949e">Rate each player 1-10 per attribute</span></div><div style="padding:20px">'+
+  '<div class="table-card"><div class="table-header"><h3>Player ratings</h3><span style="font-size:12px;color:#8b949e">Rate each player's overall match performance 1-10</span></div><div style="padding:20px">'+
   html+
   '<div style="display:flex;gap:12px;margin-top:16px">'+
   '<button class="btn btn-ghost" id="backToEventsBtn">&#8592; Back</button>'+
   '<button class="btn btn-primary" id="nextToStep5Btn">Next: Review and submit &#8594;</button>'+
   '</div></div></div>';
-
   document.getElementById('backToEventsBtn').addEventListener('click',function(){state.mode==='live'?renderStep3Live():renderStep2Post();});
   document.getElementById('nextToStep5Btn').addEventListener('click',goToStep5);
 }
 
 function goToStep5(){
-  state.ratings={};
-  document.querySelectorAll('.rating-slider').forEach(function(slider){
+  state.overallPerformance={};
+  document.querySelectorAll('.perf-slider').forEach(function(slider){
     var pid=slider.getAttribute('data-player');
-    var attr=slider.getAttribute('data-attr');
-    if(!state.ratings[pid]) state.ratings[pid]={};
-    state.ratings[pid][attr]=parseInt(slider.value);
+    state.overallPerformance[pid]=parseInt(slider.value);
+  });
+  // Also keep ratings for backward compat - set overall_performance key
+  state.ratings={};
+  Object.keys(state.overallPerformance).forEach(function(pid){
+    state.ratings[pid]={overall_performance:state.overallPerformance[pid]};
   });
   renderStep5();
 }
 
-/* =====================================================================
-   STEP 5 — REVIEW AND SUBMIT
-   ===================================================================== */
 function renderStep5(){
   setStep(5);
   var myTeam=state.myTeamName||'My team';
@@ -946,10 +949,10 @@ function renderStep5(){
        ...state.redCards.map(function(id){return {type:'red_card',playerId:id};})];;
     evtSummary='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em">Events</div>'+
     evts.map(function(e){
-      var m=e.minute!==undefined?e.minute+'min — ':'';
+      var m=e.minute!==undefined?e.minute+'min â ':'';
       if(e.type==='goal'){var assister=e.assist?playerName(e.assist):'';return '<div style="font-size:12px;padding:3px 0">&#9917; '+m+playerName(e.playerId)+(assister?' (assist: '+assister+')':'')+'</div>';}
-      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">&#9646; '+m+playerName(e.playerId)+' — Yellow card</div>';
-      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">&#9646; '+m+playerName(e.playerId)+' — Red card</div>';
+      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">&#9646; '+m+playerName(e.playerId)+' â Yellow card</div>';
+      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">&#9646; '+m+playerName(e.playerId)+' â Red card</div>';
       if(e.type==='substitution') return '<div style="font-size:12px;padding:3px 0;color:#42A5F5">&#8645; '+m+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
       return '';
     }).join('')+'</div>';
