@@ -7,17 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .scout-card{background:var(--bg1);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.scout-card:hover{border-color:#00E676;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,230,118,.12);}
+.scout-card:hover{border-color:var(--accent,#1d9e75);transform:translateY(-2px);box-shadow:0 8px 24px rgba(29,158,117,.12);}
 .scout-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00E676,#00BCD4);}
 .compat-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;border:3px solid;}
 .stage-chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .stage-watching{background:rgba(33,150,243,.15);color:#42A5F5;}
 .stage-shortlisted,.stage-interested{background:rgba(255,193,7,.15);color:#FFD54F;}
-.stage-approached,.stage-trial_pending{background:rgba(0,230,118,.15);color:#00E676;}
+.stage-approached,.stage-trial_pending{background:rgba(29,158,117,.15);color:var(--accent,#1d9e75);}
 .stage-negotiating{background:rgba(255,87,34,.15);color:#FF7043;}
 .weakness-chip{display:inline-block;padding:2px 8px;margin:2px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(255,87,34,.12);color:#FF7043;border:1px solid rgba(255,87,34,.25);}
 .scout-kpi{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
-.scout-kpi-val{font-size:32px;font-weight:900;color:#00E676;line-height:1;}
+.scout-kpi-val{font-size:32px;font-weight:900;color:var(--accent,#1d9e75);line-height:1;}
 .scout-kpi-label{font-size:12px;color:#546E7A;margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
 .scout-kpi-sub{font-size:11px;color:#546E7A;margin-top:4px;}
 .compat-bar{height:6px;border-radius:3px;background:#1e2a3a;overflow:hidden;margin-top:6px;}
@@ -28,7 +28,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -43,10 +43,10 @@
 <div class="page-content">
 
 <!-- Setup Banner -->
-<div id="setupBanner" style="display:none;background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+<div id="setupBanner" style="display:none;background:rgba(29,158,117,0.06);border:1px solid rgba(29,158,117,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px">
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
 <div>
-<b style="color:#00E676">âï¸ Complete your team setup</b>
+<b style="color:var(--accent,#1d9e75)">âï¸ Complete your team setup</b>
 <p style="font-size:13px;color:#B0BEC5;margin-top:4px">Set your team weaknesses, role expectations and scouting preferences to unlock personalised compatibility scores.</p>
 </div>
 <a href="scout-setup.html" class="btn btn-primary">Set Up My Team â</a>
@@ -59,7 +59,7 @@
 <div class="scout-kpi-val" id="kpiTotal">-</div>
 <div class="scout-kpi-label">Players Available</div>
 <div class="scout-kpi-sub">In database</div>
-<a href="player-search.html" style="display:inline-block;margin-top:8px;font-size:11px;color:#00E676;text-decoration:none;font-weight:700">Browse All â</a>
+<a href="player-search.html" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--accent,#1d9e75);text-decoration:none;font-weight:700">Browse All â</a>
 </div>
 <div class="scout-kpi"><div class="scout-kpi-val" id="kpiPipeline">-</div><div class="scout-kpi-label">My Pipeline</div><div class="scout-kpi-sub">Players tracked</div></div>
 <div class="scout-kpi"><div class="scout-kpi-val" id="kpiTopScore">-</div><div class="scout-kpi-label">Top Compatibility</div><div class="scout-kpi-sub">Best match score /100</div></div>
@@ -113,7 +113,7 @@ function initNav() {
   if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
   if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:var(--accent,#1d9e75);color:#fff">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 
@@ -130,7 +130,7 @@ function initNav() {
     return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';
   }).join('');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel&&u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  if (uel&&u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:var(--accent,#1d9e75);color:#fff">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
@@ -199,7 +199,7 @@ async function loadDashboard() {
       }
     }
   } catch(e) {
-    document.getElementById('recommendedPlayers').innerHTML = '<div class="empty-state"><p>Could not load recommendations. <a href="scout-setup.html" style="color:#00E676">Check your team setup</a>.</p></div>';
+    document.getElementById('recommendedPlayers').innerHTML = '<div class="empty-state"><p>Could not load recommendations. <a href="scout-setup.html" style="color:var(--accent,#1d9e75)">Check your team setup</a>.</p></div>';
   }
 
   // Load team profile display
@@ -242,7 +242,7 @@ function renderRecommended(players) {
     return '<div class="scout-card" onclick="location.href=\'player-profile.html?id='+p.id+'\'">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'+
       '<div style="display:flex;align-items:center;gap:10px">'+
-      '<div style="width:44px;height:44px;border-radius:50%;background:'+pCol+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#000">'+initials(p.first_name,p.last_name)+'</div>'+
+      '<div style="width:44px;height:44px;border-radius:50%;background:'+pCol+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff">'+initials(p.first_name,p.last_name)+'</div>'+
       '<div><div style="font-weight:700;font-size:15px">'+p.first_name+' '+p.last_name+'</div>'+
       '<div style="font-size:12px;color:#546E7A">'+pos+' Â· '+(p.age||'--')+' yrs</div></div>'+
       '</div>'+
@@ -253,12 +253,12 @@ function renderRecommended(players) {
       '<div class="compat-bar"><div class="compat-bar-fill" style="width:'+Math.round(score)+'%;background:'+scColor+'"></div></div>'+
       '</div>'+
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:10px">'+
-      '<div style="text-align:center;background:#0a0f1e;border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+ov+'</div><div style="color:#546E7A">Overall</div></div>'+
-      '<div style="text-align:center;background:#0a0f1e;border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+(p.appearances||0)+'</div><div style="color:#546E7A">Apps</div></div>'+
-      '<div style="text-align:center;background:#0a0f1e;border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+(p.team_name||'--').slice(0,8)+'</div><div style="color:#546E7A">Club</div></div>'+
+      '<div style="text-align:center;background:var(--bg,#0d1117);border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+ov+'</div><div style="color:#546E7A">Overall</div></div>'+
+      '<div style="text-align:center;background:var(--bg,#0d1117);border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+(p.appearances||0)+'</div><div style="color:#546E7A">Apps</div></div>'+
+      '<div style="text-align:center;background:var(--bg,#0d1117);border-radius:6px;padding:5px"><div style="font-weight:700;color:#B0BEC5">'+(p.team_name||'--').slice(0,8)+'</div><div style="color:#546E7A">Club</div></div>'+
       '</div>'+
       '<div style="display:flex;justify-content:space-between;align-items:center">'+
-      '<div style="font-size:13px;color:#00E676;font-weight:700">'+formatValue(p.transfer_value||0)+'</div>'+
+      '<div style="font-size:13px;color:var(--accent,#1d9e75);font-weight:700">'+formatValue(p.transfer_value||0)+'</div>'+
       '<span class="btn btn-sm btn-outline" style="font-size:11px">View Profile â</span>'+
       '</div>'+
       '</div>';
