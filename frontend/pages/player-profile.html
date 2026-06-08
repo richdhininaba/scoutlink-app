@@ -75,20 +75,11 @@ function attrLabel(k){
   return m[k]||k;
 }
 
-function initNav(){
-  if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
-  var role=Auth.type;
-  if(role==='Scout'){
-    if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
-  } else if(role==='Coach'){
-    if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
-  } else {
-    // Stratex or Player: build minimal nav
-    var nav=document.getElementById('sidebarNav');
-    if(nav) nav.innerHTML='<a class="nav-item" href="stratex-dashboard.html">Dashboard</a>';
-  }
-  var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+role+'</div></div></div>';
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
+  var u = Auth.user, uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
