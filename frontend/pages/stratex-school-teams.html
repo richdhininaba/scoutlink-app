@@ -1,22 +1,319 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>School Teams - ScoutLink</title>
+<title>Academy / School Teams - ScoutLink</title>
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">School Teams</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content"><div style="text-align:center;padding:80px 40px;color:#546E7A"><div style="font-size:48px;margin-bottom:16px">🚧</div><h2 style="color:#B0BEC5;margin-bottom:8px">School / Academy Teams</h2><p>This section is coming soon.</p></div></div>
+<div class="topbar"><span class="topbar-title">Academy / School Teams</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()">Notifs<span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="page-content">
+
+<div id="toast" style="display:none;position:fixed;top:20px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)"></div>
+
+<!-- Team Detail Panel -->
+<div id="teamPanel" style="display:none">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+<button class="btn btn-ghost btn-sm" onclick="showList()">← Back to Teams</button>
+<h2 id="panelTeamName" style="margin:0;color:#E0E0E0;font-size:20px"></h2>
+<span id="panelTeamBadge" style="background:#5C6BC0;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Academy / School Team</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+<div class="table-card">
+<div class="table-header"><h3>📋 Team Info</h3></div>
+<div style="padding:0 20px 20px">
+<div id="teamInfoGrid" style="display:grid;gap:10px"></div>
 </div></div>
+<div class="table-card">
+<div class="table-header"><h3>📊 Team Stats</h3></div>
+<div style="padding:0 20px 20px">
+<div id="teamStats"></div>
+</div></div>
+</div>
+
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header">
+<h3>👥 Players</h3>
+<div style="display:flex;gap:8px">
+<input id="playerSearch" type="text" placeholder="Search players..." oninput="filterTeamPlayers()" style="padding:6px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:7px;color:#E0E0E0;font-size:13px;width:180px">
+<button class="btn btn-sm btn-primary" onclick="openAddPlayerModal()">+ Add Player</button>
+</div>
+</div>
+<div id="teamPlayersTable"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header">
+<h3>🎽 Coaches</h3>
+<button class="btn btn-sm btn-primary" onclick="openAddCoachModal()">+ Add Coach</button>
+</div>
+<div id="teamCoachesTable"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+
+<div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
+<div class="table-header"><h3 style="color:#EF5350">⚠️ Danger Zone</h3></div>
+<div style="padding:0 20px 20px">
+<p style="color:#546E7A;font-size:13px;margin-bottom:14px">Removing an Academy/School Team will permanently delete the team and all associated player stats, match facts, and data. Player and coach accounts remain intact.</p>
+<button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="openDeleteTeamModal()">Remove Team</button>
+</div></div>
+</div>
+
+<!-- Teams List -->
+<div id="teamsList" style="display:none">
+<div class="table-card">
+<div class="table-header">
+<h3>All Academy / School Teams</h3>
+<div style="display:flex;gap:10px;align-items:center">
+<span id="teamCount" style="color:#546E7A;font-size:13px"></span>
+<button class="btn btn-sm btn-primary" onclick="openAddTeamModal()">+ Add Team</button>
+</div>
+</div>
+<div id="teamsTableBody"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div>
+
+<!-- Add Player Modal -->
+<div id="addPlayerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000">
+<div style="background:#162032;border-radius:14px;max-width:460px;margin:80px auto;padding:28px;border:1px solid #2d3f55">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+<h3 style="margin:0;color:#E0E0E0">Add Player to Team</h3>
+<button onclick="document.getElementById('addPlayerModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">×</button>
+</div>
+<label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Select Player</label>
+<select id="playerSelect" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;margin-bottom:16px"><option value="">Loading players...</option></select>
+<div style="display:flex;gap:10px">
+<button class="btn btn-primary" onclick="addPlayerToTeam()" style="flex:1">Add Player</button>
+<button class="btn btn-ghost" onclick="document.getElementById('addPlayerModal').style.display='none'" style="flex:1">Cancel</button>
+</div>
+<div id="addPlayerMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+</div></div>
+
+<!-- Add Coach Modal -->
+<div id="addCoachModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000">
+<div style="background:#162032;border-radius:14px;max-width:460px;margin:80px auto;padding:28px;border:1px solid #2d3f55">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+<h3 style="margin:0;color:#E0E0E0">Add Coach to Team</h3>
+<button onclick="document.getElementById('addCoachModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">×</button>
+</div>
+<label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Select Coach</label>
+<select id="coachSelect" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;margin-bottom:16px"><option value="">Loading coaches...</option></select>
+<div style="display:flex;gap:10px">
+<button class="btn btn-primary" onclick="addCoachToTeam()" style="flex:1">Add Coach</button>
+<button class="btn btn-ghost" onclick="document.getElementById('addCoachModal').style.display='none'" style="flex:1">Cancel</button>
+</div>
+<div id="addCoachMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+</div></div>
+
+<!-- Add Team Modal -->
+<div id="addTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000">
+<div style="background:#162032;border-radius:14px;max-width:480px;margin:60px auto;padding:28px;border:1px solid #2d3f55;max-height:80vh;overflow-y:auto">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+<h3 style="margin:0;color:#E0E0E0">Add Academy / School Team</h3>
+<button onclick="document.getElementById('addTeamModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">×</button>
+</div>
+<div style="display:grid;gap:12px">
+<div><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:5px;font-weight:600">Team Name *</label><input type="text" id="nt_name" placeholder="e.g. Northgate FC Academy" style="width:100%;padding:9px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
+<div><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:5px;font-weight:600">County</label><input type="text" id="nt_county" placeholder="e.g. Greater Manchester" style="width:100%;padding:9px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
+<div><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:5px;font-weight:600">League</label><input type="text" id="nt_league" placeholder="e.g. Under-16 Northern Premier League" style="width:100%;padding:9px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
+<div><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:5px;font-weight:600">Contact Email</label><input type="email" id="nt_email" placeholder="coach@example.com" style="width:100%;padding:9px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
+</div>
+<div style="display:flex;gap:10px;margin-top:16px">
+<button class="btn btn-primary" onclick="createTeam()" style="flex:1">Create Team</button>
+<button class="btn btn-ghost" onclick="document.getElementById('addTeamModal').style.display='none'" style="flex:1">Cancel</button>
+</div>
+<div id="addTeamMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+</div></div>
+
+<!-- Delete Team Modal -->
+<div id="deleteTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1001">
+<div style="background:#162032;border-radius:14px;max-width:400px;margin:120px auto;padding:28px;border:1px solid rgba(220,38,38,.3);text-align:center">
+<div style="font-size:40px;margin-bottom:12px">⚠️</div>
+<h3 style="color:#EF5350;margin-bottom:8px">Remove Team?</h3>
+<p style="color:#90A4AE;margin-bottom:6px;font-weight:600" id="deleteTeamNameText"></p>
+<p style="color:#546E7A;font-size:13px;margin-bottom:24px">This permanently removes the team and all associated stats data. Player and coach accounts remain intact.</p>
+<div style="display:flex;gap:10px">
+<button class="btn" style="flex:1;background:rgba(220,38,38,.2);color:#EF5350;border:1px solid rgba(220,38,38,.4)" onclick="confirmDeleteTeam()">Yes, Remove</button>
+<button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('deleteTeamModal').style.display='none'">Cancel</button>
+</div>
+<div id="deleteTeamMsg" style="margin-top:10px;font-size:13px"></div>
+</div></div>
+
+</div></div></div>
 <div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
-var STRATEX_NAV=[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'Users',href:'stratex-users.html'},{label:'Players',href:'stratex-players.html'},{label:'Scouts',href:'stratex-scouts.html'},{label:'Coaches',href:'stratex-coaches.html'},{label:'Scout Teams',href:'stratex-scout-teams.html'},{label:'School Teams',href:'stratex-school-teams.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'stratex-settings.html'}];
+var STRATEX_NAV=[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'Users',href:'stratex-users.html'},{label:'Players',href:'stratex-players.html'},{label:'Scouts',href:'stratex-scouts.html'},{label:'Coaches',href:'stratex-coaches.html'},{label:'Scout Teams',href:'stratex-scout-teams.html'},{label:'Academy / School Teams',href:'stratex-school-teams.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'stratex-settings.html'}];
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=STRATEX_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Stratex Admin</div></div></div>';updateNotifBadge();}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},3500);}
+
+var allTeams=[],currentTeamId=null,allPlayers=[],allCoaches=[],teamPlayers=[],teamCoaches=[];
+
+async function loadPage(){
+  document.getElementById('teamsList').style.display='block';
+  document.getElementById('teamPanel').style.display='none';
+  try{
+    var d=await api('GET','/api/stratex/school-teams');
+    allTeams=d.data||[];
+    document.getElementById('teamCount').textContent=allTeams.length+' teams';
+    renderTeamsTable();
+    var pd=await api('GET','/api/players?limit=500');
+    allPlayers=pd.data||[];
+    var cd=await api('GET','/api/stratex/coaches?limit=200');
+    allCoaches=cd.data||[];
+  }catch(e){document.getElementById('teamsTableBody').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';}
+}
+
+function renderTeamsTable(){
+  if(!allTeams.length){document.getElementById('teamsTableBody').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No academy/school teams yet</div>';return;}
+  document.getElementById('teamsTableBody').innerHTML='<table class="sl-table"><thead><tr><th>Team</th><th>County</th><th>League</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+
+  allTeams.map(function(t){return'<tr style="cursor:pointer" onclick="openTeam(\''+t.id+'\')"><td><b>'+t.team_name+'</b></td><td>'+(t.county||'--')+'</td><td>'+(t.league||'--')+'</td><td style="color:#90A4AE;font-size:13px">'+(t.contact_email||'--')+'</td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openTeam(\''+t.id+'\')">View Details →</button></td></tr>';}).join('')+'</tbody></table>';
+}
+
+async function openTeam(id){
+  currentTeamId=id;
+  var t=allTeams.find(function(x){return x.id===id;});
+  if(!t)return;
+  document.getElementById('teamsList').style.display='none';
+  document.getElementById('teamPanel').style.display='block';
+  document.getElementById('panelTeamName').textContent=t.team_name;
+  document.getElementById('deleteTeamNameText').textContent=t.team_name;
+  document.getElementById('teamInfoGrid').innerHTML=
+    infoRow('Team Name',t.team_name)+infoRow('County',t.county||'--')+infoRow('League',t.league||'--')+infoRow('Contact',t.contact_email||'--');
+  document.getElementById('teamStats').innerHTML='<div style="color:#546E7A;font-size:13px">Loading team stats...</div>';
+  teamPlayers=[];teamCoaches=[];
+  await Promise.all([loadTeamPlayers(id),loadTeamCoaches(id)]);
+  document.getElementById('teamStats').innerHTML=
+    infoRow('Total Players',teamPlayers.length)+infoRow('Total Coaches',teamCoaches.length)+
+    infoRow('Avg Overall',teamPlayers.length?(teamPlayers.reduce(function(a,p){return a+(p.overall_rating||0);},0)/teamPlayers.length).toFixed(1)+'/10':'--');
+}
+
+function infoRow(label,val){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a"><span style="color:#546E7A;font-size:13px">'+label+'</span><span style="color:#E0E0E0;font-size:13px;font-weight:600">'+val+'</span></div>';}
+
+async function loadTeamPlayers(teamId){
+  document.getElementById('teamPlayersTable').innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var d=await api('GET','/api/players?team_id='+teamId+'&limit=200');
+    teamPlayers=d.data||[];
+    renderTeamPlayers(teamPlayers);
+  }catch(e){document.getElementById('teamPlayersTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';}
+}
+
+function filterTeamPlayers(){var q=document.getElementById('playerSearch').value.toLowerCase();renderTeamPlayers(teamPlayers.filter(function(p){return (p.first_name+' '+p.last_name).toLowerCase().includes(q);}));}
+
+function renderTeamPlayers(players){
+  if(!players.length){document.getElementById('teamPlayersTable').innerHTML='<div style="text-align:center;padding:28px;color:#546E7A;font-size:13px">No players in this team.<br><br><button class="btn btn-sm btn-primary" onclick="openAddPlayerModal()">Add Player</button></div>';return;}
+  document.getElementById('teamPlayersTable').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Age</th><th>Position</th><th>Overall</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+
+  players.map(function(p){return'<tr><td><b>'+p.first_name+' '+p.last_name+'</b></td><td>'+p.age+'</td><td>'+(p.specific_position||p.primary_position||'--')+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+(p.overall_rating||0)+'/10</td><td style="text-align:right"><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3);font-size:11px" onclick="removePlayerFromTeam(\''+p.id+'\',\''+p.first_name+' '+p.last_name+'\')">Remove</button></td></tr>';}).join('')+'</tbody></table>';
+}
+
+async function loadTeamCoaches(teamId){
+  document.getElementById('teamCoachesTable').innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var d=await api('GET','/api/stratex/school-teams/'+teamId+'/coaches');
+    teamCoaches=d.data||[];
+    renderTeamCoaches(teamCoaches);
+  }catch(e){document.getElementById('teamCoachesTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';}
+}
+
+function renderTeamCoaches(coaches){
+  if(!coaches.length){document.getElementById('teamCoachesTable').innerHTML='<div style="text-align:center;padding:28px;color:#546E7A;font-size:13px">No coaches assigned.<br><br><button class="btn btn-sm btn-primary" onclick="openAddCoachModal()">Add Coach</button></div>';return;}
+  document.getElementById('teamCoachesTable').innerHTML='<table class="sl-table"><thead><tr><th>Coach</th><th>Email</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+
+  coaches.map(function(c){return'<tr><td><b>'+c.first_name+' '+c.last_name+'</b></td><td style="color:#90A4AE;font-size:13px">'+c.email+'</td><td style="text-align:right"><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3);font-size:11px" onclick="removeCoachFromTeam(\''+c.id+'\',\''+c.first_name+' '+c.last_name+'\')">Remove</button></td></tr>';}).join('')+'</tbody></table>';
+}
+
+function showList(){document.getElementById('teamPanel').style.display='none';document.getElementById('teamsList').style.display='block';currentTeamId=null;}
+
+function openAddPlayerModal(){
+  var sel=document.getElementById('playerSelect');
+  var avail=allPlayers.filter(function(p){return !teamPlayers.find(function(tp){return tp.id===p.id;});});
+  sel.innerHTML=avail.length?avail.map(function(p){return'<option value="'+p.id+'">'+p.first_name+' '+p.last_name+' ('+( p.specific_position||p.primary_position||'?')+', '+p.age+')</option>';}).join(''):'<option value="">No available players</option>';
+  document.getElementById('addPlayerMsg').textContent='';
+  document.getElementById('addPlayerModal').style.display='block';
+}
+
+async function addPlayerToTeam(){
+  var pid=document.getElementById('playerSelect').value;if(!pid)return;
+  document.getElementById('addPlayerMsg').textContent='Adding...';document.getElementById('addPlayerMsg').style.color='#90A4AE';
+  try{
+    await api('PATCH','/api/players/'+pid+'/team',{team_id:currentTeamId});
+    document.getElementById('addPlayerModal').style.display='none';
+    await loadTeamPlayers(currentTeamId);
+    showToast('Player added to team.','success');
+  }catch(e){document.getElementById('addPlayerMsg').textContent='Error: '+e.message;document.getElementById('addPlayerMsg').style.color='#EF5350';}
+}
+
+async function removePlayerFromTeam(pid,name){
+  if(!confirm('Remove '+name+' from this team?'))return;
+  try{
+    await api('PATCH','/api/players/'+pid+'/team',{team_id:null});
+    await loadTeamPlayers(currentTeamId);
+    showToast('Player removed.','success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+function openAddCoachModal(){
+  var sel=document.getElementById('coachSelect');
+  sel.innerHTML=allCoaches.length?allCoaches.map(function(c){return'<option value="'+c.id+'">'+c.first_name+' '+c.last_name+' ('+c.email+')</option>';}).join(''):'<option value="">No coaches available</option>';
+  document.getElementById('addCoachMsg').textContent='';
+  document.getElementById('addCoachModal').style.display='block';
+}
+
+async function addCoachToTeam(){
+  var cid=document.getElementById('coachSelect').value;if(!cid)return;
+  document.getElementById('addCoachMsg').textContent='Adding...';document.getElementById('addCoachMsg').style.color='#90A4AE';
+  try{
+    await api('POST','/api/stratex/school-teams/'+currentTeamId+'/coaches',{coach_id:cid});
+    document.getElementById('addCoachModal').style.display='none';
+    await loadTeamCoaches(currentTeamId);
+    showToast('Coach added to team.','success');
+  }catch(e){document.getElementById('addCoachMsg').textContent='Error: '+e.message;document.getElementById('addCoachMsg').style.color='#EF5350';}
+}
+
+async function removeCoachFromTeam(cid,name){
+  if(!confirm('Remove '+name+' from this team?'))return;
+  try{
+    await api('DELETE','/api/stratex/school-teams/'+currentTeamId+'/coaches/'+cid);
+    await loadTeamCoaches(currentTeamId);
+    showToast('Coach removed.','success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+function openAddTeamModal(){document.getElementById('addTeamMsg').textContent='';document.getElementById('addTeamModal').style.display='block';}
+
+async function createTeam(){
+  var name=document.getElementById('nt_name').value.trim();if(!name)return;
+  document.getElementById('addTeamMsg').textContent='Creating...';document.getElementById('addTeamMsg').style.color='#90A4AE';
+  try{
+    var body={team_name:name,county:document.getElementById('nt_county').value,league:document.getElementById('nt_league').value,contact_email:document.getElementById('nt_email').value};
+    var d=await api('POST','/api/stratex/school-teams',body);
+    allTeams.push(d.data||d);
+    document.getElementById('teamCount').textContent=allTeams.length+' teams';
+    renderTeamsTable();
+    document.getElementById('addTeamModal').style.display='none';
+    showToast('Team created!','success');
+  }catch(e){document.getElementById('addTeamMsg').textContent='Error: '+e.message;document.getElementById('addTeamMsg').style.color='#EF5350';}
+}
+
+function openDeleteTeamModal(){document.getElementById('deleteTeamMsg').textContent='';document.getElementById('deleteTeamModal').style.display='block';}
+
+async function confirmDeleteTeam(){
+  if(!currentTeamId)return;
+  document.getElementById('deleteTeamMsg').textContent='Removing...';document.getElementById('deleteTeamMsg').style.color='#90A4AE';
+  try{
+    await api('DELETE','/api/stratex/school-teams/'+currentTeamId);
+    allTeams=allTeams.filter(function(t){return t.id!==currentTeamId;});
+    document.getElementById('deleteTeamModal').style.display='none';
+    document.getElementById('teamCount').textContent=allTeams.length+' teams';
+    renderTeamsTable();
+    showList();
+    showToast('Team removed.','success');
+  }catch(e){document.getElementById('deleteTeamMsg').textContent='Error: '+e.message;document.getElementById('deleteTeamMsg').style.color='#EF5350';}
+}
+
 document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
 </script>
 </body></html>
