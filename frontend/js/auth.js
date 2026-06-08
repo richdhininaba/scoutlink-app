@@ -1,6 +1,17 @@
 // ScoutLink Auth & API Helper
 // Uses Supabase REST API directly from the browser (no backend needed for static site)
 
+// Detect the correct base path for redirects
+// On scoutlink.app the path is /frontend/pages/
+// On GitHub Pages (richdhininaba.github.io) the path is /scoutlink-app/frontend/pages/
+function getBase() {
+  var host = window.location.hostname;
+  if (host === 'scoutlink.app' || host === 'www.scoutlink.app') {
+    return '/frontend/pages/';
+  }
+  return '/scoutlink-app/frontend/pages/';
+}
+
 const SL = {
   url: window.SL_CONFIG?.SUPABASE_URL || 'https://fwxnggklfsgrydcoeiuh.supabase.co',
   key: window.SL_CONFIG?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDgwOTMsImV4cCI6MjA5NjMyNDA5M30.lV6TCjabEHevU5woLHLa0cCwBvm-0dFpce09ialfpKw',
@@ -53,7 +64,7 @@ const SL = {
     localStorage.removeItem('sl_user_email');
     localStorage.removeItem('sl_user_role');
     localStorage.removeItem('sl_user_data');
-    window.location.href = '/scoutlink-app/frontend/pages/login.html';
+    window.location.href = getBase() + 'login.html';
   },
 
   async resetPassword(email) {
@@ -130,7 +141,7 @@ const SL = {
 
   // --- REDIRECT AFTER LOGIN ---
   redirectByRole(role, userData) {
-    const base = '/scoutlink-app/frontend/pages/';
+    const base = getBase();
     if (role === 'scout') {
       const hasPrefs = userData?.preferences_set;
       window.location.href = base + (hasPrefs ? 'scout-dashboard.html' : 'scout-preferences.html');
@@ -148,7 +159,7 @@ const SL = {
   // Guard: redirect to login if not authenticated
   requireAuth() {
     if (!SL.isLoggedIn()) {
-      window.location.href = '/scoutlink-app/frontend/pages/login.html';
+      window.location.href = getBase() + 'login.html';
       return false;
     }
     return true;
@@ -156,3 +167,4 @@ const SL = {
 };
 
 window.SL = SL;
+window.getBase = getBase;
