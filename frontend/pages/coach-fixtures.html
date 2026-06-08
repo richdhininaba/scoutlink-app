@@ -6,16 +6,18 @@
 <link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-.fixture-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;}
+.fixture-card{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:16px;margin-bottom:12px;}
 .fixture-card.past{opacity:.7;}
 .ha-badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;}
-.ha-home{background:rgba(0,230,118,.15);color:#00E676;}
+.ha-home{background:rgba(29,158,117,.15);color:#1d9e75;}
 .ha-away{background:rgba(255,87,34,.15);color:#FF7043;}
+.form-input{width:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#ffffff;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;}
+.form-input:focus{border-color:#1d9e75;}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -29,36 +31,33 @@
 </div>
 <div class="page-content">
 
-<!-- Add Fixture Form -->
 <div class="table-card" style="margin-bottom:20px" id="addFixtureCard">
 <div class="table-header">
 <h3>Add Upcoming Fixture</h3>
-<button class="btn btn-sm btn-ghost" onclick="toggleAddForm()">&#8722; Collapse</button>
+<button class="btn btn-sm btn-ghost" id="toggleAddBtn">&#8722; Collapse</button>
 </div>
 <div id="addForm" style="padding:20px">
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Opponent *</label><input id="fOpponent" class="form-input" placeholder="e.g. Arsenal FC Academy" type="text" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Date *</label><input id="fDate" type="date" class="form-input" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Time</label><input id="fTime" type="time" class="form-input" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Venue</label><input id="fVenue" placeholder="e.g. Riverside Park, London" type="text" class="form-input" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"></div>
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Home / Away</label><select id="fHomeAway" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"><option value="Home">Home</option><option value="Away">Away</option><option value="Neutral">Neutral</option></select></div>
-<div><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Format</label><select id="fFormat" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit"><option value="5">5-a-side</option><option value="7">7-a-side</option><option value="9">9-a-side</option><option value="11" selected>11-a-side</option></select></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Opponent *</label><input id="fOpponent" class="form-input" placeholder="e.g. Arsenal FC Academy" type="text"></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Date *</label><input id="fDate" type="date" class="form-input"></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Time</label><input id="fTime" type="time" class="form-input"></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Venue</label><input id="fVenue" placeholder="e.g. Riverside Park, London" type="text" class="form-input"></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Home / Away</label><select id="fHomeAway" class="form-input"><option value="Home">Home</option><option value="Away">Away</option><option value="Neutral">Neutral</option></select></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Format</label><select id="fFormat" class="form-input"><option value="5">5-a-side</option><option value="7">7-a-side</option><option value="9">9-a-side</option><option value="11" selected>11-a-side</option></select></div>
 </div>
-<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:600;color:var(--text3);display:block;margin-bottom:6px">Notes (optional)</label><textarea id="fNotes" placeholder="Any additional notes..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;min-height:60px;resize:vertical"></textarea></div>
+<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Notes (optional)</label><textarea id="fNotes" placeholder="Any additional notes..." class="form-input" style="min-height:60px;resize:vertical"></textarea></div>
 <div style="display:flex;gap:12px;align-items:center">
-<button class="btn btn-primary" onclick="addFixture()">Save Fixture</button>
-<span id="fixMsg" style="font-size:13px;color:#00E676"></span>
+<button class="btn btn-primary" id="saveFixtureBtn">Save Fixture</button>
+<span id="fixMsg" style="font-size:13px;color:#1d9e75"></span>
 </div>
 </div>
 </div>
 
-<!-- Upcoming Fixtures -->
 <div class="table-card" style="margin-bottom:20px">
 <div class="table-header"><h3>Upcoming Fixtures</h3></div>
 <div id="upcomingList"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
 
-<!-- Past Fixtures -->
 <div class="table-card">
 <div class="table-header"><h3>Past Fixtures</h3></div>
 <div id="pastList"><div class="loading-state"><div class="spinner"></div></div></div>
@@ -74,20 +73,25 @@ function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#42A5F5;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){}
-function toggleAddForm(){var f=document.getElementById('addForm');f.style.display=f.style.display==='none'?'block':'none';}
 
-function formatDate(d){if(!d)return '--';try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}catch(e){return d;}}
+var _fixtureIds = [];
+
+function formatDate(d){
+  if(!d)return '--';
+  try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}
+  catch(e){return d;}
+}
 
 function renderFixtures(fixtures, containerId, emptyMsg){
   var el=document.getElementById(containerId);
-  if(!fixtures.length){el.innerHTML='<div style="padding:32px;text-align:center;color:var(--text3)">'+emptyMsg+'</div>';return;}
+  if(!fixtures.length){el.innerHTML='<div style="padding:32px;text-align:center;color:#8b949e">'+emptyMsg+'</div>';return;}
   var html='<div style="padding:16px">';
-  fixtures.forEach(function(fx){
+  fixtures.forEach(function(fx, idx){
     var haClass=fx.home_or_away==='Away'?'ha-away':'ha-home';
     html+='<div class="fixture-card">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">'+
@@ -95,68 +99,70 @@ function renderFixtures(fixtures, containerId, emptyMsg){
       '<div style="font-size:16px;font-weight:700;margin-bottom:4px">'+fx.opponent+
       ' <span class="ha-badge '+haClass+'">'+fx.home_or_away+'</span>'+
       (fx.format?' <span style="font-size:11px;padding:2px 8px;background:rgba(0,188,212,.1);color:#00BCD4;border-radius:4px;margin-left:4px">'+fx.format+'-a-side</span>':'')+'</div>'+
-      '<div style="font-size:13px;color:var(--text2)">'+formatDate(fx.fixture_date)+(fx.fixture_time?' at '+fx.fixture_time:'')+( fx.venue?' &bull; '+fx.venue:'')+'</div>'+
-      (fx.notes?'<div style="font-size:12px;color:var(--text3);margin-top:4px">'+fx.notes+'</div>':'')+
+      '<div style="font-size:13px;color:#8b949e">'+formatDate(fx.fixture_date)+(fx.fixture_time?' at '+fx.fixture_time:'')+(fx.venue?' &bull; '+fx.venue:'')+'</div>'+
+      (fx.notes?'<div style="font-size:12px;color:#8b949e;margin-top:4px">'+fx.notes+'</div>':'')+
       '</div>'+
       '<div style="display:flex;gap:8px">'+
-      '<button class="btn btn-sm btn-danger" onclick="deleteFixture(''+fx.id+'')" style="min-height:36px">Delete</button>'+
+      '<button class="btn btn-sm btn-danger" data-fxid="'+fx.id+'" data-action="delete" style="min-height:36px">Delete</button>'+
       '</div></div></div>';
   });
   html+='</div>';
   el.innerHTML=html;
+
+  // Event delegation for delete buttons
+  document.getElementById(containerId).addEventListener('click',function(e){
+    var btn=e.target.closest('[data-action="delete"]');
+    if(btn){
+      var id=btn.getAttribute('data-fxid');
+      if(confirm('Delete this fixture?')){
+        api('DELETE','/api/fixtures/'+id,{}).then(function(){loadFixtures();}).catch(function(e){alert('Error: '+e.message);});
+      }
+    }
+  });
 }
 
-async function deleteFixture(id){
-  if(!confirm('Delete this fixture?'))return;
-  try{
-    await api('DELETE','/api/fixtures/'+id,{});
-    loadFixtures();
-  }catch(e){alert('Error: '+e.message);}
-}
-
-async function addFixture(){
+function addFixture(){
   var opp=document.getElementById('fOpponent').value.trim();
   var date=document.getElementById('fDate').value;
   if(!opp||!date){alert('Opponent and date are required');return;}
   var msg=document.getElementById('fixMsg');
-  msg.textContent='Saving...';msg.style.color='var(--text3)';
-  try{
-    await api('POST','/api/fixtures',{
-      opponent:opp,
-      fixtureDate:date,
-      fixtureTime:document.getElementById('fTime').value||null,
-      venue:document.getElementById('fVenue').value.trim()||null,
-      homeOrAway:document.getElementById('fHomeAway').value,
-      format:document.getElementById('fFormat').value,
-      notes:document.getElementById('fNotes').value.trim()||null,
-    });
-    msg.textContent='Fixture saved!';msg.style.color='#00E676';
-    document.getElementById('fOpponent').value='';document.getElementById('fDate').value='';
-    document.getElementById('fTime').value='';document.getElementById('fVenue').value='';document.getElementById('fNotes').value='';
+  msg.textContent='Saving...';msg.style.color='#8b949e';
+  api('POST','/api/fixtures',{
+    opponent:opp,
+    fixtureDate:date,
+    fixtureTime:document.getElementById('fTime').value||null,
+    venue:document.getElementById('fVenue').value.trim()||null,
+    homeOrAway:document.getElementById('fHomeAway').value,
+    format:document.getElementById('fFormat').value,
+    notes:document.getElementById('fNotes').value.trim()||null,
+  }).then(function(){
+    msg.textContent='Fixture saved!';msg.style.color='#1d9e75';
+    document.getElementById('fOpponent').value='';document.getElementById('fVenue').value='';document.getElementById('fNotes').value='';
     setTimeout(function(){msg.textContent='';},3000);
     loadFixtures();
-  }catch(e){
+  }).catch(function(e){
     msg.textContent='Error: '+e.message;msg.style.color='#f44336';
-  }
+  });
 }
 
-async function loadFixtures(){
-  try{
-    var up=await api('GET','/api/fixtures?upcoming=true');
-    renderFixtures(up.data||[], 'upcomingList', 'No upcoming fixtures. Add one above.');
-  }catch(e){document.getElementById('upcomingList').innerHTML='<div style="padding:16px;color:var(--text3)">Could not load fixtures.</div>';}
-  try{
-    var past=await api('GET','/api/fixtures?past=true');
-    renderFixtures(past.data||[], 'pastList', 'No past fixtures recorded.');
-  }catch(e){document.getElementById('pastList').innerHTML='<div style="padding:16px;color:var(--text3)">Could not load past fixtures.</div>';}
+function loadFixtures(){
+  api('GET','/api/fixtures?upcoming=true').then(function(up){
+    renderFixtures(up.data||[],'upcomingList','No upcoming fixtures. Add one above.');
+  }).catch(function(){document.getElementById('upcomingList').innerHTML='<div style="padding:16px;color:#8b949e">Could not load fixtures.</div>';});
+  api('GET','/api/fixtures?past=true').then(function(past){
+    renderFixtures(past.data||[],'pastList','No past fixtures recorded.');
+  }).catch(function(){document.getElementById('pastList').innerHTML='<div style="padding:16px;color:#8b949e">Could not load past fixtures.</div>';});
 }
 
-// Set default date to today
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
-  var today=new Date().toISOString().split('T')[0];
-  document.getElementById('fDate').value=today;
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   loadFixtures();
+  document.getElementById('saveFixtureBtn').addEventListener('click',addFixture);
+  document.getElementById('toggleAddBtn').addEventListener('click',function(){
+    var f=document.getElementById('addForm');
+    f.style.display=f.style.display==='none'?'block':'none';
+  });
 });
 </script>
 <script src="../js/mobile.js"></script>
