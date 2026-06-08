@@ -8,29 +8,28 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">ð Player Rankings</span>
+<span class="topbar-title">Player Rankings</span>
 <div class="topbar-right">
 <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
 </div>
 </div>
 <div class="page-content">
 
 <div class="table-card">
-<div class="table-header"><div><h3>Player Rankings</h3><p style="font-size:12px;color:#546E7A">Top players by compatibility with your team profile</p></div><a href="scout-setup.html" class="btn btn-sm btn-outline">Edit Team Setup</a></div>
-<div style="text-align:center;padding:60px 20px;color:#546E7A">
-<div style="font-size:48px;margin-bottom:16px">ð</div>
-<h3 style="color:#B0BEC5;margin-bottom:8px">Rankings â Coming Soon</h3>
-<p style="margin-bottom:20px">Full league and academy rankings powered by the FA/UEFA compatibility engine are coming soon.</p>
-<a href="scout-dashboard.html" class="btn btn-primary">Back to Dashboard</a>
+<div class="table-header">
+<div><h3>Player Rankings</h3><p style="font-size:12px;color:var(--text3)">Top players by compatibility with your team profile</p></div>
+<a href="scout-setup.html" class="btn btn-sm btn-outline">Edit Team Setup</a>
 </div>
+<div id="rankContent"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading rankings...</span></div></div>
 </div>
+
 </div>
 </div>
 </div>
@@ -41,12 +40,52 @@ function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){}
-document.addEventListener('DOMContentLoaded',function(){initNav();});
+function dOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
+function cColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function pColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
+
+document.addEventListener('DOMContentLoaded',async function(){
+  initNav();
+  try{
+    var d=await api('GET','/api/scouts/recommended-players');
+    if(d.setupRequired){
+      document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><p>Complete your team setup to see personalised rankings.</p><a href="scout-setup.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Set Up My Team</a></div>';
+      return;
+    }
+    var players=d.data||[];
+    if(!players.length){
+      document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><p>No players found. Adjust your search preferences.</p><a href="scout-setup.html" class="btn btn-outline" style="margin-top:14px;display:inline-block">Edit Setup</a></div>';
+      return;
+    }
+    var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>#</th><th>Player</th><th>Position</th><th>Age Group</th><th>Club</th><th>Compat.</th><th>Overall</th><th>Value</th><th></th></tr></thead><tbody>';
+    players.slice(0,50).forEach(function(p,i){
+      var ov=dOv(p.overall_rating);
+      var ovN=parseFloat(p.overall_rating||0);var ovP=ovN>10?ovN:ovN*10;
+      var cs=Math.round(p.compatibilityScore||0);
+      var pCol=pColor(p.position_group);
+      html+='<tr>'+
+        '<td style="color:var(--text3);font-weight:700;font-size:16px">#'+(i+1)+'</td>'+
+        '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:32px;height:32px;font-size:11px;background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b></div></td>'+
+        '<td style="font-size:12px">'+(p.specific_position||p.primary_position||'--')+'</td>'+
+        '<td><span style="font-size:11px;padding:2px 8px;background:rgba(0,230,118,.1);color:#00E676;border-radius:4px">'+(p.age_group||'--')+'</span></td>'+
+        '<td style="color:var(--text3);font-size:12px">'+(p.team_name||'--')+'</td>'+
+        '<td style="font-weight:800;color:'+cColor(cs)+'">'+cs+'</td>'+
+        '<td style="font-weight:800;color:'+cColor(ovP)+'">'+ov+'</td>'+
+        '<td style="color:#00E676;font-size:12px">'+formatValue(p.transfer_value||0)+'</td>'+
+        '<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="min-height:36px">View</a></td>'+
+        '</tr>';
+    });
+    html+='</tbody></table></div>';
+    document.getElementById('rankContent').innerHTML=html;
+  }catch(e){
+    document.getElementById('rankContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">Could not load rankings.<br><small>'+e.message+'</small></div>';
+  }
+});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
