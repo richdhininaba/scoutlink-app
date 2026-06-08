@@ -120,7 +120,7 @@ btn.textContent='In Pipeline';btn.style.background='#1d9e75';btn.style.color='#0
 }else{
 _alreadyInPipeline=true;
 _interestsRemaining=r.interestsRemaining||(_interestsRemaining-1);
-btn.textContent='Added to Pipeline ✓';btn.style.background='#1d9e75';btn.style.color='#000';btn.disabled=true;
+btn.textContent='Added to Pipeline â';btn.style.background='#1d9e75';btn.style.color='#000';btn.disabled=true;
 var rem=document.getElementById('interestsRemainingCount');
 if(rem){rem.textContent=_interestsRemaining+' interests remaining';}
 }
@@ -159,6 +159,14 @@ el.innerHTML='<div class="table-card"><div class="table-header"><h3>Compatibilit
 }
 
 // ===================== PREDICTIONS =====================
+var PRED_TYPE_MAP = {
+'attribute_trajectory': 'Attribute trajectory',
+'maturation_flag': 'Maturation and relative age risk',
+'positional_ceiling': 'Positional ceiling estimate',
+'scenario_simulation': 'Match scenario simulation',
+'value_trajectory': 'Transfer value trajectory',
+'consistency_score': 'Consistency and reliability score'
+};
 function runPrediction(playerId, predType){
 var res=document.getElementById('predResultArea');
 if(!res)return;
@@ -166,24 +174,38 @@ res.innerHTML='<div style="color:#8b949e;padding:10px">Analysing...</div>';
 document.querySelectorAll('.pred-btn').forEach(function(b){b.classList.remove('active');});
 var activeBtn=document.querySelector('.pred-btn[data-pred-type="'+predType+'"]');
 if(activeBtn)activeBtn.classList.add('active');
-api('POST','/api/predictions',{playerId:playerId,predictionType:predType}).then(function(r){
-var result=r.result||{};
+var backendType=PRED_TYPE_MAP[predType]||predType;
+api('POST','/api/predictions/run',{playerId:playerId,predictionType:backendType}).then(function(r){
+var result=r.result||r||{};
 var html='<div style="background:#0d1117;border-radius:8px;padding:16px;margin-top:8px">';
-if(predType==='maturation_flag'||predType==='positional_ceiling'||predType==='consistency_score'){
-html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.ceiling||result.label||JSON.stringify(result))+'</p>';
-if(result.warning||result.note)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+(result.warning||result.note||'')+'</p>';
-}else if(predType==='attribute_trajectory'||predType==='value_trajectory'){
-if(result.current)html+='<div style="margin-bottom:8px;font-size:13px">Current: <b style="color:#1d9e75">'+result.current+'</b></div>';
-if(result.years&&result.years.length){html+=result.years.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.low+'</b> &nbsp; High: <b style="color:#1d9e75">'+y.high+'</b></span><span style="font-size:11px;color:#546E7A">'+(y.confidence||'')+'</span></div>';}).join('');}
-if(result.warning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.warning+'</p>';
-}else if(predType==='scenario_simulation'){
-if(result.scenarios&&result.scenarios.length){html+=result.scenarios.map(function(s){return '<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><b style="color:#fff">'+s.label+'</b>: <span style="color:#1d9e75;font-weight:700">'+s.score+'</span> <span style="color:#546E7A">('+s.delta+')</span></div>';}).join('');}
+if(predType==='maturation_flag'){
+html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.quarterMessage||result.message||'Analysis complete.')+'</p>';
+if(result.maturationWarning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.maturationWarning+'</p>';
+if(result.birthQuarter)html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Birth quarter: <b style="color:#fff">'+result.birthQuarter+' ('+result.quarterLabel+')</b></p>';
+}else if(predType==='positional_ceiling'){
+html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.ceiling||result.message||'Analysis complete.')+'</p>';
+if(result.reliabilityNote)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.reliabilityNote+'</p>';
+html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> • Appearances: <b>'+(result.appearances||0)+'</b></p>';
+}else if(predType==='consistency_score'){
+if(result.insufficient){html+='<p style="font-size:13px;color:#FF9800">'+result.message+'</p>';}
+else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> • Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
+}else if(predType==='attribute_trajectory'){
+if(result.currentOverall)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current overall: <b style="color:#1d9e75">'+result.currentOverall+'</b> | Focus: <b style="color:#fff">'+(result.trainingFocus||'Balanced')+'</b></div>';
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> — High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
+if(result.lowConfidenceWarning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.lowConfidenceWarning+'</p>';
+}else if(predType==='value_trajectory'){
+if(result.currentValue)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current value: <b style="color:#1d9e75">'+result.currentValue+'</b></div>';
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> — High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
 if(result.note)html+='<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
-}else{html+='<p style="font-size:13px;color:#B0BEC5">'+JSON.stringify(result)+'</p>';}
+}else if(predType==='scenario_simulation'){
+html+='<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px;display:flex;justify-content:space-between"><span style="color:#8b949e">Baseline compatibility</span><b style="color:#fff">'+(result.baselineCompatibility||'--')+'</b></div>';
+html+='<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px;display:flex;justify-content:space-between"><span style="color:#8b949e">Simulated ('+(result.opponentStrength||'Similar')+')</span><b style="color:#1d9e75">'+(result.simulatedCompatibility||'--')+'</b></div>';
+if(result.delta!==undefined)html+='<div style="padding:8px 0;font-size:13px">Delta: <b style="color:'+(result.delta>=0?'#1d9e75':'#f44336')+'">'+(result.deltaLabel||result.delta)+'</b></div>';
+if(result.note)html+='<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
+}else{html+='<p style="font-size:13px;color:#B0BEC5">'+JSON.stringify(result).substring(0,500)+'</p>';}
 html+='</div>';
 res.innerHTML=html;
-// Refresh credits
-api('GET','/api/scouts/profile').then(function(d){var rem=d&&d.scout&&d.scout.predictions_remaining;if(typeof rem==='number'){var el2=document.getElementById('predCredits');if(el2)el2.textContent=rem+' prediction credits remaining';}}).catch(function(){});
+if(typeof r.creditsRemaining==='number'){var el2=document.getElementById('predCredits');if(el2)el2.textContent=r.creditsRemaining+' prediction credits remaining';}
 }).catch(function(err){res.innerHTML='<p style="color:#f44336;font-size:13px">Could not run prediction: '+(err&&err.message||'Error')+'</p>';});
 }
 
