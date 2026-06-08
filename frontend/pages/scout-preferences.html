@@ -69,16 +69,12 @@
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Scout</div></div></div>';updateNotifBadge();}
-
-const selected = { positions:[], formation:'', style:'' };
-function initChips(containerId, key, single=false) {
-  document.querySelectorAll('#'+containerId+' .chip').forEach(c => {
-    c.addEventListener('click', () => {
-      if (single) { document.querySelectorAll('#'+containerId+' .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); selected[key]=c.dataset.val; }
-      else { c.classList.toggle('active'); selected[key]=(selected[key]||[]).filter(x=>x!==c.dataset.val); if(c.classList.contains('active')) (selected[key]=selected[key]||[]).push(c.dataset.val); }
-    });
-  });
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
+  var u = Auth.user, uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
 }
 document.addEventListener('DOMContentLoaded', () => {
   initChips('positionChips','positions',false);
