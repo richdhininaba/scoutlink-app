@@ -34,7 +34,7 @@
 </div>
 <div class="page-content">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-<h2 id="pageHeading" style="font-size:20px;font-weight:800">Stratex Football Honours — Award nominations</h2>
+<h2 id="pageHeading" style="font-size:20px;font-weight:800">Stratex Football Honours â Award nominations</h2>
 <select id="yearFilter" class="form-input" style="width:auto;max-width:140px"></select>
 </div>
 <p style="font-size:13px;color:#8b949e;margin-bottom:20px">Nominate outstanding players for recognition at the annual Stratex Football Honours.</p>
@@ -127,16 +127,16 @@ document.addEventListener('DOMContentLoaded',function(){
     opt.value = y; opt.textContent = y; if(y===currentYear) opt.selected=true;
     ys.appendChild(opt);
   }
-  document.getElementById('pageHeading').textContent = 'Stratex Football Honours '+currentYear+' — Award nominations';
+  document.getElementById('pageHeading').textContent = 'Stratex Football Honours '+currentYear+' â Award nominations';
   document.getElementById('nominationsSectionTitle').textContent = currentYear+' nominations';
   ys.addEventListener('change',function(){
     currentYear = parseInt(this.value);
-    document.getElementById('pageHeading').textContent='Stratex Football Honours '+currentYear+' — Award nominations';
+    document.getElementById('pageHeading').textContent='Stratex Football Honours '+currentYear+' â Award nominations';
     document.getElementById('nominationsSectionTitle').textContent=currentYear+' nominations';
     loadNominations();
   });
   
-  document.getElementById('cancelNominateBtn').addEventListener('click',function(){document.getElementById('nominateModal').style.display='none';});
+  document.getElementById('cancelNominateBtn').addEventListener('click',function(){var _nm2=document.getElementById('nominateModal');_nm2.style.display='none';_nm2.classList.remove('open');});
   document.getElementById('confirmNominateBtn').addEventListener('click',submitNomination);
   
   loadPlayers();
@@ -176,7 +176,7 @@ async function loadPlayers(){
       document.getElementById('nominatePlayerName').textContent = selectedPlayerName;
       document.getElementById('awardSelect').value = '';
       document.getElementById('nominateError').style.display='none';
-      document.getElementById('nominateModal').style.display='flex';
+      var _nm=document.getElementById('nominateModal');_nm.style.display='flex';_nm.classList.add('open');
     });
   }catch(e){
     tbody.innerHTML='<tr><td colspan="8" style="color:#f44336;padding:20px">Could not load players: '+safe(e.message)+'</td></tr>';
