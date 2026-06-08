@@ -131,16 +131,33 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
 // Get single player
 router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    if (req.user.accountType === 'Player' && req.user.id !== req.params.id) return res.status(403).json({ error: 'Forbidden' });
-    const { data, error } = await supabase.from('players').select('*').eq('id', req.params.id).single();
-    if (error||!data) return res.status(404).json({ error: 'Player not found' });
-    const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', req.params.id).order('match_date', { ascending: false }).limit(10);
-    const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
-    res.json({ player: data, recentMatches: matches||[], videos: videos||[] });
-  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+try {
+if (req.user.accountType === 'Player' && req.user.id !== req.params.id) return res.status(403).json({ error: 'Forbidden' });
+const { data, error } = await supabase.from('players').select('*').eq('id', req.params.id).single();
+if (error||!data) return res.status(404).json({ error: 'Player not found' });
+const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', req.params.id).order('match_date', { ascending: false }).limit(10);
+const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
+// Fetch upcoming fixtures for this player's team
+let upcomingFixtures = [];
+if (data.team_id) {
+const today = new Date().toISOString().slice(0,10);
+const { data: fx } = await supabase.from('fixtures').select('*').eq('team_id', data.team_id).gte('fixture_date', today).order('fixture_date', { ascending: true }).limit(5);
+upcomingFixtures = fx || [];
+}
+// If scout, check pipeline status and interests_remaining
+let pipelineStatus = null;
+let interestsRemaining = null;
+if (req.user.accountType === 'Scout') {
+const { data: pipelineRow } = await supabase.from('recruitment_pipeline').select('id,stage').eq('scout_id', req.user.id).eq('player_id', req.params.id).maybeSingle();
+pipelineStatus = pipelineRow ? pipelineRow.stage : null;
+const { data: scoutRow } = await supabase.from('scouts').select('interests_remaining').eq('id', req.user.id).single();
+interestsRemaining = scoutRow ? (scoutRow.interests_remaining ?? 200) : 200;
+}
+res.json({ player: data, recentMatches: matches||[], videos: videos||[], upcomingFixtures, pipelineStatus, interestsRemaining });
+} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // Create player (Coach/Stratex)
@@ -358,31 +375,45 @@ router.post('/:id/analyse', requireAuth, requireRole('Scout','Stratex','Coach'),
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
 // Scout interest
 router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req, res) => {
-  try {
-    const { notes, interestLevel = 7 } = req.body;
-    const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
-    const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id').eq('id', req.user.id).single();
-    if (!player||!scout) return res.status(404).json({ error: 'Not found' });
-    await supabase.from('recruitment_pipeline').upsert({
-      scout_id: req.user.id, player_id: req.params.id,
-      scout_team_id: scout.scout_team_id, notes, interest_level: interestLevel, stage: 'watching',
-      is_active: true
-    }, { onConflict: 'scout_id,player_id' });
-    await supabase.from('notifications').insert({
-      recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
-      title: 'A scout is interested in you!',
-      body: scout.first_name + ' ' + scout.last_name + ' from ' + scout.club_name + ' has expressed interest in your profile.',
-      data: { scoutId: scout.id, scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }
-    });
-    if (player.email) {
-      await email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
-        playerName: player.first_name + ' ' + player.last_name,
-        scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name });
-    }
-    res.json({ message: 'Interest recorded and notifications sent.' });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+try {
+const { notes, interestLevel = 7 } = req.body;
+const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
+const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id,interests_remaining').eq('id', req.user.id).single();
+if (!player||!scout) return res.status(404).json({ error: 'Not found' });
+// Check if already in pipeline
+const { data: existing } = await supabase.from('recruitment_pipeline').select('id,stage').eq('scout_id', req.user.id).eq('player_id', req.params.id).maybeSingle();
+if (existing) {
+return res.json({ message: 'Already in pipeline', alreadyInPipeline: true, stage: existing.stage, interestsRemaining: scout.interests_remaining ?? 200 });
+}
+// Check interests remaining
+const remaining = scout.interests_remaining ?? 200;
+if (remaining <= 0) {
+return res.status(402).json({ error: 'You have used all your interests for this plan. Upgrade to add more players.', interestsRemaining: 0 });
+}
+await supabase.from('recruitment_pipeline').insert({
+scout_id: req.user.id, player_id: req.params.id,
+scout_team_id: scout.scout_team_id, notes: notes||null, interest_level: interestLevel, stage: 'watching',
+is_active: true
+});
+// Decrement interests_remaining
+const newRemaining = Math.max(0, remaining - 1);
+await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('id', req.user.id);
+await supabase.from('notifications').insert({
+recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
+title: 'A scout is interested in you!',
+body: scout.first_name + ' ' + scout.last_name + ' from ' + scout.club_name + ' has expressed interest in your profile.',
+data: { scoutId: scout.id, scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }
+}).catch(()=>{});
+if (player.email) {
+email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
+playerName: player.first_name + ' ' + player.last_name,
+scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }).catch(()=>{});
+}
+res.json({ message: 'Interest recorded. Player added to pipeline.', alreadyInPipeline: false, interestsRemaining: newRemaining });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // PATCH avatar config (player)
