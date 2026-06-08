@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'">' +
-    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'—')+'</div>' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'â')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
     (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
@@ -370,7 +370,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'"><div>' +
-    '<div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'—')+'</div>' +
+    '<div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'â')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div>' +
     '</div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">'+desc+'</div>';
@@ -482,7 +482,76 @@ document.addEventListener('DOMContentLoaded',function(){
     if(btnPred) btnPred.addEventListener('click',function(){runPrediction(playerId);});
 
   }).catch(function(e){
-    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';
+    document.getElementById('profileContent').innerHTML='<div style="text-align:center
+
+// Add predictions section and your-estimated-value after profile renders
+(function() {
+  var playerId = new URLSearchParams(window.location.search).get('id');
+  if (!playerId) return;
+  var container = document.getElementById('profileContent');
+  if (!container) return;
+  
+  if (typeof Auth !== 'undefined') {
+    if (Auth.type === 'Scout') {
+      // Add predictions panel
+      var predDiv = document.createElement('div');
+      predDiv.style.cssText = 'margin-top:20px';
+      predDiv.innerHTML = '<div class="table-card"><div class="table-header"><div><h3 style="font-size:16px;font-weight:700">Prediction analysis</h3><p style="font-size:12px;color:#8b949e;margin-top:2px">Evidence-based development predictions</p></div><div id="predCredits" style="font-size:13px;color:#8b949e"></div></div><div style="padding:16px 20px"><div style="background:rgba(255,152,0,.06);border:1px solid rgba(255,152,0,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#8b949e;line-height:1.6">Predictions are illustrative estimates based on current coach-entered data. They are not guarantees of development. ScoutLink does not warrant the accuracy of any prediction. Scouts should use predictions as one of many data points and not as the sole basis for recruitment decisions.</div><div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px" id="predTypeButtons"><button class="btn btn-sm btn-outline" data-pred-type="attribute_trajectory">Attribute development</button> <button class="btn btn-sm btn-outline" data-pred-type="maturation_flag">Maturation and age risk</button> <button class="btn btn-sm btn-outline" data-pred-type="positional_ceiling">Positional ceiling</button> <button class="btn btn-sm btn-outline" data-pred-type="scenario_simulation">Match scenario simulation</button> <button class="btn btn-sm btn-outline" data-pred-type="value_trajectory">Transfer value trajectory</button> <button class="btn btn-sm btn-outline" data-pred-type="consistency_score">Consistency and reliability</button></div><div id="predResultArea"></div></div></div>';
+      container.appendChild(predDiv);
+      // Load credit count
+      if (typeof api === 'function') {
+        api('GET', '/api/scouts/setup').then(function(d){var rem=d&&d.predictions_remaining;if(typeof rem==='number')document.getElementById('predCredits').textContent=rem+' credits remaining';}).catch(function(){});
+      }
+      // Bind prediction buttons
+      document.getElementById('predTypeButtons').addEventListener('click', function(e){
+        var btn = e.target.closest('[data-pred-type]');
+        if (!btn) return;
+        var predType = btn.getAttribute('data-pred-type');
+        var res = document.getElementById('predResultArea');
+        res.innerHTML = '<div style="color:#8b949e;padding:10px">Analysing...</div>';
+        document.querySelectorAll('[data-pred-type]').forEach(function(b){b.className='btn btn-sm btn-outline';});
+        btn.className='btn btn-sm btn-primary';
+        api('POST', '/api/predictions', {playerId:playerId, predictionType:predType}).then(function(r){
+          var result = r.result || {};
+          var html = '<div style="background:#0d1117;border-radius:8px;padding:16px;margin-top:8px">';
+          if (predType==='maturation_flag' || predType==='positional_ceiling' || predType==='consistency_score') {
+            html += '<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.ceiling||result.label||'Analysis complete.')+'</p>';
+            if (result.warning || result.note) html += '<p style="color:#FF9800;font-size:12px;margin-top:8px">'+(result.warning||result.note||'')+'</p>';
+          } else if (predType==='attribute_trajectory' || predType==='value_trajectory') {
+            if (result.current) html += '<div style="margin-bottom:8px;font-size:13px">Current: <b style="color:#1d9e75">'+result.current+'</b></div>';
+            if (result.years && result.years.length) {
+              html += result.years.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.low+'</b> &nbsp; High: <b style="color:#1d9e75">'+y.high+'</b></span><span style="font-size:11px;color:#546E7A">'+(y.confidence||'')+'</span></div>';}).join('');
+            }
+            if (result.warning) html += '<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.warning+'</p>';
+          } else if (predType==='scenario_simulation') {
+            if (result.scenarios && result.scenarios.length) {
+              html += result.scenarios.map(function(s){return '<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><b style="color:#fff">'+s.label+'</b>: <span style="color:#1d9e75;font-weight:700">'+s.score+'</span> <span style="color:#546E7A">('+s.delta+')</span></div>';}).join('');
+            }
+            if (result.note) html += '<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
+          }
+          html += '</div>';
+          res.innerHTML = html;
+          if (typeof api === 'function') api('GET', '/api/scouts/setup').then(function(d){var rem=d&&d.predictions_remaining;if(typeof rem==='number')document.getElementById('predCredits').textContent=rem+' credits remaining';}).catch(function(){});
+        }).catch(function(err){res.innerHTML='<p style="color:#f44336;font-size:13px">Could not run prediction: '+(err.message||'Error')+'</p>';});
+      });
+    } else if (Auth.type === 'Player') {
+      // Show your estimated value
+      if (typeof api === 'function') {
+        api('GET', '/api/players/'+playerId).then(function(d){
+          var p = d.player || d;
+          if (p && (p.transfer_value || p.transfer_value === 0)) {
+            var valDiv = document.createElement('div');
+            valDiv.className = 'table-card';
+            valDiv.style.cssText = 'margin-top:20px';
+            var fv = typeof formatValue === 'function' ? (p.transfer_value ? formatValue(p.transfer_value) : 'Calculating...') : (p.transfer_value ? p.transfer_value : 'Calculating...');
+            valDiv.innerHTML = '<div style="padding:16px 20px"><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Your estimated value</div><div style="font-size:28px;font-weight:900;color:#1d9e75">'+fv+'</div><div style="font-size:12px;color:#546E7A;margin-top:4px">This is an indicative grassroots development value calculated by ScoutLink based on your ratings and age.</div></div>';
+            container.appendChild(valDiv);
+          }
+        }).catch(function(){});
+      }
+    }
+  }
+})();;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';
     console.error('[PlayerProfile]',e);
   });
 });
