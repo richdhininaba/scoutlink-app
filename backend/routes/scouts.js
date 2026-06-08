@@ -226,6 +226,29 @@ router.get('/pipeline', requireAuth, requireRole('Scout', 'Stratex'), async (req
   } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
+// PATCH /api/scouts/pipeline/:id - move pipeline stage
+router.patch('/pipeline/:id', requireAuth, requireRole('Scout', 'Stratex'), async (req, res) => {
+  try {
+    const { stage } = req.body;
+    const validStages = ['watching', 'interested', 'shortlisted', 'approached', 'trial_pending', 'negotiating'];
+    if (!stage || !validStages.includes(stage)) {
+      return res.status(400).json({ error: 'Invalid stage. Must be one of: ' + validStages.join(', ') });
+    }
+    const { data, error } = await supabase
+      .from('recruitment_pipeline')
+      .update({ stage, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    console.error('[Pipeline PATCH]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { data: me } = await supabase.from('scouts').select('id,scout_team_id,club_name,is_super_user').eq('id', req.user.id).single();
@@ -250,7 +273,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
 });
 
 
-// âââ NOMINATION RESPONSE âââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ NOMINATION RESPONSE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 router.post('/nomination-response', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { nominationId, response } = req.body;
@@ -261,7 +284,7 @@ router.post('/nomination-response', requireAuth, requireRole('Scout'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// âââ SHOWCASE ATTENDANCE âââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SHOWCASE ATTENDANCE Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -278,7 +301,7 @@ router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// âââ SHOWCASE CANCEL âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SHOWCASE CANCEL Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId } = req.body;
@@ -295,7 +318,7 @@ router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// âââ SHOWCASE RESPONSE (player notification accept/decline) ââââââââââââââ
+// Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ SHOWCASE RESPONSE (player notification accept/decline) Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 router.post('/showcase-response', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const { eventId, playerId, response } = req.body;
@@ -307,7 +330,7 @@ router.post('/showcase-response', requireAuth, requireRole('Scout'), async (req,
 });
 
 
-// GET /api/scouts/fixtures — upcoming fixtures for pipeline players
+// GET /api/scouts/fixtures â upcoming fixtures for pipeline players
 router.get('/fixtures', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
   // Get scout's pipeline player IDs
@@ -342,7 +365,7 @@ try {
 } catch(err) { console.error('[Scout Fixtures]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// GET /api/scouts/predictions — prediction history for this scout
+// GET /api/scouts/predictions â prediction history for this scout
 router.get('/predictions', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
   const { data: scout } = await supabase.from('scouts')
@@ -370,7 +393,7 @@ try {
 } catch(err) { console.error('[Scout Predictions]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-// GET /api/scouts/exports — export history for this scout
+// GET /api/scouts/exports â export history for this scout
 router.get('/exports', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
   const { data: scout } = await supabase.from('scouts')
@@ -399,7 +422,7 @@ try {
 });
 
 
-// GET /api/scouts/rankings — 5 leaderboards: top scorers, assisters, clean sheets, most interested, most expensive
+// GET /api/scouts/rankings â 5 leaderboards: top scorers, assisters, clean sheets, most interested, most expensive
 router.get('/rankings', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
   try {
     const [
