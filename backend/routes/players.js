@@ -61,7 +61,7 @@ router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async 
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
-    const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, page=1, limit=20 } = req.query;
+    const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, ageGroup, page=1, limit=20 } = req.query;
     let q = supabase.from('players').select(
       'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code',
       { count: 'exact' }
@@ -73,6 +73,7 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     if (minAge)     q = q.gte('age', Number(minAge));
     if (maxAge)     q = q.lte('age', Number(maxAge));
     if (minOverall) q = q.gte('overall_rating', Number(minOverall));
+if (ageGroup) q = q.eq('age_group', ageGroup);
     const off = (Number(page)-1)*Number(limit);
     q = q.order('overall_rating', { ascending: false }).range(off, off+Number(limit)-1);
     const { data, error, count } = await q;
