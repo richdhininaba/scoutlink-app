@@ -192,7 +192,39 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     if (error) throw error;
     const salary = predictedSalary(data, { tier: 5 });
     await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', data.id);
-    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross } });
+    
+    // Generate login code for the player
+    const loginCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const loginCodeExpires = new Date(Date.now() + 365*24*60*60*1000);
+    await supabase.from('players').update({ login_code: loginCode, login_code_expires: loginCodeExpires }).eq('id', data.id);
+    
+    // Send email to parent or player
+    const recipientEmail = b.parentEmail || b.email || null;
+    if (recipientEmail) {
+      try {
+        await email.sendPlayerLoginCode({
+          to: recipientEmail,
+          playerFirstName: b.firstName,
+          loginCode,
+          loginUrl: 'https://scoutlink.app/frontend/pages/login.html'
+        });
+      } catch(emailErr) { console.error('[PlayerCreate] Email error:', emailErr.message); }
+    }
+    
+    // Notify coach
+    if (req.user.accountType === 'Coach') {
+      try {
+        await supabase.from('notifications').insert({
+          recipient_id: req.user.id, recipient_type: 'Coach',
+          title: 'Player added successfully',
+          body: b.firstName + ' ' + b.lastName + ' has been added. Login code: ' + loginCode,
+          data: { player_id: data.id, login_code: loginCode, type: 'player_added' },
+          is_read: false
+        });
+      } catch(notifErr) {}
+    }
+    
+    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross, login_code: loginCode }, loginCode, message: 'Player created. Login code: ' + loginCode });
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
