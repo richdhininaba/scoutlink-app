@@ -9,14 +9,14 @@
 .stage-chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .stage-watching{background:rgba(33,150,243,.15);color:#42A5F5;}
 .stage-interested,.stage-shortlisted{background:rgba(255,193,7,.15);color:#FFD54F;}
-.stage-approached,.stage-trial_pending{background:rgba(0,230,118,.15);color:#00E676;}
+.stage-approached,.stage-trial_pending{background:rgba(29,158,117,.15);color:#1d9e75;}
 .stage-negotiating{background:rgba(255,87,34,.15);color:#FF7043;}
 .stage-header{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:16px 20px 8px;border-bottom:1px solid var(--border);}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -30,7 +30,6 @@
 </div>
 <div class="page-content">
 
-<!-- Plan summary -->
 <div class="kpi-grid" style="margin-bottom:20px">
 <div class="kpi-card">
 <div class="kpi-label">Interests Remaining</div>
@@ -71,7 +70,7 @@ function initNav() {
   if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
   if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
@@ -82,35 +81,35 @@ function stageClass(s){
   return m[(s||'').toLowerCase().replace(/ /g,'_')]||'stage-watching';
 }
 function dispOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
-function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function compatColor(s){return s>=80?'#1d9e75':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
 
-document.addEventListener('DOMContentLoaded',async function(){
+document.addEventListener('DOMContentLoaded',function(){
   initNav();
-  
-  // Load plan info
-  try{
-    var profile=await api('GET','/api/scouts/profile');
+
+  api('GET','/api/scouts/profile').then(function(profile){
     var scout=profile.scout||{};
     var LIMITS={Core:200,Plus:1000,Elite:99999};
     var plan=scout.subscription_plan||'Core';
     var planLimit=LIMITS[plan]||200;
-    var remaining=scout.interests_remaining??planLimit;
+    var remaining=scout.interests_remaining!=null?scout.interests_remaining:planLimit;
     document.getElementById('kpiInterests').textContent=remaining===99999?'Unlimited':remaining;
     document.getElementById('kpiLimit').textContent=planLimit===99999?'Unlimited':planLimit;
     document.getElementById('kpiPlan').textContent=plan;
-  }catch(e){ document.getElementById('kpiInterests').textContent='--'; document.getElementById('kpiLimit').textContent='--'; document.getElementById('kpiPlan').textContent='Core'; }
-  
-  try{
-    var d=await api('GET','/api/scouts/pipeline?limit=100');
+  }).catch(function(){
+    document.getElementById('kpiInterests').textContent='--';
+    document.getElementById('kpiLimit').textContent='--';
+    document.getElementById('kpiPlan').textContent='Core';
+  });
+
+  api('GET','/api/scouts/pipeline?limit=100').then(function(d){
     var rows=d.data||[];
     document.getElementById('kpiTotal').textContent=rows.length;
-    
+
     if(!rows.length){
       document.getElementById('pipelineContent').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">&#128203;</div><h3 style="color:var(--text2);margin-bottom:8px">Your pipeline is empty</h3><p>Browse the player database to find your first match.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
       return;
     }
-    
-    // Group by stage
+
     var stages=['watching','interested','shortlisted','approached','trial_pending','negotiating'];
     var grouped={};
     rows.forEach(function(r){
@@ -118,9 +117,9 @@ document.addEventListener('DOMContentLoaded',async function(){
       if(!grouped[s])grouped[s]=[];
       grouped[s].push(r);
     });
-    
+
     var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Club</th><th>Stage</th><th>Added</th><th></th></tr></thead><tbody>';
-    
+
     stages.forEach(function(stage){
       var stageRows=grouped[stage]||[];
       if(!stageRows.length)return;
@@ -128,24 +127,35 @@ document.addEventListener('DOMContentLoaded',async function(){
         var p=r.players||{};
         var ov=dispOv(p.overall_rating);
         var ovN=parseFloat(p.overall_rating||0);var ovP=ovN>10?ovN:ovN*10;
-        html+='<tr style="cursor:pointer" onclick="location.href='player-profile.html?id='+p.id+''">' +
-          '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:32px;height:32px;font-size:11px">'+initials(p.first_name,p.last_name)+'</div><div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b><div style="font-size:11px;color:var(--text3)">'+(p.age_group||p.age+'yrs'||'--')+'</div></div></div></td>'+
+        var pid=p.id||'';
+        html+='<tr style="cursor:pointer" data-pid="'+pid+'">' +
+          '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:32px;height:32px;font-size:11px">'+initials(p.first_name,p.last_name)+'</div><div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b><div style="font-size:11px;color:var(--text3)">'+(p.age_group||((p.age||'')+'yrs')||'--')+'</div></div></div></td>'+
           '<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
           '<td style="color:'+compatColor(ovP)+';font-weight:700">'+ov+'</td>'+
           '<td style="color:var(--text3);font-size:12px">'+(p.team_name||'--')+'</td>'+
           '<td><span class="stage-chip '+stageClass(r.stage)+'">'+(r.stage||'watching').replace(/_/g,' ')+'</span></td>'+
           '<td style="color:var(--text3);font-size:11px">'+(r.created_at?r.created_at.slice(0,10):'--')+'</td>'+
-          '<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="min-height:36px">View</a></td>'+
+          '<td><a href="player-profile.html?id='+pid+'" class="btn btn-sm btn-outline" style="min-height:36px">View</a></td>'+
           '</tr>';
       });
     });
-    
+
     html+='</tbody></table></div>';
     document.getElementById('pipelineContent').innerHTML=html;
-  }catch(e){
+
+    // Add row click navigation
+    document.querySelectorAll('#pipelineContent tr[data-pid]').forEach(function(row){
+      row.addEventListener('click',function(e){
+        if(e.target.tagName==='A'||e.target.closest('a'))return;
+        var pid=this.getAttribute('data-pid');
+        if(pid) window.location.href='player-profile.html?id='+pid;
+      });
+    });
+
+  }).catch(function(e){
     document.getElementById('kpiTotal').textContent='0';
-    document.getElementById('pipelineContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">Could not load pipeline data.<br><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
-  }
+    document.getElementById('pipelineContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">Could not load pipeline data.<br><small>'+e.message+'</small><br><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
+  });
 });
 </script>
 <script src="../js/mobile.js"></script>
