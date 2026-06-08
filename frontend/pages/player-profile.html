@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Profile - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .profile-hero{background:linear-gradient(135deg,#0a0f1e 0%,#111827 100%);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
@@ -270,4 +272,5 @@ async function showCompatibility(playerId){
   }catch(e){document.getElementById('compatResult').innerHTML='<div style="padding:16px;color:#546E7A">Compatibility analysis unavailable: '+e.message+'</div>';}
 }
 </script>
+<script src="../js/mobile.js"></script>
 </body></html>
