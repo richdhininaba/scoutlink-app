@@ -74,19 +74,19 @@
 <div class="setup-section">
 <h3>Team weaknesses</h3>
 <p class="desc">Select up to 3 weaknesses. Players who can fix these score higher compatibility.</p>
-<div class="limit-note" id="wLimitNote">Select 1–3 weaknesses</div>
+<div class="limit-note" id="wLimitNote">Select 1&#8211;3 weaknesses</div>
 <div class="chk-grid" id="weaknessGrid"></div>
 </div>
 <div class="setup-section">
 <h3>Role expectations</h3>
 <p class="desc">What qualities do you need most? Select up to 3. These weight compatibility scores.</p>
-<div class="limit-note" id="rLimitNote">Select 1–3 role expectations</div>
+<div class="limit-note" id="rLimitNote">Select 1&#8211;3 role expectations</div>
 <div class="chk-grid" id="roleGrid"></div>
 </div>
 <div class="setup-section">
 <h3>Long-term goals</h3>
 <p class="desc">Strategic objectives. Select up to 3. These influence how future potential is weighed.</p>
-<div class="limit-note" id="gLimitNote">Select 1–3 long-term goals</div>
+<div class="limit-note" id="gLimitNote">Select 1&#8211;3 long-term goals</div>
 <div class="chk-grid" id="goalGrid"></div>
 </div>
 <div class="setup-section">
@@ -154,7 +154,7 @@ function toggleChk(el,arr,limit,gridId){
     var noteEl=document.getElementById(noteMap[gridId]);
     if(noteEl){
       noteEl.textContent='Max '+limit+' selections';noteEl.style.color='#f44336';
-      setTimeout(function(){noteEl.style.color='#FF9800';noteEl.textContent='Select 1–3 '+(['weaknessGrid'].includes(gridId)?'weaknesses':['roleGrid'].includes(gridId)?'role expectations':'long-term goals');},2000);
+      setTimeout(function(){noteEl.style.color='#FF9800';noteEl.textContent='Select 1–3';},2000);
     }
   }
 }
