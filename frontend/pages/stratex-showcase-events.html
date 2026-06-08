@@ -13,22 +13,22 @@
 .status-chip{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700}
 .status-draft{background:rgba(84,110,122,.2);color:#94a3b8}
 .status-published{background:rgba(66,165,245,.15);color:#42A5F5}
-.status-confirmed{background:rgba(0,230,118,.15);color:#00E676}
+.status-confirmed{background:rgba(29,158,117,.15);color:var(--accent,#1d9e75)}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">&#9889; Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">&#127914; Showcase Events</span>
+<span class="topbar-title">Showcase events</span>
 <div class="topbar-right">
-<button class="btn btn-sm btn-primary" onclick="openCreateModal()">+ Create Event</button>
-<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+<button class="btn btn-sm btn-primary" id="createEventBtn">+ Create Event</button>
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
 </div>
 </div>
 <div class="page-content">
@@ -52,7 +52,7 @@
 <div class="form-group"><label>Status</label><select id="newStatus" style="background:#0a0f1e;border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:#E2E8F0;font-size:14px;width:100%"><option value="draft">Draft</option><option value="published">Published</option></select></div>
 <div id="createMsg" style="font-size:13px;margin:8px 0"></div>
 <div style="display:flex;gap:12px;margin-top:8px">
-<button class="btn btn-ghost" onclick="document.getElementById('createModal').style.display='none'">Cancel</button>
+<button class="btn btn-ghost" id="cancelCreateBtn">Cancel</button>
 <button class="btn btn-primary" onclick="createEvent()" id="createBtn">Create Event</button>
 </div>
 </div>
@@ -63,7 +63,7 @@
 <div class="modal-box">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
 <h3 style="font-size:17px;font-weight:800" id="modalEventName"></h3>
-<button onclick="closeEventModal()" style="background:none;border:none;color:#B0BEC5;font-size:24px;cursor:pointer">x</button>
+<button class="close-event-modal" style="background:none;border:none;color:var(--text-secondary,#8b949e);font-size:24px;cursor:pointer" style="background:none;border:none;color:#B0BEC5;font-size:24px;cursor:pointer">x</button>
 </div>
 <div class="event-panel">
 <div>
@@ -74,7 +74,7 @@
 <div id="allPlayersModal" style="max-height:340px;overflow-y:auto"></div>
 </div>
 <div>
-<h4 style="margin-bottom:12px">Selected Players <span id="selectedCount" style="color:#00E676"></span></h4>
+<h4 style="margin-bottom:12px">Selected Players <span id="selectedCount" style="color:var(--accent,#1d9e75)"></span></h4>
 <div id="showcasePlayersList" style="max-height:280px;overflow-y:auto;margin-bottom:16px"></div>
 <div style="background:#0a0f1e;border-radius:10px;padding:14px;margin-bottom:16px">
 <div style="font-size:13px;font-weight:700;margin-bottom:4px" id="attendanceCount"></div>
@@ -101,13 +101,14 @@
 </div>
 </div>
 
+<script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var STRATEX_NAV=[{"icon":"🏠","label":"Dashboard","href":"stratex-dashboard.html"},{"icon":"📋","label":"Registrations","href":"stratex-registrations.html"},{"icon":"👥","label":"Users","href":"stratex-users.html"},{"icon":"⚽","label":"Players","href":"stratex-players.html"},{"icon":"🔍","label":"Scouts","href":"stratex-scouts.html"},{"icon":"🏋️","label":"Coaches","href":"stratex-coaches.html"},{"icon":"🏆","label":"Scout Teams","href":"stratex-scout-teams.html"},{"icon":"🏫","label":"School Teams","href":"stratex-school-teams.html"},{"icon":"🎖️","label":"Award Nominations","href":"stratex-award-nominations.html"},{"icon":"🎪","label":"Showcase Events","href":"stratex-showcase-events.html"},{"icon":"🔔","label":"Notifications","href":"#","action":"toggleNotifPanel"},{"icon":"⚙️","label":"Settings","href":"stratex-settings.html"}];
-var allPlayersGlobal=[], currentEventId=null;
-
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  if(typeof buildStratexNav==='function')buildStratexNav('sidebarNav',Auth.user);
+  if(typeof updateNotifBadge==='function')updateNotifBadge();
+}
   var nav=document.getElementById('sidebarNav');
   var cur=window.location.pathname.split('/').pop();
   if(nav) nav.innerHTML=STRATEX_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'"'+(i.action?' onclick="'+i.action+'();return false"':'')+'>'+i.icon+' '+i.label+'</a>';}).join('');
@@ -127,7 +128,7 @@ async function loadEvents(){
     if(!events.length){document.getElementById('eventsList').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No showcase events yet.</p><button class="btn btn-primary" onclick="openCreateModal()" style="margin-top:16px">+ Create First Event</button></div>';return;}
     document.getElementById('eventsList').innerHTML='<div style="display:grid;gap:16px">'+events.map(function(ev){
       var dateStr=ev.event_date?new Date(ev.event_date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):'Date TBC';
-      return'<div class="table-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px"><div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:18px;font-weight:800">'+ev.event_name+'</span>'+statusChip(ev.status)+'</div><div style="font-size:13px;color:#94a3b8;margin-bottom:4px">&#128197; '+dateStr+' &nbsp;&nbsp; &#128205; '+(ev.venue_name||'Venue TBC')+'</div><div style="font-size:12px;color:#546E7A">'+(ev.description||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><div style="text-align:center;min-width:80px"><div style="font-size:22px;font-weight:900;color:#00E676">'+(ev.confirmedCount||0)+'</div><div style="font-size:11px;color:#546E7A">/ '+ev.max_scouts+' scouts</div></div><button class="btn btn-outline" onclick="openEventModal('+JSON.stringify(ev.id)+')">Manage</button></div></div></div>';
+      return'<div class="table-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px"><div><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="font-size:18px;font-weight:800">'+ev.event_name+'</span>'+statusChip(ev.status)+'</div><div style="font-size:13px;color:#94a3b8;margin-bottom:4px">&#128197; '+dateStr+' &nbsp;&nbsp; &#128205; '+(ev.venue_name||'Venue TBC')+'</div><div style="font-size:12px;color:#546E7A">'+(ev.description||'')+'</div></div><div style="display:flex;gap:10px;align-items:center"><div style="text-align:center;min-width:80px"><div style="font-size:22px;font-weight:900;color:var(--accent,#1d9e75)">'+(ev.confirmedCount||0)+'</div><div style="font-size:11px;color:#546E7A">/ '+ev.max_scouts+' scouts</div></div><button class="btn btn-outline" onclick="openEventModal('+JSON.stringify(ev.id)+')">Manage</button></div></div></div>';
     }).join('')+'</div>';
   }catch(e){document.getElementById('eventsList').innerHTML='<div style="padding:24px;color:#f44336">Error: '+e.message+'</div>';}
 }
@@ -229,7 +230,7 @@ async function showAttendees(){
     var d=await api('GET','/api/showcase/'+currentEventId+'/attendees');
     var html='';
     if(d.confirmed&&d.confirmed.length){
-      html+='<h4 style="color:#00E676;margin-bottom:10px">Confirmed ('+d.confirmed.length+')</h4>';
+      html+='<h4 style="color:var(--accent,#1d9e75);margin-bottom:10px">Confirmed ('+d.confirmed.length+')</h4>';
       html+=d.confirmed.map(function(a){var s=a.scouts;return'<div style="padding:8px 12px;border-bottom:1px solid var(--border)"><div style="font-weight:600">'+(s?s.first_name+' '+s.last_name:'Unknown')+'</div><div style="font-size:11px;color:#546E7A">'+(s&&s.email||'')+' &bull; Confirmed: '+new Date(a.confirmed_at).toLocaleDateString('en-GB')+'</div></div>';}).join('');
     }
     if(d.waitlisted&&d.waitlisted.length){
@@ -243,7 +244,15 @@ async function showAttendees(){
 
 function closeEventModal(){document.getElementById('eventModal').style.display='none';currentEventId=null;}
 
-document.addEventListener('DOMContentLoaded',function(){initNav();loadEvents();});
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();loadEvents();
+  var cBtn=document.getElementById('createEventBtn');
+  if(cBtn)cBtn.addEventListener('click',openCreateModal);
+  var nBtn=document.getElementById('notifToggleBtn');
+  if(nBtn)nBtn.addEventListener('click',function(){});
+  var lBtn=document.getElementById('logoutBtn');
+  if(lBtn)lBtn.addEventListener('click',function(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';});
+});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
