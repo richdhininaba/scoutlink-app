@@ -1,8 +1,8 @@
 :root {
-  --bg: #0A0E17; --bg2: #0D1520; --card: #0F1E2A; --card2: #12243a;
-  --green: #00E676; --green2: #00C853; --blue: #2979FF;
-  --text: #FFFFFF; --text2: #B0BEC5; --text3: #546E7A;
-  --border: rgba(255,255,255,0.08); --border2: rgba(0,230,118,0.25);
+  --bg: #0d1117; --bg2: #161b22; --card: #161b22; --card2: #1c2128;
+  --green: #1d9e75; --green2: #17856a; --blue: #2979FF;
+  --text: #FFFFFF; --text2: #8b949e; --text3: #8b949e;
+  --border: #30363d; --border2: rgba(29,158,117,0.25);
   --radius: 12px; --radius-lg: 20px; --shadow: 0 4px 24px rgba(0,0,0,0.4);
   --transition: 0.2s ease;
 }
@@ -15,8 +15,8 @@ img { max-width:100%; }
 
 /* Buttons */
 .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:8px; font-weight:600; font-size:14px; border:none; cursor:pointer; transition:var(--transition); white-space:nowrap; }
-.btn-primary { background:var(--green); color:#000; }
-.btn-primary:hover { background:var(--green2); transform:translateY(-1px); }
+.btn-primary { background:var(--green); color:#fff; }
+.btn-primary:hover { background:var(--green2); color:#fff; transform:translateY(-1px); }
 .btn-ghost { background:transparent; color:var(--text2); }
 .btn-ghost:hover { color:var(--text); background:rgba(255,255,255,0.05); }
 .btn-outline { background:transparent; color:var(--green); border:1px solid var(--green); }
