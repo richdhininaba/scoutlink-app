@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded',function(){
             '</div>'+
           '</div>'+
           '<div style="text-align:right">'+
-            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'Â£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
+            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'ÃÂ£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
             '<div style="font-size:11px;color:#8b949e">Est. transfer value</div>'+
           '</div>'+
         '</div>'+
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'">' +
-    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂ¢ÃÂÃÂ')+'</div>' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
     (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 })();
   }).catch(function(e){
-    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';';
+    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';
 
     console.error('[PlayerProfile]',e);
   });
