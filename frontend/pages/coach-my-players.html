@@ -137,7 +137,7 @@ if(p.position_group==='Forward') keyAttrs=[['Pace',p.pace],['Shooting',p.shootin
 else if(p.position_group==='Midfielder') keyAttrs=[['Passing',p.passing],['Stamina',p.stamina],['Vision',p.vision]];
 else if(p.position_group==='Defender') keyAttrs=[['Defending',p.defending],['Strength',p.strength],['Tackling',p.tackling]];
 else keyAttrs=[['Composure',p.composure],['Strength',p.strength],['Pace',p.pace]];
-html+='<div class="player-card2" onclick="location.href='player-profile.html?id='+p.id+''">'+
+html+='<div class="player-card2" onclick="location.href=\'player-profile.html?id=\'+p.id+\'\'">'+
 '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
 '<div class="user-avatar" style="background:'+pCol+';color:#000;font-size:14px">'+initials(p.first_name,p.last_name)+'</div>'+
 '<div style="flex:1"><div style="font-weight:700">'+p.first_name+' '+p.last_name+'</div>'+
