@@ -72,7 +72,40 @@
 </div>
 </div>
 
-<script src="../js/stratex-nav.js"></script>
+<script src="../js/stratex-nav.js">
+
+async function loadScoutAttendees(eventId){
+  try{
+    var resp = await api('GET','/api/showcase/'+eventId+'/attendees');
+    var container = document.getElementById('scoutAttendanceList');
+    if(!container) return;
+    var confirmed = resp.confirmed||[];
+    var waitlisted = resp.waitlisted||[];
+    var cancelled = resp.cancelled||[];
+    var all = [...confirmed,...waitlisted,...cancelled];
+    if(all.length===0){
+      container.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px 0">No scouts have confirmed attendance yet.</div>';
+      return;
+    }
+    var ev=allEvents.find(function(e){return e.id===eventId;});
+    var maxScouts=ev?ev.max_scouts:20;
+    var summary='<div style="font-size:13px;color:#8b949e;margin-bottom:10px"><strong style="color:#e6edf3">'+confirmed.length+'</strong> confirmed of '+maxScouts+' maximum</div>';
+    var rows=all.map(function(a){
+      var s=a.scouts||{};
+      var name=(s.first_name||'')+' '+(s.last_name||'');
+      var email=s.email||'--';
+      var status=a.status||'unknown';
+      var confirmedAt=a.confirmed_at?new Date(a.confirmed_at).toLocaleDateString('en-GB'):'--';
+      var bc=status==='confirmed'?'#1d9e75':status==='waitlisted'?'#FFC107':'#f85149';
+      return '<tr><td style="padding:8px 10px">'+name+'</td><td style="padding:8px 10px;color:#8b949e;font-size:12px">'+email+'</td><td style="padding:8px 10px"><span style="background:'+bc+'22;color:'+bc+';border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700">'+status+'</span></td><td style="padding:8px 10px;color:#8b949e;font-size:12px">'+confirmedAt+'</td></tr>';
+    }).join('');
+    container.innerHTML=summary+'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Scout Name</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Email</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Status</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Confirmed At</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }catch(e){
+    var container=document.getElementById('scoutAttendanceList');
+    if(container) container.innerHTML='<div style="color:#f44336;font-size:13px">Could not load attendance: '+e.message+'</div>';
+  }
+}
+</script>
 <script src="../js/main.js"></script>
 <script>
 'use strict';
@@ -212,7 +245,11 @@ async function openEventDetail(id){
   (ev.confirmed?
   '<div style="background:rgba(29,158,117,.1);border:1px solid rgba(29,158,117,.3);border-radius:8px;padding:12px;font-size:13px;color:#1d9e75">This event is confirmed. Emails have been sent to scouts.</div>':
   '<button class="btn btn-primary" id="confirmEventBtn">Confirm event &amp; notify scouts</button>')+
-  '</div></div>';
+  '<div style="margin-top:24px" id="scoutAttendanceSection">'+
+  '<div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Scout Attendance</div>'+
+  '<div id="scoutAttendanceList"><div class="loading-state"><div class="spinner"></div></div></div>'+
+  '</div>'+
+  '</div>';
   
   document.getElementById('closeDetailBtn').addEventListener('click',function(){panel.style.display='none';});
   if(!ev.confirmed){
@@ -227,6 +264,7 @@ async function openEventDetail(id){
   });
   
   loadDetailPlayers(id);
+  loadScoutAttendees(id);
 }
 
 async function loadDetailPlayers(eventId){
