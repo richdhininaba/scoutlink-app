@@ -18,7 +18,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -27,16 +27,17 @@
     <span class="topbar-title">My Profile</span>
     <div class="topbar-right">
       <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button>
     </div>
   </div>
   <div class="page-content" id="profileContent"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 var PLAYER_NAV = [
@@ -48,6 +49,7 @@ var PLAYER_NAV = [
 ];
 function initNav() {
   if (!Auth.isLoggedIn() || Auth.type !== 'Player') { window.location.href = 'login.html'; return; }
+if(typeof buildScoutNav==="function") buildScoutNav("sidebarNav","Player");
   var nav = document.getElementById('sidebarNav');
   var cur = window.location.pathname.split('/').pop();
   if (nav) nav.innerHTML = PLAYER_NAV.map(function(i) {
@@ -110,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">' +
         '<div style="width:80px;height:80px;border-radius:50%;background:' + posGroupColor(p.position_group) + ';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">' + initials(p.first_name, p.last_name) + '</div>' +
         '<div style="font-size:22px;font-weight:800">' + p.first_name + ' ' + p.last_name + '</div>' +
-        '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' · ' + (p.position_group || '') + '</div>' +
+        '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' Â· ' + (p.position_group || '') + '</div>' +
         '<div style="font-size:52px;font-weight:900;color:' + overallColor + ';margin:10px 0">' + overallVal + '</div>' +
         '<div style="color:#546E7A;font-size:12px">Overall Rating / 10</div>' +
       '</div>' +
