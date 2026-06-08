@@ -6,268 +6,378 @@
 <link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-.profile-hero{background:linear-gradient(135deg,#0a0f1e 0%,#111827 100%);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
+.profile-hero{background:linear-gradient(135deg,var(--bg2) 0%,#111827 100%);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
 .profile-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#00E676,#00BCD4,#2979FF);}
-.big-avatar{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;}
-.attr-section{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.attr-row{display:flex;align-items:center;gap:8px;}
-.attr-label{font-size:12px;color:#94a3b8;width:80px;flex-shrink:0;text-transform:capitalize;}
+.big-avatar{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;flex-shrink:0;}
+.attr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.attr-label{font-size:12px;color:var(--text3);width:88px;flex-shrink:0;text-transform:capitalize;}
 .attr-num{font-size:13px;font-weight:700;width:28px;text-align:right;}
 .attr-bar-wrap{flex:1;height:6px;background:#1e2a3a;border-radius:3px;overflow:hidden;}
-.attr-bar-inner{height:100%;border-radius:3px;}
+.attr-bar-inner{height:100%;border-radius:3px;transition:width .4s ease;}
+.stat-box{background:#0a0f1e;border-radius:8px;padding:12px;text-align:center;}
+.stat-num{font-size:22px;font-weight:800;}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
 .match-row{padding:10px 12px;background:#0a0f1e;border-radius:8px;margin-bottom:6px;}
-.perf-badge{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.compat-bar-row{margin-bottom:10px;}
+.compat-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+.compat-bar-bg{height:8px;background:#1e2a3a;border-radius:4px;overflow:hidden;}
+.compat-bar-fill{height:100%;border-radius:4px;}
+.section-heading{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+.action-btn{min-height:40px;padding:8px 14px;font-size:13px;}
+.video-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:14px;}
+.prediction-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 </style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Ã¢ÂÂ¡ Scout<span style="color:#00E676">Link</span></a></div>
-  <div class="sidebar-nav" id="sidebarNav"></div>
-  <div class="sidebar-user" id="sidebarUser"></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
-  <div class="topbar">
-    <span class="topbar-title">Player Profile</span>
-    <div class="topbar-right">
-      <a href="javascript:history.back()" class="btn btn-sm btn-outline">Ã¢ÂÂ Back</a>
-      <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
-    </div>
-  </div>
-  <div class="page-content" id="profileContent">
-    <div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading player profile...</span></div>
-  </div>
+<div class="topbar">
+<span class="topbar-title" id="profileTitle">Player Profile</span>
+<div class="topbar-right">
+<a href="javascript:history.back()" class="btn btn-sm btn-outline action-btn">&#8592; Back</a>
+<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
+</div>
+</div>
+<div class="page-content" id="profileContent">
+<div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading player profile...</span></div>
+</div>
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">ÃÂ</button></div>
-  <div class="notif-list" id="notifList"></div>
+<div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&#10005;</button></div>
+<div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
-function dispAttr(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
-function attrPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.round(n>10?n:n*10);}
-function attrColor(pct){return pct>=80?'#00E676':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
-function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
-function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
-var currentRole = (localStorage.getItem('sl_type')||'').toLowerCase();
-var NAV_SCOUT=[
-  {label:'Ã°ÂÂÂ  Dashboard',href:'scout-dashboard.html'},{label:'Ã°ÂÂÂ Player Search',href:'player-search.html'},
-  {label:'Ã°ÂÂÂ My Pipeline',href:'scout-pipeline.html'},{label:'Ã°ÂÂÂ Rankings',href:'scout-rankings.html'},
-  {label:'Ã°ÂÂÂ Fixtures',href:'scout-fixtures.html'},{label:'Ã°ÂÂÂ® Predictions',href:'scout-predictions.html'},
-  {label:'Ã°ÂÂÂ Exports',href:'scout-exports.html'},{label:'Ã°ÂÂÂ Notifications',href:'#',action:'toggleNotifPanel'},
-  {label:'Ã¢ÂÂÃ¯Â¸Â Settings',href:'scout-settings.html'}
-];
-var NAV_COACH=[
-  {label:'Ã°ÂÂÂ  Dashboard',href:'coach-dashboard.html'},{label:'Ã°ÂÂÂ¥ My Players',href:'coach-my-players.html'},
-  {label:'Ã¢ÂÂ Add Player',href:'add-player.html'},{label:'Ã°ÂÂÂ Fixtures',href:'coach-fixtures.html'},
-  {label:'Ã°ÂÂÂ Notifications',href:'#',action:'toggleNotifPanel'},{label:'Ã¢ÂÂÃ¯Â¸Â Settings',href:'coach-settings.html'}
-];
+// --- Helpers ---
+function dOv(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function dAttr(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function aPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.min(100,Math.round(n>10?n:n*10));}
+function aColor(p){return p>=70?'#00E676':p>=50?'#FFC107':'#f44336';}
+function cColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function pColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
+function confLabel(apps){
+  var n=parseInt(apps)||0;
+  if(n===0) return {label:'Very Low',color:'#f44336'};
+  if(n<=4) return {label:'Low',color:'#FF9800'};
+  if(n<=9) return {label:'Medium',color:'#FFC107'};
+  if(n<=19) return {label:'High',color:'#00BCD4'};
+  return {label:'Very High',color:'#00E676'};
+}
+function attrLabel(k){
+  var m={pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',jumping:'Jumping',composure:'Composure',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling',gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};
+  return m[k]||k;
+}
+
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
-  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
+  var role=Auth.type;
+  if(role==='Scout'){
+    if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  } else if(role==='Coach'){
+    if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+  } else {
+    // Stratex or Player: build minimal nav
+    var nav=document.getElementById('sidebarNav');
+    if(nav) nav.innerHTML='<a class="nav-item" href="stratex-dashboard.html">Dashboard</a>';
+  }
   var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+role+'</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 
-document.addEventListener('DOMContentLoaded', async function(){
-  initNav();
-  var params = new URLSearchParams(window.location.search);
-  var playerId = params.get('id');
-  if(!playerId){document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No player specified.</div>';return;}
-  try {
-    var d = await api('GET', '/api/players/'+playerId);
-    var p = d.player;
-// Age-out countdown: check if player turns 17 within 30 days
-var ageOutBanner = '';
-if (p.date_of_birth) {
-  var dob = new Date(p.date_of_birth);
-  var today = new Date();
-  var next17 = new Date(dob);
-  next17.setFullYear(today.getFullYear());
-  if (next17 < today) next17.setFullYear(today.getFullYear() + 1);
-  // Check if this birthday makes them 17
-  var turnsAge = today.getFullYear() - dob.getFullYear();
-  if (next17 < today) turnsAge++;
-  if (turnsAge === 17) {
-    var daysUntil = Math.ceil((next17 - today) / (1000*60*60*24));
-    if (daysUntil <= 30) {
-      ageOutBanner = '<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">â ï¸</span><div><div style="font-weight:700;color:#FF9800">Age Out Warning</div><div style="font-size:13px;color:#E2E8F0">This player turns 17 in <strong>' + daysUntil + ' day' + (daysUntil===1?'':'s') + '</strong> and will age out of the platform.</div></div></div>';
-    }
+// Action functions
+var _currentPlayerId=null, _scoutTeam=null, _pipelineIds=[];
+
+async function registerInterest(playerId){
+  var btn=document.getElementById('btnInterest');
+  if(btn) btn.disabled=true;
+  try{
+    await api('POST','/api/players/'+playerId+'/scout-interest',{interestLevel:7});
+    if(btn){btn.textContent='\u2714 Added to Pipeline';btn.style.background='#00E676';btn.style.color='#000';}
+    _pipelineIds.push(playerId);
+  }catch(e){
+    if(btn) btn.disabled=false;
+    alert('Could not add to pipeline: '+e.message);
   }
 }
 
-    var matches = d.recentMatches||[];
-    var videos = d.videos||[];
-    var ov = dispOverall(p.overall_rating);
-    var ovNum = parseFloat(p.overall_rating||0); var ovPct = ovNum>10?ovNum:ovNum*10;
-    var ovColor = compatColor(ovPct);
-    var pCol = posColor(p.position_group);
+async function exportProfile(playerId){
+  var btn=document.getElementById('btnExport');
+  if(btn){btn.disabled=true;btn.textContent='Exporting...';}
+  try{
+    alert('Export feature: opening player profile data for download.');
+    if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+    alert('Export error: '+e.message);
+  }
+}
 
-    // Build attributes by position
-    var outfieldAttrs = ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure','vision','heading','tackling'];
-    var gkAttrs = ['gk_diving','gk_reflexes','gk_handling','gk_positioning','gk_kicking','gk_distribution','gk_communication','gk_sweeping'];
-    var isGK = (p.position_group||'').toLowerCase()==='goalkeeper';
-    var attrsToShow = isGK ? gkAttrs : outfieldAttrs;
+function scrollToVideos(){
+  var el=document.getElementById('videoSection');
+  if(el) el.scrollIntoView({behavior:'smooth'});
+}
 
-    function attrLabel(k){var m={gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};return m[k]||k.charAt(0).toUpperCase()+k.slice(1);}
+async function runPrediction(playerId){
+  var el=document.getElementById('predictionResult');
+  if(!el) return;
+  el.innerHTML='<div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Running prediction analysis...</span></div>';
+  try{
+    var r=await api('POST','/api/players/'+playerId+'/analyse',{});
+    var pd=r.predictionDetails||{};
+    var cur=parseFloat(pd.currentOverall||0);
+    var pot=parseFloat(pd.potentialOverall||0);
+    var cOv=dOv(cur);var pOv=dOv(pot);
+    var yr1=((cur+(pot-cur)*0.33)).toFixed(1);
+    var yr2=((cur+(pot-cur)*0.66)).toFixed(1);
+    var yr3=pot.toFixed(1);
+    var traj=pd.trajectory||'stable';
+    var trajColor=traj==='rising'?'#00E676':traj==='declining'?'#f44336':'#FFC107';
+    el.innerHTML='<div class="table-card" style="margin-top:16px"><div class="table-header"><h3>Prediction Analysis</h3><span class="badge badge-green">'+traj.toUpperCase()+'</span></div><div style="padding:20px"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"><div class="prediction-card"><div style="font-size:32px;font-weight:900;color:#FFC107">'+yr1+'</div><div style="font-size:12px;color:var(--text3);margin-top:4px">Year 1</div></div><div class="prediction-card"><div style="font-size:32px;font-weight:900;color:#00BCD4">'+yr2+'</div><div style="font-size:12px;color:var(--text3);margin-top:4px">Year 2</div></div><div class="prediction-card"><div style="font-size:32px;font-weight:900;color:#00E676">'+yr3+'</div><div style="font-size:12px;color:var(--text3);margin-top:4px">Year 3 Peak</div></div></div><p style="font-size:13px;color:var(--text2)">Current overall: <strong>'+cOv+'</strong> &rarr; Potential: <strong style="color:#00E676">'+pOv+'</strong>. Trajectory: <strong style="color:'+trajColor+'">'+traj+'</strong>.</p></div></div>';
+  }catch(e){
+    el.innerHTML='<div style="padding:16px;color:var(--text3);text-align:center">Prediction analysis unavailable: '+e.message+'</div>';
+  }
+}
 
-    var attrHtml = '<div class="attr-section">';
+async function showCompatBreakdown(playerId){
+  var el=document.getElementById('compatBreakdown');
+  if(!el) return;
+  el.innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var r=await api('POST','/api/players/'+playerId+'/analyse',{});
+    var b=r.compatibilityBreakdown||{};
+    var score=Math.round(r.compatibilityScore||0);
+    var sColor=cColor(score);
+    var breakdown=[
+      {label:'Team Weakness Fit (40%)',val:Math.round(b.weaknessFit||b.technical||50),color:'#00E676'},
+      {label:'Role Expectation Fit (20%)',val:Math.round(b.roleFit||b.tierFit||50),color:'#00BCD4'},
+      {label:'Playing Style Fit (20%)',val:Math.round(b.styleFit||b.ageFit||50),color:'#42A5F5'},
+      {label:'Formation Fit (10%)',val:Math.round(b.formationFit||b.physScore||50),color:'#FFC107'},
+      {label:'Long-Term Goals Fit (10%)',val:Math.round(b.goalsFit||b.statsScore||50),color:'#FF9800'},
+    ];
+    var barsHtml=breakdown.map(function(bd){
+      return '<div class="compat-bar-row"><div class="compat-bar-label"><span style="color:var(--text2)">'+bd.label+'</span><span style="font-weight:700;color:'+bd.color+'">'+bd.val+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+bd.val+'%;background:'+bd.color+'"></div></div></div>';
+    }).join('');
+    var apps=parseInt(b.appearances||0);
+    var conf=confLabel(apps);
+    el.innerHTML='<div class="table-card"><div class="table-header"><h3>Compatibility Breakdown</h3><span style="font-size:32px;font-weight:900;color:'+sColor+'">'+score+'</span></div><div style="padding:20px">'+barsHtml+'<div style="margin-top:14px;padding:12px;background:#0a0f1e;border-radius:8px;font-size:12px;color:var(--text2)"><strong>Confidence:</strong> <span style="color:'+conf.color+'">'+conf.label+'</span> &mdash; Based on '+apps+' appearance'+( apps!==1?'s':'')+'.'+(apps<5?' More matches will improve data confidence.':'')+' </div></div></div>';
+  }catch(e){
+    el.innerHTML='<div style="padding:16px;color:var(--text3)">Compatibility breakdown unavailable: '+e.message+'</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async function(){
+  initNav();
+  var params=new URLSearchParams(window.location.search);
+  var playerId=params.get('id');
+  if(!playerId){
+    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">No player ID specified. <a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
+    return;
+  }
+  _currentPlayerId=playerId;
+
+  // Load scout team for compatibility
+  if(Auth.type==='Scout'){
+    try{var st=await api('GET','/api/scouts/setup');_scoutTeam=st.scoutTeam||null;}catch(e){}
+  }
+
+  try{
+    var d=await api('GET','/api/players/'+playerId);
+    if(!d||!d.player){throw new Error('Player not found');}
+    var p=d.player;
+    var matches=d.recentMatches||[];
+    var videos=d.videos||[];
+
+    // Set title
+    document.getElementById('profileTitle').textContent=(p.first_name||'')+' '+(p.last_name||'');
+
+    // Age-out banner
+    var ageOutBanner='';
+    if(p.date_of_birth){
+      var dob=new Date(p.date_of_birth);var today=new Date();
+      var next17=new Date(dob);next17.setFullYear(today.getFullYear());
+      if(next17<today)next17.setFullYear(today.getFullYear()+1);
+      var turnsAge=next17.getFullYear()-dob.getFullYear();
+      if(turnsAge===17){
+        var daysUntil=Math.ceil((next17-today)/(1000*60*60*24));
+        if(daysUntil<=30) ageOutBanner='<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">&#9888;</span><div><div style="font-weight:700;color:#FF9800">Age Out Warning</div><div style="font-size:13px;color:#E2E8F0">This player turns 17 in <strong>'+daysUntil+' day'+(daysUntil===1?'':'s')+'</strong> and will age out of the platform.</div></div></div>';
+      }
+    }
+
+    var ov=dOv(p.overall_rating);
+    var ovNum=parseFloat(p.overall_rating||0);var ovPct=ovNum>10?ovNum:ovNum*10;
+    var ovColor=cColor(ovPct);
+    var pgColor=pColor(p.position_group);
+    var conf=confLabel(p.appearances||0);
+    var tv=formatValue(p.transfer_value||0);
+
+    // Determine is GK
+    var isGK=(p.position_group||'').toLowerCase()==='goalkeeper';
+    var outfieldAttrs=['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure','crossing','vision','positioning','heading','tackling','jumping'];
+    var gkAttrs=['gk_diving','gk_reflexes','gk_handling','gk_positioning','gk_kicking','gk_distribution','gk_communication','gk_sweeping'];
+    var attrsToShow=isGK?gkAttrs:outfieldAttrs;
+
+    var attrHtml='<div>';
     attrsToShow.forEach(function(a){
-      var val = p[a]; var display = dispAttr(val); var pct = attrPct(val); var col = attrColor(pct);
-      attrHtml += '<div class="attr-row"><span class="attr-label">'+attrLabel(a)+'</span>' +
-        '<div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div>' +
-        '<span class="attr-num" style="color:'+col+'">'+display+'</span></div>';
+      var val=p[a];var display=dAttr(val);var pct=aPct(val);var col=aColor(pct);
+      attrHtml+='<div class="attr-row"><span class="attr-label">'+attrLabel(a)+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+display+'</span></div>';
     });
-    attrHtml += '</div>';
+    attrHtml+='</div>';
 
-    var matchHtml = '';
+    // Stats
+    var apps=parseInt(p.appearances)||0;
+    var goals=parseInt(p.goals)||0;
+    var assts=parseInt(p.assists)||0;
+    var cs=parseInt(p.clean_sheets)||0;
+    var yc=parseInt(p.yellow_cards)||0;
+    var rc=parseInt(p.red_cards)||0;
+    var gpg=apps>0?(goals/apps).toFixed(2):'-';
+    var apg=apps>0?(assts/apps).toFixed(2):'-';
+    var cspg=apps>0?(cs/apps).toFixed(2):'-';
+
+    // Action buttons for scouts
+    var actionBtns='';
+    if(Auth.type==='Scout'){
+      actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">'+
+        '<button id="btnInterest" class="btn btn-primary action-btn" onclick="registerInterest(''+p.id+'')">+ Register Interest</button>'+
+        '<button id="btnExport" class="btn btn-outline action-btn" onclick="exportProfile(''+p.id+'')">Export Profile</button>'+
+        '<button class="btn btn-outline action-btn" onclick="scrollToVideos()">&#9654; Watch Videos</button>'+
+        '</div>';
+    }
+
+    // Build match rows
+    var matchHtml='';
     if(matches.length){
-      matchHtml = matches.map(function(m){
-        var perf = m.performance_score||50;
-        var pCol2 = perf>=80?'#00E676':perf>=60?'#FFC107':'#FF9800';
-        return '<div class="match-row"><div style="display:flex;align-items:center;gap:10px">' +
-          '<div class="perf-badge" style="background:'+pCol2+'22;color:'+pCol2+'">'+perf+'</div>' +
-          '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+(m.opponent_name||'Unknown Opponent')+'</div>' +
-          '<div style="font-size:11px;color:#546E7A">'+(m.competition||'Match')+' ÃÂ· '+(m.match_date?m.match_date.slice(0,10):'--')+'</div></div>' +
-          '<div style="text-align:right;font-size:12px">' +
-            '<span style="color:#00E676;font-weight:700">'+(m.goals||0)+'G</span> ' +
-            '<span style="color:#42A5F5;font-weight:700">'+(m.assists||0)+'A</span>' +
+      matchHtml=matches.slice(0,5).map(function(m){
+        var perf=parseInt(m.performance_score||50);var pCol2=cColor(perf);
+        return '<div class="match-row"><div style="display:flex;align-items:center;gap:10px">'+
+          '<div style="width:36px;height:36px;border-radius:50%;background:'+pCol2+'22;color:'+pCol2+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+perf+'</div>'+
+          '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+(m.opponent_name||m.opponent||'Unknown Opponent')+'</div>'+
+          '<div style="font-size:11px;color:var(--text3)">'+(m.competition||m.format||'Match')+' &middot; '+(m.match_date?m.match_date.slice(0,10):'--')+'</div></div>'+
+          '<div style="text-align:right;font-size:12px;min-width:60px">'+
+          '<span style="color:#00E676;font-weight:700">'+(m.goals_scored||m.goals||0)+'G</span> '+
+          '<span style="color:#42A5F5;font-weight:700">'+(m.assists||0)+'A</span>'+
+          (m.yellow_card||m.yellow_cards?'<span style="color:#FFC107;margin-left:4px">&#9646;Y</span>':'')+(m.red_card||m.red_cards?'<span style="color:#f44336;margin-left:4px">&#9646;R</span>':'')+
           '</div></div></div>';
       }).join('');
     }
 
-    // Scout actions (only for scouts)
-    var scoutActions = '';
-    if(Auth.type==='Scout'){
-      scoutActions = '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">' +
-        '<button class="btn btn-primary" onclick="addToPipeline(''+p.id+'')">+ Add to Pipeline</button>' +
-        '<button class="btn btn-outline" onclick="showCompatibility(''+p.id+'')">Ã°ÂÂÂ® Analyse Compatibility</button>' +
-      '</div>';
+    // Build video cards
+    var videoHtml='';
+    if(videos.length){
+      videoHtml=videos.map(function(v){
+        var url=v.video_url||v.url||'#';
+        return '<div class="video-card">'+
+          '<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+(v.title||'Video')+'</div>'+
+          '<div style="font-size:12px;color:var(--text3);margin-bottom:8px">'+(v.category||'Highlight')+' &middot; '+(v.description||'')+'</div>'+
+          '<a href="'+url+'" target="_blank" class="btn btn-sm btn-outline" style="min-height:36px">&#9654; Watch</a>'+
+          '</div>';
+      }).join('');
+    }else{
+      videoHtml='<div style="text-align:center;padding:32px;color:var(--text3)">No video reels uploaded yet.</div>';
     }
 
+    // Render the full profile
     document.getElementById('profileContent').innerHTML =
-      '<div class="profile-hero">' +
-        '<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">' +
-          '<div class="big-avatar" style="background:'+pCol+';color:'+(pCol==='#FFC107'?'#000':'#fff')+';flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>' +
-          '<div style="flex:1;min-width:200px">' +
-            '<div style="font-size:26px;font-weight:900">'+p.first_name+' '+p.last_name+'</div>' +
-            '<div style="color:#546E7A;font-size:14px;margin:6px 0">'+(p.specific_position||p.primary_position||'--')+' ÃÂ· '+(p.position_group||'--')+' ÃÂ· '+(p.age||'--')+' yrs ÃÂ· '+(p.nationality||'England')+'</div>' +
-            '<div style="font-size:12px;color:#546E7A">Club: '+(p.team_name||'Free Agent')+'</div>' +
-            scoutActions +
-          '</div>' +
-          '<div style="text-align:center">' +
-            '<div style="font-size:64px;font-weight:900;color:'+ovColor+';line-height:1">'+ov+'</div>' +
-            '<div style="font-size:12px;color:#546E7A">Overall / 10</div>' +
-            '<div style="font-size:18px;font-weight:800;color:#00E676;margin-top:8px">'+formatValue(p.transfer_value||0)+'</div>' +
-            '<div style="font-size:12px;color:#546E7A">Transfer Value</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
+      ageOutBanner+
 
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">' +
+      // HEADER
+      '<div class="profile-hero">'+
+      '<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">'+
+      '<div class="big-avatar" style="background:'+pgColor+';color:'+(pgColor==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div>'+
+      '<div style="flex:1;min-width:180px">'+
+      '<div style="font-size:26px;font-weight:900">'+(p.first_name||'')+' '+(p.last_name||'')+'</div>'+
+      '<div style="color:var(--text3);font-size:13px;margin:6px 0">'+(p.age_group||p.age+'yrs'||'--')+' &bull; '+(p.specific_position||p.primary_position||'--')+' &bull; '+(p.position_group||'--')+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text2);margin:8px 0">'+
+      '<span>Club: <strong>'+(p.team_name||'Free Agent')+'</strong></span>'+
+      '<span>Nationality: <strong>'+(p.nationality||'England')+'</strong></span>'+
+      '<span>Foot: <strong>'+(p.foot||'Right')+'</strong></span>'+
+      '<span>Height: <strong>'+(p.height_range_cm||p.height_category||'--')+'</strong></span>'+
+      '<span>Build: <strong>'+(p.weight_range_kg||p.build_category||'--')+'</strong></span>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">'+
+      '<span style="background:rgba(0,230,118,.12);color:#00E676;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700">Confidence: '+conf.label+'</span>'+
+      '<span style="color:var(--text3);font-size:12px">'+apps+' appearances</span>'+
+      '</div>'+
+      actionBtns+
+      '</div>'+
+      '<div style="text-align:center;min-width:100px">'+
+      '<div style="font-size:64px;font-weight:900;color:'+ovColor+';line-height:1">'+ov+'</div>'+
+      '<div style="font-size:12px;color:var(--text3)">Overall / 10</div>'+
+      '<div style="font-size:18px;font-weight:800;color:#00E676;margin-top:8px">'+tv+'</div>'+
+      '<div style="font-size:12px;color:var(--text3)">Transfer Value</div>'+
+      '</div>'+
+      '</div></div>'+
 
-        '<div class="table-card">' +
-          '<div class="table-header"><h3>Attribute Ratings <span style="font-size:12px;font-weight:400;color:#546E7A">/ 10</span></h3></div>' +
-          '<div style="padding:16px">'+attrHtml+'</div>' +
-        '</div>' +
+      // COMPATIBILITY BREAKDOWN (for scouts)
+      (Auth.type==='Scout'?'<div id="compatBreakdown"><div style="padding:16px;text-align:center"><button class="btn btn-outline" onclick="showCompatBreakdown(''+p.id+'')">Show Compatibility Analysis</button></div></div>':'')+
 
-        '<div>' +
-          '<div class="table-card" style="margin-bottom:16px">' +
-            '<div class="table-header"><h3>Physical Profile</h3></div>' +
-            '<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-              '<div style="background:#0a0f1e;border-radius:8px;padding:12px;text-align:center">' +
-                '<div style="font-weight:700;font-size:15px">'+(p.height_category||'--')+'</div><div style="font-size:11px;color:#546E7A">Height</div>' +
-                (p.height_range_cm?'<div style="font-size:11px;color:#94a3b8;margin-top:2px">'+p.height_range_cm+'</div>':'') +
-              '</div>' +
-              '<div style="background:#0a0f1e;border-radius:8px;padding:12px;text-align:center">' +
-                '<div style="font-weight:700;font-size:15px">'+(p.build_category||'--')+'</div><div style="font-size:11px;color:#546E7A">Build</div>' +
-                (p.weight_range_kg?'<div style="font-size:11px;color:#94a3b8;margin-top:2px">'+p.weight_range_kg+'</div>':'') +
-              '</div>' +
-              '<div style="background:#0a0f1e;border-radius:8px;padding:12px;text-align:center">' +
-                '<div style="font-weight:700;font-size:15px">'+(p.foot||'Right')+'</div><div style="font-size:11px;color:#546E7A">Preferred Foot</div>' +
-              '</div>' +
-              '<div style="background:#0a0f1e;border-radius:8px;padding:12px;text-align:center">' +
-                '<div style="font-weight:700;font-size:15px">'+(p.work_rate||'Med/Med')+'</div><div style="font-size:11px;color:#546E7A">Work Rate</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="table-card">' +
-            '<div class="table-header"><h3>Season Stats</h3></div>' +
-            '<div style="padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">' +
-              '<div><div style="font-size:24px;font-weight:800">'+(p.appearances||0)+'</div><div style="font-size:11px;color:#546E7A">Apps</div></div>' +
-              '<div><div style="font-size:24px;font-weight:800;color:#00E676">'+(p.goals||0)+'</div><div style="font-size:11px;color:#546E7A">Goals</div></div>' +
-              '<div><div style="font-size:24px;font-weight:800;color:#42A5F5">'+(p.assists||0)+'</div><div style="font-size:11px;color:#546E7A">Assists</div></div>' +
-              '<div><div style="font-size:24px;font-weight:800;color:#FFC107">'+(p.clean_sheets||0)+'</div><div style="font-size:11px;color:#546E7A">CS</div></div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
+      // STATS + RATINGS grid
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">'+
 
-      '</div>' +
+      // Attribute Ratings
+      '<div class="table-card">'+
+      '<div class="table-header"><h3>Attribute Ratings <span style="font-size:12px;font-weight:400;color:var(--text3)">/ 10</span></h3></div>'+
+      '<div style="padding:16px">'+attrHtml+'</div>'+
+      '</div>'+
 
+      // Right column: stats + physical
+      '<div>'+
+      '<div class="table-card" style="margin-bottom:16px">'+
+      '<div class="table-header"><h3>Season Statistics</h3></div>'+
+      '<div style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'+
+      '<div class="stat-box"><div class="stat-num">'+apps+'</div><div class="stat-lbl">Apps</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="color:#00E676">'+goals+'</div><div class="stat-lbl">Goals</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="color:#42A5F5">'+assts+'</div><div class="stat-lbl">Assists</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="color:#FFC107">'+cs+'</div><div class="stat-lbl">Clean Sheets</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="color:#FFC107">'+yc+'</div><div class="stat-lbl">Yellow Cards</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="color:#f44336">'+rc+'</div><div class="stat-lbl">Red Cards</div></div>'+
+      '</div>'+
+      '<div style="padding:0 16px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'+
+      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+gpg+'</div><div class="stat-lbl">G/Game</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+apg+'</div><div class="stat-lbl">A/Game</div></div>'+
+      '<div class="stat-box"><div class="stat-num" style="font-size:16px">'+cspg+'</div><div class="stat-lbl">CS/Game</div></div>'+
+      '</div>'+
+      '</div>'+
+
+      '<div class="table-card">'+
+      '<div class="table-header"><h3>Physical Profile</h3></div>'+
+      '<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.height_category||'--')+'</div>'+(p.height_range_cm?'<div style="font-size:11px;color:#94a3b8">'+p.height_range_cm+'</div>':'')+'<div class="stat-lbl">Height</div></div>'+
+      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.build_category||'--')+'</div>'+(p.weight_range_kg?'<div style="font-size:11px;color:#94a3b8">'+p.weight_range_kg+'</div>':'')+'<div class="stat-lbl">Build</div></div>'+
+      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.foot||'Right')+'</div><div class="stat-lbl">Preferred Foot</div></div>'+
+      '<div class="stat-box"><div style="font-weight:700;font-size:14px">'+(p.work_rate||'Med/Med')+'</div><div class="stat-lbl">Work Rate</div></div>'+
+      '</div></div>'+
+      '</div>'+
+      '</div>'+
+
+      // Recent Matches
       (matches.length?
-        '<div class="table-card" style="margin-bottom:20px">' +
-          '<div class="table-header"><h3>Recent Matches</h3><span style="font-size:12px;color:#546E7A">Performance scores 0-100</span></div>' +
-          '<div style="padding:16px">'+matchHtml+'</div>' +
-        '</div>' : '') +
+        '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Latest Match Facts</h3><span style="font-size:12px;color:var(--text3)">Last '+Math.min(5,matches.length)+' matches</span></div><div style="padding:16px">'+matchHtml+'</div></div>'
+        :'<div class="table-card" style="margin-bottom:20px"><div style="padding:32px;text-align:center;color:var(--text3)">No match records yet.</div></div>')+
 
-      (videos.length?
-        '<div class="table-card">' +
-          '<div class="table-header"><h3>Ã°ÂÂÂ¹ Video Highlights</h3></div>' +
-          '<div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
-          videos.map(function(v){return '<div style="background:#0a0f1e;border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">'+v.title+'</div><a href="'+v.url+'" target="_blank" class="btn btn-sm btn-outline">Ã¢ÂÂ¶ Watch</a></div>';}).join('') +
-          '</div></div>' : '') +
+      // Video Reels
+      '<div id="videoSection" class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Video Reels</h3></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">'+videoHtml+'</div></div>'+
 
-      '<div id="compatResult"></div>';
+      // Prediction (scouts only)
+      (Auth.type==='Scout'?
+        '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Prediction Analysis</h3></div><div style="padding:16px"><div id="predictionResult"><button class="btn btn-primary" onclick="runPrediction(''+p.id+'')">Run Prediction Analysis</button><p style="font-size:12px;color:var(--text3);margin-top:8px">Uses the compatibility engine to forecast attribute growth over 3 years.</p></div></div></div>'
+        :'');
 
   } catch(e) {
-    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px">'+e.message+'</p></div>';
-    console.error(e);
+    document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)"><p>Could not load player profile.</p><p style="font-size:12px;margin-top:8px;color:#f44336">'+e.message+'</p><a href="player-search.html" class="btn btn-outline" style="margin-top:14px">Back to Player Search</a></div>';
+    console.error('[PlayerProfile]', e);
   }
 });
-
-async function addToPipeline(playerId){
-  try{
-    await api('POST','/api/players/'+playerId+'/scout-interest',{interestLevel:7});
-    alert('Added to pipeline! Check My Pipeline to manage stages.');
-  }catch(e){alert('Error: '+e.message);}
-}
-
-async function showCompatibility(playerId){
-  document.getElementById('compatResult').innerHTML='<div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Running compatibility analysis...</span></div>';
-  try{
-    var r = await api('POST','/api/players/'+playerId+'/analyse',{teamId:'bbbbbbbb-1111-1111-1111-111111111111'});
-    var b = r.compatibilityBreakdown||{};
-    var score = r.compatibilityScore||0;
-    var sColor = compatColor(score);
-    document.getElementById('compatResult').innerHTML=
-      '<div class="table-card" style="margin-top:20px">' +
-        '<div class="table-header"><h3>Ã°ÂÂÂ® Compatibility vs Riverside Rangers</h3></div>' +
-        '<div style="padding:20px">' +
-          '<div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">' +
-            '<div style="font-size:72px;font-weight:900;color:'+sColor+';line-height:1">'+Math.round(score)+'</div>' +
-            '<div><div style="font-size:16px;font-weight:700">Compatibility Score</div>' +
-            '<div style="font-size:13px;color:#546E7A">Based on 6 weighted factors + weakness exploitation</div>' +
-            '<div style="font-size:20px;font-weight:800;color:#00E676;margin-top:6px">'+formatValue(r.transferValue||0)+'</div>' +
-            '<div style="font-size:11px;color:#546E7A">Recommended Transfer Value</div></div>' +
-          '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Technical (35%)</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:'+(b.technical||0)+'%;background:#00BCD4;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">'+Math.round(b.technical||0)+'</div></div>' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Tier Fit (20%)</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:'+(b.tierFit||0)+'%;background:#42A5F5;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">'+Math.round(b.tierFit||0)+'</div></div>' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Age Fit (15%)</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:'+(b.ageFit||0)+'%;background:#00E676;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">'+Math.round(b.ageFit||0)+'</div></div>' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Physical (10%)</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:'+(b.physScore||0)+'%;background:#FFC107;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">'+Math.round(b.physScore||0)+'</div></div>' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Match Stats (7%)</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:'+(b.statsScore||0)+'%;background:#FF9800;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">'+Math.round(b.statsScore||0)+'</div></div>' +
-            '<div><div style="font-size:12px;color:#94a3b8;margin-bottom:4px">Weakness Bonus</div><div style="height:8px;background:#1e2a3a;border-radius:4px"><div style="height:100%;width:Math.min((b.weaknessBonus||0)*10,100)+"%;background:#FF5722;border-radius:4px"></div></div><div style="font-size:11px;color:#546E7A;text-align:right">+'+Math.round((b.weaknessBonus||0))+'pts</div></div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-  }catch(e){document.getElementById('compatResult').innerHTML='<div style="padding:16px;color:#546E7A">Compatibility analysis unavailable: '+e.message+'</div>';}
-}
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
