@@ -62,6 +62,7 @@
   <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
@@ -79,12 +80,9 @@ var COACH_NAV = [
 ];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
-  var nav=document.getElementById('sidebarNav');
-  var cur=window.location.pathname.split('/').pop();
-  if(nav) nav.innerHTML=COACH_NAV.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
-  var u=Auth.user;
-  var uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#42A5F5;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
