@@ -242,4 +242,61 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
   } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+
+// ─── NOMINATION RESPONSE ─────────────────────────────────────────────────
+router.post('/nomination-response', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { nominationId, response } = req.body;
+    if (!nominationId || !['accepted','declined'].includes(response)) return res.status(400).json({ error: 'nominationId and response required' });
+    const { data, error } = await supabase.from('award_nomination_responses').upsert({ nomination_id: nominationId, scout_id: req.user.id, response, responded_at: new Date().toISOString() }, { onConflict: 'nomination_id,scout_id' }).select().single();
+    if (error) throw error;
+    res.json({ message: 'Response recorded', data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── SHOWCASE ATTENDANCE ─────────────────────────────────────────────────
+router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { eventId } = req.body;
+    if (!eventId) return res.status(400).json({ error: 'eventId required' });
+    const { data: ev } = await supabase.from('showcase_events').select('*').eq('id', eventId).single();
+    if (!ev) return res.status(404).json({ error: 'Event not found' });
+    const { count: cc } = await supabase.from('showcase_attendance').select('id', { count:'exact', head:true }).eq('event_id', eventId).eq('status', 'confirmed');
+    const isFull = (cc||0) >= (ev.max_scouts||20);
+    const status = isFull ? 'waitlisted' : 'confirmed';
+    const { data, error } = await supabase.from('showcase_attendance').upsert({ event_id: eventId, scout_id: req.user.id, status, confirmed_at: new Date().toISOString() }, { onConflict: 'event_id,scout_id' }).select().single();
+    if (error) throw error;
+    if (isFull) return res.json({ message: 'Event fully booked. You have been added to the waitlist.', status: 'waitlisted', data });
+    res.json({ message: 'Attendance confirmed', status: 'confirmed', data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── SHOWCASE CANCEL ─────────────────────────────────────────────────────
+router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { eventId } = req.body;
+    if (!eventId) return res.status(400).json({ error: 'eventId required' });
+    await supabase.from('showcase_attendance').update({ status: 'cancelled' }).eq('event_id', eventId).eq('scout_id', req.user.id);
+    // Promote next waitlisted scout
+    const { data: waitlist } = await supabase.from('showcase_attendance').select('*').eq('event_id', eventId).eq('status', 'waitlisted').order('confirmed_at', { ascending: true }).limit(1);
+    if (waitlist && waitlist.length) {
+      await supabase.from('showcase_attendance').update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('id', waitlist[0].id);
+      const { data: ev2 } = await supabase.from('showcase_events').select('event_name').eq('id', eventId).single();
+      await supabase.from('notifications').insert({ recipient_id: waitlist[0].scout_id, recipient_type: 'Scout', title: 'Showcase Space Available', body: 'A space is now available at ' + (ev2 ? ev2.event_name : 'the showcase') + '. You are confirmed!', data: { event_id: eventId }, is_read: false });
+    }
+    res.json({ message: 'Attendance cancelled' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── SHOWCASE RESPONSE (player notification accept/decline) ──────────────
+router.post('/showcase-response', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { eventId, playerId, response } = req.body;
+    if (!eventId || !playerId || !['accepted','declined'].includes(response)) return res.status(400).json({ error: 'eventId, playerId and response required' });
+    const { data, error } = await supabase.from('showcase_responses').upsert({ event_id: eventId, player_id: playerId, scout_id: req.user.id, response, responded_at: new Date().toISOString() }, { onConflict: 'event_id,player_id,scout_id' }).select().single();
+    if (error) throw error;
+    res.json({ message: 'Response recorded', data });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
