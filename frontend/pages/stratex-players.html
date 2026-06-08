@@ -9,7 +9,7 @@
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Players</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
+<div class="topbar"><span class="topbar-title">Players</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
 
 <!-- Edit Ratings Modal -->
@@ -17,7 +17,7 @@
 <div style="background:#162032;border-radius:14px;max-width:520px;margin:40px auto;padding:28px;border:1px solid #2d3f55">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
 <h3 style="margin:0;color:#E0E0E0" id="editModalTitle">Edit Player Ratings</h3>
-<button onclick="closeEditModal()" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">Ã</button>
+<button onclick="closeEditModal()" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Â</button>
 </div>
 <div id="editForm" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 <div><label style="display:block;font-size:12px;color:#90A4AE;margin-bottom:4px">Pace (0-10)</label><input type="number" id="e_pace" min="0" max="10" step="0.1" style="width:100%;padding:8px 10px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:7px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
@@ -40,7 +40,7 @@
 <!-- Delete Confirm Modal -->
 <div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1001">
 <div style="background:#162032;border-radius:14px;max-width:400px;margin:120px auto;padding:28px;border:1px solid rgba(220,38,38,.3);text-align:center">
-<div style="font-size:40px;margin-bottom:12px">â ï¸</div>
+<div style="font-size:40px;margin-bottom:12px">&times;¢ÂÂ &times;¯Â¸Â</div>
 <h3 style="color:#EF5350;margin-bottom:8px">Delete Player?</h3>
 <p style="color:#90A4AE;margin-bottom:6px" id="deletePlayerName"></p>
 <p style="color:#546E7A;font-size:13px;margin-bottom:24px">This will permanently remove the player and all associated stats, match facts, and pipeline data. This cannot be undone.</p>
@@ -80,7 +80,7 @@ if(!players.length){document.getElementById('playersTable').innerHTML='<div styl
 document.getElementById('playersTable').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Age</th><th>Position</th><th>Team</th><th>Overall</th><th>Value</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+
 players.map(function(p){return '<tr><td><b>'+p.first_name+' '+p.last_name+'</b></td><td>'+p.age+'</td><td>'+(p.specific_position||p.primary_position||'--')+'</td><td>'+(p.team_name||'--')+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+(p.overall_rating||0)+'/10</td><td>'+formatValue(p.transfer_value||0)+'</td><td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn btn-sm btn-outline" onclick="openEditModal(\''+p.id+'\')">Edit Ratings</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="openDeleteModal(\''+p.id+'\',\''+p.first_name+' '+p.last_name+'\')">Delete</button></div></td></tr>';}).join('')+'</tbody></table>';
 }
-function openEditModal(id){var p=allPlayers.find(function(x){return x.id===id;});if(!p)return;document.getElementById('editPlayerId').value=id;document.getElementById('editModalTitle').textContent='Edit Ratings â '+p.first_name+' '+p.last_name;document.getElementById('e_pace').value=p.pace||0;document.getElementById('e_shooting').value=p.shooting||0;document.getElementById('e_passing').value=p.passing||0;document.getElementById('e_dribbling').value=p.dribbling||0;document.getElementById('e_defending').value=p.defending||0;document.getElementById('e_physical').value=p.physical||0;document.getElementById('e_vision').value=p.vision||0;document.getElementById('e_leadership').value=p.leadership||0;document.getElementById('editMsg').textContent='';document.getElementById('editModal').style.display='block';}
+function openEditModal(id){var p=allPlayers.find(function(x){return x.id===id;});if(!p)return;document.getElementById('editPlayerId').value=id;document.getElementById('editModalTitle').textContent='Edit Ratings &times;¢ÂÂ '+p.first_name+' '+p.last_name;document.getElementById('e_pace').value=p.pace||0;document.getElementById('e_shooting').value=p.shooting||0;document.getElementById('e_passing').value=p.passing||0;document.getElementById('e_dribbling').value=p.dribbling||0;document.getElementById('e_defending').value=p.defending||0;document.getElementById('e_physical').value=p.physical||0;document.getElementById('e_vision').value=p.vision||0;document.getElementById('e_leadership').value=p.leadership||0;document.getElementById('editMsg').textContent='';document.getElementById('editModal').style.display='block';}
 function closeEditModal(){document.getElementById('editModal').style.display='none';}
 async function saveRatings(){var id=document.getElementById('editPlayerId').value;var body={pace:parseFloat(document.getElementById('e_pace').value)||0,shooting:parseFloat(document.getElementById('e_shooting').value)||0,passing:parseFloat(document.getElementById('e_passing').value)||0,dribbling:parseFloat(document.getElementById('e_dribbling').value)||0,defending:parseFloat(document.getElementById('e_defending').value)||0,physical:parseFloat(document.getElementById('e_physical').value)||0,vision:parseFloat(document.getElementById('e_vision').value)||0,leadership:parseFloat(document.getElementById('e_leadership').value)||0};document.getElementById('editMsg').textContent='Saving...';document.getElementById('editMsg').style.color='#90A4AE';try{await api('PATCH','/api/players/'+id+'/ratings',body);document.getElementById('editMsg').textContent='Saved!';document.getElementById('editMsg').style.color='#66BB6A';var p=allPlayers.find(function(x){return x.id===id;});if(p){Object.assign(p,body);p.overall_rating=Math.round(((body.pace+body.shooting+body.passing+body.dribbling+body.defending+body.physical)/6)*10)/10;}setTimeout(function(){closeEditModal();renderTable(allPlayers);showToast('Ratings updated!','success');},800);}catch(e){document.getElementById('editMsg').textContent='Error: '+e.message;document.getElementById('editMsg').style.color='#EF5350';}}
 var deleteTargetId=null;
@@ -89,24 +89,11 @@ async function confirmDelete(){if(!deleteTargetId)return;document.getElementById
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},3500);}
 </script>
 </div></div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div><div class="notif-list" id="notifList"></div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Â</button></div><div class="notif-list" id="notifList"></div></div>
+<script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var STRATEX_NAV = [
-{label:'🏠 Dashboard',href:'stratex-dashboard.html'},
-{label:'📋 Registrations',href:'stratex-registrations.html'},
-{label:'👥 Users',href:'stratex-users.html'},
-{label:'⚽ Players',href:'stratex-players.html'},
-{label:'🔍 Scouts',href:'stratex-scouts.html'},
-{label:'🏋️ Coaches',href:'stratex-coaches.html'},
-{label:'🏆 Scout Teams',href:'stratex-scout-teams.html'},
-{label:'🏫 School Teams',href:'stratex-school-teams.html'},
-{label:'🎖️ Award Nominations',href:'stratex-award-nominations.html'},
-{label:'🎪 Showcase Events',href:'stratex-showcase-events.html'},
-{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-{label:'⚙️ Settings',href:'stratex-settings.html'}
-];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=STRATEX_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Stratex Admin</div></div></div>';updateNotifBadge();}
+function initNav(){initStratexPage();}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
