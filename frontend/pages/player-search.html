@@ -13,8 +13,8 @@
 <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:12px;align-items:end">
 <div class="form-group" style="margin:0"><label>Search</label><input type="text" id="searchInput" placeholder="Player name..." oninput="debouncedSearch()"></div>
 <div class="form-group" style="margin:0"><label>Position Group</label><select id="posFilter" onchange="loadPlayers()"><option value="">All Positions</option><option value="Goalkeeper">Goalkeeper</option><option value="Defender">Defender</option><option value="Midfielder">Midfielder</option><option value="Forward">Forward</option></select></div>
-<div class="form-group" style="margin:0"><label>Min Age</label><input type="number" id="minAge" placeholder="Min" min="10" max="40" oninput="debouncedSearch()"></div>
-<div class="form-group" style="margin:0"><label>Max Age</label><input type="number" id="maxAge" placeholder="Max" min="10" max="40" oninput="debouncedSearch()"></div>
+<div class="form-group" style="margin:0"><label>Min Age</label><input type="number" id="minAge" placeholder="Min" min="10" max="21" oninput="debouncedSearch()"></div>
+<div class="form-group" style="margin:0"><label>Max Age</label><input type="number" id="maxAge" placeholder="Max" min="10" max="21" oninput="debouncedSearch()"></div>
 <button class="btn btn-primary" onclick="loadPlayers()" style="margin-bottom:0">Search</button>
 </div>
 </div>
@@ -27,15 +27,23 @@
 </div>
 </div>
 </div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">x</button></div><div class="notif-list" id="notifList"></div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/main.js"></script>
 <script>
 var NAV_MAP = {
-Scout:[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'recruitment-pipeline.html'},{label:'Rankings',href:'player-rankings.html'},{label:'Compare Players',href:'compare-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'My Preferences',href:'scout-preferences.html'}],
-Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'player-search.html'},{label:'Add Player',href:'add-player.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}],
-Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'All Players',href:'player-search.html'},{label:'Add Users',href:'stratex-users.html'},{label:'Bulk Import',href:'bulk-add-players.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'}]
+Scout:[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'scout-pipeline.html'},{label:'Rankings',href:'scout-rankings.html'},{label:'Fixtures',href:'scout-fixtures.html'},{label:'Predictions',href:'scout-predictions.html'},{label:'Exports',href:'scout-exports.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'scout-settings.html'}],
+Coach:[{label:'Dashboard',href:'coach-dashboard.html'},{label:'My Players',href:'coach-my-players.html'},{label:'Add Players',href:'add-player.html'},{label:'Bulk Add Players',href:'bulk-add-players.html'},{label:'Match Facts',href:'match-facts.html'},{label:'Fixtures',href:'coach-fixtures.html'},{label:'Video Reels',href:'coach-video-reels.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'coach-settings.html'}],
+Stratex:[{label:'Dashboard',href:'stratex-dashboard.html'},{label:'Registrations',href:'stratex-registrations.html'},{label:'Users',href:'stratex-users.html'},{label:'Players',href:'stratex-players.html'},{label:'Scouts',href:'stratex-scouts.html'},{label:'Coaches',href:'stratex-coaches.html'},{label:'Scout Teams',href:'stratex-scout-teams.html'},{label:'School Teams',href:'stratex-school-teams.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'stratex-settings.html'}]
 };
-function initNav(){if(!Auth.isLoggedIn()){window.location.href='login.html';return;}var t=Auth.type;var items=NAV_MAP[t]||[];var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';updateNotifBadge();}
+function initNav(){
+if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
+var t=Auth.type;var items=NAV_MAP[t]||[];var nav=document.getElementById('sidebarNav');
+var cur=window.location.pathname.split('/').pop();
+if(nav)nav.innerHTML=items.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
+var u=Auth.user;var uel=document.getElementById('sidebarUser');
+if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">'+t+'</div></div></div>';
+updateNotifBadge();
+}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 var viewMode='cards',currentPage=1,debounceTimer;
@@ -43,7 +51,10 @@ function debouncedSearch(){clearTimeout(debounceTimer);debounceTimer=setTimeout(
 function setView(mode,btn){viewMode=mode;document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');loadPlayers();}
 async function loadPlayers(page){
 if(!page)page=1;currentPage=page;
-var search=document.getElementById('searchInput').value,posGroup=document.getElementById('posFilter').value,minAge=document.getElementById('minAge').value,maxAge=document.getElementById('maxAge').value;
+var search=document.getElementById('searchInput').value;
+var posGroup=document.getElementById('posFilter').value;
+var minAge=document.getElementById('minAge').value;
+var maxAge=document.getElementById('maxAge').value;
 var url='/api/players?page='+page+'&limit=20';
 if(search)url+='&search='+encodeURIComponent(search);
 if(posGroup)url+='&posGroup='+posGroup;
@@ -55,10 +66,35 @@ var d=await api('GET',url);var players=d.data||[];
 document.getElementById('resultCount').textContent=(d.total||0)+' players found';
 if(!players.length){document.getElementById('resultsContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No players found.</div>';return;}
 if(viewMode==='cards'){
-var grid=document.createElement('div');grid.className='player-grid';
-grid.innerHTML=players.map(function(p){return'<div class="player-card" onclick="location.href='player-profile.html?id='+p.id+''"><div class="player-card-top"><div class="player-avatar-lg" style="background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><div><div class="player-card-name">'+p.first_name+' '+p.last_name+'</div><div class="player-card-meta">'+p.specific_position+' Age '+p.age+'</div><div class="player-card-meta">'+p.team_name+'</div></div></div><div class="player-card-ratings"><div class="rating-pill"><div class="r-val" style="color:'+ratingColor(p.overall_rating)+'">'+Math.round(p.overall_rating||0)+'</div><div class="r-lab">Overall</div></div><div class="rating-pill"><div class="r-val" style="color:#FFC107">'+p.height_category+'</div><div class="r-lab">Height</div></div><div class="rating-pill"><div class="r-val">'+p.nationality+'</div><div class="r-lab">Nation</div></div></div><div class="player-card-footer"><div><div class="compat-score">'+formatValue(p.transfer_value||0)+'</div><div class="compat-label">Transfer Value</div></div><div class="transfer-val">'+formatSalary(p.predicted_salary_weekly||0)+'</div></div></div>';}).join('');
-document.getElementById('resultsContainer').innerHTML='';document.getElementById('resultsContainer').appendChild(grid);
-}else{document.getElementById('resultsContainer').innerHTML='<div class="table-card"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Height</th><th>Build</th><th>Overall</th><th>Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>'+players.map(function(p){return'<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div><div><b>'+p.first_name+' '+p.last_name+'</b><br><span style="font-size:11px;color:#546E7A">'+p.team_name+'</span></div></div></td><td>'+p.specific_position+'</td><td>'+p.age+'</td><td><span class="badge badge-blue">'+p.height_category+'</span></td><td>'+p.build_category+'</td><td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+Math.round(p.overall_rating||0)+'</td><td>'+formatValue(p.transfer_value||0)+'</td><td>'+formatSalary(p.predicted_salary_weekly||0)+'</td><td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td></tr>';}).join('')+'</tbody></table></div>';}
+document.getElementById('resultsContainer').innerHTML='<div class="player-grid">'+
+players.map(function(p){
+return '<div class="player-card" onclick="location.href=\'player-profile.html?id='+p.id+'\'">'+
+'<div class="player-card-top"><div class="player-avatar-lg" style="background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div>'+
+'<div><div class="player-card-name">'+p.first_name+' '+p.last_name+'</div>'+
+'<div class="player-card-meta">'+(p.specific_position||p.primary_position||'--')+' Age '+p.age+'</div>'+
+'<div class="player-card-meta">'+(p.team_name||'')+'</div></div></div>'+
+'<div class="player-card-ratings">'+
+'<div class="rating-pill"><div class="r-val" style="color:'+ratingColor(p.overall_rating)+'">'+Math.round(p.overall_rating||0)+'</div><div class="r-lab">Overall</div></div>'+
+'<div class="rating-pill"><div class="r-val" style="color:#FFC107">'+(p.height_category||'--')+'</div><div class="r-lab">Height</div></div>'+
+'<div class="rating-pill"><div class="r-val">'+(p.nationality||'ENG')+'</div><div class="r-lab">Nation</div></div>'+
+'</div>'+
+'<div class="player-card-footer"><div><div class="compat-score">'+formatValue(p.transfer_value||0)+'</div><div class="compat-label">Transfer Value</div></div><div class="transfer-val">'+formatSalary(p.predicted_salary_weekly||0)+'</div></div></div>';
+}).join('')+'</div>';
+}else{
+document.getElementById('resultsContainer').innerHTML='<div class="table-card"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Height</th><th>Build</th><th>Overall</th><th>Value</th><th>Salary/wk</th><th></th></tr></thead><tbody>'+
+players.map(function(p){
+return '<tr><td><div style="display:flex;align-items:center;gap:10px"><div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:'+posGroupColor(p.position_group)+'">'+initials(p.first_name,p.last_name)+'</div>'+
+'<div><b>'+p.first_name+' '+p.last_name+'</b><br><span style="font-size:11px;color:#546E7A">'+(p.team_name||'')+'</span></div></div></td>'+
+'<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
+'<td>'+p.age+'</td>'+
+'<td><span class="badge badge-blue">'+(p.height_category||'--')+'</span></td>'+
+'<td>'+(p.build_category||'--')+'</td>'+
+'<td style="color:'+ratingColor(p.overall_rating)+';font-weight:700">'+Math.round(p.overall_rating||0)+'</td>'+
+'<td>'+formatValue(p.transfer_value||0)+'</td>'+
+'<td>'+formatSalary(p.predicted_salary_weekly||0)+'</td>'+
+'<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td></tr>';
+}).join('')+'</tbody></table></div>';
+}
 var totalPages=Math.ceil((d.total||0)/20);
 document.getElementById('pagination').innerHTML=totalPages>1?Array.from({length:Math.min(totalPages,10)},function(_,i){return'<button class="btn btn-sm '+(i+1===page?'btn-primary':'btn-ghost')+'" onclick="loadPlayers('+(i+1)+')">'+(i+1)+'</button>';}).join(''):'';
 }catch(e){document.getElementById('resultsContainer').innerHTML='<div style="padding:24px;color:#ff6666">Error: '+e.message+'</div>';}
