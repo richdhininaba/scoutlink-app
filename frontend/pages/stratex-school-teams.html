@@ -17,19 +17,19 @@
 <!-- Team Detail Panel -->
 <div id="teamPanel" style="display:none">
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-<button class="btn btn-ghost btn-sm" onclick="showList()">&times;¢ÂÂ Back to Teams</button>
+<button class="btn btn-ghost btn-sm" onclick="showList()"> Back to Teams</button>
 <h2 id="panelTeamName" style="margin:0;color:#E0E0E0;font-size:20px"></h2>
 <span id="panelTeamBadge" style="background:#5C6BC0;color:#fff;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">Academy / School Team</span>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
 <div class="table-card">
-<div class="table-header"><h3>&times;°ÂÂÂ Team Info</h3></div>
+<div class="table-header"><h3>ÃÂÃÂ Team Info</h3></div>
 <div style="padding:0 20px 20px">
 <div id="teamInfoGrid" style="display:grid;gap:10px"></div>
 </div></div>
 <div class="table-card">
-<div class="table-header"><h3>&times;°ÂÂÂ Team Stats</h3></div>
+<div class="table-header"><h3>ÃÂÃÂ Team Stats</h3></div>
 <div style="padding:0 20px 20px">
 <div id="teamStats"></div>
 </div></div>
@@ -37,7 +37,7 @@
 
 <div class="table-card" style="margin-bottom:20px">
 <div class="table-header">
-<h3>&times;°ÂÂÂ¥ Players</h3>
+<h3>ÃÂÃÂ¥ Players</h3>
 <div style="display:flex;gap:8px">
 <input id="playerSearch" type="text" placeholder="Search players..." oninput="filterTeamPlayers()" style="padding:6px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:7px;color:#E0E0E0;font-size:13px;width:180px">
 <button class="btn btn-sm btn-primary" onclick="openAddPlayerModal()">+ Add Player</button>
@@ -48,14 +48,14 @@
 
 <div class="table-card" style="margin-bottom:20px">
 <div class="table-header">
-<h3>&times;°ÂÂÂ½ Coaches</h3>
+<h3>ÃÂÃÂ½ Coaches</h3>
 <button class="btn btn-sm btn-primary" onclick="openAddCoachModal()">+ Add Coach</button>
 </div>
 <div id="teamCoachesTable"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
 
 <div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
-<div class="table-header"><h3 style="color:#EF5350">&times;¢ÂÂ &times;¯Â¸Â Danger Zone</h3></div>
+<div class="table-header"><h3 style="color:#EF5350">ÃÂ  Danger Zone</h3></div>
 <div style="padding:0 20px 20px">
 <p style="color:#546E7A;font-size:13px;margin-bottom:14px">Removing an Academy/School Team will permanently delete the team and all associated player stats, match facts, and data. Player and coach accounts remain intact.</p>
 <button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="openDeleteTeamModal()">Remove Team</button>
@@ -81,7 +81,7 @@
 <div style="background:#162032;border-radius:14px;max-width:460px;margin:80px auto;padding:28px;border:1px solid #2d3f55">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
 <h3 style="margin:0;color:#E0E0E0">Add Player to Team</h3>
-<button onclick="document.getElementById('addPlayerModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Â</button>
+<button onclick="document.getElementById('addPlayerModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1"></button>
 </div>
 <label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Select Player</label>
 <select id="playerSelect" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;margin-bottom:16px"><option value="">Loading players...</option></select>
@@ -97,7 +97,7 @@
 <div style="background:#162032;border-radius:14px;max-width:460px;margin:80px auto;padding:28px;border:1px solid #2d3f55">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
 <h3 style="margin:0;color:#E0E0E0">Add Coach to Team</h3>
-<button onclick="document.getElementById('addCoachModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Â</button>
+<button onclick="document.getElementById('addCoachModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1"></button>
 </div>
 <label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Select Coach</label>
 <select id="coachSelect" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;margin-bottom:16px"><option value="">Loading coaches...</option></select>
@@ -113,7 +113,7 @@
 <div style="background:#162032;border-radius:14px;max-width:480px;margin:60px auto;padding:28px;border:1px solid #2d3f55;max-height:80vh;overflow-y:auto">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
 <h3 style="margin:0;color:#E0E0E0">Add Academy / School Team</h3>
-<button onclick="document.getElementById('addTeamModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Â</button>
+<button onclick="document.getElementById('addTeamModal').style.display='none'" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1"></button>
 </div>
 <div style="display:grid;gap:12px">
 <div><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:5px;font-weight:600">Team Name *</label><input type="text" id="nt_name" placeholder="e.g. Northgate FC Academy" style="width:100%;padding:9px 12px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
@@ -131,7 +131,7 @@
 <!-- Delete Team Modal -->
 <div id="deleteTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1001">
 <div style="background:#162032;border-radius:14px;max-width:400px;margin:120px auto;padding:28px;border:1px solid rgba(220,38,38,.3);text-align:center">
-<div style="font-size:40px;margin-bottom:12px">&times;¢ÂÂ &times;¯Â¸Â</div>
+<div style="font-size:40px;margin-bottom:12px">ÃÂ </div>
 <h3 style="color:#EF5350;margin-bottom:8px">Remove Team?</h3>
 <p style="color:#90A4AE;margin-bottom:6px;font-weight:600" id="deleteTeamNameText"></p>
 <p style="color:#546E7A;font-size:13px;margin-bottom:24px">This permanently removes the team and all associated stats data. Player and coach accounts remain intact.</p>
@@ -143,7 +143,7 @@
 </div></div>
 
 </div></div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Â</button></div><div class="notif-list" id="notifList"></div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer"></button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
@@ -172,7 +172,7 @@ async function loadPage(){
 function renderTeamsTable(){
   if(!allTeams.length){document.getElementById('teamsTableBody').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No academy/school teams yet</div>';return;}
   document.getElementById('teamsTableBody').innerHTML='<table class="sl-table"><thead><tr><th>Team</th><th>County</th><th>League</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+
-  allTeams.map(function(t){return'<tr style="cursor:pointer" onclick="openTeam(\''+t.id+'\')"><td><b>'+t.team_name+'</b></td><td>'+(t.county||'--')+'</td><td>'+(t.league||'--')+'</td><td style="color:#90A4AE;font-size:13px">'+(t.contact_email||'--')+'</td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openTeam(\''+t.id+'\')">View Details &times;¢ÂÂ</button></td></tr>';}).join('')+'</tbody></table>';
+  allTeams.map(function(t){return'<tr style="cursor:pointer" onclick="openTeam(\''+t.id+'\')"><td><b>'+t.team_name+'</b></td><td>'+(t.county||'--')+'</td><td>'+(t.league||'--')+'</td><td style="color:#90A4AE;font-size:13px">'+(t.contact_email||'--')+'</td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openTeam(\''+t.id+'\')">View Details</button></td></tr>';}).join('')+'</tbody></table>';
 }
 
 async function openTeam(id){
