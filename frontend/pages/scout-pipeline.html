@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded',function(){
           '<td style="color:'+tvColor+';font-weight:'+(tv?'700':'400')+'">'+tvDisp+'</td>'+
           '<td><span class="stage-chip '+stageClass(r.stage)+'" id="stage-badge-'+rid+'" data-stage="'+r.stage+'">'+(r.stage||'watching').replace(/_/g,' ')+'</span></td>'+
           '<td>'+
-          '<select id="stage-sel-'+rid+'" style="background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer" onchange="(function(sel){var badge=document.getElementById('stage-badge-'+rid+'');moveStage(''+rid+'',sel.value,badge,sel);})(this)">'+
+          '<select id="stage-sel-'+rid+'" style="background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer" onchange="(function(sel){var badge=document.getElementById(&quot;stage-badge-&quot;+rid+&quot;&quot;);moveStage(&quot;&quot;+rid+&quot;&quot;,sel.value,badge,sel);})(this)">'+
           '<option value="watching"'+(r.stage==='watching'?' selected':'')+'>Watching</option>'+
           '<option value="interested"'+(r.stage==='interested'?' selected':'')+'>Interested</option>'+
           '<option value="trial_pending"'+(r.stage==='trial_pending'?' selected':'')+'>Trial pending</option>'+
