@@ -36,7 +36,7 @@
 
 <div class="modal-overlay" id="approveModal">
   <div class="modal">
-    <div class="modal-header"><h3 class="modal-title">Approve Registration</h3><button class="modal-close" onclick="closeApprove()">×</button></div>
+    <div class="modal-header"><h3 class="modal-title">Approve Registration</h3><button class="modal-close" onclick="closeApprove()">Ã</button></div>
     <div id="approveScoutPlan" style="display:none">
       <div class="form-group"><label>Subscription Plan <span class="required">*</span></label>
         <select id="planSelect">
@@ -57,7 +57,7 @@
 
 <div class="modal-overlay" id="declineModal">
   <div class="modal">
-    <div class="modal-header"><h3 class="modal-title">Decline Registration</h3><button class="modal-close" onclick="closeDecline()">×</button></div>
+    <div class="modal-header"><h3 class="modal-title">Decline Registration</h3><button class="modal-close" onclick="closeDecline()">Ã</button></div>
     <div class="form-group"><label>Reason for Declining <span class="required">*</span></label>
       <select id="declineReasonSel">
         <option value="">Select a reason...</option>
@@ -78,22 +78,24 @@
 </div>
 
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/main.js"></script>
 <script>
 var STRATEX_NAV = [
-  {label:'Dashboard', href:'stratex-dashboard.html'},
-  {label:'Registrations', href:'stratex-registrations.html'},
-  {label:'Users', href:'stratex-users.html'},
-  {label:'Players', href:'stratex-players.html'},
-  {label:'Scouts', href:'stratex-scouts.html'},
-  {label:'Coaches', href:'stratex-coaches.html'},
-  {label:'Scout Teams', href:'stratex-scout-teams.html'},
-  {label:'Academy / School Teams', href:'stratex-school-teams.html'},
-  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
-  {label:'Settings', href:'stratex-settings.html'}
+{label:'🏠 Dashboard',href:'stratex-dashboard.html'},
+{label:'📋 Registrations',href:'stratex-registrations.html'},
+{label:'👥 Users',href:'stratex-users.html'},
+{label:'⚽ Players',href:'stratex-players.html'},
+{label:'🔍 Scouts',href:'stratex-scouts.html'},
+{label:'🏋️ Coaches',href:'stratex-coaches.html'},
+{label:'🏆 Scout Teams',href:'stratex-scout-teams.html'},
+{label:'🏫 School Teams',href:'stratex-school-teams.html'},
+{label:'🎖️ Award Nominations',href:'stratex-award-nominations.html'},
+{label:'🎪 Showcase Events',href:'stratex-showcase-events.html'},
+{label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
+{label:'⚙️ Settings',href:'stratex-settings.html'}
 ];
 
 function initNav() {
