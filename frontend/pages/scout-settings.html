@@ -35,12 +35,16 @@
 <button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="showToast('Contact support@stratexanalytics.co.uk','error')">Deactivate Account</button>
 </div></div>
 </div></div></div></div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var SCOUT_NAV=[{icon:'ð ',label:'Dashboard',href:'scout-dashboard.html'},{icon:'ð',label:'Player Search',href:'player-search.html'},{icon:'ð',label:'My Pipeline',href:'scout-pipeline.html'},{icon:'ð',label:'Rankings',href:'scout-rankings.html'},{icon:'ð',label:'Fixtures',href:'scout-fixtures.html'},{icon:'ð®',label:'Predictions',href:'scout-predictions.html'},{icon:'ð',label:'Exports',href:'scout-exports.html'},{icon:'âï¸',label:'My Team Setup',href:'scout-setup.html'},{icon:'ð',label:'Notifications',href:'scout-events.html'},{icon:'&#127914;',label:'Events',href:'scout-events.html'},{icon:'&#128276;',label:'Notifications',href:'scout-events.html'},{icon:'🎪',label:'Events',href:'scout-events.html'},{icon:'🔔',label:'Notifications',href:'scout-notifications.html'},{icon:'ð¤',label:'Settings',href:'scout-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';updateNotifBadge();}
-function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},4000);}
-async function changePassword(){var p=document.getElementById('newPassword').value,c=document.getElementById('confirmPassword').value;if(!p||!c)return showToast('Fill in both fields.','error');if(p.length<8)return showToast('Min 8 characters.','error');if(p!==c)return showToast('Passwords do not match.','error');try{await api('POST','/api/auth/change-password',{password:p});showToast('Password updated!','success');document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';}catch(e){showToast('Error: '+e.message,'error');}}
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 function toggleNotifPanel(){}
 document.addEventListener('DOMContentLoaded',function(){initNav();});
