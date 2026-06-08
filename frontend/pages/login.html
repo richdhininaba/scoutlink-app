@@ -67,63 +67,37 @@ input:focus{outline:none;border-color:var(--sl-green);}
 const SUPABASE_URL = 'https://fwxnggklfsgrydcoeiuh.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eG5nZ2tsZnNncnlkY29laXVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDgwOTMsImV4cCI6MjA5NjMyNDA5M30.lV6TCjabEHevU5woLHLa0cCwBvm-0dFpce09ialfpKw';
 const ROLE_TYPE_MAP = { stratex:'Stratex', scout:'Scout', coach:'Coach', player:'Player' };
-const BASE = '/scoutlink-app/frontend/pages/';
 
-// Bug fix: Only auto-redirect from login page if NOT logging out, NOT on an expired session,
-// and we have a valid session AND role. Use a flag to prevent redirect loops.
-(function() {
-  const params = new URLSearchParams(window.location.search);
-  const justLoggedOut = params.get('logout') === '1';
-  const sessionExpired = params.get('expired') === '1';
+// Dynamic base path
+function getBase() {
+  var host = window.location.hostname;
+  if (host === 'scoutlink.app' || host === 'www.scoutlink.app') return '/frontend/pages/';
+  return '/scoutlink-app/frontend/pages/';
+}
 
-  // Do NOT redirect if logging out or session expired (explicit landing on login page)
-  if (justLoggedOut || sessionExpired) {
-    // Clear storage on logout
-    if (justLoggedOut) {
-      localStorage.removeItem('sl_session');
-      localStorage.removeItem('sl_token');
-      localStorage.removeItem('sl_user');
-      localStorage.removeItem('sl_type');
-      localStorage.removeItem('sl_user_id');
-      localStorage.removeItem('sl_user_email');
-      localStorage.removeItem('sl_user_role');
-      localStorage.removeItem('sl_user_data');
-    }
-    return;
+const params = new URLSearchParams(window.location.search);
+const justLoggedOut = params.get('logout') === '1';
+const sessionExpired = params.get('expired') === '1';
+
+if (justLoggedOut || sessionExpired) {
+  if (justLoggedOut) {
+    ['sl_session','sl_token','sl_user','sl_type','sl_user_id','sl_user_email','sl_user_role','sl_user_data'].forEach(k => localStorage.removeItem(k));
   }
-
-  // Check if already logged in - redirect to appropriate dashboard
-  // Only redirect if we have BOTH a valid session AND a known role
+} else {
   try {
     const token = localStorage.getItem('sl_token');
     const type = localStorage.getItem('sl_type');
     const s = JSON.parse(localStorage.getItem('sl_session') || 'null');
-    
     const sessionValid = s && s.access_token && s.expires_at && (Date.now() / 1000 < s.expires_at);
     const tokenValid = token && token.length > 20;
-    
     if ((sessionValid || tokenValid) && type) {
-      const map = {
-        Stratex: 'stratex-dashboard.html',
-        Scout: 'scout-dashboard.html',
-        Coach: 'coach-dashboard.html',
-        Player: 'player-dashboard.html'
-      };
-      if (map[type]) {
-        window.location.replace(BASE + map[type]);
-        return;
-      }
+      const map = { Stratex:'stratex-dashboard.html', Scout:'scout-dashboard.html', Coach:'coach-dashboard.html', Player:'player-dashboard.html' };
+      if (map[type]) { window.location.replace(getBase() + map[type]); }
     }
-  } catch(e) {
-    // Ignore parse errors
-  }
-})();
-
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.classList.add('show');
+  } catch(e) {}
 }
+
+function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = msg; el.classList.add('show'); }
 function hideError() { document.getElementById('errorMsg').classList.remove('show'); }
 function setLoading(on) {
   document.getElementById('loginBtn').disabled = on;
@@ -140,7 +114,6 @@ async function doLogin() {
   if (!email || !password) { showError('Please enter your email and password.'); return; }
   setLoading(true);
   try {
-    // Step 1: Authenticate with Supabase
     const authResp = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
@@ -150,15 +123,8 @@ async function doLogin() {
     if (!authData.access_token) {
       throw new Error(authData.error_description || authData.msg || 'Invalid email or password');
     }
-
     const bearerToken = authData.access_token;
-    const headers = {
-      'apikey': SUPABASE_KEY,
-      'Authorization': 'Bearer ' + bearerToken,
-      'Content-Type': 'application/json'
-    };
-
-    // Step 2: Find user profile across role tables
+    const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearerToken, 'Content-Type': 'application/json' };
     const tables = [
       { table: 'stratex', role: 'stratex' },
       { table: 'scouts', role: 'scout' },
@@ -169,39 +135,25 @@ async function doLogin() {
     for (const t of tables) {
       const r = await fetch(SUPABASE_URL + '/rest/v1/' + t.table + '?email=eq.' + encodeURIComponent(email.toLowerCase()) + '&select=*', { headers });
       const data = await r.json();
-      if (Array.isArray(data) && data.length > 0) {
-        profile = data[0];
-        userRole = t.role;
-        break;
-      }
+      if (Array.isArray(data) && data.length > 0) { profile = data[0]; userRole = t.role; break; }
     }
     if (!profile) throw new Error('Account not found. Please register or contact Stratex.');
-
-    // Step 3: Store session data - store the Supabase access token as sl_token
-    // so the api() helper in main.js sends it as Bearer for API calls
     const roleType = ROLE_TYPE_MAP[userRole] || userRole;
     localStorage.setItem('sl_session', JSON.stringify(authData));
     localStorage.setItem('sl_token', bearerToken);
-    localStorage.setItem('sl_user', JSON.stringify({
-      id: profile.id,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      email: email.toLowerCase()
-    }));
+    localStorage.setItem('sl_user', JSON.stringify({ id: profile.id, firstName: profile.first_name, lastName: profile.last_name, email: email.toLowerCase() }));
     localStorage.setItem('sl_type', roleType);
     localStorage.setItem('sl_user_email', email.toLowerCase());
     localStorage.setItem('sl_user_role', userRole);
     localStorage.setItem('sl_user_data', JSON.stringify(profile));
     localStorage.setItem('sl_user_id', profile.id);
-
-    // Step 4: Redirect to correct dashboard
     const dashMap = {
       stratex: 'stratex-dashboard.html',
       scout: profile.preferences_set ? 'scout-dashboard.html' : 'scout-preferences.html',
       coach: 'coach-dashboard.html',
       player: 'player-dashboard.html'
     };
-    window.location.href = BASE + (dashMap[userRole] || 'login.html');
+    window.location.href = getBase() + (dashMap[userRole] || 'login.html');
   } catch(e) {
     showError(e.message || 'Login failed. Please try again.');
     setLoading(false);
