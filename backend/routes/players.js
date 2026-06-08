@@ -389,19 +389,28 @@ if (existing) {
 return res.json({ message: 'Already in pipeline', alreadyInPipeline: true, stage: existing.stage, interestsRemaining: scout.interests_remaining ?? 200 });
 }
 // Check interests remaining
-const remaining = scout.interests_remaining ?? 200;
+const remaining = typeof scout.interests_remaining === 'number' ? scout.interests_remaining : 200;
 if (remaining <= 0) {
 return res.status(402).json({ error: 'You have used all your interests for this plan. Upgrade to add more players.', interestsRemaining: 0 });
 }
-await supabase.from('recruitment_pipeline').insert({
+// Insert into pipeline
+const { error: insertErr } = await supabase.from('recruitment_pipeline').insert({
 scout_id: req.user.id, player_id: req.params.id,
 scout_team_id: scout.scout_team_id, notes: notes||null, interest_level: interestLevel, stage: 'watching',
 is_active: true
 });
-// Decrement interests_remaining
+if (insertErr) {
+// If unique constraint violation, treat as already in pipeline
+if (insertErr.code === '23505') {
+return res.json({ message: 'Already in pipeline', alreadyInPipeline: true, interestsRemaining: remaining });
+}
+throw insertErr;
+}
+// Only decrement AFTER successful insert
 const newRemaining = Math.max(0, remaining - 1);
 await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('id', req.user.id);
-await supabase.from('notifications').insert({
+// Notify player
+supabase.from('notifications').insert({
 recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
 title: 'A scout is interested in you!',
 body: scout.first_name + ' ' + scout.last_name + ' from ' + scout.club_name + ' has expressed interest in your profile.',
