@@ -66,6 +66,8 @@
 </div>
 <script src="../js/main.js"></script>
 <script>
+var SCOUT_NAV=[{label:'Dashboard',href:'scout-dashboard.html'},{label:'Player Search',href:'player-search.html'},{label:'My Pipeline',href:'scout-pipeline.html'},{label:'Rankings',href:'scout-rankings.html'},{label:'Fixtures',href:'scout-fixtures.html'},{label:'Predictions',href:'scout-predictions.html'},{label:'Exports',href:'scout-exports.html'},{label:'Notifications',href:'#',action:'toggleNotifPanel'},{label:'Settings',href:'scout-settings.html'}];function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=SCOUT_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Scout</div></div></div>';updateNotifBadge();}
+
 const selected = { positions:[], formation:'', style:'' };
 function initChips(containerId, key, single=false) {
   document.querySelectorAll('#'+containerId+' .chip').forEach(c => {
