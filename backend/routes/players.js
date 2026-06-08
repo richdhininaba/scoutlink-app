@@ -1,6 +1,6 @@
 'use strict';
 const express = require('express');
-const router  = express.Router();
+const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateId } = require('../utils/auth');
 const { analysePlayer, predictedSalary, computeOverall } = require('../engines/compatibility');
@@ -8,24 +8,24 @@ const email = require('../services/email');
 
 // Height/weight range maps
 const HEIGHT_RANGES = {
-  very_short: { label: 'Very Short', range: '155-163 cm', min: 155, max: 163 },
-  short:      { label: 'Short',      range: '163-170 cm', min: 163, max: 170 },
-  average:    { label: 'Average',    range: '170-178 cm', min: 170, max: 178 },
-  tall:       { label: 'Tall',       range: '178-185 cm', min: 178, max: 185 },
-  very_tall:  { label: 'Very Tall',  range: '185-200 cm', min: 185, max: 200 },
+  very_short: { label:'Very Short', range:'155-163 cm', min:155, max:163 },
+  short:      { label:'Short',      range:'163-170 cm', min:163, max:170 },
+  average:    { label:'Average',    range:'170-178 cm', min:170, max:178 },
+  tall:       { label:'Tall',       range:'178-185 cm', min:178, max:185 },
+  very_tall:  { label:'Very Tall',  range:'185-200 cm', min:185, max:200 },
 };
 const BUILD_RANGES = {
-  very_slight: { label: 'Very Slight',  range: '50-58 kg', min: 50, max: 58 },
-  slight:      { label: 'Slight',       range: '58-65 kg', min: 58, max: 65 },
-  lean:        { label: 'Lean',         range: '65-72 kg', min: 65, max: 72 },
-  athletic:    { label: 'Athletic',     range: '72-80 kg', min: 72, max: 80 },
-  stocky:      { label: 'Stocky',       range: '80-88 kg', min: 80, max: 88 },
-  powerful:    { label: 'Powerful',     range: '88-96 kg', min: 88, max: 96 },
-  very_powerful:{ label: 'Very Powerful', range: '96+ kg', min: 96, max: 120 },
+  very_slight: { label:'Very Slight', range:'50-58 kg',  min:50,  max:58  },
+  slight:      { label:'Slight',      range:'58-65 kg',  min:58,  max:65  },
+  lean:        { label:'Lean',        range:'65-72 kg',  min:65,  max:72  },
+  athletic:    { label:'Athletic',    range:'72-80 kg',  min:72,  max:80  },
+  stocky:      { label:'Stocky',      range:'80-88 kg',  min:80,  max:88  },
+  powerful:    { label:'Powerful',    range:'88-96 kg',  min:88,  max:96  },
+  very_powerful:{ label:'Very Powerful', range:'96+ kg', min:96, max:120 },
 };
 
 router.get('/height-ranges', (_, res) => res.json(HEIGHT_RANGES));
-router.get('/build-ranges',  (_, res) => res.json(BUILD_RANGES));
+router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
 
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
@@ -35,7 +35,6 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
       'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code',
       { count: 'exact' }
     ).eq('is_active', true);
-
     if (search)     q = q.or('first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%');
     if (posGroup)   q = q.eq('position_group', posGroup);
     if (specificPos)q = q.contains('positions', [specificPos.toUpperCase()]);
@@ -43,7 +42,6 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     if (minAge)     q = q.gte('age', Number(minAge));
     if (maxAge)     q = q.lte('age', Number(maxAge));
     if (minOverall) q = q.gte('overall_rating', Number(minOverall));
-
     const off = (Number(page)-1)*Number(limit);
     q = q.order('overall_rating', { ascending: false }).range(off, off+Number(limit)-1);
     const { data, error, count } = await q;
@@ -59,7 +57,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     const { data, error } = await supabase.from('players').select('*').eq('id', req.params.id).single();
     if (error||!data) return res.status(404).json({ error: 'Player not found' });
     const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', req.params.id).order('match_date', { ascending: false }).limit(10);
-    const { data: videos }  = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
+    const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
     res.json({ player: data, recentMatches: matches||[], videos: videos||[] });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
@@ -70,11 +68,8 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     const b = req.body;
     if (!b.firstName||!b.lastName) return res.status(400).json({ error: 'firstName and lastName required' });
     const posArr = Array.isArray(b.positions) ? b.positions.map(p=>p.toUpperCase()) : [];
-
-    // Calculate physical range details
     const hRange = HEIGHT_RANGES[b.heightCategory];
     const bRange = BUILD_RANGES[b.buildCategory];
-
     const playerData = {
       player_id: generateId('PLY'),
       first_name: b.firstName.trim(), last_name: b.lastName.trim(),
@@ -91,15 +86,12 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       weight_range_kg: bRange ? bRange.range : b.weightRangeKg||null,
       weight_min_kg: bRange ? bRange.min : null, weight_max_kg: bRange ? bRange.max : null,
       team_name: b.teamName||null,
-      // Universal metrics
       pace: b.pace||null, agility: b.agility||null, strength: b.strength||null,
       stamina: b.stamina||null, jumping: b.jumping||null, composure: b.composure||null,
-      // Outfield
       shooting: b.shooting||null, passing: b.passing||null, dribbling: b.dribbling||null,
       defending: b.defending||null, crossing: b.crossing||null, vision: b.vision||null,
       positioning: b.positioning||null, heading: b.heading||null, tackling: b.tackling||null,
       work_rate: b.workRate||'Medium/Medium',
-      // GK
       gk_diving: b.gkDiving||null, gk_handling: b.gkHandling||null, gk_kicking: b.gkKicking||null,
       gk_reflexes: b.gkReflexes||null, gk_positioning: b.gkPositioning||null,
       gk_distribution: b.gkDistribution||null, gk_communication: b.gkCommunication||null,
@@ -107,18 +99,13 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       avatar_config: b.avatarConfig||null,
       is_active: true,
     };
-
-    // Compute overall rating immediately
-    const overall = computeOverall(playerData);
-    playerData.overall_rating = Math.round(overall * 10) / 10;
-
+    // Store overall as 0-10 (engine returns 0-100, divide by 10)
+    const overall100 = computeOverall(playerData);
+    playerData.overall_rating = Math.round(overall100) / 10;
     const { data, error } = await supabase.from('players').insert(playerData).select().single();
     if (error) throw error;
-
-    // Calculate salary prediction
     const salary = predictedSalary(data, { tier: 5 });
     await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', data.id);
-
     res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross } });
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
@@ -129,7 +116,6 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
     const { players, teamName } = req.body;
     if (!Array.isArray(players)||players.length===0) return res.status(400).json({ error: 'players array required' });
     if (players.length > 50) return res.status(400).json({ error: 'Max 50 players per bulk import' });
-
     const results = { created: [], errors: [] };
     for (const p of players) {
       try {
@@ -163,8 +149,8 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           gk_sweeping: p.gkSweeping||null,
           is_active: true,
         };
-        const overall = computeOverall(playerData);
-        playerData.overall_rating = Math.round(overall*10)/10;
+        const overall100 = computeOverall(playerData);
+        playerData.overall_rating = Math.round(overall100) / 10;
         const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name').single();
         if (error) throw error;
         const salary = predictedSalary(created, { tier: 5 });
@@ -194,11 +180,13 @@ router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res)
     }
     const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
     if (error) throw error;
-    // Recalculate overall + salary
-    const overall = computeOverall(data);
-    const salary  = predictedSalary(data, { tier: 5 });
-    await supabase.from('players').update({ overall_rating: Math.round(overall*10)/10, predicted_salary_weekly: salary.weeklyGross }).eq('id', data.id);
-    res.json({ player: { ...data, overall_rating: Math.round(overall*10)/10, predicted_salary_weekly: salary.weeklyGross } });
+    const overall100 = computeOverall(data);
+    const salary = predictedSalary(data, { tier: 5 });
+    await supabase.from('players').update({
+      overall_rating: Math.round(overall100) / 10,
+      predicted_salary_weekly: salary.weeklyGross
+    }).eq('id', data.id);
+    res.json({ player: { ...data, overall_rating: Math.round(overall100)/10, predicted_salary_weekly: salary.weeklyGross } });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -231,21 +219,18 @@ router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req
   try {
     const { notes, interestLevel = 7 } = req.body;
     const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
-    const { data: scout }  = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id').eq('id', req.user.id).single();
+    const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id').eq('id', req.user.id).single();
     if (!player||!scout) return res.status(404).json({ error: 'Not found' });
-
     await supabase.from('recruitment_pipeline').upsert({
       scout_id: req.user.id, player_id: req.params.id,
       scout_team_id: scout.scout_team_id, notes, interest_level: interestLevel, stage: 'watching'
     }, { onConflict: 'scout_id,player_id' });
-
     await supabase.from('notifications').insert({
       recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
       title: 'A scout is interested in you!',
       body: scout.first_name + ' ' + scout.last_name + ' from ' + scout.club_name + ' has expressed interest in your profile.',
       data: { scoutId: scout.id, scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }
     });
-
     if (player.email) {
       await email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
         playerName: player.first_name + ' ' + player.last_name,
