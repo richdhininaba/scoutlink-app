@@ -95,6 +95,9 @@ function dOv(v){var n=parseFloat(v);return isNaN(n)?0:(n>10?n:n*10);}
 function dDisp(v){var n=dOv(v);return n.toFixed(1);}
 function cColor(s){return s>=80?'#1d9e75':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
 function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
+function fmtVal(v){var n=Number(v)||0;if(!n)return 'N/A';if(n>=1000000)return '\u00a3'+(n/1000000).toFixed(2)+'m';if(n>=1000)return '\u00a3'+(n/1000).toFixed(0)+'k';return '\u00a3'+n;}
+function calcAge(dob){if(!dob)return '--';var d=new Date(dob),t=new Date();var a=t.getFullYear()-d.getFullYear();if(t<new Date(t.getFullYear(),d.getMonth(),d.getDate()))a--;return a;}
+function ageGroup(dob){if(!dob)return '--';var a=calcAge(dob);if(a<=6)return 'U7';if(a<=7)return 'U8';if(a<=8)return 'U9';if(a<=9)return 'U10';if(a<=10)return 'U11';if(a<=11)return 'U12';if(a<=12)return 'U13';if(a<=13)return 'U14';if(a<=14)return 'U15';if(a<=15)return 'U16';if(a<=16)return 'U17';return 'Open';}
 
 function populateSelect(selId, players){
   var sel=document.getElementById(selId);
@@ -103,7 +106,7 @@ function populateSelect(selId, players){
   players.forEach(function(p){
     var opt=document.createElement('option');
     opt.value=p.id;
-    opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' — '+(p.age_group||'')+(p.specific_position?' ('+p.specific_position+')':'')+' '+( p.team_name?'| '+p.team_name:'');
+    opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' \u2013 '+(p.age_group||ageGroup(p.date_of_birth)||'')+(p.specific_position?' ('+p.specific_position+')':'')+' '+(p.team_name?'| '+p.team_name:'');
     if(p.id===curVal) opt.selected=true;
     sel.appendChild(opt);
   });
@@ -121,153 +124,184 @@ function searchPlayers(searchId, selId, filter){
   populateSelect(selId,filtered.slice(0,100));
 }
 
-function updateComparison(){
-  var p1id=document.getElementById('player1').value;
-  var p2id=document.getElementById('player2').value;
-  if(!p1id||!p2id){document.getElementById('compareResult').innerHTML='';return;}
-  var p1=_allPlayers.find(function(p){return p.id===p1id;});
-  var p2=_allPlayers.find(function(p){return p.id===p2id;});
-  if(!p1||!p2){return;}
-  renderComparison(p1,p2);
-}
-
 var ATTRS=['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
 var ATTR_LABELS={pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',jumping:'Jumping',composure:'Composure',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling'};
 
-function renderComparison(p1,p2){
-  var ov1=dOv(p1.overall_rating);var ov2=dOv(p2.overall_rating);
-  var cs1=Math.round(p1.compatibilityScore||0);var cs2=Math.round(p2.compatibilityScore||0);
-  var tv1=formatValue(p1.transfer_value||0);var tv2=formatValue(p2.transfer_value||0);
-  var apps1=parseInt(p1.appearances)||0;var apps2=parseInt(p2.appearances)||0;
-  var goals1=parseInt(p1.goals)||0;var goals2=parseInt(p2.goals)||0;
-  var assts1=parseInt(p1.assists)||0;var assts2=parseInt(p2.assists)||0;
-  var cs_1=parseInt(p1.clean_sheets)||0;var cs_2=parseInt(p2.clean_sheets)||0;
-  var gpg1=apps1>0?(goals1/apps1).toFixed(2):'0.00';var gpg2=apps2>0?(goals2/apps2).toFixed(2):'0.00';
-  var apg1=apps1>0?(assts1/apps1).toFixed(2):'0.00';var apg2=apps2>0?(assts2/apps2).toFixed(2):'0.00';
-  var cspg1=apps1>0?(cs_1/apps1).toFixed(2):'0.00';var cspg2=apps2>0?(cs_2/apps2).toFixed(2):'0.00';
+function calcCompatScore(player){
+  if(!_scoutTeam||((_scoutTeam.team_weaknesses||[]).length===0)) return null;
+  var weaknessAttrs={
+    'Insufficient Game Pace and Speed':['pace','agility','stamina'],
+    'Physical Fragility and Injury Risk':['stamina','strength'],
+    'Lack of Physical Presence':['strength','jumping','heading'],
+    'Weak Defensive Base':['defending','positioning','tackling'],
+    'Poor Defensive Output':['tackling','defending','positioning'],
+    'Low Team Chemistry and Leadership':['vision','passing','composure'],
+    'Technical Deficiencies Under Pressure':['composure','dribbling','passing'],
+    'Tactical Awareness Gaps':['positioning','composure','vision'],
+    'Poor Goal Output':['shooting','positioning'],
+  };
+  var total=0, count=0;
+  (_scoutTeam.team_weaknesses||[]).forEach(function(w){
+    var attrs=weaknessAttrs[w]||[];
+    attrs.forEach(function(a){
+      total+=dOv(player[a]);count++;
+    });
+  });
+  return count>0?Math.min(100,Math.round(total/count)):50;
+}
 
-  function statRow(label,v1,v2,higherIsBetter){
-    var n1=parseFloat(v1)||0,n2=parseFloat(v2)||0;
-    var w1=(higherIsBetter!==false)?n1>n2:'#8b949e',w2=(higherIsBetter!==false)?n2>n1:'#8b949e';
-    var c1=w1?'#1d9e75':'#8b949e',c2=w2?'#1d9e75':'#8b949e';
-    return '<tr><td style="color:'+c1+';font-weight:'+(n1>n2?'800':'400')+'">'+v1+'</td><td style="color:#8b949e;font-size:11px;text-align:center;padding:6px">'+label+'</td><td style="color:'+c2+';font-weight:'+(n2>n1?'800':'400')+'">'+v2+'</td></tr>';
-  }
+function renderSinglePanel(p, side, otherP){
+  var ov=dOv(p.overall_rating);
+  var ovColor=cColor(ov);
+  var compat=calcCompatScore(p);
+  var tv=fmtVal(p.transfer_value);
+  var apps=parseInt(p.appearances)||0;
+  var goals=parseInt(p.goals)||0;
+  var assts=parseInt(p.assists)||0;
+  var cs=parseInt(p.clean_sheets)||0;
+  var yc=parseInt(p.yellow_cards)||0;
+  var rc=parseInt(p.red_cards)||0;
+  var gpg=apps>0?(goals/apps).toFixed(2):'0.00';
+  var apg=apps>0?(assts/apps).toFixed(2):'0.00';
+  var cspg=apps>0?(cs/apps).toFixed(2):'0.00';
+  var ag=p.age_group||ageGroup(p.date_of_birth)||'--';
+  var pos=p.specific_position||p.primary_position||'--';
+  var name=(p.first_name||'')+' '+(p.last_name||'');
+  var teamName=p.team_name||'Free agent';
 
-  // Attribute bars
-  var attrHtml='';
+  var attrRows='';
   ATTRS.forEach(function(a){
-    var v1=dOv(p1[a]);var v2=dOv(p2[a]);
-    var c1=v1>=v2?'#1d9e75':'#FF9800';var c2=v2>=v1?'#1d9e75':'#FF9800';
-    var max=Math.max(v1,v2,10);
-    var w1=Math.round((v1/100)*100);var w2=Math.round((v2/100)*100);
-    attrHtml+='<div style="display:grid;grid-template-columns:1fr 52px 1fr;align-items:center;gap:6px;margin-bottom:8px">';
-    attrHtml+='<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span style="font-size:11px;color:'+c1+';font-weight:700;min-width:24px;text-align:right">'+v1.toFixed(1)+'</span><div style="height:8px;border-radius:4px 0 0 4px;background:'+c1+';width:'+w1+'px;max-width:80px;min-width:4px"></div></div>';
-    attrHtml+='<div style="text-align:center;font-size:10px;color:#8b949e;font-weight:700;text-transform:uppercase">'+ATTR_LABELS[a]+'</div>';
-    attrHtml+='<div style="display:flex;align-items:center;gap:6px"><div style="height:8px;border-radius:0 4px 4px 0;background:'+c2+';width:'+w2+'px;max-width:80px;min-width:4px"></div><span style="font-size:11px;color:'+c2+';font-weight:700;min-width:24px">'+v2.toFixed(1)+'</span></div>';
-    attrHtml+='</div>';
+    var v1=dOv(p[a]);
+    var v2=otherP?dOv(otherP[a]):null;
+    var barColor='#1d9e75';
+    if(v2!==null){barColor=v1>=v2?'#1d9e75':'#FF9800';}
+    var w=Math.round(v1);
+    attrRows+='<div style="margin-bottom:8px">';
+    attrRows+='<div style="display:flex;justify-content:space-between;margin-bottom:3px">';
+    attrRows+='<span style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase">'+ATTR_LABELS[a]+'</span>';
+    attrRows+='<span style="font-size:12px;font-weight:700;color:'+barColor+'">'+v1.toFixed(1)+'</span>';
+    attrRows+='</div>';
+    attrRows+='<div style="height:6px;background:#21262d;border-radius:3px">';
+    attrRows+='<div style="height:100%;width:'+w+'%;background:'+barColor+';border-radius:3px"></div>';
+    attrRows+='</div></div>';
   });
 
-  // Recommendation panel
-  var recHtml='';
-  if(_scoutTeam&&(_scoutTeam.team_weaknesses||[]).length){
-    var weaknessAttrs={
-      'Insufficient Game Pace and Speed':['pace','agility','stamina'],
-      'Physical Fragility and Injury Risk':['stamina','strength'],
-      'Lack of Physical Presence':['strength','jumping','heading'],
-      'Weak Defensive Base':['defending','positioning','tackling'],
-      'Poor Defensive Output':['tackling','defending','positioning'],
-      'Low Team Chemistry and Leadership':['vision','passing','composure'],
-      'Technical Deficiencies Under Pressure':['composure','dribbling','passing'],
-      'Tactical Awareness Gaps':['positioning','composure','vision'],
-      'Poor Goal Output':['shooting','positioning'],
-    };
-    (_scoutTeam.team_weaknesses||[]).forEach(function(w){
-      var attrs=weaknessAttrs[w]||['overall_rating'];
-      var key=attrs[0];
-      var v1=dOv(p1[key]);var v2=dOv(p2[key]);
-      var n1=p1.first_name+' '+p1.last_name,n2=p2.first_name+' '+p2.last_name;
-      var sentence='';
-      if(Math.abs(v1-v2)<0.5){
-        sentence='Both players are equally matched in this area.';
-      } else {
-        var winner=v1>v2?n1:n2;var score=v1>v2?v1:v2;
-        sentence='<strong>'+winner+'</strong> is the stronger fit with a '+ATTR_LABELS[key]+' score of '+score.toFixed(1)+'.';
-      }
-      recHtml+='<div class="rec-row">For <strong>'+w+'</strong>: '+sentence+'</div>';
-    });
+  var compatHtml='';
+  if(compat!==null){
+    compatHtml='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Compatibility</span><span style="font-size:14px;font-weight:800;color:'+cColor(compat)+'">'+compat+'</span></div>';
   } else {
-    recHtml='<div style="padding:16px;color:#8b949e;text-align:center">Complete your team setup to see recommendations based on your team weaknesses.</div>';
+    compatHtml='<div style="padding:8px 0;border-bottom:1px solid #21262d;font-size:11px;color:#8b949e">Complete team setup to see compatibility</div>';
   }
 
-  var n1=p1.first_name+' '+p1.last_name,n2=p2.first_name+' '+p2.last_name;
-  var pc1=pColor(p1.position_group),pc2=pColor(p2.position_group);
-
-  document.getElementById('compareResult').innerHTML=
-    '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Head to Head</h3></div><div style="padding:16px">'+
-    '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;margin-bottom:20px">'+
-    '<div style="text-align:center">'+
-    '<div class="big-stat" style="color:'+cColor(ov1)+'">'+ov1.toFixed(1)+'</div><div class="stat-label">Overall</div>'+
-    '<div style="margin-top:8px;font-size:18px;font-weight:800;color:#1d9e75">'+tv1+'</div><div class="stat-label" style="margin-top:0">Value</div>'+
-    '<div style="margin-top:10px;font-size:16px;font-weight:900">'+n1+'</div>'+
-    '<div style="font-size:12px;color:#8b949e">'+(p1.age_group||'')+' &bull; '+(p1.specific_position||p1.primary_position||'--')+'</div>'+
-    '<div style="font-size:12px;color:#8b949e">'+(p1.team_name||'Free Agent')+'</div>'+
+  return '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;height:100%">'+
+    '<div style="text-align:center;margin-bottom:16px">'+
+    '<div style="font-size:32px;font-weight:900;color:'+ovColor+'">'+ov.toFixed(1)+'</div>'+
+    '<div style="font-size:11px;color:#8b949e;margin-bottom:8px">Overall rating</div>'+
+    '<div style="font-size:18px;font-weight:800;color:#ffffff">'+name+'</div>'+
+    '<div style="font-size:12px;color:#8b949e;margin-top:4px">'+ag+' &bull; '+pos+'</div>'+
+    '<div style="font-size:12px;color:#8b949e">'+teamName+'</div>'+
     '</div>'+
-    '<div style="text-align:center;padding:16px 0;color:#30363d;font-size:24px;font-weight:900">VS</div>'+
-    '<div style="text-align:center">'+
-    '<div class="big-stat" style="color:'+cColor(ov2)+'">'+ov2.toFixed(1)+'</div><div class="stat-label">Overall</div>'+
-    '<div style="margin-top:8px;font-size:18px;font-weight:800;color:#1d9e75">'+tv2+'</div><div class="stat-label" style="margin-top:0">Value</div>'+
-    '<div style="margin-top:10px;font-size:16px;font-weight:900">'+n2+'</div>'+
-    '<div style="font-size:12px;color:#8b949e">'+(p2.age_group||'')+' &bull; '+(p2.specific_position||p2.primary_position||'--')+'</div>'+
-    '<div style="font-size:12px;color:#8b949e">'+(p2.team_name||'Free Agent')+'</div>'+
+    '<div style="margin-bottom:16px">'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Transfer value</span><span style="font-size:14px;font-weight:700;color:#1d9e75">'+tv+'</span></div>'+
+    compatHtml+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Appearances</span><span style="font-size:14px;font-weight:700;color:#fff">'+apps+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Goals per game</span><span style="font-size:14px;font-weight:700;color:#1d9e75">'+gpg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Assists per game</span><span style="font-size:14px;font-weight:700;color:#58a6ff">'+apg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Clean sheets per game</span><span style="font-size:14px;font-weight:700;color:#FFC107">'+cspg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Yellow cards</span><span style="font-size:14px;font-weight:700;color:#FFC107">'+yc+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:12px;color:#8b949e">Red cards</span><span style="font-size:14px;font-weight:700;color:#f44336">'+rc+'</span></div>'+
     '</div>'+
+    '<div><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Attributes</div>'+
+    attrRows+
     '</div>'+
-    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'+
-    '<thead><tr><th style="text-align:right;padding:6px;font-size:11px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+n1+'</th><th style="text-align:center;padding:6px"></th><th style="text-align:left;padding:6px;font-size:11px;color:#8b949e;font-weight:700;text-transform:uppercase;letter-spacing:.04em">'+n2+'</th></tr></thead>'+
-    '<tbody style="font-size:14px">'+
-    statRow('Apps',apps1,apps2)+
-    statRow('Goals',goals1,goals2)+
-    statRow('Assists',assts1,assts2)+
-    statRow('G/Game',gpg1,gpg2)+
-    statRow('A/Game',apg1,apg2)+
-    statRow('CS/Game',cspg1,cspg2)+
-    statRow('Yellow Cards',parseInt(p1.yellow_cards)||0,parseInt(p2.yellow_cards)||0,false)+
-    statRow('Red Cards',parseInt(p1.red_cards)||0,parseInt(p2.red_cards)||0,false)+
-    '</tbody></table></div>'+
-    '</div></div>'+
+    '</div>';
+}
 
-    '<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Attribute Comparison</h3><div style="display:flex;gap:20px;font-size:12px"><span style="color:#1d9e75;font-weight:700">&#9632; Higher</span><span style="color:#FF9800;font-weight:700">&#9632; Lower</span></div></div><div style="padding:16px">'+
-    '<div style="display:grid;grid-template-columns:1fr 52px 1fr;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #30363d"><div style="text-align:center;font-size:12px;font-weight:700;color:#ffffff">'+n1+'</div><div></div><div style="text-align:center;font-size:12px;font-weight:700;color:#ffffff">'+n2+'</div></div>'+
-    attrHtml+
-    '</div></div>'+
+function renderRecommendations(p1,p2){
+  if(!_scoutTeam||!(_scoutTeam.team_weaknesses||[]).length){
+    return '<div style="padding:16px;color:#8b949e;text-align:center">Please complete your team setup to see recommendations based on your team weaknesses.</div>';
+  }
+  if(!p1||!p2){
+    return '<div style="padding:16px;color:#8b949e;text-align:center">Select both players to see recommendations.</div>';
+  }
+  var weaknessAttrs={
+    'Insufficient Game Pace and Speed':['pace','agility','stamina'],
+    'Physical Fragility and Injury Risk':['stamina','strength'],
+    'Lack of Physical Presence':['strength','jumping','heading'],
+    'Weak Defensive Base':['defending','positioning','tackling'],
+    'Poor Defensive Output':['tackling','defending','positioning'],
+    'Low Team Chemistry and Leadership':['vision','passing','composure'],
+    'Technical Deficiencies Under Pressure':['composure','dribbling','passing'],
+    'Tactical Awareness Gaps':['positioning','composure','vision'],
+    'Poor Goal Output':['shooting','positioning'],
+  };
+  var html='';
+  (_scoutTeam.team_weaknesses||[]).forEach(function(w){
+    var attrs=weaknessAttrs[w]||['overall_rating'];
+    var key=attrs[0];
+    var v1=dOv(p1[key]);var v2=dOv(p2[key]);
+    var n1=(p1.first_name||'')+' '+(p1.last_name||'');
+    var n2=(p2.first_name||'')+' '+(p2.last_name||'');
+    var sentence='';
+    if(Math.abs(v1-v2)<0.5){
+      sentence='Both players are equally matched in this area.';
+    } else {
+      var winner=v1>v2?n1:n2;var score=Math.max(v1,v2);
+      sentence='<strong>'+winner+'</strong> is the stronger fit with a '+ATTR_LABELS[key]+' score of '+score.toFixed(1)+'.';
+    }
+    html+='<div style="padding:10px 0;border-bottom:1px solid #30363d"><span style="color:#8b949e;font-size:12px">For <strong style="color:#fff">'+w+'</strong>: </span>'+sentence+'</div>';
+  });
+  return html;
+}
 
-    '<div class="table-card"><div class="table-header"><h3>Scout Recommendation</h3><span style="font-size:12px;color:#8b949e">Based on your team weaknesses</span></div><div style="padding:16px">'+
-    recHtml+
-    '</div></div>';
+function updateComparison(){
+  var p1id=document.getElementById('player1').value;
+  var p2id=document.getElementById('player2').value;
+  var p1=p1id?_allPlayers.find(function(p){return p.id===p1id;}):null;
+  var p2=p2id?_allPlayers.find(function(p){return p.id===p2id;}):null;
+
+  if(!p1&&!p2){document.getElementById('compareResult').innerHTML='';return;}
+
+  var html='';
+
+  if(p1||p2){
+    html+='<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Player comparison</h3><div style="font-size:12px;color:#8b949e">Select both players to compare side by side</div></div><div style="padding:16px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    html+=p1?renderSinglePanel(p1,'left',p2):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the left dropdown</div>';
+    html+=p2?renderSinglePanel(p2,'right',p1):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the right dropdown</div>';
+    html+='</div></div></div>';
+  }
+
+  html+='<div class="table-card"><div class="table-header"><h3>Scout recommendation</h3><span style="font-size:12px;color:#8b949e">Based on your team weaknesses</span></div><div style="padding:16px">'+renderRecommendations(p1,p2)+'</div></div>';
+
+  document.getElementById('compareResult').innerHTML=html;
 }
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
 
-  // Load scout team for recommendations
   api('GET','/api/scouts/setup').then(function(d){_scoutTeam=d.scoutTeam||null;}).catch(function(){});
 
-  // Load pipeline IDs
   api('GET','/api/scouts/pipeline?limit=200').then(function(d){
     _pipelineIds=(d.data||[]).map(function(r){return r.player_id||((r.players||{}).id);}).filter(Boolean);
   }).catch(function(){});
 
-  // Load all players
   api('GET','/api/players?limit=200').then(function(d){
     _allPlayers=d.data||[];
+    if(!_allPlayers.length){
+      document.getElementById('compareResult').innerHTML='<div style="text-align:center;padding:48px;color:#8b949e">Could not load players. Please try again.</div>';
+      return;
+    }
     populateSelect('player1',_allPlayers.slice(0,200));
     populateSelect('player2',_allPlayers.slice(0,200));
-  }).catch(function(e){console.error('load players failed',e.message);});
+  }).catch(function(e){
+    console.error('load players failed',e.message);
+    document.getElementById('compareResult').innerHTML='<div style="text-align:center;padding:48px;color:#8b949e">Could not load players: '+e.message+'</div>';
+  });
 
-  // Search handlers
   document.getElementById('search1').addEventListener('input',function(){searchPlayers('search1','player1',_filter1);});
   document.getElementById('search2').addEventListener('input',function(){searchPlayers('search2','player2',_filter2);});
 
-  // Filter buttons
   document.getElementById('f1All').addEventListener('click',function(){
     _filter1='all';this.classList.add('active');document.getElementById('f1Pipeline').classList.remove('active');
     searchPlayers('search1','player1','all');
@@ -285,7 +319,6 @@ document.addEventListener('DOMContentLoaded',function(){
     searchPlayers('search2','player2','pipeline');
   });
 
-  // Change handlers
   document.getElementById('player1').addEventListener('change',updateComparison);
   document.getElementById('player2').addEventListener('change',updateComparison);
 });
