@@ -1,181 +1,62 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Predictions & Compatibility - ScoutLink</title>
+<title>Predictions - ScoutLink</title>
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-.compat-card{background:var(--bg1);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-.compat-card:hover{border-color:#00E676;transform:translateY(-2px);}
-.big-score{font-size:56px;font-weight:900;line-height:1;}
-.breakdown-bar{height:8px;border-radius:4px;background:#1e2a3a;overflow:hidden;margin-top:4px;}
-.breakdown-fill{height:100%;border-radius:4px;}
-.bd-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.bd-label{font-size:12px;color:#94a3b8;width:90px;flex-shrink:0;}
-.bd-bar{flex:1;}
-.bd-val{font-size:12px;font-weight:700;width:36px;text-align:right;}
-.trajectory-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
-.rising{background:rgba(0,230,118,.15);color:#00E676;}
-.stable{background:rgba(255,193,7,.15);color:#FFC107;}
-.declining{background:rgba(244,67,54,.15);color:#f44336;}
-</style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
-  <div class="sidebar-nav" id="sidebarNav"></div>
-  <div class="sidebar-user" id="sidebarUser"></div>
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
 </nav>
 <div class="dashboard-main">
-  <div class="topbar">
-    <span class="topbar-title">Predictions & Compatibility</span>
-    <div class="topbar-right">
-      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
-      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
-    </div>
-  </div>
-  <div class="page-content">
-
-    <!-- Info Banner -->
-    <div style="background:rgba(0,188,212,.06);border:1px solid rgba(0,188,212,.25);border-radius:12px;padding:16px 20px;margin-bottom:24px">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <span style="font-size:22px">🔮</span>
-        <div>
-          <b style="color:#00BCD4">ScoutLink Compatibility Engine</b>
-          <p style="font-size:12px;color:#B0BEC5;margin-top:4px;line-height:1.6">
-            Compatibility scores are calculated using <b>6 weighted factors</b> aligned with FIFA/UEFA talent identification frameworks:
-            Technical ability (35%), Tier fit (20%), Age development curve (15%), Physical profile (10%), Match statistics (7%), Scout criteria match (5%), Team weakness exploitation bonus (up to 8pts).
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Compatibility by player -->
-    <div class="table-card" style="margin-bottom:20px">
-      <div class="table-header">
-        <div><h3>Compatibility Scores vs Riverside Rangers</h3>
-        <p style="font-size:12px;color:#546E7A;margin-top:2px">Players analysed against your team weaknesses</p></div>
-        <a href="player-search.html" class="btn btn-sm btn-primary">Run New Analysis</a>
-      </div>
-      <div id="compatContent"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Running analysis...</span></div></div>
-    </div>
-
-    <!-- Prediction Methodology -->
-    <div class="table-card">
-      <div class="table-header"><h3>🎯 Scoring Methodology</h3></div>
-      <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">⚡ Technical (35%)</div>
-          <div style="font-size:13px;color:#B0BEC5">Position-weighted attribute profile. Forwards weighted on shooting/dribbling/pace. Midfielders on passing/vision/stamina. Defenders on defending/strength/tackling.</div>
-        </div>
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">🎯 Tier Fit (20%)</div>
-          <div style="font-size:13px;color:#B0BEC5">Match between player ability and team competition level. Prevents over/under-qualified recommendations. Aligned with FA pyramid tiers.</div>
-        </div>
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">📅 Age Curve (15%)</div>
-          <div style="font-size:13px;color:#B0BEC5">U18s score highest (100pts). Peak at 18-21. Decreasing scores post-27. Aligned with UEFA talent development windows.</div>
-        </div>
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">💪 Physical (10%)</div>
-          <div style="font-size:13px;color:#B0BEC5">Height and build optimality per position. Centre-backs favour height. Forwards favour athletic build. Based on FA player development data.</div>
-        </div>
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">📊 Match Stats (7%)</div>
-          <div style="font-size:13px;color:#B0BEC5">Goals/appearances ratio for forwards, assists ratio for midfielders, clean sheet ratio for defenders and GKs. Real match performance signal.</div>
-        </div>
-        <div style="background:#0a0f1e;border-radius:10px;padding:16px">
-          <div style="font-size:20px;margin-bottom:8px">🎯 Weakness Bonus (8%)</div>
-          <div style="font-size:13px;color:#B0BEC5">Players who can exploit your team weaknesses gain up to +8 points. Set piece threats, pace against high line, strength vs physical vulnerability.</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
+<div class="topbar">
+<span class="topbar-title">🔮 Predictions</span>
+<div class="topbar-right">
+<button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
 </div>
 </div>
-<div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
-  <div class="notif-list" id="notifList"></div>
+<div class="page-content">
+
+<div class="table-card">
+<div class="table-header"><div><h3>Player Predictions</h3><p style="font-size:12px;color:#546E7A">AI-powered potential and trajectory forecasts</p></div></div>
+<div style="text-align:center;padding:60px 20px;color:#546E7A">
+<div style="font-size:48px;margin-bottom:16px">🔮</div>
+<h3 style="color:#B0BEC5;margin-bottom:8px">Predictions — Coming Soon</h3>
+<p style="margin-bottom:20px">Potential trajectory and peak performance predictions powered by the Stratex Analytics engine are coming soon.</p>
+<a href="player-search.html" class="btn btn-primary">Browse Players</a>
+</div>
+</div>
+</div>
+</div>
 </div>
 <script src="../js/main.js"></script>
 <script>
-function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
-function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
-function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
 var SCOUT_NAV=[
-  {label:'🏠 Dashboard',href:'scout-dashboard.html'},
-  {label:'🔍 Player Search',href:'player-search.html'},
-  {label:'📋 My Pipeline',href:'scout-pipeline.html'},
-  {label:'🏆 Rankings',href:'scout-rankings.html'},
-  {label:'📅 Fixtures',href:'scout-fixtures.html'},
-  {label:'🔮 Predictions',href:'scout-predictions.html'},
-  {label:'📊 Exports',href:'scout-exports.html'},
-  {label:'🔔 Notifications',href:'#',action:'toggleNotifPanel'},
-  {label:'⚙️ Settings',href:'scout-settings.html'}
+  {icon:'🏠',label:'Dashboard',href:'scout-dashboard.html'},
+  {icon:'🔍',label:'Player Search',href:'player-search.html'},
+  {icon:'📋',label:'My Pipeline',href:'scout-pipeline.html'},
+  {icon:'🏆',label:'Rankings',href:'scout-rankings.html'},
+  {icon:'📅',label:'Fixtures',href:'scout-fixtures.html'},
+  {icon:'🔮',label:'Predictions',href:'scout-predictions.html'},
+  {icon:'📊',label:'Exports',href:'scout-exports.html'},
+  {icon:'⚙️',label:'My Team Setup',href:'scout-setup.html'},
+  {icon:'🔔',label:'Notifications',href:'scout-notifications.html'},
+  {icon:'👤',label:'Settings',href:'scout-settings.html'},
 ];
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
   var nav=document.getElementById('sidebarNav');
   var cur=window.location.pathname.split('/').pop();
-  if(nav) nav.innerHTML=SCOUT_NAV.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';}).join('');
-  var u=Auth.user;
-  var uel=document.getElementById('sidebarUser');
+  if(nav) nav.innerHTML=SCOUT_NAV.map(function(i){return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.icon+' '+i.label+'</a>';}).join('');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-
-document.addEventListener('DOMContentLoaded',function(){initNav();loadCompatibility();});
-
-async function loadCompatibility(){
-  try {
-    var d = await api('GET', '/api/players?limit=12');
-    var players = (d.data||[]).slice(0,6);
-    if(!players.length){
-      document.getElementById('compatContent').innerHTML='<div style="text-align:center;padding:40px;color:#546E7A">No players to analyse yet.</div>';
-      return;
-    }
-    // Show existing compatibility data from DB if available
-    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;padding:20px">';
-    players.forEach(function(p){
-      var ov = dispOverall(p.overall_rating);
-      var ovNum = parseFloat(p.overall_rating||0); var ovPct = ovNum>10?ovNum:ovNum*10;
-      var pCol = posColor(p.position_group);
-      // Estimate compatibility based on overall
-      var compat = Math.round(ovPct * 0.75 + Math.random()*15);
-      if(compat>99)compat=99;
-      var cColor = compatColor(compat);
-      var trajectory = ovPct>=75?'rising':ovPct>=60?'stable':'stable';
-      var tClass = trajectory==='rising'?'rising':'stable';
-      var peakAge = (p.position_group==='Goalkeeper')?29:(p.position_group==='Forward'?25:27);
-      html += '<div class="compat-card" onclick="location.href='player-profile.html?id='+p.id+''">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">' +
-          '<div style="display:flex;align-items:center;gap:10px">' +
-            '<div class="user-avatar" style="background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div>' +
-            '<div><div style="font-weight:700">'+p.first_name+' '+p.last_name+'</div>' +
-            '<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' · '+p.age+' yrs</div></div>' +
-          '</div>' +
-          '<div style="text-align:right">' +
-            '<div class="big-score" style="color:'+cColor+'">'+compat+'</div>' +
-            '<div style="font-size:10px;color:#546E7A">Compat %</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="bd-row"><div class="bd-label">Technical</div><div class="bd-bar"><div class="breakdown-bar"><div class="breakdown-fill" style="width:'+ovPct+'%;background:'+cColor+'"></div></div></div><div class="bd-val" style="color:'+cColor+'">'+Math.round(ovPct)+'</div></div>' +
-        '<div class="bd-row"><div class="bd-label">Age Fit</div><div class="bd-bar"><div class="breakdown-bar"><div class="breakdown-fill" style="width:'+(p.age<=18?100:p.age<=21?90:p.age<=24?75:55)+'%;background:#42A5F5"></div></div></div><div class="bd-val" style="color:#42A5F5">'+(p.age<=18?100:p.age<=21?90:p.age<=24?75:55)+'</div></div>' +
-        '<div class="bd-row"><div class="bd-label">Transfer Val</div><div class="bd-bar"><div style="font-size:13px;font-weight:700;color:#00E676">'+formatValue(p.transfer_value||0)+'</div></div><div></div></div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">' +
-          '<span class="trajectory-chip '+tClass+'">'+trajectory.toUpperCase()+'</span>' +
-          '<span style="font-size:11px;color:#546E7A">Peak age: '+peakAge+'</span>' +
-        '</div>' +
-      '</div>';
-    });
-    html += '</div>';
-    document.getElementById('compatContent').innerHTML = html;
-  } catch(e) {
-    document.getElementById('compatContent').innerHTML='<div style="text-align:center;padding:40px;color:#546E7A">Could not load compatibility data.</div>';
-    console.error(e);
-  }
-}
+function toggleNotifPanel(){}
+document.addEventListener('DOMContentLoaded',function(){initNav();});
 </script>
 </body></html>
