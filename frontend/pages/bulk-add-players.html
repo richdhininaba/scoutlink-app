@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
 body{background:var(--bg);color:var(--text);}
-.bulk-table-wrap{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;}
+.bulk-table-wrap{overflow-x:auto;width:100%;max-width:100%;-webkit-overflow-scrolling:touch;}
 .bulk-table{border-collapse:collapse;white-space:nowrap;}
 .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
 .bulk-table th{background:#1c2128;color:var(--text-secondary);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
@@ -66,7 +66,7 @@ body{background:var(--bg);color:var(--text);}
 <div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
 <div class="table-card">
   <div style="padding:10px 16px;background:rgba(29,158,117,0.05);border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">
-    Scroll horizontally to see all columns. Ratings are 1-10. Required fields marked *.
+    Scroll right to see all columns. Ratings are 1-10. Required fields marked *.
   </div>
   <div class="bulk-table-wrap">
     <table class="bulk-table" id="bulkTable">
@@ -99,6 +99,7 @@ body{background:var(--bg);color:var(--text);}
   </div>
   <div class="notif-list" id="notifList"></div>
 </div>
+<script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById("notifPanel").classList.toggle("open");}
