@@ -1,61 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Rankings - ScoutLink</title>
-<link rel="stylesheet" href="../css/style.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-.data-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.data-card h3{font-size:15px;font-weight:600;margin-bottom:12px;color:#1a1a2e}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
-.stat-box{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-.stat-box .val{font-size:28px;font-weight:700;color:#4f46e5}
-.stat-box .lbl{font-size:12px;color:#666;margin-top:4px}
-table{width:100%;border-collapse:collapse}
-th{background:#f8f9fa;padding:10px 14px;text-align:left;font-size:13px;color:#666;font-weight:600}
-td{padding:12px 14px;border-bottom:1px solid #f0f0f0;font-size:14px}
-tr:hover td{background:#f8f9fa}
-.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
-.badge-green{background:#d1fae5;color:#065f46}
-.badge-blue{background:#dbeafe;color:#1e40af}
-.badge-purple{background:#ede9fe;color:#5b21b6}
-.badge-yellow{background:#fef3c7;color:#92400e}
-.btn-primary{background:#4f46e5;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
-.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e0e0e0;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer}
-.empty-state{text-align:center;padding:60px 20px;color:#666}
-.empty-icon{font-size:64px;color:#e0e0e0;margin-bottom:16px}
+.rank-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;}
+.rank-1{background:linear-gradient(135deg,#FFD700,#FFA000);color:#000;}
+.rank-2{background:linear-gradient(135deg,#B0BEC5,#78909C);color:#000;}
+.rank-3{background:linear-gradient(135deg,#FF8A65,#E64A19);color:#fff;}
+.rank-other{background:#1e2a3a;color:#94a3b8;}
+.attr-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.attr-pill.high{background:rgba(0,230,118,.12);color:#00E676;}
+.attr-pill.med{background:rgba(255,193,7,.12);color:#FFC107;}
+.attr-pill.low{background:rgba(244,67,54,.12);color:#f44336;}
+.filter-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.filter-tab{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:transparent;color:#94a3b8;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;}
+.filter-tab.active{background:#00E676;color:#000;border-color:#00E676;}
+.compat-bar{height:6px;border-radius:3px;background:#1e2a3a;overflow:hidden;margin-top:4px;}
+.compat-bar-fill{height:100%;border-radius:3px;}
 </style>
-</head>
-<body>
-<div class="layout">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
-    <nav class="sidebar-nav"><a href="scout-dashboard.html"><i class="fas fa-home"></i> Dashboard</a><a href="player-search.html"><i class="fas fa-search"></i> Player Search</a><a href="scout-pipeline.html"><i class="fas fa-layer-group"></i> My Pipeline</a><a href="scout-rankings.html" class="active"><i class="fas fa-trophy"></i> Rankings</a><a href="scout-fixtures.html"><i class="fas fa-calendar"></i> Fixtures</a><a href="scout-predictions.html"><i class="fas fa-chart-line"></i> Predictions</a><a href="scout-exports.html"><i class="fas fa-download"></i> Exports</a><a href="scout-notifications.html"><i class="fas fa-bell"></i> Notifications</a><a href="scout-settings.html"><i class="fas fa-cog"></i> Settings</a></nav>
-    <div class="sidebar-footer"><button onclick="logout()" style="width:100%;background:#f3f4f6;border:1px solid #e0e0e0;padding:10px;border-radius:8px;cursor:pointer"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
-  </aside>
-  <main class="main-content">
-    <div class="page-header"><h1><i class="fas fa-trophy" style="color:#4f46e5;margin-right:8px"></i>Player Rankings</h1></div>
-    
-<div class="stat-grid">
-  <div class="stat-box"><div class="val">#3</div><div class="lbl">Jordan Blake Rank (U16)</div></div>
-  <div class="stat-box"><div class="val">81</div><div class="lbl">Average Overall Rating</div></div>
-  <div class="stat-box"><div class="val">14</div><div class="lbl">Goals this season</div></div>
-  <div class="stat-box"><div class="val">87%</div><div class="lbl">Compatibility Score</div></div>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+  <div class="topbar">
+    <span class="topbar-title">Player Rankings</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="page-content">
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" onclick="setFilter('all',this)">All Positions</button>
+      <button class="filter-tab" onclick="setFilter('Forward',this)">⚡ Forwards</button>
+      <button class="filter-tab" onclick="setFilter('Midfielder',this)">🔄 Midfielders</button>
+      <button class="filter-tab" onclick="setFilter('Defender',this)">🛡️ Defenders</button>
+      <button class="filter-tab" onclick="setFilter('Goalkeeper',this)">🧤 Goalkeepers</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <input type="text" id="searchInput" placeholder="🔍 Search player name..." style="padding:8px 14px;background:#111827;border:1px solid #1e2a3a;border-radius:8px;color:#e2e8f0;font-size:14px;width:220px" oninput="filterRankings()">
+      <select id="sortSelect" onchange="filterRankings()" style="padding:8px 14px;background:#111827;border:1px solid #1e2a3a;border-radius:8px;color:#e2e8f0;font-size:14px">
+        <option value="overall">Sort: Overall Rating</option>
+        <option value="transfer">Sort: Transfer Value</option>
+        <option value="age">Sort: Age (Youngest)</option>
+      </select>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <h3 id="rankTitle">All Players — Ranked</h3>
+          <p style="font-size:12px;color:#546E7A;margin-top:2px">Based on attribute profile · FA/UEFA position weighting</p>
+        </div>
+        <span id="rankCount" style="font-size:13px;color:#546E7A"></span>
+      </div>
+      <div id="rankingsTable"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading rankings...</span></div></div>
+    </div>
+  </div>
 </div>
-<div class="data-card">
-  <h3><i class="fas fa-trophy" style="color:#f59e0b;margin-right:8px"></i>Top Players - U16 North West Region</h3>
-  <table>
-    <thead><tr><th>Rank</th><th>Player</th><th>Position</th><th>Team</th><th>Rating</th><th>Goals</th><th>Assists</th></tr></thead>
-    <tbody id="rankingsTable"><tr><td colspan="7" style="text-align:center;padding:40px"><i class="fas fa-spinner fa-spin"></i> Loading rankings...</td></tr></tbody>
-  </table>
 </div>
-  </main>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">×</button></div>
+  <div class="notif-list" id="notifList"></div>
 </div>
-<script src="../js/auth.js"></script>
+<script src="../js/main.js"></script>
 <script>
-function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function dispAttr(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function attrPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.round(n>10?n:n*10);}
+function compatColor(s){return s>=80?'#00E676':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function attrClass(v){var p=attrPct(v);return p>=80?'high':p>=60?'med':'low';}
+function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676';}
+
+var SCOUT_NAV = [
+  {label:'🏠 Dashboard', href:'scout-dashboard.html'},
+  {label:'🔍 Player Search', href:'player-search.html'},
+  {label:'📋 My Pipeline', href:'scout-pipeline.html'},
+  {label:'🏆 Rankings', href:'scout-rankings.html'},
+  {label:'📅 Fixtures', href:'scout-fixtures.html'},
+  {label:'🔮 Predictions', href:'scout-predictions.html'},
+  {label:'📊 Exports', href:'scout-exports.html'},
+  {label:'🔔 Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'⚙️ Settings', href:'scout-settings.html'}
+];
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  var nav=document.getElementById('sidebarNav');
+  var cur=window.location.pathname.split('/').pop();
+  if(nav) nav.innerHTML=SCOUT_NAV.map(function(i){
+    return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'" '+(i.action?'onclick="'+i.action+'();return false"':'')+'>'+i.label+'</a>';
+  }).join('');
+  var u=Auth.user;
+  var uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+
+var allPlayers = [];
+var currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', function(){ initNav(); loadRankings(); });
+
+async function loadRankings(){
+  try {
+    var d = await api('GET', '/api/players?limit=50');
+    allPlayers = d.data||[];
+    renderRankings();
+  } catch(e) {
+    document.getElementById('rankingsTable').innerHTML = '<div style="text-align:center;padding:40px;color:#546E7A">Could not load rankings.</div>';
+  }
+}
+
+function setFilter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  filterRankings();
+}
+
+function filterRankings(){
+  var search = (document.getElementById('searchInput').value||'').toLowerCase();
+  var sort = document.getElementById('sortSelect').value;
+  var filtered = allPlayers.filter(function(p){
+    var posMatch = currentFilter==='all' || p.position_group===currentFilter;
+    var nameMatch = !search || (p.first_name+' '+p.last_name).toLowerCase().includes(search);
+    return posMatch && nameMatch;
+  });
+  if(sort==='overall') filtered.sort(function(a,b){return parseFloat(b.overall_rating||0)-parseFloat(a.overall_rating||0);});
+  else if(sort==='transfer') filtered.sort(function(a,b){return (b.transfer_value||0)-(a.transfer_value||0);});
+  else if(sort==='age') filtered.sort(function(a,b){return (a.age||99)-(b.age||99);});
+  renderRankings(filtered);
+}
+
+function renderRankings(players){
+  var list = players || allPlayers;
+  document.getElementById('rankCount').textContent = list.length + ' players';
+  if(!list.length){
+    document.getElementById('rankingsTable').innerHTML = '<div style="text-align:center;padding:40px;color:#546E7A">No players found.</div>';
+    return;
+  }
+  var html = '<div style="overflow-x:auto"><table class="sl-table"><thead><tr>' +
+    '<th style="width:44px">#</th>' +
+    '<th>Player</th>' +
+    '<th>Position</th>' +
+    '<th>Age</th>' +
+    '<th>Overall</th>' +
+    '<th>Key Attributes</th>' +
+    '<th>Transfer Value</th>' +
+    '<th>Club</th>' +
+    '<th></th>' +
+  '</tr></thead><tbody>';
+  list.forEach(function(p, i){
+    var rank = i+1;
+    var rnkCls = rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
+    var ov = dispOverall(p.overall_rating);
+    var ovNum = parseFloat(p.overall_rating||0); var ovPct = ovNum>10?ovNum:ovNum*10;
+    var ovColor = compatColor(ovPct);
+    var pCol = posColor(p.position_group);
+    // Key attributes by position
+    var keyAttrs = [];
+    var g = p.position_group||'';
+    if(g==='Forward') keyAttrs = [['Pace',p.pace],['Shooting',p.shooting],['Dribbling',p.dribbling]];
+    else if(g==='Midfielder') keyAttrs = [['Passing',p.passing],['Vision',p.vision],['Stamina',p.stamina]];
+    else if(g==='Defender') keyAttrs = [['Defending',p.defending],['Strength',p.strength],['Tackling',p.tackling]];
+    else if(g==='Goalkeeper') keyAttrs = [['Reflexes',p.gk_reflexes],['Diving',p.gk_diving],['Handling',p.gk_handling]];
+    else keyAttrs = [['Pace',p.pace],['Passing',p.passing],['Defending',p.defending]];
+    var attrHtml = keyAttrs.map(function(a){
+      return '<span class="attr-pill '+attrClass(a[1])+'">'+a[0]+': '+dispAttr(a[1])+'</span>';
+    }).join(' ');
+    html += '<tr>' +
+      '<td><div class="rank-num '+rnkCls+'">'+rank+'</div></td>' +
+      '<td><div style="display:flex;align-items:center;gap:10px">' +
+        '<div class="user-avatar" style="width:34px;height:34px;font-size:12px;background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div>' +
+        '<div><b>'+p.first_name+' '+p.last_name+'</b>' +
+        '<div style="font-size:11px;color:#546E7A">'+(p.nationality||'England')+'</div></div></div></td>' +
+      '<td><span style="font-size:12px;font-weight:600;color:'+pCol+'">'+(p.specific_position||p.primary_position||'--')+'</span></td>' +
+      '<td style="color:#94a3b8">'+p.age+' yrs</td>' +
+      '<td><div style="font-size:18px;font-weight:800;color:'+ovColor+'">'+ov+'</div>' +
+        '<div class="compat-bar"><div class="compat-bar-fill" style="width:'+ovPct+'%;background:'+ovColor+'"></div></div></td>' +
+      '<td style="white-space:nowrap">'+attrHtml+'</td>' +
+      '<td style="color:#00E676;font-weight:700">'+formatValue(p.transfer_value||0)+'</td>' +
+      '<td style="font-size:12px;color:#546E7A">'+(p.team_name||'--')+'</td>' +
+      '<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">Scout</a></td>' +
+    '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('rankingsTable').innerHTML = html;
+}
 </script>
-</body>
-</html>
+</body></html>
