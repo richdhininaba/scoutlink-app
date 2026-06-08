@@ -316,9 +316,10 @@ document.addEventListener('DOMContentLoaded',function(){
               '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">'+safe(p.foot)+' foot</span>'+
               '<span style="background:rgba(29,158,117,.08);color:#8b949e;border-radius:20px;padding:3px 12px;font-size:12px">'+safe(p.nationality)+'</span>'+
             '</div>'+
+          actionBtns+
           '</div>'+
           '<div style="text-align:right">'+
-            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'ÃÂÃÂÃÂÃÂ£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
+            '<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'£'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>'+
             '<div style="font-size:11px;color:#8b949e">Est. transfer value</div>'+
           '</div>'+
         '</div>'+
@@ -346,7 +347,9 @@ document.addEventListener('DOMContentLoaded',function(){
         '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Video Reels ('+videos.length+')</div>'+
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+
         videos.slice(0,4).map(function(v){return '<div style="background:#0d1117;border-radius:8px;padding:10px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">'+safe(v.title)+'</div><a href="'+safe(v.video_url||v.url)+'" target="_blank" class="btn btn-sm btn-outline" style="font-size:11px">Watch</a></div>';}).join('')+
-        '</div></div>':'<div style="padding:16px;color:#8b949e;font-size:13px;text-align:center">No video reels uploaded yet.</div>');
+        '</div></div>':'<div style="padding:16px;color:#8b949e;font-size:13px;text-align:center">No video reels uploaded yet.</div>')
+      +(matchHtml?'<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px"><div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Latest Match Facts</div>'+matchHtml+'</div>':'')
+      +(Auth.type==='Scout'?'<div id="compatBreakdown" class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px"><div style="text-align:center;padding:16px"><button class="btn btn-outline" onclick="showCompatBreakdown(\''+playerId+'\')" style="min-height:40px">Show Compatibility Analysis</button></div></div>':'');
 // Post-render: inject overall performance gauge and collapsible attrs
 (function() {
   if (typeof player === 'undefined') return;
@@ -366,7 +369,7 @@ document.addEventListener('DOMContentLoaded',function(){
   gaugeDiv.className = 'overall-gauge';
   gaugeDiv.innerHTML = '<div class="gauge-desc-lbl">Overall match performance rating</div>' +
     '<div class="gauge-ring" style="border-color:'+rColor+'">' +
-    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ')+'</div>' +
+    '<div><div class="gauge-score" style="color:'+rColor+'">'+(ap>0?ov100:'ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ')+'</div>' +
     '<div style="font-size:10px;color:var(--text-secondary,#8b949e)">'+(ap>0?'/100':'No data')+'</div></div></div>' +
     '<div class="gauge-desc-val" style="color:'+rColor+'">' + desc + '</div>' +
     (apMsg?'<p style="margin-top:12px;font-size:13px;color:var(--text-secondary,#8b949e)">'+apMsg+'</p>':'');
