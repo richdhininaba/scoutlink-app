@@ -8,7 +8,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">⚡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -63,7 +63,7 @@ function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#42A5F5;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#42A5F5;color:#fff">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
   updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
