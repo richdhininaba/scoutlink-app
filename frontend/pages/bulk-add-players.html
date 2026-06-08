@@ -8,7 +8,21 @@
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
 body{background:var(--bg);color:var(--text);}
-.bulk-table-wrap{overflow-x:auto;width:100%;max-width:100%;-webkit-overflow-scrolling:touch;}
+.bulk-table-wrap{
+  overflow-x:scroll;
+  width:100%;
+  max-width:100%;
+  max-height:400px;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  position:relative;
+  scrollbar-width:thin;
+  scrollbar-color:#1d9e75 #30363d;
+}
+.bulk-table-wrap::-webkit-scrollbar{height:8px;width:8px;}
+.bulk-table-wrap::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
+.bulk-table-wrap::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
+.bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
 .bulk-table{border-collapse:collapse;white-space:nowrap;}
 .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
 .bulk-table th{background:#1c2128;color:var(--text-secondary);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
