@@ -18,7 +18,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">â¡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Ã¢ÂÂ¡ Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -34,7 +34,7 @@
 </div>
 </div>
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">Ã</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">ÃÂ</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/scout-nav.js"></script>
@@ -44,120 +44,136 @@ var PLAYER_NAV = [
   {label:'Dashboard', href:'player-dashboard.html'},
   {label:'My Profile', href:'player-profile-edit.html'},
   {label:'Video Reels', href:'player-video-reels.html'},
-  {label:'Notifications', href:'#', action:'toggleNotifPanel'},
+  {label:'Notifications', href:'player-notifications.html'},
   {label:'Settings', href:'player-settings.html'}
 ];
 function initNav() {
   if (!Auth.isLoggedIn() || Auth.type !== 'Player') { window.location.href = 'login.html'; return; }
-if(typeof buildScoutNav==="function") buildScoutNav("sidebarNav","Player");
-  var nav = document.getElementById('sidebarNav');
-  var cur = window.location.pathname.split('/').pop();
-  if (nav) nav.innerHTML = PLAYER_NAV.map(function(i) {
-    return '<a class="nav-item' + (cur === i.href ? ' active' : '') + '" href="' + i.href + '" ' +
-      (i.action ? 'onclick="' + i.action + '();return false"' : '') + '>' + i.label + '</a>';
-  }).join('');
+  if (typeof buildPlayerNav === 'function') buildPlayerNav('sidebarNav', 'Dashboard');
   var u = Auth.user;
   var uel = document.getElementById('sidebarUser');
-  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName||'') + ' ' + (u.lastName||'') + '</div><div class="user-role">Player</div></div></div>';
-  updateNotifBadge();
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Player</div></div></div>';
+  if (typeof updateNotifBadge === 'function') updateNotifBadge();
 }
 function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
 function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+function safe(v,fb){return(v!==null&&v!==undefined&&v!=='')?v:(fb||'N/A');}
+function fmtVal(v){var n=Number(v)||0;if(!n)return 'N/A';if(n>=1000000)return '\u00a3'+(n/1000000).toFixed(2)+'m';if(n>=1000)return '\u00a3'+(n/1000).toFixed(0)+'k';return '\u00a3'+n;}
+function getOvBand(ov100){
+  if(ov100>=90)return{label:'Elite grassroots',color:'#7ee8a2'};
+  if(ov100>=80)return{label:'Excellent',color:'#1d9e75'};
+  if(ov100>=70)return{label:'Strong',color:'#FFC107'};
+  if(ov100>=55)return{label:'Promising',color:'#FF9800'};
+  if(ov100>=40)return{label:'Emerging',color:'#f44336'};
+  return{label:'Developing',color:'#f85149'};
+}
+function dispAttr(val){
+  if(val===null||val===undefined)return '--';
+  var v=parseFloat(val);if(isNaN(v))return '--';
+  return(v>10?v/10:v).toFixed(1);
+}
+function barPct(val){
+  if(val===null||val===undefined)return 0;
+  var v=parseFloat(val);if(isNaN(v))return 0;
+  return Math.round(v>10?v:v*10);
+}
+function barClass(val){var p=barPct(val);return p>=80?'':p>=60?' amber':' red';}
+function attrColor(val){var p=barPct(val);return p>=80?'#1d9e75':p>=60?'#FFC107':p>=50?'#FF9800':'#f44336';}
 
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
   initNav();
   var u = Auth.user;
   if (!u) { window.location.href = 'login.html'; return; }
-  try {
-    var d = await api('GET', '/api/players/' + u.id);
+  api('GET', '/api/players/' + u.id).then(function(d) {
+    if (!d || !d.player) {
+      document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#8b949e">Could not load your profile. Please contact your coach.</div>';
+      return;
+    }
     var p = d.player;
     var v = d.videos || [];
     var el = document.getElementById('profileContent');
+    var ov = parseFloat(p.overall_rating || 0);
+    var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov * 10);
+    var band = getOvBand(ov100);
+    var omr = parseFloat(p.overall_match_rating || p.overall_rating || 0);
+    var omr100 = omr > 10 ? Math.round(omr) : Math.round(omr * 10);
+    var omrBand = getOvBand(omr100);
+    var apps = parseInt(p.appearances) || 0;
+    var goals = parseInt(p.goals) || 0;
+    var assts = parseInt(p.assists) || 0;
+    var cs = parseInt(p.clean_sheets) || 0;
+    var isGK = (p.position_group || '').toLowerCase() === 'goalkeeper';
+    var outfieldAttrs = ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure','crossing','vision','positioning','heading','tackling','jumping'];
+    var gkAttrs = ['gk_diving','gk_reflexes','gk_handling','gk_positioning','gk_kicking','gk_distribution','gk_communication','gk_sweeping'];
+    var attrsToShow = isGK ? gkAttrs : outfieldAttrs;
+    var attrLabels = {pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',composure:'Composure',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling',jumping:'Jumping',gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};
 
-    // Helper: display a 0-10 attribute value
-    function dispAttr(val) {
-      if (val === null || val === undefined) return '--';
-      var v = parseFloat(val);
-      if (isNaN(v)) return '--';
-      // If > 10, it's on old 0-100 scale
-      return (v > 10 ? v / 10 : v).toFixed(1);
-    }
-    function dispOverall(val) {
-      if (val === null || val === undefined) return '--';
-      var v = parseFloat(val);
-      if (isNaN(v)) return '--';
-      return (v > 10 ? v / 10 : v).toFixed(1);
-    }
-    // Bar width as % of 10
-    function barPct(val) {
-      if (val === null || val === undefined) return 0;
-      var v = parseFloat(val);
-      if (isNaN(v)) return 0;
-      return Math.round(v > 10 ? v : v * 10);
-    }
-    function barClass(val) {
+    var attrHtml = attrsToShow.map(function(a){
+      var val = p[a];
       var pct = barPct(val);
-      return pct >= 80 ? '' : pct >= 60 ? ' amber' : ' red';
-    }
-    function attrColor(val) {
-      var pct = barPct(val);
-      return pct >= 80 ? '#00E676' : pct >= 60 ? '#FFC107' : pct >= 50 ? '#FF9800' : '#f44336';
+      var col = attrColor(val);
+      var display = dispAttr(val);
+      return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + (attrLabels[a]||a) + '</span><span class="attr-val" style="color:' + col + '">' + display + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + barClass(val) + '" style="width:' + pct + '%;background:' + col + '"></div></div></div>';
+    }).join('');
+
+    var videoHtml = '';
+    if (v.length) {
+      videoHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">' +
+        v.slice(0, 4).map(function(vid) {
+          var url = vid.video_url || vid.url || '#';
+          return '<div style="background:#21262d;border:1px solid #30363d;border-radius:10px;padding:14px"><div style="font-weight:600;font-size:13px;margin-bottom:4px;color:#fff">' + (vid.title || 'Match video') + '</div>' +
+            '<div style="font-size:11px;color:#1d9e75;margin-bottom:8px">' + (vid.category || 'Highlight') + '</div>' +
+            '<a href="' + url + '" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none">&#9654; Watch</a></div>';
+        }).join('') + '</div>';
+    } else {
+      videoHtml = '<div style="color:#8b949e;font-size:13px;padding:16px 0">No videos uploaded yet. Your coach can add highlights for you.</div>';
     }
 
-    var overallVal = dispOverall(p.overall_rating);
-    var overallColor = p.overall_rating >= 8 ? '#00E676' : p.overall_rating >= 6 ? '#FFC107' : '#FF9800';
-
-    el.innerHTML = '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
-      '<div>' +
-      '<div class="kpi-card" style="text-align:center;padding:28px;margin-bottom:16px">' +
-        '<div style="width:80px;height:80px;border-radius:50%;background:' + posGroupColor(p.position_group) + ';display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin:0 auto 14px">' + initials(p.first_name, p.last_name) + '</div>' +
-        '<div style="font-size:22px;font-weight:800">' + p.first_name + ' ' + p.last_name + '</div>' +
-        '<div style="color:#546E7A;font-size:14px;margin:6px 0">' + (p.specific_position || p.primary_position || '') + ' Â· ' + (p.position_group || '') + '</div>' +
-        '<div style="font-size:52px;font-weight:900;color:' + overallColor + ';margin:10px 0">' + overallVal + '</div>' +
-        '<div style="color:#546E7A;font-size:12px">Overall Rating / 10</div>' +
-      '</div>' +
-      '<div class="kpi-card" style="margin-bottom:16px">' +
-        '<div class="kpi-label">Physical</div>' +
-        '<div style="display:flex;justify-content:space-between;margin-top:10px">' +
-          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.height_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Height</div></div>' +
-          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.build_category || '--') + '</div><div style="font-size:11px;color:#546E7A">Build</div></div>' +
-          '<div style="text-align:center"><div style="font-size:13px;font-weight:700">' + (p.foot || '--') + '</div><div style="font-size:11px;color:#546E7A">Foot</div></div>' +
+    el.innerHTML =
+      '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
+        '<div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">' +
+            '<div style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">' + initials(p.first_name,p.last_name) + '</div>' +
+            '<div style="font-size:18px;font-weight:800;color:#fff">' + safe(p.first_name) + ' ' + safe(p.last_name,'') + '</div>' +
+            '<div style="font-size:12px;color:#8b949e;margin-top:4px">' + safe(p.specific_position||p.primary_position||p.position_group) + ' &bull; ' + safe(p.age_group) + '</div>' +
+            '<div style="font-size:12px;color:#8b949e;margin-top:2px">' + safe(p.team_name) + '</div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:16px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Overall match performance</div>' +
+            '<div style="text-align:center">' +
+              '<div style="font-size:48px;font-weight:900;color:' + omrBand.color + ';line-height:1">' + (apps > 0 ? omr100 : '--') + '</div>' +
+              '<div style="font-size:11px;color:#8b949e;margin-top:4px">' + (apps > 0 ? '/100' : 'No match data') + '</div>' +
+              '<div style="font-size:13px;font-weight:700;color:' + omrBand.color + ';margin-top:8px">' + omrBand.label + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Estimated value</div>' +
+            '<div style="font-size:22px;font-weight:900;color:#1d9e75">' + fmtVal(p.transfer_value) + '</div>' +
+          '</div>' +
         '</div>' +
-      '</div>' +
-      '<div class="kpi-card">' +
-        '<div class="kpi-label">Predicted Value</div>' +
-        '<div style="font-size:26px;font-weight:800;color:var(--accent,#1d9e75);margin:8px 0">' + formatValue(p.transfer_value || 0) + '</div>' +
-        '<div style="color:#546E7A;font-size:13px">Predicted Salary: ' + formatSalary(p.predicted_salary_weekly || 0) + '</div>' +
-      '</div>' +
-      '</div>' +
-      '<div>' +
-      '<div class="kpi-grid" style="margin-bottom:16px">' +
-        '<div class="kpi-card"><div class="kpi-label">Appearances</div><div class="kpi-value">' + (p.appearances || 0) + '</div></div>' +
-        '<div class="kpi-card"><div class="kpi-label">Goals</div><div class="kpi-value green">' + (p.goals || 0) + '</div></div>' +
-        '<div class="kpi-card"><div class="kpi-label">Assists</div><div class="kpi-value">' + (p.assists || 0) + '</div></div>' +
-        '<div class="kpi-card"><div class="kpi-label">Clean Sheets</div><div class="kpi-value">' + (p.clean_sheets || 0) + '</div></div>' +
-      '</div>' +
-      '<div class="table-card" style="margin-bottom:16px"><div class="table-header"><h3>Attribute Ratings <span style="font-size:12px;font-weight:400;color:#546E7A">/ 10</span></h3></div><div style="padding:20px">' +
-      ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure'].map(function(a) {
-        var val = p[a];
-        var display = dispAttr(val);
-        var pct = barPct(val);
-        var cls = barClass(val);
-        var color = attrColor(val);
-        return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + a.charAt(0).toUpperCase() + a.slice(1) + '</span><span class="attr-val" style="color:' + color + '">' + display + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + cls + '" style="width:' + pct + '%"></div></div></div>';
-      }).join('') +
-      '</div></div>' +
-      (v.length ?
-        '<div class="table-card"><div class="table-header"><h3>My Videos</h3><a href="player-video-reels.html" class="btn btn-sm btn-outline">Manage Videos</a></div><div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">' +
-        v.map(function(vid) { return '<div style="background:var(--bg2);border-radius:8px;padding:12px"><div style="font-weight:600;font-size:13px;margin-bottom:6px">' + vid.title + '</div><a href="' + vid.url + '" target="_blank" class="btn btn-sm btn-outline">Watch</a></div>'; }).join('') +
-        '</div></div>' :
-        '<div class="table-card"><div class="table-header"><h3>No Videos Yet</h3><a href="player-video-reels.html" class="btn btn-sm btn-primary">Add Video</a></div></div>') +
-      '</div>' +
+        '<div>' +
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#1d9e75">' + apps + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Appearances</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#58a6ff">' + goals + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Goals</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#1d9e75">' + assts + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Assists</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#FFC107">' + cs + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Clean sheets</div></div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:20px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">Attributes</div>' +
+            attrHtml +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+              '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em">My video reels</div>' +
+              '<a href="player-video-reels.html" style="font-size:12px;color:#1d9e75;text-decoration:none">View all</a>' +
+            '</div>' +
+            videoHtml +
+          '</div>' +
+        '</div>' +
       '</div>';
-  } catch(e) {
-    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A"><p>Unable to load profile data.</p><p style="font-size:12px;margin-top:8px">' + e.message + '</p></div>';
-    console.error(e);
-  }
+  }).catch(function(e) {
+    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#8b949e">Could not load profile: ' + e.message + '</div>';
+  });
 });
 </script>
 <script src="../js/mobile.js"></script>
