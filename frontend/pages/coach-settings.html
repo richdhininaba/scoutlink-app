@@ -1,1 +1,98 @@
-<html>test</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings - ScoutLink</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.settings-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.settings-card h3{font-size:16px;font-weight:600;margin-bottom:16px;color:#1a1a2e;border-bottom:2px solid #f0f0f0;padding-bottom:10px}
+.form-row{display:flex;gap:16px;margin-bottom:16px}
+.form-row .form-group,.form-group{flex:1;margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:#666;margin-bottom:6px;font-weight:500}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;transition:border-color .2s}
+.form-group input:focus{border-color:#4f46e5;outline:none}
+.btn-primary{background:#4f46e5;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-primary:hover{background:#3730a3}
+.btn-danger{background:#dc2626;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-secondary{background:#f3f4f6;color:#374151;border:1px solid #e0e0e0;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.toggle-switch{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.toggle{position:relative;display:inline-block;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.3s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+input:checked + .slider{background:#4f46e5}
+input:checked + .slider:before{transform:translateX(20px)}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;display:none}
+.alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.danger-zone{border:1.5px solid #fee2e2;border-radius:12px;padding:24px;background:#fff}
+.danger-zone h3{color:#dc2626}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span style="font-size:20px;font-weight:700;color:#4f46e5">ScoutLink</span></div>
+    <nav class="sidebar-nav">
+<a href="coach-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+<a href="coach-my-players.html"><i class="fas fa-users"></i> My Players</a>
+<a href="add-player.html"><i class="fas fa-user-plus"></i> Add Players</a>
+<a href="bulk-add-players.html"><i class="fas fa-file-import"></i> Bulk Add Players</a>
+<a href="match-facts.html"><i class="fas fa-clipboard"></i> Match Facts</a>
+<a href="coach-fixtures.html"><i class="fas fa-calendar"></i> Fixtures</a>
+<a href="coach-video-reels.html"><i class="fas fa-video"></i> Video Reels</a>
+<a href="coach-notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+<a href="coach-settings.html" class="active"><i class="fas fa-cog"></i> Settings</a></nav>
+    <div class="sidebar-footer"><button onclick="logout()" class="btn-secondary" style="width:100%"><i class="fas fa-sign-out-alt"></i> Sign Out</button></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-header"><h1><i class="fas fa-cog" style="color:#4f46e5;margin-right:8px"></i>Settings</h1><p>Manage your Coach account preferences</p></div>
+    <div id="successAlert" class="alert alert-success"><i class="fas fa-check-circle"></i> <span id="successMsg">Changes saved.</span></div>
+    <div id="errorAlert" class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <span id="errorMsg">An error occurred.</span></div>
+
+    <div class="settings-card">
+      <h3><i class="fas fa-lock" style="color:#4f46e5;margin-right:8px"></i>Change Password</h3>
+      <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters"></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password"></div>
+      <button class="btn-primary" onclick="changePassword()">Update Password</button>
+    </div>
+
+    <div class="settings-card">
+      <h3><i class="fas fa-bell" style="color:#4f46e5;margin-right:8px"></i>Notification Preferences</h3>
+      <div class="toggle-switch"><label class="toggle"><input type="checkbox" id="n1" checked><span class="slider"></span></label><div><strong>Email Notifications</strong><p style="font-size:12px;color:#666;margin:2px 0 0">Receive updates via email</p></div></div>
+      <div class="toggle-switch"><label class="toggle"><input type="checkbox" id="n2" checked><span class="slider"></span></label><div><strong>In-App Notifications</strong><p style="font-size:12px;color:#666;margin:2px 0 0">See notifications in the platform</p></div></div>
+      <div class="toggle-switch"><label class="toggle"><input type="checkbox" id="n3"><span class="slider"></span></label><div><strong>System Updates</strong><p style="font-size:12px;color:#666;margin:2px 0 0">Platform announcements and updates</p></div></div>
+      <button class="btn-primary" style="margin-top:8px" onclick="showSuccess('Notification preferences saved.')">Save Preferences</button>
+    </div>
+
+    
+
+    <div class="danger-zone">
+      <h3><i class="fas fa-exclamation-triangle" style="margin-right:8px"></i>Danger Zone</h3>
+      <p style="color:#666;margin-bottom:16px">These actions are permanent. Contact support if you need assistance.</p>
+      <button class="btn-danger" onclick="showError('Contact support@stratexanalytics.co.uk to deactivate your account.')">Deactivate Account</button>
+    </div>
+  </main>
+</div>
+<script src="../js/auth.js"></script>
+<script>
+function showSuccess(msg){document.getElementById('successMsg').textContent=msg;document.getElementById('successAlert').style.display='block';setTimeout(()=>document.getElementById('successAlert').style.display='none',4000)}
+function showError(msg){document.getElementById('errorMsg').textContent=msg;document.getElementById('errorAlert').style.display='block';setTimeout(()=>document.getElementById('errorAlert').style.display='none',6000)}
+async function changePassword(){
+  const p=document.getElementById('newPassword').value,c=document.getElementById('confirmPassword').value;
+  if(!p||!c) return showError('Fill in both fields.');
+  if(p.length<8) return showError('Min 8 characters.');
+  if(p!==c) return showError('Passwords do not match.');
+  try{const{error}=await window.supabaseClient.auth.updateUser({password:p});
+    if(error) return showError(error.message);
+    showSuccess('Password updated!');
+    document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';
+  }catch(e){showError('Could not update password.');}
+}
+function logout(){if(window.supabaseClient)window.supabaseClient.auth.signOut();localStorage.clear();sessionStorage.clear();window.location.href='../pages/login.html';}
+</script>
+</body>
+</html>
