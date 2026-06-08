@@ -25,7 +25,7 @@ const limiter = rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: 'T
 const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30, message: { error: 'Too many auth attempts' } });
 app.use(limiter);
 
-app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.1.0', timestamp: new Date().toISOString() }));
+app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.2.0', timestamp: new Date().toISOString() }));
 
 // Routes
 app.use('/api/auth', authLimiter, require('./routes/auth'));
@@ -38,12 +38,14 @@ app.use('/api/scouts', require('./routes/scouts'));
 app.use('/api/scout', require('./routes/scouts')); // alias for frontend scout routes
 app.use('/api/coaches', require('./routes/coaches'));
 app.use('/api/videos', require('./routes/videos'));
+app.use('/api/awards', require('./routes/awards'));
+app.use('/api/showcase', require('./routes/showcase'));
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });
 
 app.listen(config.port, () => {
-  console.log('\u26a1 ScoutLink API v2.1 on http://localhost:' + config.port);
+  console.log('\u26a1 ScoutLink API v2.2 on http://localhost:' + config.port);
 });
 
 module.exports = app;
