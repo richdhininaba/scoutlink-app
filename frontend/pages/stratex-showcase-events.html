@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded',function(){
   if(!initStratexPage()) return;
   document.getElementById('logoutBtn').addEventListener('click',logout);
   document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
-  document.getElementById('createEventBtn').addEventListener('click',function(){document.getElementById('createModal').style.display='flex';});
-  document.getElementById('cancelCreateBtn').addEventListener('click',function(){document.getElementById('createModal').style.display='none';});
+  document.getElementById('createEventBtn').addEventListener('click',function(){var _cm=document.getElementById('createModal');_cm.style.display='flex';_cm.classList.add('open');});
+  document.getElementById('cancelCreateBtn').addEventListener('click',function(){var _cm2=document.getElementById('createModal');_cm2.style.display='none';_cm2.classList.remove('open');});
   document.getElementById('confirmCreateBtn').addEventListener('click',createEvent);
   loadEvents();
 });
