@@ -40,6 +40,7 @@ app.use('/api/coaches', require('./routes/coaches'));
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/awards', require('./routes/awards'));
 app.use('/api/showcase', require('./routes/showcase'));
+app.use('/api/fixtures', require('./routes/fixtures'));
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });
