@@ -126,6 +126,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     // ---- MULTI-PLAYER SUBMISSION ----
     if (Array.isArray(playersList) && playersList.length > 0) {
       const results = [];
+      const errors = [];
       for (const pp of playersList) {
         if (!pp.playerId) continue;
 
@@ -180,12 +181,19 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
           ...ratings
         }).select().single();
 
-        if (mfErr) { console.error('[MatchFacts multi]', mfErr.message); continue; }
+        if (mfErr) {
+          console.error('[MatchFacts multi]', mfErr.message);
+          errors.push({ playerId: pp.playerId, error: mfErr.message });
+          continue;
+        }
         await updatePlayerStats(pp.playerId);
         if (Object.keys(ratings).length > 0) await recalcPlayer(pp.playerId);
         results.push(mf);
       }
-      return res.status(201).json({ message: 'Match facts saved for ' + results.length + ' players', matchFacts: results });
+      if (!results.length && errors.length) {
+        return res.status(400).json({ error: 'Could not save match facts', details: errors });
+      }
+      return res.status(201).json({ message: 'Match facts saved for ' + results.length + ' players', matchFacts: results, errors });
     }
 
     // ---- SINGLE PLAYER SUBMISSION (legacy) ----
