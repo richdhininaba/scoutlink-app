@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var cp=document.getElementById('confirmPassword').value;
     if(!np||np.length<8){showToast('Password must be at least 8 characters','error');return;}
     if(np!==cp){showToast('Passwords do not match','error');return;}
-    api('POST','/api/auth/change-password',{newPassword:np}).then(function(){
+    api('POST','/api/auth/change-password',{password:np}).then(function(){
       showToast('Password updated successfully','success');
       document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';
     }).catch(function(e){showToast('Error: '+e.message,'error');});
