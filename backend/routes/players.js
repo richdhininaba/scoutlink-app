@@ -101,7 +101,7 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
   try {
     const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, ageGroup, page=1, limit=20 } = req.query;
     let q = supabase.from('players').select(
-      'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot,date_of_birth',
+      'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_id,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot,date_of_birth',
       { count: 'exact' }
     ).eq('is_active', true);
     if (search) q = q.or('first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%');
