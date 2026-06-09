@@ -13,6 +13,13 @@
 .form-input:focus{border-color:#1d9e75;}
 .tab-btn{padding:8px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #30363d;background:#0d1117;color:#8b949e;transition:all .2s;}
 .tab-btn.active{border-color:#1d9e75;background:rgba(29,158,117,.1);color:#1d9e75;}
+.video-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.video-modal.open{display:flex;}
+.video-modal-box{width:min(860px,100%);background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.5);}
+.video-modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid #30363d;}
+.video-frame{background:#000;aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;}
+.video-frame iframe,.video-frame video{width:100%;height:100%;border:0;}
+.video-fallback{color:#8b949e;text-align:center;padding:24px;}
 </style>
 </head><body>
 <div class="dashboard">
@@ -80,6 +87,15 @@
 </div>
 </div>
 </div>
+<div class="video-modal" id="videoModal">
+<div class="video-modal-box">
+<div class="video-modal-head">
+<div><div id="videoModalTitle" style="font-weight:800;font-size:16px">Video reel</div><div id="videoModalDesc" style="font-size:12px;color:#8b949e;margin-top:4px"></div></div>
+<button class="btn btn-sm btn-outline" onclick="closeVideoModal()">Close</button>
+</div>
+<div class="video-frame" id="videoModalFrame"></div>
+</div>
+</div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
@@ -95,6 +111,33 @@ function toggleNotifPanel(){}
 
 var _uploadMode = 'url';
 var _videos = [];
+
+function streamableUrl(url){
+  if(!url)return '';
+  var u=String(url);
+  if(u.indexOf('www.dropbox.com')>-1)u=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','');
+  return u;
+}
+function embedVideo(url){
+  var u=streamableUrl(url);
+  var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]+)/);
+  if(yt)return '<iframe src="https://www.youtube.com/embed/'+yt[1]+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  var vm=u.match(/vimeo\.com\/(\d+)/);
+  if(vm)return '<iframe src="https://player.vimeo.com/video/'+vm[1]+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+  if(/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u)||u.indexOf('supabase.co/storage')>-1||u.indexOf('dl.dropboxusercontent.com')>-1)return '<video src="'+u+'" controls playsinline></video>';
+  return '<div class="video-fallback"><p style="margin-bottom:12px">This video provider cannot be embedded here.</p><a class="btn btn-outline" href="'+u+'" target="_blank" rel="noopener">Open video</a></div>';
+}
+function openVideoModal(idx){
+  var v=_videos[idx];if(!v)return;
+  document.getElementById('videoModalTitle').textContent=v.title||'Video reel';
+  document.getElementById('videoModalDesc').textContent=(v.category||'Highlight')+(v.description?' - '+v.description:'');
+  document.getElementById('videoModalFrame').innerHTML=embedVideo(v.video_url||v.url||'');
+  document.getElementById('videoModal').classList.add('open');
+}
+function closeVideoModal(){
+  document.getElementById('videoModalFrame').innerHTML='';
+  document.getElementById('videoModal').classList.remove('open');
+}
 
 function loadVideos(){
   api('GET','/api/videos?type=player').then(function(d){
@@ -125,25 +168,27 @@ function renderVideoList(){
       (v.description?'<div style="font-size:12px;color:#8b949e">'+v.description+'</div>':'')+
       '</div>'+
       '<div style="display:flex;gap:8px;flex-shrink:0">'+
-      '<a href="'+url+'" target="_blank" class="btn btn-sm btn-outline" style="min-height:36px">&#9654; Watch</a>'+
+      '<button class="btn btn-sm btn-outline" data-action="watch" data-idx="'+idx+'" style="min-height:36px">&#9654; Watch</button>'+
       '<button class="btn btn-sm btn-danger" data-vid="'+v.id+'" data-action="delete" style="min-height:36px">Delete</button>'+
       '</div></div></div>';
   });
   html+='</div>';
   document.getElementById('videoList').innerHTML=html;
 
-  document.getElementById('videoList').addEventListener('click',function(e){
+  document.getElementById('videoList').onclick=function(e){
+    var watch=e.target.closest('[data-action="watch"]');
+    if(watch){openVideoModal(parseInt(watch.getAttribute('data-idx')));return;}
     var btn=e.target.closest('[data-action="delete"]');
     if(btn&&confirm('Delete this video?')){
       api('DELETE','/api/videos/'+btn.getAttribute('data-vid'),{}).then(function(){loadVideos();}).catch(function(e){alert('Error: '+e.message);});
     }
-  });
+  };
 }
 
 function loadPlayers(){
-  api('GET','/api/players?limit=200').then(function(d){
+  api('GET','/api/coaches/my-players').then(function(d){
     var sel=document.getElementById('playerAssign');
-    (d.data||[]).forEach(function(p){
+    (d.players||d.data||[]).forEach(function(p){
       var opt=document.createElement('option');
       opt.value=p.id;
       opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' ('+(p.specific_position||p.position_group||'--')+')';
@@ -184,12 +229,11 @@ function doUpload(){
     if(payload.description) formData.append('description',payload.description);
 
     var token=localStorage.getItem('sl_token');
-    fetch('/api/videos/upload',{
+    fetch(API + '/api/videos/upload',{
       method:'POST',
       headers:{'Authorization':'Bearer '+token},
       body:formData
-    }).then(function(r){return r.json();}).then(function(d){
-      if(d.error) throw new Error(d.error);
+    }).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||'Upload failed');return d;});}).then(function(d){
       msg.textContent='Video uploaded!';msg.style.color='#1d9e75';
       resetForm(btn);loadVideos();
     }).catch(function(e){

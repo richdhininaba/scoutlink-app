@@ -30,6 +30,18 @@
 .gauge-score{font-size:40px;font-weight:900;line-height:1}
 .gauge-desc-lbl{font-size:11px;color:var(--text-secondary,#8b949e);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 .gauge-desc-val{font-size:15px;font-weight:700}
+.performance-panel{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:18px;margin-bottom:20px;}
+.performance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+.confidence-note{margin-top:12px;background:rgba(255,152,0,.08);border:1px solid rgba(255,152,0,.24);border-radius:8px;padding:12px 14px;color:#E2E8F0;font-size:12px;line-height:1.5;}
+.match-meta-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--text3);}
+.result-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;}
+.video-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.video-modal.open{display:flex;}
+.video-modal-box{width:min(860px,100%);background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.5);}
+.video-modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid #30363d;}
+.video-frame{background:#000;aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;}
+.video-frame iframe,.video-frame video{width:100%;height:100%;border:0;}
+.video-fallback{color:#8b949e;text-align:center;padding:24px;}
 .stats-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .stat-box{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:10px;padding:14px;text-align:center}
 .stat-val{font-size:22px;font-weight:800}
@@ -71,6 +83,15 @@
 <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&#10005;</button></div>
 <div class="notif-list" id="notifList"></div>
 </div>
+<div class="video-modal" id="profileVideoModal">
+<div class="video-modal-box">
+<div class="video-modal-head">
+<div><div id="profileVideoTitle" style="font-weight:800;font-size:16px">Video reel</div><div id="profileVideoDesc" style="font-size:12px;color:#8b949e;margin-top:4px"></div></div>
+<button class="btn btn-sm btn-outline" onclick="closeProfileVideo()">Close</button>
+</div>
+<div class="video-frame" id="profileVideoFrame"></div>
+</div>
+</div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
@@ -87,6 +108,23 @@ function confLabel(apps){var n=parseInt(apps)||0;if(n===0)return{label:'Very Low
 function attrLabel(k){var m={pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',jumping:'Jumping',composure:'Composure',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling',gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'GK Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};return m[k]||k;}
 function buildAttrBar(label,val){var n=parseFloat(val);var pct=isNaN(n)?0:Math.min(100,Math.round(n>10?n:n*10));var col=pct>=70?'#1d9e75':pct>=50?'#FFC107':'#f44336';return '<div class="attr-row"><span class="attr-label">'+label+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+((!isNaN(n))?(n>10?n/10:n).toFixed(1):'--')+'</span></div>';}
 function statBadge(label,val){return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-lbl">'+label+'</div></div>';}
+var _profileVideos=[];
+function matchPerf(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.max(0,Math.min(100,Math.round(n<=10?n*10:n)));}
+function confidenceInfo(count){var n=parseInt(count)||0;if(n<1)return{label:'No match evidence',color:'#f44336',text:'No match facts have been recorded yet.'};if(n<5)return{label:'Low confidence',color:'#FF9800',text:'Based on fewer than 5 games. Add more match facts before relying heavily on this score.'};if(n<10)return{label:'Medium confidence',color:'#FFC107',text:'Enough games for a useful early read, but more fixtures will improve the signal.'};return{label:'High confidence',color:'#1d9e75',text:'This rating is supported by a stronger set of match records.'};}
+function scoreText(m){if(m.home_score===null||m.home_score===undefined||m.away_score===null||m.away_score===undefined)return 'Score not entered';return String(m.home_score)+' - '+String(m.away_score);}
+function resultInfo(m){var r=(m.result||'').toLowerCase();if(!r&&m.home_score!==undefined&&m.away_score!==undefined&&m.home_score!==null&&m.away_score!==null){var h=Number(m.home_score),a=Number(m.away_score);if(!isNaN(h)&&!isNaN(a))r=h>a?'win':h<a?'loss':'draw';}if(r==='win')return{label:'W',text:'Win',color:'#1d9e75'};if(r==='loss')return{label:'L',text:'Loss',color:'#f44336'};if(r==='draw')return{label:'D',text:'Draw',color:'#FFC107'};return{label:'-',text:'Result pending',color:'#8b949e'};}
+function streamableUrl(url){if(!url)return'';var u=String(url);if(u.indexOf('www.dropbox.com')>-1)u=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','');return u;}
+function embedHtml(url){
+var u=streamableUrl(url);
+var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]+)/);
+if(yt)return '<iframe src="https://www.youtube.com/embed/'+yt[1]+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+var vm=u.match(/vimeo\.com\/(\d+)/);
+if(vm)return '<iframe src="https://player.vimeo.com/video/'+vm[1]+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+if(/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u)||u.indexOf('supabase.co/storage')>-1||u.indexOf('dl.dropboxusercontent.com')>-1)return '<video src="'+u+'" controls playsinline></video>';
+return '<div class="video-fallback"><p style="margin-bottom:12px">This video provider cannot be embedded here.</p><a class="btn btn-outline" href="'+u+'" target="_blank" rel="noopener">Open video</a></div>';
+}
+function openProfileVideo(idx){var v=_profileVideos[idx];if(!v)return;var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoTitle').textContent=v.title||'Video reel';document.getElementById('profileVideoDesc').textContent=(v.category||'Highlight')+(v.description?' - '+v.description:'');document.getElementById('profileVideoFrame').innerHTML=embedHtml(v.video_url||v.url||'');modal.classList.add('open');}
+function closeProfileVideo(){var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoFrame').innerHTML='';modal.classList.remove('open');}
 
 function initNav(){
 if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
@@ -249,6 +287,14 @@ var ov100=ovNum>10?Math.round(ovNum):Math.round(ovNum*10);
 var ovColor=ov100>=90?'#7ee8a2':ov100>=80?'#1d9e75':ov100>=70?'#FFC107':ov100>=55?'#FF9800':'#f85149';
 var descs=[[90,'Elite grassroots'],[80,'Excellent'],[70,'Strong'],[55,'Promising'],[40,'Emerging'],[0,'Developing']];
 var ovDesc=(descs.find(function(d2){return ov100>=d2[0];})||descs[descs.length-1])[1];
+var conf=confidenceInfo(matches.length);
+var coachEvidencePrompts='';
+if(Auth.type==='Coach'&&matches.length<5){
+coachEvidencePrompts+='<div class="confidence-note"><strong>Low data confidence:</strong> this rating is based on fewer than 5 games. Arrange fixtures and add more match facts so scouts can trust the trend. <a href="match-facts.html" style="color:#1d9e75;font-weight:800">Add match facts</a></div>';
+}
+if(Auth.type==='Coach'&&!fixtures.length){
+coachEvidencePrompts+='<div class="confidence-note"><strong>No upcoming fixtures:</strong> add fixtures so scouts can see where and when this player can be watched. <a href="coach-fixtures.html" style="color:#1d9e75;font-weight:800">Add fixtures</a></div>';
+}
 
 // Stats
 var apps=parseInt(p.appearances)||0;
@@ -291,17 +337,21 @@ actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;ali
 var matchHtml='';
 if(matches.length){
 matchHtml=matches.slice(0,5).map(function(m){
-var perf=parseInt(m.performance_score||50);var pCol2=cColor(perf);
-return '<div class="match-row"><div style="display:flex;align-items:center;gap:10px">'+
-'<div style="width:36px;height:36px;border-radius:50%;background:'+pCol2+'22;color:'+pCol2+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">'+perf+'</div>'+
-'<div style="flex:1"><div style="font-size:13px;font-weight:600">'+(m.opponent_name||m.opponent||'Unknown Opponent')+'</div>'+
-'<div style="font-size:11px;color:var(--text3)">'+(m.competition||m.format||'Match')+' &middot; '+(m.match_date?m.match_date.slice(0,10):'--')+'</div></div>'+
-'<div style="text-align:right;font-size:12px;min-width:60px">'+
-'<span style="color:#1d9e75;font-weight:700">'+(m.goals_scored||m.goals||0)+'G</span> '+
-'<span style="color:#42A5F5;font-weight:700">'+(m.assists||0)+'A</span>'+
-(m.yellow_card||m.yellow_cards?'<span style="color:#FFC107;margin-left:4px">Y</span>':'')+
-(m.red_card||m.red_cards?'<span style="color:#f44336;margin-left:4px">R</span>':'')+
-'</div></div></div>';
+var perf=matchPerf(m.performance_score||0);var pCol2=perf?cColor(perf):'#8b949e';
+var res=resultInfo(m);
+var cards='';
+if(Number(m.yellow_cards||0)>0)cards+='<span style="color:#FFC107;font-weight:800">'+Number(m.yellow_cards||0)+'Y</span>';
+if(Number(m.red_cards||0)>0)cards+='<span style="color:#f44336;font-weight:800;margin-left:6px">'+Number(m.red_cards||0)+'R</span>';
+return '<div class="match-row">'+
+'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
+'<div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:700">'+(m.opponent_name||m.opponent||'Unknown Opponent')+'</div>'+
+'<div class="match-meta-row"><span>'+(m.competition||m.format||'Match')+'</span><span>&middot;</span><span>'+(m.match_date?m.match_date.slice(0,10):'--')+'</span><span>&middot;</span><span>'+scoreText(m)+'</span><span class="result-pill" style="background:'+res.color+'22;color:'+res.color+'">'+res.text+'</span></div></div>'+
+'<div style="text-align:right;font-size:12px;min-width:150px">'+
+'<div style="font-weight:800;color:'+pCol2+'">Perf '+(perf||'--')+'/100</div>'+
+'<div style="margin-top:4px"><span style="color:#1d9e75;font-weight:800">'+(m.goals_scored||m.goals||0)+'G</span> '+
+'<span style="color:#42A5F5;font-weight:800">'+(m.assists||0)+'A</span>'+
+(cards?'<span style="margin-left:8px">'+cards+'</span>':'<span style="color:#8b949e;margin-left:8px">0 cards</span>')+
+'</div></div></div></div>';
 }).join('');
 }else{matchHtml='<div style="text-align:center;padding:20px;color:#8b949e;font-size:13px">No match facts recorded yet for this player.</div>';}
 
@@ -323,13 +373,14 @@ return '<div class="fixture-row">'+
 
 // Videos
 var videoHtml='';
+_profileVideos=videos;
 if(videos.length){
-videoHtml=videos.map(function(v){
+videoHtml=videos.map(function(v,idx){
 var url=v.video_url||v.url||'#';
 return '<div class="video-card">'+
 '<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+(v.title||'Video')+'</div>'+
 '<div style="font-size:12px;color:var(--text3);margin-bottom:8px">'+(v.category||'Highlight')+' &middot; '+(v.description||'')+'</div>'+
-'<a href="'+url+'" target="_blank" class="btn btn-sm btn-outline" style="min-height:36px">&#9654; Watch</a>'+
+'<button class="btn btn-sm btn-outline" style="min-height:36px" onclick="openProfileVideo('+idx+')">&#9654; Watch</button>'+
 '</div>';
 }).join('');
 }else{videoHtml='<div style="text-align:center;padding:32px;color:var(--text3)">No video reels uploaded yet.</div>';}
@@ -357,13 +408,13 @@ actionBtns+
 '<div style="text-align:right">'+tvHtml+'<div style="font-size:11px;color:#8b949e">Est. transfer value</div></div>'+
 '</div></div>'+
 
-// Overall gauge
-'<div class="overall-gauge">'+
-'<div class="gauge-desc-lbl">Overall match performance rating</div>'+
-'<div class="gauge-ring" style="border-color:'+ovColor+'">'+
-'<div><div class="gauge-score" style="color:'+ovColor+'">'+ov100+'</div><div style="font-size:10px;color:#8b949e">/100</div></div>'+
-'</div>'+
-'<div class="gauge-desc-val" style="color:'+ovColor+'">'+ovDesc+'</div>'+
+// Overall performance
+'<div class="performance-panel">'+
+'<div class="performance-grid">'+
+'<div><div class="gauge-desc-lbl">Overall match performance rating</div><div style="font-size:42px;font-weight:900;color:'+ovColor+';line-height:1">'+ov100+'<span style="font-size:16px;color:#8b949e">/100</span></div><div class="gauge-desc-val" style="color:'+ovColor+';margin-top:6px">'+ovDesc+'</div></div>'+
+'<div><div class="gauge-desc-lbl">Data confidence</div><div style="font-size:24px;font-weight:900;color:'+conf.color+'">'+conf.label+'</div><div style="font-size:12px;color:#8b949e;margin-top:6px;line-height:1.5">'+conf.text+'</div></div>'+
+'<div><div class="gauge-desc-lbl">Evidence base</div><div style="font-size:24px;font-weight:900;color:#fff">'+matches.length+'</div><div style="font-size:12px;color:#8b949e;margin-top:6px">Match fact record'+(matches.length===1?'':'s')+' used for this profile.</div></div>'+
+'</div>'+coachEvidencePrompts+
 '</div>'+
 
 // Per-game stats

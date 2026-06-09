@@ -414,4 +414,4 @@ return { value, valueFormatted: fmt };
 }
 
 module.exports = { compatibilityScore, predictionScore, transferValue, predictedSalary,
-  analysePlayer, computeOverall, getPosGroup, calcAge, getHeightMid, getBuildMid, parseWeaknesses };
+  analysePlayer, computeOverall, grassrootsTransferValue, getPosGroup, calcAge, getHeightMid, getBuildMid, parseWeaknesses };

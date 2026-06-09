@@ -49,15 +49,7 @@
 <div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div>
 </div>
 <div class="form-group"><label>Nationality</label>
-<select id="nationality">
-<option value="England">England</option><option value="Scotland">Scotland</option><option value="Wales">Wales</option>
-<option value="Northern Ireland">Northern Ireland</option><option value="Ireland">Ireland</option>
-<option value="Nigeria">Nigeria</option><option value="Ghana">Ghana</option>
-<option value="Brazil">Brazil</option><option value="France">France</option>
-<option value="Spain">Spain</option><option value="Portugal">Portugal</option>
-<option value="Jamaica">Jamaica</option><option value="Somalia">Somalia</option>
-<option value="Other">Other</option>
-</select>
+<select id="nationality"></select>
 </div>
 </div>
 
@@ -70,7 +62,26 @@
 <div class="form-group"><label>Specific Position</label><select id="specificPosition"><option value="">--</option></select></div>
 <div class="form-group"><label>Preferred Foot</label><select id="foot"><option>Right</option><option>Left</option><option>Both</option></select></div>
 </div>
-<div class="form-group"><label>Team Name (leave blank to use your team)</label><input type="text" id="teamName" placeholder="e.g. Riverside FC Academy U12"></div>
+<div id="teamAssignmentInfo" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;color:#8b949e;font-size:13px">Loading team assignment...</div>
+</div>
+
+<div class="table-card" id="coachAssignmentCard" style="padding:24px;margin-bottom:20px;display:none">
+<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Team Coach Assignment</h3>
+<div class="form-row">
+<div class="form-group"><label>Assigned Coach</label><select id="assignedCoachId"><option value="">Loading coaches...</option></select></div>
+<div class="form-group"><label>Add Coach To Team</label><button class="btn btn-outline" id="showAddCoachBtn" type="button" style="width:100%;justify-content:center">+ Add Coach</button></div>
+</div>
+<div id="addCoachPanel" style="display:none;margin-top:4px">
+<div class="form-row">
+<div class="form-group"><label>First Name</label><input type="text" id="newCoachFirstName"></div>
+<div class="form-group"><label>Last Name</label><input type="text" id="newCoachLastName"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Email</label><input type="email" id="newCoachEmail"></div>
+<div class="form-group"><label>Role</label><input type="text" id="newCoachRole" placeholder="Coach"></div>
+</div>
+<div style="display:flex;gap:10px;align-items:center"><button class="btn btn-primary" id="addCoachBtn" type="button">Add Coach</button><span id="addCoachMsg" style="font-size:13px;color:#8b949e"></span></div>
+</div>
 </div>
 
 <div class="table-card" style="padding:24px;margin-bottom:20px">
@@ -156,6 +167,8 @@ var POS_BY_GROUP={
   Midfielder:['CDM','CM','LCM','RCM','LDM','RDM','LM','RM','CAM','LAM','RAM','B2B'],
   Forward:['ST','LS','RS','LW','RW','CF','SS']
 };
+var NATIONALITIES=['England','Scotland','Wales','Northern Ireland','Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Ivory Coast','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','Other'];
+var coachContext={coach:null,teamCoaches:[]};
 
 function initNav(){
   if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
@@ -167,6 +180,56 @@ function initNav(){
   updateNotifBadge();
 }
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+
+function populateNationalities(){
+  var sel=document.getElementById('nationality');
+  sel.innerHTML=NATIONALITIES.map(function(n){return '<option value="'+n+'"'+(n==='England'?' selected':'')+'>'+n+'</option>';}).join('');
+}
+
+async function loadCoachContext(){
+  if(Auth.type!=='Coach')return;
+  try{
+    var profile=await api('GET','/api/coaches/profile');
+    coachContext.coach=profile.coach||null;
+    var teamName=coachContext.coach&&coachContext.coach.team_name?coachContext.coach.team_name:'your team';
+    document.getElementById('teamAssignmentInfo').innerHTML='Players you add will be assigned to <b style="color:#e6edf3">'+teamName+'</b>.';
+    if(coachContext.coach&&coachContext.coach.is_super_user){
+      var teamRes=await api('GET','/api/coaches/team-coaches');
+      coachContext.teamCoaches=[coachContext.coach].concat(teamRes.coaches||teamRes.data||[]);
+      renderCoachDropdown();
+      document.getElementById('coachAssignmentCard').style.display='block';
+    }
+  }catch(e){
+    document.getElementById('teamAssignmentInfo').textContent='Could not load your team assignment: '+e.message;
+  }
+}
+
+function renderCoachDropdown(){
+  var sel=document.getElementById('assignedCoachId');
+  sel.innerHTML=coachContext.teamCoaches.map(function(c){
+    return '<option value="'+c.id+'"'+(coachContext.coach&&c.id===coachContext.coach.id?' selected':'')+'>'+(c.first_name||'')+' '+(c.last_name||'')+(c.is_super_user?' (Super user)':'')+'</option>';
+  }).join('');
+}
+
+async function addTeamCoach(){
+  var msg=document.getElementById('addCoachMsg');
+  var body={
+    firstName:gv('newCoachFirstName').trim(),
+    lastName:gv('newCoachLastName').trim(),
+    emailAddr:gv('newCoachEmail').trim(),
+    roleAtClub:gv('newCoachRole').trim()||'Coach'
+  };
+  if(!body.firstName||!body.lastName||!body.emailAddr){msg.textContent='First name, last name and email are required.';msg.style.color='#f44336';return;}
+  msg.textContent='Adding coach...';msg.style.color='#8b949e';
+  try{
+    await api('POST','/api/coaches/add-coach',body);
+    msg.textContent='Coach added and invited.';msg.style.color='#1d9e75';
+    ['newCoachFirstName','newCoachLastName','newCoachEmail','newCoachRole'].forEach(function(id){document.getElementById(id).value='';});
+    var teamRes=await api('GET','/api/coaches/team-coaches');
+    coachContext.teamCoaches=[coachContext.coach].concat(teamRes.coaches||teamRes.data||[]);
+    renderCoachDropdown();
+  }catch(e){msg.textContent=e.message;msg.style.color='#f44336';}
+}
 
 function selectRange(el,hiddenId){
   var parent=el.closest('.range-grid');
@@ -201,7 +264,7 @@ function submitPlayer(){
     positionGroup:pg,specificPosition:sp,
     positions:sp?[sp]:[],foot:gv('foot'),
     heightCategory:gv('heightCategory'),buildCategory:gv('buildCategory'),
-    teamName:gv('teamName')||null,
+    assignedCoachId:gv('assignedCoachId')||null,
     pace:nv('pace'),agility:nv('agility'),strength:nv('strength'),
     stamina:nv('stamina'),jumping:nv('jumping'),composure:nv('composure'),
   };
@@ -222,8 +285,8 @@ function submitPlayer(){
   btn.textContent='Adding...';btn.disabled=true;
   api('POST','/api/players',body).then(function(d){
     var p=d.player;
-    var loginCodeMsg = d.login_code ? ' · Login code: ' + d.login_code : (p.login_code ? ' · Login code: ' + p.login_code : '');
-    suc.innerHTML='<strong>✓ Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Overall: '+(p.overall_rating||0)+' / 10 · Value: '+formatValue(p.transfer_value||0)+(loginCodeMsg ? '<br><span style=\'font-size:18px;font-weight:900;color:#1d9e75;letter-spacing:3px\'>' + (d.login_code || p.login_code) + '</span><br><small style=\'color:#aaa\'>Share this login code with the player/parent</small>' : '');
+    var loginCodeMsg = d.login_code ? ' - Login code: ' + d.login_code : (p.login_code ? ' - Login code: ' + p.login_code : '');
+    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0)+(loginCodeMsg ? '<br><span style=\'font-size:18px;font-weight:900;color:#1d9e75;letter-spacing:3px\'>' + (d.login_code || p.login_code) + '</span><br><small style=\'color:#aaa\'>Share this login code with the player/parent</small>' : '');
     suc.className='form-success show';
     btn.textContent='Add Another Player';btn.disabled=false;
     document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date]').forEach(function(i){i.value='';});
@@ -235,6 +298,8 @@ function submitPlayer(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
+  populateNationalities();
+  loadCoachContext();
 
   // Range option click handlers
   document.querySelectorAll('.range-option[data-value]').forEach(function(el){
@@ -249,6 +314,11 @@ document.addEventListener('DOMContentLoaded',function(){
 
   // Submit
   document.getElementById('submitBtn').addEventListener('click',submitPlayer);
+  document.getElementById('showAddCoachBtn').addEventListener('click',function(){
+    var p=document.getElementById('addCoachPanel');
+    p.style.display=p.style.display==='none'?'block':'none';
+  });
+  document.getElementById('addCoachBtn').addEventListener('click',addTeamCoach);
 });
 </script>
 <script src="../js/mobile.js"></script>

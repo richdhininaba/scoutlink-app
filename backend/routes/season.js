@@ -4,18 +4,33 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 
-function getSeasonLabel() {
-  const now = new Date();
+function getSeasonYears(date = new Date()) {
+  const now = date;
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   // Season starts Aug 1, ends Jul 31
   const startYear = month >= 8 ? year : year - 1;
-  return startYear + '-' + String(startYear + 1).slice(2);
+  return { startYear, endYear: startYear + 1 };
 }
+
+function getSeasonLabel(date = new Date()) {
+  const { startYear, endYear } = getSeasonYears(date);
+  return startYear + '/' + String(endYear).slice(2);
+}
+
+function getNextSeasonLabel(date = new Date()) {
+  const { startYear } = getSeasonYears(date);
+  return (startYear + 1) + '/' + String(startYear + 2).slice(2);
+}
+
+router.get('/current', requireAuth, requireRole('Coach'), async (req, res) => {
+  res.json({ currentSeason: getSeasonLabel(), nextSeason: getNextSeasonLabel(), seasonStartsMonth: 'August' });
+});
 
 // POST /api/season/end — archive season and reset stats
 router.post('/end', requireAuth, requireRole('Coach'), async (req, res) => {
   try {
+    if (req.body && req.body.confirm !== true) return res.status(400).json({ error: 'Please confirm you want to move to the next season' });
     const coachId = req.user.id;
     const { data: coach } = await supabase.from('coaches').select('id,team_id,team_name').eq('id', coachId).single();
     if (!coach) return res.status(404).json({ error: 'Coach not found' });
@@ -32,7 +47,8 @@ router.post('/end', requireAuth, requireRole('Coach'), async (req, res) => {
     const { data: players, error: playersErr } = await playerQuery;
     if (playersErr) throw playersErr;
 
-    const seasonLabel = getSeasonLabel();
+    const seasonLabel = req.body.seasonLabel || getSeasonLabel();
+    const nextSeasonLabel = getNextSeasonLabel();
     
     // Build player summaries for archive
     const playerSummaries = (players || []).map(p => ({
@@ -67,7 +83,7 @@ router.post('/end', requireAuth, requireRole('Coach'), async (req, res) => {
       await supabase.from('players').update(resetData).in('id', playerIds);
     }
 
-    res.json({ message: 'Season ' + seasonLabel + ' has been archived. Squad statistics reset for the new season.', archive, seasonLabel });
+    res.json({ message: 'Season ' + seasonLabel + ' has been archived. Squad statistics reset for ' + nextSeasonLabel + '.', archive, seasonLabel, nextSeasonLabel });
   } catch(e) { console.error('[Season End]', e); res.status(500).json({ error: 'Internal server error' }); }
 });
 

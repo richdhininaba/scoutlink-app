@@ -22,7 +22,7 @@ async function recalcPlayer(playerId) {
     const overall100 = computeOverall(p);
     const tvData = grassrootsTransferValue ? grassrootsTransferValue({ ...p, overall_rating: overall100 }) : { value: 0 };
     await supabase.from('players').update({
-      overall_rating: parseFloat((overall100 / 10).toFixed(1)),
+      overall_rating: Math.round(overall100),
       transfer_value: tvData.value || 0
     }).eq('id', playerId);
   } catch(e) { console.error('[recalcPlayer]', playerId, e.message); }
@@ -68,7 +68,7 @@ router.get('/', requireAuth, requireRole('Coach','Stratex','Scout','Player'), as
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
     const {
-      teamId, coachId, matchDate, opponent, format, formation, mode,
+      teamId, coachId, fixtureId, matchDate, opponent, format, formation, mode,
       homeScore, awayScore,
       // Single-player legacy fields
       playerId,
@@ -91,9 +91,34 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     }
 
     const effectiveCoachId = coachId || (req.user.accountType === 'Coach' ? req.user.id : null);
-    const effectiveTeamId = teamId || null;
+    let effectiveTeamId = teamId || null;
+    let fixture = null;
+
+    if (req.user.accountType === 'Coach') {
+      const { data: coach } = await supabase.from('coaches').select('team_id,team_name').eq('id', req.user.id).single();
+      if (!coach) return res.status(404).json({ error: 'Coach not found' });
+      if (!effectiveTeamId) effectiveTeamId = coach.team_id || null;
+    }
+
+    if (fixtureId) {
+      const { data: fx, error: fxErr } = await supabase.from('fixtures').select('*').eq('id', fixtureId).maybeSingle();
+      if (fxErr) throw fxErr;
+      if (!fx) return res.status(404).json({ error: 'Fixture not found' });
+      if (effectiveTeamId && fx.team_id && fx.team_id !== effectiveTeamId) return res.status(403).json({ error: 'Fixture is not linked to your team' });
+      fixture = fx;
+      if (!effectiveTeamId) effectiveTeamId = fx.team_id || null;
+    }
+
+    const finalMatchDate = matchDate || fixture?.fixture_date || new Date().toISOString().split('T')[0];
+    const finalOpponent = opponent || fixture?.opponent || null;
+    const finalFormat = format || fixture?.format || null;
 
     const ratingKeys = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
+    const perf100 = (value) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return null;
+      return Math.max(0, Math.min(100, Math.round(n <= 10 ? n * 10 : n)));
+    };
 
     // Parse playerPositions for clean sheet detection in live mode
     const positionsMap = (playerPositions && typeof playerPositions === 'object') ? playerPositions : {};
@@ -111,6 +136,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
           if (pp[k] !== undefined && pp[k] !== null) ratings[k] = Number(pp[k]);
           else if (ratingsObj[k] !== undefined) ratings[k] = Number(ratingsObj[k]);
         });
+        const performanceScore = perf100(pp.performanceScore || pp.overallPerformance || pp.overall_performance || ratingsObj.overallPerformance || ratingsObj.overall_performance);
 
         // Determine clean sheet
         let cs = pp.cleanSheet !== undefined ? !!pp.cleanSheet : false;
@@ -131,9 +157,10 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
           player_id: pp.playerId,
           team_id: effectiveTeamId,
           coach_id: effectiveCoachId,
-          match_date: matchDate || new Date().toISOString().split('T')[0],
-          opponent: opponent || null,
-          format: format || null,
+          fixture_id: fixtureId || null,
+          match_date: finalMatchDate,
+          opponent: finalOpponent,
+          format: finalFormat,
           formation: formation || null,
           mode: mode || 'post',
           home_score: homeScore !== undefined ? Number(homeScore) : null,
@@ -144,10 +171,11 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
           yellow_cards: Number(pp.yellowCards || 0),
           red_cards: Number(pp.redCards || 0),
           clean_sheet: cs,
+          performance_score: performanceScore,
           coach_notes: pp.notes || coachNotes || null,
-          events: events ? JSON.stringify(events) : null,
-          player_positions: playerPositions ? JSON.stringify(playerPositions) : null,
-          ratings: Object.keys(ratings).length ? JSON.stringify(ratings) : null,
+          events: events || [],
+          player_positions: playerPositions || {},
+          ratings: Object.keys(ratings).length ? ratings : {},
           confirmed: !!confirmed,
           ...ratings
         }).select().single();
@@ -170,6 +198,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       if (body[k] !== undefined && body[k] !== null) ratings[k] = Number(body[k]);
       else if (ratingsObj[k] !== undefined) ratings[k] = Number(ratingsObj[k]);
     });
+    const performanceScore = perf100(body.performanceScore || body.overallPerformance || body.overall_performance || ratingsObj.overallPerformance || ratingsObj.overall_performance);
 
     let cs = !!cleanSheet;
     if (!cs && awayScore !== undefined && Number(awayScore) === 0) {
@@ -181,9 +210,10 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       player_id: playerId,
       team_id: effectiveTeamId,
       coach_id: effectiveCoachId,
-      match_date: matchDate || new Date().toISOString().split('T')[0],
-      opponent: opponent || null,
-      format: format || null,
+      fixture_id: fixtureId || null,
+      match_date: finalMatchDate,
+      opponent: finalOpponent,
+      format: finalFormat,
       formation: formation || null,
       mode: mode || 'post',
       home_score: homeScore !== undefined ? Number(homeScore) : null,
@@ -194,10 +224,11 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       yellow_cards: Number(yellowCards),
       red_cards: Number(redCards),
       clean_sheet: cs,
+      performance_score: performanceScore,
       coach_notes: coachNotes || null,
-      events: events ? JSON.stringify(events) : null,
-      player_positions: playerPositions ? JSON.stringify(playerPositions) : null,
-      ratings: Object.keys(ratings).length ? JSON.stringify(ratings) : null,
+      events: events || [],
+      player_positions: playerPositions || {},
+      ratings: Object.keys(ratings).length ? ratings : {},
       confirmed: !!confirmed,
       ...ratings
     }).select().single();

@@ -84,6 +84,59 @@ function calcTransferValue(player, overall100) {
   return value;
 }
 
+async function getCoachPlayerScope(req, requestedCoachId) {
+  if (req.user.accountType !== 'Coach') return null;
+  const { data: coach, error } = await supabase
+    .from('coaches')
+    .select('id,team_id,team_name,is_super_user')
+    .eq('id', req.user.id)
+    .single();
+  if (error || !coach) {
+    const e = new Error('Coach not found');
+    e.status = 404;
+    throw e;
+  }
+
+  let assignedCoachId = req.user.id;
+  if (coach.is_super_user && requestedCoachId) {
+    const { data: target, error: targetErr } = await supabase
+      .from('coaches')
+      .select('id,team_id,team_name')
+      .eq('id', requestedCoachId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (targetErr) throw targetErr;
+    const sameTeam = target && (
+      (coach.team_id && target.team_id === coach.team_id) ||
+      (!coach.team_id && coach.team_name && target.team_name === coach.team_name) ||
+      target.id === req.user.id
+    );
+    if (!sameTeam) {
+      const e = new Error('Assigned coach must be on your team');
+      e.status = 403;
+      throw e;
+    }
+    assignedCoachId = target.id;
+  } else if (!coach.is_super_user && requestedCoachId && requestedCoachId !== req.user.id) {
+    const e = new Error('Only super user coaches can assign players to another coach');
+    e.status = 403;
+    throw e;
+  }
+
+  return {
+    team_id: coach.team_id || null,
+    team_name: coach.team_name || null,
+    assigned_coach_id: assignedCoachId,
+    is_super_user: !!coach.is_super_user
+  };
+}
+
+async function resolveTeamName(teamId, fallback) {
+  if (!teamId) return fallback || null;
+  const { data } = await supabase.from('school_academy_teams').select('team_name').eq('id', teamId).maybeSingle();
+  return data?.team_name || fallback || null;
+}
+
 router.get('/height-ranges', (_, res) => res.json(HEIGHT_RANGES));
 router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
 
@@ -107,7 +160,17 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     if (search) q = q.or('first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%');
     if (posGroup) q = q.eq('position_group', posGroup);
     if (specificPos) q = q.contains('positions', [specificPos.toUpperCase()]);
-    if (teamId) q = q.eq('team_id', teamId);
+    if (req.user.accountType === 'Coach') {
+      const scope = await getCoachPlayerScope(req);
+      if (teamId && scope.team_id && teamId !== scope.team_id) return res.status(403).json({ error: 'You can only view players on your team' });
+      if (scope.is_super_user) {
+        if (scope.team_id) q = q.eq('team_id', scope.team_id);
+        else if (scope.team_name) q = q.eq('team_name', scope.team_name);
+        else q = q.eq('assigned_coach_id', req.user.id);
+      } else {
+        q = q.eq('assigned_coach_id', req.user.id);
+      }
+    } else if (teamId) q = q.eq('team_id', teamId);
     if (minAge) q = q.gte('age', Number(minAge));
     if (maxAge) q = q.lte('age', Number(maxAge));
     if (minOverall) q = q.gte('overall_rating', Number(minOverall));
@@ -128,7 +191,7 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
       }));
     }
     res.json({ data, total: count, page: Number(page), limit: Number(limit) });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 
@@ -165,6 +228,9 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
   try {
     const b = req.body;
     if (!b.firstName||!b.lastName) return res.status(400).json({ error: 'firstName and lastName required' });
+    const coachScope = await getCoachPlayerScope(req, b.assignedCoachId || b.coachId || null);
+    const resolvedTeamId = coachScope ? coachScope.team_id : (b.teamId || null);
+    const resolvedTeamName = coachScope ? coachScope.team_name : await resolveTeamName(resolvedTeamId, b.teamName);
     const posArr = Array.isArray(b.positions) ? b.positions.map(p=>p.toUpperCase()) : [];
     const hRange = HEIGHT_RANGES[b.heightCategory];
     const bRange = BUILD_RANGES[b.buildCategory];
@@ -186,7 +252,9 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       build_category: b.buildCategory||'athletic',
       weight_range_kg: bRange ? bRange.range : b.weightRangeKg||null,
       weight_min_kg: bRange ? bRange.min : null, weight_max_kg: bRange ? bRange.max : null,
-      team_name: b.teamName||null,
+      team_id: resolvedTeamId,
+      team_name: resolvedTeamName,
+      assigned_coach_id: coachScope ? coachScope.assigned_coach_id : (b.assignedCoachId || null),
       pace: b.pace||null, agility: b.agility||null, strength: b.strength||null,
       stamina: b.stamina||null, jumping: b.jumping||null, composure: b.composure||null,
       shooting: b.shooting||null, passing: b.passing||null, dribbling: b.dribbling||null,
@@ -242,18 +310,21 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     }
     
     res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross, login_code: loginCode }, loginCode, message: 'Player created. Login code: ' + loginCode });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 // Bulk create players
 router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const { players, teamName } = req.body;
+    const { players, teamName, teamId, assignedCoachId } = req.body;
     if (!Array.isArray(players)||players.length===0) return res.status(400).json({ error: 'players array required' });
     if (players.length > 50) return res.status(400).json({ error: 'Max 50 players per bulk import' });
     const results = { created: [], errors: [] };
     for (const p of players) {
       try {
+        const coachScope = await getCoachPlayerScope(req, p.assignedCoachId || assignedCoachId || p.coachId || null);
+        const resolvedTeamId = coachScope ? coachScope.team_id : (p.teamId || teamId || null);
+        const resolvedTeamName = coachScope ? coachScope.team_name : await resolveTeamName(resolvedTeamId, teamName||p.teamName);
         const posArr = Array.isArray(p.positions) ? p.positions.map(x=>x.toUpperCase()) : [];
         const hRange = HEIGHT_RANGES[p.heightCategory];
         const bRange = BUILD_RANGES[p.buildCategory];
@@ -275,7 +346,9 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           build_category: p.buildCategory||'athletic',
           weight_range_kg: bRange ? bRange.range : null,
           weight_min_kg: bRange ? bRange.min : null, weight_max_kg: bRange ? bRange.max : null,
-          team_name: teamName||p.teamName||null,
+          team_id: resolvedTeamId,
+          team_name: resolvedTeamName,
+          assigned_coach_id: coachScope ? coachScope.assigned_coach_id : (p.assignedCoachId || assignedCoachId || null),
           pace: p.pace||null, agility: p.agility||null, strength: p.strength||null,
           stamina: p.stamina||null, jumping: p.jumping||null, composure: p.composure||null,
           shooting: p.shooting||null, passing: p.passing||null, dribbling: p.dribbling||null,
@@ -290,7 +363,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         const overall100 = computeOverall(playerData);
         playerData.overall_rating = Math.round(overall100);
         playerData.transfer_value = calcTransferValue(playerData, overall100);
-        const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name').single();
+        const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,team_id,team_name,assigned_coach_id').single();
         if (error) throw error;
         const salary = predictedSalary(created, { tier: 5 });
         await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', created.id);

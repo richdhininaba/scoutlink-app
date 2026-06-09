@@ -36,9 +36,9 @@
 </div>
 <div class="table-card">
 <div class="table-header">
-<h3>My squad</h3>
+<div><h3>My squad</h3><div id="seasonLabel" style="font-size:12px;color:#8b949e;margin-top:2px">Loading season...</div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-sm btn-outline" id="endSeasonBtn" style="border-color:#FF9800;color:#FF9800">End season</button>
+<button class="btn btn-sm btn-outline" id="endSeasonBtn" style="border-color:#FF9800;color:#FF9800">Start new season</button>
 <a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk import</a>
 <a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
 </div>
@@ -56,10 +56,10 @@
 <!-- End season modal -->
 <div class="modal-overlay" id="endSeasonModal" style="display:none">
 <div class="modal-box">
-<h3>End season</h3>
-<p>Ending the season will archive this season's match facts and reset the season statistics for all your players. Player ratings and overall scores will be preserved. This cannot be undone.</p>
+<h3 id="seasonModalTitle">Start new season?</h3>
+<p id="seasonModalText">This will archive the current season and reset season statistics for your squad.</p>
 <div style="display:flex;gap:12px">
-<button class="btn btn-primary" id="confirmEndSeasonBtn">Confirm</button>
+<button class="btn btn-primary" id="confirmEndSeasonBtn">Continue</button>
 <button class="btn btn-ghost" id="cancelEndSeasonBtn">Cancel</button>
 </div>
 <div id="endSeasonMsg" style="margin-top:12px;font-size:13px"></div>
@@ -81,6 +81,8 @@
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 function ratingCol(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
 function posGroupColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
+var seasonInfo={currentSeason:'',nextSeason:''};
+var endSeasonStep=1;
 
 function initNav(){
 if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
@@ -95,22 +97,59 @@ document.addEventListener('DOMContentLoaded',function(){
 initNav();
 var u=Auth.user;
 if(u) document.getElementById('coachTitle').textContent='Welcome, '+(u.firstName||'Coach');
+loadSeasonInfo();
 loadCoachData();
 loadPreviousSeasons();
 document.getElementById('logoutBtn').addEventListener('click',logout);
 document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
-document.getElementById('endSeasonBtn').addEventListener('click',function(){
-document.getElementById('endSeasonModal').style.display='flex';
-document.getElementById('endSeasonMsg').textContent='';
-});
+document.getElementById('endSeasonBtn').addEventListener('click',openSeasonModal);
 document.getElementById('cancelEndSeasonBtn').addEventListener('click',function(){
 document.getElementById('endSeasonModal').style.display='none';
 });
-document.getElementById('confirmEndSeasonBtn').addEventListener('click',endSeason);
+document.getElementById('confirmEndSeasonBtn').addEventListener('click',confirmSeasonStep);
 document.getElementById('closeSummaryBtn').addEventListener('click',function(){
 document.getElementById('seasonSummaryModal').style.display='none';
 });
 });
+
+async function loadSeasonInfo(){
+try{
+var r=await api('GET','/api/season/current');
+seasonInfo.currentSeason=r.currentSeason||'Current';
+seasonInfo.nextSeason=r.nextSeason||'Next';
+document.getElementById('seasonLabel').textContent='Current football season: '+seasonInfo.currentSeason;
+document.getElementById('endSeasonBtn').textContent='Start '+seasonInfo.nextSeason+' season';
+}catch(e){
+document.getElementById('seasonLabel').textContent='Current football season unavailable';
+}
+}
+
+function openSeasonModal(){
+endSeasonStep=1;
+document.getElementById('endSeasonMsg').textContent='';
+document.getElementById('endSeasonModal').style.display='flex';
+renderSeasonModal();
+}
+
+function renderSeasonModal(){
+var title=document.getElementById('seasonModalTitle');
+var text=document.getElementById('seasonModalText');
+var btn=document.getElementById('confirmEndSeasonBtn');
+if(endSeasonStep===1){
+title.textContent='Are you sure?';
+text.textContent='You are currently in the '+(seasonInfo.currentSeason||'current')+' season. Starting a new season will archive this season and reset squad goals, assists, appearances, clean sheets and card totals.';
+btn.textContent='Yes, I am sure';
+}else{
+title.textContent='Move on to '+(seasonInfo.nextSeason||'next season')+'?';
+text.textContent='This is the final confirmation. Player profiles and ratings stay in place, but current season statistics move into the archive.';
+btn.textContent='Move on to '+(seasonInfo.nextSeason||'next season');
+}
+}
+
+function confirmSeasonStep(){
+if(endSeasonStep===1){endSeasonStep=2;renderSeasonModal();return;}
+endSeason();
+}
 
 async function loadCoachData(){
   try{
@@ -192,11 +231,12 @@ var btn=document.getElementById('confirmEndSeasonBtn');
 var msg=document.getElementById('endSeasonMsg');
 btn.disabled=true;btn.textContent='Archiving...';
 try{
-var r=await api('POST','/api/season/end');
+var r=await api('POST','/api/season/end',{confirm:true,seasonLabel:seasonInfo.currentSeason});
 msg.textContent=(r.message||'Season archived successfully. Squad statistics have been reset.');
 msg.style.color='#1d9e75';
 setTimeout(function(){
 document.getElementById('endSeasonModal').style.display='none';
+loadSeasonInfo();
 loadCoachData();
 loadPreviousSeasons();
 },2000);
@@ -204,7 +244,7 @@ loadPreviousSeasons();
 msg.textContent='Error: '+(e.message||'Could not end season. Please try again.');
 msg.style.color='#f44336';
 }
-btn.disabled=false;btn.textContent='Confirm';
+btn.disabled=false;renderSeasonModal();
 }
 
 async function loadPreviousSeasons(){

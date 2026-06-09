@@ -95,6 +95,9 @@
 var state = {
   mode: null, opponent: '', matchDate: '', format: '11', formation: '4-4-2',
   myTeamName: 'My team',
+  coachTeamId: null,
+  fixtureId: null,
+  fixtures: [],
   players: [],          // selected players for this match
   goals: [],            // [{player,assist}] post-game / [{playerId,minute}] live
   yellowCards: [],      // [playerId] post / [{playerId,minute}] live
@@ -283,6 +286,31 @@ function setStep(n){
 function initials(f,l){return ((f||'?')[0]+(l||'?')[0]).toUpperCase();}
 function playerName(id){var p=myPlayers.find(function(x){return x.id===id;});return p?((p.first_name||'')+' '+(p.last_name||'')).trim():'Unknown';}
 function playerInitials(id){var p=myPlayers.find(function(x){return x.id===id;});return p?initials(p.first_name,p.last_name):'??';}
+function fixtureDateValue(fx){return fx&&fx.fixture_date?String(fx.fixture_date).slice(0,10):'';}
+function fixtureLabel(fx){
+  var date=fixtureDateValue(fx)||'TBC';
+  var loc=fx.home_or_away==='Away'?'@':'vs';
+  return date+' '+loc+' '+(fx.opponent||'Opponent');
+}
+function applySelectedFixture(id){
+  var fx=(state.fixtures||[]).find(function(f){return f.id===id;});
+  if(!fx)return;
+  var opp=document.getElementById('mfOpponent');
+  var dt=document.getElementById('mfDate');
+  var fmt=document.getElementById('mfFormat');
+  var formation=document.getElementById('mfFormation');
+  state.opponent=fx.opponent||'';
+  state.matchDate=fixtureDateValue(fx);
+  if(opp)opp.value=fx.opponent||'';
+  if(dt)dt.value=fixtureDateValue(fx);
+  if(fmt&&fx.format){
+    state.format=String(fx.format);
+    fmt.value=state.format;
+    if(formation){
+      formation.innerHTML=(FORMATIONS[fmt.value]||FORMATIONS['11']).map(function(f){return '<option value="'+f+'">'+f+'</option>';}).join('');
+    }
+  }
+}
 
 /* =====================================================================
    STEP 1 Ã¢ÂÂ MODE AND SETUP
@@ -300,6 +328,10 @@ function renderStep1(){
     '<span style="font-size:11px;color:#8b949e;margin-left:4px">'+(p.specific_position||p.primary_position||'')+'</span>'+
     '</label>';
   }).join(''):'<p style="color:#8b949e">No players found. <a href="add-player.html" style="color:#1d9e75">Add players first</a>.</p>';
+  var fixtureOptions='<option value="">Enter match facts manually</option>'+(state.fixtures||[]).map(function(fx){
+    return '<option value="'+fx.id+'"'+(state.fixtureId===fx.id?' selected':'')+'>'+fixtureLabel(fx)+'</option>';
+  }).join('');
+  var fixtureHelp=(state.fixtures&&state.fixtures.length)?'Choose a scheduled fixture or continue manually.':'No upcoming fixtures found. You can still enter match facts directly.';
 
   document.getElementById('stepContent').innerHTML=
   '<div class="table-card"><div class="table-header"><h3>Select match mode</h3></div><div style="padding:20px">'+
@@ -308,6 +340,9 @@ function renderStep1(){
   '<div class="mode-card" data-mode="live"><div class="mode-icon">&#9654;</div><div class="mode-title">Live game mode</div><div class="mode-desc">Record events in real time during the match.</div></div>'+
   '</div>'+
   '<hr style="border-color:#30363d;margin-bottom:20px">'+
+  '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Use upcoming fixture (optional)</label>'+
+  '<select id="mfFixture" class="form-select">'+fixtureOptions+'</select>'+
+  '<div style="font-size:12px;color:#8b949e;margin-top:6px">'+fixtureHelp+'</div></div>'+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'+
   '<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Opponent *</label><input id="mfOpponent" class="form-input-sm" value="'+state.opponent+'" placeholder="e.g. Riverside FC" type="text"></div>'+
   '<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Date *</label><input id="mfDate" class="form-input-sm" value="'+state.matchDate+'" type="date"></div>'+
@@ -321,7 +356,7 @@ function renderStep1(){
   '<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Formation</label>'+
   '<select id="mfFormation" class="form-select">'+formationsHtml+'</select></div>'+
   '</div>'+
-  '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Players in this match</label>'+
+  '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Players in this match including subs</label>'+
   '<div id="playerCheckboxes">'+playerChecks+'</div></div>'+
   '<button class="btn btn-primary" id="nextToStep2Btn">Next: Assign positions &#8594;</button>'+
   '</div></div>';
@@ -338,13 +373,19 @@ function renderStep1(){
     var fSel=document.getElementById('mfFormation');
     fSel.innerHTML=(FORMATIONS[fmt]||FORMATIONS['11']).map(function(f){return '<option value="'+f+'">'+f+'</option>';}).join('');
   });
+  document.getElementById('mfFixture').addEventListener('change',function(){
+    state.fixtureId=this.value||null;
+    if(this.value)applySelectedFixture(this.value);
+  });
   document.getElementById('nextToStep2Btn').addEventListener('click',goToStep2);
+  if(state.fixtureId)applySelectedFixture(state.fixtureId);
   if(!state.matchDate) document.getElementById('mfDate').value=new Date().toISOString().split('T')[0];
 }
 /* =====================================================================
    STEP 2 Ã¢ÂÂ FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
    ===================================================================== */
 function goToStep2(){
+  state.fixtureId=document.getElementById('mfFixture').value||null;
   state.opponent=document.getElementById('mfOpponent').value.trim();
   state.matchDate=document.getElementById('mfDate').value;
   state.format=document.getElementById('mfFormat').value;
@@ -1039,6 +1080,8 @@ function submitMatchFacts(){
   });
 
   var payload={
+    fixtureId: state.fixtureId||null,
+    teamId: state.coachTeamId||null,
     matchDate: state.matchDate,
     opponent: state.opponent,
     homeScore: state.homeScore,
@@ -1057,7 +1100,7 @@ function submitMatchFacts(){
     msg.style.color='#1d9e75';
     setTimeout(function(){
       if(confirm(submitted+' player record'+(submitted!==1?'s':'')+' updated. Submit another match?')){
-        state={mode:null,opponent:'',matchDate:'',format:'11',formation:'4-4-2',myTeamName:state.myTeamName,
+        state={mode:null,opponent:'',matchDate:'',format:'11',formation:'4-4-2',myTeamName:state.myTeamName,coachTeamId:state.coachTeamId,fixtureId:null,fixtures:state.fixtures,
           players:[],goals:[],yellowCards:[],redCards:[],homeScore:0,awayScore:0,result:'',
           ratings:{},playerPositions:{},events:[],timerSeconds:0,timerInterval:null,halfTimePaused:false,liveGoals:0};
         renderStep1();
@@ -1086,8 +1129,15 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('logoutBtn').addEventListener('click',logout);
   document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
   initNav();
-  api('GET','/api/coaches/profile').then(function(d){if(d&&d.coach&&d.coach.team_name) state.myTeamName=d.coach.team_name;}).catch(function(){});
-  api('GET','/api/players?limit=200').then(function(pd){myPlayers=pd.data||[];}).catch(function(){}).finally(function(){renderStep1();});
+  var profileReq=api('GET','/api/coaches/profile').then(function(d){
+    if(d&&d.coach){
+      if(d.coach.team_name)state.myTeamName=d.coach.team_name;
+      state.coachTeamId=d.coach.team_id||null;
+    }
+  }).catch(function(){});
+  var fixturesReq=api('GET','/api/fixtures?upcoming=true').then(function(fd){state.fixtures=fd.data||[];}).catch(function(){state.fixtures=[];});
+  var playersReq=api('GET','/api/coaches/my-players').then(function(pd){myPlayers=pd.players||pd.data||[];}).catch(function(){myPlayers=[];});
+  Promise.all([profileReq,fixturesReq,playersReq]).finally(function(){renderStep1();});
 });
 </script>
 <script src="../js/mobile.js"></script>
