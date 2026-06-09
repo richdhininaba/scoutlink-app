@@ -24,6 +24,13 @@ const BUILD_RANGES = {
   very_powerful:{ label:'Very Powerful', range:'96+ kg', min:96, max:120 },
 };
 
+const SCOUT_PLAN_LIMITS = {
+  Core: { exports: 30, predictions: 120, interests: 200 },
+  Plus: { exports: 120, predictions: 600, interests: 1000 },
+  Elite: { exports: 500, predictions: 1200, interests: 99999 },
+  Enterprise: { exports: 99999, predictions: 99999, interests: 99999 }
+};
+
 // Calculate age and age group from date_of_birth
 function calcAgeGroup(dob) {
   if (!dob) return null;
@@ -137,8 +144,65 @@ async function resolveTeamName(teamId, fallback) {
   return data?.team_name || fallback || null;
 }
 
+async function getScoutAnalysisContext(req) {
+  if (req.user.accountType !== 'Scout') return { team: { tier: 5 }, prefs: {} };
+  const { data: scout } = await supabase
+    .from('scouts')
+    .select('scout_preferences,scout_team_id')
+    .eq('id', req.user.id)
+    .maybeSingle();
+  const prefs = scout?.scout_preferences || {};
+  let team = { tier: 5 };
+  if (scout?.scout_team_id) {
+    const { data: st } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
+    if (st) team = st;
+  }
+  if (prefs.teamWeaknesses?.length) team.team_weaknesses = prefs.teamWeaknesses;
+  if (prefs.roleExpectations?.length) team.role_expectations = prefs.roleExpectations;
+  if (prefs.longTermGoals?.length) team.long_term_goals = prefs.longTermGoals;
+  if (prefs.formation) team.formation = prefs.formation;
+  if (prefs.playingStyle) team.playing_style = prefs.playingStyle;
+  return { team, prefs };
+}
+
+async function enrichPlayersWithTeamLocation(players) {
+  const rows = players || [];
+  const teamIds = [...new Set(rows.map(p => p.team_id).filter(Boolean))];
+  if (!teamIds.length) return rows.map(p => ({ ...p, team_city: null, team_country: null }));
+  const { data: teams } = await supabase
+    .from('school_academy_teams')
+    .select('id,city,country,county')
+    .in('id', teamIds);
+  const byId = {};
+  (teams || []).forEach(t => { byId[t.id] = t; });
+  return rows.map(p => {
+    const t = byId[p.team_id] || {};
+    return { ...p, team_city: t.city || t.county || null, team_country: t.country || null };
+  });
+}
+
 router.get('/height-ranges', (_, res) => res.json(HEIGHT_RANGES));
 router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
+
+router.get('/locations', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
+  try {
+    const { data: players } = await supabase
+      .from('players')
+      .select('team_id')
+      .eq('is_active', true)
+      .not('team_id', 'is', null);
+    const ids = [...new Set((players || []).map(p => p.team_id).filter(Boolean))];
+    if (!ids.length) return res.json({ data: [] });
+    const { data: teams, error } = await supabase
+      .from('school_academy_teams')
+      .select('city')
+      .in('id', ids)
+      .not('city', 'is', null);
+    if (error) throw error;
+    const cities = [...new Set((teams || []).map(t => t.city).filter(Boolean))].sort();
+    res.json({ data: cities });
+  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
 
 // Count active players
 router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
@@ -152,11 +216,21 @@ router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async 
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
-    const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, ageGroup, page=1, limit=20 } = req.query;
+    const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, ageGroup, city, page=1, limit=20 } = req.query;
     let q = supabase.from('players').select(
       'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_id,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot,date_of_birth',
       { count: 'exact' }
     ).eq('is_active', true);
+    if (city) {
+      const { data: cityTeams, error: cityErr } = await supabase
+        .from('school_academy_teams')
+        .select('id')
+        .ilike('city', city);
+      if (cityErr) throw cityErr;
+      const cityIds = (cityTeams || []).map(t => t.id);
+      if (!cityIds.length) return res.json({ data: [], total: 0, page: Number(page), limit: Number(limit) });
+      q = q.in('team_id', cityIds);
+    }
     if (search) q = q.or('first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%');
     if (posGroup) q = q.eq('position_group', posGroup);
     if (specificPos) q = q.contains('positions', [specificPos.toUpperCase()]);
@@ -176,7 +250,8 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     if (minOverall) q = q.gte('overall_rating', Number(minOverall));
     if (ageGroup) q = q.eq('age_group', ageGroup);
     const off = (Number(page)-1)*Number(limit);
-    q = q.order('overall_rating', { ascending: false }).range(off, off+Number(limit)-1);
+    if (req.user.accountType === 'Scout') q = q.order('overall_rating', { ascending: false }).limit(300);
+    else q = q.order('overall_rating', { ascending: false }).range(off, off+Number(limit)-1);
     const { data, error, count } = await q;
     if (error) throw error;
     // Auto-calc transfer_value for players where it is 0 or null
@@ -190,7 +265,16 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
         } catch(e) {}
       }));
     }
-    res.json({ data, total: count, page: Number(page), limit: Number(limit) });
+    const enriched = await enrichPlayersWithTeamLocation(data || []);
+    if (req.user.accountType === 'Scout') {
+      const { team, prefs } = await getScoutAnalysisContext(req);
+      const scored = enriched.map(p => {
+        const analysis = analysePlayer(p, team, [], prefs);
+        return { ...p, compatibilityScore: analysis.compatibilityScore, compatibilityBreakdown: analysis.compatibilityBreakdown };
+      }).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+      return res.json({ data: scored.slice(off, off + Number(limit)), total: scored.length, page: Number(page), limit: Number(limit) });
+    }
+    res.json({ data: enriched, total: count, page: Number(page), limit: Number(limit) });
   } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
@@ -454,17 +538,28 @@ router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req
 try {
 const { notes, interestLevel = 7 } = req.body;
 const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
-const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id,interests_remaining').eq('id', req.user.id).single();
+const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id,subscription_plan,interests_remaining').eq('id', req.user.id).single();
 if (!player||!scout) return res.status(404).json({ error: 'Not found' });
+const plan = scout.subscription_plan || 'Core';
+const planLimit = (SCOUT_PLAN_LIMITS[plan] || SCOUT_PLAN_LIMITS.Core).interests;
+const capScope = scout.scout_team_id ? { scout_team_id: scout.scout_team_id } : { scout_id: req.user.id };
 // Check if already in pipeline (any row for this scout+player)
 const { data: existing } = await supabase.from('recruitment_pipeline').select('id,stage,is_active').eq('scout_id', req.user.id).eq('player_id', req.params.id).maybeSingle();
 if (existing) {
-return res.json({ message: 'Already in pipeline', alreadyInPipeline: true, stage: existing.stage, interestsRemaining: typeof scout.interests_remaining === 'number' ? scout.interests_remaining : 200 });
+let countQ = supabase.from('recruitment_pipeline').select('id', { count:'exact', head:true }).eq('is_active', true);
+if (capScope.scout_team_id) countQ = countQ.eq('scout_team_id', capScope.scout_team_id);
+else countQ = countQ.eq('scout_id', capScope.scout_id);
+const { count: currentCount } = await countQ;
+return res.json({ message: 'Already in pipeline', alreadyInPipeline: true, stage: existing.stage, interestsRemaining: Math.max(0, planLimit - (currentCount || 0)), planLimit, plan });
 }
-// Check interests remaining
-const remaining = typeof scout.interests_remaining === 'number' ? scout.interests_remaining : 200;
+let countQ = supabase.from('recruitment_pipeline').select('id', { count:'exact', head:true }).eq('is_active', true);
+if (capScope.scout_team_id) countQ = countQ.eq('scout_team_id', capScope.scout_team_id);
+else countQ = countQ.eq('scout_id', capScope.scout_id);
+const { count: usedInterests, error: usedErr } = await countQ;
+if (usedErr) throw usedErr;
+const remaining = Math.max(0, planLimit - (usedInterests || 0));
 if (remaining <= 0) {
-return res.status(402).json({ error: 'You have used all your interests for this plan. Upgrade to add more players.', interestsRemaining: 0 });
+return res.status(402).json({ error: 'You have reached your interest cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.', interestsRemaining: 0, planLimit, plan });
 }
 // Upsert into pipeline (upsert handles any edge cases)
 const { error: upsertErr } = await supabase.from('recruitment_pipeline').upsert({
@@ -473,9 +568,12 @@ scout_team_id: scout.scout_team_id, notes: notes||null, interest_level: interest
 is_active: true
 }, { onConflict: 'scout_id,player_id' });
 if (upsertErr) throw upsertErr;
-// Decrement interests_remaining
 const newRemaining = Math.max(0, remaining - 1);
+if (scout.scout_team_id) {
+await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('scout_team_id', scout.scout_team_id);
+} else {
 await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('id', req.user.id);
+}
 // Notify (fire and forget)
 supabase.from('notifications').insert({
 recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',

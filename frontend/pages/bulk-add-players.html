@@ -36,6 +36,12 @@ body:not(.super-user) .coach-col{display:none;}
 .assignment-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;}
 .assignment-toolbar label{display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;}
 .assignment-toolbar select{background:#0d1117;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;min-width:220px;}
+.bulk-scroll-tools{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#10151d;border-bottom:1px solid var(--border);}
+.bulk-top-scroll{height:16px;overflow-x:auto;overflow-y:hidden;flex:1;scrollbar-width:auto;scrollbar-color:#1d9e75 #30363d;}
+.bulk-top-scroll::-webkit-scrollbar{height:10px;}
+.bulk-top-scroll::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
+.bulk-top-scroll::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
+.bulk-top-scroll-inner{height:1px;}
 .btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover{background:#17856a;}
@@ -46,6 +52,10 @@ body:not(.super-user) .coach-col{display:none;}
 .form-error.show{display:block;}
 .form-success{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);color:var(--accent);padding:10px 14px;border-radius:6px;display:none;}
 .form-success.show{display:block;}
+@media(max-width:768px){
+  .bulk-table th,.bulk-table td{display:table-cell!important;}
+  .bulk-table{min-width:2200px;}
+}
 </style>
 </head><body>
 <div class="dashboard">
@@ -92,6 +102,11 @@ body:not(.super-user) .coach-col{display:none;}
 <div class="table-card">
   <div style="padding:10px 16px;background:rgba(29,158,117,0.05);border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">
     Scroll right to see all columns. Ratings are 1-10. Required fields marked *.
+  </div>
+  <div class="bulk-scroll-tools">
+    <button class="btn btn-outline btn-sm" id="scrollBulkLeft" type="button">&lt;</button>
+    <div class="bulk-top-scroll" id="bulkTopScroll"><div class="bulk-top-scroll-inner" id="bulkTopScrollInner"></div></div>
+    <button class="btn btn-outline btn-sm" id="scrollBulkRight" type="button">&gt;</button>
   </div>
   <div class="bulk-table-wrap">
     <table class="bulk-table" id="bulkTable">
@@ -240,6 +255,16 @@ function addRow(){
     '<td><input type="number" data-f="tackling" min="1" max="10" step="0.5" placeholder="--"></td>'+
     '<td><button class="bulk-remove" data-remove="'+n+'">X</button></td>';
   document.getElementById("bulkBody").appendChild(tr);
+  syncBulkScroll();
+}
+
+function syncBulkScroll(){
+  var wrap=document.querySelector(".bulk-table-wrap");
+  var top=document.getElementById("bulkTopScroll");
+  var inner=document.getElementById("bulkTopScrollInner");
+  var table=document.getElementById("bulkTable");
+  if(!wrap||!top||!inner||!table)return;
+  inner.style.width=table.scrollWidth+"px";
 }
 </script>
 <script>
@@ -337,6 +362,16 @@ document.addEventListener("DOMContentLoaded",function(){
   document.getElementById("addRowBtn").addEventListener("click",addRow);
   document.getElementById("addRowBtn2").addEventListener("click",addRow);
   document.getElementById("submitAllBtn").addEventListener("click",submitAll);
+  var wrap=document.querySelector(".bulk-table-wrap");
+  var top=document.getElementById("bulkTopScroll");
+  if(wrap&&top){
+    var syncing=false;
+    top.addEventListener("scroll",function(){if(syncing)return;syncing=true;wrap.scrollLeft=top.scrollLeft;syncing=false;});
+    wrap.addEventListener("scroll",function(){if(syncing)return;syncing=true;top.scrollLeft=wrap.scrollLeft;syncing=false;});
+    document.getElementById("scrollBulkLeft").addEventListener("click",function(){wrap.scrollBy({left:-360,behavior:"smooth"});});
+    document.getElementById("scrollBulkRight").addEventListener("click",function(){wrap.scrollBy({left:360,behavior:"smooth"});});
+    window.addEventListener("resize",syncBulkScroll);
+  }
   document.getElementById("notifToggle").addEventListener("click",toggleNotifPanel);
   document.getElementById("closeNotifBtn").addEventListener("click",toggleNotifPanel);
   document.getElementById("logoutBtn").addEventListener("click",logout);

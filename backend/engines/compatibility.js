@@ -70,6 +70,12 @@ function norm(val, min=0, max=100) {
   return clamp((val - min) / (max - min), 0, 1);
 }
 
+function avg(values, fallback = 50) {
+  const clean = values.map(Number).filter(v => Number.isFinite(v));
+  if (!clean.length) return fallback;
+  return clean.reduce((s, v) => s + v, 0) / clean.length;
+}
+
 // Position-weighted overall rating (returns 0-100) with age maturity modifier
 // Sections 3 & 4: position-aware weighted formula
 function computeOverall(player) {
@@ -198,22 +204,147 @@ function computeWeaknessBoost(player, weaknesses) {
 }
 
 // ── COMPATIBILITY SCORE ──────────────────────────────────────────────────────
-function compatibilityScore(player, team, prefs = {}) {
+function weaknessFitScore(player, weaknesses) {
+  const W = {
+    'Insufficient Game Pace and Speed': ['pace','agility','stamina'],
+    'Physical Fragility and Injury Risk': ['stamina','strength','composure'],
+    'Lack of Physical Presence': ['strength','jumping','heading'],
+    'Weak Defensive Base': ['defending','positioning','tackling'],
+    'Poor Defensive Output': ['tackling','defending','positioning'],
+    'Low Team Chemistry and Leadership': ['vision','passing','composure'],
+    'Technical Deficiencies Under Pressure': ['composure','dribbling','passing'],
+    'Tactical Awareness Gaps': ['positioning','composure','vision'],
+    'Poor Goal Output': ['shooting','positioning','crossing']
+  };
+  const selected = Array.isArray(weaknesses) ? weaknesses : [];
+  if (!selected.length) return 60;
+  return avg(selected.map(w => avg((W[w] || []).map(k => attr(player, k, 50)), 55)), 60);
+}
+
+function roleFitScore(player, roles) {
+  const R = {
+    'Aerial Dominance': ['jumping','heading','strength'],
+    'Vision and Creativity': ['vision','passing','dribbling','composure'],
+    'Speed and Agility': ['pace','agility','stamina'],
+    'Tactical Intelligence': ['positioning','vision','composure'],
+    'Ball Retention Under Pressure': ['composure','dribbling','passing'],
+    'Physical Resilience Work Rate': ['stamina','strength','defending'],
+    'Defensive Impact': ['defending','tackling','positioning','stamina'],
+    'Offensive Impact': ['shooting','dribbling','pace','crossing'],
+    'Progression and Carrying': ['dribbling','pace','agility','vision'],
+    'Leadership and Communication': ['vision','passing','composure']
+  };
+  const selected = Array.isArray(roles) ? roles : [];
+  if (!selected.length) return 62;
+  return avg(selected.map(r => avg((R[r] || []).map(k => attr(player, k, 50)), 58)), 62);
+}
+
+function playingStyleScore(player, style) {
+  const S = {
+    'Possession-Based Play': ['passing','composure','vision','dribbling'],
+    'Counter-Attacking': ['pace','stamina','dribbling','composure'],
+    'High Press': ['stamina','pace','defending','composure'],
+    'Low Block': ['defending','positioning','tackling','stamina'],
+    'Direct Play': ['pace','strength','heading','shooting'],
+    'Wing Play': ['pace','crossing','dribbling','agility'],
+    'Tiki-Taka': ['passing','vision','composure','dribbling'],
+    'Gegenpressing': ['stamina','pace','defending','passing'],
+    'Build-Up from the Back': ['passing','composure','vision','defending'],
+    'Long Ball': ['heading','strength','jumping','pace'],
+    'Total Football': ['vision','passing','stamina','dribbling'],
+    'Compact Defence': ['defending','positioning','tackling'],
+    'Vertical Play': ['pace','dribbling','shooting','stamina']
+  };
+  return style && S[style] ? avg(S[style].map(k => attr(player, k, 50)), 60) : 60;
+}
+
+function formationScore(player, formation) {
+  if (!formation) return 60;
+  const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
+  const map = {
+    '4-4-2': { Goalkeeper: 60, Defender: 72, Midfielder: 70, Forward: 68 },
+    '4-3-3': { Goalkeeper: 60, Defender: 66, Midfielder: 68, Forward: 78 },
+    '3-5-2': { Goalkeeper: 60, Defender: 62, Midfielder: 80, Forward: 70 },
+    '5-3-2': { Goalkeeper: 60, Defender: 82, Midfielder: 64, Forward: 66 },
+    '4-2-3-1': { Goalkeeper: 60, Defender: 68, Midfielder: 78, Forward: 66 },
+    '4-1-4-1': { Goalkeeper: 60, Defender: 68, Midfielder: 78, Forward: 60 },
+    '4-5-1': { Goalkeeper: 60, Defender: 70, Midfielder: 82, Forward: 58 },
+    '3-4-3': { Goalkeeper: 60, Defender: 58, Midfielder: 72, Forward: 78 },
+    '5-4-1': { Goalkeeper: 60, Defender: 82, Midfielder: 72, Forward: 56 }
+  };
+  return (map[formation] && map[formation][group]) || 62;
+}
+
+function longTermGoalScore(player, goals) {
+  const age = calcAge(player.date_of_birth) ?? 15;
+  const G = {
+    'Physical Growth Potential': age <= 12 ? 88 : age <= 14 ? 78 : age <= 16 ? 66 : 50,
+    'Tactical Role Maturity': avg(['positioning','composure','vision'].map(k => attr(player, k, 50))),
+    'Leadership and Coachability': avg(['composure','vision','passing'].map(k => attr(player, k, 50))),
+    'Injury Risk and Physical Resilience': avg(['stamina','strength','composure'].map(k => attr(player, k, 50))),
+    'Positional Depth Advantage': Array.isArray(player.positions) && player.positions.length > 1 ? 82 : 58,
+    'Goal Contribution Potential': avg(['shooting','positioning','crossing','passing'].map(k => attr(player, k, 50))),
+    'Financial Viability': avg([computeOverall(player), age <= 16 ? 82 : 64])
+  };
+  const selected = Array.isArray(goals) ? goals : [];
+  if (!selected.length) return 60;
+  return avg(selected.map(g => G[g] || 60), 60);
+}
+
+function matchEvidenceScore(player, matchHistory = []) {
+  const apps = Number(player.appearances) || 0;
+  const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
+  const matches = Array.isArray(matchHistory) ? matchHistory : [];
+  const recentPerf = matches.length ? avg(matches.slice(0, 5).map(m => {
+    const n = Number(m.performance_score);
+    return Number.isFinite(n) ? (n <= 10 ? n * 10 : n) : null;
+  }).filter(v => v !== null), 50) : 50;
+  let output = 50;
+  if (apps > 0) {
+    const goals = Number(player.goals) || 0;
+    const assists = Number(player.assists) || 0;
+    const cleanSheets = Number(player.clean_sheets) || 0;
+    const cards = (Number(player.yellow_cards) || 0) + (Number(player.red_cards) || 0) * 2;
+    if (group === 'Forward') output = clamp(50 + (goals / apps) * 38 + (assists / apps) * 18 - (cards / apps) * 8);
+    else if (group === 'Midfielder') output = clamp(50 + (assists / apps) * 32 + (goals / apps) * 16 - (cards / apps) * 8);
+    else if (group === 'Goalkeeper') output = clamp(50 + (cleanSheets / apps) * 42 - (cards / apps) * 6);
+    else output = clamp(50 + (cleanSheets / apps) * 30 + (assists / apps) * 10 - (cards / apps) * 8);
+  }
+  return avg([recentPerf, output], 50);
+}
+
+function dataConfidenceScore(player, matchHistory = []) {
+  const apps = Math.max(Number(player.appearances) || 0, Array.isArray(matchHistory) ? matchHistory.length : 0);
+  if (apps === 0) return 35;
+  if (apps < 3) return 48;
+  if (apps < 5) return 60;
+  if (apps < 10) return 75;
+  return 90;
+}
+
+function compatibilityScore(player, team, prefs = {}, matchHistory = []) {
   const group = getPosGroup(player.positions || player.primary_position);
   const age   = calcAge(player.date_of_birth) ?? 17;
-  const tier  = Number(team?.tier) || 5;
   const overall = computeOverall(player);
 
-  // 1. Technical (35%)
+  const teamWeaknesses = Array.isArray(team?.team_weaknesses) ? team.team_weaknesses : (prefs.teamWeaknesses || []);
+  const roleExpectations = Array.isArray(team?.role_expectations) ? team.role_expectations : (prefs.roleExpectations || []);
+  const longTermGoals = Array.isArray(team?.long_term_goals) ? team.long_term_goals : (prefs.longTermGoals || []);
+  const style = team?.playing_style || prefs.playingStyle || '';
+  const formation = team?.formation || prefs.formation || '';
+
   const technical = overall;
+  const tactical = avg([
+    weaknessFitScore(player, teamWeaknesses),
+    roleFitScore(player, roleExpectations),
+    playingStyleScore(player, style),
+    formationScore(player, formation),
+    longTermGoalScore(player, longTermGoals)
+  ], 60);
 
-  // 2. Tier fit (20%)
-  const tierReq = Math.max(0, 100 - (tier - 1) * 10);
-  const tierFit = clamp(100 - Math.abs(overall - tierReq) * 1.1);
-
-  // 3. Age fit (15%)
   let ageFit;
-  if (age <= 14)      ageFit = 55;
+  if (age <= 12)      ageFit = 74;
+  else if (age <= 14) ageFit = 88;
   else if (age <= 18) ageFit = 100;
   else if (age <= 21) ageFit = 92;
   else if (age <= 24) ageFit = 78;
@@ -221,51 +352,57 @@ function compatibilityScore(player, team, prefs = {}) {
   else if (age <= 30) ageFit = 44;
   else ageFit = 25;
 
-  // 4. Physical fit (10%)
-  const physScore = clamp(70 + physicalFitBonus(player, group));
+  const physScore = clamp(avg([
+    attr(player, 'pace', 50),
+    attr(player, 'agility', 50),
+    attr(player, 'strength', 50),
+    attr(player, 'stamina', 50),
+    70 + physicalFitBonus(player, group)
+  ], 60));
 
-  // 5. Stats (7%)
-  const apps  = Number(player.appearances) || 0;
-  const goals = Number(player.goals) || 0;
-  const assts = Number(player.assists) || 0;
-  let statsScore = 50;
-  if (apps > 0) {
-    if (group === 'Forward')    statsScore = clamp(50 + (goals/apps)*40 + (assts/apps)*15);
-    else if (group === 'Midfielder') statsScore = clamp(50 + (goals/apps)*15 + (assts/apps)*30);
-    else if (group === 'Goalkeeper') statsScore = clamp(50 + (Number(player.clean_sheets)||0)/Math.max(apps,1)*45);
-    else statsScore = clamp(50 + (Number(player.clean_sheets)||0)/Math.max(apps,1)*30);
-  }
+  const statsScore = matchEvidenceScore(player, matchHistory);
+  const confidence = dataConfidenceScore(player, matchHistory);
 
-  // 6. Scout preference match (5%)
   let prefScore = 70;
   if (prefs.preferredPositions && prefs.preferredPositions.length) {
     const pp = normalisePos(player.positions || player.primary_position);
     const match = prefs.preferredPositions.some(p => pp.includes(p.toUpperCase()));
     prefScore = match ? 95 : 40;
   }
+  if (prefs.ageGroups && prefs.ageGroups.length && player.age_group) {
+    prefScore = avg([prefScore, prefs.ageGroups.includes(player.age_group) ? 95 : 45]);
+  }
 
-  // 7. Team weakness exploitation bonus (8%)
   const weaknesses = parseWeaknesses(team?.playing_style);
   const weaknessBonus = computeWeaknessBoost(player, weaknesses);
 
   const rawScore = clamp(
-    technical * 0.35 + tierFit * 0.20 + ageFit * 0.15 +
-    physScore * 0.10 + statsScore * 0.07 + prefScore * 0.05
+    technical * 0.30 + tactical * 0.25 + physScore * 0.15 +
+    statsScore * 0.15 + ageFit * 0.08 + prefScore * 0.04 + confidence * 0.03
   );
   const score = clamp(rawScore + weaknessBonus);
 
   return {
     score: Math.round(score * 10) / 10,
     breakdown: {
-      technical:     Math.round(technical*10)/10,
-      tierFit:       Math.round(tierFit*10)/10,
-      ageFit:        Math.round(ageFit*10)/10,
-      physScore:     Math.round(physScore*10)/10,
-      statsScore:    Math.round(statsScore*10)/10,
-      prefScore:     Math.round(prefScore*10)/10,
-      weaknessBonus: Math.round(weaknessBonus*10)/10,
+      technical: Math.round(technical * 10) / 10,
+      tacticalFit: Math.round(tactical * 10) / 10,
+      physicalProfile: Math.round(physScore * 10) / 10,
+      matchImpact: Math.round(statsScore * 10) / 10,
+      ageDevelopmentFit: Math.round(ageFit * 10) / 10,
+      preferenceFit: Math.round(prefScore * 10) / 10,
+      dataConfidence: Math.round(confidence * 10) / 10,
+      weaknessFit: Math.round(weaknessFitScore(player, teamWeaknesses) * 10) / 10,
+      roleFit: Math.round(roleFitScore(player, roleExpectations) * 10) / 10,
+      styleFit: Math.round(playingStyleScore(player, style) * 10) / 10,
+      formationFit: Math.round(formationScore(player, formation) * 10) / 10,
+      goalsFit: Math.round(longTermGoalScore(player, longTermGoals) * 10) / 10,
+      weaknessBonus: Math.round(weaknessBonus * 10) / 10,
       weaknesses,
-      group, overall: Math.round(overall*10)/10, age, tier
+      group,
+      overall: Math.round(overall * 10) / 10,
+      age,
+      appearances: Number(player.appearances) || 0
     }
   };
 }
@@ -355,7 +492,7 @@ function predictedSalary(player, team) {
 
 // ── FULL ANALYSIS ─────────────────────────────────────────────────────────────
 function analysePlayer(player, team, matchHistory = [], scoutPrefs = {}) {
-  const compat  = compatibilityScore(player, team, scoutPrefs);
+  const compat  = compatibilityScore(player, team, scoutPrefs, matchHistory);
   const predict = predictionScore(player, matchHistory);
   const value   = transferValue(player, team, compat.score);
   const salary  = predictedSalary(player, team);

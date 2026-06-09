@@ -31,6 +31,8 @@
 .compat-mid{background:rgba(255,193,7,.15);color:#FFC107;}
 .compat-low{background:rgba(255,152,0,.15);color:#FF9800;}
 .conf-label{font-size:11px;color:#546E7A;font-weight:600;}
+.dashboard-two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-bottom:20px;}
+@media(max-width:980px){.dashboard-two-col{grid-template-columns:1fr;}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -53,15 +55,15 @@
 <div id="setupBanner" style="display:none;background:rgba(29,158,117,0.06);border:1px solid rgba(29,158,117,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px">
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
 <div>
-<b style="color:var(--accent,#1d9e75)">Complete your team setup</b>
-<p style="font-size:13px;color:#B0BEC5;margin-top:4px">Set your team weaknesses, role expectations and scouting preferences to unlock personalised compatibility scores.</p>
+<b style="color:var(--accent,#1d9e75)">Complete your scout setup</b>
+<p style="font-size:13px;color:#B0BEC5;margin-top:4px">Set the team weakness you are looking to solve, role expectations and scouting preferences to unlock personalised compatibility scores.</p>
 </div>
-<a href="scout-setup.html" class="btn btn-primary">Set up my team &rarr;</a>
+<a href="scout-setup.html" class="btn btn-primary">Set up scouting &rarr;</a>
 </div>
 </div>
 
 <!-- KPI Row -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px" id="kpiRow">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px" id="kpiRow">
 <div class="scout-kpi">
 <div class="scout-kpi-val" id="kpiTotal">-</div>
 <div class="scout-kpi-label">Players available</div>
@@ -69,14 +71,13 @@
 <a href="player-search.html" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--accent,#1d9e75);text-decoration:none;font-weight:700">Browse all &rarr;</a>
 </div>
 <div class="scout-kpi"><div class="scout-kpi-val" id="kpiPipeline">-</div><div class="scout-kpi-label">My pipeline</div><div class="scout-kpi-sub">Players tracked</div></div>
-<div class="scout-kpi"><div class="scout-kpi-val" id="kpiTopScore">-</div><div class="scout-kpi-label">Top compatibility</div><div class="scout-kpi-sub">Best match score /100</div></div>
-<div class="scout-kpi"><div class="scout-kpi-val" id="kpiSetup" style="font-size:18px">-</div><div class="scout-kpi-label">Team profile</div><div class="scout-kpi-sub" id="kpiSetupSub"></div></div>
+<div class="scout-kpi"><div class="scout-kpi-val" id="kpiPlan" style="font-size:24px">-</div><div class="scout-kpi-label">Subscription plan</div><div class="scout-kpi-sub" id="kpiPlanSub">Team limits apply</div></div>
 </div>
 
 <!-- Team Profile Card -->
 <div class="table-card" style="margin-bottom:20px;display:none" id="teamProfileCard">
 <div class="table-header">
-<div><h3>My team profile</h3><p style="font-size:12px;color:#546E7A;margin-top:2px" id="teamProfileSub">Weaknesses drive player compatibility scores</p></div>
+<div><h3>My scout setup</h3><p style="font-size:12px;color:#546E7A;margin-top:2px" id="teamProfileSub">Team weaknesses drive player compatibility scores</p></div>
 <a href="scout-setup.html" class="btn btn-sm btn-outline">Edit setup</a>
 </div>
 <div id="teamProfileContent" style="padding:16px 20px">
@@ -85,10 +86,11 @@
 </div>
 </div>
 
+<div class="dashboard-two-col">
 <!-- Recommended Players -->
 <div class="table-card" style="margin-bottom:20px">
 <div class="table-header">
-<div><h3>Recommended players</h3><p style="font-size:12px;color:#546E7A;margin-top:2px">Sorted by compatibility score — top 10</p></div>
+<div><h3>Top 5 compatible players</h3><p style="font-size:12px;color:#546E7A;margin-top:2px">Sorted by compatibility score</p></div>
 <a href="player-search.html" class="btn btn-sm btn-outline">View all players</a>
 </div>
 <div id="recommendedPlayers"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Analysing players...</span></div></div>
@@ -97,10 +99,11 @@
 <!-- Pipeline Preview -->
 <div class="table-card">
 <div class="table-header">
-<div><h3>My recent pipeline</h3><p style="font-size:12px;color:#546E7A;margin-top:2px">FA/UEFA-aligned recruitment stages</p></div>
+<div><h3>My recent pipeline</h3><p style="font-size:12px;color:#546E7A;margin-top:2px">Player, position, stage and age group</p></div>
 <a href="scout-pipeline.html" class="btn btn-sm btn-outline">Full pipeline</a>
 </div>
 <div id="pipelinePreview"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
 </div>
 
 </div>
@@ -138,6 +141,15 @@ loadDashboard();
 });
 
 async function loadDashboard(){
+try{
+var profile=await api('GET','/api/scouts/profile');
+var scout=profile.scout||{};
+var plan=(scout.subscription_plan||'Core').toUpperCase();
+document.getElementById('kpiPlan').textContent=plan;
+if(scout.plan_end)document.getElementById('kpiPlanSub').textContent='Renews '+new Date(scout.plan_end).toLocaleDateString();
+}catch(e){
+document.getElementById('kpiPlan').textContent='CORE';
+}
 // Load players count
 try{
 var pc=await api('GET','/api/scouts/players-count');
@@ -163,22 +175,12 @@ try{
 var rec=await api('GET','/api/scouts/recommended-players');
 if(rec.setupRequired){
 document.getElementById('setupBanner').style.display='block';
-document.getElementById('kpiSetup').textContent='Not set';
-document.getElementById('kpiSetup').style.color='#FF9800';
-document.getElementById('kpiSetupSub').textContent='Complete setup';
-document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>Complete your team setup to see your recommended players.</p><a href="scout-setup.html" class="btn btn-primary">Set up my team &rarr;</a></div>';
-document.getElementById('kpiTopScore').textContent='--';
+document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>Complete your scout setup to see your recommended players.</p><a href="scout-setup.html" class="btn btn-primary">Set up scouting &rarr;</a></div>';
 }else{
-document.getElementById('kpiSetup').textContent='Active';
-document.getElementById('kpiSetup').style.color='#1d9e75';
-document.getElementById('kpiSetupSub').textContent='Team profile set';
 renderRecommended(rec.data||[]);
-if(rec.data&&rec.data.length){
-document.getElementById('kpiTopScore').textContent=Math.round(rec.data[0].compatibilityScore||0);
-}
 }
 }catch(e){
-document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>Could not load recommendations. <a href="scout-setup.html" style="color:var(--accent,#1d9e75)">Check your team setup</a>.</p></div>';
+document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>Could not load recommendations. <a href="scout-setup.html" style="color:var(--accent,#1d9e75)">Check your scout setup</a>.</p></div>';
 }
 
 // Load team profile
@@ -209,7 +211,7 @@ if(!players.length){
 document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>No matching players found yet. Try adjusting your setup criteria.</p><a href="scout-setup.html" class="btn btn-outline" style="margin-right:8px">Edit setup</a><a href="player-search.html" class="btn btn-primary">Browse players</a></div>';
 return;
 }
-var rows=players.slice(0,10).map(function(p,i){
+var rows=players.slice(0,5).map(function(p,i){
 var score=p.compatibilityScore||0;
 var scColor=compatColor(score);
 var scClass=compatClass(score);
@@ -241,19 +243,14 @@ if(!pipeData.length){
 document.getElementById('pipelinePreview').innerHTML='<div class="empty-state"><p>No players in your pipeline yet. Browse the player database to find your first match.</p><a href="player-search.html" class="btn btn-primary">Find players</a></div>';
 return;
 }
-document.getElementById('pipelinePreview').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Age group</th><th>Stage</th><th>Value</th><th>Club</th></tr></thead><tbody>'+
+document.getElementById('pipelinePreview').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Stage</th><th>Age group</th></tr></thead><tbody>'+
 pipeData.map(function(row){
 var pl=row.players||{};
-var ov=dispOverall(pl.overall_rating);
-var ovNum=parseFloat(pl.overall_rating||0),ovPct=ovNum>10?ovNum:ovNum*10;
 return '<tr>'+
 '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div><b>'+(pl.first_name||'')+' '+(pl.last_name||'')+'</b></div></td>'+
 '<td>'+(pl.specific_position||pl.primary_position||'--')+'</td>'+
-'<td style="color:'+compatColor(ovPct)+';font-weight:700">'+ov+'</td>'+
-'<td>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</td>'+
 '<td><span class="stage-chip '+stageClass(row.stage)+'">'+(row.stage||'watching').replace(/_/g,' ')+'</span></td>'+
-'<td>'+(pl.transfer_value?formatValue(pl.transfer_value):'--')+'</td>'+
-'<td style="color:#546E7A;font-size:12px">'+(pl.team_name||'--')+'</td>'+
+'<td>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</td>'+
 '</tr>';
 }).join('')+'</tbody></table></div>';
 }

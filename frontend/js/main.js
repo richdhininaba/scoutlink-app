@@ -2,6 +2,72 @@
 // ScoutLink Frontend v2.2 - All experiences complete
 const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
 
+const CLEAN_ROUTES = {
+  'index.html':'/',
+  'login.html':'/login',
+  'complete-registration.html':'/complete-registration',
+  'stratex-dashboard.html':'/stratex/dashboard',
+  'stratex-registrations.html':'/stratex/registrations',
+  'stratex-users.html':'/stratex/users',
+  'stratex-players.html':'/stratex/players',
+  'stratex-scouts.html':'/stratex/scouts',
+  'stratex-coaches.html':'/stratex/coaches',
+  'stratex-scout-teams.html':'/stratex/scout-teams',
+  'stratex-school-teams.html':'/stratex/non-pro-academies',
+  'stratex-award-nominations.html':'/stratex/award-nominations',
+  'stratex-showcase-events.html':'/stratex/showcase-events',
+  'coach-dashboard.html':'/coach/dashboard',
+  'coach-my-players.html':'/coach/my-players',
+  'add-player.html':'/coach/add-player',
+  'bulk-add-players.html':'/coach/bulk-add-players',
+  'match-facts.html':'/coach/match-facts',
+  'coach-fixtures.html':'/coach/fixtures',
+  'coach-video-reels.html':'/coach/video-reels',
+  'scout-dashboard.html':'/scout/dashboard',
+  'player-search.html':'/scout/player-search',
+  'scout-pipeline.html':'/scout/pipeline',
+  'scout-rankings.html':'/scout/rankings',
+  'scout-fixtures.html':'/scout/fixtures',
+  'scout-predictions.html':'/scout/predictions',
+  'scout-exports.html':'/scout/exports',
+  'compare-players.html':'/scout/compare-players',
+  'scout-setup.html':'/scout/setup',
+  'scout-events.html':'/scout/events',
+  'scout-notifications.html':'/scout/notifications',
+  'scout-settings.html':'/scout/settings',
+  'player-dashboard.html':'/player/dashboard',
+  'player-profile.html':'/player/profile',
+  'player-profile-edit.html':'/player/edit-profile',
+  'player-video-reels.html':'/player/video-reels'
+};
+
+function cleanRouteFor(href) {
+  if (!href || href.indexOf('#') === 0) return href;
+  const url = new URL(href, window.location.href);
+  const page = url.pathname.split('/').pop();
+  const route = CLEAN_ROUTES[page];
+  if (!route) return href;
+  return route + url.search + url.hash;
+}
+
+function applyCleanUrl() {
+  const page = window.location.pathname.split('/').pop();
+  const route = CLEAN_ROUTES[page];
+  if (route && window.history && window.location.protocol.indexOf('http') === 0) {
+    window.history.replaceState(null, '', route + window.location.search + window.location.hash);
+  }
+}
+
+function applyTheme(theme) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('theme-light', next === 'light');
+  document.body.classList.toggle('theme-dark', next === 'dark');
+  localStorage.setItem('sl_theme', next);
+}
+
+applyCleanUrl();
+document.addEventListener('DOMContentLoaded', function(){ applyTheme(localStorage.getItem('sl_theme') || 'dark'); });
+
 // Auth
 const Auth = {
   get token() { return localStorage.getItem('sl_token'); },
@@ -18,7 +84,7 @@ const Auth = {
     const map = { Player:'player-dashboard.html', Coach:'coach-dashboard.html',
       Scout:'scout-dashboard.html', Stratex:'stratex-dashboard.html' };
     const dest = map[this.type] || 'login.html';
-    window.location.href = dest;
+    window.location.href = cleanRouteFor(dest);
   }
 };
 
@@ -31,7 +97,7 @@ async function api(method, path, body) {
   if (r.status === 401) {
     // Token expired or invalid - clear and redirect to login
     Auth.clear();
-    window.location.href = 'login.html?expired=1';
+    window.location.href = '/login?expired=1';
     throw new Error('Session expired. Please log in again.');
   }
   const data = await r.json().catch(() => ({}));
@@ -109,8 +175,20 @@ window.formatSalary = formatSalary; window.relTime = relTime;
 window.initials = initials; window.posGroupColor = posGroupColor; window.ratingColor = ratingColor;
 window.ratingDisplay = ratingDisplay;
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
+window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', function(e) {
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.target || a.hasAttribute('download')) return;
+    const href = a.getAttribute('href');
+    if (!href || href.indexOf('http') === 0 || href.indexOf('mailto:') === 0 || href.indexOf('#') === 0) return;
+    const clean = cleanRouteFor(href);
+    if (clean !== href && window.location.protocol.indexOf('http') === 0) {
+      e.preventDefault();
+      window.location.href = clean;
+    }
+  });
   // Check for session expired param
   const params = new URLSearchParams(window.location.search);
   if (params.get('expired') === '1') {

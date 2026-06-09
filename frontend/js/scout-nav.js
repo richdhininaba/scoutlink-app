@@ -36,7 +36,7 @@ var SCOUT_NAV_ITEMS = [
   { icon: 'chart-line', label: 'Predictions', href: 'scout-predictions.html' },
   { icon: 'file-export', label: 'Exports', href: 'scout-exports.html' },
   { icon: 'arrows-diff', label: 'Compare players', href: 'compare-players.html' },
-  { icon: 'settings', label: 'My team setup', href: 'scout-setup.html' },
+  { icon: 'settings', label: 'Scout setup', href: 'scout-setup.html' },
   { icon: 'flag', label: 'Events', href: 'scout-events.html' },
   { icon: 'bell', label: 'Notifications', href: 'scout-notifications.html' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'scout-settings.html' },

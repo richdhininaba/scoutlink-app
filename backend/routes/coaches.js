@@ -122,9 +122,15 @@ if (!coach) return res.status(404).json({ error: 'Coach not found' });
 const targetCoachId = req.body.coachId || req.user.id;
 // Super user can assign to any coach on team; regular coach can only self-assign
 if (!coach.is_super_user && targetCoachId !== req.user.id) return res.status(403).json({ error: 'Only super user coaches can reassign players' });
+const { data: targetCoach } = await supabase.from('coaches').select('id,team_id,team_name').eq('id', targetCoachId).eq('is_active', true).single();
+if (!targetCoach) return res.status(404).json({ error: 'Target coach not found' });
+const targetSameTeam = (coach.team_id && targetCoach.team_id === coach.team_id) || (!coach.team_id && coach.team_name && targetCoach.team_name === coach.team_name) || targetCoach.id === coach.id;
+if (!targetSameTeam) return res.status(403).json({ error: 'Target coach must be on your team' });
 // Verify player is on same team
 const { data: player } = await supabase.from('players').select('id,team_id,team_name').eq('id', req.params.playerId).single();
 if (!player) return res.status(404).json({ error: 'Player not found' });
+const playerSameTeam = (coach.team_id && player.team_id === coach.team_id) || (!coach.team_id && coach.team_name && player.team_name === coach.team_name);
+if (!playerSameTeam) return res.status(403).json({ error: 'Player must be on your team' });
 const { error } = await supabase.from('players').update({ assigned_coach_id: targetCoachId }).eq('id', req.params.playerId);
 if (error) throw error;
 res.json({ message: 'Player assigned to coach' });

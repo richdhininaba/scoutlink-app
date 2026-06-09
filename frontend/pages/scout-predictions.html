@@ -86,18 +86,18 @@ function showEmpty(){
 
 function loadPredictions(){
   if(typeof api!=='function')return;
-  api('GET','/api/scouts/predictions').then(function(d){
+  api('GET','/api/predictions').then(function(d){
     var preds=d.data||[];
     var remaining=d.remaining!==undefined?d.remaining:null;
     var planLimit=d.planLimit||120;
     var plan=d.plan||'Core';
 
-    var dispRemaining=remaining!==null?(plan==='Elite'?'Unlimited':remaining):'--';
-    var dispLimit=plan==='Elite'?'Unlimited':planLimit;
+    var dispRemaining=remaining!==null?(planLimit>=99999?'Unlimited':remaining):'--';
+    var dispLimit=planLimit>=99999?'Unlimited':planLimit;
     document.getElementById('kpiRemaining').textContent=dispRemaining;
     document.getElementById('kpiLimit').textContent=dispLimit;
-    document.getElementById('kpiPlan').textContent=plan;
-    document.getElementById('kpiRun').textContent=preds.length;
+    document.getElementById('kpiPlan').textContent=String(plan).toUpperCase();
+    document.getElementById('kpiRun').textContent=d.teamUsed!=null?d.teamUsed:preds.length;
 
     // Usage bar
     if(remaining!==null && plan!=='Elite'){
@@ -117,22 +117,22 @@ function loadPredictions(){
     }
 
     if(!preds.length){
-      document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128202;</div><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
+      document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
       return;
     }
 
-    document.getElementById('predList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Prediction type</th><th>Date run</th><th>Year 1</th><th>Year 2</th><th>Year 3</th><th></th></tr></thead><tbody>'+
+    document.getElementById('predList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Prediction type</th><th>Date run</th><th>Result summary</th><th></th></tr></thead><tbody>'+
       preds.map(function(pred){
         var pl=pred.players||{};
+        var result=pred.result||{};
+        var summary=result.recommendation||result.suitability||result.summary||result.scenario||result.focus||'Saved prediction';
         return '<tr>'+
           '<td><b>'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</b></td>'+
           '<td style="color:var(--text-secondary);font-size:12px">'+(pl.team_name||'--')+'</td>'+
           '<td><span style="font-size:11px;padding:2px 8px;background:rgba(23,162,186,.12);color:#17a2b8;border-radius:4px">'+(pl.position_group||'--')+'</span></td>'+
-          '<td style="font-size:12px;color:var(--text-secondary)">'+(pred.prediction_type||'Performance prediction')+'</td>'+
+          '<td style="font-size:12px;color:var(--text-secondary)">'+(pred.prediction_type||'Prediction')+'</td>'+
           '<td style="color:var(--text-secondary);font-size:12px">'+fmtDate(pred.run_at||pred.created_at)+'</td>'+
-          '<td style="font-weight:700;color:#FFC107">'+dispOv(pred.yr1_rating)+'</td>'+
-          '<td style="font-weight:700;color:#17a2b8">'+dispOv(pred.yr2_rating)+'</td>'+
-          '<td style="font-weight:700;color:var(--accent)">'+dispOv(pred.yr3_rating)+'</td>'+
+          '<td style="font-size:12px;color:var(--text-secondary);max-width:360px">'+summary+'</td>'+
           '<td><a href="player-profile.html?id='+pred.player_id+'" class="btn btn-sm btn-outline" style="text-decoration:none">View player</a></td>'+
           '</tr>';
       }).join('')+'</tbody></table></div>';

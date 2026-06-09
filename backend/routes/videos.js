@@ -53,7 +53,7 @@ router.get('/', requireAuth, requireRole('Player','Coach','Scout','Stratex'), as
 // Add video (URL-based) for coaches
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const { playerId, title, videoUrl, videoType, category, description } = req.body;
+    const { playerId, title, videoUrl, videoType, category, description, filePath } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
     if (!videoUrl) return res.status(400).json({ error: 'videoUrl required' });
 
@@ -67,8 +67,12 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       title,
       video_url: videoUrl,
       url: videoUrl,
+      file_path: filePath || null,
       category: category || videoType || 'Highlight',
       description: description || null,
+      video_type: category || videoType || 'Highlight',
+      uploaded_by: req.user.id,
+      uploaded_by_type: req.user.accountType
     };
 
     console.log('[Videos POST] inserting:', JSON.stringify(insertData));

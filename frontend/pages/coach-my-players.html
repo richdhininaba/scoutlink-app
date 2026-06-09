@@ -14,6 +14,7 @@
 .attr-mini-fill2{height:100%;border-radius:2px;}
 .filter-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
 .filter-bar input,.filter-bar select{padding:8px 12px;background:#111827;border:1px solid #1e2a3a;border-radius:8px;color:#e2e8f0;font-size:13px;}
+.coach-assign-select{width:100%;margin-top:10px;padding:8px 10px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e2e8f0;font-size:12px;}
 </style>
 </head><body>
 <div class="dashboard">
@@ -68,6 +69,8 @@ function attrColor(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
 function fmtVal(v){if(!v||v===0)return'Calculating...';return'Estimated value: '+formatValue(v);}
 var allPlayers=[];
+var isSuperUser=false;
+var teamCoaches=[];
 
 function initNav(){
 if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
@@ -89,6 +92,8 @@ async function loadPlayers(){
 try{
 var d=await api('GET','/api/coaches/my-players');
 allPlayers=d.data||[];
+isSuperUser=!!d.isSuperUser;
+if(isSuperUser) await loadTeamCoaches();
 var total=allPlayers.length;
 document.getElementById('kpiTotal').textContent=total;
 if(total){
@@ -108,6 +113,45 @@ renderPlayers();
 document.getElementById('playersContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:14px">Import squad</a></div>';
 document.getElementById('kpiTotal').textContent='0';
 console.error(e);
+}
+}
+
+async function loadTeamCoaches(){
+try{
+var profile=await api('GET','/api/coaches/profile');
+var me=profile.coach||{};
+var r=await api('GET','/api/coaches/team-coaches');
+var seen={};
+teamCoaches=[me].concat(r.data||r.coaches||[]).filter(function(c){
+if(!c||!c.id||seen[c.id])return false;
+seen[c.id]=true;
+return true;
+});
+}catch(e){
+teamCoaches=[];
+}
+}
+
+function coachOptions(selected){
+if(!teamCoaches.length)return '<option value="">No team coaches found</option>';
+return teamCoaches.map(function(c){
+var name=((c.first_name||'')+' '+(c.last_name||'')).trim()||c.email||'Coach';
+return '<option value="'+c.id+'" '+(selected===c.id?'selected':'')+'>'+name+(c.is_super_user?' (Super user)':'')+'</option>';
+}).join('');
+}
+
+function coachAssignControl(p){
+if(!isSuperUser)return '';
+return '<select class="coach-assign-select" data-player="'+p.id+'" onclick="event.stopPropagation()" onchange="assignCoach(this.dataset.player,this.value,event)">'+coachOptions(p.assigned_coach_id)+'</select>';
+}
+
+async function assignCoach(playerId,coachId,event){
+if(event)event.stopPropagation();
+try{
+await api('POST','/api/coaches/assign-player/'+playerId,{coachId:coachId});
+allPlayers=allPlayers.map(function(p){if(p.id===playerId)p.assigned_coach_id=coachId;return p;});
+}catch(e){
+alert('Could not reassign player: '+e.message);
 }
 }
 
@@ -149,6 +193,7 @@ keyAttrs.map(function(a){var pct2=attrPct(a[1]);var col=attrColor(pct2);return'<
 '<span style="color:var(--accent,#1d9e75);font-weight:700">'+fmtVal(p.transfer_value)+'</span>'+
 '<span style="color:#546E7A">Apps: '+(p.appearances||0)+'</span>'+
 '</div>'+
+coachAssignControl(p)+
 '<div style="display:flex;gap:8px;margin-top:10px">'+
 '<a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="flex:1;justify-content:center">View profile</a>'+
 '</div>'+
@@ -159,7 +204,7 @@ document.getElementById('playersContainer').innerHTML=html;
 }
 
 function renderTable(players){
-var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Overall</th><th>Apps</th><th>Goals</th><th>Assists</th><th>Est. value</th><th></th></tr></thead><tbody>';
+var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Overall</th><th>Apps</th><th>Goals</th><th>Assists</th><th>Est. value</th>'+(isSuperUser?'<th>Assigned coach</th>':'')+'<th></th></tr></thead><tbody>';
 players.forEach(function(p){
 var pct=ovPct(p.overall_rating);
 var pCol=posColor(p.position_group);
@@ -172,6 +217,7 @@ html+='<tr>'+
 '<td style="color:#1d9e75">'+(p.goals||0)+'</td>'+
 '<td>'+(p.assists||0)+'</td>'+
 '<td style="color:#1d9e75;font-weight:700">'+(p.transfer_value?formatValue(p.transfer_value):'Calculating...')+'</td>'+
+(isSuperUser?'<td>'+coachAssignControl(p)+'</td>':'')+
 '<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td>'+
 '</tr>';
 });

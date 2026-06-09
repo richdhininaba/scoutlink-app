@@ -3,7 +3,27 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
-const { getPosGroup } = require('../engines/compatibility');
+const { getPosGroup, analysePlayer } = require('../engines/compatibility');
+
+const PLAN_LIMITS = {
+  Core: { exports: 30, predictions: 120, interests: 200 },
+  Plus: { exports: 120, predictions: 600, interests: 1000 },
+  Elite: { exports: 500, predictions: 1200, interests: 99999 },
+  Enterprise: { exports: 99999, predictions: 99999, interests: 99999 }
+};
+
+function limitsFor(plan) {
+  return PLAN_LIMITS[plan] || PLAN_LIMITS.Core;
+}
+
+async function teamUsage(table, scout) {
+  let q = supabase.from(table).select('id', { count:'exact', head:true });
+  if (scout.scout_team_id) q = q.eq('scout_team_id', scout.scout_team_id);
+  else q = q.eq('scout_id', scout.id);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count || 0;
+}
 
 function confidenceModifier(apps) {
   const n = Number(apps) || 0;
@@ -150,10 +170,6 @@ router.post('/setup', requireAuth, requireRole('Scout'), async (req, res) => {
     const { teamName, clubName, country, scoutRegion, formation, playingStyle, teamWeaknesses, roleExpectations, longTermGoals, ageGroups, preferredPositions, salaryCap, minAppearances } = req.body;
     const prefs = { teamName:teamName||'', clubName:clubName||'', country:country||'', scoutRegion:scoutRegion||'', formation:formation||'', playingStyle:playingStyle||'', teamWeaknesses:teamWeaknesses||[], roleExpectations:roleExpectations||[], longTermGoals:longTermGoals||[], ageGroups:ageGroups||[], preferredPositions:preferredPositions||[], salaryCap:salaryCap?Number(salaryCap):null, minAppearances:minAppearances?Number(minAppearances):0, updatedAt:new Date().toISOString() };
     await supabase.from('scouts').update({ scout_preferences: prefs, preferences_set: true }).eq('id', req.user.id);
-    const { data: scout } = await supabase.from('scouts').select('scout_team_id').eq('id', req.user.id).single();
-    if (scout && scout.scout_team_id) {
-      await supabase.from('scout_teams').update({ team_weaknesses:teamWeaknesses||[], role_expectations:roleExpectations||[], long_term_goals:longTermGoals||[], formation:formation||null, playing_style:playingStyle||null, scout_region:scoutRegion||null, country:country||null, salary_cap:salaryCap?Number(salaryCap):null, min_appearances:minAppearances?Number(minAppearances):0, preferred_positions:preferredPositions||[], age_groups:ageGroups||[], club_name:clubName||null }).eq('id', scout.scout_team_id);
-    }
     res.json({ message: 'Setup saved successfully', preferences: prefs });
   } catch (err) { console.error('[Scout Setup]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
@@ -165,6 +181,49 @@ router.get('/setup', requireAuth, requireRole('Scout'), async (req, res) => {
     if (scout && scout.scout_team_id) { const { data: team } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).single(); teamData = team; }
     res.json({ preferences: scout?.scout_preferences||{}, preferencesSet: scout?.preferences_set||false, scoutTeam: teamData });
   } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/settings', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { data: scout, error } = await supabase
+      .from('scouts')
+      .select('scout_preferences')
+      .eq('id', req.user.id)
+      .single();
+    if (error || !scout) return res.status(404).json({ error: 'Scout not found' });
+    const prefs = scout.scout_preferences || {};
+    res.json({
+      settings: {
+        theme: prefs.theme || 'dark',
+        emailAlerts: prefs.emailAlerts !== false,
+        pushAlerts: prefs.pushAlerts !== false,
+        weeklySummary: prefs.weeklySummary !== false
+      }
+    });
+  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.patch('/settings', requireAuth, requireRole('Scout'), async (req, res) => {
+  try {
+    const { data: scout, error } = await supabase
+      .from('scouts')
+      .select('scout_preferences')
+      .eq('id', req.user.id)
+      .single();
+    if (error || !scout) return res.status(404).json({ error: 'Scout not found' });
+    const prefs = scout.scout_preferences || {};
+    const next = {
+      ...prefs,
+      theme: req.body.theme === 'light' ? 'light' : 'dark',
+      emailAlerts: req.body.emailAlerts !== false,
+      pushAlerts: req.body.pushAlerts !== false,
+      weeklySummary: req.body.weeklySummary !== false,
+      settingsUpdatedAt: new Date().toISOString()
+    };
+    const { error: updateErr } = await supabase.from('scouts').update({ scout_preferences: next }).eq('id', req.user.id);
+    if (updateErr) throw updateErr;
+    res.json({ message: 'Settings saved', settings: { theme: next.theme, emailAlerts: next.emailAlerts, pushAlerts: next.pushAlerts, weeklySummary: next.weeklySummary } });
+  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req, res) => {
@@ -179,12 +238,31 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
     if (prefs.longTermGoals?.length) scoutTeam.long_term_goals = prefs.longTermGoals;
     if (prefs.formation) scoutTeam.formation = prefs.formation;
     if (prefs.playingStyle) scoutTeam.playing_style = prefs.playingStyle;
-    let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,overall_rating,transfer_value,predicted_salary_weekly,team_name,height_category,build_category,nationality,date_of_birth,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,foot,gk_diving,gk_handling,gk_kicking,gk_reflexes,gk_positioning,gk_distribution').eq('is_active', true);
+    let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,overall_rating,transfer_value,predicted_salary_weekly,team_id,team_name,height_category,build_category,nationality,date_of_birth,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,foot,gk_diving,gk_handling,gk_kicking,gk_reflexes,gk_positioning,gk_distribution,gk_communication,gk_sweeping').eq('is_active', true);
     if (prefs.minAppearances && Number(prefs.minAppearances) > 0) q = q.gte('appearances', Number(prefs.minAppearances));
     q = q.order('overall_rating', { ascending: false }).limit(100);
     const { data: players, error } = await q;
     if (error) throw error;
-    const scored = (players||[]).map(p => { const r = calcFullCompatibility(p, scoutTeam); return { ...p, compatibilityScore: r.score, compatibilityBreakdown: r.breakdown }; });
+    const playerIds = (players || []).map(p => p.id);
+    const { data: matches } = playerIds.length
+      ? await supabase.from('match_facts').select('*').in('player_id', playerIds).order('match_date', { ascending: false }).limit(500)
+      : { data: [] };
+    const matchesByPlayer = {};
+    (matches || []).forEach(m => {
+      if (!matchesByPlayer[m.player_id]) matchesByPlayer[m.player_id] = [];
+      if (matchesByPlayer[m.player_id].length < 10) matchesByPlayer[m.player_id].push(m);
+    });
+    const teamIds = [...new Set((players || []).map(p => p.team_id).filter(Boolean))];
+    const { data: teams } = teamIds.length
+      ? await supabase.from('school_academy_teams').select('id,city,country,county').in('id', teamIds)
+      : { data: [] };
+    const teamsById = {};
+    (teams || []).forEach(t => { teamsById[t.id] = t; });
+    const scored = (players||[]).map(p => {
+      const analysis = analysePlayer(p, scoutTeam, matchesByPlayer[p.id] || [], prefs);
+      const teamInfo = teamsById[p.team_id] || {};
+      return { ...p, team_city: teamInfo.city || teamInfo.county || null, team_country: teamInfo.country || null, compatibilityScore: analysis.compatibilityScore, compatibilityBreakdown: analysis.compatibilityBreakdown };
+    });
     scored.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
     let filtered = scored;
     
@@ -196,7 +274,7 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
     }
     if (prefs.preferredPositions && prefs.preferredPositions.length) {
       const pp = prefs.preferredPositions.map(p => p.toUpperCase());
-      const pf = scored.filter(p => { const pos = Array.isArray(p.positions) ? p.positions : [p.specific_position||p.primary_position||'']; return pos.some(x => pp.includes(String(x).toUpperCase())); });
+      const pf = filtered.filter(p => { const pos = Array.isArray(p.positions) ? p.positions : [p.specific_position||p.primary_position||'']; return pos.some(x => pp.includes(String(x).toUpperCase())); });
       if (pf.length > 0) filtered = pf;
     }
     res.json({ data: filtered.slice(0, 10), total: filtered.length, setupRequired: false });
@@ -390,23 +468,26 @@ try {
 router.get('/predictions', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
   const { data: scout } = await supabase.from('scouts')
-    .select('predictions_remaining, subscription_plan')
+    .select('id,scout_team_id,predictions_remaining,subscription_plan')
     .eq('id', req.user.id).single();
-  
-  const LIMITS = { Core: 120, Plus: 600, Elite: 1200 };
+
+  if (!scout) return res.status(404).json({ error: 'Scout not found' });
   const plan = scout?.subscription_plan || 'Core';
-  const limit = LIMITS[plan] || 120;
-  const remaining = scout?.predictions_remaining ?? limit;
+  const limit = limitsFor(plan).predictions;
+  const teamUsed = await teamUsage('predictions_log', scout);
+  const remaining = Math.max(0, limit - teamUsed);
   
-  const { data: predictions } = await supabase.from('scout_predictions')
-    .select('id, player_id, training_plan, yr1_rating, yr2_rating, yr3_rating, created_at, players(first_name, last_name, position_group, team_name)')
+  const { data: predictions, error } = await supabase.from('predictions_log')
+    .select('id, player_id, prediction_type, input_params, result, run_at, players(first_name, last_name, position_group, team_name, overall_rating)')
     .eq('scout_id', req.user.id)
-    .order('created_at', { ascending: false })
+    .order('run_at', { ascending: false })
     .limit(100);
+  if (error) throw error;
   
   res.json({ 
     data: predictions || [], 
     total: (predictions||[]).length,
+    teamUsed,
     remaining, 
     planLimit: limit, 
     plan 
@@ -418,16 +499,17 @@ try {
 router.get('/exports', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
   const { data: scout } = await supabase.from('scouts')
-    .select('exports_remaining, subscription_plan')
+    .select('id,scout_team_id,exports_remaining,subscription_plan')
     .eq('id', req.user.id).single();
-  
-  const LIMITS = { Core: 30, Plus: 120, Elite: 500 };
+
+  if (!scout) return res.status(404).json({ error: 'Scout not found' });
   const plan = scout?.subscription_plan || 'Core';
-  const limit = LIMITS[plan] || 30;
-  const remaining = scout?.exports_remaining ?? limit;
+  const limit = limitsFor(plan).exports;
+  const teamUsed = await teamUsage('scout_exports', scout);
+  const remaining = Math.max(0, limit - teamUsed);
   
   const { data: exports_ } = await supabase.from('scout_exports')
-    .select('id, player_id, export_type, file_url, created_at, players(first_name, last_name, position_group, team_name)')
+    .select('id, player_id, prediction_log_id, export_type, source, file_name, file_url, created_at, players(first_name, last_name, position_group, team_name)')
     .eq('scout_id', req.user.id)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -435,6 +517,7 @@ try {
   res.json({ 
     data: exports_ || [], 
     total: (exports_||[]).length,
+    teamUsed,
     remaining, 
     planLimit: limit, 
     plan 

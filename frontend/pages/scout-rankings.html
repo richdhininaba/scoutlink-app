@@ -9,7 +9,7 @@
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
 .leaderboard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
 .leaderboard-header{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);}
-.leaderboard-icon{font-size:20px;}
+.leaderboard-icon{min-width:34px;height:26px;border-radius:6px;background:rgba(29,158,117,.12);border:1px solid rgba(29,158,117,.24);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;letter-spacing:.04em;}
 .leaderboard-title{font-size:16px;font-weight:700;}
 .leaderboard-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);}
 .leaderboard-row:last-child{border-bottom:none;}
@@ -101,11 +101,11 @@ function loadRankings(){
   if(typeof api!=='function')return;
   api('GET','/api/scouts/rankings').then(function(d){
     document.getElementById('rankingsGrid').innerHTML =
-      buildLeaderboard('Top scorers','&#9917;', d.topScorers, 'goals', 'goals', null) +
-      buildLeaderboard('Top assisters','&#127381;', d.topAssisters, 'assists', 'assists', null) +
-      buildLeaderboard('Top clean sheets','&#128274;', d.topCleanSheets, 'clean_sheets', 'clean sheets', null) +
-      buildLeaderboard('Most scouted','&#128269;', d.topInterested, 'interest_count', 'scouts', null) +
-      buildLeaderboard('Most valuable','&#128181;', d.topExpensive, 'transfer_value', 'est. value', fmtVal);
+      buildLeaderboard('Top scorers','G', d.topScorers, 'goals', 'goals', null) +
+      buildLeaderboard('Top assisters','A', d.topAssisters, 'assists', 'assists', null) +
+      buildLeaderboard('Top clean sheets','CS', d.topCleanSheets, 'clean_sheets', 'clean sheets', null) +
+      buildLeaderboard('Most scouted','INT', d.topInterested, 'interest_count', 'scouts', null) +
+      buildLeaderboard('Most valuable','GBP', d.topExpensive, 'transfer_value', 'est. value', fmtVal);
   }).catch(function(e){
     document.getElementById('rankingsGrid').innerHTML='<div style="grid-column:1/-1;padding:32px;color:var(--text-secondary);text-align:center">Could not load rankings. '+e.message+'</div>';
   });

@@ -44,3 +44,20 @@
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
   --transition: 0.2s ease;
 }
+
+body.theme-light {
+  --bg: #f6f8fb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef3f7;
+  --card: #ffffff;
+  --card-alt: #f1f5f9;
+  --text: #102033;
+  --text-secondary: #52616f;
+  --text-muted: #6b7a88;
+  --border: #d7e0ea;
+  --bg2: #ffffff;
+  --card2: #f1f5f9;
+  --text2: #52616f;
+  --text3: #6b7a88;
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+}

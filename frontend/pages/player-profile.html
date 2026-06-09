@@ -57,6 +57,16 @@
 .pred-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border,#30363d);background:transparent;color:#8b949e;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;}
 .pred-btn.active{background:#1d9e75;color:#000;border-color:#1d9e75;}
 .pred-btn:hover:not(.active){border-color:#1d9e75;color:#1d9e75;}
+.profile-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;}
+.profile-modal.open{display:flex;}
+.profile-modal-box{width:min(820px,100%);max-height:88vh;overflow:auto;background:#161b22;border:1px solid #30363d;border-radius:12px;box-shadow:0 22px 70px rgba(0,0,0,.5);}
+.profile-modal-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 18px;border-bottom:1px solid #30363d;}
+.profile-modal-body{padding:18px;}
+.match-fixture-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.video-table{width:100%;border-collapse:collapse;}
+.video-table th,.video-table td{padding:10px 12px;border-bottom:1px solid var(--border,#30363d);font-size:13px;text-align:left;}
+.video-table th{color:#8b949e;text-transform:uppercase;font-size:11px;letter-spacing:.04em;}
+@media(max-width:900px){.match-fixture-grid{grid-template-columns:1fr;}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -92,6 +102,15 @@
 <div class="video-frame" id="profileVideoFrame"></div>
 </div>
 </div>
+<div class="profile-modal" id="profileActionModal">
+<div class="profile-modal-box">
+<div class="profile-modal-head">
+<div id="profileActionTitle" style="font-weight:800;font-size:16px">Details</div>
+<button class="btn btn-sm btn-outline" onclick="closeProfileActionModal()">Close</button>
+</div>
+<div class="profile-modal-body" id="profileActionBody"></div>
+</div>
+</div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
@@ -109,6 +128,11 @@ function attrLabel(k){var m={pace:'Pace',agility:'Agility',strength:'Strength',s
 function buildAttrBar(label,val){var n=parseFloat(val);var pct=isNaN(n)?0:Math.min(100,Math.round(n>10?n:n*10));var col=pct>=70?'#1d9e75':pct>=50?'#FFC107':'#f44336';return '<div class="attr-row"><span class="attr-label">'+label+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+((!isNaN(n))?(n>10?n/10:n).toFixed(1):'--')+'</span></div>';}
 function statBadge(label,val){return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-lbl">'+label+'</div></div>';}
 var _profileVideos=[];
+var _profileMatches=[];
+var _profileFixtures=[];
+var _profilePlayer=null;
+var _profileAnalysis=null;
+var _lastPredictionLogId=null;
 function matchPerf(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.max(0,Math.min(100,Math.round(n<=10?n*10:n)));}
 function confidenceInfo(count){var n=parseInt(count)||0;if(n<1)return{label:'No match evidence',color:'#f44336',text:'No match facts have been recorded yet.'};if(n<5)return{label:'Low confidence',color:'#FF9800',text:'Based on fewer than 5 games. Add more match facts before relying heavily on this score.'};if(n<10)return{label:'Medium confidence',color:'#FFC107',text:'Enough games for a useful early read, but more fixtures will improve the signal.'};return{label:'High confidence',color:'#1d9e75',text:'This rating is supported by a stronger set of match records.'};}
 function scoreText(m){if(m.home_score===null||m.home_score===undefined||m.away_score===null||m.away_score===undefined)return 'Score not entered';return String(m.home_score)+' - '+String(m.away_score);}
@@ -125,6 +149,39 @@ return '<div class="video-fallback"><p style="margin-bottom:12px">This video pro
 }
 function openProfileVideo(idx){var v=_profileVideos[idx];if(!v)return;var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoTitle').textContent=v.title||'Video reel';document.getElementById('profileVideoDesc').textContent=(v.category||'Highlight')+(v.description?' - '+v.description:'');document.getElementById('profileVideoFrame').innerHTML=embedHtml(v.video_url||v.url||'');modal.classList.add('open');}
 function closeProfileVideo(){var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoFrame').innerHTML='';modal.classList.remove('open');}
+function openProfileActionModal(title,html){document.getElementById('profileActionTitle').textContent=title;document.getElementById('profileActionBody').innerHTML=html;document.getElementById('profileActionModal').classList.add('open');}
+function closeProfileActionModal(){document.getElementById('profileActionModal').classList.remove('open');document.getElementById('profileActionBody').innerHTML='';}
+function pitchHtml(label){
+return '<div style="height:280px;border:2px solid #1d9e75;border-radius:12px;background:linear-gradient(90deg,rgba(29,158,117,.18),rgba(29,158,117,.08));position:relative;margin:14px 0;overflow:hidden">'+
+'<div style="position:absolute;inset:18px;border:1px solid rgba(255,255,255,.35);border-radius:8px"></div>'+
+'<div style="position:absolute;left:50%;top:0;bottom:0;border-left:1px solid rgba(255,255,255,.28)"></div>'+
+'<div style="position:absolute;left:50%;top:50%;width:78px;height:78px;border:1px solid rgba(255,255,255,.28);border-radius:50%;transform:translate(-50%,-50%)"></div>'+
+'<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#1d9e75;color:#000;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;box-shadow:0 8px 22px rgba(0,0,0,.35)">'+safe(label||'Position')+'</div>'+
+'</div>';
+}
+function openMatchDetail(idx){
+var m=_profileMatches[idx];if(!m)return;
+var res=resultInfo(m);var position=safe(m.position_played||m.player_position||m.specific_position||(_profilePlayer&&(_profilePlayer.specific_position||_profilePlayer.primary_position)));
+var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div><div style="font-size:12px;color:#8b949e">Opponent</div><b>'+safe(m.opponent_name||m.opponent)+'</b></div><div><div style="font-size:12px;color:#8b949e">Score</div><b>'+scoreText(m)+' <span style="color:'+res.color+'">'+res.text+'</span></b></div><div><div style="font-size:12px;color:#8b949e">Date</div><b>'+safe(m.match_date?m.match_date.slice(0,10):null)+'</b></div><div><div style="font-size:12px;color:#8b949e">Player position</div><b>'+position+'</b></div></div>';
+html+=pitchHtml(position);
+html+='<table class="sl-table"><tbody>'+
+'<tr><th>Goals</th><td>'+(m.goals_scored||m.goals||0)+'</td></tr>'+
+'<tr><th>Assists</th><td>'+(m.assists||0)+'</td></tr>'+
+'<tr><th>Cards</th><td>'+(m.yellow_cards||0)+' yellow, '+(m.red_cards||0)+' red</td></tr>'+
+'<tr><th>Substitution</th><td>'+safe(m.substitution||m.sub_status||m.minutes_played?((m.minutes_played||'--')+' minutes'):'Not recorded')+'</td></tr>'+
+'<tr><th>Coach notes</th><td>'+safe(m.coach_notes||m.notes)+'</td></tr>'+
+'</tbody></table>';
+openProfileActionModal('Match detail',html);
+}
+function openFixtureDetail(idx){
+var fx=_profileFixtures[idx];if(!fx)return;
+var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><div style="font-size:12px;color:#8b949e">Opponent</div><b>'+safe(fx.opponent)+'</b></div><div><div style="font-size:12px;color:#8b949e">Date</div><b>'+safe(fx.fixture_date?new Date(fx.fixture_date).toLocaleDateString('en-GB'):null)+'</b></div><div><div style="font-size:12px;color:#8b949e">Home/Away</div><b>'+safe(fx.home_or_away)+'</b></div><div><div style="font-size:12px;color:#8b949e">Venue</div><b>'+safe(fx.venue||fx.venue_address||fx.city)+'</b></div></div>';
+html+='<div style="margin-top:14px;padding:12px;background:#0d1117;border-radius:8px;color:#8b949e;font-size:13px">Fixture address: '+safe(fx.venue_address||fx.address||fx.postcode||fx.venue)+'</div>';
+openProfileActionModal('Upcoming fixture',html);
+}
+function downloadBase64(filename,mime,contentBase64){var bin=atob(contentBase64);var bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);var blob=new Blob([bytes],{type:mime});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
+function cmRangeToFeet(range){var nums=String(range||'').match(/\d+/g)||[];if(nums.length<2)return'--';function one(cm){var inches=cm/2.54;var ft=Math.floor(inches/12);var inch=Math.round(inches-ft*12);if(inch===12){ft++;inch=0;}return ft+"'"+inch+'"';}return one(Number(nums[0]))+' - '+one(Number(nums[1]));}
+function sentenceCase(v){return String(v||'--').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
 
 function initNav(){
 if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
@@ -147,7 +204,7 @@ var btn=document.getElementById('btnInterest');
 if(!btn)return;
 if(_alreadyInPipeline){return;}
 if(_interestsRemaining<=0){
-alert('You have used all your interests for this plan. Please upgrade to add more players to your pipeline.');
+alert('You have reached your interest cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.');
 return;
 }
 btn.disabled=true;btn.textContent='Adding...';
@@ -164,15 +221,30 @@ if(rem){rem.textContent=_interestsRemaining+' interests remaining';}
 }
 }).catch(function(e){
 btn.disabled=false;btn.textContent='+ Register Interest';
-if(e.message&&e.message.indexOf('402')>=0){alert('You have used all your interests. Upgrade to add more.');}
-else{alert('Could not add to pipeline: '+(e.message||'Error'));}
+alert(e.message||'Could not add to pipeline. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');
 });
 }
 
 function exportProfile(playerId){
 var btn=document.getElementById('btnExport');
+if(!confirm('Export this player profile? This will count against your scout team export cap.'))return;
+var fmt=(prompt('Choose export format: PDF or Excel','PDF')||'PDF').trim().toUpperCase();
+if(fmt!=='PDF'&&fmt!=='EXCEL'&&fmt!=='XLS')fmt='PDF';
 if(btn){btn.disabled=true;btn.textContent='Exporting...';}
-setTimeout(function(){if(btn){btn.disabled=false;btn.textContent='Export Profile';}alert('PDF export coming soon.');},800);
+api('POST','/api/exports/player',{playerId:playerId,format:fmt,source:'profile'}).then(function(r){
+downloadBase64(r.filename,r.mime,r.contentBase64);
+if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+}).catch(function(e){
+if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+alert(e.message||'Could not export profile. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');
+});
+}
+function exportLastPrediction(){
+if(!_profilePlayer||!_lastPredictionLogId){alert('Run a prediction first.');return;}
+if(!confirm('Export this prediction as a PDF? This will count against your scout team export cap.'))return;
+api('POST','/api/exports/player',{playerId:_profilePlayer.id,format:'PDF',source:'prediction',predictionLogId:_lastPredictionLogId}).then(function(r){
+downloadBase64(r.filename,r.mime,r.contentBase64);
+}).catch(function(e){alert(e.message||'Could not export prediction. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');});
 }
 function scrollToVideos(){var el=document.getElementById('videoSection');if(el)el.scrollIntoView({behavior:'smooth'});}
 
@@ -183,28 +255,44 @@ if(!el)return;
 el.innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
 api('POST','/api/players/'+playerId+'/analyse',{}).then(function(r){
 var b=r.compatibilityBreakdown||{};var score=Math.round(r.compatibilityScore||0);var sColor=cColor(score);
+_profileAnalysis=r;
 var breakdown=[
-{label:'Team Weakness Fit (40%)',val:Math.round(b.weaknessFit||50),color:'#1d9e75'},
-{label:'Role Expectation Fit (20%)',val:Math.round(b.roleFit||50),color:'#00BCD4'},
-{label:'Playing Style Fit (20%)',val:Math.round(b.styleFit||50),color:'#42A5F5'},
-{label:'Formation Fit (10%)',val:Math.round(b.formationFit||50),color:'#FFC107'},
-{label:'Long-Term Goals Fit (10%)',val:Math.round(b.goalsFit||50),color:'#FF9800'},
+{label:'Technical profile',val:Math.round(b.technical||b.technicalScore||50),color:'#1d9e75'},
+{label:'Tactical fit',val:Math.round(b.tacticalFit||50),color:'#00BCD4'},
+{label:'Physical profile',val:Math.round(b.physicalProfile||50),color:'#42A5F5'},
+{label:'Match impact',val:Math.round(b.matchImpact||50),color:'#FFC107'},
+{label:'Age development fit',val:Math.round(b.ageDevelopmentFit||50),color:'#FF9800'},
+{label:'Data confidence',val:Math.round(b.dataConfidence||50),color:'#8B5CF6'}
 ];
 var barsHtml=breakdown.map(function(bd){return '<div class="compat-bar-row"><div class="compat-bar-label"><span style="color:var(--text2)">'+bd.label+'</span><span style="font-weight:700;color:'+bd.color+'">'+bd.val+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+bd.val+'%;background:'+bd.color+'"></div></div></div>';}).join('');
 var apps=parseInt(b.appearances||0);var conf=confLabel(apps);
-el.innerHTML='<div class="table-card"><div class="table-header"><h3>Compatibility Breakdown</h3><span style="font-size:32px;font-weight:900;color:'+sColor+'">'+score+'</span></div><div style="padding:20px">'+barsHtml+'<div style="margin-top:14px;padding:12px;background:#0a0f1e;border-radius:8px;font-size:12px;color:var(--text2)"><strong>Confidence:</strong> <span style="color:'+conf.color+'">'+conf.label+'</span> &mdash; Based on '+apps+' appearance'+(apps!==1?'s':'')+'.</div></div></div>';
+el.innerHTML='<div class="table-card"><div class="table-header"><h3>Compatibility Breakdown</h3><span style="font-size:32px;font-weight:900;color:'+sColor+'">'+score+'</span></div><div style="padding:20px">'+barsHtml+'<div style="margin-top:14px;padding:12px;background:#0a0f1e;border-radius:8px;font-size:12px;color:var(--text2)"><strong>Confidence:</strong> <span style="color:'+conf.color+'">'+conf.label+'</span> &mdash; Based on '+apps+' appearance'+(apps!==1?'s':'')+'. This blends coach attributes, match evidence, physical profile and your scout setup.</div></div></div>';
 }).catch(function(e){el.innerHTML='<div style="padding:16px;color:var(--text3)">Compatibility breakdown unavailable: '+e.message+'</div>';});
 }
 
 // ===================== PREDICTIONS =====================
 var PRED_TYPE_MAP = {
-'attribute_trajectory': 'Attribute trajectory',
-'maturation_flag': 'Maturation and relative age risk',
-'positional_ceiling': 'Positional ceiling estimate',
-'scenario_simulation': 'Match scenario simulation',
-'value_trajectory': 'Transfer value trajectory',
-'consistency_score': 'Consistency and reliability score'
+'attribute_development': 'Attribute Development',
+'roi_analysis': 'ROI Analysis',
+'match_scenario': 'Match Scenario Prediction'
 };
+function predictionInputParams(predType){
+if(predType==='attribute_development')return{focus:document.getElementById('developmentFocus')?document.getElementById('developmentFocus').value:'Balanced Growth'};
+if(predType==='roi_analysis')return{financialGoal:document.getElementById('financialGoal')?document.getElementById('financialGoal').value:'Balanced value growth'};
+if(predType==='match_scenario')return{scenarioKey:document.getElementById('scenarioSelect')?document.getElementById('scenarioSelect').value:'protect_lead'};
+return{};
+}
+function renderEnhancedPrediction(result){
+var html='<div style="background:#0d1117;border-radius:8px;padding:16px;margin-top:8px">';
+html+='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">'+safe(result.type)+'</div><div style="font-size:12px;color:#8b949e">'+safe(result.summary||result.recommendation||result.financialGoal||result.scenario)+'</div></div><button class="btn btn-sm btn-outline" onclick="exportLastPrediction()">Export PDF</button></div>';
+if(result.confidence)html+='<div style="font-size:12px;color:#8b949e;margin-bottom:12px"><b style="color:#fff">Data confidence:</b> '+safe(result.confidence.label)+' - '+safe(result.confidence.note)+'</div>';
+if(result.seasons){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Overall</th><th>Transfer value</th><th>Ranking impact</th></tr></thead><tbody>'+result.seasons.map(function(s){return'<tr><td>Year '+s.year+'</td><td>'+s.overall+'/100</td><td>'+safe(s.transferValueFormatted)+'</td><td>'+safe(s.rankingImpact)+'</td></tr>';}).join('')+'</tbody></table>';}
+else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Horizon</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+s.horizon+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><p style="font-size:13px;color:#B0BEC5;margin-top:12px">'+safe(result.recommendation)+'</p>';}
+else if(result.evidence){html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe(result.predictedBehaviour)+'</p><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
+else{html+='<pre style="white-space:pre-wrap;color:#B0BEC5;font-size:12px">'+JSON.stringify(result,null,2)+'</pre>';}
+html+='<p style="font-size:11px;color:#8b949e;margin-top:12px">'+safe(result.disclaimer)+'</p></div>';
+return html;
+}
 function runPrediction(playerId, predType){
 var res=document.getElementById('predResultArea');
 if(!res)return;
@@ -213,8 +301,14 @@ document.querySelectorAll('.pred-btn').forEach(function(b){b.classList.remove('a
 var activeBtn=document.querySelector('.pred-btn[data-pred-type="'+predType+'"]');
 if(activeBtn)activeBtn.classList.add('active');
 var backendType=PRED_TYPE_MAP[predType]||predType;
-api('POST','/api/predictions/run',{playerId:playerId,predictionType:backendType}).then(function(r){
+api('POST','/api/predictions/run',{playerId:playerId,predictionType:backendType,inputParams:predictionInputParams(predType)}).then(function(r){
 var result=r.result||r||{};
+_lastPredictionLogId=r.logId||null;
+if(predType==='attribute_development'||predType==='roi_analysis'||predType==='match_scenario'){
+res.innerHTML=renderEnhancedPrediction(result);
+if(typeof r.creditsRemaining==='number'){var el2=document.getElementById('predCredits');if(el2)el2.textContent=r.creditsRemaining+' prediction credits remaining';}
+return;
+}
 var html='<div style="background:#0d1117;border-radius:8px;padding:16px;margin-top:8px">';
 if(predType==='maturation_flag'){
 html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.quarterMessage||result.message||'Analysis complete.')+'</p>';
@@ -257,12 +351,17 @@ document.getElementById('profileContent').innerHTML='<div style="text-align:cent
 return;
 }
 
-api('GET','/api/players/'+playerId).then(function(d){
+api('GET','/api/players/'+playerId).then(async function(d){
 if(!d||!d.player){throw new Error('Player not found');}
 var p=d.player;
 var matches=d.recentMatches||[];
 var videos=d.videos||[];
 var fixtures=d.upcomingFixtures||[];
+_profilePlayer=p;_profileMatches=matches;_profileFixtures=fixtures;
+var profileAnalysis=null;
+if(Auth.type==='Scout'){
+try{profileAnalysis=await api('POST','/api/players/'+playerId+'/analyse',{});_profileAnalysis=profileAnalysis;}catch(e){}
+}
 var pipelineStatus=d.pipelineStatus||null;
 var interestsRem=typeof d.interestsRemaining==='number'?d.interestsRemaining:200;
 _interestsRemaining=interestsRem;
@@ -336,7 +435,7 @@ actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;ali
 // Match facts
 var matchHtml='';
 if(matches.length){
-matchHtml=matches.slice(0,5).map(function(m){
+matchHtml=matches.slice(0,5).map(function(m,idx){
 var perf=matchPerf(m.performance_score||0);var pCol2=perf?cColor(perf):'#8b949e';
 var res=resultInfo(m);
 var cards='';
@@ -351,14 +450,14 @@ return '<div class="match-row">'+
 '<div style="margin-top:4px"><span style="color:#1d9e75;font-weight:800">'+(m.goals_scored||m.goals||0)+'G</span> '+
 '<span style="color:#42A5F5;font-weight:800">'+(m.assists||0)+'A</span>'+
 (cards?'<span style="margin-left:8px">'+cards+'</span>':'<span style="color:#8b949e;margin-left:8px">0 cards</span>')+
-'</div></div></div></div>';
+'</div><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="openMatchDetail('+idx+')">View match</button></div></div></div>';
 }).join('');
 }else{matchHtml='<div style="text-align:center;padding:20px;color:#8b949e;font-size:13px">No match facts recorded yet for this player.</div>';}
 
 // Upcoming fixtures
 var fixtureHtml='';
 if(fixtures.length){
-fixtureHtml=fixtures.map(function(fx){
+fixtureHtml=fixtures.map(function(fx,idx){
 var fdate=fx.fixture_date?new Date(fx.fixture_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'TBC';
 var home=fx.home_or_away==='Home'?'H':'A';
 var homeColor=home==='H'?'#1d9e75':'#FF9800';
@@ -367,6 +466,7 @@ return '<div class="fixture-row">'+
 '<span class="fixture-opponent" style="font-size:14px;font-weight:600">'+(fx.home_or_away==='Home'?'vs ':'@ ')+safe(fx.opponent)+'</span>'+
 '<span style="background:'+homeColor+'22;color:'+homeColor+';border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">'+home+'</span>'+
 '<span class="fixture-venue">'+(fx.venue||fx.format||'')+'</span>'+
+'<button class="btn btn-sm btn-outline" onclick="openFixtureDetail('+idx+')">Details</button>'+
 '</div>';
 }).join('');
 }else{fixtureHtml='<div style="text-align:center;padding:20px;color:#8b949e;font-size:13px">No upcoming fixtures scheduled.</div>';}
@@ -375,18 +475,23 @@ return '<div class="fixture-row">'+
 var videoHtml='';
 _profileVideos=videos;
 if(videos.length){
-videoHtml=videos.map(function(v,idx){
+videoHtml='<table class="video-table"><thead><tr><th>Title</th><th>Category</th><th>Description</th><th></th></tr></thead><tbody>'+videos.map(function(v,idx){
 var url=v.video_url||v.url||'#';
-return '<div class="video-card">'+
-'<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+(v.title||'Video')+'</div>'+
-'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">'+(v.category||'Highlight')+' &middot; '+(v.description||'')+'</div>'+
-'<button class="btn btn-sm btn-outline" style="min-height:36px" onclick="openProfileVideo('+idx+')">&#9654; Watch</button>'+
-'</div>';
-}).join('');
+return '<tr><td><b>'+(v.title||'Video')+'</b></td><td>'+(v.category||'Highlight')+'</td><td style="color:#8b949e">'+(v.description||'')+'</td><td><button class="btn btn-sm btn-outline" style="min-height:36px" onclick="openProfileVideo('+idx+')">Watch</button></td></tr>';
+}).join('')+'</tbody></table>';
 }else{videoHtml='<div style="text-align:center;padding:32px;color:var(--text3)">No video reels uploaded yet.</div>';}
 
 // Transfer value
 var tvHtml='<div style="font-size:24px;font-weight:900;color:#1d9e75">'+(p.transfer_value&&p.transfer_value>0?'\u00A3'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0}):'Calculating...')+'</div>';
+var compatHeroHtml='';
+if(Auth.type==='Scout'){
+var cScore=profileAnalysis?Math.round(profileAnalysis.compatibilityScore||0):'--';
+compatHeroHtml='<div style="font-size:34px;font-weight:900;color:'+cColor(Number(cScore)||0)+'">'+cScore+(cScore==='--'?'':'%')+'</div><div style="font-size:11px;color:#8b949e;margin-bottom:12px">Compatibility score</div>';
+}
+var heightLabel=sentenceCase(p.height_category);
+var heightRange=safe(p.height_range_cm);
+var heightFeet=cmRangeToFeet(p.height_range_cm);
+var buildLabel=sentenceCase(p.build_category);
 
 // ===================== RENDER =====================
 document.getElementById('profileContent').innerHTML=
@@ -405,7 +510,7 @@ ageOutBanner+
 '</div>'+
 actionBtns+
 '</div>'+
-'<div style="text-align:right">'+tvHtml+'<div style="font-size:11px;color:#8b949e">Est. transfer value</div></div>'+
+'<div style="text-align:right">'+compatHeroHtml+tvHtml+'<div style="font-size:11px;color:#8b949e">Est. transfer value</div></div>'+
 '</div></div>'+
 
 // Overall performance
@@ -442,14 +547,16 @@ statBadge('Appearances',apps)+statBadge('Goals',goals)+statBadge('Assists',assts
 // Physical card
 '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Physical Profile</div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:8px">Height: <b>'+safe(p.height_range_cm)+'</b></div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:8px">Build: <b>'+safe(p.build_category)+'</b></div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:8px">Height category: <b>'+safe(p.height_category)+'</b></div>'+
+'<div style="font-size:13px;color:#e6edf3;margin-bottom:10px">HEIGHT: <b>'+heightLabel+' ('+heightRange+')</b></div>'+
+'<div style="font-size:13px;color:#8b949e;margin-bottom:10px">Feet/inches: <b style="color:#e6edf3">'+heightFeet+'</b></div>'+
+'<div style="font-size:13px;color:#e6edf3;margin-bottom:10px">Build: <b>'+buildLabel+'</b></div>'+
+'<div style="font-size:13px;color:#8b949e;margin-bottom:10px">Weight range: <b style="color:#e6edf3">'+safe(p.weight_range_kg)+'</b></div>'+
 '<div style="font-size:13px;color:#e6edf3;margin-bottom:8px">Nationality: <b>'+safe(p.nationality)+'</b></div>'+
 '<div style="font-size:13px;color:#e6edf3">DOB: <b>'+safe(p.date_of_birth?p.date_of_birth.slice(0,10):null)+'</b></div>'+
 '</div></div>'+
 
 // Match Facts
+'<div class="match-fixture-grid">'+
 '<div id="matchSection" class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Last 5 Match Facts</div>'+
 matchHtml+
@@ -459,12 +566,12 @@ matchHtml+
 '<div id="fixtureSection" class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Upcoming Fixtures</div>'+
 fixtureHtml+
-'</div>'+
+'</div></div>'+
 
 // Video Reels
 '<div id="videoSection" class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Video Reels'+(videos.length?' ('+videos.length+')':'')+'</div>'+
-(videos.length?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+videoHtml+'</div>':videoHtml)+
+videoHtml+
 '</div>'+
 
 // Compatibility
@@ -482,13 +589,10 @@ fixtureHtml+
 '<div id="predCredits" style="font-size:12px;color:#8b949e"></div>'+
 '</div>'+
 '<div style="background:rgba(255,152,0,.06);border:1px solid rgba(255,152,0,.2);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:12px;color:#8b949e;line-height:1.6">Predictions are illustrative estimates based on current coach-entered data. They are not guarantees of development.</div>'+
-'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">'+
-'<button class="pred-btn" data-pred-type="attribute_trajectory">Attribute development</button>'+
-'<button class="pred-btn" data-pred-type="maturation_flag">Maturation and age risk</button>'+
-'<button class="pred-btn" data-pred-type="positional_ceiling">Positional ceiling</button>'+
-'<button class="pred-btn" data-pred-type="scenario_simulation">Match scenario simulation</button>'+
-'<button class="pred-btn" data-pred-type="value_trajectory">Transfer value trajectory</button>'+
-'<button class="pred-btn" data-pred-type="consistency_score">Consistency and reliability</button>'+
+'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">'+
+'<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Development focus</label><select id="developmentFocus" style="margin-top:6px"><option>Balanced Growth</option><option>Technical Possession</option><option>Athletic Transition</option><option>Defensive Intelligence</option><option>Final Third Output</option><option>Goalkeeper Command</option></select><button class="pred-btn" data-pred-type="attribute_development" style="margin-top:8px">Run attribute development</button></div>'+
+'<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Financial goal</label><select id="financialGoal" style="margin-top:6px"><option>Balanced value growth</option><option>Resale profit</option><option>Low-cost high ceiling</option><option>First-team contribution</option><option>Squad depth value</option></select><button class="pred-btn" data-pred-type="roi_analysis" style="margin-top:8px">Run ROI analysis</button></div>'+
+'<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Match scenario</label><select id="scenarioSelect" style="margin-top:6px"><option value="protect_lead">Protecting a one-goal lead under pressure</option><option value="chasing_game">Chasing the game with 15 minutes left</option><option value="high_press">High press against a possession team</option><option value="low_block">Breaking down a compact low block</option><option value="wide_duel">Repeated wide 1v1 duels</option><option value="aerial_battle">Direct opponent with heavy aerial pressure</option><option value="counter_attack">Counter-attacking from deep</option><option value="build_back">Building play from the back</option><option value="set_piece_attack">Attacking set pieces late in the game</option><option value="set_piece_defence">Defending set pieces against a taller team</option><option value="fatigue_phase">Managing a high-tempo final 20 minutes</option><option value="physical_midfield">Playing through a physical midfield battle</option><option value="transition_defence">Defending fast transitions after losing possession</option><option value="creative_10">Operating as the main creative outlet</option><option value="striker_isolated">Playing as an isolated striker</option><option value="gk_crosses">GK: repeated crosses</option><option value="gk_penalties">GK: penalty shootout</option><option value="gk_sweeper">GK: sweeping behind a high line</option><option value="gk_distribution">GK: start attacks short and long</option><option value="gk_shot_volume">GK: high shot volume</option></select><button class="pred-btn" data-pred-type="match_scenario" style="margin-top:8px">Run scenario prediction</button></div>'+
 '</div>'+
 '<div id="predResultArea"><div style="color:#8b949e;font-size:13px;text-align:center;padding:20px">Click a prediction type above to run analysis</div></div>'+
 '</div>':'');
@@ -510,9 +614,9 @@ btn.addEventListener('click',function(){runPrediction(playerId,btn.getAttribute(
 
 // Load prediction credits
 if(Auth.type==='Scout'){
-api('GET','/api/scouts/profile').then(function(d){
-var rem=d&&d.scout&&d.scout.predictions_remaining;
-if(typeof rem==='number'){var el2=document.getElementById('predCredits');if(el2)el2.textContent=rem+' prediction credits remaining';}
+api('GET','/api/predictions').then(function(d){
+var el2=document.getElementById('predCredits');
+if(el2)el2.textContent=(d.remaining>=99999?'Unlimited':d.remaining)+' prediction credits remaining';
 }).catch(function(){});
 }
 

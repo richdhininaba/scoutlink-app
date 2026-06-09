@@ -36,9 +36,8 @@
 </div>
 <div class="table-card">
 <div class="table-header">
-<div><h3>My squad</h3><div id="seasonLabel" style="font-size:12px;color:#8b949e;margin-top:2px">Loading season...</div></div>
+<div><h3>My squad</h3></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-sm btn-outline" id="endSeasonBtn" style="border-color:#FF9800;color:#FF9800">Start new season</button>
 <a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk import</a>
 <a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
 </div>
@@ -97,19 +96,9 @@ document.addEventListener('DOMContentLoaded',function(){
 initNav();
 var u=Auth.user;
 if(u) document.getElementById('coachTitle').textContent='Welcome, '+(u.firstName||'Coach');
-loadSeasonInfo();
 loadCoachData();
-loadPreviousSeasons();
 document.getElementById('logoutBtn').addEventListener('click',logout);
 document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
-document.getElementById('endSeasonBtn').addEventListener('click',openSeasonModal);
-document.getElementById('cancelEndSeasonBtn').addEventListener('click',function(){
-document.getElementById('endSeasonModal').style.display='none';
-});
-document.getElementById('confirmEndSeasonBtn').addEventListener('click',confirmSeasonStep);
-document.getElementById('closeSummaryBtn').addEventListener('click',function(){
-document.getElementById('seasonSummaryModal').style.display='none';
-});
 });
 
 async function loadSeasonInfo(){

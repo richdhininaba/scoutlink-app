@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>My Team Setup - ScoutLink</title>
+<title>Scout Setup - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link rel="stylesheet" href="../css/mobile.css">
@@ -42,7 +42,7 @@
 </nav>
 <div class="dashboard-main">
 <div class="topbar">
-<span class="topbar-title">My team setup</span>
+<span class="topbar-title">Scout setup</span>
 <div class="topbar-right">
 <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
 <button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button>
@@ -50,16 +50,16 @@
 </div>
 <div class="page-content"><div style="max-width:900px">
 <div class="setup-section">
-<h3>Team profile</h3>
-<p class="desc">Tell us about the team you scout for. This context helps personalise everything.</p>
+<h3>Scout profile</h3>
+<p class="desc">Tell us how you scout. This setup is saved for your user only, even when you share a scout team.</p>
 <div class="form-row">
 <div class="fg"><label>Team name</label><input type="text" id="teamName" placeholder="e.g. Riverside Rangers FC"></div>
 <div class="fg"><label>Club / Organisation</label><input type="text" id="clubName" placeholder="e.g. Riverside FC Academy"></div>
 </div>
 <div class="form-row">
-<div class="fg"><label>Country</label><input type="text" id="country" value="England"></div>
+<div class="fg"><label>Scout country</label><select id="country"></select></div>
 <div class="fg"><label>Scout region</label>
-<select id="scoutRegion"><option value="">Select region...</option><option>London</option><option>Greater Manchester</option><option>Liverpool</option><option>West Yorkshire</option><option>West Midlands</option><option>Nottingham</option><option>Other</option></select>
+<select id="scoutRegion"><option value="">Select region...</option></select>
 </div>
 </div>
 <div class="form-row">
@@ -72,8 +72,8 @@
 </div>
 </div>
 <div class="setup-section">
-<h3>Team weaknesses</h3>
-<p class="desc">Select up to 3 weaknesses. Players who can fix these score higher compatibility.</p>
+<h3>Team weaknesses looking to be solved</h3>
+<p class="desc">Select up to 3 weaknesses you are scouting to solve. Players who can fix these score higher compatibility.</p>
 <div class="limit-note" id="wLimitNote">Select 1-3 weaknesses</div>
 <div class="chk-grid" id="weaknessGrid"></div>
 </div>
@@ -123,6 +123,19 @@ var ROLES=['Aerial Dominance','Vision and Creativity','Speed and Agility','Tacti
 var GOALS=['Physical Growth Potential','Tactical Role Maturity','Leadership and Coachability','Injury Risk and Physical Resilience','Positional Depth Advantage','Goal Contribution Potential','Financial Viability'];
 var AGES=['U6','U7','U8','U9','U10','U11','U12','U13','U14','U15','U16'];
 var POSITIONS=['GK','CB','RB','LB','RWB','LWB','CDM','CM','CAM','LM','RM','LW','RW','ST'];
+var COUNTRY_REGIONS={
+  'England':['London','Greater Manchester','Liverpool','West Yorkshire','West Midlands','Nottingham','Bristol','Southampton','Newcastle','Sheffield','Leeds','Other'],
+  'Scotland':['Glasgow','Edinburgh','Aberdeen','Dundee','Inverness','Other'],
+  'Wales':['Cardiff','Swansea','Newport','Wrexham','Other'],
+  'Northern Ireland':['Belfast','Derry/Londonderry','Lisburn','Newry','Other'],
+  'Ireland':['Dublin','Cork','Galway','Limerick','Other'],
+  'United States':['New York','Los Angeles','Chicago','Dallas','Miami','Atlanta','Other'],
+  'France':['Paris','Lyon','Marseille','Lille','Nice','Other'],
+  'Spain':['Madrid','Barcelona','Valencia','Seville','Bilbao','Other'],
+  'Germany':['Berlin','Munich','Hamburg','Dortmund','Frankfurt','Other'],
+  'Netherlands':['Amsterdam','Rotterdam','Eindhoven','Utrecht','Other'],
+  'Portugal':['Lisbon','Porto','Braga','Faro','Other']
+};
 var selW=[],selR=[],selG=[],selA=[],selP=[];
 
 function initNav(){
@@ -195,12 +208,28 @@ function setSelectVal(id,val){
   for(var i=0;i<el.options.length;i++){if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;break;}}
 }
 
+function initCountryRegion(){
+  var country=document.getElementById('country');
+  country.innerHTML=Object.keys(COUNTRY_REGIONS).map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+  country.value='England';
+  country.addEventListener('change',function(){updateRegionOptions(this.value,'');});
+  updateRegionOptions('England','');
+}
+
+function updateRegionOptions(country,selected){
+  var regions=COUNTRY_REGIONS[country]||['Other'];
+  var sel=document.getElementById('scoutRegion');
+  sel.innerHTML='<option value="">Select region...</option>'+regions.map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join('');
+  if(selected)setSelectVal('scoutRegion',selected);
+}
+
 function populateForm(prefs,team){
   if(!prefs)prefs={};var t=team||{};
   document.getElementById('teamName').value=prefs.teamName||t.team_name||'';
   document.getElementById('clubName').value=prefs.clubName||t.club_name||'';
-  document.getElementById('country').value=prefs.country||'England';
-  setSelectVal('scoutRegion',prefs.scoutRegion||t.scout_region||'');
+  var country=prefs.country||'England';
+  setSelectVal('country',country);
+  updateRegionOptions(country,prefs.scoutRegion||t.scout_region||'');
   setSelectVal('formation',prefs.formation||t.formation||'');
   setSelectVal('playingStyle',prefs.playingStyle||t.playing_style||'');
   document.getElementById('salaryCap').value=prefs.salaryCap||t.salary_cap||'';
@@ -227,6 +256,7 @@ function loadExisting(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
+  initCountryRegion();
   loadExisting();
   document.getElementById('saveBtn').addEventListener('click',function(){
     var btn=document.getElementById('saveBtn');var msg=document.getElementById('saveMsg');
@@ -235,7 +265,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var payload={
       teamName:document.getElementById('teamName').value.trim(),
       clubName:document.getElementById('clubName').value.trim(),
-      country:document.getElementById('country').value.trim(),
+      country:document.getElementById('country').value,
       scoutRegion:document.getElementById('scoutRegion').value,
       formation:document.getElementById('formation').value,
       playingStyle:document.getElementById('playingStyle').value,

@@ -26,7 +26,7 @@ try {
 // POST /api/fixtures — add a fixture (Coach or Stratex)
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
 try {
-  const { opponent, fixtureDate, fixtureTime, venue, homeOrAway, format, notes, teamId } = req.body;
+  const { opponent, fixtureDate, fixtureTime, venue, venueAddress, venuePostcode, city, country, homeOrAway, format, notes, teamId } = req.body;
   if (!opponent || !fixtureDate) return res.status(400).json({ error: 'opponent and fixtureDate required' });
   
   let coachTeamId = teamId;
@@ -42,6 +42,10 @@ try {
     fixture_date: fixtureDate,
     fixture_time: fixtureTime || null,
     venue: venue || null,
+    venue_address: venueAddress || null,
+    venue_postcode: venuePostcode || null,
+    city: city || null,
+    country: country || 'England',
     home_or_away: homeOrAway || 'Home',
     format: format || '11',
     notes: notes || null,
@@ -55,12 +59,16 @@ try {
 // PUT /api/fixtures/:id — update a fixture
 router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
 try {
-  const { opponent, fixtureDate, fixtureTime, venue, homeOrAway, format, notes } = req.body;
+  const { opponent, fixtureDate, fixtureTime, venue, venueAddress, venuePostcode, city, country, homeOrAway, format, notes } = req.body;
   const updates = {};
   if (opponent) updates.opponent = opponent;
   if (fixtureDate) updates.fixture_date = fixtureDate;
   if (fixtureTime !== undefined) updates.fixture_time = fixtureTime;
   if (venue !== undefined) updates.venue = venue;
+  if (venueAddress !== undefined) updates.venue_address = venueAddress;
+  if (venuePostcode !== undefined) updates.venue_postcode = venuePostcode;
+  if (city !== undefined) updates.city = city;
+  if (country !== undefined) updates.country = country;
   if (homeOrAway) updates.home_or_away = homeOrAway;
   if (format) updates.format = format;
   if (notes !== undefined) updates.notes = notes;

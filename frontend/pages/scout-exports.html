@@ -84,10 +84,10 @@ document.addEventListener('DOMContentLoaded',function(){
     var planLimit=d.planLimit||30;
     var plan=d.plan||'Core';
 
-    document.getElementById('kpiRemaining').textContent=remaining;
-    document.getElementById('kpiLimit').textContent=planLimit;
-    document.getElementById('kpiPlan').textContent=plan;
-    document.getElementById('kpiTotal').textContent=exports_.length;
+    document.getElementById('kpiRemaining').textContent=planLimit>=99999?'Unlimited':remaining;
+    document.getElementById('kpiLimit').textContent=planLimit>=99999?'Unlimited':planLimit;
+    document.getElementById('kpiPlan').textContent=String(plan).toUpperCase();
+    document.getElementById('kpiTotal').textContent=d.teamUsed!=null?d.teamUsed:exports_.length;
 
     if(typeof remaining==='number'&&planLimit){
       var used=planLimit-remaining;
@@ -99,17 +99,18 @@ document.addEventListener('DOMContentLoaded',function(){
     }
 
     if(!exports_.length){
-      document.getElementById('expList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">&#128196;</div><h3 style="color:var(--text2);margin-bottom:8px">No exports yet</h3><p>You have not generated any player dossiers yet.</p><p style="font-size:13px;margin-top:8px">Go to a player profile to export your first dossier.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
+      document.getElementById('expList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><h3 style="color:var(--text2);margin-bottom:8px">No exports yet</h3><p>You have not generated any player dossiers yet.</p><p style="font-size:13px;margin-top:8px">Go to a player profile to export your first dossier.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
       return;
     }
 
-    var tableHtml='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Export Type</th><th>Date</th><th></th></tr></thead><tbody>';
+    var tableHtml='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Source</th><th>Export Type</th><th>Date</th><th></th></tr></thead><tbody>';
     exports_.forEach(function(exp,idx){
       var pl=exp.players||{};
       var typeBadge=exp.export_type==='PDF'?'badge-red':'badge-green';
       tableHtml+='<tr>'+
         '<td><a href="player-profile.html?id='+exp.player_id+'" style="color:var(--text);font-weight:600">'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</a></td>'+
         '<td style="color:var(--text3);font-size:12px">'+(pl.team_name||'--')+'</td>'+
+        '<td style="color:var(--text3);font-size:12px">'+(exp.source||'profile')+'</td>'+
         '<td><span class="badge '+typeBadge+'">'+(exp.export_type||'PDF')+'</span></td>'+
         '<td style="color:var(--text3);font-size:12px">'+(exp.created_at?exp.created_at.slice(0,10):'--')+'</td>'+
         '<td><button class="btn btn-sm btn-outline" style="min-height:36px" data-exp-idx="'+idx+'">Re-download</button></td>'+
