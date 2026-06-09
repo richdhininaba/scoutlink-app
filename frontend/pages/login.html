@@ -54,7 +54,7 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 <option value="Stratex">Stratex Admin</option>
 </select></div>
 <button class="btn btn-primary" id="loginBtn" onclick="doLogin()"><span id="btnText">Sign In</span><div class="spinner" id="spinner"></div></button>
-<div class="links"><a href="forgot-password.html">Forgot password?</a></div>
+<div class="links"><a href="/forgot-password">Forgot password?</a></div>
 </div>
 
 <!-- Login code -->
@@ -72,12 +72,30 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 </div>
 
 <hr class="divider">
-<div class="links">New to ScoutLink? <a href="register.html">Register here</a></div>
+<div class="links">New to ScoutLink? <a href="/register">Register here</a></div>
 </div></div>
 
 <script>
 const API = 'https://scoutlink-api.vercel.app';
-function getBase(){var h=window.location.hostname;return(h==='scoutlink.app'||h==='www.scoutlink.app')?'/frontend/pages/':'/scoutlink-app/frontend/pages/';}
+var CLEAN_ROUTES={
+  'login.html':'/login',
+  'complete-registration.html':'/complete-registration',
+  'scout-preferences.html':'/scout/preferences',
+  'stratex-dashboard.html':'/stratex/dashboard',
+  'scout-dashboard.html':'/scout/dashboard',
+  'coach-dashboard.html':'/coach/dashboard',
+  'player-dashboard.html':'/player/dashboard'
+};
+function cleanRouteFor(href){
+  var url=new URL(href,window.location.href);
+  var page=url.pathname.split('/').pop();
+  return (CLEAN_ROUTES[page]||href)+url.search+url.hash;
+}
+function applyCleanUrl(){
+  var page=window.location.pathname.split('/').pop();
+  if(CLEAN_ROUTES[page]&&window.history)window.history.replaceState(null,'',CLEAN_ROUTES[page]+window.location.search+window.location.hash);
+}
+applyCleanUrl();
 
 // Auto-fill from URL params (email link from complete-registration)
 var params=new URLSearchParams(window.location.search);
@@ -89,7 +107,7 @@ if(params.get('code')){
 }
 
 // Redirect if already logged in
-try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(getBase()+m[typ]);}}catch(e){}
+try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(cleanRouteFor(m[typ]));}}catch(e){}
 
 function switchTab(t){
   document.getElementById('section-password').style.display=t==='password'?'block':'none';
@@ -132,7 +150,7 @@ async function doCodeLogin(){
     var d=await r.json();
     if(!r.ok)throw new Error(d.error||'Invalid login code');
     // Code login means first login - redirect to complete registration
-    if(d.needsRegistration){window.location.href=getBase()+'complete-registration.html?token='+d.token+'&type='+at;return;}
+    if(d.needsRegistration){window.location.href=cleanRouteFor('complete-registration.html?token='+d.token+'&type='+at);return;}
     storeAndRedirect(d);
   }catch(e){showError(e.message);document.getElementById('codeBtn').disabled=false;document.getElementById('codeBtnText').style.display='inline';document.getElementById('codeSpinner').style.display='none';}
 }
@@ -144,7 +162,7 @@ function storeAndRedirect(d){
   localStorage.setItem('sl_user_id',d.user.id);
   localStorage.setItem('sl_user_email',d.user.email);
   var map={Stratex:'stratex-dashboard.html',Scout:d.needsPreferences?'scout-preferences.html':'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};
-  window.location.href=getBase()+(map[d.accountType]||'login.html');
+  window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }
 </script><script src="../js/mobile.js"></script>
 </body></html>

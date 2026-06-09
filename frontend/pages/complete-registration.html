@@ -109,7 +109,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sl-green
 const API = 'https://scoutlink-api.vercel.app';
 var token = null, accountType = null, userId = null;
 
-function getBase(){var h=window.location.hostname;return(h==='scoutlink.app'||h==='www.scoutlink.app')?'/frontend/pages/':'/scoutlink-app/frontend/pages/';}
+var CLEAN_ROUTES={
+  'login.html':'/login',
+  'complete-registration.html':'/complete-registration',
+  'add-player.html':'/coach/add-player',
+  'stratex-dashboard.html':'/stratex/dashboard',
+  'scout-dashboard.html':'/scout/dashboard',
+  'coach-dashboard.html':'/coach/dashboard',
+  'player-dashboard.html':'/player/dashboard'
+};
+function cleanRouteFor(href){
+  var url=new URL(href,window.location.href);
+  var page=url.pathname.split('/').pop();
+  return (CLEAN_ROUTES[page]||href)+url.search+url.hash;
+}
+function applyCleanUrl(){
+  var page=window.location.pathname.split('/').pop();
+  if(CLEAN_ROUTES[page]&&window.history)window.history.replaceState(null,'',CLEAN_ROUTES[page]+window.location.search+window.location.hash);
+}
+applyCleanUrl();
 
 // Pre-fill from URL params (email link)
 var params = new URLSearchParams(window.location.search);
@@ -199,7 +217,7 @@ async function saveWeaknesses(){
   try{
     // Save as scout preferences
     await fetch(API+'/api/scouts/preferences',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({teamWeaknesses:selectedWeaknesses})});
-    showStep('stepDone');setTimeout(function(){window.location.href=getBase()+'scout-dashboard.html';},2000);
+    showStep('stepDone');setTimeout(function(){window.location.href=cleanRouteFor('scout-dashboard.html');},2000);
   }catch(e){showError(e.message);}
 }
 
@@ -224,7 +242,7 @@ async function saveAvatar(){
   hideError();
   try{
     await fetch(API+'/api/players/'+userId+'/avatar',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({avatar_config:avatarConfig})});
-    showStep('stepDone');setTimeout(function(){window.location.href=getBase()+'player-dashboard.html';},2000);
+    showStep('stepDone');setTimeout(function(){window.location.href=cleanRouteFor('player-dashboard.html');},2000);
   }catch(e){showError(e.message);}
 }
 
@@ -237,13 +255,13 @@ async function checkCoachPlayers(){
     else{goToDash();}
   }catch(e){showStep('step3coach');}
 }
-function goAddPlayer(){window.location.href=getBase()+'add-player.html';}
+function goAddPlayer(){window.location.href=cleanRouteFor('add-player.html');}
 function skipToCoachDash(){goToDash();}
 function goToDash(){
   showStep('stepDone');
   setTimeout(function(){
     var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};
-    window.location.href=getBase()+(m[accountType]||'login.html');
+    window.location.href=cleanRouteFor(m[accountType]||'login.html');
   },1500);
 }
 </script><script src="../js/mobile.js"></script>

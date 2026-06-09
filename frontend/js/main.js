@@ -5,6 +5,11 @@ const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.
 const CLEAN_ROUTES = {
   'index.html':'/',
   'login.html':'/login',
+  'forgot-password.html':'/forgot-password',
+  'register.html':'/register',
+  'register-scout.html':'/register/scout',
+  'register-coach.html':'/register/coach',
+  'data-policy.html':'/data-policy',
   'complete-registration.html':'/complete-registration',
   'stratex-dashboard.html':'/stratex/dashboard',
   'stratex-registrations.html':'/stratex/registrations',
@@ -16,6 +21,8 @@ const CLEAN_ROUTES = {
   'stratex-school-teams.html':'/stratex/non-pro-academies',
   'stratex-award-nominations.html':'/stratex/award-nominations',
   'stratex-showcase-events.html':'/stratex/showcase-events',
+  'stratex-notifications.html':'/stratex/notifications',
+  'stratex-settings.html':'/stratex/settings',
   'coach-dashboard.html':'/coach/dashboard',
   'coach-my-players.html':'/coach/my-players',
   'add-player.html':'/coach/add-player',
@@ -23,6 +30,8 @@ const CLEAN_ROUTES = {
   'match-facts.html':'/coach/match-facts',
   'coach-fixtures.html':'/coach/fixtures',
   'coach-video-reels.html':'/coach/video-reels',
+  'coach-notifications.html':'/coach/notifications',
+  'coach-settings.html':'/coach/settings',
   'scout-dashboard.html':'/scout/dashboard',
   'player-search.html':'/scout/player-search',
   'scout-pipeline.html':'/scout/pipeline',
@@ -35,10 +44,13 @@ const CLEAN_ROUTES = {
   'scout-events.html':'/scout/events',
   'scout-notifications.html':'/scout/notifications',
   'scout-settings.html':'/scout/settings',
+  'scout-preferences.html':'/scout/preferences',
   'player-dashboard.html':'/player/dashboard',
   'player-profile.html':'/player/profile',
   'player-profile-edit.html':'/player/edit-profile',
-  'player-video-reels.html':'/player/video-reels'
+  'player-video-reels.html':'/player/video-reels',
+  'player-notifications.html':'/player/notifications',
+  'player-settings.html':'/player/settings'
 };
 
 function cleanRouteFor(href) {
