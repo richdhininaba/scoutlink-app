@@ -228,6 +228,7 @@ router.patch('/settings', requireAuth, requireRole('Scout'), async (req, res) =>
 
 router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
+    const requestedLimit = Math.max(1, Math.min(25, Number(req.query.limit || 5) || 5));
     const { data: scout } = await supabase.from('scouts').select('id,scout_team_id,scout_preferences,preferences_set').eq('id', req.user.id).single();
     if (!scout || !scout.preferences_set) return res.json({ setupRequired: true, data: [], total: 0 });
     let scoutTeam = {};
@@ -277,7 +278,7 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
       const pf = filtered.filter(p => { const pos = Array.isArray(p.positions) ? p.positions : [p.specific_position||p.primary_position||'']; return pos.some(x => pp.includes(String(x).toUpperCase())); });
       if (pf.length > 0) filtered = pf;
     }
-    res.json({ data: filtered.slice(0, 10), total: filtered.length, setupRequired: false });
+    res.json({ data: filtered.slice(0, requestedLimit), total: filtered.length, setupRequired: false });
   } catch (err) { console.error('[Recommended Players]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

@@ -172,7 +172,7 @@ document.getElementById('pipelinePreview').innerHTML='<div class="empty-state"><
 
 // Load recommended players
 try{
-var rec=await api('GET','/api/scouts/recommended-players');
+var rec=await api('GET','/api/scouts/recommended-players?limit=5');
 if(rec.setupRequired){
 document.getElementById('setupBanner').style.display='block';
 document.getElementById('recommendedPlayers').innerHTML='<div class="empty-state"><p>Complete your scout setup to see your recommended players.</p><a href="scout-setup.html" class="btn btn-primary">Set up scouting &rarr;</a></div>';
