@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Complete Registration - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<style>
+:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.wrap{width:100%;max-width:460px;}
+.brand{text-align:center;margin-bottom:2rem;}
+.brand h1{font-size:2rem;font-weight:900;color:var(--sl-green);}
+.brand h1 span{color:var(--sl-text);}
+.brand p{color:var(--sl-muted);margin-top:.5rem;font-size:.95rem;}
+.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;}
+.step{display:none;}
+.step.active{display:block;}
+.step-header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--sl-border);}
+.step-label{font-size:11px;font-weight:700;color:var(--sl-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.step-title{font-size:1.3rem;font-weight:800;color:var(--sl-text);}
+.form-group{margin-bottom:1.25rem;}
+label{display:block;font-size:.875rem;font-weight:600;color:var(--sl-muted);margin-bottom:.5rem;}
+input,select,textarea{width:100%;padding:.75rem 1rem;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-text);font-size:.95rem;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sl-green);}
+.btn{width:100%;padding:.875rem;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:1rem;}
+.btn-primary{background:var(--sl-green);color:#000;}
+.btn-primary:hover{opacity:.9;}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+.error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:8px;padding:.75rem 1rem;font-size:.875rem;margin-bottom:1rem;display:none;}
+.error.show{display:block;}
+.success{background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);color:#6ee7b7;border-radius:8px;padding:.75rem 1rem;font-size:.875rem;margin-bottom:1rem;}
+.progress{display:flex;gap:6px;margin-bottom:1.5rem;}
+.progress-step{flex:1;height:4px;border-radius:2px;background:var(--sl-border);}
+.progress-step.done{background:var(--sl-green);}
+.progress-step.active{background:var(--sl-green);opacity:.5;}
+.weakness-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.weakness-chip{padding:8px 12px;border:1.5px solid var(--sl-border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--sl-muted);transition:all .2s;text-align:center;}
+.weakness-chip.selected{border-color:var(--sl-green);background:rgba(0,200,83,.1);color:var(--sl-green);}
+.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
+.avatar-opt{padding:12px 8px;border:2px solid var(--sl-border);border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;}
+.avatar-opt.selected{border-color:var(--sl-green);background:rgba(0,200,83,.08);}
+.avatar-opt .emoji{font-size:24px;}
+.avatar-opt .label{font-size:11px;color:var(--sl-muted);margin-top:4px;}
+</style></head><body>
+<div class="wrap">
+<div class="brand"><h1>Scout<span>Link</span></h1><p id="welcomeMsg">Welcome! Let's get you set up.</p></div>
+<div class="card">
+<div id="progress" class="progress"></div>
+<div id="errorDiv" class="error"></div>
+
+<!-- STEP 1: Enter login code & verify -->
+<div class="step active" id="step1">
+<div class="step-header"><div class="step-label">Step 1</div><div class="step-title">Verify Your Identity</div></div>
+<div class="form-group"><label>Email Address</label><input type="email" id="s1Email" placeholder="your@email.com"></div>
+<div class="form-group"><label>Login Code</label><input type="text" id="s1Code" placeholder="6-character code from your email" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" maxlength="6" oninput="this.value=this.value.toUpperCase()"></div>
+<div class="form-group"><label>Account Type</label><select id="s1Type"><option value="Scout">Scout</option><option value="Coach">Coach</option><option value="Player">Player</option></select></div>
+<button class="btn btn-primary" onclick="verifyCode()">Continue →</button>
+</div>
+
+<!-- STEP 2: Set password -->
+<div class="step" id="step2">
+<div class="step-header"><div class="step-label">Step 2</div><div class="step-title">Create Your Password</div></div>
+<div class="success">✓ Identity verified! Now create a secure password for future logins.</div>
+<div class="form-group"><label>Password (min 8 characters)</label><input type="password" id="s2Password" placeholder="Create a strong password"></div>
+<div class="form-group"><label>Confirm Password</label><input type="password" id="s2Confirm" placeholder="Repeat your password"></div>
+<button class="btn btn-primary" onclick="setPassword()">Set Password →</button>
+</div>
+
+<!-- STEP 3a: Scout — enter team weaknesses -->
+<div class="step" id="step3scout">
+<div class="step-header"><div class="step-label">Step 3 — Scout Setup</div><div class="step-title">Your Team's Weaknesses</div></div>
+<p style="color:var(--sl-muted);font-size:13px;margin-bottom:12px">Select the weaknesses of the team you're scouting for. This powers the compatibility engine.</p>
+<div class="weakness-grid" id="weaknessGrid"></div>
+<button class="btn btn-primary" style="margin-top:16px" onclick="saveWeaknesses()">Save & Go to Dashboard →</button>
+</div>
+
+<!-- STEP 3b: Player — create avatar -->
+<div class="step" id="step3player">
+<div class="step-header"><div class="step-label">Step 3 — Player Setup</div><div class="step-title">Create Your Avatar</div></div>
+<p style="color:var(--sl-muted);font-size:13px;margin-bottom:4px">Choose a skin tone:</p>
+<div class="avatar-grid" id="skinGrid"></div>
+<p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a hair style:</p>
+<div class="avatar-grid" id="hairGrid"></div>
+<p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a kit colour:</p>
+<div class="avatar-grid" id="kitGrid"></div>
+<button class="btn btn-primary" style="margin-top:16px" onclick="saveAvatar()">Save Avatar & Go to Dashboard →</button>
+</div>
+
+<!-- STEP 3c: Coach — add first player prompt -->
+<div class="step" id="step3coach">
+<div class="step-header"><div class="step-label">Step 3 — Coach Setup</div><div class="step-title">Add Your Players</div></div>
+<p style="color:var(--sl-muted);font-size:13px;margin-bottom:16px">You don't have any players assigned yet. Would you like to add your first player now?</p>
+<button class="btn btn-primary" onclick="goAddPlayer()" style="margin-bottom:10px">Add Players Now →</button>
+<button class="btn" style="background:var(--sl-border);color:var(--sl-text)" onclick="skipToCoachDash()">Skip for Now</button>
+</div>
+
+<!-- STEP 4: Done -->
+<div class="step" id="stepDone">
+<div style="text-align:center;padding:2rem 0">
+<div style="font-size:48px;margin-bottom:16px">🎉</div>
+<h2 style="color:var(--sl-green);margin-bottom:8px">You're all set!</h2>
+<p style="color:var(--sl-muted);margin-bottom:24px">Your account is ready. Redirecting to your dashboard...</p>
+</div>
+</div>
+</div></div>
+
+<script>
+const API = 'https://scoutlink-api.vercel.app';
+var token = null, accountType = null, userId = null;
+
+function getBase(){var h=window.location.hostname;return(h==='scoutlink.app'||h==='www.scoutlink.app')?'/frontend/pages/':'/scoutlink-app/frontend/pages/';}
+
+// Pre-fill from URL params (email link)
+var params = new URLSearchParams(window.location.search);
+if(params.get('token')){
+  // Came from login with code — already verified
+  token = params.get('token');
+  accountType = params.get('type') || localStorage.getItem('sl_type');
+  var u = JSON.parse(localStorage.getItem('sl_user')||'{}');
+  userId = u.id;
+  showStep('step2');
+} else {
+  if(params.get('email')) document.getElementById('s1Email').value = decodeURIComponent(params.get('email'));
+  if(params.get('code')) document.getElementById('s1Code').value = params.get('code').toUpperCase();
+  if(params.get('type')){var sel=document.getElementById('s1Type');for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===params.get('type'))sel.selectedIndex=i;}}
+  showStep('step1');
+}
+
+function buildProgress(current, total){
+  var p=document.getElementById('progress');
+  p.innerHTML='';
+  for(var i=0;i<total;i++){var d=document.createElement('div');d.className='progress-step'+(i<current?' done':i===current?' active':'');p.appendChild(d);}
+}
+
+function showStep(id){
+  document.querySelectorAll('.step').forEach(function(s){s.classList.remove('active');});
+  var el=document.getElementById(id);if(el)el.classList.add('active');
+  var steps={'step1':0,'step2':1,'step3scout':2,'step3player':2,'step3coach':2,'stepDone':3};
+  var total={'Scout':3,'Coach':3,'Player':3}[accountType||'Scout']||3;
+  buildProgress(steps[id]||0, total);
+}
+
+function showError(msg){var e=document.getElementById('errorDiv');e.textContent=msg;e.classList.add('show');}
+function hideError(){document.getElementById('errorDiv').classList.remove('show');}
+
+async function verifyCode(){
+  hideError();
+  var em=document.getElementById('s1Email').value.trim();
+  var code=document.getElementById('s1Code').value.trim().toUpperCase();
+  var at=document.getElementById('s1Type').value;
+  if(!em||!code){showError('Please enter your email and login code.');return;}
+  try{
+    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,loginCode:code,accountType:at})});
+    var d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Verification failed');
+    token=d.token;accountType=d.accountType;
+    localStorage.setItem('sl_token',token);localStorage.setItem('sl_type',accountType);
+    localStorage.setItem('sl_user',JSON.stringify(d.user));localStorage.setItem('sl_user_id',d.user.id);localStorage.setItem('sl_user_email',d.user.email);
+    userId=d.user.id;
+    document.getElementById('welcomeMsg').textContent='Welcome, '+d.user.firstName+'!';
+    showStep('step2');
+  }catch(e){showError(e.message);}
+}
+
+async function setPassword(){
+  hideError();
+  var p=document.getElementById('s2Password').value;
+  var c=document.getElementById('s2Confirm').value;
+  if(!p||!c){showError('Please fill in both password fields.');return;}
+  if(p.length<8){showError('Password must be at least 8 characters.');return;}
+  if(p!==c){showError('Passwords do not match.');return;}
+  try{
+    var r=await fetch(API+'/api/auth/complete-registration',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({newPassword:p,accountType:accountType})});
+    var d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Failed to set password');
+    // Go to role-specific step
+    if(accountType==='Scout'){buildWeaknessGrid();showStep('step3scout');}
+    else if(accountType==='Player'){buildAvatarGrids();showStep('step3player');}
+    else if(accountType==='Coach'){checkCoachPlayers();}
+    else goToDash();
+  }catch(e){showError(e.message);}
+}
+
+// SCOUT: weakness selection
+var WEAKNESSES = ['poor_set_pieces','weak_left_flank','weak_right_flank','high_defensive_line','pace_exploitable','poor_second_ball','poor_aerial','weak_pressing','slow_build_up','poor_transitions','direct_play_only','poor_wide_play'];
+var selectedWeaknesses = [];
+function buildWeaknessGrid(){
+  var g=document.getElementById('weaknessGrid');
+  g.innerHTML=WEAKNESSES.map(function(w){return '<div class="weakness-chip" data-w="'+w+'" onclick="toggleWeakness(this)">'+w.replace(/_/g,' ')+'</div>';}).join('');
+}
+function toggleWeakness(el){
+  var w=el.dataset.w;
+  if(el.classList.contains('selected')){el.classList.remove('selected');selectedWeaknesses=selectedWeaknesses.filter(function(x){return x!==w;});}
+  else{el.classList.add('selected');selectedWeaknesses.push(w);}
+}
+async function saveWeaknesses(){
+  hideError();
+  try{
+    // Save as scout preferences
+    await fetch(API+'/api/scouts/preferences',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({teamWeaknesses:selectedWeaknesses})});
+    showStep('stepDone');setTimeout(function(){window.location.href=getBase()+'scout-dashboard.html';},2000);
+  }catch(e){showError(e.message);}
+}
+
+// PLAYER: avatar
+var skinOptions=[{emoji:'👤',label:'Light',val:'light'},{emoji:'🟤',label:'Medium',val:'medium'},{emoji:'⬛',label:'Dark',val:'dark'},{emoji:'🟡',label:'Tan',val:'tan'}];
+var hairOptions=[{emoji:'💇',label:'Short',val:'short'},{emoji:'🦱',label:'Curly',val:'curly'},{emoji:'🧢',label:'Cap',val:'cap'},{emoji:'🦲',label:'Bald',val:'bald'}];
+var kitOptions=[{emoji:'🔵',label:'Blue',val:'blue'},{emoji:'🔴',label:'Red',val:'red'},{emoji:'⚫',label:'Black',val:'black'},{emoji:'🟢',label:'Green',val:'green'}];
+var avatarConfig={skin:'light',hair:'short',kit:'blue'};
+
+function buildAvatarGrids(){
+  function makeGrid(id,opts,key){
+    var g=document.getElementById(id);
+    g.innerHTML=opts.map(function(o){return '<div class="avatar-opt'+(avatarConfig[key]===o.val?' selected':'')+'" data-val="'+o.val+'" onclick="selectAvatar(\''+id+'\',\''+key+'\',this)"><div class="emoji">'+o.emoji+'</div><div class="label">'+o.label+'</div></div>';}).join('');
+  }
+  makeGrid('skinGrid',skinOptions,'skin');makeGrid('hairGrid',hairOptions,'hair');makeGrid('kitGrid',kitOptions,'kit');
+}
+function selectAvatar(gridId,key,el){
+  document.querySelectorAll('#'+gridId+' .avatar-opt').forEach(function(x){x.classList.remove('selected');});
+  el.classList.add('selected');avatarConfig[key]=el.dataset.val;
+}
+async function saveAvatar(){
+  hideError();
+  try{
+    await fetch(API+'/api/players/'+userId+'/avatar',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({avatar_config:avatarConfig})});
+    showStep('stepDone');setTimeout(function(){window.location.href=getBase()+'player-dashboard.html';},2000);
+  }catch(e){showError(e.message);}
+}
+
+// COACH: check if has players
+async function checkCoachPlayers(){
+  try{
+    var r=await fetch(API+'/api/players?limit=1',{headers:{'Authorization':'Bearer '+token}});
+    var d=await r.json();
+    if(!d.data||d.data.length===0){showStep('step3coach');}
+    else{goToDash();}
+  }catch(e){showStep('step3coach');}
+}
+function goAddPlayer(){window.location.href=getBase()+'add-player.html';}
+function skipToCoachDash(){goToDash();}
+function goToDash(){
+  showStep('stepDone');
+  setTimeout(function(){
+    var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};
+    window.location.href=getBase()+(m[accountType]||'login.html');
+  },1500);
+}
+</script><script src="../js/mobile.js"></script>
+</body></html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Login - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<style>
+:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-wrap{width:100%;max-width:420px;}
+.brand{text-align:center;margin-bottom:2rem;}
+.brand h1{font-size:2.5rem;font-weight:900;color:var(--sl-green);letter-spacing:-1px;}
+.brand h1 span{color:var(--sl-text);}
+.brand p{color:var(--sl-muted);margin-top:0.5rem;}
+.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;}
+.form-group{margin-bottom:1.25rem;}
+label{display:block;font-size:0.875rem;font-weight:600;color:var(--sl-muted);margin-bottom:0.5rem;}
+input,select{width:100%;padding:0.75rem 1rem;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-text);font-size:0.95rem;transition:border-color 0.2s;}
+input:focus,select:focus{outline:none;border-color:var(--sl-green);}
+.btn{width:100%;padding:0.875rem;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:1rem;transition:all 0.2s;}
+.btn-primary{background:var(--sl-green);color:#000;}
+.btn-primary:hover{background:#00b548;}
+.btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
+.links{margin-top:1.5rem;text-align:center;font-size:0.875rem;color:var(--sl-muted);}
+.links a{color:var(--sl-green);text-decoration:none;}
+.divider{border:none;border-top:1px solid var(--sl-border);margin:1.5rem 0;}
+.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:8px;padding:0.75rem 1rem;font-size:0.875rem;margin-bottom:1rem;display:none;}
+.error.show{display:block;}
+.spinner{display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.tab-row{display:flex;gap:8px;margin-bottom:1.5rem;}
+.tab{flex:1;padding:8px;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;}
+.tab.active{background:var(--sl-green);color:#000;border-color:var(--sl-green);}
+</style></head><body>
+<div class="login-wrap">
+<div class="brand"><h1>Scout<span>Link</span></h1><p>Football Player Intelligence Platform</p></div>
+<div class="card">
+<div id="errorMsg" class="error"></div>
+<div class="tab-row">
+<div class="tab active" id="tab-pw" onclick="switchTab('password')">Email & Password</div>
+<div class="tab" id="tab-code" onclick="switchTab('code')">Login with Code</div>
+</div>
+
+<!-- Password login -->
+<div id="section-password">
+<div class="form-group"><label>Email Address</label><input type="email" id="email" placeholder="your@email.com" autocomplete="email"></div>
+<div class="form-group"><label>Password</label><input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+<div class="form-group"><label>Account Type</label>
+<select id="accountType">
+<option value="Scout">Scout</option>
+<option value="Coach">Coach</option>
+<option value="Player">Player</option>
+<option value="Stratex">Stratex Admin</option>
+</select></div>
+<button class="btn btn-primary" id="loginBtn" onclick="doLogin()"><span id="btnText">Sign In</span><div class="spinner" id="spinner"></div></button>
+<div class="links"><a href="forgot-password.html">Forgot password?</a></div>
+</div>
+
+<!-- Login code -->
+<div id="section-code" style="display:none">
+<div class="form-group"><label>Email Address</label><input type="email" id="codeEmail" placeholder="your@email.com"></div>
+<div class="form-group"><label>Login Code</label><input type="text" id="loginCode" placeholder="e.g. S8CA3G" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" maxlength="6" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doCodeLogin()"></div>
+<div class="form-group"><label>Account Type</label>
+<select id="codeAccountType">
+<option value="Scout">Scout</option>
+<option value="Coach">Coach</option>
+<option value="Player">Player</option>
+</select></div>
+<button class="btn btn-primary" id="codeBtn" onclick="doCodeLogin()"><span id="codeBtnText">Sign In with Code</span><div class="spinner" id="codeSpinner" style="display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div></button>
+<p style="color:var(--sl-muted);font-size:12px;margin-top:12px;text-align:center">Login codes are sent in your approval email. They expire after 7 days.</p>
+</div>
+
+<hr class="divider">
+<div class="links">New to ScoutLink? <a href="register.html">Register here</a></div>
+</div></div>
+
+<script>
+const API = 'https://scoutlink-api.vercel.app';
+function getBase(){var h=window.location.hostname;return(h==='scoutlink.app'||h==='www.scoutlink.app')?'/frontend/pages/':'/scoutlink-app/frontend/pages/';}
+
+// Auto-fill from URL params (email link from complete-registration)
+var params=new URLSearchParams(window.location.search);
+if(params.get('code')){
+  switchTab('code');
+  if(params.get('email'))document.getElementById('codeEmail').value=decodeURIComponent(params.get('email'));
+  document.getElementById('loginCode').value=params.get('code').toUpperCase();
+  if(params.get('type')){var sel=document.getElementById('codeAccountType');for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===params.get('type'))sel.selectedIndex=i;}}
+}
+
+// Redirect if already logged in
+try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(getBase()+m[typ]);}}catch(e){}
+
+function switchTab(t){
+  document.getElementById('section-password').style.display=t==='password'?'block':'none';
+  document.getElementById('section-code').style.display=t==='code'?'block':'none';
+  document.getElementById('tab-pw').className='tab'+(t==='password'?' active':'');
+  document.getElementById('tab-code').className='tab'+(t==='code'?' active':'');
+  hideError();
+}
+function showError(msg){var el=document.getElementById('errorMsg');el.textContent=msg;el.classList.add('show');}
+function hideError(){document.getElementById('errorMsg').classList.remove('show');}
+
+async function doLogin(){
+  hideError();
+  var em=document.getElementById('email').value.trim();
+  var pw=document.getElementById('password').value;
+  var at=document.getElementById('accountType').value;
+  if(!em||!pw){showError('Please enter your email and password.');return;}
+  document.getElementById('loginBtn').disabled=true;
+  document.getElementById('btnText').style.display='none';
+  document.getElementById('spinner').style.display='block';
+  try{
+    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw,accountType:at})});
+    var d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Invalid credentials');
+    storeAndRedirect(d);
+  }catch(e){showError(e.message);document.getElementById('loginBtn').disabled=false;document.getElementById('btnText').style.display='inline';document.getElementById('spinner').style.display='none';}
+}
+
+async function doCodeLogin(){
+  hideError();
+  var em=document.getElementById('codeEmail').value.trim();
+  var code=document.getElementById('loginCode').value.trim().toUpperCase();
+  var at=document.getElementById('codeAccountType').value;
+  if(!em||!code){showError('Please enter your email and login code.');return;}
+  document.getElementById('codeBtn').disabled=true;
+  document.getElementById('codeBtnText').style.display='none';
+  document.getElementById('codeSpinner').style.display='block';
+  try{
+    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,loginCode:code,accountType:at})});
+    var d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Invalid login code');
+    // Code login means first login - redirect to complete registration
+    if(d.needsRegistration){window.location.href=getBase()+'complete-registration.html?token='+d.token+'&type='+at;return;}
+    storeAndRedirect(d);
+  }catch(e){showError(e.message);document.getElementById('codeBtn').disabled=false;document.getElementById('codeBtnText').style.display='inline';document.getElementById('codeSpinner').style.display='none';}
+}
+
+function storeAndRedirect(d){
+  localStorage.setItem('sl_token',d.token);
+  localStorage.setItem('sl_type',d.accountType);
+  localStorage.setItem('sl_user',JSON.stringify(d.user));
+  localStorage.setItem('sl_user_id',d.user.id);
+  localStorage.setItem('sl_user_email',d.user.email);
+  var map={Stratex:'stratex-dashboard.html',Scout:d.needsPreferences?'scout-preferences.html':'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};
+  window.location.href=getBase()+(map[d.accountType]||'login.html');
+}
+</script><script src="../js/mobile.js"></script>
+</body></html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Register as Coach – ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head><body class="form-page">
+<div class="form-page-inner">
+<div class="form-container">
+  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <h1 class="form-title">Register as Coach</h1>
+  <p class="form-subtitle">Submit your details for review by the Stratex team. You'll receive an email within 24 hours.</p>
+  <div class="form-error" id="formError"></div>
+  <div class="form-success" id="formSuccess"></div>
+  <div class="form-row">
+    <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="firstName" placeholder="John"></div>
+    <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="lastName" placeholder="Smith"></div>
+  </div>
+  <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="emailAddr" placeholder="john@yourclub.co.uk"></div>
+  <div class="form-group"><label>Phone Number</label><input type="tel" id="phone" placeholder="+44 7700 000000"></div>
+  <div class="form-divider"></div>
+  <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Club / Team Details</h3>
+  <div class="form-group"><label>Team / Club Name <span class="required">*</span></label><input type="text" id="teamName" placeholder="e.g. Manchester City Academy U18"></div>
+  <div class="form-row">
+    <div class="form-group"><label>County</label><input type="text" id="county" placeholder="Greater Manchester"></div>
+    <div class="form-group"><label>League</label><input type="text" id="league" placeholder="e.g. FAYTH North West"></div>
+  </div>
+  <div class="form-group"><label>Your Role at Club</label>
+    <select id="roleAtClub"><option>Head Coach</option><option>Assistant Coach</option><option>Academy Manager</option><option>Director of Football</option><option>Goalkeeping Coach</option><option>Other</option></select>
+  </div>
+  <div class="form-divider"></div>
+  <div class="policy-check">
+    <input type="checkbox" id="policyAgreed">
+    <p>I have read and agree to the <a href="data-policy.html" target="_blank">ScoutLink Data Policy</a>. I confirm that for any player under the age of 16, I have obtained verifiable parental or guardian consent before adding their information to the platform. I understand that ScoutLink is committed to safeguarding young people and that all data is handled in compliance with UK GDPR and KCSIE guidelines.</p>
+  </div>
+  <button class="btn btn-primary btn-full" onclick="submitReg()">Submit Registration</button>
+  <div class="form-divider"></div>
+  <div class="form-link">Already registered? <a href="login.html">Sign In</a></div>
+</div>
+</div>
+<script src="../js/main.js"></script>
+<script>
+async function submitReg() {
+  const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  err.classList.remove('show'); suc.classList.remove('show');
+  if (!document.getElementById('policyAgreed').checked) { err.textContent = 'Please agree to the data policy.'; err.classList.add('show'); return; }
+  try {
+    const data = await api('POST', '/api/registrations/coach', {
+      firstName: document.getElementById('firstName').value,
+      lastName: document.getElementById('lastName').value,
+      emailAddr: document.getElementById('emailAddr').value,
+      phone: document.getElementById('phone').value,
+      teamName: document.getElementById('teamName').value,
+      county: document.getElementById('county').value,
+      league: document.getElementById('league').value,
+      roleAtClub: document.getElementById('roleAtClub').value,
+      dataPolicyAgreed: true
+    });
+    suc.textContent = data.message; suc.classList.add('show');
+    document.querySelector('.btn').disabled = true;
+  } catch(e) { err.textContent = e.message; err.classList.add('show'); }
+}
+</script>
+<script src="../js/mobile.js"></script>
+</body></html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Coach dashboard - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:32px;max-width:480px;width:100%;}
+.modal-box h3{font-size:18px;font-weight:700;margin-bottom:12px;}
+.modal-box p{font-size:13px;color:#8b949e;line-height:1.6;margin-bottom:24px;}
+.season-archive-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+</style>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title" id="coachTitle">Coach dashboard</span>
+<div class="topbar-right">
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<div class="kpi-grid">
+<div class="kpi-card"><div class="kpi-label">My players</div><div class="kpi-value green" id="kpiPlayers">-</div></div>
+<div class="kpi-card"><div class="kpi-label">Scouts interested</div><div class="kpi-value" id="kpiInterest">-</div></div>
+<div class="kpi-card"><div class="kpi-label">Top rated player</div><div class="kpi-value green" id="kpiTop">-</div></div>
+<div class="kpi-card"><div class="kpi-label">Total squad value</div><div class="kpi-value" id="kpiValue">-</div></div>
+</div>
+<div class="table-card">
+<div class="table-header">
+<div><h3>My squad</h3><div id="seasonLabel" style="font-size:12px;color:#8b949e;margin-top:2px">Loading season...</div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-sm btn-outline" id="endSeasonBtn" style="border-color:#FF9800;color:#FF9800">Start new season</button>
+<a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk import</a>
+<a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
+</div>
+</div>
+<div id="myPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+<div class="table-card" id="prevSeasonsCard" style="display:none">
+<div class="table-header"><h3>Previous seasons</h3></div>
+<div id="prevSeasonsList" style="padding:16px"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- End season modal -->
+<div class="modal-overlay" id="endSeasonModal" style="display:none">
+<div class="modal-box">
+<h3 id="seasonModalTitle">Start new season?</h3>
+<p id="seasonModalText">This will archive the current season and reset season statistics for your squad.</p>
+<div style="display:flex;gap:12px">
+<button class="btn btn-primary" id="confirmEndSeasonBtn">Continue</button>
+<button class="btn btn-ghost" id="cancelEndSeasonBtn">Cancel</button>
+</div>
+<div id="endSeasonMsg" style="margin-top:12px;font-size:13px"></div>
+</div>
+</div>
+
+<!-- View season summary modal -->
+<div class="modal-overlay" id="seasonSummaryModal" style="display:none">
+<div class="modal-box" style="max-width:640px">
+<h3 id="summaryTitle">Season summary</h3>
+<div id="summaryContent" style="overflow-y:auto;max-height:60vh;margin-top:12px"></div>
+<button class="btn btn-ghost" id="closeSummaryBtn" style="margin-top:20px">Close</button>
+</div>
+</div>
+
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function ratingCol(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
+function posGroupColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
+var seasonInfo={currentSeason:'',nextSeason:''};
+var endSeasonStep=1;
+
+function initNav(){
+if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
+if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+var u=Auth.user,uel=document.getElementById('sidebarUser');
+if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+updateNotifBadge();
+}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+
+document.addEventListener('DOMContentLoaded',function(){
+initNav();
+var u=Auth.user;
+if(u) document.getElementById('coachTitle').textContent='Welcome, '+(u.firstName||'Coach');
+loadSeasonInfo();
+loadCoachData();
+loadPreviousSeasons();
+document.getElementById('logoutBtn').addEventListener('click',logout);
+document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
+document.getElementById('endSeasonBtn').addEventListener('click',openSeasonModal);
+document.getElementById('cancelEndSeasonBtn').addEventListener('click',function(){
+document.getElementById('endSeasonModal').style.display='none';
+});
+document.getElementById('confirmEndSeasonBtn').addEventListener('click',confirmSeasonStep);
+document.getElementById('closeSummaryBtn').addEventListener('click',function(){
+document.getElementById('seasonSummaryModal').style.display='none';
+});
+});
+
+async function loadSeasonInfo(){
+try{
+var r=await api('GET','/api/season/current');
+seasonInfo.currentSeason=r.currentSeason||'Current';
+seasonInfo.nextSeason=r.nextSeason||'Next';
+document.getElementById('seasonLabel').textContent='Current football season: '+seasonInfo.currentSeason;
+document.getElementById('endSeasonBtn').textContent='Start '+seasonInfo.nextSeason+' season';
+}catch(e){
+document.getElementById('seasonLabel').textContent='Current football season unavailable';
+}
+}
+
+function openSeasonModal(){
+endSeasonStep=1;
+document.getElementById('endSeasonMsg').textContent='';
+document.getElementById('endSeasonModal').style.display='flex';
+renderSeasonModal();
+}
+
+function renderSeasonModal(){
+var title=document.getElementById('seasonModalTitle');
+var text=document.getElementById('seasonModalText');
+var btn=document.getElementById('confirmEndSeasonBtn');
+if(endSeasonStep===1){
+title.textContent='Are you sure?';
+text.textContent='You are currently in the '+(seasonInfo.currentSeason||'current')+' season. Starting a new season will archive this season and reset squad goals, assists, appearances, clean sheets and card totals.';
+btn.textContent='Yes, I am sure';
+}else{
+title.textContent='Move on to '+(seasonInfo.nextSeason||'next season')+'?';
+text.textContent='This is the final confirmation. Player profiles and ratings stay in place, but current season statistics move into the archive.';
+btn.textContent='Move on to '+(seasonInfo.nextSeason||'next season');
+}
+}
+
+function confirmSeasonStep(){
+if(endSeasonStep===1){endSeasonStep=2;renderSeasonModal();return;}
+endSeason();
+}
+
+async function loadCoachData(){
+  try{
+    // Load player list AND dashboard stats in parallel
+    var [playersRes, statsRes] = await Promise.all([
+      api('GET','/api/coaches/my-players'),
+      api('GET','/api/coaches/dashboard').catch(function(){return {};})
+    ]);
+    var players = playersRes.data||[];
+    var stats = statsRes||{};
+    
+    // KPI: Total Players
+    var kpiP=document.getElementById('kpiPlayers');
+    if(kpiP) kpiP.textContent = stats.totalPlayers!==undefined ? stats.totalPlayers : players.length;
+    
+    // KPI: Top Rated Player
+    var kpiT=document.getElementById('kpiTop');
+    if(kpiT){
+      if(stats.topRatedPlayer){
+        var ov=parseFloat(stats.topRatedPlayer.overall_rating||0);
+        var ovDisp=ov>10?ov.toFixed(0):(ov*10).toFixed(0);
+        kpiT.textContent=stats.topRatedPlayer.name||'N/A';
+        var kpiTSub=document.getElementById('kpiTopSub');
+        if(kpiTSub) kpiTSub.textContent='Overall: '+ovDisp+'/100';
+      } else if(players.length){
+        var sorted=[...players].sort(function(a,b){return (parseFloat(b.overall_rating)||0)-(parseFloat(a.overall_rating)||0);});
+        var top=sorted[0];
+        kpiT.textContent=(top.first_name||'')+' '+(top.last_name||'');
+      } else {
+        kpiT.textContent='No players yet';
+      }
+    }
+    
+    // KPI: Total Squad Value
+    var kpiV=document.getElementById('kpiValue');
+    if(kpiV){
+      var val = stats.totalSquadValue !== undefined ? stats.totalSquadValue : players.reduce(function(s,p){return s+(Number(p.transfer_value)||0);},0);
+      kpiV.textContent = val ? '\xA3'+Number(val).toLocaleString('en-GB',{maximumFractionDigits:0}) : '\xA30';
+    }
+    
+    // KPI: Scouts Interested
+    var kpiI=document.getElementById('kpiInterest');
+    if(kpiI) kpiI.textContent = stats.scoutsInterested !== undefined ? stats.scoutsInterested : '0';
+    
+    // Render players list
+    var listEl=document.getElementById('myPlayers');
+    if(!listEl) return;
+    if(!players.length){
+      listEl.innerHTML='<div style="text-align:center;padding:32px;color:#546E7A"><p style="margin-bottom:16px">No players in your squad yet.</p><a href="add-player.html" class="btn btn-primary">Add your first player</a></div>';
+      return;
+    }
+    listEl.innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Age group</th><th>Position</th><th>Overall</th><th>Value</th><th>Apps</th><th>Goals</th><th>Assists</th></tr></thead><tbody>'+
+    players.map(function(p){
+      var ov=parseFloat(p.overall_rating||0);
+      var ovPct=ov>10?ov:ov*10;
+      var ovDisp=ovPct.toFixed(0);
+      var ovCol=ovPct>=80?'#1d9e75':ovPct>=65?'#FFC107':'#FF9800';
+      var val=p.transfer_value?('\xA3'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0})):'Calculating...';
+      return '<tr>'+
+      '<td><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b></td>'+
+      '<td>'+(p.age_group||'--')+'</td>'+
+      '<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
+      '<td style="font-weight:800;color:'+ovCol+'">'+ovDisp+'</td>'+
+      '<td style="color:#1d9e75">'+val+'</td>'+
+      '<td>'+(p.appearances||0)+'</td>'+
+      '<td>'+(p.goals||0)+'</td>'+
+      '<td>'+(p.assists||0)+'</td>'+
+      '</tr>';
+    }).join('')+'</tbody></table></div>';
+  }catch(e){
+    console.error('loadCoachData error:',e);
+    var listEl=document.getElementById('myPlayers');
+    if(listEl) listEl.innerHTML='<div style="padding:16px;color:#f44336">Could not load data: '+(e.message||'Unknown error')+'</div>';
+  }
+}
+
+async function endSeason(){
+var btn=document.getElementById('confirmEndSeasonBtn');
+var msg=document.getElementById('endSeasonMsg');
+btn.disabled=true;btn.textContent='Archiving...';
+try{
+var r=await api('POST','/api/season/end',{confirm:true,seasonLabel:seasonInfo.currentSeason});
+msg.textContent=(r.message||'Season archived successfully. Squad statistics have been reset.');
+msg.style.color='#1d9e75';
+setTimeout(function(){
+document.getElementById('endSeasonModal').style.display='none';
+loadSeasonInfo();
+loadCoachData();
+loadPreviousSeasons();
+},2000);
+}catch(e){
+msg.textContent='Error: '+(e.message||'Could not end season. Please try again.');
+msg.style.color='#f44336';
+}
+btn.disabled=false;renderSeasonModal();
+}
+
+async function loadPreviousSeasons(){
+try{
+var r=await api('GET','/api/season/archives');
+var archives=r.data||[];
+if(!archives.length) return;
+document.getElementById('prevSeasonsCard').style.display='block';
+document.getElementById('prevSeasonsList').innerHTML=archives.map(function(a){
+var playerCount=a.player_summaries?Object.keys(a.player_summaries).length:0;
+return '<div class="season-archive-card">'+
+'<div><div style="font-weight:700">Season '+escHtml(a.season_label||'--')+'</div>'+
+'<div style="font-size:12px;color:#546E7A;margin-top:2px">'+playerCount+' players &bull; Archived '+relTime(a.archived_at)+'</div></div>'+
+'<button class="btn btn-sm btn-outline" data-archive-id="'+a.id+'" data-season-label="'+escHtml(a.season_label||'')+'">View summary</button>'+
+'</div>';
+}).join('');
+document.getElementById('prevSeasonsList').addEventListener('click',function(e){
+var btn=e.target.closest('button[data-archive-id]');
+if(!btn) return;
+showSeasonSummary(btn.dataset.archiveId,btn.dataset.seasonLabel,archives);
+});
+}catch(e){}
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function relTime(ts){var d=new Date(ts),now=new Date(),diff=Math.floor((now-d)/1000);if(diff<60)return 'just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return new Date(ts).toLocaleDateString();}
+
+function showSeasonSummary(id,label,archives){
+var archive=archives.find(function(a){return a.id===id;});
+if(!archive) return;
+document.getElementById('summaryTitle').textContent='Season '+label+' summary';
+var summaries=archive.player_summaries||{};
+var rows=Object.values(summaries);
+if(!rows.length){
+document.getElementById('summaryContent').innerHTML='<p style="color:#8b949e">No player data recorded for this season.</p>';
+}else{
+document.getElementById('summaryContent').innerHTML='<table class="sl-table"><thead><tr><th>Player</th><th>Apps</th><th>Goals</th><th>Assists</th><th>Clean sheets</th><th>Yellow cards</th><th>Red cards</th></tr></thead><tbody>'+
+rows.map(function(p){
+return '<tr><td><b>'+(p.name||p.player_name||'--')+'</b></td><td>'+(p.appearances||0)+'</td><td>'+(p.goals||0)+'</td><td>'+(p.assists||0)+'</td><td>'+(p.clean_sheets||0)+'</td><td>'+(p.yellow_cards||0)+'</td><td>'+(p.red_cards||0)+'</td></tr>';
+}).join('')+'</tbody></table>';
+}
+document.getElementById('seasonSummaryModal').style.display='flex';
+}
+</script>
+<script src="../js/mobile.js"></script>
+</body></html>

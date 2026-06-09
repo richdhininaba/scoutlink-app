@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My players - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px;}
+.player-card2{background:#111827;border:1px solid #1e2a3a;border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative;}
+.player-card2:hover{border-color:var(--accent,#1d9e75);transform:translateY(-1px);}
+.attr-mini-row{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px;}
+.attr-mini-bar2{flex:1;height:4px;background:#1e2a3a;border-radius:2px;overflow:hidden;}
+.attr-mini-fill2{height:100%;border-radius:2px;}
+.filter-bar{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.filter-bar input,.filter-bar select{padding:8px 12px;background:#111827;border:1px solid #1e2a3a;border-radius:8px;color:#e2e8f0;font-size:13px;}
+</style>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">My players</span>
+<div class="topbar-right">
+<a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<!-- Squad KPIs -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+<div class="kpi-card"><div class="kpi-label">Total players</div><div class="kpi-value green" id="kpiTotal">-</div></div>
+<div class="kpi-card"><div class="kpi-label">Avg overall</div><div class="kpi-value" id="kpiAvg">-</div><div class="kpi-sub">/ 100</div></div>
+<div class="kpi-card"><div class="kpi-label">Top player</div><div class="kpi-value green" id="kpiTop" style="font-size:16px">-</div></div>
+<div class="kpi-card"><div class="kpi-label">Squad value</div><div class="kpi-value" id="kpiValue">-</div></div>
+</div>
+<!-- Filters -->
+<div class="filter-bar">
+<input type="text" id="searchInput" placeholder="Search name..." oninput="renderPlayers()">
+<select id="posFilter" onchange="renderPlayers()">
+<option value="">All positions</option>
+<option value="Goalkeeper">Goalkeepers</option>
+<option value="Defender">Defenders</option>
+<option value="Midfielder">Midfielders</option>
+<option value="Forward">Forwards</option>
+</select>
+<select id="viewMode" onchange="renderPlayers()">
+<option value="grid">Card view</option>
+<option value="table">Table view</option>
+</select>
+</div>
+<div id="playersContainer"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div>
+</div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return n>10?Math.round(n):Math.round(n*10);}
+function ovPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return n>10?Math.min(n,100):Math.min(n*10,100);}
+function attrPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.round(n>10?n:n*10);}
+function attrColor(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
+function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
+function fmtVal(v){if(!v||v===0)return'Calculating...';return'Estimated value: '+formatValue(v);}
+var allPlayers=[];
+
+function initNav(){
+if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
+if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+var u=Auth.user,uel=document.getElementById('sidebarUser');
+if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+updateNotifBadge();
+}
+function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+
+document.addEventListener('DOMContentLoaded',function(){
+initNav();
+document.getElementById('logoutBtn').addEventListener('click',logout);
+document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
+loadPlayers();
+});
+
+async function loadPlayers(){
+try{
+var d=await api('GET','/api/coaches/my-players');
+allPlayers=d.data||[];
+var total=allPlayers.length;
+document.getElementById('kpiTotal').textContent=total;
+if(total){
+var avgOv=allPlayers.reduce(function(s,p){return s+ovPct(p.overall_rating);},0)/total;
+document.getElementById('kpiAvg').textContent=Math.round(avgOv);
+var top=allPlayers.reduce(function(a,p){return parseFloat(p.overall_rating||0)>parseFloat(a.overall_rating||0)?p:a;});
+document.getElementById('kpiTop').textContent=(top.first_name||'')+' '+(top.last_name||'');
+var totalVal=allPlayers.reduce(function(s,p){return s+(p.transfer_value||0);},0);
+document.getElementById('kpiValue').textContent=formatValue(totalVal);
+}else{
+document.getElementById('kpiAvg').textContent='--';
+document.getElementById('kpiTop').textContent='--';
+document.getElementById('kpiValue').textContent='--';
+}
+renderPlayers();
+}catch(e){
+document.getElementById('playersContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="bulk-add-players.html" class="btn btn-primary" style="margin-top:14px">Import squad</a></div>';
+document.getElementById('kpiTotal').textContent='0';
+console.error(e);
+}
+}
+
+function renderPlayers(){
+var search=(document.getElementById('searchInput').value||'').toLowerCase();
+var posF=document.getElementById('posFilter').value;
+var mode=document.getElementById('viewMode').value;
+var filtered=allPlayers.filter(function(p){
+var nm=!search||(p.first_name+' '+p.last_name).toLowerCase().includes(search);
+var pos=!posF||p.position_group===posF;
+return nm&&pos;
+});
+if(!filtered.length){document.getElementById('playersContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No players match your filter.</div>';return;}
+if(mode==='grid') renderGrid(filtered);
+else renderTable(filtered);
+}
+
+function renderGrid(players){
+var html='<div class="player-grid">';
+players.forEach(function(p){
+var ov=dispOverall(p.overall_rating);
+var pct=ovPct(p.overall_rating);
+var ovColor=attrColor(pct);
+var pCol=posColor(p.position_group);
+var keyAttrs=[];
+if(p.position_group==='Forward') keyAttrs=[['Pace',p.pace],['Shooting',p.shooting],['Dribbling',p.dribbling]];
+else if(p.position_group==='Midfielder') keyAttrs=[['Passing',p.passing],['Stamina',p.stamina],['Vision',p.vision]];
+else if(p.position_group==='Defender') keyAttrs=[['Defending',p.defending],['Strength',p.strength],['Tackling',p.tackling]];
+else keyAttrs=[['Composure',p.composure],['Strength',p.strength],['Pace',p.pace]];
+html+='<div class="player-card2" onclick="location.href=\'player-profile.html?id=\'+p.id+\'\'">'+
+'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
+'<div class="user-avatar" style="background:'+pCol+';color:#000;font-size:14px">'+initials(p.first_name,p.last_name)+'</div>'+
+'<div style="flex:1"><div style="font-weight:700">'+p.first_name+' '+p.last_name+'</div>'+
+'<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' &middot; '+(p.age||'--')+' yrs</div></div>'+
+'<div style="font-size:24px;font-weight:900;color:'+ovColor+'">'+ov+'</div>'+
+'</div>'+
+keyAttrs.map(function(a){var pct2=attrPct(a[1]);var col=attrColor(pct2);return'<div class="attr-mini-row"><span style="color:#546E7A;width:70px">'+a[0]+'</span><div class="attr-mini-bar2"><div class="attr-mini-fill2" style="width:'+pct2+'%;background:'+col+'"></div></div><span style="color:'+col+';font-weight:700;font-size:11px">'+attrPct(a[1])/10+'</span></div>';}).join('')+
+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px">'+
+'<span style="color:var(--accent,#1d9e75);font-weight:700">'+fmtVal(p.transfer_value)+'</span>'+
+'<span style="color:#546E7A">Apps: '+(p.appearances||0)+'</span>'+
+'</div>'+
+'<div style="display:flex;gap:8px;margin-top:10px">'+
+'<a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="flex:1;justify-content:center">View profile</a>'+
+'</div>'+
+'</div>';
+});
+html+='</div>';
+document.getElementById('playersContainer').innerHTML=html;
+}
+
+function renderTable(players){
+var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Age</th><th>Overall</th><th>Apps</th><th>Goals</th><th>Assists</th><th>Est. value</th><th></th></tr></thead><tbody>';
+players.forEach(function(p){
+var pct=ovPct(p.overall_rating);
+var pCol=posColor(p.position_group);
+html+='<tr>'+
+'<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div><b>'+p.first_name+' '+p.last_name+'</b></div></td>'+
+'<td><span style="color:'+pCol+';font-size:12px;font-weight:600">'+(p.specific_position||p.primary_position||'--')+'</span></td>'+
+'<td>'+(p.age||'--')+'</td>'+
+'<td style="color:'+attrColor(pct)+';font-weight:700">'+dispOverall(p.overall_rating)+'</td>'+
+'<td>'+(p.appearances||0)+'</td>'+
+'<td style="color:#1d9e75">'+(p.goals||0)+'</td>'+
+'<td>'+(p.assists||0)+'</td>'+
+'<td style="color:#1d9e75;font-weight:700">'+(p.transfer_value?formatValue(p.transfer_value):'Calculating...')+'</td>'+
+'<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td>'+
+'</tr>';
+});
+html+='</tbody></table></div>';
+document.getElementById('playersContainer').innerHTML=html;
+}
+</script>
+<script src="../js/mobile.js"></script>
+</body></html>
