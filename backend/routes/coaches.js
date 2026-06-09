@@ -6,6 +6,8 @@ const { requireAuth, requireRole, generateLoginCode, generateId } = require('../
 const email = require('../services/email');
 const config = require('../config');
 
+const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
+
 // My players - coaches only see players assigned to them (assigned_coach_id)
 // NOTE: coaches table requires is_super_user column (boolean, default false) - added via migration
 // Super user coaches see ALL players on their team
@@ -37,7 +39,7 @@ res.json({ data: data||[], teamName: coach.team_name, isSuperUser: coach.is_supe
 
 router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
 try {
-const { data, error } = await supabase.from('coaches').select('*').eq('id', req.user.id).single();
+const { data, error } = await supabase.from('coaches').select(COACH_PROFILE_SELECT).eq('id', req.user.id).single();
 if (error||!data) return res.status(404).json({ error: 'Not found' });
 res.json({ coach: data });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -189,7 +191,7 @@ router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => 
 // GET /api/coaches/profile - coach profile
 router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
   try {
-    const { data: coach, error } = await supabase.from('coaches').select('*').eq('id', req.user.id).single();
+    const { data: coach, error } = await supabase.from('coaches').select(COACH_PROFILE_SELECT).eq('id', req.user.id).single();
     if (error || !coach) return res.status(404).json({ error: 'Coach not found' });
     res.json({ coach });
   } catch(err) { res.status(500).json({ error: err.message }); }
