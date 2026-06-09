@@ -20,6 +20,21 @@ async function notify(recipientId, recipientType, title, body, data) {
   try { await supabase.from('notifications').insert({ recipient_id: recipientId, recipient_type: recipientType, title, body, data: data||{}, is_read: false }); } catch(e) {}
 }
 
+async function notifyStratexAdmins(title, body, data) {
+  try {
+    const { data: admins } = await supabase.from('stratex').select('id,email').eq('is_active', true);
+    if (!admins || !admins.length) return;
+    await supabase.from('notifications').insert(admins.map(a => ({
+      recipient_id: a.id,
+      recipient_type: 'Stratex',
+      title,
+      body,
+      data: data || {},
+      is_read: false
+    })));
+  } catch(e) { console.error('[Notify Stratex]', e.message); }
+}
+
 function eventHtml(eventName, eventDate, venueName, venueAddress, description, maxScouts) {
   const dateStr = eventDate ? new Date(eventDate).toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : 'TBC';
   return '<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:24px"><h1 style="color:#00E676">ScoutLink Showcase Event</h1><div style="background:#111827;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00E676"><h2 style="color:#fff;margin:0">' + eventName + '</h2><p style="color:#94a3b8">' + dateStr + '</p><p style="color:#E2E8F0">' + (venueName||'') + ', ' + (venueAddress||'') + '</p>' + (description ? '<p style="color:#B0BEC5">' + description + '</p>' : '') + '</div><p>Spaces are limited to <strong>' + (maxScouts||20) + '</strong> scouts.</p><p style="color:#94a3b8;margin-top:32px">Stratex Analytics — ScoutLink Platform</p></div>';
@@ -143,6 +158,50 @@ router.post('/:id/confirm', requireAuth, requireRole('Stratex'), async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/showcase/:id/cancel - cancel event and notify affected users
+router.post('/:id/cancel', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const { reason } = req.body || {};
+    const { data: ev, error } = await supabase.from('showcase_events').update({ status: 'cancelled', confirmed: false }).eq('id', req.params.id).select().single();
+    if (error || !ev) return res.status(404).json({ error: 'Event not found' });
+    const dateStr = ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : 'TBC';
+    const subject = 'ScoutLink Showcase Cancelled: ' + ev.event_name;
+    const html = '<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:24px"><h1 style="color:#f85149">Showcase Event Cancelled</h1><p>The <strong>' + ev.event_name + '</strong> showcase scheduled for ' + dateStr + ' at ' + (ev.venue_name||'the venue') + ' has been cancelled.</p>' + (reason ? '<p><strong>Reason:</strong> ' + reason + '</p>' : '') + '<p>We will share any replacement event details separately.</p><p style="color:#94a3b8;margin-top:32px">Stratex Analytics - ScoutLink Platform</p></div>';
+    const { data: scouts } = await supabase.from('scouts').select('id,email').eq('is_active', true);
+    const { data: spRows } = await supabase.from('showcase_players').select('player_id').eq('event_id', req.params.id);
+    const playerIds = [...new Set((spRows||[]).map(r => r.player_id).filter(Boolean))];
+    let eventPlayers = [];
+    if (playerIds.length) {
+      const { data: players } = await supabase.from('players').select('id,email,parent_email,team_id').in('id', playerIds);
+      eventPlayers = players || [];
+    }
+    const emails = new Set();
+    const notifications = [];
+    (scouts||[]).forEach(s => {
+      if (s.email) emails.add(s.email);
+      notifications.push({ recipient_id: s.id, recipient_type: 'Scout', title: 'Showcase Event Cancelled', body: ev.event_name + ' has been cancelled.', data: { event_id: req.params.id, type: 'showcase_cancelled' }, is_read: false });
+    });
+    eventPlayers.forEach(p => {
+      if (p.email) emails.add(p.email);
+      if (p.parent_email) emails.add(p.parent_email);
+    });
+    if (eventPlayers.length) {
+      const teamIds = [...new Set(eventPlayers.map(p => p.team_id).filter(Boolean))];
+      if (teamIds.length) {
+        const { data: coaches } = await supabase.from('coaches').select('id,email').in('team_id', teamIds);
+        (coaches||[]).forEach(c => {
+          if (c.email) emails.add(c.email);
+          notifications.push({ recipient_id: c.id, recipient_type: 'Coach', title: 'Showcase Event Cancelled', body: ev.event_name + ' has been cancelled.', data: { event_id: req.params.id, type: 'showcase_cancelled' }, is_read: false });
+        });
+      }
+    }
+    if (notifications.length) await supabase.from('notifications').insert(notifications);
+    await notifyStratexAdmins('Showcase Event Cancelled', ev.event_name + ' has been cancelled and affected users were notified.', { event_id: req.params.id, type: 'showcase_cancelled' });
+    if (emails.size) await sendDirectEmail(Array.from(emails), subject, html);
+    res.json({ message: 'Event cancelled and notifications sent', event: ev, notifiedEmails: emails.size, notifications: notifications.length });
+  } catch(e) { console.error('[Showcase Cancel]', e); res.status(500).json({ error: e.message }); }
+});
+
 // POST /api/showcase/showcase-response (scout accept/decline player notification)
 router.post('/player-response', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
@@ -166,6 +225,12 @@ router.post('/attendance', requireAuth, requireRole('Scout'), async (req, res) =
     const status = isFull ? 'waitlisted' : 'confirmed';
     const { data, error } = await supabase.from('showcase_attendance').upsert({ event_id: eventId, scout_id: req.user.id, status, confirmed_at: new Date().toISOString() }, { onConflict: 'event_id,scout_id' }).select().single();
     if (error) throw error;
+    const scoutName = ((req.user.firstName || '') + ' ' + (req.user.lastName || '')).trim() || req.user.email || 'A scout';
+    await notifyStratexAdmins(
+      status === 'confirmed' ? 'Scout accepted showcase event' : 'Scout joined showcase waitlist',
+      scoutName + ' has ' + (status === 'confirmed' ? 'accepted' : 'joined the waitlist for') + ' ' + ev.event_name + '.',
+      { event_id: eventId, scout_id: req.user.id, type: 'showcase_attendance', status }
+    );
     if (isFull) return res.json({ message: 'Event is fully booked. You have been added to the waitlist.', status: 'waitlisted', data });
     res.json({ message: 'Attendance confirmed', status: 'confirmed', data });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -195,12 +260,28 @@ router.post('/cancel-attendance', requireAuth, requireRole('Scout'), async (req,
 // GET /api/showcase/:id/attendees
 router.get('/:id/attendees', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
-    const { data, error } = await supabase.from('showcase_attendance').select('*, scouts(id,first_name,last_name,email,club_name)').eq('event_id', req.params.id).order('confirmed_at', { ascending: true });
+    const { data: scouts, error: scoutErr } = await supabase.from('scouts').select('id,first_name,last_name,email,club_name,scout_team_id').eq('is_active', true).order('first_name');
+    if (scoutErr) throw scoutErr;
+    const { data: attendance, error } = await supabase.from('showcase_attendance').select('*').eq('event_id', req.params.id).order('confirmed_at', { ascending: true });
     if (error) throw error;
-    const confirmed = (data||[]).filter(r => r.status === 'confirmed');
-    const waitlisted = (data||[]).filter(r => r.status === 'waitlisted');
-    const cancelled = (data||[]).filter(r => r.status === 'cancelled');
-    res.json({ confirmed, waitlisted, cancelled, total: data ? data.length : 0 });
+    const attendanceMap = {};
+    (attendance||[]).forEach(a => { attendanceMap[a.scout_id] = a; });
+    const rows = (scouts||[]).map(s => {
+      const a = attendanceMap[s.id] || null;
+      const raw = a ? a.status : 'not_responded';
+      const display = raw === 'confirmed' || raw === 'waitlisted' ? 'accepted' : raw === 'cancelled' ? 'declined' : 'not_responded';
+      return {
+        ...(a || { event_id: req.params.id, scout_id: s.id, status: 'not_responded', confirmed_at: null }),
+        display_status: display,
+        raw_status: raw,
+        scouts: s
+      };
+    });
+    const confirmed = rows.filter(r => r.raw_status === 'confirmed');
+    const waitlisted = rows.filter(r => r.raw_status === 'waitlisted');
+    const cancelled = rows.filter(r => r.raw_status === 'cancelled');
+    const notResponded = rows.filter(r => r.raw_status === 'not_responded');
+    res.json({ scouts: rows, confirmed, waitlisted, cancelled, notResponded, total: rows.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -6,6 +6,12 @@ const { requireAuth, requireRole, generateLoginCode, generateId } = require('../
 const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
 
+const SCOUT_PLAN_LIMITS = {
+Core: { seats:1, exports:30, predictions:120, interests:200 },
+Plus: { seats:3, exports:120, predictions:600, interests:1000 },
+Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
+Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
+};
 
 // Generate login code unique across all user tables
 async function generateUniqueCode() {
@@ -38,6 +44,57 @@ if (data) return { duplicate: true, field: 'phone' };
 }
 return { duplicate: false };
 }
+
+async function countBy(table, column, value) {
+try {
+const { count, error } = await supabase.from(table).select('id',{count:'exact',head:true}).eq(column, value);
+if (error) return 0;
+return count || 0;
+} catch(e) { return 0; }
+}
+
+async function deletePlayersByIds(playerIds) {
+const ids = (playerIds || []).filter(Boolean);
+if (!ids.length) return 0;
+const { data: nominations } = await supabase.from('award_nominations').select('id').in('player_id', ids);
+const nominationIds = (nominations || []).map(n => n.id);
+if (nominationIds.length) await supabase.from('award_nomination_responses').delete().in('nomination_id', nominationIds);
+await supabase.from('award_nominations').delete().in('player_id', ids);
+await supabase.from('showcase_responses').delete().in('player_id', ids);
+await supabase.from('showcase_players').delete().in('player_id', ids);
+await supabase.from('compatibility_scores').delete().in('player_id', ids);
+await supabase.from('recruitment_pipeline').delete().in('player_id', ids);
+await supabase.from('match_facts').delete().in('player_id', ids);
+await supabase.from('player_videos').delete().in('player_id', ids);
+await supabase.from('notifications').delete().eq('recipient_type', 'Player').in('recipient_id', ids);
+const { error } = await supabase.from('players').delete().in('id', ids);
+if (error) throw error;
+return ids.length;
+}
+
+async function deleteScoutsByIds(scoutIds) {
+const ids = (scoutIds || []).filter(Boolean);
+if (!ids.length) return 0;
+await supabase.from('showcase_attendance').delete().in('scout_id', ids);
+await supabase.from('showcase_responses').delete().in('scout_id', ids);
+await supabase.from('award_nomination_responses').delete().in('scout_id', ids);
+await supabase.from('recruitment_pipeline').delete().in('scout_id', ids);
+await supabase.from('notifications').delete().eq('recipient_type', 'Scout').in('recipient_id', ids);
+const { error } = await supabase.from('scouts').delete().in('id', ids);
+if (error) throw error;
+return ids.length;
+}
+
+async function deleteCoachesByIds(coachIds) {
+const ids = (coachIds || []).filter(Boolean);
+if (!ids.length) return 0;
+await supabase.from('players').update({ assigned_coach_id: null }).in('assigned_coach_id', ids);
+await supabase.from('notifications').delete().eq('recipient_type', 'Coach').in('recipient_id', ids);
+const { error } = await supabase.from('coaches').delete().in('id', ids);
+if (error) throw error;
+return ids.length;
+}
+
 router.get('/dashboard', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const [{ count: totalPlayers }, { count: totalCoaches }, { count: totalScouts }, { count: pendingReqs }, { data: recentReqs }] = await Promise.all([
@@ -97,7 +154,13 @@ try {
 const { limit=200 } = req.query;
 const { data, error, count } = await supabase.from('scouts').select('*',{count:'exact'}).order('created_at',{ascending:false}).limit(Number(limit));
 if (error) throw error;
-res.json({ data, total: count });
+const teamIds = [...new Set((data||[]).map(s => s.scout_team_id).filter(Boolean))];
+let teamMap = {};
+if (teamIds.length) {
+const { data: teams } = await supabase.from('scout_teams').select('id,team_name,league,tier,club_name').in('id', teamIds);
+(teams||[]).forEach(t => { teamMap[t.id] = t; });
+}
+res.json({ data: (data||[]).map(s => ({ ...s, scout_team: s.scout_team_id ? teamMap[s.scout_team_id] || null : null })), total: count });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -106,8 +169,68 @@ try {
 const { limit=200 } = req.query;
 const { data, error, count } = await supabase.from('coaches').select('*',{count:'exact'}).order('created_at',{ascending:false}).limit(Number(limit));
 if (error) throw error;
-res.json({ data, total: count });
+const teamIds = [...new Set((data||[]).map(c => c.team_id).filter(Boolean))];
+let teamMap = {};
+if (teamIds.length) {
+const { data: teams } = await supabase.from('school_academy_teams').select('id,team_name,county,league').in('id', teamIds);
+(teams||[]).forEach(t => { teamMap[t.id] = t; });
+}
+res.json({ data: (data||[]).map(c => ({ ...c, academy_team: c.team_id ? teamMap[c.team_id] || null : null })), total: count });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/scouts/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { data: scout, error } = await supabase.from('scouts').select('*').eq('id', req.params.id).single();
+if (error || !scout) return res.status(404).json({ error: 'Scout not found' });
+let scoutTeam = null;
+if (scout.scout_team_id) {
+const { data: team } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
+scoutTeam = team || null;
+}
+const limits = SCOUT_PLAN_LIMITS[scout.subscription_plan || 'Core'] || SCOUT_PLAN_LIMITS.Core;
+const interestsShown = await countBy('recruitment_pipeline', 'scout_id', scout.id);
+const showcaseResponses = await countBy('showcase_attendance', 'scout_id', scout.id);
+const usage = {
+exportsUsed: Math.max(0, (limits.exports || 0) - (scout.exports_remaining || 0)),
+exportsRemaining: scout.exports_remaining || 0,
+predictionsUsed: Math.max(0, (limits.predictions || 0) - (scout.predictions_remaining || 0)),
+predictionsRemaining: scout.predictions_remaining || 0,
+interestsShown,
+interestsRemaining: scout.interests_remaining || 0,
+showcaseResponses
+};
+res.json({ scout, scoutTeam, usage });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.delete('/scouts/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const removed = await deleteScoutsByIds([req.params.id]);
+res.json({ message: 'Scout deleted', removed });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/coaches/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { data: coach, error } = await supabase.from('coaches').select('*').eq('id', req.params.id).single();
+if (error || !coach) return res.status(404).json({ error: 'Coach not found' });
+let academyTeam = null;
+if (coach.team_id) {
+const { data: team } = await supabase.from('school_academy_teams').select('*').eq('id', coach.team_id).maybeSingle();
+academyTeam = team || null;
+}
+const assignedPlayers = await countBy('players', 'assigned_coach_id', coach.id);
+const teamPlayers = coach.team_id ? await countBy('players', 'team_id', coach.team_id) : 0;
+res.json({ coach, academyTeam, stats: { assignedPlayers, teamPlayers, startedAt: coach.created_at, lastActiveAt: coach.last_login || coach.updated_at || coach.created_at } });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.delete('/coaches/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const removed = await deleteCoachesByIds([req.params.id]);
+res.json({ message: 'Coach deleted', removed });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.post('/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -204,11 +327,13 @@ res.status(201).json({ data, message: 'Scout team created' });
 
 router.delete('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-// Remove scout seat assignments first (scouts.scout_team_id if exists, or just delete team)
-await supabase.from('scouts').update({ scout_team_id: null }).eq('scout_team_id', req.params.id);
+const { data: assignedScouts } = await supabase.from('scouts').select('id').eq('scout_team_id', req.params.id);
+await supabase.from('compatibility_scores').delete().eq('scout_team_id', req.params.id);
+await supabase.from('recruitment_pipeline').delete().eq('scout_team_id', req.params.id);
+const scoutsRemoved = await deleteScoutsByIds((assignedScouts||[]).map(s => s.id));
 const { error } = await supabase.from('scout_teams').delete().eq('id', req.params.id);
 if (error) throw error;
-res.json({ message: 'Scout team removed' });
+res.json({ message: 'Scout team and assigned scouts removed', scoutsRemoved });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -256,29 +381,28 @@ const { team_name, county, league, contact_email } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
 const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county||null, league:league||null, contact_email:contact_email||null }).select().single();
 if (error) throw error;
-res.status(201).json({ data, message: 'Academy/school team created' });
+res.status(201).json({ data, message: 'Non Pro Academy created' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.delete('/school-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-// Remove player associations (set team_id to null)
-await supabase.from('players').update({ team_id: null, team_name: null }).eq('team_id', req.params.id);
-// Remove coach associations
-await supabase.from('coaches').update({ team_id: null }).eq('team_id', req.params.id);
-// Delete match facts for this team
+const { data: teamPlayers } = await supabase.from('players').select('id').eq('team_id', req.params.id);
+const { data: teamCoaches } = await supabase.from('coaches').select('id').eq('team_id', req.params.id);
+const playersRemoved = await deletePlayersByIds((teamPlayers||[]).map(p => p.id));
+const coachesRemoved = await deleteCoachesByIds((teamCoaches||[]).map(c => c.id));
 await supabase.from('match_facts').delete().eq('team_id', req.params.id);
-// Delete team
+await supabase.from('fixtures').delete().eq('team_id', req.params.id);
 const { error } = await supabase.from('school_academy_teams').delete().eq('id', req.params.id);
 if (error) throw error;
-res.json({ message: 'Academy/school team removed' });
+res.json({ message: 'Non Pro Academy and assigned users removed', playersRemoved, coachesRemoved });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // Get coaches for a school team
 router.get('/school-teams/:id/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { data, error } = await supabase.from('coaches').select('id,first_name,last_name,email,role_at_club').eq('team_id', req.params.id);
+const { data, error } = await supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,created_at,last_login,is_active').eq('team_id', req.params.id);
 if (error) throw error;
 res.json({ data: data||[] });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }

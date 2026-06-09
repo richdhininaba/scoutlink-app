@@ -59,6 +59,13 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
       .order('nominated_at', { ascending: false });
     if (year) q = q.eq('year', year);
     const { data, error } = await q;
+    if (error && year && /year/i.test(error.message || '')) {
+      const fallback = await supabase.from('award_nominations')
+        .select('*, players(id,first_name,last_name,team_name,age_group,overall_rating,position_group,appearances)')
+        .order('nominated_at', { ascending: false });
+      if (fallback.error) throw fallback.error;
+      return res.json({ data: (fallback.data||[]).filter(n => !n.nominated_at || new Date(n.nominated_at).getFullYear() === year), year });
+    }
     if (error) throw error;
     res.json({ data: data||[], year: year || AWARD_YEAR() });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -86,12 +93,12 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       .eq('id', playerId).single();
     if (playerErr || !player) return res.status(404).json({ error: 'Player not found' });
 
-    const year = AWARD_YEAR();
+    const year = req.body.year ? parseInt(req.body.year) : AWARD_YEAR();
     const nominatedBy = (req.user && req.user.email) ? req.user.email : 'admin@scoutlink.app';
     const pName = player.first_name + ' ' + player.last_name;
 
     // 1. Insert award_nominations row
-    const { data: nom, error: nomErr } = await supabase.from('award_nominations').insert({
+    const insertPayload = {
       player_id: playerId,
       award_name: awardName,
       nominated_by: nominatedBy,
@@ -99,7 +106,14 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       status: 'pending',
       year: year,
       notification_sent: false
-    }).select().single();
+    };
+    let { data: nom, error: nomErr } = await supabase.from('award_nominations').insert(insertPayload).select().single();
+    if (nomErr && /year/i.test(nomErr.message || '')) {
+      delete insertPayload.year;
+      const retry = await supabase.from('award_nominations').insert(insertPayload).select().single();
+      nom = retry.data;
+      nomErr = retry.error;
+    }
     if (nomErr) throw nomErr;
 
     // Lookup coach

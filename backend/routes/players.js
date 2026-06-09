@@ -200,9 +200,9 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       avatar_config: b.avatarConfig||null,
       is_active: true,
     };
-    // Compute overall (0-100) then store as 0-10
+    // Compute and store overall on the public 0-100 scale.
     const overall100 = computeOverall(playerData);
-    playerData.overall_rating = Math.round(overall100) / 10;
+    playerData.overall_rating = Math.round(overall100);
     // Compute transfer value
     playerData.transfer_value = calcTransferValue(playerData, overall100);
     const { data, error } = await supabase.from('players').insert(playerData).select().single();
@@ -288,7 +288,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           is_active: true,
         };
         const overall100 = computeOverall(playerData);
-        playerData.overall_rating = Math.round(overall100) / 10;
+        playerData.overall_rating = Math.round(overall100);
         playerData.transfer_value = calcTransferValue(playerData, overall100);
         const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name').single();
         if (error) throw error;
@@ -327,11 +327,11 @@ router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res)
     const transferValue = calcTransferValue(data, overall100);
     const salary = predictedSalary(data, { tier: 5 });
     await supabase.from('players').update({
-      overall_rating: Math.round(overall100) / 10,
+      overall_rating: Math.round(overall100),
       transfer_value: transferValue,
       predicted_salary_weekly: salary.weeklyGross
     }).eq('id', data.id);
-    res.json({ player: { ...data, overall_rating: Math.round(overall100)/10, transfer_value: transferValue, predicted_salary_weekly: salary.weeklyGross } });
+    res.json({ player: { ...data, overall_rating: Math.round(overall100), transfer_value: transferValue, predicted_salary_weekly: salary.weeklyGross } });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -441,7 +441,7 @@ router.patch('/:id/ratings', requireAuth, requireRole('Stratex','Coach'), async 
     const merged = Object.assign({}, existing, updates);
     const overall100 = computeOverall(merged);
     const transferValue = calcTransferValue(merged, overall100);
-    updates.overall_rating = Math.round(overall100) / 10;
+    updates.overall_rating = Math.round(overall100);
     updates.transfer_value = transferValue;
     const salary = predictedSalary(merged, { tier: 5 });
     updates.predicted_salary_weekly = salary.weeklyGross;

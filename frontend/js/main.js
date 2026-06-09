@@ -95,12 +95,13 @@ function ratingColor(r) {
   const v = r <= 10 ? r * 10 : r;
   return v>=80?'#00E676':v>=65?'#FFC107':v>=50?'#FF9800':'#f44336';
 }
-// Display a rating value on 0-10 scale
+// Display a rating value on the public 0-100 scale.
 function ratingDisplay(r) {
   if (r === null || r === undefined) return '--';
-  // If stored as 0-100, convert to 0-10
-  const v = r > 10 ? r / 10 : r;
-  return v.toFixed(1);
+  const n = Number(r);
+  if (Number.isNaN(n)) return '--';
+  const v = n <= 10 ? n * 10 : n;
+  return String(Math.round(v));
 }
 
 window.Auth = Auth; window.api = api; window.formatValue = formatValue;

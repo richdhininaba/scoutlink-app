@@ -13,6 +13,21 @@ function confidenceModifier(apps) {
 function applyConf(raw, conf) { return raw * conf + 50 * (1 - conf); }
 function ga(p, k) { const v = parseFloat(p[k]); return isNaN(v) ? 5 : (v <= 10 ? v * 10 : v); }
 
+async function notifyStratexAdmins(title, body, data) {
+  try {
+    const { data: admins } = await supabase.from('stratex').select('id').eq('is_active', true);
+    if (!admins || !admins.length) return;
+    await supabase.from('notifications').insert(admins.map(a => ({
+      recipient_id: a.id,
+      recipient_type: 'Stratex',
+      title,
+      body,
+      data: data || {},
+      is_read: false
+    })));
+  } catch(e) { console.error('[Notify Stratex]', e.message); }
+}
+
 function calcWeaknessFit(player, weaknesses) {
   if (!weaknesses || !weaknesses.length) return 50;
   const apps = Number(player.appearances) || 0;
@@ -296,6 +311,12 @@ router.post('/showcase-attendance', requireAuth, requireRole('Scout'), async (re
     const status = isFull ? 'waitlisted' : 'confirmed';
     const { data, error } = await supabase.from('showcase_attendance').upsert({ event_id: eventId, scout_id: req.user.id, status, confirmed_at: new Date().toISOString() }, { onConflict: 'event_id,scout_id' }).select().single();
     if (error) throw error;
+    const scoutName = ((req.user.firstName || '') + ' ' + (req.user.lastName || '')).trim() || req.user.email || 'A scout';
+    await notifyStratexAdmins(
+      status === 'confirmed' ? 'Scout accepted showcase event' : 'Scout joined showcase waitlist',
+      scoutName + ' has ' + (status === 'confirmed' ? 'accepted' : 'joined the waitlist for') + ' ' + ev.event_name + '.',
+      { event_id: eventId, scout_id: req.user.id, type: 'showcase_attendance', status }
+    );
     if (isFull) return res.json({ message: 'Event fully booked. You have been added to the waitlist.', status: 'waitlisted', data });
     res.json({ message: 'Attendance confirmed', status: 'confirmed', data });
   } catch(e) { res.status(500).json({ error: e.message }); }

@@ -37,7 +37,7 @@
 </div>
 <div class="table-card">
 <div class="table-header">
-<h3>Top players by overall <span style="font-size:12px;font-weight:400;color:#546E7A">/ 10</span></h3>
+<h3>Top players by overall <span style="font-size:12px;font-weight:400;color:#546E7A">/ 100</span></h3>
 <a href="stratex-players.html" class="btn btn-sm btn-outline">All players</a>
 </div>
 <div id="topPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
@@ -70,7 +70,7 @@
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
+function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return String(Math.round(n>10?n:n*10));}
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
 

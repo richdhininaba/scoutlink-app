@@ -5,6 +5,14 @@
 <link rel="stylesheet" href="../css/main.css">
 <link rel="stylesheet" href="../css/mobile.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;overflow:auto;padding:32px 16px}
+.detail-box{background:#162032;border:1px solid #2d3f55;border-radius:10px;max-width:760px;margin:0 auto;padding:24px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px}
+.detail-stat{background:#0d1117;border:1px solid #243447;border-radius:8px;padding:14px}
+.detail-label{color:#90A4AE;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.detail-value{color:#E0E0E0;font-size:16px;font-weight:800}
+</style>
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -15,27 +23,83 @@
   <div class="table-header"><h3>All Scouts</h3><span id="scoutCount" style="color:#546E7A;font-size:13px"></span></div>
   <div id="scoutsTable"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
-<script>
-async function loadPage() {
-  try {
-    var d = await api('GET', '/api/stratex/scouts');
-    document.getElementById('scoutCount').textContent = (d.total || 0) + ' scouts';
-    var scouts = d.data || [];
-    if (!scouts.length) { document.getElementById('scoutsTable').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A">No scouts yet</div>'; return; }
-    document.getElementById('scoutsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Club</th><th>Plan</th><th>Status</th><th>Joined</th></tr></thead><tbody>' +
-      scouts.map(function(s) { return '<tr><td><b>'+s.first_name+' '+s.last_name+'</b></td><td>'+s.email+'</td><td>'+(s.club_name||'--')+'</td><td><span class="badge badge-blue">'+(s.subscription_plan||'Core')+'</span></td><td><span class="badge '+(s.is_active?'badge-green':'badge-red')+'">'+(s.is_active?'Active':'Inactive')+'</span></td><td>'+new Date(s.created_at).toLocaleDateString('en-GB')+'</td></tr>'; }).join('') + '</tbody></table>';
-  } catch(e) { document.getElementById('scoutsTable').innerHTML = '<div style="padding:16px;color:#ff6666">Error: ' + e.message + '</div>'; }
-}
-</script></div>
-</div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Â</button></div><div class="notif-list" id="notifList"></div></div>
+</div></div></div>
+
+<div class="detail-modal" id="scoutModal">
+  <div class="detail-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div><h3 id="modalTitle" style="margin:0;color:#E0E0E0">Scout details</h3><p id="modalSubtitle" style="margin:6px 0 0;color:#90A4AE"></p></div>
+      <button onclick="closeScoutModal()" style="background:none;border:none;color:#90A4AE;font-size:24px;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div id="scoutDetailBody"><div class="loading-state"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-function initNav(){initStratexPage();}
+var allScouts=[];
+function safe(v, fallback){return (v===null||v===undefined||v==='')?(fallback||'--'):String(v);}
+function dateFmt(v){return v?new Date(v).toLocaleDateString('en-GB'):'--';}
 function logout(){Auth.clear();window.location.href='login.html?logout=1';}
-function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
+function closeScoutModal(){document.getElementById('scoutModal').style.display='none';}
+
+async function loadPage() {
+  try {
+    var d = await api('GET', '/api/stratex/scouts');
+    allScouts = d.data || [];
+    document.getElementById('scoutCount').textContent = (d.total || allScouts.length) + ' scouts';
+    renderScouts(allScouts);
+  } catch(e) { document.getElementById('scoutsTable').innerHTML = '<div style="padding:16px;color:#ff6666">Error: ' + e.message + '</div>'; }
+}
+
+function renderScouts(scouts){
+  if (!scouts.length) { document.getElementById('scoutsTable').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A">No scouts yet</div>'; return; }
+  document.getElementById('scoutsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Club</th><th>Scout Team</th><th>Plan</th><th>Renewal</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
+    scouts.map(function(s) {
+      var team=s.scout_team?s.scout_team.team_name:'--';
+      return '<tr><td><b>'+safe(s.first_name)+' '+safe(s.last_name,'')+'</b></td><td>'+safe(s.email)+'</td><td>'+safe(s.club_name)+'</td><td>'+team+'</td><td><span class="badge badge-blue">'+safe(s.subscription_plan,'Core')+'</span></td><td>'+dateFmt(s.plan_end)+'</td><td><span class="badge '+(s.is_active?'badge-green':'badge-red')+'">'+(s.is_active?'Active':'Inactive')+'</span></td><td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn btn-sm btn-outline" onclick="viewScout(\''+s.id+'\')">View details</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteScout(\''+s.id+'\')">Delete</button></div></td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function stat(label,value){return '<div class="detail-stat"><div class="detail-label">'+label+'</div><div class="detail-value">'+safe(value)+'</div></div>';}
+
+async function viewScout(id){
+  document.getElementById('scoutModal').style.display='block';
+  document.getElementById('scoutDetailBody').innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var d=await api('GET','/api/stratex/scouts/'+id);
+    var s=d.scout||{}, team=d.scoutTeam||{}, u=d.usage||{};
+    document.getElementById('modalTitle').textContent=safe(s.first_name)+' '+safe(s.last_name,'');
+    document.getElementById('modalSubtitle').textContent=safe(s.email);
+    document.getElementById('scoutDetailBody').innerHTML='<div class="detail-grid">'+
+      stat('Scout team', safe(team.team_name,'Unassigned'))+
+      stat('Club', safe(s.club_name))+
+      stat('Subscription', safe(s.subscription_plan,'Core'))+
+      stat('Renews', dateFmt(s.plan_end))+
+      stat('Exports', safe(u.exportsUsed,0)+' used / '+safe(u.exportsRemaining,0)+' left')+
+      stat('Predictions', safe(u.predictionsUsed,0)+' used / '+safe(u.predictionsRemaining,0)+' left')+
+      stat('Interests shown', safe(u.interestsShown,0)+' shown / '+safe(u.interestsRemaining,0)+' left')+
+      stat('Showcase replies', safe(u.showcaseResponses,0))+
+      stat('Joined', dateFmt(s.created_at))+
+      stat('Last active', dateFmt(s.last_login))+
+      '</div>';
+  }catch(e){document.getElementById('scoutDetailBody').innerHTML='<div style="padding:16px;color:#ff6666">Error: '+e.message+'</div>';}
+}
+
+async function deleteScout(id){
+  var scout=allScouts.find(function(s){return s.id===id;});
+  var name=scout?(safe(scout.first_name)+' '+safe(scout.last_name,'')):'this scout';
+  if(!confirm('Delete '+name+' and their linked scout records?')) return;
+  try{
+    await api('DELETE','/api/stratex/scouts/'+id);
+    allScouts=allScouts.filter(function(s){return s.id!==id;});
+    document.getElementById('scoutCount').textContent=allScouts.length+' scouts';
+    renderScouts(allScouts);
+  }catch(e){alert('Could not delete scout: '+e.message);}
+}
+
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadPage();});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
