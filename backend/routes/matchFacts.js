@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
-const { computeOverall, grassrootsTransferValue } = require('../engines/compatibility');
+const { computeOverall, grassrootsTransferValue, calculateOverallBreakdown, calculatePositionRatings, calculateValueAnalysis } = require('../engines/compatibility');
 
 // Helper: determine position group from formation slot key
 function posGroupFromSlot(key) {
@@ -19,11 +19,19 @@ async function recalcPlayer(playerId) {
   try {
     const { data: p } = await supabase.from('players').select('*').eq('id', playerId).single();
     if (!p) return;
-    const overall100 = computeOverall(p);
-    const tvData = grassrootsTransferValue ? grassrootsTransferValue({ ...p, overall_rating: overall100 }) : { value: 0 };
+    const { data: facts } = await supabase.from('match_facts').select('*').eq('player_id', playerId).order('match_date', { ascending: false }).limit(20);
+    const overallBreakdown = calculateOverallBreakdown(p, facts || []);
+    const positionRatings = calculatePositionRatings(p, facts || []);
+    const valueAnalysis = calculateValueAnalysis(p, facts || []);
+    const overall100 = computeOverall(p, facts || []);
+    const tvData = grassrootsTransferValue ? grassrootsTransferValue({ ...p, overall_rating: overall100 }, facts || []) : { value: valueAnalysis.value };
     await supabase.from('players').update({
       overall_rating: Math.round(overall100),
-      transfer_value: tvData.value || 0
+      transfer_value: tvData.value || valueAnalysis.value || 0,
+      overall_breakdown: overallBreakdown,
+      position_ratings: positionRatings,
+      value_analysis: valueAnalysis,
+      scoring_version: 'v3'
     }).eq('id', playerId);
   } catch(e) { console.error('[recalcPlayer]', playerId, e.message); }
 }

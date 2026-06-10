@@ -3,7 +3,15 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
-const { computeOverall, grassrootsTransferValue, calcAge, getPosGroup } = require('../engines/compatibility');
+const {
+  computeOverall,
+  grassrootsTransferValue,
+  calcAge,
+  getPosGroup,
+  calculatePositionRatings,
+  calculateOverallBreakdown,
+  calculateValueAnalysis
+} = require('../engines/compatibility');
 
 const DISCLAIMER = 'ScoutLink predictions are deterministic estimates based on coach ratings, match facts, physical profile and current player data. They are decision-support outputs, not guarantees.';
 const PLAN_LIMITS = {
@@ -90,6 +98,8 @@ const MATCH_SCENARIOS = [
   { key:'gk_distribution', label:'Goalkeeper asked to start attacks short and long', gk:true, attrs:['gk_distribution','gk_kicking','gk_communication','composure','vision'], behaviour:'should vary distribution and avoid predictable restarts' },
   { key:'gk_shot_volume', label:'Goalkeeper facing high shot volume', gk:true, attrs:['gk_reflexes','gk_diving','gk_handling','stamina','composure'], behaviour:'should sustain concentration and manage rebounds' }
 ];
+
+const POSITION_TARGETS = ['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'];
 
 function planLimit(plan) {
   return (PLAN_LIMITS[plan] || PLAN_LIMITS.Core).predictions;
@@ -338,6 +348,55 @@ function scenarioPrediction(player, facts, inputParams = {}, context = {}) {
   };
 }
 
+function positionFitPrediction(player, facts, inputParams = {}, context = {}) {
+  const playerLabel = playerName(player);
+  const target = String(inputParams.targetPosition || inputParams.position || '').toUpperCase();
+  const targetPosition = POSITION_TARGETS.includes(target) ? target : null;
+  const positions = calculatePositionRatings(player, facts || []);
+  const overall = calculateOverallBreakdown(player, facts || []);
+  const value = calculateValueAnalysis(player, facts || [], context);
+  const targetScore = targetPosition ? (positions.ratings[targetPosition] || 0) : positions.bestCurrentScore;
+  const bestScore = positions.bestCurrentScore || 0;
+  const gap = Math.round((targetScore - bestScore) * 10) / 10;
+  const targetVerdict = !targetPosition
+    ? 'No target role selected'
+    : gap >= -2
+      ? 'Natural or near-natural fit'
+      : gap >= -8
+        ? 'Convertible with a managed development plan'
+        : 'High-friction conversion';
+  const topRoles = (positions.sorted || []).slice(0, 6);
+  const currentLabel = positions.bestCurrentPosition || overall.primaryPosition || 'CM';
+  const futureLabel = positions.bestFuturePosition || currentLabel;
+  const paragraphOne = playerLabel + "'s strongest current role is " + currentLabel + ' at ' + Math.round(bestScore) + '/100, with a future pathway towards ' + futureLabel + ' if the current development trend is protected.';
+  const paragraphTwo = targetPosition
+    ? 'The selected target role is ' + targetPosition + '. ScoutLink rates this fit at ' + Math.round(targetScore) + '/100, which makes it a ' + targetVerdict.toLowerCase() + '. The judgement is based on role-weighted coach attributes, physical suitability, match evidence and the player age band rather than a generic position label.'
+    : 'No target position was selected, so ScoutLink is showing the strongest role family and nearby conversion roles. Use this to decide whether the player should stay in their current lane or be tested in a related role.';
+  return {
+    type: 'Position Fit Projection',
+    targetPosition,
+    targetVerdict,
+    bestCurrentPosition: currentLabel,
+    bestCurrentScore: Math.round(bestScore),
+    bestFuturePosition: futureLabel,
+    bestFutureScore: Math.round(positions.bestFutureScore || bestScore),
+    targetScore: Math.round(targetScore),
+    targetGapVsBest: gap,
+    positionRatings: positions.ratings,
+    topRoles,
+    conversionCandidates: positions.conversionCandidates || [],
+    overallBreakdown: overall,
+    valueAnalysis: value,
+    confidence: { score: overall.dataConfidenceScore, label: overall.dataConfidenceLabel, note: overall.dataConfidenceNote },
+    paragraphs: [paragraphOne, paragraphTwo],
+    summary: targetPosition
+      ? 'Position fit for ' + playerLabel + ': ' + targetPosition + ' is a ' + targetVerdict.toLowerCase() + ' at ' + Math.round(targetScore) + '/100.'
+      : 'Position fit for ' + playerLabel + ': best current role is ' + currentLabel + ' and best future role is ' + futureLabel + '.',
+    visualisation: { labels: topRoles.map(r => r.role), values: topRoles.map(r => Math.round(r.score)) },
+    disclaimer: DISCLAIMER
+  };
+}
+
 function fallbackPrediction(player, facts, predictionType) {
   const confidence = dataConfidence(player, facts);
   const overall = Math.round(computeOverall(player));
@@ -392,6 +451,9 @@ function canonicalType(type) {
   if (type === 'Transfer value trajectory') return 'ROI Analysis';
   if (type === 'Match scenario simulation') return 'Match Scenario Prediction';
   if (type === 'Return on Investment') return 'ROI Analysis';
+  if (type === 'Position Fit' || type === 'position_fit' || type === 'Positional ceiling') return 'Position Fit Projection';
+  if (type === 'Value / ROI Projection' || type === 'Value Projection') return 'ROI Analysis';
+  if (type === 'Overall Rating Projection' || type === 'Role Readiness Prediction' || type === 'Compatibility Projection') return 'Position Fit Projection';
   return type;
 }
 
@@ -423,6 +485,7 @@ router.post('/run', requireAuth, requireRole('Scout'), async (req, res) => {
     if (type === 'Attribute Development') result = attributeDevelopment(player, facts || [], ip, context);
     else if (type === 'ROI Analysis') result = roiAnalysis(player, facts || [], ip, context);
     else if (type === 'Match Scenario Prediction') result = scenarioPrediction(player, facts || [], ip, context);
+    else if (type === 'Position Fit Projection') result = positionFitPrediction(player, facts || [], ip, context);
     else result = fallbackPrediction(player, facts || [], type);
 
     const { data: log, error: logErr } = await supabase.from('predictions_log').insert({

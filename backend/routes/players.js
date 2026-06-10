@@ -3,7 +3,15 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateId } = require('../utils/auth');
-const { analysePlayer, predictedSalary, computeOverall, getPosGroup } = require('../engines/compatibility');
+const {
+  analysePlayer,
+  predictedSalary,
+  computeOverall,
+  getPosGroup,
+  calculateOverallBreakdown,
+  calculatePositionRatings,
+  calculateValueAnalysis
+} = require('../engines/compatibility');
 const email = require('../services/email');
 
 // Height/weight range maps
@@ -54,41 +62,28 @@ function calcAgeGroup(dob) {
 
 // Calculate transfer value from Task 9 spec
 function calcTransferValue(player, overall100) {
-  const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
-  // Base values by position group
-  const BASE = { Forward: 70000, Midfielder: 60000, Defender: 52000, Goalkeeper: 52000 };
-  const baseVal = BASE[group] || 60000;
-
-  // Rating multiplier
-  let ratingMult = 0.4;
-  if (overall100 <= 40) ratingMult = 0.4;
-  else if (overall100 <= 60) ratingMult = 0.7;
-  else if (overall100 <= 75) ratingMult = 0.9;
-  else if (overall100 <= 85) ratingMult = 1.1;
-  else if (overall100 <= 95) ratingMult = 1.3;
-  else ratingMult = 1.5;
-
-  // Age runway bonus
-  let ageBonus = 0;
-  const ageInfo = calcAgeGroup(player.date_of_birth);
-  const age = ageInfo ? ageInfo.age : null;
-  if (age !== null) {
-    if (age <= 9) ageBonus = 0.08;
-    else if (age <= 12) ageBonus = 0.05;
-    else if (age <= 14) ageBonus = 0.02;
+  try {
+    return calculateValueAnalysis({ ...player, overall_rating: overall100 }, []).value;
+  } catch(e) {
+    const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
+    const baseVal = { Forward: 70000, Midfielder: 60000, Defender: 52000, Goalkeeper: 52000 }[group] || 60000;
+    const ratingMult = overall100 >= 85 ? 1.3 : overall100 >= 75 ? 1.1 : overall100 >= 60 ? 0.9 : 0.7;
+    return Math.max(5000, Math.min(200000, Math.round((baseVal * ratingMult) / 1000) * 1000));
   }
+}
 
-  // Appearance confidence
-  const apps = Number(player.appearances) || 0;
-  let appConf = 1.0;
-  if (apps === 0) appConf = 0.5;
-  else if (apps <= 4) appConf = 0.7;
-  else if (apps <= 9) appConf = 0.85;
-
-  let value = baseVal * ratingMult * (1 + ageBonus) * appConf;
-  // Cap min 5000 max 200000, round to nearest 1000
-  value = Math.max(5000, Math.min(200000, Math.round(value / 1000) * 1000));
-  return value;
+function scoringPayload(player, matchHistory = [], context = {}) {
+  const overallBreakdown = calculateOverallBreakdown(player, matchHistory);
+  const positionRatings = calculatePositionRatings(player, matchHistory);
+  const valueAnalysis = calculateValueAnalysis(player, matchHistory, context);
+  return {
+    overall_rating: Math.round(overallBreakdown.finalScore),
+    transfer_value: valueAnalysis.value,
+    overall_breakdown: overallBreakdown,
+    position_ratings: positionRatings,
+    value_analysis: valueAnalysis,
+    scoring_version: 'v3'
+  };
 }
 
 async function getCoachPlayerScope(req, requestedCoachId) {
@@ -279,7 +274,16 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
       });
       const scored = enriched.map(p => {
         const analysis = analysePlayer(p, team, factsByPlayer[p.id] || [], prefs);
-        return { ...p, compatibilityScore: analysis.compatibilityScore, compatibilityBreakdown: analysis.compatibilityBreakdown };
+        return {
+          ...p,
+          compatibilityScore: analysis.compatibilityScore,
+          compatibilityBreakdown: analysis.compatibilityBreakdown,
+          compatibility: analysis.compatibility,
+          overallBreakdown: analysis.overallBreakdown,
+          positionRatings: analysis.positionRatings,
+          valueAnalysis: analysis.valueAnalysis,
+          transferValueFormatted: analysis.transferValueFormatted
+        };
       }).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
       return res.json({ data: scored.slice(off, off + Number(limit)), total: scored.length, page: Number(page), limit: Number(limit) });
     }
@@ -312,7 +316,19 @@ pipelineStatus = pipelineRow ? pipelineRow.stage : null;
 const { data: scoutRow } = await supabase.from('scouts').select('interests_remaining').eq('id', req.user.id).single();
 interestsRemaining = scoutRow ? (scoutRow.interests_remaining ?? 200) : 200;
 }
-res.json({ player: data, recentMatches: matches||[], videos: videos||[], upcomingFixtures, pipelineStatus, interestsRemaining });
+let analysisContext = { team: { tier: 5 }, prefs: {} };
+if (req.user.accountType === 'Scout') analysisContext = await getScoutAnalysisContext(req);
+const analysis = analysePlayer(data, analysisContext.team, matches || [], analysisContext.prefs);
+const playerWithBreakdowns = {
+...data,
+overallBreakdown: analysis.overallBreakdown,
+positionRatings: analysis.positionRatings,
+valueAnalysis: analysis.valueAnalysis,
+compatibility: req.user.accountType === 'Scout' ? analysis.compatibility : null,
+compatibilityScore: req.user.accountType === 'Scout' ? analysis.compatibilityScore : null,
+compatibilityBreakdown: req.user.accountType === 'Scout' ? analysis.compatibilityBreakdown : null
+};
+res.json({ player: playerWithBreakdowns, analysis, recentMatches: matches||[], videos: videos||[], upcomingFixtures, pipelineStatus, interestsRemaining });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -361,11 +377,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       avatar_config: b.avatarConfig||null,
       is_active: true,
     };
-    // Compute and store overall on the public 0-100 scale.
-    const overall100 = computeOverall(playerData);
-    playerData.overall_rating = Math.round(overall100);
-    // Compute transfer value
-    playerData.transfer_value = calcTransferValue(playerData, overall100);
+    Object.assign(playerData, scoringPayload(playerData));
     const { data, error } = await supabase.from('players').insert(playerData).select().single();
     if (error) throw error;
     const salary = predictedSalary(data, { tier: 5 });
@@ -453,12 +465,10 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           gk_sweeping: p.gkSweeping||null,
           is_active: true,
         };
-        const overall100 = computeOverall(playerData);
-        playerData.overall_rating = Math.round(overall100);
-        playerData.transfer_value = calcTransferValue(playerData, overall100);
+        Object.assign(playerData, scoringPayload(playerData));
         const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,team_id,team_name,assigned_coach_id').single();
         if (error) throw error;
-        const salary = predictedSalary(created, { tier: 5 });
+        const salary = predictedSalary(playerData, { tier: 5 });
         await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', created.id);
         results.created.push(created);
       } catch(e) {
@@ -489,15 +499,13 @@ router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res)
     }
     const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
     if (error) throw error;
-    const overall100 = computeOverall(data);
-    const transferValue = calcTransferValue(data, overall100);
+    const scoring = scoringPayload(data);
     const salary = predictedSalary(data, { tier: 5 });
     await supabase.from('players').update({
-      overall_rating: Math.round(overall100),
-      transfer_value: transferValue,
+      ...scoring,
       predicted_salary_weekly: salary.weeklyGross
     }).eq('id', data.id);
-    res.json({ player: { ...data, overall_rating: Math.round(overall100), transfer_value: transferValue, predicted_salary_weekly: salary.weeklyGross } });
+    res.json({ player: { ...data, ...scoring, predicted_salary_weekly: salary.weeklyGross } });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -534,6 +542,11 @@ router.post('/:id/analyse', requireAuth, requireRole('Scout','Stratex','Coach'),
         player_id: req.params.id, scout_team_id: teamId,
         compatibility_score: analysis.compatibilityScore, transfer_value: analysis.transferValue,
         prediction_score: analysis.predictionScore, breakdown: analysis.compatibilityBreakdown,
+        compatibility: analysis.compatibility,
+        overall_breakdown: analysis.overallBreakdown,
+        position_ratings: analysis.positionRatings,
+        value_analysis: analysis.valueAnalysis,
+        scoring_version: 'v3',
         calculated_at: new Date()
       }, { onConflict: 'player_id,scout_team_id' });
     }
@@ -619,10 +632,7 @@ router.patch('/:id/ratings', requireAuth, requireRole('Stratex','Coach'), async 
     const { data: existing } = await supabase.from('players').select('*').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ error: 'Player not found' });
     const merged = Object.assign({}, existing, updates);
-    const overall100 = computeOverall(merged);
-    const transferValue = calcTransferValue(merged, overall100);
-    updates.overall_rating = Math.round(overall100);
-    updates.transfer_value = transferValue;
+    Object.assign(updates, scoringPayload(merged));
     const salary = predictedSalary(merged, { tier: 5 });
     updates.predicted_salary_weekly = salary.weeklyGross;
     const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
