@@ -53,10 +53,16 @@ function initNav(){
  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--green);color:#001b12">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+Auth.type+'</div></div></div>';
 }
 function otherName(t){return Auth.type==='Scout'?((t.coaches&&((t.coaches.first_name||'')+' '+(t.coaches.last_name||'')))||'Coach'):((t.scouts&&((t.scouts.first_name||'')+' '+(t.scouts.last_name||'')))||'Scout');}
+function otherContact(t){
+ var person=Auth.type==='Scout'?t.coaches:t.scouts;
+ if(!person)return '';
+ var club=person.team_name||person.club_name||'';
+ return [person.email,club].filter(Boolean).join(' - ');
+}
 function renderThreads(){
  var box=document.getElementById('threadList');
  if(!_threads.length){box.innerHTML='<div style="padding:34px 18px;text-align:center;color:var(--text3);font-size:13px">No chats yet. Scouts can start one from their pipeline.</div>';return;}
- box.innerHTML=_threads.map(function(t,i){var p=t.players||{};return '<div class="thread-item '+(_activeThread&&_activeThread.id===t.id?'active':'')+'" data-thread="'+t.id+'"><div class="thread-title">'+otherName(t)+(t.unreadCount?'<span class="unread-pill">'+t.unreadCount+'</span>':'')+'</div><div class="thread-meta">'+(p.first_name||'')+' '+(p.last_name||'')+' &middot; '+(p.team_name||'')+'</div></div>';}).join('');
+ box.innerHTML=_threads.map(function(t,i){var p=t.players||{};return '<div class="thread-item '+(_activeThread&&_activeThread.id===t.id?'active':'')+'" data-thread="'+t.id+'"><div class="thread-title">'+otherName(t)+(t.unreadCount?'<span class="unread-pill">'+t.unreadCount+'</span>':'')+'</div><div class="thread-meta">'+(p.first_name||'')+' '+(p.last_name||'')+' &middot; '+(p.team_name||'')+'</div><div class="thread-meta">'+otherContact(t)+'</div></div>';}).join('');
  box.querySelectorAll('[data-thread]').forEach(function(el){el.addEventListener('click',function(){selectThread(this.getAttribute('data-thread'));});});
 }
 function loadThreads(){
@@ -67,7 +73,7 @@ function selectThread(id){
  if(!_activeThread)return;
  var p=_activeThread.players||{};
  document.getElementById('chatTitle').textContent=otherName(_activeThread);
- document.getElementById('chatMeta').textContent=((p.first_name||'')+' '+(p.last_name||'')+' - '+(p.team_name||'')).trim();
+ document.getElementById('chatMeta').textContent=[((p.first_name||'')+' '+(p.last_name||'')+' - '+(p.team_name||'')).trim(),otherContact(_activeThread)].filter(Boolean).join(' | ');
  var profile=document.getElementById('profileLink');profile.style.display='inline-flex';profile.href='player-profile.html?id='+_activeThread.player_id;
  api('GET','/api/chat/threads/'+id+'/messages').then(function(d){renderMessages(d.data||[]);}).catch(function(e){document.getElementById('messages').innerHTML='<div style="margin:auto;color:#f44336">'+e.message+'</div>';});
 }
