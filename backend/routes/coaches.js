@@ -65,7 +65,7 @@ router.post('/add-coach', requireAuth, requireRole('Coach'), async (req, res) =>
 try {
 const { data: me } = await supabase.from('coaches').select('id,team_id,team_name,is_super_user').eq('id', req.user.id).single();
 if (!me || !me.is_super_user) return res.status(403).json({ error: 'Only super user coaches can add coaches' });
-const { firstName, lastName, emailAddr, phone, roleAtClub } = req.body;
+const { firstName, lastName, emailAddr, phone, isSuperUser } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
 
 // Check duplicates
@@ -102,17 +102,20 @@ const { data: newCoach, error } = await supabase.from('coaches').insert({
 coach_id: generateId('CHC'), first_name: firstName.trim(), last_name: lastName.trim(),
 email: emailAddr.toLowerCase().trim(), phone: phone||null,
 team_name: me.team_name, team_id: me.team_id,
-role_at_club: roleAtClub||'Coach',
+role_at_club: 'Coach',
 data_policy_agreed: true, login_code: loginCode, login_code_expires: expires,
-is_active: true, is_super_user: false, registration_complete: false
+is_active: true, is_super_user: !!isSuperUser, registration_complete: false
 }).select().single();
 if (error) throw error;
 
 const baseUrl = config.brandUrl||'https://scoutlink.app';
-const completeLink = baseUrl + '/frontend/pages/complete-registration.html?code=' + loginCode + '&email=' + encodeURIComponent(emailAddr.toLowerCase()) + '&type=Coach';
-await email.sendCompleteSignup({ to: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => console.error('[Email]', e.message));
+const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(emailAddr.toLowerCase()) + '&type=Coach';
+const emailResult = await email.sendCompleteSignup({ to: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
+  console.error('[Email]', e.message);
+  return { success: false, error: e.message };
+});
 
-res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink });
+res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink, emailSent: !!emailResult?.success });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

@@ -361,7 +361,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
     const plan = subscriptionPlan||'Core'; const limits = PL[plan]||PL.Core; const expires = new Date(Date.now()+7*24*60*60*1000);
     const { data: newScout, error } = await supabase.from('scouts').insert({scout_id:generateId('SCT'),first_name:firstName.trim(),last_name:lastName.trim(),email:emailAddr.toLowerCase().trim(),phone:phone||null,club_name:scoutClub||me.club_name||null,club_league:scoutLeague||null,scout_team_id:me.scout_team_id||null,login_code:loginCode,login_code_expires:expires,is_active:true,preferences_set:false,is_super_user:false,registration_complete:false,subscription_plan:plan,plan_start:new Date(),plan_end:new Date(Date.now()+365*24*60*60*1000),exports_remaining:limits.exports,predictions_remaining:limits.predictions,interests_remaining:limits.interests}).select().single();
     if (error) throw error;
-    const baseUrl = config.brandUrl||'https://scoutlink.app'; const cl = baseUrl+'/frontend/pages/complete-registration.html?code='+loginCode+'&email='+encodeURIComponent(emailAddr.toLowerCase())+'&type=Scout';
+    const baseUrl = config.brandUrl||'https://scoutlink.app'; const cl = baseUrl+'/complete-registration?code='+loginCode+'&email='+encodeURIComponent(emailAddr.toLowerCase())+'&type=Scout';
     await emailSvc.sendCompleteSignup({to:emailAddr,firstName,loginCode,accountType:'Scout',completeLink:cl}).catch(e=>console.error('[Email]',e.message));
     res.status(201).json({message:'Scout added. Complete-registration email sent.',scoutId:newScout.id,loginCode,completeLink:cl});
   } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }

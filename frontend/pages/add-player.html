@@ -69,18 +69,7 @@
 <h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Team Coach Assignment</h3>
 <div class="form-row">
 <div class="form-group"><label>Assigned Coach</label><select id="assignedCoachId"><option value="">Loading coaches...</option></select></div>
-<div class="form-group"><label>Add Coach To Team</label><button class="btn btn-outline" id="showAddCoachBtn" type="button" style="width:100%;justify-content:center">+ Add Coach</button></div>
-</div>
-<div id="addCoachPanel" style="display:none;margin-top:4px">
-<div class="form-row">
-<div class="form-group"><label>First Name</label><input type="text" id="newCoachFirstName"></div>
-<div class="form-group"><label>Last Name</label><input type="text" id="newCoachLastName"></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>Email</label><input type="email" id="newCoachEmail"></div>
-<div class="form-group"><label>Role</label><input type="text" id="newCoachRole" placeholder="Coach"></div>
-</div>
-<div style="display:flex;gap:10px;align-items:center"><button class="btn btn-primary" id="addCoachBtn" type="button">Add Coach</button><span id="addCoachMsg" style="font-size:13px;color:#8b949e"></span></div>
+<div class="form-group"><label>Team Coaches</label><a class="btn btn-outline" href="coach-settings.html#teamCoaches" style="width:100%;justify-content:center;text-decoration:none">Manage coaches</a></div>
 </div>
 </div>
 
@@ -211,26 +200,6 @@ function renderCoachDropdown(){
   }).join('');
 }
 
-async function addTeamCoach(){
-  var msg=document.getElementById('addCoachMsg');
-  var body={
-    firstName:gv('newCoachFirstName').trim(),
-    lastName:gv('newCoachLastName').trim(),
-    emailAddr:gv('newCoachEmail').trim(),
-    roleAtClub:gv('newCoachRole').trim()||'Coach'
-  };
-  if(!body.firstName||!body.lastName||!body.emailAddr){msg.textContent='First name, last name and email are required.';msg.style.color='#f44336';return;}
-  msg.textContent='Adding coach...';msg.style.color='#8b949e';
-  try{
-    await api('POST','/api/coaches/add-coach',body);
-    msg.textContent='Coach added and invited.';msg.style.color='#1d9e75';
-    ['newCoachFirstName','newCoachLastName','newCoachEmail','newCoachRole'].forEach(function(id){document.getElementById(id).value='';});
-    var teamRes=await api('GET','/api/coaches/team-coaches');
-    coachContext.teamCoaches=[coachContext.coach].concat(teamRes.coaches||teamRes.data||[]);
-    renderCoachDropdown();
-  }catch(e){msg.textContent=e.message;msg.style.color='#f44336';}
-}
-
 function selectRange(el,hiddenId){
   var parent=el.closest('.range-grid');
   parent.querySelectorAll('.range-option').forEach(function(o){o.classList.remove('active');});
@@ -314,11 +283,6 @@ document.addEventListener('DOMContentLoaded',function(){
 
   // Submit
   document.getElementById('submitBtn').addEventListener('click',submitPlayer);
-  document.getElementById('showAddCoachBtn').addEventListener('click',function(){
-    var p=document.getElementById('addCoachPanel');
-    p.style.display=p.style.display==='none'?'block':'none';
-  });
-  document.getElementById('addCoachBtn').addEventListener('click',addTeamCoach);
 });
 </script>
 <script src="../js/mobile.js"></script>

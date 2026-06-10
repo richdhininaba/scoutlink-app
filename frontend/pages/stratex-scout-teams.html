@@ -47,7 +47,7 @@
 <input id="nt_name" placeholder="Team name" class="form-input">
 <input id="nt_league" placeholder="League" class="form-input">
 <input id="nt_tier" type="number" min="1" max="10" placeholder="Tier" class="form-input">
-<input id="nt_country" placeholder="Country" value="England" class="form-input">
+<select id="nt_country" class="form-input"></select>
 <input id="nt_formation" placeholder="Formation" class="form-input">
 <textarea id="nt_style" rows="3" placeholder="Playing style and weaknesses" class="form-input"></textarea>
 </div>
@@ -143,7 +143,7 @@ async function deleteCurrentTeam(){
   document.getElementById('detailPanel').style.display='none';
   renderTeams();
 }
-document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadPage().catch(function(e){document.getElementById('teamsTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';});});
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();fillCountrySelect('nt_country','England');loadPage().catch(function(e){document.getElementById('teamsTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';});});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

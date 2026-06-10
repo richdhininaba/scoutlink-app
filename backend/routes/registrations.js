@@ -64,6 +64,10 @@ if (data) return true;
 return false;
 }
 
+function titleCase(v) {
+return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // Public: coach registers
 router.post('/coach', async (req, res) => {
 try {
@@ -76,7 +80,7 @@ if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error:
 const { data: req2, error } = await supabase.from('registration_requests').insert({
 account_type: 'Coach', first_name: firstName.trim(), last_name: lastName.trim(),
 email: emailAddr.toLowerCase().trim(), phone: phone||null, team_name: teamName,
-team_county: county||null, team_league: league||null, role_at_club: roleAtClub||'Coach',
+team_county: county?titleCase(county):null, team_league: league||null, role_at_club: roleAtClub||'Coach',
 data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending'
 }).select().single();
 if (error) throw error;
@@ -174,7 +178,7 @@ reviewed_by: req.user.email||'stratex', reviewed_at: new Date()
 
 // Build complete-registration link
 const baseUrl = config.brandUrl || 'https://scoutlink.app';
-const completeLink = baseUrl + '/frontend/pages/complete-registration.html?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=' + rq.account_type;
+const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=' + rq.account_type;
 
 // Send complete-signup email with the link and code
 await email.sendCompleteSignup({

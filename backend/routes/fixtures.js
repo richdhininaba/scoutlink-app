@@ -4,6 +4,10 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 
+function titleCase(v) {
+  return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // GET /api/fixtures — list fixtures (filtered by team_id or coach_id)
 router.get('/', requireAuth, requireRole('Coach','Scout','Stratex'), async (req, res) => {
 try {
@@ -44,8 +48,8 @@ try {
     venue: venue || null,
     venue_address: venueAddress || null,
     venue_postcode: venuePostcode || null,
-    city: city || null,
-    country: country || 'England',
+    city: city ? titleCase(city) : null,
+    country: country ? titleCase(country) : 'England',
     home_or_away: homeOrAway || 'Home',
     format: format || '11',
     notes: notes || null,
@@ -67,8 +71,8 @@ try {
   if (venue !== undefined) updates.venue = venue;
   if (venueAddress !== undefined) updates.venue_address = venueAddress;
   if (venuePostcode !== undefined) updates.venue_postcode = venuePostcode;
-  if (city !== undefined) updates.city = city;
-  if (country !== undefined) updates.country = country;
+  if (city !== undefined) updates.city = city ? titleCase(city) : null;
+  if (country !== undefined) updates.country = country ? titleCase(country) : 'England';
   if (homeOrAway) updates.home_or_away = homeOrAway;
   if (format) updates.format = format;
   if (notes !== undefined) updates.notes = notes;

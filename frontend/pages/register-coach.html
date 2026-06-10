@@ -23,7 +23,10 @@
   <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Club / Team Details</h3>
   <div class="form-group"><label>Team / Club Name <span class="required">*</span></label><input type="text" id="teamName" placeholder="e.g. Manchester City Academy U18"></div>
   <div class="form-row">
-    <div class="form-group"><label>County</label><input type="text" id="county" placeholder="Greater Manchester"></div>
+    <div class="form-group"><label>Country</label><select id="teamCountry"></select></div>
+    <div class="form-group"><label>City / County</label><input type="text" id="county" placeholder="Select city" autocomplete="address-level2"><datalist id="coachRegCityOptions"></datalist></div>
+  </div>
+  <div class="form-row">
     <div class="form-group"><label>League</label><input type="text" id="league" placeholder="e.g. FAYTH North West"></div>
   </div>
   <div class="form-group"><label>Your Role at Club</label>
@@ -52,7 +55,8 @@ async function submitReg() {
       emailAddr: document.getElementById('emailAddr').value,
       phone: document.getElementById('phone').value,
       teamName: document.getElementById('teamName').value,
-      county: document.getElementById('county').value,
+      county: canonicalChoice(document.getElementById('county').value, SL_COUNTRY_CITIES[document.getElementById('teamCountry').value] || []),
+      country: document.getElementById('teamCountry').value,
       league: document.getElementById('league').value,
       roleAtClub: document.getElementById('roleAtClub').value,
       dataPolicyAgreed: true
@@ -61,6 +65,10 @@ async function submitReg() {
     document.querySelector('.btn').disabled = true;
   } catch(e) { err.textContent = e.message; err.classList.add('show'); }
 }
+document.addEventListener('DOMContentLoaded',function(){
+  fillCountrySelect('teamCountry','England');
+  attachCityAutocomplete('county','coachRegCityOptions','teamCountry');
+});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

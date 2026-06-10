@@ -24,6 +24,12 @@
 .tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#8b949e;border-radius:50%;transition:.3s}
 input:checked+.tgl-slider{background:#1d9e75}
 input:checked+.tgl-slider:before{transform:translateX(20px);background:#001b12}
+.coach-list{display:grid;gap:10px;margin-top:14px}
+.coach-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;flex-wrap:wrap}
+.coach-row b{color:#fff}
+.coach-row span{font-size:12px;color:#8b949e}
+.coach-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(max-width:640px){.coach-form-grid{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -41,6 +47,26 @@ input:checked+.tgl-slider:before{transform:translateX(20px);background:#001b12}
 <div><div class="settings-title">Theme</div><div class="settings-copy">Choose dark or light mode for your coach account.</div></div>
 <div class="seg" role="group" aria-label="Theme"><button type="button" id="darkThemeBtn" class="active">Dark</button><button type="button" id="lightThemeBtn">Light</button></div>
 </div>
+</div></div>
+
+<div class="table-card settings-panel" id="teamCoaches" style="display:none">
+<div class="table-header"><h3>Team Coaches</h3></div>
+<div class="settings-body">
+<div class="settings-row">
+<div><div class="settings-title">Invite a coach</div><div class="settings-copy">New coaches join your team and receive a login-code email.</div></div>
+</div>
+<div class="coach-form-grid">
+<div><label class="field-label">First name</label><input class="form-field" id="coachFirstName" placeholder="First name"></div>
+<div><label class="field-label">Last name</label><input class="form-field" id="coachLastName" placeholder="Last name"></div>
+<div><label class="field-label">Email</label><input class="form-field" id="coachEmail" type="email" placeholder="coach@team.co.uk"></div>
+<div><label class="field-label">Phone</label><input class="form-field" id="coachPhone" type="tel" placeholder="+44..."></div>
+</div>
+<div class="settings-row" style="margin-top:12px">
+<div><div class="settings-title">Super user</div><div class="settings-copy">Can add coaches and reassign players across this team.</div></div>
+<label class="tgl"><input type="checkbox" id="coachIsSuperUser"><span class="tgl-slider"></span></label>
+</div>
+<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-primary" id="inviteCoachBtn">Invite Coach</button><span id="coachInviteMsg" style="font-size:13px;color:#8b949e"></span></div>
+<div class="coach-list" id="teamCoachList"></div>
 </div></div>
 
 <div class="table-card settings-panel">
@@ -103,6 +129,42 @@ function changePassword(){
     document.getElementById('confirmPassword').value='';
   }).catch(function(e){showToast('Error: '+e.message,'error');});
 }
+function coachName(c){return ((c.first_name||'')+' '+(c.last_name||'')).trim()||c.email||'Coach';}
+function renderTeamCoaches(list){
+  var box=document.getElementById('teamCoachList');
+  if(!box)return;
+  if(!list.length){box.innerHTML='<div style="color:#8b949e;font-size:13px;padding:10px">No other coaches have been added yet.</div>';return;}
+  box.innerHTML=list.map(function(c){
+    return '<div class="coach-row"><div><b>'+coachName(c)+'</b><br><span>'+((c.email||'')+(c.registration_complete?'':' - invite pending'))+'</span></div><span class="badge '+(c.is_super_user?'badge-green':'badge-blue')+'">'+(c.is_super_user?'Super user':'Coach')+'</span></div>';
+  }).join('');
+}
+function loadTeamCoachesPanel(){
+  api('GET','/api/coaches/profile').then(function(p){
+    var me=p.coach||{};
+    if(!me.is_super_user)return;
+    document.getElementById('teamCoaches').style.display='block';
+    api('GET','/api/coaches/team-coaches').then(function(d){renderTeamCoaches(d.data||d.coaches||[]);}).catch(function(e){document.getElementById('teamCoachList').innerHTML='<div style="color:#f44336;font-size:13px;padding:10px">'+e.message+'</div>';});
+  }).catch(function(){});
+}
+function inviteCoach(){
+  var msg=document.getElementById('coachInviteMsg');
+  var body={
+    firstName:document.getElementById('coachFirstName').value.trim(),
+    lastName:document.getElementById('coachLastName').value.trim(),
+    emailAddr:document.getElementById('coachEmail').value.trim(),
+    phone:document.getElementById('coachPhone').value.trim()||null,
+    isSuperUser:document.getElementById('coachIsSuperUser').checked
+  };
+  if(!body.firstName||!body.lastName||!body.emailAddr){msg.textContent='First name, last name and email are required.';msg.style.color='#f44336';return;}
+  msg.textContent='Inviting coach...';msg.style.color='#8b949e';
+  api('POST','/api/coaches/add-coach',body).then(function(d){
+    msg.textContent=d.emailSent?'Coach invited and email sent.':'Coach created. Email could not be confirmed.';
+    msg.style.color=d.emailSent?'#1d9e75':'#FFC107';
+    ['coachFirstName','coachLastName','coachEmail','coachPhone'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('coachIsSuperUser').checked=false;
+    loadTeamCoachesPanel();
+  }).catch(function(e){msg.textContent=e.message;msg.style.color='#f44336';});
+}
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
   var theme=localStorage.getItem('sl_theme')||'dark';
@@ -111,8 +173,10 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('darkThemeBtn').addEventListener('click',function(){setTheme('dark');});
   document.getElementById('lightThemeBtn').addEventListener('click',function(){setTheme('light');});
   document.getElementById('changePassBtn').addEventListener('click',changePassword);
+  document.getElementById('inviteCoachBtn').addEventListener('click',inviteCoach);
   document.getElementById('savePrefsBtn').addEventListener('click',function(){showToast('Preferences saved.','success');});
   document.getElementById('deactivateBtn').addEventListener('click',function(){showToast('Contact support@stratexanalytics.co.uk to deactivate your account.','error');});
+  loadTeamCoachesPanel();
 });
 </script>
 <script src="../js/mobile.js"></script>

@@ -20,6 +20,12 @@
 .msg.mine{align-self:flex-end;background:rgba(29,158,117,.14);border-color:rgba(29,158,117,.28);}
 .msg .by{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);font-weight:800;margin-bottom:4px;}
 .msg .body{font-size:14px;line-height:1.5;white-space:pre-wrap;}
+.share-card{background:#07111f;border:1px solid rgba(29,158,117,.25);border-radius:10px;padding:12px;margin-top:4px;}
+.share-card-type{font-size:10px;color:var(--green);text-transform:uppercase;letter-spacing:.06em;font-weight:900;margin-bottom:4px;}
+.share-card-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:4px;}
+.share-card-meta{font-size:12px;color:var(--text3);line-height:1.5;}
+.share-bar{display:none;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--card);flex-wrap:wrap;}
+.share-bar select{max-width:260px;min-height:38px;}
 .composer{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;background:var(--card);}
 .composer textarea{min-height:46px;max-height:120px;resize:vertical;}
 @media(max-width:900px){.chat-shell{grid-template-columns:1fr}.thread-list{max-height:320px}.msg{max-width:92%;}}
@@ -34,6 +40,7 @@
 <div class="thread-list"><div class="table-header"><h3>Conversations</h3><button class="btn btn-sm btn-outline" id="refreshThreads">Refresh</button></div><div id="threadList"><div class="loading-state"><div class="spinner"></div></div></div></div>
 <div class="chat-pane">
 <div class="chat-head"><div><div id="chatTitle" style="font-size:16px;font-weight:900">Select a conversation</div><div id="chatMeta" style="font-size:12px;color:var(--text3);margin-top:4px">Chats appear after a scout adds a player to their pipeline.</div></div><a id="profileLink" class="btn btn-sm btn-outline" href="#" style="display:none;text-decoration:none">View player</a></div>
+<div class="share-bar" id="shareBar"><select id="shareType"><option value="player">Player</option><option value="fixture">Fixture</option><option value="prediction">Prediction</option></select><select id="shareTarget"><option value="">Loading...</option></select><button class="btn btn-sm btn-outline" id="shareBtn" type="button">Share</button><span id="shareMsg" style="font-size:12px;color:var(--text3)"></span></div>
 <div class="messages" id="messages"><div style="margin:auto;color:var(--text3);font-size:14px">No conversation selected.</div></div>
 <div class="composer"><textarea id="messageBody" placeholder="Write a message..."></textarea><button class="btn btn-primary" id="sendBtn">Send</button></div>
 </div>
@@ -44,8 +51,9 @@
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var _threads=[],_activeThread=null;
+var _threads=[],_activeThread=null,_shareOptions={player:[],fixture:[],prediction:[]};
 function logout(){logoutToLogin();}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function initNav(){
  if(!Auth.isLoggedIn()||(Auth.type!=='Scout'&&Auth.type!=='Coach')){navigateClean('login.html');return;}
  if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav',Auth.type);
@@ -76,11 +84,21 @@ function selectThread(id){
  document.getElementById('chatMeta').textContent=[((p.first_name||'')+' '+(p.last_name||'')+' - '+(p.team_name||'')).trim(),otherContact(_activeThread)].filter(Boolean).join(' | ');
  var profile=document.getElementById('profileLink');profile.style.display='inline-flex';profile.href='player-profile.html?id='+_activeThread.player_id;
  api('GET','/api/chat/threads/'+id+'/messages').then(function(d){renderMessages(d.data||[]);}).catch(function(e){document.getElementById('messages').innerHTML='<div style="margin:auto;color:#f44336">'+e.message+'</div>';});
+ updateShareState();
+}
+function shareCardHtml(m){
+ var meta=m.metadata||{};var type=String(m.reference_type||'item');
+ var title=meta.playerName||meta.opponent||meta.predictionType||'Shared item';
+ var lines=[];
+ if(type==='player')lines=[meta.position,meta.ageGroup,meta.teamName,meta.stage?('Stage: '+meta.stage):'',meta.overall?('Overall: '+meta.overall):''].filter(Boolean);
+ else if(type==='fixture')lines=[meta.fixtureDate,meta.fixtureTime,meta.homeOrAway,meta.venue,meta.city].filter(Boolean);
+ else if(type==='prediction')lines=[meta.playerName,meta.runAt?new Date(meta.runAt).toLocaleDateString('en-GB'):'',meta.summary].filter(Boolean);
+ return '<div class="share-card"><div class="share-card-type">Shared '+esc(type)+'</div><div class="share-card-title">'+esc(title)+'</div><div class="share-card-meta">'+esc(lines.join(' | '))+'</div>'+(meta.profileUrl?'<a class="btn btn-sm btn-outline" style="margin-top:10px;text-decoration:none" href="'+esc(meta.profileUrl)+'">Open profile</a>':'')+'</div>';
 }
 function renderMessages(messages){
  var box=document.getElementById('messages');
  if(!messages.length){box.innerHTML='<div style="margin:auto;color:var(--text3);font-size:14px">No messages yet.</div>';return;}
- box.innerHTML=messages.map(function(m){var mine=m.sender_id===Auth.user.id;return '<div class="msg '+(mine?'mine':'')+'"><div class="by">'+(mine?'You':m.sender_type)+'</div><div class="body">'+String(m.body||'').replace(/[<>]/g,'')+'</div><div style="font-size:10px;color:var(--text3);margin-top:6px">'+(m.created_at?new Date(m.created_at).toLocaleString('en-GB'):'')+'</div></div>';}).join('');
+ box.innerHTML=messages.map(function(m){var mine=m.sender_id===Auth.user.id;var isShare=m.message_kind==='share';return '<div class="msg '+(mine?'mine':'')+'"><div class="by">'+(mine?'You':esc(m.sender_type))+'</div><div class="body">'+esc(m.body||'')+'</div>'+(isShare?shareCardHtml(m):'')+'<div style="font-size:10px;color:var(--text3);margin-top:6px">'+(m.created_at?new Date(m.created_at).toLocaleString('en-GB'):'')+'</div></div>';}).join('');
  box.scrollTop=box.scrollHeight;
 }
 function sendMessage(){
@@ -90,7 +108,44 @@ function sendMessage(){
  var btn=document.getElementById('sendBtn');btn.disabled=true;
  api('POST','/api/chat/threads/'+_activeThread.id+'/messages',{body:body}).then(function(){document.getElementById('messageBody').value='';selectThread(_activeThread.id);loadThreads();}).catch(function(e){alert(e.message||'Could not send message.');}).finally(function(){btn.disabled=false;});
 }
-document.addEventListener('DOMContentLoaded',function(){initNav();loadThreads();document.getElementById('refreshThreads').addEventListener('click',loadThreads);document.getElementById('sendBtn').addEventListener('click',sendMessage);});
+function updateShareState(){
+ var bar=document.getElementById('shareBar');
+ if(!bar)return;
+ bar.style.display=(Auth.type==='Scout'&&_activeThread)?'flex':'none';
+ if(Auth.type==='Scout')renderShareTarget();
+}
+function optionLabel(type,item){
+ if(type==='player'){var p=item.players||{};return ((p.first_name||'')+' '+(p.last_name||'')).trim()+' - '+(p.specific_position||p.primary_position||'')+' - '+((item.stage||'watching').replace(/_/g,' '));}
+ if(type==='fixture')return (item.fixture_date||'TBC')+' - '+(item.home_or_away==='Away'?'@ ':'vs ')+(item.opponent||'Fixture');
+ var pl=item.players||{};return (item.prediction_type||'Prediction')+' - '+((pl.first_name||'')+' '+(pl.last_name||'')).trim();
+}
+function optionId(type,item){return type==='player'?item.player_id:item.id;}
+function renderShareTarget(){
+ var type=document.getElementById('shareType').value;var sel=document.getElementById('shareTarget');var list=_shareOptions[type]||[];
+ if(!list.length){sel.innerHTML='<option value="">No '+type+'s available</option>';return;}
+ sel.innerHTML='<option value="">Select '+type+'</option>'+list.map(function(item){return '<option value="'+esc(optionId(type,item))+'">'+esc(optionLabel(type,item))+'</option>';}).join('');
+}
+function loadShareOptions(){
+ if(Auth.type!=='Scout'){updateShareState();return;}
+ Promise.all([
+  api('GET','/api/scouts/pipeline?limit=100').catch(function(){return{data:[]};}),
+  api('GET','/api/scouts/fixtures').catch(function(){return{data:[]};}),
+  api('GET','/api/predictions').catch(function(){return{data:[]};})
+ ]).then(function(res){
+  _shareOptions.player=res[0].data||[];
+  _shareOptions.fixture=res[1].data||[];
+  _shareOptions.prediction=res[2].data||[];
+  updateShareState();
+ });
+}
+function shareSelected(){
+ if(!_activeThread)return;
+ var type=document.getElementById('shareType').value;var referenceId=document.getElementById('shareTarget').value;var msg=document.getElementById('shareMsg');
+ if(!referenceId){msg.textContent='Select something to share.';msg.style.color='#f44336';return;}
+ msg.textContent='Sharing...';msg.style.color='var(--text3)';
+ api('POST','/api/chat/threads/'+_activeThread.id+'/share',{type:type,referenceId:referenceId}).then(function(){msg.textContent='Shared.';msg.style.color='var(--green)';selectThread(_activeThread.id);loadThreads();}).catch(function(e){msg.textContent=e.message;msg.style.color='#f44336';});
+}
+document.addEventListener('DOMContentLoaded',function(){initNav();loadThreads();loadShareOptions();document.getElementById('refreshThreads').addEventListener('click',loadThreads);document.getElementById('sendBtn').addEventListener('click',sendMessage);document.getElementById('shareType').addEventListener('change',renderShareTarget);document.getElementById('shareBtn').addEventListener('click',shareSelected);});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

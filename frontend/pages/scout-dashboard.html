@@ -32,10 +32,18 @@
 .compat-low{background:rgba(255,152,0,.15);color:#FF9800;}
 .conf-label{font-size:11px;color:#546E7A;font-weight:600;}
 .dashboard-two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-bottom:20px;align-items:stretch;}
-.dashboard-two-col>.table-card{display:flex;flex-direction:column;min-height:520px;margin-bottom:0;}
+.dashboard-two-col>.table-card{display:flex;flex-direction:column;min-height:560px;margin-bottom:0;}
 .dashboard-two-col>.table-card>div:last-child{flex:1;}
+#recommendedPlayers,#pipelinePreview{flex:1;display:flex;flex-direction:column;}
+.pipeline-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px;border-bottom:1px solid #1e2a3a;}
+.pipeline-mini{background:#0a0f1e;border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px;}
+.pipeline-mini b{display:block;font-size:18px;color:#e6edf3;line-height:1;}
+.pipeline-mini span{display:block;margin-top:4px;font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800;}
+.pipeline-footer{margin-top:auto;border-top:1px solid #1e2a3a;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.pipeline-stage-note{font-size:11px;color:#8b949e;line-height:1.5;}
 .table-header h3{text-transform:uppercase;letter-spacing:.04em;font-size:14px;}
 @media(max-width:980px){.dashboard-two-col{grid-template-columns:1fr;}}
+@media(max-width:620px){.pipeline-summary{grid-template-columns:1fr;}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -120,6 +128,7 @@ function compatColor(s){return s>=80?'#1d9e75':s>=60?'#FFC107':'#FF9800';}
 function compatClass(s){return s>=80?'compat-high':s>=60?'compat-mid':'compat-low';}
 function posGroupColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
 function stageClass(s){var m={'watching':'stage-watching','shortlisted':'stage-shortlisted','interested':'stage-interested','approached':'stage-approached','trial_pending':'stage-trial_pending','negotiating':'stage-negotiating'};return m[(s||'').toLowerCase().replace(/ /g,'_')]||'stage-watching';}
+function stageLabel(s){return String(s||'watching').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return n>10?Math.round(n):Math.round(n*10);}
 function confLabel(apps){if(!apps||apps===0)return'Very Low';if(apps<=2)return'Low';if(apps<=5)return'Medium';if(apps<=10)return'High';return'Very High';}
 
@@ -237,16 +246,27 @@ if(!pipeData.length){
 document.getElementById('pipelinePreview').innerHTML='<div class="empty-state"><p>No players in your pipeline yet. Browse the player database to find your first match.</p><a href="player-search.html" class="btn btn-primary">Find players</a></div>';
 return;
 }
-document.getElementById('pipelinePreview').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Stage</th><th>Age group</th></tr></thead><tbody>'+
+var activeStages={};var avgInterest=0;var latest=null;
+pipeData.forEach(function(row){var st=stageLabel(row.stage);activeStages[st]=(activeStages[st]||0)+1;avgInterest+=Number(row.interest_level)||0;if(!latest||new Date(row.updated_at||row.created_at)>new Date(latest.updated_at||latest.created_at))latest=row;});
+avgInterest=pipeData.length?Math.round((avgInterest/pipeData.length)*10)/10:0;
+var latestLabel=latest&&latest.players?((latest.players.first_name||'')+' '+(latest.players.last_name||'')).trim():'--';
+document.getElementById('pipelinePreview').innerHTML=
+'<div class="pipeline-summary">'+
+'<div class="pipeline-mini"><b>'+pipeData.length+'</b><span>Recent players</span></div>'+
+'<div class="pipeline-mini"><b>'+Object.keys(activeStages).length+'</b><span>Active stages</span></div>'+
+'<div class="pipeline-mini"><b>'+avgInterest+'</b><span>Avg interest</span></div>'+
+'</div>'+
+'<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Stage</th><th>Age group</th></tr></thead><tbody>'+
 pipeData.map(function(row){
 var pl=row.players||{};
 return '<tr>'+
 '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div><b>'+(pl.first_name||'')+' '+(pl.last_name||'')+'</b></div></td>'+
 '<td>'+(pl.specific_position||pl.primary_position||'--')+'</td>'+
-'<td><span class="stage-chip '+stageClass(row.stage)+'">'+(row.stage||'watching').replace(/_/g,' ')+'</span></td>'+
+'<td><span class="stage-chip '+stageClass(row.stage)+'">'+stageLabel(row.stage)+'</span></td>'+
 '<td>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</td>'+
 '</tr>';
-}).join('')+'</tbody></table></div>';
+}).join('')+'</tbody></table></div>'+
+'<div class="pipeline-footer"><div class="pipeline-stage-note"><b style="color:#e6edf3">Latest:</b> '+latestLabel+'<br>Stages visible: '+Object.keys(activeStages).join(', ')+'</div><a href="scout-pipeline.html" class="btn btn-sm btn-outline">Manage pipeline</a></div>';
 }
 </script>
 <script src="../js/mobile.js"></script>

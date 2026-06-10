@@ -47,7 +47,7 @@
 <div id="addTeamModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow:auto">
 <div style="background:#162032;border-radius:12px;max-width:500px;margin:70px auto;padding:24px;border:1px solid #2d3f55">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><h3 style="margin:0;color:#E0E0E0">Add Non Pro Academy</h3><button onclick="document.getElementById('addTeamModal').style.display='none'" style="background:none;border:none;color:#90A4AE;font-size:24px;cursor:pointer">&times;</button></div>
-<div style="display:grid;gap:12px"><input id="nt_name" placeholder="Academy name" class="form-input"><input id="nt_county" placeholder="County" class="form-input"><input id="nt_league" placeholder="League" class="form-input"><input id="nt_email" placeholder="Contact email" class="form-input"></div>
+<div style="display:grid;gap:12px"><input id="nt_name" placeholder="Academy name" class="form-input"><select id="nt_country" class="form-input"></select><input id="nt_city" placeholder="Select city" class="form-input" autocomplete="address-level2"><datalist id="academyCityOptions"></datalist><input id="nt_county" placeholder="County / local area" class="form-input"><input id="nt_league" placeholder="League" class="form-input"><input id="nt_email" placeholder="Contact email" class="form-input"></div>
 <div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-primary" onclick="createTeam()" style="flex:1">Create</button><button class="btn btn-ghost" onclick="document.getElementById('addTeamModal').style.display='none'" style="flex:1">Cancel</button></div>
 <div id="addTeamMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
 </div></div>
@@ -96,7 +96,7 @@ async function openTeam(id){
   if(!t)return;
   document.getElementById('detailPanel').style.display='block';
   document.getElementById('panelTeamName').textContent=t.team_name;
-  document.getElementById('teamInfoGrid').innerHTML=infoRow('Academy Name',t.team_name)+infoRow('County',t.county)+infoRow('League',t.league)+infoRow('Contact',t.contact_email);
+  document.getElementById('teamInfoGrid').innerHTML=infoRow('Academy Name',t.team_name)+infoRow('City',t.city)+infoRow('County',t.county)+infoRow('Country',t.country)+infoRow('League',t.league)+infoRow('Contact',t.contact_email);
   teamPlayers=allPlayers.filter(function(p){return p.team_id===id||(!p.team_id&&p.team_name===t.team_name);});
   await loadTeamCoaches(id);
   renderStats();
@@ -122,7 +122,7 @@ function renderCoaches(coaches){
 }
 function openAddTeamModal(){document.getElementById('addTeamMsg').textContent='';document.getElementById('addTeamModal').style.display='block';}
 async function createTeam(){
-  var body={team_name:document.getElementById('nt_name').value.trim(),county:document.getElementById('nt_county').value.trim(),league:document.getElementById('nt_league').value.trim(),contact_email:document.getElementById('nt_email').value.trim()};
+  var body={team_name:document.getElementById('nt_name').value.trim(),country:document.getElementById('nt_country').value||'England',city:canonicalChoice(document.getElementById('nt_city').value,SL_COUNTRY_CITIES[document.getElementById('nt_country').value]||[]),county:document.getElementById('nt_county').value.trim(),league:document.getElementById('nt_league').value.trim(),contact_email:document.getElementById('nt_email').value.trim()};
   if(!body.team_name){document.getElementById('addTeamMsg').textContent='Academy name is required';return;}
   var d=await api('POST','/api/stratex/school-teams',body);
   allTeams.push(d.data||d);
@@ -183,7 +183,7 @@ async function deleteCurrentTeam(){
   document.getElementById('detailPanel').style.display='none';
   renderTeams();
 }
-document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadPage().catch(function(e){document.getElementById('teamsTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';});});
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();fillCountrySelect('nt_country','England');attachCityAutocomplete('nt_city','academyCityOptions','nt_country');loadPage().catch(function(e){document.getElementById('teamsTable').innerHTML='<div style="padding:16px;color:#EF5350">Error: '+e.message+'</div>';});});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

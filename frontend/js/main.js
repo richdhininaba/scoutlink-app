@@ -193,6 +193,59 @@ function ratingDisplay(r) {
   return String(Math.round(v));
 }
 
+const SL_COUNTRY_CITIES = {
+  England:['London','Manchester','Liverpool','Birmingham','Leeds','Bristol','Sheffield','Nottingham','Southampton','Newcastle','Leicester','Coventry','Derby','Reading','Oxford','Cambridge','Brighton','Portsmouth','Plymouth','Norwich','York'],
+  Scotland:['Glasgow','Edinburgh','Aberdeen','Dundee','Inverness','Stirling'],
+  Wales:['Cardiff','Swansea','Newport','Wrexham'],
+  'Northern Ireland':['Belfast','Derry/Londonderry','Lisburn','Newry'],
+  Ireland:['Dublin','Cork','Galway','Limerick'],
+  'United States':['New York','Los Angeles','Chicago','Dallas','Miami','Atlanta'],
+  France:['Paris','Lyon','Marseille','Lille','Nice'],
+  Spain:['Madrid','Barcelona','Valencia','Seville','Bilbao'],
+  Germany:['Berlin','Munich','Hamburg','Dortmund','Frankfurt'],
+  Netherlands:['Amsterdam','Rotterdam','Eindhoven','Utrecht'],
+  Portugal:['Lisbon','Porto','Braga','Faro']
+};
+function canonicalChoice(value, choices) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const hit = (choices || []).find(x => x.toLowerCase() === raw.toLowerCase());
+  if (hit) return hit;
+  return raw.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+function fillCountrySelect(selectId, selected) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  const countries = Object.keys(SL_COUNTRY_CITIES);
+  el.innerHTML = countries.map(c => '<option value="'+c+'">'+c+'</option>').join('');
+  el.value = selected && countries.includes(selected) ? selected : 'England';
+}
+function attachCityAutocomplete(inputId, datalistId, countryId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  let list = document.getElementById(datalistId);
+  if (!list) {
+    list = document.createElement('datalist');
+    list.id = datalistId;
+    document.body.appendChild(list);
+  }
+  input.setAttribute('list', datalistId);
+  function cities() {
+    const countryEl = countryId ? document.getElementById(countryId) : null;
+    return SL_COUNTRY_CITIES[(countryEl && countryEl.value) || 'England'] || [];
+  }
+  function render() {
+    list.innerHTML = cities().map(c => '<option value="'+c+'"></option>').join('');
+    input.value = canonicalChoice(input.value, cities());
+  }
+  input.addEventListener('blur', render);
+  if (countryId) {
+    const countryEl = document.getElementById(countryId);
+    if (countryEl) countryEl.addEventListener('change', render);
+  }
+  render();
+}
+
 window.Auth = Auth; window.api = api; window.formatValue = formatValue;
 window.formatSalary = formatSalary; window.relTime = relTime;
 window.initials = initials; window.posGroupColor = posGroupColor; window.ratingColor = ratingColor;
@@ -200,6 +253,8 @@ window.ratingDisplay = ratingDisplay;
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
 window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
 window.navigateClean = navigateClean; window.logoutToLogin = logoutToLogin;
+window.SL_COUNTRY_CITIES = SL_COUNTRY_CITIES; window.fillCountrySelect = fillCountrySelect;
+window.attachCityAutocomplete = attachCityAutocomplete; window.canonicalChoice = canonicalChoice;
 
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', function(e) {

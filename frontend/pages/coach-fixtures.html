@@ -44,7 +44,8 @@
 <div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Venue name</label><input id="fVenue" placeholder="e.g. Riverside Park" type="text" class="form-input"></div>
 <div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Venue address</label><input id="fVenueAddress" placeholder="Start typing full address..." type="text" class="form-input" autocomplete="street-address"></div>
 <div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Postcode</label><input id="fVenuePostcode" placeholder="e.g. SW1A 1AA" type="text" class="form-input" autocomplete="postal-code"></div>
-<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">City</label><input id="fCity" list="fixtureCityOptions" placeholder="Select city" type="text" class="form-input" autocomplete="address-level2"><datalist id="fixtureCityOptions"><option>London</option><option>Manchester</option><option>Liverpool</option><option>Birmingham</option><option>Leeds</option><option>Bristol</option><option>Sheffield</option><option>Nottingham</option><option>Southampton</option><option>Newcastle</option></datalist></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Country</label><select id="fCountry" class="form-input"></select></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">City</label><input id="fCity" placeholder="Select city" type="text" class="form-input" autocomplete="address-level2"><datalist id="fixtureCityOptions"></datalist></div>
 <div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Home / Away</label><select id="fHomeAway" class="form-input"><option value="Home">Home</option><option value="Away">Away</option><option value="Neutral">Neutral</option></select></div>
 <div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Format</label><select id="fFormat" class="form-input"><option value="5">5-a-side</option><option value="7">7-a-side</option><option value="9">9-a-side</option><option value="11" selected>11-a-side</option></select></div>
 </div>
@@ -137,8 +138,8 @@ function addFixture(){
     venue:document.getElementById('fVenue').value.trim()||null,
     venueAddress:document.getElementById('fVenueAddress').value.trim()||null,
     venuePostcode:document.getElementById('fVenuePostcode').value.trim()||null,
-    city:document.getElementById('fCity').value.trim()||null,
-    country:'England',
+    city:canonicalChoice(document.getElementById('fCity').value,SL_COUNTRY_CITIES[document.getElementById('fCountry').value]||[])||null,
+    country:document.getElementById('fCountry').value||'England',
     homeOrAway:document.getElementById('fHomeAway').value,
     format:document.getElementById('fFormat').value,
     notes:document.getElementById('fNotes').value.trim()||null,
@@ -163,6 +164,8 @@ function loadFixtures(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
+  fillCountrySelect('fCountry','England');
+  attachCityAutocomplete('fCity','fixtureCityOptions','fCountry');
   document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   loadFixtures();
   document.getElementById('saveFixtureBtn').addEventListener('click',addFixture);

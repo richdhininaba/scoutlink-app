@@ -13,6 +13,10 @@ Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
 Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
 };
 
+function titleCase(v) {
+return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // Generate login code unique across all user tables
 async function generateUniqueCode() {
 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -319,7 +323,7 @@ router.post('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res
 try {
 const { team_name, league, tier, country, formation, playing_style } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const { data, error } = await supabase.from('scout_teams').insert({ team_name, league:league||null, tier:tier||null, country:country||'England', formation:formation||null, playing_style:playing_style||null }).select().single();
+const { data, error } = await supabase.from('scout_teams').insert({ team_name, league:league||null, tier:tier||null, country:country?titleCase(country):'England', formation:formation||null, playing_style:playing_style||null }).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Scout team created' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -377,9 +381,9 @@ res.json({ data: data||[], total: count||0 });
 
 router.post('/school-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { team_name, county, league, contact_email } = req.body;
+const { team_name, county, city, country, league, contact_email } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county||null, league:league||null, contact_email:contact_email||null }).select().single();
+const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county?titleCase(county):null, city:city?titleCase(city):(county?titleCase(county):null), country:country?titleCase(country):'England', league:league||null, contact_email:contact_email||null }).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Non Pro Academy created' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }

@@ -384,7 +384,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
           to: recipientEmail,
           playerFirstName: b.firstName,
           loginCode,
-          loginUrl: 'https://scoutlink.app/frontend/pages/login.html'
+          loginUrl: 'https://scoutlink.app/login'
         });
       } catch(emailErr) { console.error('[PlayerCreate] Email error:', emailErr.message); }
     }
