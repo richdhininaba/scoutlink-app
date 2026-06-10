@@ -519,7 +519,7 @@ try {
     }
   }
   res.json({ attendance: row, message: 'Attendance saved' });
-} catch(err) { console.error('[Scout fixture attendance]', err); res.status(500).json({ error: 'Internal server error', code: err.code || null, detail: err.message || null, dbDetail: err.details || null, hint: err.hint || null }); }
+} catch(err) { console.error('[Scout fixture attendance]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/scouts/predictions â prediction history for this scout
