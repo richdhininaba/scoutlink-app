@@ -5,6 +5,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
 const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
+const config = require('../config');
 
 const SCOUT_PLAN_LIMITS = {
 Core: { seats:1, exports:30, predictions:120, interests:200 },
@@ -17,6 +18,11 @@ function titleCase(v) {
 return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function completeRegistrationLink(accountType, emailAddr, loginCode) {
+const baseUrl = String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
+return baseUrl + '/complete-registration?code=' + encodeURIComponent(loginCode) + '&email=' + encodeURIComponent(String(emailAddr || '').toLowerCase().trim()) + '&type=' + encodeURIComponent(accountType);
+}
+
 // Generate login code unique across all user tables
 async function generateUniqueCode() {
 const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -24,19 +30,20 @@ let attempts = 0;
 while (attempts < 20) {
 let c = '';
 for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random()*chars.length)];
-const [s,co,p] = await Promise.all([
+const [s,co,p,stx] = await Promise.all([
 supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),
 supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),
-supabase.from('players').select('id').eq('login_code',c).maybeSingle()
+supabase.from('players').select('id').eq('login_code',c).maybeSingle(),
+supabase.from('stratex').select('id').eq('login_code',c).maybeSingle()
 ]);
-if (!s.data && !co.data && !p.data) return c;
+if (!s.data && !co.data && !p.data && !stx.data) return c;
 attempts++;
 }
 throw new Error('Could not generate unique login code');
 }
 async function checkDuplicates(emailAddr, phone) {
 const em = emailAddr.toLowerCase().trim();
-for (const t of ['scouts','coaches','players']) {
+for (const t of ['scouts','coaches','players','stratex']) {
 const { data } = await supabase.from(t).select('id').eq('email', em).maybeSingle();
 if (data) return { duplicate: true, field: 'email' };
 }
@@ -264,8 +271,9 @@ subscription_plan: plan, plan_start: planStart, plan_end: planEnd,
 exports_remaining: limits.exports, predictions_remaining: limits.predictions, interests_remaining: limits.interests
 }).select().single();
 if (error) throw error;
-await email.sendRegApproved({ to: emailAddr, firstName, loginCode, accountType: 'Scout' });
-res.status(201).json({ message: 'Scout added and login code sent by email.', scout: data });
+const completeLink = completeRegistrationLink('Scout', emailAddr, loginCode);
+const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Scout', completeLink });
+res.status(201).json({ message: 'Scout added. Complete-registration email sent.', scout: data, loginCode, completeLink, emailSent: !!emailResult?.success });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -273,18 +281,42 @@ router.post('/coaches', requireAuth, requireRole('Stratex'), async (req, res) =>
 try {
 const { firstName, lastName, emailAddr, phone, teamName, roleAtClub, county, league } = req.body;
 if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
-const loginCode = generateLoginCode();
+const dupC = await checkDuplicates(emailAddr, phone);
+if (dupC.duplicate) return res.status(409).json({ error: 'This ' + dupC.field + ' is already registered.' });
+const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 365*24*60*60*1000);
 const { data, error } = await supabase.from('coaches').insert({
 coach_id: generateId('CHC'), first_name: firstName.trim(), last_name: lastName.trim(),
 email: emailAddr.toLowerCase().trim(), phone: phone||null,
 team_name: teamName, role_at_club: roleAtClub||'Coach',
 team_county: county||null, team_league: league||null,
-login_code: loginCode, login_code_expires: expires, is_active: true, data_policy_agreed: true
+login_code: loginCode, login_code_expires: expires, is_active: true, data_policy_agreed: true,
+registration_complete: false
 }).select().single();
 if (error) throw error;
-await email.sendRegApproved({ to: emailAddr, firstName, loginCode, accountType: 'Coach' });
-res.status(201).json({ message: 'Coach added and login code sent by email.', coach: data });
+const completeLink = completeRegistrationLink('Coach', emailAddr, loginCode);
+const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink });
+res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coach: data, loginCode, completeLink, emailSent: !!emailResult?.success });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { firstName, lastName, emailAddr, role } = req.body;
+if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
+const dupA = await checkDuplicates(emailAddr, null);
+if (dupA.duplicate) return res.status(409).json({ error: 'This email is already registered.' });
+const loginCode = await generateUniqueCode();
+const expires = new Date(Date.now() + 7*24*60*60*1000);
+const { data, error } = await supabase.from('stratex').insert({
+stratex_id: generateId('STX'), first_name: firstName.trim(), last_name: lastName.trim(),
+email: emailAddr.toLowerCase().trim(), role: role || 'admin', is_active: true,
+login_code: loginCode, login_code_expires: expires, registration_complete: false
+}).select().single();
+if (error) throw error;
+const completeLink = completeRegistrationLink('Stratex', emailAddr, loginCode);
+const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Stratex', completeLink });
+res.status(201).json({ message: 'Admin added. Complete-registration email sent.', admin: data, loginCode, completeLink, emailSent: !!emailResult?.success });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

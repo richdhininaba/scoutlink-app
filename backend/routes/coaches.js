@@ -69,7 +69,7 @@ const { firstName, lastName, emailAddr, phone, isSuperUser } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
 
 // Check duplicates
-const tables = ['scouts','coaches','players'];
+const tables = ['scouts','coaches','players','stratex'];
 for (const t of tables) {
 const { data: eRow } = await supabase.from(t).select('id').eq('email', emailAddr.toLowerCase().trim()).maybeSingle();
 if (eRow) return res.status(409).json({ error: 'This email is already registered on ScoutLink.' });
@@ -87,12 +87,13 @@ let loginCode = '', attempts = 0;
 while (attempts < 20) {
 let c = '';
 for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random()*chars.length)];
-const [s,co,p] = await Promise.all([
+const [s,co,p,stx] = await Promise.all([
 supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),
 supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),
-supabase.from('players').select('id').eq('login_code',c).maybeSingle()
+supabase.from('players').select('id').eq('login_code',c).maybeSingle(),
+supabase.from('stratex').select('id').eq('login_code',c).maybeSingle()
 ]);
-if (!s.data && !co.data && !p.data) { loginCode = c; break; }
+if (!s.data && !co.data && !p.data && !stx.data) { loginCode = c; break; }
 attempts++;
 }
 if (!loginCode) return res.status(500).json({ error: 'Could not generate unique login code' });
@@ -110,7 +111,7 @@ if (error) throw error;
 
 const baseUrl = config.brandUrl||'https://scoutlink.app';
 const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(emailAddr.toLowerCase()) + '&type=Coach';
-const emailResult = await email.sendCompleteSignup({ to: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
+const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
   console.error('[Email]', e.message);
   return { success: false, error: e.message };
 });

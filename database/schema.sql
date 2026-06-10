@@ -135,7 +135,10 @@ CREATE TABLE IF NOT EXISTS stratex (
   first_name TEXT NOT NULL, last_name TEXT NOT NULL,
   email TEXT UNIQUE, password_hash TEXT,
   role TEXT DEFAULT 'admin', is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  login_code TEXT, login_code_expires TIMESTAMPTZ,
+  last_login TIMESTAMPTZ,
+  registration_complete BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Match Facts
@@ -224,6 +227,7 @@ CREATE OR REPLACE FUNCTION update_updated_at() RETURNS TRIGGER AS $$ BEGIN NEW.u
 DROP TRIGGER IF EXISTS trg_players ON players; CREATE TRIGGER trg_players BEFORE UPDATE ON players FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 DROP TRIGGER IF EXISTS trg_coaches ON coaches; CREATE TRIGGER trg_coaches BEFORE UPDATE ON coaches FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 DROP TRIGGER IF EXISTS trg_scouts ON scouts; CREATE TRIGGER trg_scouts BEFORE UPDATE ON scouts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_stratex ON stratex; CREATE TRIGGER trg_stratex BEFORE UPDATE ON stratex FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 DROP TRIGGER IF EXISTS trg_pipeline ON recruitment_pipeline; CREATE TRIGGER trg_pipeline BEFORE UPDATE ON recruitment_pipeline FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- SEED: Stratex admins (update password_hash after running seed.js)

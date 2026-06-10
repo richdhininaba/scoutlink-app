@@ -66,6 +66,7 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 <option value="Scout">Scout</option>
 <option value="Coach">Coach</option>
 <option value="Player">Player</option>
+<option value="Stratex">Stratex Admin</option>
 </select></div>
 <button class="btn btn-primary" id="codeBtn" onclick="doCodeLogin()"><span id="codeBtnText">Sign In with Code</span><div class="spinner" id="codeSpinner" style="display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div></button>
 <p style="color:var(--sl-muted);font-size:12px;margin-top:12px;text-align:center">Login codes are sent in your approval email. They expire after 7 days.</p>
@@ -149,8 +150,13 @@ async function doCodeLogin(){
     var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,loginCode:code,accountType:at})});
     var d=await r.json();
     if(!r.ok)throw new Error(d.error||'Invalid login code');
+    localStorage.setItem('sl_token',d.token);
+    localStorage.setItem('sl_type',d.accountType);
+    localStorage.setItem('sl_user',JSON.stringify(d.user));
+    localStorage.setItem('sl_user_id',d.user.id);
+    localStorage.setItem('sl_user_email',d.user.email);
     // Code login means first login - redirect to complete registration
-    if(d.needsRegistration){window.location.href=cleanRouteFor('complete-registration.html?token='+d.token+'&type='+at);return;}
+    if(d.needsRegistration){window.location.href=cleanRouteFor('complete-registration.html?token='+encodeURIComponent(d.token)+'&type='+encodeURIComponent(d.accountType));return;}
     storeAndRedirect(d);
   }catch(e){showError(e.message);document.getElementById('codeBtn').disabled=false;document.getElementById('codeBtnText').style.display='inline';document.getElementById('codeSpinner').style.display='none';}
 }

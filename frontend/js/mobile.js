@@ -1,71 +1,208 @@
 'use strict';
-/* ScoutLink mobile.js v1.1 */
+/* ScoutLink mobile shell */
 (function(){
-var _done=false;
-function initMobileNav(){
-  if(_done)return;
-  var sidebar=document.getElementById('sidebar');
-  var topbar=document.querySelector('.topbar');
-  var topbarRight=document.querySelector('.topbar-right');
-  if(!sidebar||!topbar){setTimeout(initMobileNav,250);return;}
-  _done=true;
-  // Fix broken logo
-  var logoLink=sidebar.querySelector('.sidebar-logo a');
-  if(logoLink){
-    var lhtml=logoLink.innerHTML||'';
-    lhtml=lhtml.replace(/^[\s\S]*?(?=Scout)/i,'');
-    logoLink.innerHTML='<svg style="width:20px;height:20px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>'+lhtml;
+  var drawerReady = false;
+
+  function isPhone(){
+    return window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
   }
-  // Inject hamburger
-  if(!document.getElementById('mobileHamburger')){
-    var ham=document.createElement('button');
-    ham.id='mobileHamburger';
-    ham.className='topbar-hamburger';
-    ham.setAttribute('aria-label','Toggle navigation');
-    ham.innerHTML='<div class="hamburger-icon"><span></span><span></span><span></span></div>';
-    topbar.insertBefore(ham,topbarRight||topbar.firstChild);
+
+  function closeDrawer(){
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('mobile-drawer-open');
+    document.body.style.overflow = '';
   }
-  // Mark desktop sign-out
-  var btns=topbar.querySelectorAll('.btn-ghost');
-  btns.forEach(function(b){if(b.textContent.trim()==='Sign Out')b.classList.add('desktop-signout');});
-  // Mobile sign-out in sidebar
-  if(!document.getElementById('mobileSidebarSignout')){
-    var soWrap=document.createElement('div');
-    soWrap.id='mobileSidebarSignout';
-    soWrap.className='sidebar-signout-mobile';
-    soWrap.innerHTML='<button class="btn btn-ghost" style="width:100%;justify-content:flex-start;color:#ff7b7b" onclick="if(typeof logout===\'function\')logout();else if(typeof logoutToLogin===\'function\')logoutToLogin();else{localStorage.clear();window.location.href=\'/login?logout=1\';}" >&#9166; Sign Out</button>';
-    sidebar.appendChild(soWrap);
+
+  function openDrawer(){
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.classList.add('mobile-drawer-open');
+    document.body.style.overflow = 'hidden';
   }
-  // Inject backdrop
-  if(!document.getElementById('sidebarBackdrop')){
-    var bd=document.createElement('div');
-    bd.id='sidebarBackdrop';bd.className='sidebar-backdrop';
-    document.body.appendChild(bd);
+
+  function normalizeTopbar(){
+    var topbar = document.querySelector('.topbar');
+    if (!topbar) return;
+    var title = topbar.querySelector('.topbar-title');
+    if (title && !title.getAttribute('title')) title.setAttribute('title', title.textContent.trim());
+    topbar.querySelectorAll('button,a').forEach(function(el){
+      var txt = (el.textContent || '').trim().toLowerCase();
+      if (txt === 'sign out' || txt === 'logout') el.classList.add('desktop-signout');
+    });
   }
-  var hamBtn=document.getElementById('mobileHamburger');
-  var backdrop=document.getElementById('sidebarBackdrop');
-  function openDrawer(){sidebar.classList.add('mobile-open');backdrop.classList.add('active');document.body.style.overflow='hidden';}
-  function closeDrawer(){sidebar.classList.remove('mobile-open');backdrop.classList.remove('active');document.body.style.overflow='';}
-  hamBtn.addEventListener('click',function(){sidebar.classList.contains('mobile-open')?closeDrawer():openDrawer();});
-  backdrop.addEventListener('click',closeDrawer);
-  sidebar.querySelectorAll('.nav-item').forEach(function(item){item.addEventListener('click',function(){if(window.innerWidth<768)closeDrawer();});});
-  window.addEventListener('resize',function(){if(window.innerWidth>=1024){closeDrawer();document.body.style.overflow='';}});
-  // Watch for nav items added dynamically
-  var sn=document.getElementById('sidebarNav');
-  if(sn&&window.MutationObserver){new MutationObserver(function(){sn.querySelectorAll('.nav-item').forEach(function(i){if(!i.dataset.mc){i.dataset.mc='1';i.addEventListener('click',function(){if(window.innerWidth<768)closeDrawer();});}});}).observe(sn,{childList:true});}
-  window._mobileDrawer={open:openDrawer,close:closeDrawer};
-}
-function fixTruncation(){
-  document.querySelectorAll('.sl-table td').forEach(function(td){
-    td.querySelectorAll('span').forEach(function(s){
-      var t=s.textContent||'';
-      if(t.indexOf('@')!==-1||t.indexOf('.com')!==-1||t.length>28){
-        s.style.cssText+=';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;display:block';
+
+  function initMobileNav(){
+    var sidebar = document.getElementById('sidebar');
+    var topbar = document.querySelector('.topbar');
+    if (!sidebar || !topbar) {
+      setTimeout(initMobileNav, 200);
+      return;
+    }
+    document.body.classList.add('has-mobile-shell');
+    normalizeTopbar();
+
+    var logoLink = sidebar.querySelector('.sidebar-logo a');
+    if (logoLink && !logoLink.dataset.mobileLogoCleaned) {
+      logoLink.dataset.mobileLogoCleaned = '1';
+      logoLink.innerHTML = 'Scout<span style="color:var(--green,#00E676)">Link</span>';
+    }
+
+    if (!document.getElementById('mobileHamburger')) {
+      var ham = document.createElement('button');
+      ham.id = 'mobileHamburger';
+      ham.className = 'topbar-hamburger';
+      ham.type = 'button';
+      ham.setAttribute('aria-label', 'Open navigation menu');
+      ham.innerHTML = '<span class="hamburger-icon" aria-hidden="true"><span></span><span></span><span></span></span><span class="hamburger-label">Menu</span>';
+      topbar.insertBefore(ham, topbar.firstChild);
+    }
+
+    if (!document.getElementById('mobileSidebarSignout')) {
+      var soWrap = document.createElement('div');
+      soWrap.id = 'mobileSidebarSignout';
+      soWrap.className = 'sidebar-signout-mobile';
+      soWrap.innerHTML = '<button class="btn btn-ghost" type="button">Sign out</button>';
+      sidebar.appendChild(soWrap);
+      soWrap.querySelector('button').addEventListener('click', function(){
+        if (typeof logout === 'function') logout();
+        else if (typeof logoutToLogin === 'function') logoutToLogin();
+        else {
+          localStorage.clear();
+          window.location.href = '/login?logout=1';
+        }
+      });
+    }
+
+    if (!document.getElementById('sidebarBackdrop')) {
+      var bd = document.createElement('div');
+      bd.id = 'sidebarBackdrop';
+      bd.className = 'sidebar-backdrop';
+      document.body.appendChild(bd);
+    }
+
+    if (!drawerReady) {
+      drawerReady = true;
+      document.getElementById('mobileHamburger').addEventListener('click', function(){
+        var sidebarEl = document.getElementById('sidebar');
+        if (sidebarEl && sidebarEl.classList.contains('mobile-open')) closeDrawer();
+        else openDrawer();
+      });
+      document.getElementById('sidebarBackdrop').addEventListener('click', closeDrawer);
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeDrawer(); });
+      window.addEventListener('resize', function(){ if (!isPhone()) closeDrawer(); enhanceTablesForMobile(); enhanceChatMobile(); });
+    }
+
+    sidebar.querySelectorAll('.nav-item').forEach(function(item){
+      if (!item.dataset.mobileClose) {
+        item.dataset.mobileClose = '1';
+        item.addEventListener('click', function(){ if (isPhone()) closeDrawer(); });
       }
     });
-  });
-}
-function init(){initMobileNav();fixTruncation();}
-if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){setTimeout(init,150);});}else{setTimeout(init,150);}
-window.initMobileNav=initMobileNav;
+
+    var sn = document.getElementById('sidebarNav');
+    if (sn && window.MutationObserver && !sn.dataset.mobileObserver) {
+      sn.dataset.mobileObserver = '1';
+      new MutationObserver(function(){
+        sidebar.querySelectorAll('.nav-item').forEach(function(item){
+          if (!item.dataset.mobileClose) {
+            item.dataset.mobileClose = '1';
+            item.addEventListener('click', function(){ if (isPhone()) closeDrawer(); });
+          }
+        });
+      }).observe(sn, { childList:true, subtree:true });
+    }
+
+    window._mobileDrawer = { open: openDrawer, close: closeDrawer };
+  }
+
+  function tableShouldBecomeCards(table){
+    if (!table || table.classList.contains('bulk-table') || table.closest('.bulk-table-wrap') || table.classList.contains('no-mobile-cards')) return false;
+    if (!table.classList.contains('sl-table') && !table.closest('.table-card')) return false;
+    return true;
+  }
+
+  function enhanceTablesForMobile(){
+    document.querySelectorAll('table').forEach(function(table){
+      if (!tableShouldBecomeCards(table)) return;
+      var headers = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th){ return th.textContent.trim(); });
+      if (!headers.length) return;
+      table.classList.add('mobile-card-table');
+      table.querySelectorAll('tbody tr').forEach(function(row){
+        row.querySelectorAll('td').forEach(function(td, idx){
+          var label = headers[idx] || '';
+          if (label && !td.getAttribute('data-label')) td.setAttribute('data-label', label);
+          var text = (td.textContent || '').trim();
+          if (!text) td.classList.add('mobile-empty-cell');
+          if (/actions?|view|edit|delete|download|profile/i.test(label)) td.classList.add('mobile-actions-cell');
+        });
+      });
+    });
+  }
+
+  function setMobileChatMode(mode){
+    var shell = document.querySelector('.chat-shell');
+    if (!shell) return;
+    if (!isPhone()) {
+      shell.classList.remove('chat-mobile-list','chat-mobile-conversation');
+      return;
+    }
+    shell.classList.toggle('chat-mobile-list', mode !== 'conversation');
+    shell.classList.toggle('chat-mobile-conversation', mode === 'conversation');
+  }
+
+  function enhanceChatMobile(){
+    var shell = document.querySelector('.chat-shell');
+    if (!shell) return;
+    var head = shell.querySelector('.chat-head');
+    if (head && !head.querySelector('.chat-mobile-back')) {
+      var back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'chat-mobile-back btn btn-sm btn-ghost';
+      back.textContent = 'Back to chats';
+      back.addEventListener('click', function(){ setMobileChatMode('list'); });
+      head.insertBefore(back, head.firstChild);
+    }
+    if (!window._mobileSelectThreadWrapped && typeof window.selectThread === 'function') {
+      var originalSelect = window.selectThread;
+      window.selectThread = function(){
+        var result = originalSelect.apply(this, arguments);
+        if (isPhone()) setMobileChatMode('conversation');
+        return result;
+      };
+      window._mobileSelectThreadWrapped = true;
+    }
+    if (isPhone() && !shell.classList.contains('chat-mobile-conversation')) setMobileChatMode('list');
+  }
+
+  function fitLongText(){
+    document.querySelectorAll('.sl-table td span,.thread-meta,.notif-body,.topbar-title').forEach(function(el){
+      if (!el.dataset.mobileOverflow) {
+        el.dataset.mobileOverflow = '1';
+        el.style.overflow = 'hidden';
+        el.style.textOverflow = 'ellipsis';
+      }
+    });
+  }
+
+  function init(){
+    initMobileNav();
+    enhanceTablesForMobile();
+    enhanceChatMobile();
+    fitLongText();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 80); });
+  } else {
+    setTimeout(init, 80);
+  }
+
+  window.initMobileNav = initMobileNav;
+  window.setMobileChatMode = setMobileChatMode;
+  window.refreshMobileLayout = init;
 })();

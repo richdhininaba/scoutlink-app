@@ -27,12 +27,13 @@ while (attempts < 20) {
 let code = '';
 for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random()*chars.length)];
 // Check all tables for this code
-const [s, c, p] = await Promise.all([
+const [s, c, p, stx] = await Promise.all([
 supabase.from('scouts').select('id').eq('login_code', code).maybeSingle(),
 supabase.from('coaches').select('id').eq('login_code', code).maybeSingle(),
-supabase.from('players').select('id').eq('login_code', code).maybeSingle()
+supabase.from('players').select('id').eq('login_code', code).maybeSingle(),
+supabase.from('stratex').select('id').eq('login_code', code).maybeSingle()
 ]);
-if (!s.data && !c.data && !p.data) return code;
+if (!s.data && !c.data && !p.data && !stx.data) return code;
 attempts++;
 }
 throw new Error('Could not generate unique login code after 20 attempts');
@@ -41,7 +42,7 @@ throw new Error('Could not generate unique login code after 20 attempts');
 // Helper: check duplicate email/phone across all user tables
 async function checkDuplicates(emailAddr, phone) {
 const em = emailAddr.toLowerCase().trim();
-const tables = ['scouts','coaches','players'];
+const tables = ['scouts','coaches','players','stratex'];
 for (const t of tables) {
 const { data: eRow } = await supabase.from(t).select('id').eq('email', em).maybeSingle();
 if (eRow) return { duplicate: true, field: 'email', table: t };
@@ -183,7 +184,7 @@ const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&em
 // Send complete-signup email with the link and code
 await email.sendCompleteSignup({
 to: rq.email, firstName: rq.first_name, loginCode,
-accountType: rq.account_type, completeLink
+accountType: rq.account_type, completeLink, email: rq.email
 }).catch(e => console.error('[Approve] email failed:', e.message));
 
 res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink });

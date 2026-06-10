@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
-const { requireAuth, requireRole, generateId } = require('../utils/auth');
+const { requireAuth, requireRole, generateId, generateLoginCode } = require('../utils/auth');
 const {
   analysePlayer,
   predictedSalary,
@@ -137,6 +137,19 @@ async function resolveTeamName(teamId, fallback) {
   if (!teamId) return fallback || null;
   const { data } = await supabase.from('school_academy_teams').select('team_name').eq('id', teamId).maybeSingle();
   return data?.team_name || fallback || null;
+}
+
+async function generateUniquePlayerLoginCode() {
+  let attempts = 0;
+  while (attempts < 20) {
+    const code = generateLoginCode();
+    const checks = await Promise.all(['players','coaches','scouts','stratex'].map(t =>
+      supabase.from(t).select('id').eq('login_code', code).maybeSingle()
+    ));
+    if (!checks.some(r => r.data)) return code;
+    attempts++;
+  }
+  throw new Error('Could not generate unique login code');
 }
 
 async function getScoutAnalysisContext(req) {
@@ -384,7 +397,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', data.id);
     
     // Generate login code for the player
-    const loginCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const loginCode = await generateUniquePlayerLoginCode();
     const loginCodeExpires = new Date(Date.now() + 365*24*60*60*1000);
     await supabase.from('players').update({ login_code: loginCode, login_code_expires: loginCodeExpires }).eq('id', data.id);
     
@@ -394,9 +407,9 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       try {
         await email.sendPlayerLoginCode({
           to: recipientEmail,
+          email: recipientEmail,
           playerFirstName: b.firstName,
-          loginCode,
-          loginUrl: 'https://scoutlink.app/login'
+          loginCode
         });
       } catch(emailErr) { console.error('[PlayerCreate] Email error:', emailErr.message); }
     }
@@ -469,8 +482,25 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,team_id,team_name,assigned_coach_id').single();
         if (error) throw error;
         const salary = predictedSalary(playerData, { tier: 5 });
-        await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', created.id);
-        results.created.push(created);
+        const loginCode = await generateUniquePlayerLoginCode();
+        const loginCodeExpires = new Date(Date.now() + 365*24*60*60*1000);
+        await supabase.from('players').update({
+          predicted_salary_weekly: salary.weeklyGross,
+          login_code: loginCode,
+          login_code_expires: loginCodeExpires
+        }).eq('id', created.id);
+        let emailSent = false;
+        const recipientEmail = p.parentEmail || p.email || null;
+        if (recipientEmail) {
+          const emailResult = await email.sendPlayerLoginCode({
+            to: recipientEmail,
+            email: recipientEmail,
+            playerFirstName: p.firstName,
+            loginCode
+          }).catch(e => ({ success: false, error: e.message }));
+          emailSent = !!emailResult?.success;
+        }
+        results.created.push({ ...created, login_code: loginCode, emailSent });
       } catch(e) {
         results.errors.push({ player: p.firstName + ' ' + p.lastName, error: e.message });
       }

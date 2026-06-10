@@ -5,6 +5,7 @@
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/login", "destination": "/frontend/pages/login.html" },
     { "source": "/forgot-password", "destination": "/frontend/pages/forgot-password.html" },
+    { "source": "/404", "destination": "/frontend/pages/404.html" },
     { "source": "/register", "destination": "/frontend/pages/register.html" },
     { "source": "/register/scout", "destination": "/frontend/pages/register-scout.html" },
     { "source": "/register/coach", "destination": "/frontend/pages/register-coach.html" },
