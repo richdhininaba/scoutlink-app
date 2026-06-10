@@ -481,26 +481,42 @@ try {
   if (fxErr) throw fxErr;
   if (!fixture) return res.status(404).json({ error: 'Fixture not found' });
 
-  const { data: row, error } = await supabase.from('fixture_attendance').upsert({
+  const payload = {
     fixture_id: fixture.id,
     scout_id: req.user.id,
     coach_id: fixture.coach_id || null,
     status,
     updated_at: new Date().toISOString()
-  }, { onConflict: 'fixture_id,scout_id' }).select().single();
+  };
+  const { data: existingAttendance, error: existingErr } = await supabase
+    .from('fixture_attendance')
+    .select('id')
+    .eq('fixture_id', fixture.id)
+    .eq('scout_id', req.user.id)
+    .maybeSingle();
+  if (existingErr) throw existingErr;
+  const write = existingAttendance
+    ? supabase.from('fixture_attendance').update(payload).eq('id', existingAttendance.id).select().single()
+    : supabase.from('fixture_attendance').insert(payload).select().single();
+  const { data: row, error } = await write;
   if (error) throw error;
 
   if (fixture.coach_id) {
     const { data: scout } = await supabase.from('scouts').select('first_name,last_name,club_name').eq('id', req.user.id).maybeSingle();
     const scoutName = [scout?.first_name, scout?.last_name].filter(Boolean).join(' ') || 'A scout';
-    await supabase.from('notifications').insert({
-      recipient_id: fixture.coach_id,
-      recipient_type: 'Coach',
-      notification_type: 'fixture_attendance',
-      title: 'Scout fixture attendance updated',
-      body: scoutName + ' marked ' + status.replace(/_/g, ' ') + ' for the fixture against ' + (fixture.opponent || 'your opponent') + '.',
-      data: { fixtureId: fixture.id, scoutId: req.user.id, status }
-    });
+    try {
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        recipient_id: fixture.coach_id,
+        recipient_type: 'Coach',
+        notification_type: 'fixture_attendance',
+        title: 'Scout fixture attendance updated',
+        body: scoutName + ' marked ' + status.replace(/_/g, ' ') + ' for the fixture against ' + (fixture.opponent || 'your opponent') + '.',
+        data: { fixtureId: fixture.id, scoutId: req.user.id, status }
+      });
+      if (notifErr) console.warn('[Fixture attendance notification skipped]', notifErr.message);
+    } catch(notifErr) {
+      console.warn('[Fixture attendance notification skipped]', notifErr.message);
+    }
   }
   res.json({ attendance: row, message: 'Attendance saved' });
 } catch(err) { console.error('[Scout fixture attendance]', err); res.status(500).json({ error: 'Internal server error' }); }

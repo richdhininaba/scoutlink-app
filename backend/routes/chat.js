@@ -110,14 +110,19 @@ router.post('/threads', requireAuth, requireRole('Scout'), async (req, res) => {
       last_message_at: new Date().toISOString()
     }).select().single();
     if (error) throw error;
-    await supabase.from('notifications').insert({
-      recipient_id: coach.id,
-      recipient_type: 'Coach',
-      notification_type: 'chat_started',
-      title: 'New scout chat',
-      body: 'A scout opened a chat about ' + displayName(player) + '.',
-      data: { threadId: thread.id, playerId }
-    });
+    try {
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        recipient_id: coach.id,
+        recipient_type: 'Coach',
+        notification_type: 'chat_started',
+        title: 'New scout chat',
+        body: 'A scout opened a chat about ' + displayName(player) + '.',
+        data: { threadId: thread.id, playerId }
+      });
+      if (notifErr) console.warn('[Chat notification skipped]', notifErr.message);
+    } catch(notifErr) {
+      console.warn('[Chat notification skipped]', notifErr.message);
+    }
     res.status(201).json({ thread, coach });
   } catch(err) {
     console.error('[Chat create]', err);
@@ -158,14 +163,19 @@ router.post('/threads/:id/messages', requireAuth, requireRole('Scout','Coach'), 
     await supabase.from('chat_threads').update({ last_message_at: message.created_at, updated_at: message.created_at }).eq('id', thread.id);
     const recipientId = req.user.accountType === 'Scout' ? thread.coach_id : thread.scout_id;
     const recipientType = req.user.accountType === 'Scout' ? 'Coach' : 'Scout';
-    await supabase.from('notifications').insert({
-      recipient_id: recipientId,
-      recipient_type: recipientType,
-      notification_type: 'chat_message',
-      title: 'New ScoutLink message',
-      body: 'New message about ' + displayName(thread.players) + '.',
-      data: { threadId: thread.id, playerId: thread.player_id }
-    });
+    try {
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        recipient_id: recipientId,
+        recipient_type: recipientType,
+        notification_type: 'chat_message',
+        title: 'New ScoutLink message',
+        body: 'New message about ' + displayName(thread.players) + '.',
+        data: { threadId: thread.id, playerId: thread.player_id }
+      });
+      if (notifErr) console.warn('[Chat message notification skipped]', notifErr.message);
+    } catch(notifErr) {
+      console.warn('[Chat message notification skipped]', notifErr.message);
+    }
     res.status(201).json({ message });
   } catch(err) {
     console.error('[Chat message]', err);
