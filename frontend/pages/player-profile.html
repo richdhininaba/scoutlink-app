@@ -23,9 +23,12 @@
 .compat-bar-fill{height:100%;border-radius:4px;}
 .section-heading{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
 .action-btn{min-height:40px;padding:8px 14px;font-size:13px;}
-.export-control{display:flex;align-items:center;gap:8px;background:#0a0f1e;border:1px solid var(--border,#30363d);border-radius:10px;padding:4px;min-height:44px;}
-.export-control select{min-height:34px;background:transparent!important;border:none!important;color:var(--text,#fff)!important;font-size:13px;font-weight:700;padding:0 8px;}
-.export-control select:focus{outline:none;box-shadow:none;}
+.export-menu-wrap{position:relative;display:inline-flex;}
+.export-menu{position:absolute;top:calc(100% + 8px);left:0;min-width:190px;background:#0a0f1e;border:1px solid var(--border,#30363d);border-radius:10px;padding:6px;display:none;z-index:60;box-shadow:0 18px 50px rgba(0,0,0,.42);}
+.export-menu.open{display:block;}
+.export-option{width:100%;display:flex;align-items:flex-start;gap:8px;background:transparent;border:none;color:var(--text,#fff);border-radius:8px;padding:10px;text-align:left;cursor:pointer;font-weight:800;}
+.export-option:hover{background:rgba(29,158,117,.12);}
+.export-option small{display:block;color:#8b949e;font-weight:600;margin-top:2px;line-height:1.25;}
 .video-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:14px;}
 .prediction-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .breakdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
@@ -38,9 +41,20 @@
 .breakdown-bar-track{height:7px;background:#1e2a3a;border-radius:999px;overflow:hidden}
 .breakdown-bar-fill{height:100%;border-radius:999px}
 .position-pill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.position-pill-grid.locked-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 .position-pill{background:#0a0f1e;border:1px solid #26313d;border-radius:8px;padding:10px}
 .position-pill span{display:block;color:#8b949e;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
 .position-pill b{font-size:17px}
+.locked-result{filter:blur(5px);user-select:none;pointer-events:none;}
+.locked-card{position:relative;overflow:hidden;}
+.position-pill.is-locked span,.position-pill.is-locked b,.position-pill.is-locked small{filter:blur(4px);user-select:none;}
+.position-lock-note{margin-top:10px;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.22);border-radius:8px;padding:10px 12px;font-size:12px;color:#B0BEC5;line-height:1.45;}
+.overall-breakdown-layout{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(260px,.8fr);gap:16px;}
+.value-factor-grid{display:grid;gap:9px;margin-top:12px;}
+.value-factor-row{display:grid;grid-template-columns:minmax(160px,.9fr) 1fr auto;gap:12px;align-items:center;background:#0a0f1e;border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:11px 12px;}
+.value-factor-row span{font-size:12px;color:#e6edf3;font-weight:800;}
+.value-factor-row small{font-size:11px;color:#8b949e;line-height:1.35;}
+.value-factor-row b{font-size:13px;color:#fff;white-space:nowrap;}
 .overall-gauge{text-align:center;padding:28px 20px;background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:14px;margin-bottom:20px}
 .gauge-ring{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:6px solid;}
 .gauge-score{font-size:40px;font-weight:900;line-height:1}
@@ -94,6 +108,52 @@
 .video-table th{color:#8b949e;text-transform:uppercase;font-size:11px;letter-spacing:.04em;}
 @media(max-width:1100px){.profile-detail-grid{grid-template-columns:1fr 1fr}.profile-detail-grid .profile-metric-card:first-child{grid-column:1/-1;}}
 @media(max-width:900px){.match-fixture-grid{grid-template-columns:1fr;}.profile-detail-grid{grid-template-columns:1fr;}.profile-detail-grid .profile-metric-card:first-child{grid-column:auto;}}
+@media(max-width:640px){
+.dashboard-main{min-width:0;}
+.page-content{padding:12px!important;}
+.profile-card,.performance-panel{border-radius:10px!important;padding:14px!important;margin-bottom:12px!important;}
+.profile-hero-row{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;text-align:left;}
+.profile-identity{display:grid!important;grid-template-columns:56px 1fr!important;gap:12px!important;min-width:0!important;}
+.profile-identity .user-avatar{width:56px!important;height:56px!important;font-size:18px!important;}
+.profile-name-block{min-width:0!important;}
+.profile-name-block h2{font-size:20px!important;line-height:1.15!important;}
+.profile-tag-row{gap:6px!important;}
+.profile-tag-row span{font-size:11px!important;padding:3px 9px!important;}
+.profile-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;width:100%!important;align-items:stretch!important;}
+.profile-actions .action-btn,.profile-actions .export-menu-wrap{width:100%!important;}
+.profile-actions .action-btn{display:flex!important;align-items:center!important;justify-content:center!important;min-height:42px!important;padding:9px 10px!important;}
+.profile-actions #interestsRemainingCount{grid-column:1/-1;margin-left:0!important;text-align:left!important;}
+.export-menu{left:auto;right:0;min-width:100%;}
+.profile-hero-summary{text-align:left!important;border-top:1px solid var(--border,#30363d);padding-top:12px;}
+.profile-hero-summary>div:first-child{font-size:30px!important;}
+.profile-hero-summary>div:nth-last-child(2){font-size:22px!important;}
+.performance-grid{grid-template-columns:1fr!important;gap:12px!important;}
+.performance-grid>div{background:#0a0f1e;border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:12px;}
+.breakdown-grid{grid-template-columns:1fr 1fr;gap:8px;}
+.breakdown-card{min-height:88px;padding:10px;}
+.breakdown-card b{font-size:19px;}
+.breakdown-card small{font-size:10px;}
+.overall-breakdown-layout{grid-template-columns:1fr;gap:12px;}
+.position-pill-grid,.position-pill-grid.locked-grid{grid-template-columns:1fr 1fr;gap:8px;}
+.position-pill{padding:9px;min-height:64px;}
+.value-factor-row{grid-template-columns:1fr;gap:5px;padding:10px;}
+.value-factor-row b{justify-self:start;}
+.stats-trio,.stat-tile-grid,.physical-metric-grid{grid-template-columns:1fr 1fr!important;gap:8px!important;}
+.stat-box,.physical-metric{min-height:72px;padding:10px;}
+.stat-num,.stat-val{font-size:20px!important;}
+.profile-detail-grid,.match-fixture-grid{grid-template-columns:1fr!important;gap:12px!important;}
+.profile-metric-card{min-height:auto!important;}
+.attr-label{width:76px;font-size:11px;}
+.match-row,.fixture-row{min-height:auto;padding:11px 12px;}
+.match-row>div{display:grid!important;grid-template-columns:1fr!important;}
+.match-row div[style*="text-align:right"]{text-align:left!important;min-width:0!important;}
+.fixture-row{display:grid!important;grid-template-columns:1fr auto!important;align-items:center;}
+.fixture-date,.fixture-opponent,.fixture-venue{min-width:0!important;}
+.fixture-venue{grid-column:1/-1;}
+.video-table{display:block;overflow-x:auto;white-space:nowrap;}
+.profile-modal,.video-modal{padding:10px;}
+.profile-modal-box{max-height:92vh;}
+}
 </style>
 </head><body>
 <div class="dashboard">
@@ -152,12 +212,33 @@ function cColor(s){return s>=80?'#1d9e75':s>=65?'#FFC107':s>=50?'#FF9800':'#f443
 function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
 function confLabel(apps){var n=parseInt(apps)||0;if(n===0)return{label:'Very Low',color:'#f44336'};if(n<=4)return{label:'Low',color:'#FF9800'};if(n<=9)return{label:'Medium',color:'#FFC107'};if(n<=19)return{label:'High',color:'#00BCD4'};return{label:'Very High',color:'#1d9e75'};}
 function attrLabel(k){var m={pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',jumping:'Jumping',composure:'Composure',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling',gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'GK Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};return m[k]||k;}
+var POSITION_LABELS={GK:'Goalkeeper',CB:'Centre Back',BPD:'Ball-playing Defender',RB:'Right Back',LB:'Left Back',RWB:'Right Wing Back',LWB:'Left Wing Back',CDM:'Defensive Midfielder',CM:'Central Midfielder',B2B:'Box-to-box Midfielder',CAM:'Attacking Midfielder',LW:'Left Winger',RW:'Right Winger',CF:'Centre Forward',ST:'Striker',SS:'Second Striker'};
+var POSITION_ORDER=['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'];
+function positionName(code){var c=String(code||'').trim().toUpperCase();return POSITION_LABELS[c]||safe(code);}
+function positionOptionsHtml(){return '<option value="">Auto-detect best fit</option>'+POSITION_ORDER.map(function(code){return '<option value="'+code+'">'+POSITION_LABELS[code]+'</option>';}).join('');}
+function positionText(text){var s=safe(text);POSITION_ORDER.slice().sort(function(a,b){return b.length-a.length;}).forEach(function(code){s=s.replace(new RegExp('\\b'+code+'\\b','g'),POSITION_LABELS[code]);});return s;}
 function buildAttrBar(label,val){var n=parseFloat(val);var pct=isNaN(n)?0:Math.min(100,Math.round(n>10?n:n*10));var col=pct>=70?'#1d9e75':pct>=50?'#FFC107':'#f44336';return '<div class="attr-row"><span class="attr-label">'+label+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+((!isNaN(n))?(n>10?n/10:n).toFixed(1):'--')+'</span></div>';}
 function statBadge(label,val){return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-lbl">'+label+'</div></div>';}
 function scoreVal(v){var n=Number(v);return isNaN(n)?0:Math.max(0,Math.min(100,Math.round(n)));}
 function scoreDisplay(v){var n=Number(v);return isNaN(n)?'--':Math.round(n)+'/100';}
 function breakdownBar(label,val,color){var v=scoreVal(val);var c=color||cColor(v);return '<div class="breakdown-bar"><div class="breakdown-bar-head"><span style="color:#B0BEC5">'+label+'</span><b style="color:'+c+'">'+v+'</b></div><div class="breakdown-bar-track"><div class="breakdown-bar-fill" style="width:'+v+'%;background:'+c+'"></div></div></div>';}
 function breakdownMetric(label,value,note,color){return '<div class="breakdown-card"><span>'+label+'</span><b style="color:'+(color||'#fff')+'">'+value+'</b><small>'+safe(note)+'</small></div>';}
+function lockedRoleMetric(label,role,score){return '<div class="breakdown-card locked-card"><span>'+label+'</span><b class="locked-result" style="color:#fff">'+positionName(role)+'</b><small class="locked-result">'+scoreDisplay(score)+'</small><small>Run Position Fit Prediction to reveal.</small></div>';}
+function scrollToPositionFit(){var el=document.getElementById('targetPosition');if(!el)return;var card=el.closest?el.closest('.profile-card'):null;(card||el).scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){try{el.focus();}catch(e){}},350);}
+function valueFactorAmount(key,val){if(key==='base')return 'GBP '+Number(val||0).toLocaleString('en-GB',{maximumFractionDigits:0});var n=Number(val);if(isNaN(n))return safe(val);var pct=Math.round((n-1)*100);return (pct>=0?'+':'')+pct+'%';}
+function valueFactorRows(m){
+var defs=[
+{key:'base',label:'Age-band starting value',desc:'The starting youth valuation before player-specific adjustments.'},
+{key:'groupPremium',label:'Position group adjustment',desc:'How the market typically values this broad position group.'},
+{key:'rolePremium',label:'Role scarcity adjustment',desc:'Extra value for roles that are harder to recruit at this level.'},
+{key:'ratingMultiplier',label:'Overall quality adjustment',desc:'How the ScoutLink overall score moves the estimate up or down.'},
+{key:'potentialMultiplier',label:'Potential runway adjustment',desc:'How much age, development upside and future role fit add to the valuation.'},
+{key:'confidenceMultiplier',label:'Evidence confidence adjustment',desc:'How strongly the data supports the current valuation.'},
+{key:'disciplineMultiplier',label:'Discipline and availability adjustment',desc:'Card record, reliability and availability risk.'},
+{key:'matchOutputMultiplier',label:'Match output adjustment',desc:'Impact from goals, assists, clean sheets and match performance evidence.'}
+];
+return defs.filter(function(d){return m&&m[d.key]!==undefined&&m[d.key]!==null;}).map(function(d){return '<div class="value-factor-row"><span>'+d.label+'</span><small>'+d.desc+'</small><b>'+valueFactorAmount(d.key,m[d.key])+'</b></div>';}).join('');
+}
 function renderOverallBreakdownBlock(analysis,p){
 var a=(analysis&&analysis.overallBreakdown)||p.overallBreakdown||{};
 if(!a||!Object.keys(a).length)return '';
@@ -169,7 +250,7 @@ var bars=[
 ['Mental/coachability',a.mentalCoachabilityScore,'#8B5CF6'],['Match output',a.matchOutputScore,'#FFC107'],['Discipline',a.disciplineScore,'#FF9800'],
 ['Availability',a.availabilityScore,'#22c55e'],['Data confidence',a.dataConfidenceScore,'#E879F9']
 ].map(function(x){return breakdownBar(x[0],x[1],x[2]);}).join('');
-var roleHtml=topRoles.length?'<div class="position-pill-grid">'+topRoles.map(function(r){return '<div class="position-pill"><span>'+safe(r.role)+'</span><b style="color:'+cColor(r.score)+'">'+Math.round(r.score)+'</b><small style="color:#8b949e"> '+safe(r.group)+'</small></div>';}).join('')+'</div>':'';
+var roleHtml=topRoles.length?'<div class="position-pill-grid locked-grid">'+topRoles.map(function(r){return '<div class="position-pill is-locked"><span>'+positionName(r.role)+'</span><b style="color:'+cColor(r.score)+'">'+Math.round(r.score)+'</b><small style="color:#8b949e"> '+safe(r.group)+'</small></div>';}).join('')+'</div><div class="position-lock-note">Run a Best Position Fit Prediction to reveal the role scores and the reason behind each fit. <button class="btn btn-sm btn-outline" style="margin-top:8px;min-height:32px" onclick="scrollToPositionFit()">Run position fit</button></div>':'';
 var warnHtml=warnings.length?'<div class="confidence-note" style="margin-top:10px">'+warnings.map(function(w){return safe(w);}).join('<br>')+'</div>':'';
 return '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
 '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><div style="font-size:16px;font-weight:800">Overall Rating Breakdown</div><div style="font-size:12px;color:#8b949e;margin-top:3px">'+safe(a.explanation)+'</div></div><div style="font-size:12px;color:#8b949e">'+safe(a.ageBandLabel)+' &bull; '+safe(a.positionGroup)+'</div></div>'+
@@ -178,17 +259,18 @@ breakdownMetric('Final score',scoreDisplay(a.finalScore),'Headline ScoutLink ove
 breakdownMetric('Current readiness',scoreDisplay(a.currentReadiness),'How ready the player is now','#1d9e75')+
 breakdownMetric('Potential rating',scoreDisplay(a.potentialRating),'Age runway and development upside','#FFC107')+
 breakdownMetric('Data confidence',safe(a.dataConfidenceLabel),safe(a.dataConfidenceNote),'#58a6ff')+
-breakdownMetric('Best current role',safe(pos.bestCurrentPosition||a.primaryPosition),scoreDisplay(pos.bestCurrentScore),'#fff')+
-breakdownMetric('Best future role',safe(pos.bestFuturePosition||a.primaryPosition),scoreDisplay(pos.bestFutureScore),'#fff')+
-'</div><div style="display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(220px,.8fr);gap:16px"><div>'+bars+'</div><div><div class="section-heading">Position ratings</div>'+roleHtml+'</div></div>'+warnHtml+'</div>';
+lockedRoleMetric('Best current role',pos.bestCurrentPosition||a.primaryPosition,pos.bestCurrentScore)+
+lockedRoleMetric('Best future role',pos.bestFuturePosition||a.primaryPosition,pos.bestFutureScore)+
+'</div><div class="overall-breakdown-layout"><div>'+bars+'</div><div><div class="section-heading">Position ratings</div>'+roleHtml+'</div></div>'+warnHtml+'</div>';
 }
 function renderValueAnalysisBlock(analysis,p){
 var v=(analysis&&analysis.valueAnalysis)||p.valueAnalysis||{};
 if(!v||!Object.keys(v).length)return '';
 var m=v.multipliers||{};
-var multHtml=Object.keys(m).slice(0,8).map(function(k){return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e2a3a;font-size:12px"><span style="color:#8b949e">'+safe(k.replace(/_/g,' '))+'</span><b>'+safe(m[k])+'</b></div>';}).join('');
+var factorHtml=valueFactorRows(m);
+var multHtml=factorHtml?'<div class="value-factor-grid">'+factorHtml+'</div>':'';
 return '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
-'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">Value Analysis</div><div style="font-size:12px;color:#8b949e;margin-top:3px">'+safe(v.label)+' &bull; '+safe(v.ageBandLabel)+' &bull; '+safe(v.primaryPosition)+'</div></div><div style="font-size:24px;font-weight:900;color:#1d9e75">'+safe(v.valueFormatted)+'</div></div>'+
+'<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">Value Analysis</div><div style="font-size:12px;color:#8b949e;margin-top:3px">'+safe(v.label)+' &bull; '+safe(v.ageBandLabel)+' &bull; '+positionName(v.primaryPosition)+'</div></div><div style="font-size:24px;font-weight:900;color:#1d9e75">'+safe(v.valueFormatted)+'</div></div>'+
 '<div class="breakdown-grid">'+breakdownMetric('Affordability',safe(v.affordabilityFlag),'Budget signal','#1d9e75')+breakdownMetric('Risk label',safe(v.riskLabel),'Evidence and profile risk','#FFC107')+breakdownMetric('Position group',safe(v.positionGroup),'Value baseline','#58a6ff')+'</div>'+
 '<p style="font-size:13px;color:#B0BEC5;line-height:1.6;margin:0 0 12px">'+safe(v.explanation)+'</p>'+multHtml+'</div>';
 }
@@ -303,19 +385,27 @@ alert(e.message||'Could not add to pipeline. Please contact info@scoutlink.app o
 });
 }
 
-function exportProfile(playerId){
+function toggleExportMenu(){
+var menu=document.getElementById('exportMenu');
+if(menu)menu.classList.toggle('open');
+}
+function closeExportMenu(){
+var menu=document.getElementById('exportMenu');
+if(menu)menu.classList.remove('open');
+}
+function exportProfile(playerId,format){
 var btn=document.getElementById('btnExport');
-var select=document.getElementById('exportFormat');
-var fmt=(select&&select.value?select.value:'PDF').trim().toUpperCase();
+var fmt=(format||'PDF').trim().toUpperCase();
 if(fmt!=='PDF'&&fmt!=='EXCEL'&&fmt!=='XLS')fmt='PDF';
 var label=fmt==='PDF'?'PDF':'Excel';
+closeExportMenu();
 if(!confirm('Export this player profile as '+label+'? This will count against your scout team export cap.'))return;
 if(btn){btn.disabled=true;btn.textContent='Exporting...';}
 api('POST','/api/exports/player',{playerId:playerId,format:fmt,source:'profile'}).then(function(r){
 downloadBase64(r.filename,r.mime,r.contentBase64);
-if(btn){btn.disabled=false;btn.textContent='Download';}
+if(btn){btn.disabled=false;btn.textContent='Export';}
 }).catch(function(e){
-if(btn){btn.disabled=false;btn.textContent='Download';}
+if(btn){btn.disabled=false;btn.textContent='Export';}
 alert(e.message||'Could not export profile. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');
 });
 }
@@ -392,7 +482,7 @@ html+='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap
 if(result.confidence)html+='<div style="font-size:12px;color:#8b949e;margin-bottom:12px"><b style="color:#fff">Data confidence:</b> '+safe(result.confidence.label)+' - '+safe(result.confidence.note)+'</div>';
 if(result.seasons){html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><label style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#8b949e">View year</label><select id="devYearSelect" onchange="renderDevelopmentYear(this.value)" style="max-width:160px">'+result.seasons.map(function(s){return '<option value="'+s.year+'">Year '+s.year+'</option>';}).join('')+'</select></div><div id="devYearDetail"></div><p style="font-size:13px;color:#B0BEC5;line-height:1.6;margin-top:12px">'+safe((result.paragraphs&&result.paragraphs[0])||result.summary)+'</p>';}
 else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+safe(s.horizon)+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><p style="font-size:13px;color:#B0BEC5;margin-top:12px;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.recommendation)+'</p>';}
-else if(result.topRoles){html+='<div class="breakdown-grid">'+breakdownMetric('Best current role',safe(result.bestCurrentPosition),scoreDisplay(result.bestCurrentScore),'#1d9e75')+breakdownMetric('Best future role',safe(result.bestFuturePosition),scoreDisplay(result.bestFutureScore),'#FFC107')+breakdownMetric('Target role',safe(result.targetPosition||'Not selected'),scoreDisplay(result.targetScore),'#58a6ff')+breakdownMetric('Verdict',safe(result.targetVerdict),'Gap vs best: '+safe(result.targetGapVsBest),'#fff')+'</div><p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.summary)+'</p>'+result.topRoles.map(function(r){return breakdownBar(r.role,r.score,cColor(r.score));}).join('')+'<div class="position-pill-grid">'+(result.conversionCandidates||[]).map(function(c){return '<div class="position-pill"><span>'+safe(c.role)+'</span><b>'+safe(c.score)+'</b><small style="display:block;color:#8b949e">'+safe(c.reason)+'</small></div>';}).join('')+'</div>';}
+else if(result.topRoles){html+='<div class="breakdown-grid">'+breakdownMetric('Best current role',positionName(result.bestCurrentPosition),scoreDisplay(result.bestCurrentScore),'#1d9e75')+breakdownMetric('Best future role',positionName(result.bestFuturePosition),scoreDisplay(result.bestFutureScore),'#FFC107')+breakdownMetric('Target role',result.targetPosition?positionName(result.targetPosition):'Not selected',scoreDisplay(result.targetScore),'#58a6ff')+breakdownMetric('Verdict',safe(result.targetVerdict),'Gap vs best: '+safe(result.targetGapVsBest),'#fff')+'</div><p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+positionText((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.summary)+'</p>'+result.topRoles.map(function(r){return breakdownBar(positionName(r.role),r.score,cColor(r.score));}).join('')+'<div class="position-pill-grid">'+(result.conversionCandidates||[]).map(function(c){return '<div class="position-pill"><span>'+positionName(c.role)+'</span><b>'+safe(c.score)+'</b><small style="display:block;color:#8b949e">'+positionText(c.reason)+'</small></div>';}).join('')+'</div>';}
 else if(result.evidence){html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.predictedBehaviour)+'</p><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
 else{html+='<pre style="white-space:pre-wrap;color:#B0BEC5;font-size:12px">'+JSON.stringify(result,null,2)+'</pre>';}
 html+='<p style="font-size:11px;color:#8b949e;margin-top:12px">'+safe(result.disclaimer)+'</p></div>';
@@ -531,9 +621,9 @@ var actionBtns='';
 if(Auth.type==='Scout'){
 var btnLabel=_alreadyInPipeline?'In Pipeline':'Register Interest';
 var btnStyle=_alreadyInPipeline?'background:#1d9e75;color:#000;':'';
-actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">'+
+actionBtns='<div class="profile-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">'+
 '<button id="btnInterest" class="btn btn-primary action-btn" style="'+btnStyle+'" '+((_alreadyInPipeline)?'disabled':'')+'>'+btnLabel+'</button>'+
-'<div class="export-control"><select id="exportFormat" aria-label="Export format"><option value="PDF">PDF</option><option value="EXCEL">Excel</option></select><button id="btnExport" class="btn btn-outline action-btn">Download</button></div>'+
+'<div class="export-menu-wrap" id="exportMenuWrap"><button id="btnExport" class="btn btn-outline action-btn" type="button">Export</button><div class="export-menu" id="exportMenu"><button class="export-option" type="button" data-format="PDF"><span>PDF report<small>Designed profile summary</small></span></button><button class="export-option" type="button" data-format="EXCEL"><span>Excel workbook<small>Structured data sheet</small></span></button></div></div>'+
 '<button class="btn btn-outline action-btn" onclick="scrollToVideos()">&#9654; Watch Videos</button>'+
 '<span id="interestsRemainingCount" style="font-size:12px;color:#8b949e;margin-left:4px">'+interestsRem+' interests remaining</span>'+
 '</div>';
@@ -606,19 +696,20 @@ document.getElementById('profileContent').innerHTML=
 ageOutBanner+
 // Hero card
 '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:14px;padding:24px;margin-bottom:20px">'+
-'<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">'+
+'<div class="profile-hero-row" style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">'+
+'<div class="profile-identity" style="display:flex;align-items:flex-start;gap:20px;flex:1;min-width:220px">'+
 '<div class="user-avatar" style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>'+
-'<div style="flex:1;min-width:180px">'+
+'<div class="profile-name-block" style="flex:1;min-width:180px">'+
 '<h2 style="font-size:22px;font-weight:800;margin:0 0 4px">'+safe(p.first_name)+' '+safe(p.last_name)+'</h2>'+
-'<div style="font-size:14px;color:#8b949e;margin-bottom:8px">'+safe(p.specific_position||p.primary_position)+' &bull; '+safe(p.age_group)+' &bull; '+safe(p.team_name)+'</div>'+
-'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
+'<div style="font-size:14px;color:#8b949e;margin-bottom:8px">'+positionName(p.specific_position||p.primary_position)+' &bull; '+safe(p.age_group)+' &bull; '+safe(p.team_name)+'</div>'+
+'<div class="profile-tag-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">Overall: '+ov100+'/100</span>'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">'+safe(p.foot)+' foot</span>'+
 '<span style="background:rgba(29,158,117,.08);color:#8b949e;border-radius:20px;padding:3px 12px;font-size:12px">'+safe(p.nationality)+'</span>'+
 '</div>'+
 actionBtns+
-'</div>'+
-'<div style="text-align:right">'+compatHeroHtml+tvHtml+'<div style="font-size:11px;color:#8b949e">Est. transfer value</div></div>'+
+'</div></div>'+
+'<div class="profile-hero-summary" style="text-align:right">'+compatHeroHtml+tvHtml+'<div style="font-size:11px;color:#8b949e">Est. transfer value</div></div>'+
 '</div></div>'+
 
 // Overall performance
@@ -698,7 +789,7 @@ videoHtml+
 '<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Development focus</label><select id="developmentFocus" style="margin-top:6px"><option>Balanced Growth</option><option>Technical Possession</option><option>Athletic Transition</option><option>Defensive Intelligence</option><option>Final Third Output</option><option>Goalkeeper Command</option></select><button class="pred-btn" data-pred-type="attribute_development" style="margin-top:8px">Run attribute development</button></div>'+
 '<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Financial goal</label><select id="financialGoal" style="margin-top:6px"><option>Balanced value growth</option><option>Resale profit</option><option>Low-cost high ceiling</option><option>First-team contribution</option><option>Squad depth value</option></select><button class="pred-btn" data-pred-type="roi_analysis" style="margin-top:8px">Run ROI analysis</button></div>'+
 '<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Match scenario</label><select id="scenarioSelect" style="margin-top:6px"><option value="protect_lead">Protecting a one-goal lead under pressure</option><option value="chasing_game">Chasing the game with 15 minutes left</option><option value="high_press">High press against a possession team</option><option value="low_block">Breaking down a compact low block</option><option value="wide_duel">Repeated wide 1v1 duels</option><option value="aerial_battle">Direct opponent with heavy aerial pressure</option><option value="counter_attack">Counter-attacking from deep</option><option value="build_back">Building play from the back</option><option value="set_piece_attack">Attacking set pieces late in the game</option><option value="set_piece_defence">Defending set pieces against a taller team</option><option value="fatigue_phase">Managing a high-tempo final 20 minutes</option><option value="physical_midfield">Playing through a physical midfield battle</option><option value="transition_defence">Defending fast transitions after losing possession</option><option value="creative_10">Operating as the main creative outlet</option><option value="striker_isolated">Playing as an isolated striker</option><option value="gk_crosses">GK: repeated crosses</option><option value="gk_penalties">GK: penalty shootout</option><option value="gk_sweeper">GK: sweeping behind a high line</option><option value="gk_distribution">GK: start attacks short and long</option><option value="gk_shot_volume">GK: high shot volume</option></select><button class="pred-btn" data-pred-type="match_scenario" style="margin-top:8px">Run scenario prediction</button></div>'+
-'<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Target position</label><select id="targetPosition" style="margin-top:6px"><option value="">Auto-detect best fit</option><option>GK</option><option>CB</option><option>BPD</option><option>RB</option><option>LB</option><option>RWB</option><option>LWB</option><option>CDM</option><option>CM</option><option>B2B</option><option>CAM</option><option>LW</option><option>RW</option><option>CF</option><option>ST</option><option>SS</option></select><button class="pred-btn" data-pred-type="position_fit" style="margin-top:8px">Run position fit</button></div>'+
+'<div><label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800">Target position</label><select id="targetPosition" style="margin-top:6px">'+positionOptionsHtml()+'</select><button class="pred-btn" data-pred-type="position_fit" style="margin-top:8px">Run position fit</button></div>'+
 '</div>'+
 '<div id="predResultArea"><div style="color:#8b949e;font-size:13px;text-align:center;padding:20px">Click a prediction type above to run analysis</div></div>'+
 '</div>':'');
@@ -708,7 +799,17 @@ var btnInterest=document.getElementById('btnInterest');
 if(btnInterest)btnInterest.addEventListener('click',function(){registerInterest(playerId);});
 
 var btnExport=document.getElementById('btnExport');
-if(btnExport)btnExport.addEventListener('click',function(){exportProfile(playerId);});
+if(btnExport)btnExport.addEventListener('click',function(e){e.stopPropagation();toggleExportMenu();});
+document.querySelectorAll('.export-option').forEach(function(opt){
+opt.addEventListener('click',function(e){e.stopPropagation();exportProfile(playerId,opt.getAttribute('data-format')||'PDF');});
+});
+if(!window._profileExportOutsideClickBound){
+window._profileExportOutsideClickBound=true;
+document.addEventListener('click',function(e){
+var wrap=document.getElementById('exportMenuWrap');
+if(wrap&&!wrap.contains(e.target))closeExportMenu();
+});
+}
 
 var btnShowCompat=document.getElementById('btnShowCompat');
 if(btnShowCompat)btnShowCompat.addEventListener('click',function(){showCompatBreakdown(playerId);});
