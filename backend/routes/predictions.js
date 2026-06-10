@@ -15,6 +15,13 @@ const PLAN_LIMITS = {
 
 const ATTRS = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
 const GK_ATTRS = ['gk_diving','gk_handling','gk_kicking','gk_reflexes','gk_positioning','gk_distribution','gk_communication','gk_sweeping'];
+const ALL_ATTR_LABELS = {
+  pace:'Pace', agility:'Agility', strength:'Strength', stamina:'Stamina', jumping:'Jumping', composure:'Composure',
+  shooting:'Shooting', passing:'Passing', dribbling:'Dribbling', defending:'Defending', crossing:'Crossing', vision:'Vision',
+  positioning:'Positioning', heading:'Heading', tackling:'Tackling', gk_diving:'Diving', gk_handling:'Handling',
+  gk_kicking:'Kicking', gk_reflexes:'Reflexes', gk_positioning:'GK Positioning', gk_distribution:'Distribution',
+  gk_communication:'Communication', gk_sweeping:'Sweeping'
+};
 
 const DEVELOPMENT_PLANS = {
   'Balanced Growth': {
@@ -107,6 +114,28 @@ function formatCurrency(value) {
   return 'GBP ' + n.toLocaleString('en-GB');
 }
 
+function playerName(player) {
+  return [player.first_name, player.last_name].filter(Boolean).join(' ') || 'this player';
+}
+
+function generatedAttributes(attrs) {
+  const a = key => (Number(attrs[key]) || 5) * 10;
+  return {
+    creativity: Math.round((a('passing') * 0.34 + a('vision') * 0.46 + a('dribbling') * 0.20)),
+    ball_progression: Math.round((a('dribbling') * 0.36 + a('passing') * 0.30 + a('pace') * 0.20 + a('vision') * 0.14)),
+    defensive_reliability: Math.round((a('defending') * 0.42 + a('tackling') * 0.34 + a('positioning') * 0.24)),
+    attacking_threat: Math.round((a('shooting') * 0.42 + a('positioning') * 0.25 + a('pace') * 0.18 + a('composure') * 0.15)),
+    pressure_resistance: Math.round((a('composure') * 0.45 + a('dribbling') * 0.25 + a('passing') * 0.20 + a('strength') * 0.10))
+  };
+}
+
+function effectText(delta, focus) {
+  if (delta > 0.8) return 'Primary gain from ' + focus + '.';
+  if (delta > 0.15) return 'Secondary support from the plan.';
+  if (delta < -0.4) return 'Trade-off caused by narrowing training load.';
+  return 'Maintained without a material directional change.';
+}
+
 function transferValue(player) {
   try {
     const tv = grassrootsTransferValue ? grassrootsTransferValue(player) : null;
@@ -138,7 +167,7 @@ function projectedValue(player, overall) {
   return transferValue(next);
 }
 
-function attributeDevelopment(player, facts, inputParams = {}) {
+function attributeDevelopment(player, facts, inputParams = {}, context = {}) {
   const requested = inputParams.focus || inputParams.trainingFocus || 'Balanced Growth';
   const plan = DEVELOPMENT_PLANS[requested] || DEVELOPMENT_PLANS['Balanced Growth'];
   const confidence = dataConfidence(player, facts);
@@ -146,18 +175,36 @@ function attributeDevelopment(player, facts, inputParams = {}) {
   const currentAttrs = {};
   const profileAttrs = getPosGroup(player.position_group || player.primary_position) === 'Goalkeeper' ? ATTRS.concat(GK_ATTRS) : ATTRS;
   profileAttrs.forEach(a => { currentAttrs[a] = Math.round(attr10(player, a) * 10) / 10; });
+  const playerLabel = playerName(player);
+
+  const fiveYearDeltas = {};
+  const attributeEffectsByKey = {};
+  profileAttrs.forEach(a => {
+    const isPriority = plan.boosts.includes(a);
+    const isGkFocus = requested === 'Goalkeeper Command' && !GK_ATTRS.includes(a);
+    let delta = isPriority ? (1.6 + ageFactor * 0.55) : (0.25 + ageFactor * 0.15);
+    if (plan.drag && !isPriority) delta -= (plan.drag * 18);
+    if (isGkFocus) delta -= 0.55;
+    if (requested === 'Defensive Intelligence' && ['shooting','crossing'].includes(a)) delta -= 0.85;
+    if (requested === 'Final Third Output' && ['defending','tackling'].includes(a)) delta -= 0.75;
+    if (requested === 'Technical Possession' && ['heading','jumping'].includes(a)) delta -= 0.35;
+    fiveYearDeltas[a] = Math.round(Math.max(-1.4, Math.min(2.4, delta)) * 10) / 10;
+    attributeEffectsByKey[a] = {
+      attribute: ALL_ATTR_LABELS[a] || a,
+      deltaFiveYear: fiveYearDeltas[a],
+      reason: effectText(fiveYearDeltas[a], plan.label)
+    };
+  });
 
   const seasons = [];
-  let state = { ...currentAttrs };
   for (let year = 1; year <= 5; year++) {
     const nextAttrs = {};
+    const attributeDeltas = {};
     profileAttrs.forEach(a => {
-      const isPriority = plan.boosts.includes(a);
-      const growth = (isPriority ? plan.priorityBoost : plan.supportBoost) * ageFactor * (confidence.score / 75);
-      const drag = !isPriority && plan.drag ? plan.drag : 0;
-      nextAttrs[a] = Math.round(Math.max(1, Math.min(9.8, (state[a] || 5) + growth - drag)) * 10) / 10;
+      const scaledDelta = fiveYearDeltas[a] * (year / 5) * (0.85 + confidence.score / 300);
+      attributeDeltas[a] = Math.round(scaledDelta * 10) / 10;
+      nextAttrs[a] = Math.round(Math.max(1, Math.min(10, (currentAttrs[a] || 5) + scaledDelta)) * 10) / 10;
     });
-    state = nextAttrs;
     const simulated = { ...player, ...nextAttrs };
     const overall = Math.round(computeOverall(simulated));
     const value = projectedValue(simulated, overall);
@@ -167,40 +214,67 @@ function attributeDevelopment(player, facts, inputParams = {}) {
       transferValue: value.value,
       transferValueFormatted: value.formatted,
       rankingImpact: overall >= 85 ? 'Elite academy watchlist range' : overall >= 75 ? 'Strong regional academy range' : overall >= 65 ? 'County and trial-ready range' : 'Developing grassroots range',
-      attributes: nextAttrs
+      attributes: nextAttrs,
+      attributeDeltas
     });
   }
+  const generated = {};
+  seasons.forEach(s => { generated[s.year] = generatedAttributes(s.attributes); });
 
   return {
     type: 'Attribute Development',
     focus: plan.label,
     currentOverall: Math.round(computeOverall(player)),
     currentTransferValue: transferValue(player),
+    currentAttributes: currentAttrs,
     confidence,
     seasons,
-    attributeEffects: plan.boosts.map(a => ({ attribute: a, direction: 'up', reason: 'Primary focus attribute in this plan.' })),
-    tradeOffs: profileAttrs.filter(a => !plan.boosts.includes(a)).slice(0, 5).map(a => ({ attribute: a, direction: plan.drag ? 'slight down pressure' : 'stable', reason: 'Not a primary focus area.' })),
+    attributeEffectsByKey,
+    attributeEffects: Object.keys(attributeEffectsByKey).map(k => attributeEffectsByKey[k]),
+    generatedAttributes: generated,
+    tradeOffs: profileAttrs.filter(a => fiveYearDeltas[a] < 0).map(a => ({ attribute: a, direction: 'down', reason: attributeEffectsByKey[a].reason })),
     visualisation: { labels: seasons.map(s => 'Year ' + s.year), overall: seasons.map(s => s.overall), transferValue: seasons.map(s => s.transferValue) },
-    summary: 'This plan projects how a structured focus could change attributes, overall ranking and estimated transfer value over five football years.',
+    paragraphs: [
+      'Your focus was ' + plan.label + '. For ' + playerLabel + ', ScoutLink projects the biggest movement in ' + plan.boosts.map(a => ALL_ATTR_LABELS[a] || a).slice(0, 4).join(', ') + ', while every coach-rated attribute is still tracked so trade-offs are visible.',
+      'The five-year view caps attributes at 10 and blends age runway, current coach ratings, recorded match evidence and position-specific value baselines. Use the year selector to inspect the exact expected attribute movement for years 1 to 5.'
+    ],
+    summary: 'Your focus was ' + plan.label + ' and this will change ' + playerLabel + "'s individual attributes, projected overall and estimated value over five years.",
     disclaimer: DISCLAIMER
   };
 }
 
-function roiAnalysis(player, facts, inputParams = {}) {
+function roiAnalysis(player, facts, inputParams = {}, context = {}) {
   const goal = inputParams.financialGoal || inputParams.goal || 'Balanced value growth';
-  const development = attributeDevelopment(player, facts, { focus: inputParams.focus || 'Balanced Growth' });
+  const development = attributeDevelopment(player, facts, { focus: inputParams.focus || 'Balanced Growth' }, context);
   const current = transferValue(player).value || 0;
-  const year3 = development.seasons[2]?.transferValue || current;
-  const year5 = development.seasons[4]?.transferValue || year3;
+  const playerLabel = playerName(player);
+  const teamName = context.scoutTeam?.team_name || context.scoutTeam?.club_name || context.scout?.club_name || 'your scout team';
   const acquisitionCost = Number(inputParams.acquisitionCost) || Math.round(current * 0.18);
-  const annualDevelopmentCost = Number(inputParams.annualDevelopmentCost) || 2500;
+  const annualDevelopmentCost = Number(inputParams.annualDevelopmentCost) || (goal === 'First-team contribution' ? 3500 : goal === 'Low-cost high ceiling' ? 1800 : 2500);
   const scoutingCost = Number(inputParams.scoutingCost) || 750;
-  const totalCost3 = acquisitionCost + scoutingCost + annualDevelopmentCost * 3;
-  const totalCost5 = acquisitionCost + scoutingCost + annualDevelopmentCost * 5;
-  const roi3 = totalCost3 > 0 ? Math.round(((year3 - totalCost3) / totalCost3) * 100) : 0;
-  const roi5 = totalCost5 > 0 ? Math.round(((year5 - totalCost5) / totalCost5) * 100) : 0;
+  const projection = development.seasons.map(s => {
+    const totalCost = acquisitionCost + scoutingCost + annualDevelopmentCost * s.year;
+    const roiPercent = totalCost > 0 ? Math.round(((s.transferValue - totalCost) / totalCost) * 100) : 0;
+    return {
+      horizon: 'Year ' + s.year,
+      year: s.year,
+      projectedValue: s.transferValue,
+      projectedValueFormatted: formatCurrency(s.transferValue),
+      totalCost,
+      totalCostFormatted: formatCurrency(totalCost),
+      roiPercent
+    };
+  });
+  const year3 = projection[2] || projection[projection.length - 1];
+  const year5 = projection[4] || year3;
   const confidence = dataConfidence(player, facts);
-  const suitability = roi5 >= 80 && confidence.score >= 60 ? 'Strong financial fit' : roi5 >= 25 ? 'Monitor and negotiate carefully' : 'High-risk financial fit';
+  const suitability = year5.roiPercent >= 80 && confidence.score >= 60 ? 'Strong financial fit' : year5.roiPercent >= 25 ? 'Monitor and negotiate carefully' : 'High-risk financial fit';
+  const paragraphOne = goal + ' is the financial goal for ' + teamName + '. On current evidence, ' + playerLabel + ' starts at ' + formatCurrency(current) + ' and projects to ' + year5.projectedValueFormatted + ' by ' + year5.horizon.toLowerCase() + ', against a modelled total cost of ' + year5.totalCostFormatted + '.';
+  const paragraphTwo = suitability === 'Strong financial fit'
+    ? 'This is a positive financial case if the team can maintain development minutes and avoid overpaying at entry. ScoutLink would treat the player as a worthwhile target because upside, position baseline and evidence confidence are pulling in the same direction.'
+    : suitability === 'Monitor and negotiate carefully'
+      ? 'This is investable only with disciplined acquisition cost. The profile has enough value upside to keep watching, but the margin can disappear quickly if development costs rise or match evidence weakens.'
+      : 'This is not a strong financial recommendation right now. The projected upside does not sufficiently clear the cost base, so ScoutLink would keep the player in monitoring rather than pushing for recruitment spend.';
 
   return {
     type: 'ROI Analysis',
@@ -214,32 +288,41 @@ function roiAnalysis(player, facts, inputParams = {}) {
       scoutingCost,
       scoutingCostFormatted: formatCurrency(scoutingCost)
     },
-    projection: [
-      { horizon: '3 years', projectedValue: year3, projectedValueFormatted: formatCurrency(year3), totalCost: totalCost3, totalCostFormatted: formatCurrency(totalCost3), roiPercent: roi3 },
-      { horizon: '5 years', projectedValue: year5, projectedValueFormatted: formatCurrency(year5), totalCost: totalCost5, totalCostFormatted: formatCurrency(totalCost5), roiPercent: roi5 }
-    ],
+    projection,
     suitability,
     confidence,
-    recommendation: suitability === 'Strong financial fit' ? 'Financially attractive if the scouting objective is resale growth or academy pathway depth.' : suitability === 'Monitor and negotiate carefully' ? 'Worth monitoring, but acquisition and development costs should be controlled.' : 'Do not treat this as a priority financial target until more evidence improves the value case.',
-    visualisation: { labels:['Current','Year 3','Year 5'], values:[current, year3, year5], costs:[0, totalCost3, totalCost5] },
+    recommendation: paragraphTwo,
+    paragraphs: [paragraphOne, paragraphTwo],
+    summary: 'For ' + teamName + ', the ' + goal.toLowerCase() + ' case for ' + playerLabel + ' is: ' + suitability + '.',
+    visualisation: { labels:['Current'].concat(projection.map(p => p.horizon)), values:[current].concat(projection.map(p => p.projectedValue)), costs:[0].concat(projection.map(p => p.totalCost)) },
     disclaimer: DISCLAIMER
   };
 }
 
-function scenarioPrediction(player, facts, inputParams = {}) {
+function scenarioPrediction(player, facts, inputParams = {}, context = {}) {
   const scenario = MATCH_SCENARIOS.find(s => s.key === inputParams.scenarioKey || s.label === inputParams.scenario) || MATCH_SCENARIOS[0];
   const isGk = getPosGroup(player.position_group || player.primary_position) === 'Goalkeeper';
+  const playerLabel = playerName(player);
+  const teamName = context.scoutTeam?.team_name || context.scout?.club_name || 'your scout team';
   const relevantAttrs = scenario.gk && !isGk ? ['positioning','composure','jumping','heading','strength'] : scenario.attrs;
   const score = Math.round(relevantAttrs.reduce((sum, a) => sum + attr100(player, a), 0) / relevantAttrs.length);
   const confidence = dataConfidence(player, facts);
-  const adjusted = Math.round(score * 0.82 + confidence.score * 0.18);
-  const recommendation = adjusted >= 75 ? 'Flourish' : adjusted >= 58 ? 'Usable with support' : 'Avoid as a repeated tactical demand';
+  const gkPenalty = scenario.gk && isGk ? 6 : 0;
+  const adjusted = Math.round(score * 0.84 + confidence.score * 0.16 - gkPenalty);
+  const recommendation = adjusted >= 78 ? 'Flourish' : adjusted >= 62 ? 'Usable with support' : 'Avoid as a repeated tactical demand';
   const risk = adjusted >= 75 ? 'Low' : adjusted >= 58 ? 'Medium' : 'High';
+  const scenarioPhrase = 'The match scenario was ' + scenario.label + '.';
+  const verdict = recommendation === 'Flourish'
+    ? playerLabel + ' should flourish here because the strongest evidence areas line up with the repeated actions this scenario demands.'
+    : recommendation === 'Usable with support'
+      ? playerLabel + ' can be used in this scenario, but ' + teamName + ' should protect the weaker moments through role clarity, nearby support and managed exposure.'
+      : playerLabel + ' should not be repeatedly exposed to this scenario yet. The current evidence suggests the risk would outweigh the tactical benefit unless the role is heavily protected.';
+  const gkNote = scenario.gk && isGk ? 'Goalkeeper scenarios are scored more strictly because errors in command, handling or positioning are usually high-consequence actions.' : '';
 
   return {
     type: 'Match Scenario Prediction',
     scenario: scenario.label,
-    predictedBehaviour: 'In this scenario the player ' + scenario.behaviour + '.',
+    predictedBehaviour: 'In this scenario ' + playerLabel + ' ' + scenario.behaviour + '.',
     scenarioScore: adjusted,
     rawScenarioFit: score,
     risk,
@@ -247,6 +330,8 @@ function scenarioPrediction(player, facts, inputParams = {}) {
     confidence,
     evidence: relevantAttrs.map(a => ({ attribute: a, score: Math.round(attr100(player, a)) })),
     tacticalNote: recommendation === 'Flourish' ? 'This profile fits the scenario well enough to be a positive selection trigger.' : recommendation === 'Usable with support' ? 'The player can be used here if the team shape protects their weaker evidence areas.' : 'Avoid building a game model that repeatedly exposes this scenario for this player.',
+    paragraphs: [scenarioPhrase + ' ' + verdict, gkNote || 'ScoutLink blends the player age, position, coach-rated attributes, physical profile and recent match evidence so the output is strict when the evidence is thin and more confident when match facts support the rating.'],
+    summary: scenarioPhrase + ' The result was ' + playerLabel + ' will ' + recommendation.toLowerCase() + ' with a scenario score of ' + adjusted + '/100.',
     visualisation: { labels: relevantAttrs, values: relevantAttrs.map(a => Math.round(attr100(player, a))) },
     scenarios: MATCH_SCENARIOS.map(s => ({ key: s.key, label: s.label, gk: !!s.gk })),
     disclaimer: DISCLAIMER
@@ -296,6 +381,12 @@ async function updateRemaining(scout, remaining) {
   }
 }
 
+async function loadScoutTeam(scout) {
+  if (!scout.scout_team_id) return null;
+  const { data } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
+  return data || null;
+}
+
 function canonicalType(type) {
   if (type === 'Attribute trajectory') return 'Attribute Development';
   if (type === 'Transfer value trajectory') return 'ROI Analysis';
@@ -324,12 +415,14 @@ router.post('/run', requireAuth, requireRole('Scout'), async (req, res) => {
     const { data: player, error: playerErr } = await supabase.from('players').select('*').eq('id', playerId).single();
     if (playerErr || !player) return res.status(404).json({ error: 'Player not found' });
     const { data: facts } = await supabase.from('match_facts').select('*').eq('player_id', playerId).order('match_date', { ascending: false }).limit(10);
+    const scoutTeam = await loadScoutTeam(scout);
+    const context = { scout, scoutTeam };
     const type = canonicalType(predictionType);
     const ip = inputParams || {};
     let result;
-    if (type === 'Attribute Development') result = attributeDevelopment(player, facts || [], ip);
-    else if (type === 'ROI Analysis') result = roiAnalysis(player, facts || [], ip);
-    else if (type === 'Match Scenario Prediction') result = scenarioPrediction(player, facts || [], ip);
+    if (type === 'Attribute Development') result = attributeDevelopment(player, facts || [], ip, context);
+    else if (type === 'ROI Analysis') result = roiAnalysis(player, facts || [], ip, context);
+    else if (type === 'Match Scenario Prediction') result = scenarioPrediction(player, facts || [], ip, context);
     else result = fallbackPrediction(player, facts || [], type);
 
     const { data: log, error: logErr } = await supabase.from('predictions_log').insert({

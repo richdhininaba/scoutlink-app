@@ -101,10 +101,10 @@
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){if(typeof Auth!=='undefined')Auth.clear();navigateClean('login.html?logout=1');}
 
 function initNav(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u){
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
   document.getElementById('resultsContainer').addEventListener('click',function(e){
     var card=e.target.closest('.scout-card');
-    if(card&&card.dataset.pid)window.location.href='player-profile.html?id='+card.dataset.pid;
+    if(card&&card.dataset.pid)navigateClean('player-profile.html?id='+card.dataset.pid);
   });
   document.getElementById('pagination').addEventListener('click',function(e){
     var btn=e.target.closest('[data-page]');

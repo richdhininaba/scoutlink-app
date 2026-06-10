@@ -53,12 +53,12 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav(){
-if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}
+if(!Auth.isLoggedIn()||Auth.type!=='Player'){navigateClean('login.html');return;}
 if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Player');
 var u=Auth.user,uel=document.getElementById('sidebarUser');
 if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Player</div></div></div>';
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function relTime(ts){var d=new Date(ts),now=new Date(),diff=Math.floor((now-d)/1000);if(diff<60)return'Just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return Math.floor(diff/86400)+'d ago';}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 

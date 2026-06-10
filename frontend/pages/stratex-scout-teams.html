@@ -67,7 +67,7 @@
 <script src="../js/main.js"></script>
 <script>
 var allTeams=[], allScouts=[], currentTeamId=null, teamScouts=[];
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function safe(v,f){return (v===null||v===undefined||v==='')?(f||'--'):String(v);}
 function infoRow(label,value){return '<div style="background:#0d1117;border:1px solid #243447;border-radius:8px;padding:12px"><div style="color:#90A4AE;font-size:12px;margin-bottom:4px">'+label+'</div><div style="color:#E0E0E0;font-weight:800">'+safe(value)+'</div></div>';}
 function scoutCountForTeam(id){return allScouts.filter(function(s){return s.scout_team_id===id;}).length;}

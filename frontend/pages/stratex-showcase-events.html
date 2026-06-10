@@ -117,7 +117,7 @@ async function loadScoutAttendees(eventId){
 'use strict';
 var allEvents = [];
 
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function fmtDate(d){if(!d)return 'N/A';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(d||'N/A');}}
 function safe(v,fb){return(v!==undefined&&v!==null&&v!=='')?String(v):(fb||'N/A');}
 

@@ -13,6 +13,7 @@
 .form-input:focus{border-color:#1d9e75;}
 .tab-btn{padding:8px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #30363d;background:#0d1117;color:#8b949e;transition:all .2s;}
 .tab-btn.active{border-color:#1d9e75;background:rgba(29,158,117,.1);color:#1d9e75;}
+#fileSection{display:block!important;}
 .video-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
 .video-modal.open{display:flex;}
 .video-modal-box{width:min(860px,100%);background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.5);}
@@ -43,14 +44,10 @@
 <div class="table-header"><h3>Upload Video Reel</h3></div>
 <div style="padding:20px">
 <div style="display:flex;gap:12px;margin-bottom:20px">
-<button class="tab-btn active" id="tabUrl">Video URL</button>
-<button class="tab-btn" id="tabFile">Upload File</button>
+<button class="tab-btn active" id="tabFile">Upload File</button>
 </div>
 
-<div id="urlSection">
-<div style="margin-bottom:14px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Video URL *</label><input type="url" id="videoUrl" class="form-input" placeholder="https://youtube.com/watch?v=... or Vimeo URL"></div>
-</div>
-<div id="fileSection" style="display:none">
+<div id="fileSection">
 <div style="margin-bottom:14px">
 <label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Video File</label>
 <div class="upload-zone" id="uploadZone"><div style="font-size:32px;margin-bottom:8px">&#9654;</div><p style="color:#8b949e;margin-bottom:8px">Click to choose a video file</p><p style="font-size:11px;color:#8b949e">MP4, MOV, AVI (max 100MB)</p><input type="file" id="videoFile" accept="video/*" style="display:none">
@@ -101,16 +98,16 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Coach'){window.location.href='login.html';return;}
+  if(!Auth.isLoggedIn()||Auth.type!=='Coach'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
   updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function toggleNotifPanel(){}
 
-var _uploadMode = 'url';
+var _uploadMode = 'file';
 var _videos = [];
 
 function streamableUrl(url){
@@ -213,16 +210,9 @@ function doUpload(){
     description:document.getElementById('videoDesc').value.trim()||null,
   };
 
-  if(_uploadMode==='url'){
-    var url=document.getElementById('videoUrl').value.trim();
-    if(!url){alert('Please enter a video URL.');btn.disabled=false;btn.textContent='Upload Video';return;}
-    payload.videoUrl=url;
-    saveVideo(payload,btn,msg);
-  } else {
-    var file=document.getElementById('videoFile').files[0];
-    if(!file){alert('Please select a video file.');btn.disabled=false;btn.textContent='Upload Video';return;}
-    directStorageUpload(file,payload,btn,msg);
-  }
+  var file=document.getElementById('videoFile').files[0];
+  if(!file){alert('Please select a video file.');btn.disabled=false;btn.textContent='Upload Video';return;}
+  uploadFileViaBackend(file,payload,btn,msg);
 }
 
 function safeFileName(name){
@@ -234,39 +224,23 @@ function encodeStoragePath(path){
   return String(path).split('/').map(encodeURIComponent).join('/');
 }
 
-function directStorageUpload(file,payload,btn,msg){
-  var cfg=window.SL_CONFIG||{};
-  if(!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY){
-    msg.textContent='Error: video storage is not configured on this page.';
-    msg.style.color='#f44336';
-    btn.disabled=false;btn.textContent='Upload Video';
-    return;
-  }
-  var user=Auth.user||{};
-  var owner=(user.id||user.userId||'coach').replace(/[^a-zA-Z0-9-]/g,'');
-  var filePath=['coach',owner,Date.now()+'-'+safeFileName(file.name)].join('/');
-  var uploadUrl=cfg.SUPABASE_URL.replace(/\/$/,'')+'/storage/v1/object/player-videos/'+encodeStoragePath(filePath);
+function uploadFileViaBackend(file,payload,btn,msg){
+  var fd=new FormData();
+  fd.append('file',file);
+  fd.append('title',payload.title);
+  fd.append('category',payload.category||'Highlight');
+  if(payload.playerId)fd.append('playerId',payload.playerId);
+  if(payload.description)fd.append('description',payload.description);
   msg.textContent='Uploading file...';
-  fetch(uploadUrl,{
+  fetch(API+'/api/videos/upload',{
     method:'POST',
-    headers:{
-      apikey:cfg.SUPABASE_ANON_KEY,
-      Authorization:'Bearer '+cfg.SUPABASE_ANON_KEY,
-      'Content-Type':file.type||'video/quicktime',
-      'x-upsert':'false'
-    },
-    body:file
+    headers:{Authorization:'Bearer '+Auth.token},
+    body:fd
   }).then(function(r){
-    return r.text().then(function(t){
-      var d={};try{d=JSON.parse(t||'{}');}catch(e){}
-      if(!r.ok)throw new Error(d.error||d.message||'Storage upload failed');
+    return r.json().catch(function(){return {};}).then(function(d){
+      if(!r.ok)throw new Error(d.error||d.detail||'Video upload failed');
       return d;
     });
-  }).then(function(){
-    payload.videoUrl=cfg.SUPABASE_URL.replace(/\/$/,'')+'/storage/v1/object/public/player-videos/'+encodeStoragePath(filePath);
-    payload.filePath=filePath;
-    msg.textContent='Saving video details...';
-    return api('POST','/api/videos',payload);
   }).then(function(){
     msg.textContent='Video uploaded!';msg.style.color='#1d9e75';
     resetForm(btn);loadVideos();
@@ -277,20 +251,9 @@ function directStorageUpload(file,payload,btn,msg){
   });
 }
 
-function saveVideo(payload,btn,msg){
-  api('POST','/api/videos',payload).then(function(){
-    msg.textContent='Video saved!';msg.style.color='#1d9e75';
-    resetForm(btn);loadVideos();
-  }).catch(function(e){
-    msg.textContent='Error: '+e.message;msg.style.color='#f44336';
-    btn.disabled=false;btn.textContent='Upload Video';
-  });
-}
-
 function resetForm(btn){
   btn.disabled=false;btn.textContent='Upload Video';
   document.getElementById('videoTitle').value='';
-  document.getElementById('videoUrl').value='';
   document.getElementById('videoDesc').value='';
   document.getElementById('videoFile').value='';
   document.getElementById('fileStatus').style.display='none';
@@ -301,19 +264,7 @@ document.addEventListener('DOMContentLoaded',function(){
   loadPlayers();
   loadVideos();
 
-  // Tab switching
-  document.getElementById('tabUrl').addEventListener('click',function(){
-    _uploadMode='url';
-    this.classList.add('active');document.getElementById('tabFile').classList.remove('active');
-    document.getElementById('urlSection').style.display='block';
-    document.getElementById('fileSection').style.display='none';
-  });
-  document.getElementById('tabFile').addEventListener('click',function(){
-    _uploadMode='file';
-    this.classList.add('active');document.getElementById('tabUrl').classList.remove('active');
-    document.getElementById('urlSection').style.display='none';
-    document.getElementById('fileSection').style.display='block';
-  });
+  _uploadMode='file';
 
   // Upload zone click
   document.getElementById('uploadZone').addEventListener('click',function(){

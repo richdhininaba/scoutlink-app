@@ -53,11 +53,11 @@
 <style>.tgl{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}.tgl input{opacity:0;width:0;height:0}.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#2d3f55;border-radius:24px;transition:.3s}.tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#546E7A;border-radius:50%;transition:.3s}input:checked+.tgl-slider{background:#5C6BC0}input:checked+.tgl-slider:before{transform:translateX(20px);background:#fff}</style>
 <script>
 var PLAYER_NAV=[{label:'Dashboard',href:'player-dashboard.html'},{label:'My Profile',href:'player-profile.html'},{label:'Videos',href:'player-videos.html'},{label:'Notifications',href:'player-notifications.html'},{label:'Settings',href:'player-settings.html'}];
-function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}
+function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){navigateClean('login.html');return;}
 if(typeof buildScoutNav==="function") buildScoutNav("sidebarNav","Player");var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=PLAYER_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},4000);}
 async function changePassword(){var p=document.getElementById('newPassword').value,c=document.getElementById('confirmPassword').value;if(!p||!c)return showToast('Fill in both fields.','error');if(p.length<8)return showToast('Min 8 characters.','error');if(p!==c)return showToast('Passwords do not match.','error');try{var res=await api('POST','/api/auth/change-password',{password:p});showToast('Password updated!','success');document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';}catch(e){showToast('Could not update password.','error');}}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 document.addEventListener('DOMContentLoaded',function(){initNav();});
 </script>
 <script src="../js/mobile.js"></script>

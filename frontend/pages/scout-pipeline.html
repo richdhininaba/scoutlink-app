@@ -67,13 +67,13 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav() {
-  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { navigateClean('login.html'); return; }
   if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
   if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function toggleNotifPanel(){}
 
 function stageClass(s){
@@ -101,9 +101,19 @@ function moveStage(pipelineId, newStage, badgeEl, selectEl){
     var stage=updated.stage||newStage;
     badgeEl.textContent=stage.replace(/_/g,' ');
     badgeEl.className='stage-chip '+stageClass(stage);
+    badgeEl.setAttribute('data-stage',stage);
   }).catch(function(e){
     alert('Could not update stage: '+e.message);
     selectEl.value=badgeEl.getAttribute('data-stage');
+  });
+}
+
+function startChat(playerId){
+  if(!playerId)return;
+  api('POST','/api/chat/threads',{playerId:playerId}).then(function(){
+    navigateClean('scout-chat.html');
+  }).catch(function(e){
+    alert(e.message||'Could not start chat for this player.');
   });
 }
 
@@ -140,7 +150,7 @@ document.addEventListener('DOMContentLoaded',function(){
       grouped[s].push(r);
     });
 
-    var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Estimated value</th><th>Stage</th><th>Move to stage</th><th>Added</th><th></th></tr></thead><tbody>';
+    var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Estimated value</th><th>Stage</th><th>Move to stage</th><th>Coach</th><th>Added</th><th></th></tr></thead><tbody>';
 
     stages.forEach(function(stage){
       var stageRows=grouped[stage]||[];
@@ -161,7 +171,7 @@ document.addEventListener('DOMContentLoaded',function(){
           '<td style="color:'+tvColor+';font-weight:'+(tv?'700':'400')+'">'+tvDisp+'</td>'+
           '<td><span class="stage-chip '+stageClass(r.stage)+'" id="stage-badge-'+rid+'" data-stage="'+r.stage+'">'+(r.stage||'watching').replace(/_/g,' ')+'</span></td>'+
           '<td>'+
-          '<select id="stage-sel-'+rid+'" style="background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer" onchange="(function(sel){var badge=document.getElementById(&quot;stage-badge-&quot;+rid+&quot;&quot;);moveStage(&quot;&quot;+rid+&quot;&quot;,sel.value,badge,sel);})(this)">'+
+          '<select id="stage-sel-'+rid+'" class="stage-select" data-pipeline-id="'+rid+'" style="background:#0d1117;color:#fff;border:1px solid #30363d;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer">'+
           '<option value="watching"'+(r.stage==='watching'?' selected':'')+'>Watching</option>'+
           '<option value="interested"'+(r.stage==='interested'?' selected':'')+'>Interested</option>'+
           '<option value="trial_pending"'+(r.stage==='trial_pending'?' selected':'')+'>Trial pending</option>'+
@@ -169,6 +179,7 @@ document.addEventListener('DOMContentLoaded',function(){
           '<option value="negotiating"'+(r.stage==='negotiating'?' selected':'')+'>Negotiating</option>'+
           '</select>'+
           '</td>'+
+          '<td><button class="btn btn-sm btn-outline" style="min-height:36px" data-chat-player="'+pid+'">Message coach</button></td>'+
           '<td style="color:var(--text3);font-size:11px">'+(r.created_at?r.created_at.slice(0,10):'--')+'</td>'+
           '<td><a href="player-profile.html?id='+pid+'" class="btn btn-sm btn-outline" style="min-height:36px">View</a></td>'+
           '</tr>';
@@ -177,6 +188,16 @@ document.addEventListener('DOMContentLoaded',function(){
 
     html+='</tbody></table></div>';
     document.getElementById('pipelineContent').innerHTML=html;
+    document.querySelectorAll('.stage-select').forEach(function(sel){
+      sel.addEventListener('change',function(){
+        var rid=this.getAttribute('data-pipeline-id');
+        var badge=document.getElementById('stage-badge-'+rid);
+        moveStage(rid,this.value,badge,this);
+      });
+    });
+    document.querySelectorAll('[data-chat-player]').forEach(function(btn){
+      btn.addEventListener('click',function(){startChat(this.getAttribute('data-chat-player'));});
+    });
 
   }).catch(function(e){
     document.getElementById('kpiTotal').textContent='0';

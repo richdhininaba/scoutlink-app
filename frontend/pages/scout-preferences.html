@@ -70,7 +70,7 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav() {
-  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { window.location.href = 'login.html'; return; }
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { navigateClean('login.html'); return; }
   if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
   var u = Auth.user, uel = document.getElementById('sidebarUser');
   if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
@@ -101,7 +101,7 @@ async function savePrefs() {
       footPreference: document.getElementById('footPref').value,
       otherRequirements: document.getElementById('otherReqs').value
     });
-    window.location.href='scout-dashboard.html';
+    navigateClean('scout-dashboard.html');
   } catch(e){err.textContent=e.message;err.classList.add('show');}
 }
 </script>

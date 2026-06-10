@@ -515,10 +515,30 @@ function grassrootsTransferValue(player) {
 const group = getPosGroup(player.positions || player.primary_position || player.specific_position);
 const age = calcAge(player.date_of_birth) ?? 12;
 const overall = computeOverall(player); // 0-100
+const position = String(player.specific_position || player.primary_position || '').toUpperCase();
 
-// Base values by position
-const BASE = { Forward: 70000, Midfielder: 60000, Defender: 52000, Goalkeeper: 52000 };
+// Base values by position. Attacking roles carry a higher scarcity premium.
+const BASE = { Forward: 78000, Midfielder: 62000, Defender: 52000, Goalkeeper: 48000 };
+if (['ST','CF','LW','RW','CAM'].includes(position)) BASE[group] = Math.max(BASE[group] || 0, 82000);
+if (['CB','LCB','RCB','CDM'].includes(position)) BASE[group] = Math.max(BASE[group] || 0, 56000);
 const base = BASE[group] || 52000;
+
+const KEY_ATTRS = {
+  Forward: ['shooting','positioning','pace','dribbling','composure'],
+  Midfielder: ['passing','vision','composure','stamina','dribbling'],
+  Defender: ['defending','tackling','positioning','heading','strength'],
+  Goalkeeper: ['gk_reflexes','gk_handling','gk_positioning','gk_distribution','composure']
+};
+const keyAttrs = KEY_ATTRS[group] || KEY_ATTRS.Midfielder;
+const positionalScore = avg(keyAttrs.map(k => attr(player, k, 50)), overall);
+const creativity = avg([attr(player,'passing',50), attr(player,'vision',50), attr(player,'dribbling',50)], 50);
+const outputScore = group === 'Forward'
+  ? avg([attr(player,'shooting',50), attr(player,'positioning',50), attr(player,'pace',50)], 50)
+  : group === 'Midfielder'
+    ? creativity
+    : group === 'Defender'
+      ? avg([attr(player,'defending',50), attr(player,'tackling',50), attr(player,'heading',50)], 50)
+      : avg([attr(player,'gk_reflexes',50), attr(player,'gk_handling',50), attr(player,'gk_distribution',50)], 50);
 
 // Rating multiplier
 let ratingMult;
@@ -528,12 +548,14 @@ else if (overall >= 76) ratingMult = 1.1;
 else if (overall >= 61) ratingMult = 0.9;
 else if (overall >= 41) ratingMult = 0.7;
 else ratingMult = 0.4;
+ratingMult *= 0.85 + (positionalScore / 100) * 0.28 + (outputScore / 100) * 0.12;
 
 // Age runway bonus
 let ageBonus = 1.0;
-if (age <= 9) ageBonus = 1.08;
-else if (age <= 12) ageBonus = 1.05;
-else if (age <= 14) ageBonus = 1.02;
+if (age <= 9) ageBonus = 1.12;
+else if (age <= 12) ageBonus = 1.08;
+else if (age <= 14) ageBonus = 1.04;
+else if (age >= 16) ageBonus = 0.92;
 
 // Appearances confidence
 const apps = Number(player.appearances) || 0;
@@ -547,7 +569,7 @@ let value = base * ratingMult * ageBonus * appsMult;
 value = Math.max(5000, Math.min(200000, value));
 value = Math.round(value / 1000) * 1000;
 const fmt = value >= 1000 ? '\u00a3' + (value/1000).toFixed(0) + 'K' : '\u00a3' + value;
-return { value, valueFormatted: fmt };
+return { value, valueFormatted: fmt, breakdown: { base, group, position, overall: Math.round(overall), positionalScore: Math.round(positionalScore), outputScore: Math.round(outputScore), age, appsMult, ageBonus } };
 }
 
 module.exports = { compatibilityScore, predictionScore, transferValue, predictedSalary,

@@ -33,7 +33,7 @@ function initMobileNav(){
     var soWrap=document.createElement('div');
     soWrap.id='mobileSidebarSignout';
     soWrap.className='sidebar-signout-mobile';
-    soWrap.innerHTML='<button class="btn btn-ghost" style="width:100%;justify-content:flex-start;color:#ff7b7b" onclick="if(typeof logout===\'function\')logout();else{localStorage.clear();window.location.href=\'login.html?logout=1\';}" >&#9166; Sign Out</button>';
+    soWrap.innerHTML='<button class="btn btn-ghost" style="width:100%;justify-content:flex-start;color:#ff7b7b" onclick="if(typeof logout===\'function\')logout();else if(typeof logoutToLogin===\'function\')logoutToLogin();else{localStorage.clear();window.location.href=\'/login?logout=1\';}" >&#9166; Sign Out</button>';
     sidebar.appendChild(soWrap);
   }
   // Inject backdrop

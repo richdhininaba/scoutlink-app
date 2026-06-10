@@ -7,9 +7,24 @@
 function getBase() {
   var host = window.location.hostname;
   if (host === 'scoutlink.app' || host === 'www.scoutlink.app') {
-    return '/frontend/pages/';
+    return '/';
   }
   return '/scoutlink-app/frontend/pages/';
+}
+
+function cleanAuthRoute(file) {
+  if (typeof cleanRouteFor === 'function') return cleanRouteFor(file);
+  var map = {
+    'login.html': '/login',
+    'scout-dashboard.html': '/scout/dashboard',
+    'scout-preferences.html': '/scout/preferences',
+    'coach-dashboard.html': '/coach/dashboard',
+    'player-dashboard.html': '/player/dashboard',
+    'stratex-dashboard.html': '/stratex/dashboard'
+  };
+  var host = window.location.hostname;
+  if ((host === 'scoutlink.app' || host === 'www.scoutlink.app') && map[file]) return map[file];
+  return getBase() + file;
 }
 
 const SL = {
@@ -64,7 +79,7 @@ const SL = {
     localStorage.removeItem('sl_user_email');
     localStorage.removeItem('sl_user_role');
     localStorage.removeItem('sl_user_data');
-    window.location.href = getBase() + 'login.html';
+    window.location.href = cleanAuthRoute('login.html');
   },
 
   async resetPassword(email) {
@@ -141,25 +156,24 @@ const SL = {
 
   // --- REDIRECT AFTER LOGIN ---
   redirectByRole(role, userData) {
-    const base = getBase();
     if (role === 'scout') {
       const hasPrefs = userData?.preferences_set;
-      window.location.href = base + (hasPrefs ? 'scout-dashboard.html' : 'scout-preferences.html');
+      window.location.href = cleanAuthRoute(hasPrefs ? 'scout-dashboard.html' : 'scout-preferences.html');
     } else if (role === 'coach') {
-      window.location.href = base + 'coach-dashboard.html';
+      window.location.href = cleanAuthRoute('coach-dashboard.html');
     } else if (role === 'player') {
-      window.location.href = base + 'player-dashboard.html';
+      window.location.href = cleanAuthRoute('player-dashboard.html');
     } else if (role === 'stratex') {
-      window.location.href = base + 'stratex-dashboard.html';
+      window.location.href = cleanAuthRoute('stratex-dashboard.html');
     } else {
-      window.location.href = base + 'login.html';
+      window.location.href = cleanAuthRoute('login.html');
     }
   },
 
   // Guard: redirect to login if not authenticated
   requireAuth() {
     if (!SL.isLoggedIn()) {
-      window.location.href = getBase() + 'login.html';
+      window.location.href = cleanAuthRoute('login.html');
       return false;
     }
     return true;

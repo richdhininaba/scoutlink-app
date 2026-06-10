@@ -41,7 +41,7 @@
 var allCoaches=[];
 function safe(v, fallback){return (v===null||v===undefined||v==='')?(fallback||'--'):String(v);}
 function dateFmt(v){return v?new Date(v).toLocaleDateString('en-GB'):'--';}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function closeCoachModal(){document.getElementById('coachModal').style.display='none';}
 
 async function loadPage() {

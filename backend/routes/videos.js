@@ -50,12 +50,13 @@ router.get('/', requireAuth, requireRole('Player','Coach','Scout','Stratex'), as
   }
 });
 
-// Add video (URL-based) for coaches
+// Add video metadata after a file-backed Supabase Storage upload.
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
     const { playerId, title, videoUrl, videoType, category, description, filePath } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
-    if (!videoUrl) return res.status(400).json({ error: 'videoUrl required' });
+    if (!filePath || !videoUrl) return res.status(400).json({ error: 'Only file uploads are supported for video reels.' });
+    if (!String(videoUrl).includes('/storage/v1/object/public/player-videos/')) return res.status(400).json({ error: 'Only ScoutLink storage video files are supported.' });
 
     const coachData = req.user.accountType === 'Coach' ? await getCoachTeam(req.user.id) : null;
     const coachTeamId = coachData ? coachData.team_id : null;

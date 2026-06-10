@@ -30,6 +30,7 @@ const CLEAN_ROUTES = {
   'match-facts.html':'/coach/match-facts',
   'coach-fixtures.html':'/coach/fixtures',
   'coach-video-reels.html':'/coach/video-reels',
+  'coach-chat.html':'/coach/chat',
   'coach-notifications.html':'/coach/notifications',
   'coach-settings.html':'/coach/settings',
   'scout-dashboard.html':'/scout/dashboard',
@@ -42,6 +43,7 @@ const CLEAN_ROUTES = {
   'compare-players.html':'/scout/compare-players',
   'scout-setup.html':'/scout/setup',
   'scout-events.html':'/scout/events',
+  'scout-chat.html':'/scout/chat',
   'scout-notifications.html':'/scout/notifications',
   'scout-settings.html':'/scout/settings',
   'scout-preferences.html':'/scout/preferences',
@@ -75,6 +77,15 @@ function applyTheme(theme) {
   document.body.classList.toggle('theme-light', next === 'light');
   document.body.classList.toggle('theme-dark', next === 'dark');
   localStorage.setItem('sl_theme', next);
+}
+
+function navigateClean(href) {
+  window.location.href = cleanRouteFor(href);
+}
+
+function logoutToLogin() {
+  Auth.clear();
+  navigateClean('login.html?logout=1');
 }
 
 applyCleanUrl();
@@ -188,6 +199,7 @@ window.initials = initials; window.posGroupColor = posGroupColor; window.ratingC
 window.ratingDisplay = ratingDisplay;
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
 window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
+window.navigateClean = navigateClean; window.logoutToLogin = logoutToLogin;
 
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', function(e) {

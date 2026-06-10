@@ -78,17 +78,17 @@
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var _allPlayers=[], _pipelineIds=[], _scoutTeam=null;
+var _allPlayers=[], _pipelineIds=[], _scoutTeam=null,_scoutPrefs={};
 var _filter1='all', _filter2='all';
 
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function toggleNotifPanel(){}
 
 function dOv(v){var n=parseFloat(v);return isNaN(n)?0:(n>10?n:n*10);}
@@ -237,6 +237,11 @@ function renderRecommendations(p1,p2){
     'Poor Goal Output':['shooting','positioning'],
   };
   var html='';
+  var setupBits=[];
+  if((_scoutTeam.team_weaknesses||[]).length)setupBits.push('weaknesses: '+(_scoutTeam.team_weaknesses||[]).join(', '));
+  if((_scoutPrefs.roleExpectations||[]).length)setupBits.push('role expectations: '+_scoutPrefs.roleExpectations.join(', '));
+  if((_scoutPrefs.longTermGoals||[]).length)setupBits.push('long-term goals: '+_scoutPrefs.longTermGoals.join(', '));
+  if(_scoutPrefs.playingStyle)setupBits.push('playing style: '+_scoutPrefs.playingStyle);
   (_scoutTeam.team_weaknesses||[]).forEach(function(w){
     var attrs=weaknessAttrs[w]||['overall_rating'];
     var key=attrs[0];
@@ -250,8 +255,15 @@ function renderRecommendations(p1,p2){
       var winner=v1>v2?n1:n2;var score=Math.max(v1,v2);
       sentence='<strong>'+winner+'</strong> is the stronger fit with a '+ATTR_LABELS[key]+' score of '+score.toFixed(1)+'.';
     }
-    html+='<div style="padding:10px 0;border-bottom:1px solid #30363d"><span style="color:#8b949e;font-size:12px">For <strong style="color:#fff">'+w+'</strong>: </span>'+sentence+'</div>';
+    html+='<div class="rec-row"><span style="color:#8b949e;font-size:12px">For <strong style="color:#fff">'+w+'</strong>: </span>'+sentence+'</div>';
   });
+  var n1=(p1.first_name||'')+' '+(p1.last_name||'');
+  var n2=(p2.first_name||'')+' '+(p2.last_name||'');
+  var c1=calcCompatScore(p1)||dOv(p1.overall_rating);
+  var c2=calcCompatScore(p2)||dOv(p2.overall_rating);
+  var preferred=c1>=c2?n1:n2;
+  html+='<p style="font-size:12px;color:#B0BEC5;line-height:1.7;margin-top:12px">Based on '+(setupBits.join('; ')||'your current scout setup')+', ScoutLink would currently lean towards <strong style="color:#fff">'+preferred+'</strong>. The recommendation is not just a weakness match: it also considers role fit, likely tactical demand, physical profile, overall rating and whether the player profile looks aligned with the longer-term recruitment goal.</p>';
+  html+='<p style="font-size:12px;color:#B0BEC5;line-height:1.7;margin-top:8px">If the team needs immediate problem-solving, favour the player who wins the relevant weakness attributes. If the goal is development or resale upside, use the profile page before deciding so compatibility, match evidence and prediction outputs can confirm the direction.</p>';
   return html;
 }
 
@@ -285,6 +297,7 @@ document.addEventListener('DOMContentLoaded',function(){
     _scoutTeam=d.scoutTeam||null;
     // Merge team weaknesses from preferences into scoutTeam
     var prefs = d.preferences||{};
+    _scoutPrefs=prefs;
     var weakSlugs = prefs.teamWeaknesses||[];
     var WMAP = {'insufficient_game_pace_and_speed':'Insufficient Game Pace and Speed','physical_fragility_and_injury_risk':'Physical Fragility and Injury Risk','lack_of_physical_presence':'Lack of Physical Presence','weak_defensive_base':'Weak Defensive Base','poor_defensive_output':'Poor Defensive Output','low_team_chemistry_and_leadership':'Low Team Chemistry and Leadership','technical_deficiencies_under_pressure':'Technical Deficiencies Under Pressure','tactical_awareness_gaps':'Tactical Awareness Gaps','poor_goal_output':'Poor Goal Output','poor_set_pieces':'Insufficient Game Pace and Speed','high_defensive_line':'Weak Defensive Base','slow_build_up':'Tactical Awareness Gaps','weak_left_flank':'Lack of Physical Presence','pace_exploitable':'Insufficient Game Pace and Speed','poor_second_ball':'Tactical Awareness Gaps'};
     if(_scoutTeam) _scoutTeam.team_weaknesses = weakSlugs.map(function(s){return WMAP[s]||s;});

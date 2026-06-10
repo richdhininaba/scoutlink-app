@@ -16,7 +16,7 @@
 .stat-box{background:#0a0f1e;border-radius:8px;padding:12px;text-align:center;}
 .stat-num{font-size:22px;font-weight:800;}
 .stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
-.match-row{padding:10px 12px;background:#0a0f1e;border-radius:8px;margin-bottom:6px;}
+.match-row{padding:12px 14px;background:#0a0f1e;border-radius:8px;margin-bottom:8px;min-height:78px;}
 .compat-bar-row{margin-bottom:10px;}
 .compat-bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
 .compat-bar-bg{height:8px;background:#1e2a3a;border-radius:4px;overflow:hidden;}
@@ -50,7 +50,11 @@
 .attr-details summary::-webkit-details-marker{display:none}
 .attr-details[open] summary{border-radius:10px 10px 0 0;border-bottom-color:transparent}
 .attr-details .attr-inner{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-top:none;border-radius:0 0 10px 10px;padding:16px 18px;margin-bottom:20px}
-.fixture-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#0a0f1e;border-radius:8px;margin-bottom:8px;gap:10px;flex-wrap:wrap;}
+.fixture-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#0a0f1e;border-radius:8px;margin-bottom:8px;gap:10px;flex-wrap:wrap;min-height:78px;}
+.physical-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.physical-metric{background:#0a0f1e;border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px;}
+.physical-metric span{display:block;font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;font-weight:800;}
+.physical-metric b{font-size:13px;color:#e6edf3;}
 .fixture-date{font-size:12px;color:#8b949e;min-width:80px;}
 .fixture-opponent{font-size:14px;font-weight:600;flex:1;}
 .fixture-venue{font-size:12px;color:#8b949e;}
@@ -133,10 +137,11 @@ var _profileFixtures=[];
 var _profilePlayer=null;
 var _profileAnalysis=null;
 var _lastPredictionLogId=null;
+var _lastPredictionResult=null;
 function matchPerf(v){var n=parseFloat(v);if(isNaN(n))return 0;return Math.max(0,Math.min(100,Math.round(n<=10?n*10:n)));}
 function confidenceInfo(count){var n=parseInt(count)||0;if(n<1)return{label:'No match evidence',color:'#f44336',text:'No match facts have been recorded yet.'};if(n<5)return{label:'Low confidence',color:'#FF9800',text:'Based on fewer than 5 games. Add more match facts before relying heavily on this score.'};if(n<10)return{label:'Medium confidence',color:'#FFC107',text:'Enough games for a useful early read, but more fixtures will improve the signal.'};return{label:'High confidence',color:'#1d9e75',text:'This rating is supported by a stronger set of match records.'};}
 function scoreText(m){if(m.home_score===null||m.home_score===undefined||m.away_score===null||m.away_score===undefined)return 'Score not entered';return String(m.home_score)+' - '+String(m.away_score);}
-function resultInfo(m){var r=(m.result||'').toLowerCase();if(!r&&m.home_score!==undefined&&m.away_score!==undefined&&m.home_score!==null&&m.away_score!==null){var h=Number(m.home_score),a=Number(m.away_score);if(!isNaN(h)&&!isNaN(a))r=h>a?'win':h<a?'loss':'draw';}if(r==='win')return{label:'W',text:'Win',color:'#1d9e75'};if(r==='loss')return{label:'L',text:'Loss',color:'#f44336'};if(r==='draw')return{label:'D',text:'Draw',color:'#FFC107'};return{label:'-',text:'Result pending',color:'#8b949e'};}
+function resultInfo(m){var r=(m.result||'').toLowerCase();if(!r&&m.home_score!==undefined&&m.away_score!==undefined&&m.home_score!==null&&m.away_score!==null){var h=Number(m.home_score),a=Number(m.away_score);if(!isNaN(h)&&!isNaN(a))r=h>a?'win':h<a?'loss':'draw';}if(r==='win')return{label:'W',text:'Win',color:'#1d9e75'};if(r==='loss')return{label:'L',text:'Loss',color:'#f44336'};if(r==='draw')return{label:'D',text:'Draw',color:'#FFC107'};return{label:'',text:'',color:'#8b949e'};}
 function streamableUrl(url){if(!url)return'';var u=String(url);if(u.indexOf('www.dropbox.com')>-1)u=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','');return u;}
 function embedHtml(url){
 var u=streamableUrl(url);
@@ -184,7 +189,7 @@ function cmRangeToFeet(range){var nums=String(range||'').match(/\d+/g)||[];if(nu
 function sentenceCase(v){return String(v||'--').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
 
 function initNav(){
-if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
+if(!Auth.isLoggedIn()){navigateClean('login.html');return;}
 var role=Auth.type;
 if(role==='Scout'||role==='Coach'){if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav',role);}
 else{var nav=document.getElementById('sidebarNav');if(nav)nav.innerHTML='<a class="nav-item" href="stratex-dashboard.html">Dashboard</a>';}
@@ -192,7 +197,7 @@ var u=Auth.user,uel=document.getElementById('sidebarUser');
 if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+role+'</div></div></div>';
 updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 
 // ===================== REGISTER INTEREST =====================
@@ -215,12 +220,12 @@ btn.textContent='In Pipeline';btn.style.background='#1d9e75';btn.style.color='#0
 }else{
 _alreadyInPipeline=true;
 _interestsRemaining=r.interestsRemaining||(_interestsRemaining-1);
-btn.textContent='Added to Pipeline â';btn.style.background='#1d9e75';btn.style.color='#000';btn.disabled=true;
+btn.textContent='Added to Pipeline';btn.style.background='#1d9e75';btn.style.color='#000';btn.disabled=true;
 var rem=document.getElementById('interestsRemainingCount');
 if(rem){rem.textContent=_interestsRemaining+' interests remaining';}
 }
 }).catch(function(e){
-btn.disabled=false;btn.textContent='+ Register Interest';
+btn.disabled=false;btn.textContent='Register Interest';
 alert(e.message||'Could not add to pipeline. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');
 });
 }
@@ -282,13 +287,35 @@ if(predType==='roi_analysis')return{financialGoal:document.getElementById('finan
 if(predType==='match_scenario')return{scenarioKey:document.getElementById('scenarioSelect')?document.getElementById('scenarioSelect').value:'protect_lead'};
 return{};
 }
+function renderDevelopmentYear(year){
+var result=_lastPredictionResult||{};
+var season=(result.seasons||[]).find(function(s){return String(s.year)===String(year);})||(result.seasons||[])[0];
+var el=document.getElementById('devYearDetail');
+if(!el||!season)return;
+var current=result.currentAttributes||{};
+var effects=result.attributeEffectsByKey||{};
+var attrs=Object.keys(season.attributes||{});
+var rows=attrs.map(function(k){
+var next=Number(season.attributes[k]||0);
+var cur=Number(current[k]||0);
+var delta=season.attributeDeltas&&season.attributeDeltas[k]!==undefined?Number(season.attributeDeltas[k]):(next-cur);
+var deltaText=(delta>=0?'+':'')+delta.toFixed(1);
+var color=delta>0?'#1d9e75':delta<0?'#f44336':'#8b949e';
+var reason=effects[k]&&effects[k].reason?effects[k].reason:'Maintained by the selected plan.';
+return '<tr><td>'+attrLabel(k)+'</td><td>'+cur.toFixed(1)+'</td><td style="color:'+color+';font-weight:800">'+deltaText+'</td><td>'+next.toFixed(1)+'</td><td style="font-size:12px;color:#8b949e">'+safe(reason)+'</td></tr>';
+}).join('');
+var gen=result.generatedAttributes&&result.generatedAttributes[season.year]?result.generatedAttributes[season.year]:{};
+var genHtml=Object.keys(gen).length?'<div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px">'+Object.keys(gen).map(function(k){return '<div style="background:#111820;border:1px solid #26313d;border-radius:8px;padding:10px"><div style="font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em">'+safe(k.replace(/_/g,' '))+'</div><b style="font-size:18px;color:#fff">'+Math.round(gen[k])+'/100</b></div>';}).join('')+'</div>':'';
+el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0"><div class="prediction-card"><div class="stat-lbl">Year</div><div class="stat-val">'+season.year+'</div></div><div class="prediction-card"><div class="stat-lbl">Forecast overall</div><div class="stat-val">'+season.overall+'/100</div></div><div class="prediction-card"><div class="stat-lbl">Forecast value</div><div class="stat-val" style="font-size:20px">'+safe(season.transferValueFormatted)+'</div></div></div><table class="sl-table"><thead><tr><th>Attribute</th><th>Now</th><th>Effect</th><th>Year '+season.year+'</th><th>Why</th></tr></thead><tbody>'+rows+'</tbody></table>'+genHtml;
+}
 function renderEnhancedPrediction(result){
+_lastPredictionResult=result||{};
 var html='<div style="background:#0d1117;border-radius:8px;padding:16px;margin-top:8px">';
 html+='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">'+safe(result.type)+'</div><div style="font-size:12px;color:#8b949e">'+safe(result.summary||result.recommendation||result.financialGoal||result.scenario)+'</div></div><button class="btn btn-sm btn-outline" onclick="exportLastPrediction()">Export PDF</button></div>';
 if(result.confidence)html+='<div style="font-size:12px;color:#8b949e;margin-bottom:12px"><b style="color:#fff">Data confidence:</b> '+safe(result.confidence.label)+' - '+safe(result.confidence.note)+'</div>';
-if(result.seasons){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Overall</th><th>Transfer value</th><th>Ranking impact</th></tr></thead><tbody>'+result.seasons.map(function(s){return'<tr><td>Year '+s.year+'</td><td>'+s.overall+'/100</td><td>'+safe(s.transferValueFormatted)+'</td><td>'+safe(s.rankingImpact)+'</td></tr>';}).join('')+'</tbody></table>';}
-else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Horizon</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+s.horizon+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><p style="font-size:13px;color:#B0BEC5;margin-top:12px">'+safe(result.recommendation)+'</p>';}
-else if(result.evidence){html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe(result.predictedBehaviour)+'</p><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
+if(result.seasons){html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><label style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#8b949e">View year</label><select id="devYearSelect" onchange="renderDevelopmentYear(this.value)" style="max-width:160px">'+result.seasons.map(function(s){return '<option value="'+s.year+'">Year '+s.year+'</option>';}).join('')+'</select></div><div id="devYearDetail"></div><p style="font-size:13px;color:#B0BEC5;line-height:1.6;margin-top:12px">'+safe((result.paragraphs&&result.paragraphs[0])||result.summary)+'</p>';}
+else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+safe(s.horizon)+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><p style="font-size:13px;color:#B0BEC5;margin-top:12px;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.recommendation)+'</p>';}
+else if(result.evidence){html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.predictedBehaviour)+'</p><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
 else{html+='<pre style="white-space:pre-wrap;color:#B0BEC5;font-size:12px">'+JSON.stringify(result,null,2)+'</pre>';}
 html+='<p style="font-size:11px;color:#8b949e;margin-top:12px">'+safe(result.disclaimer)+'</p></div>';
 return html;
@@ -306,6 +333,7 @@ var result=r.result||r||{};
 _lastPredictionLogId=r.logId||null;
 if(predType==='attribute_development'||predType==='roi_analysis'||predType==='match_scenario'){
 res.innerHTML=renderEnhancedPrediction(result);
+if(result.seasons)renderDevelopmentYear(1);
 if(typeof r.creditsRemaining==='number'){var el2=document.getElementById('predCredits');if(el2)el2.textContent=r.creditsRemaining+' prediction credits remaining';}
 return;
 }
@@ -422,7 +450,7 @@ attrRows+='<div class="attr-row"><span class="attr-label">'+attrLabel(a)+'</span
 // Action buttons
 var actionBtns='';
 if(Auth.type==='Scout'){
-var btnLabel=_alreadyInPipeline?'In Pipeline':'+ Register Interest';
+var btnLabel=_alreadyInPipeline?'In Pipeline':'Register Interest';
 var btnStyle=_alreadyInPipeline?'background:#1d9e75;color:#000;':'';
 actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">'+
 '<button id="btnInterest" class="btn btn-primary action-btn" style="'+btnStyle+'" '+((_alreadyInPipeline)?'disabled':'')+'>'+btnLabel+'</button>'+
@@ -441,16 +469,16 @@ var res=resultInfo(m);
 var cards='';
 if(Number(m.yellow_cards||0)>0)cards+='<span style="color:#FFC107;font-weight:800">'+Number(m.yellow_cards||0)+'Y</span>';
 if(Number(m.red_cards||0)>0)cards+='<span style="color:#f44336;font-weight:800;margin-left:6px">'+Number(m.red_cards||0)+'R</span>';
-return '<div class="match-row">'+
+return '<div class="match-row" onclick="openMatchDetail('+idx+')" style="cursor:pointer">'+
 '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
 '<div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:700">'+(m.opponent_name||m.opponent||'Unknown Opponent')+'</div>'+
-'<div class="match-meta-row"><span>'+(m.competition||m.format||'Match')+'</span><span>&middot;</span><span>'+(m.match_date?m.match_date.slice(0,10):'--')+'</span><span>&middot;</span><span>'+scoreText(m)+'</span><span class="result-pill" style="background:'+res.color+'22;color:'+res.color+'">'+res.text+'</span></div></div>'+
+'<div class="match-meta-row"><span>'+(m.competition||m.format||'Match')+'</span><span>&middot;</span><span>'+(m.match_date?m.match_date.slice(0,10):'--')+'</span><span>&middot;</span><span>'+scoreText(m)+'</span>'+(res.text?'<span class="result-pill" style="background:'+res.color+'22;color:'+res.color+'">'+res.text+'</span>':'')+'</div></div>'+
 '<div style="text-align:right;font-size:12px;min-width:150px">'+
 '<div style="font-weight:800;color:'+pCol2+'">Perf '+(perf||'--')+'/100</div>'+
 '<div style="margin-top:4px"><span style="color:#1d9e75;font-weight:800">'+(m.goals_scored||m.goals||0)+'G</span> '+
 '<span style="color:#42A5F5;font-weight:800">'+(m.assists||0)+'A</span>'+
 (cards?'<span style="margin-left:8px">'+cards+'</span>':'<span style="color:#8b949e;margin-left:8px">0 cards</span>')+
-'</div><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="openMatchDetail('+idx+')">View match</button></div></div></div>';
+'</div></div></div></div>';
 }).join('');
 }else{matchHtml='<div style="text-align:center;padding:20px;color:#8b949e;font-size:13px">No match facts recorded yet for this player.</div>';}
 
@@ -547,12 +575,14 @@ statBadge('Appearances',apps)+statBadge('Goals',goals)+statBadge('Assists',assts
 // Physical card
 '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Physical Profile</div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:10px">HEIGHT: <b>'+heightLabel+' ('+heightRange+')</b></div>'+
-'<div style="font-size:13px;color:#8b949e;margin-bottom:10px">Feet/inches: <b style="color:#e6edf3">'+heightFeet+'</b></div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:10px">Build: <b>'+buildLabel+'</b></div>'+
-'<div style="font-size:13px;color:#8b949e;margin-bottom:10px">Weight range: <b style="color:#e6edf3">'+safe(p.weight_range_kg)+'</b></div>'+
-'<div style="font-size:13px;color:#e6edf3;margin-bottom:8px">Nationality: <b>'+safe(p.nationality)+'</b></div>'+
-'<div style="font-size:13px;color:#e6edf3">DOB: <b>'+safe(p.date_of_birth?p.date_of_birth.slice(0,10):null)+'</b></div>'+
+'<div class="physical-metric-grid">'+
+'<div class="physical-metric"><span>Height</span><b>'+heightLabel+'<br>'+heightRange+'</b></div>'+
+'<div class="physical-metric"><span>Feet/inches</span><b>'+heightFeet+'</b></div>'+
+'<div class="physical-metric"><span>Build</span><b>'+buildLabel+'</b></div>'+
+'<div class="physical-metric"><span>Weight range</span><b>'+safe(p.weight_range_kg)+'</b></div>'+
+'<div class="physical-metric"><span>Nationality</span><b>'+safe(p.nationality)+'</b></div>'+
+'<div class="physical-metric"><span>Date of birth</span><b>'+safe(p.date_of_birth?p.date_of_birth.slice(0,10):null)+'</b></div>'+
+'</div>'+
 '</div></div>'+
 
 // Match Facts
@@ -607,6 +637,12 @@ if(btnExport)btnExport.addEventListener('click',function(){exportProfile(playerI
 var btnShowCompat=document.getElementById('btnShowCompat');
 if(btnShowCompat)btnShowCompat.addEventListener('click',function(){showCompatBreakdown(playerId);});
 
+var scenarioSelect=document.getElementById('scenarioSelect');
+if(scenarioSelect){
+var isGkProfile=String(p.position_group||p.primary_position||p.specific_position||'').toLowerCase().indexOf('goal')>=0 || String(p.specific_position||'').toUpperCase()==='GK';
+if(!isGkProfile)scenarioSelect.querySelectorAll('option[value^="gk_"]').forEach(function(opt){opt.remove();});
+}
+
 // Prediction buttons
 document.querySelectorAll('.pred-btn').forEach(function(btn){
 btn.addEventListener('click',function(){runPrediction(playerId,btn.getAttribute('data-pred-type'));});
@@ -628,3 +664,4 @@ console.error('[PlayerProfile]',e);
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>
+

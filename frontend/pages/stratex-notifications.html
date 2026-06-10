@@ -48,11 +48,11 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Stratex'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Stratex'){navigateClean('login.html');return;}
   if(typeof buildStratexNav==='function')buildStratexNav('sidebarNav',Auth.user);
   if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
-function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){if(typeof Auth!=='undefined')Auth.clear();navigateClean('login.html?logout=1');}
 function relTime(ts){if(!ts)return '';var d=new Date(ts),n=new Date();var s=Math.floor((n-d)/1000);if(s<60)return 'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 
 function renderNotif(n){

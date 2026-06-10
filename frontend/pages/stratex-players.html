@@ -94,7 +94,7 @@ function showToast(msg,type){var t=document.getElementById('toast');t.textConten
 <script src="../js/main.js"></script>
 <script>
 function initNav(){initStratexPage();}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
 </script>

@@ -268,8 +268,17 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
     const enriched = await enrichPlayersWithTeamLocation(data || []);
     if (req.user.accountType === 'Scout') {
       const { team, prefs } = await getScoutAnalysisContext(req);
+      const ids = enriched.map(p => p.id).filter(Boolean);
+      const { data: facts } = ids.length
+        ? await supabase.from('match_facts').select('*').in('player_id', ids).order('match_date', { ascending: false }).limit(600)
+        : { data: [] };
+      const factsByPlayer = {};
+      (facts || []).forEach(f => {
+        if (!factsByPlayer[f.player_id]) factsByPlayer[f.player_id] = [];
+        if (factsByPlayer[f.player_id].length < 10) factsByPlayer[f.player_id].push(f);
+      });
       const scored = enriched.map(p => {
-        const analysis = analysePlayer(p, team, [], prefs);
+        const analysis = analysePlayer(p, team, factsByPlayer[p.id] || [], prefs);
         return { ...p, compatibilityScore: analysis.compatibilityScore, compatibilityBreakdown: analysis.compatibilityBreakdown };
       }).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
       return res.json({ data: scored.slice(off, off + Number(limit)), total: scored.length, page: Number(page), limit: Number(limit) });

@@ -37,7 +37,8 @@ function buildStratexNav(navElId, userObj) {
 
 function initStratexPage() {
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn() || Auth.type !== 'Stratex') {
-    window.location.href = 'login.html';
+    if (typeof navigateClean === 'function') navigateClean('login.html');
+    else window.location.href = '/login';
     return false;
   }
   buildStratexNav('sidebarNav', Auth.user);

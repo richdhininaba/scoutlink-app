@@ -78,7 +78,7 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav(){initStratexPage();}
-function logout() { Auth.clear(); window.location.href = 'login.html?logout=1'; }
+function logout() { Auth.clear(); navigateClean('login.html?logout=1'); }
 function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
 var activeTab = 'scouts';
 function switchTab(tab, btn) {

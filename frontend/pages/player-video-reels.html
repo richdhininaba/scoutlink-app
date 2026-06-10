@@ -54,19 +54,19 @@
 <script src="../js/main.js"></script>
 <script>
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Player'){window.location.href='login.html';return;}
+  if(!Auth.isLoggedIn()||Auth.type!=='Player'){navigateClean('login.html');return;}
   if(typeof buildPlayerNav==='function') buildPlayerNav('sidebarNav','Video reels');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Player</div></div></div>';
   if(typeof updateNotifBadge==='function') updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function toggleNotifPanel(){var p=document.getElementById('notifPanel');if(p)p.classList.toggle('open');}
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
   var u=Auth.user;
-  if(!u){window.location.href='login.html';return;}
+  if(!u){navigateClean('login.html');return;}
 
   api('GET','/api/players/'+u.id).then(function(d){
     var videos=(d&&d.videos)||[];

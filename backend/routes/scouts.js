@@ -309,7 +309,7 @@ router.get('/preferences', requireAuth, requireRole('Scout'), async (req, res) =
 router.get('/pipeline', requireAuth, requireRole('Scout', 'Stratex'), async (req, res) => {
   try {
     const scoutId = req.user.accountType === 'Scout' ? req.user.id : req.query.scoutId;
-    let q = supabase.from('recruitment_pipeline').select('id,stage,notes,interest_level,created_at,updated_at,players(id,first_name,last_name,specific_position,primary_position,overall_rating,transfer_value,team_name,age,age_group,position_group,appearances),scouts(id,first_name,last_name,club_name)',{count:'exact'});
+    let q = supabase.from('recruitment_pipeline').select('id,scout_id,player_id,stage,notes,interest_level,created_at,updated_at,players(id,first_name,last_name,specific_position,primary_position,overall_rating,transfer_value,team_name,age,age_group,position_group,appearances,assigned_coach_id,team_id),scouts(id,first_name,last_name,club_name)',{count:'exact'});
     if (scoutId) q = q.eq('scout_id', scoutId);
     if (req.query.stage) q = q.eq('stage', req.query.stage);
     const { limit = 50 } = req.query;
@@ -333,6 +333,7 @@ router.patch('/pipeline/:id', requireAuth, requireRole('Scout', 'Stratex'), asyn
       .from('recruitment_pipeline')
       .update({ stage, updated_at: new Date().toISOString() })
       .eq('id', req.params.id)
+      .eq(req.user.accountType === 'Scout' ? 'scout_id' : 'id', req.user.accountType === 'Scout' ? req.user.id : req.params.id)
       .select()
       .single();
     if (error) throw error;
@@ -455,14 +456,54 @@ try {
     fixtures = fx || [];
   }
   
-  // Enrich with player info
+  const fixtureIds = fixtures.map(fx => fx.id).filter(Boolean);
+  const { data: attendanceRows } = fixtureIds.length
+    ? await supabase.from('fixture_attendance').select('*').in('fixture_id', fixtureIds).eq('scout_id', req.user.id)
+    : { data: [] };
+  const attendanceByFixture = {};
+  (attendanceRows || []).forEach(a => { attendanceByFixture[a.fixture_id] = a; });
+
+  // Enrich with player info and this scout's attendance status
   const enriched = fixtures.map(fx => {
     const teamPlayers = (pipeline||[]).filter(p => p.players?.team_id === fx.team_id).map(p => p.players).filter(Boolean);
-    return { ...fx, players: teamPlayers };
+    return { ...fx, players: teamPlayers, attendance: attendanceByFixture[fx.id] || null };
   });
   
   res.json({ data: enriched, total: enriched.length });
 } catch(err) { console.error('[Scout Fixtures]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/fixtures/:id/attendance', requireAuth, requireRole('Scout'), async (req, res) => {
+try {
+  const status = req.body.status || 'attending';
+  if (!['attending','not_attending','maybe'].includes(status)) return res.status(400).json({ error: 'Invalid attendance status' });
+  const { data: fixture, error: fxErr } = await supabase.from('fixtures').select('*').eq('id', req.params.id).maybeSingle();
+  if (fxErr) throw fxErr;
+  if (!fixture) return res.status(404).json({ error: 'Fixture not found' });
+
+  const { data: row, error } = await supabase.from('fixture_attendance').upsert({
+    fixture_id: fixture.id,
+    scout_id: req.user.id,
+    coach_id: fixture.coach_id || null,
+    status,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'fixture_id,scout_id' }).select().single();
+  if (error) throw error;
+
+  if (fixture.coach_id) {
+    const { data: scout } = await supabase.from('scouts').select('first_name,last_name,club_name').eq('id', req.user.id).maybeSingle();
+    const scoutName = [scout?.first_name, scout?.last_name].filter(Boolean).join(' ') || 'A scout';
+    await supabase.from('notifications').insert({
+      recipient_id: fixture.coach_id,
+      recipient_type: 'Coach',
+      notification_type: 'fixture_attendance',
+      title: 'Scout fixture attendance updated',
+      body: scoutName + ' marked ' + status.replace(/_/g, ' ') + ' for the fixture against ' + (fixture.opponent || 'your opponent') + '.',
+      data: { fixtureId: fixture.id, scoutId: req.user.id, status }
+    });
+  }
+  res.json({ attendance: row, message: 'Attendance saved' });
+} catch(err) { console.error('[Scout fixture attendance]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // GET /api/scouts/predictions â prediction history for this scout

@@ -171,15 +171,15 @@ var NATIONALITIES=['England','Scotland','Wales','Northern Ireland','Afghanistan'
 var coachContext={coach:null,teamCoaches:[]};
 
 function initNav(){
-  if(!Auth.isLoggedIn()){window.location.href='login.html';return;}
+  if(!Auth.isLoggedIn()){navigateClean('login.html');return;}
   var t=Auth.type;
-  if(t!=='Coach'&&t!=='Stratex'){window.location.href='login.html';return;}
+  if(t!=='Coach'&&t!=='Stratex'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav',t);
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+t+'</div></div></div>';
   updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 
 function populateNationalities(){
   var sel=document.getElementById('nationality');

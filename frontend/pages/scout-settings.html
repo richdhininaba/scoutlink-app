@@ -74,13 +74,13 @@ input:checked+.tgl-slider:before{transform:translateX(20px);background:#000}
 <script src="../js/main.js"></script>
 <script>
 function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
   updateNotifBadge();
 }
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function toggleNotifPanel(){}
 function showToast(msg,type){
   var t=document.getElementById('toast');

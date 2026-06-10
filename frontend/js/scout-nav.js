@@ -18,7 +18,8 @@ var TABLER = {
 'user-plus': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M16 19h6"/><path d="M19 16v6"/><path d="M2 21v-2a4 4 0 0 1 4 -4h4"/></svg>',
 'file-import': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-11.5"/><path d="M2 19l3 3l3 -3"/><path d="M5 16v6"/></svg>',
 'clipboard': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>',
-'video': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553 -2.069a1 1 0 0 1 1.447 .894v6.35a1 1 0 0 1 -1.447 .894l-4.553 -2.069v-4z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>'
+'video': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.553 -2.069a1 1 0 0 1 1.447 .894v6.35a1 1 0 0 1 -1.447 .894l-4.553 -2.069v-4z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>',
+'message': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9h8"/><path d="M8 13h5"/><path d="M5 19l2.5 -2h9.5a3 3 0 0 0 3 -3v-6a3 3 0 0 0 -3 -3h-10a3 3 0 0 0 -3 3v6a3 3 0 0 0 3 3"/></svg>'
 };
 
 function tablerIcon(name, size) {
@@ -38,6 +39,7 @@ var SCOUT_NAV_ITEMS = [
   { icon: 'arrows-diff', label: 'Compare players', href: 'compare-players.html' },
   { icon: 'settings', label: 'Scout setup', href: 'scout-setup.html' },
   { icon: 'flag', label: 'Events', href: 'scout-events.html' },
+  { icon: 'message', label: 'Chat', href: 'scout-chat.html' },
   { icon: 'bell', label: 'Notifications', href: 'scout-notifications.html' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'scout-settings.html' },
 ];
@@ -50,6 +52,7 @@ var COACH_NAV_ITEMS = [
   { icon: 'clipboard', label: 'Match facts', href: 'match-facts.html' },
   { icon: 'calendar-event', label: 'Fixtures', href: 'coach-fixtures.html' },
   { icon: 'video', label: 'Video reels', href: 'coach-video-reels.html' },
+  { icon: 'message', label: 'Chat', href: 'coach-chat.html' },
   { icon: 'bell', label: 'Notifications', href: 'coach-notifications.html' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'coach-settings.html' },
 ];

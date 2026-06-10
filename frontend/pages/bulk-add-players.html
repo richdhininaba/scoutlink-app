@@ -8,11 +8,15 @@
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
 body{background:var(--bg);color:var(--text);}
+.dashboard-main{min-width:0;overflow:hidden;}
+.page-content{max-width:100%;overflow:hidden;}
+.bulk-import-shell{max-width:100%;overflow:hidden;}
+.bulk-import-card{max-width:calc(100vw - 238px);overflow:hidden;}
 .bulk-table-wrap{
-  overflow-x:scroll;
-  overflow-y:visible;
+  overflow:auto;
   width:100%;
   max-width:100%;
+  max-height:calc(100vh - 392px);
   -webkit-overflow-scrolling:touch;
   position:relative;
   scrollbar-width:auto;
@@ -22,7 +26,7 @@ body{background:var(--bg);color:var(--text);}
 .bulk-table-wrap::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
 .bulk-table-wrap::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
 .bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
-.bulk-table{border-collapse:collapse;white-space:nowrap;}
+.bulk-table{border-collapse:collapse;white-space:nowrap;min-width:2520px;width:max-content;}
 .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
 .bulk-table th{background:#1c2128;color:var(--text-secondary);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
 .bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);color:#fff;border-radius:4px;font-size:12px;}
@@ -34,6 +38,7 @@ body{background:var(--bg);color:var(--text);}
 .bulk-table th:last-child{background:#1c2128;z-index:3;}
 body:not(.super-user) .coach-col{display:none;}
 .assignment-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;}
+.bulk-action-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .assignment-toolbar label{display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;}
 .assignment-toolbar select{background:#0d1117;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;min-width:220px;}
 .bulk-scroll-tools{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#10151d;border-bottom:1px solid var(--border);}
@@ -42,6 +47,8 @@ body:not(.super-user) .coach-col{display:none;}
 .bulk-top-scroll::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
 .bulk-top-scroll::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
 .bulk-top-scroll-inner{height:1px;}
+.bulk-bottom-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px;background:#10151d;border-top:1px solid var(--border);position:sticky;bottom:0;left:0;z-index:12;}
+.bulk-bottom-actions .hint{font-size:12px;color:var(--text-secondary);}
 .btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover{background:#17856a;}
@@ -54,7 +61,11 @@ body:not(.super-user) .coach-col{display:none;}
 .form-success.show{display:block;}
 @media(max-width:768px){
   .bulk-table th,.bulk-table td{display:table-cell!important;}
-  .bulk-table{min-width:2200px;}
+  .bulk-table{min-width:2520px;}
+  .bulk-import-card{max-width:calc(100vw - 24px);}
+  .bulk-action-group{width:100%;}
+  .bulk-action-group .btn{flex:1;justify-content:center;}
+  .bulk-bottom-actions{align-items:stretch;flex-direction:column;}
 }
 </style>
 </head><body>
@@ -75,7 +86,7 @@ body:not(.super-user) .coach-col{display:none;}
     <button class="btn btn-sm btn-outline" id="logoutBtn">Sign Out</button>
   </div>
 </div>
-<div class="page-content">
+<div class="page-content bulk-import-shell">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
   <div>
     <h2 style="font-size:22px;font-weight:700">Bulk Player Import</h2>
@@ -92,14 +103,14 @@ body:not(.super-user) .coach-col{display:none;}
     <label>Default Assigned Coach</label>
     <select id="defaultCoachSelect"><option value="">Loading coaches...</option></select>
   </div>
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <div class="bulk-action-group">
     <button class="btn btn-outline btn-sm" id="addRowBtn">+ Add Row</button>
     <button class="btn btn-primary" id="submitAllBtn">Submit All Players</button>
   </div>
 </div>
 <div class="form-error" id="formError" style="margin-bottom:12px"></div>
 <div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
-<div class="table-card">
+<div class="table-card bulk-import-card">
   <div style="padding:10px 16px;background:rgba(29,158,117,0.05);border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">
     Scroll right to see all columns. Ratings are 1-10. Required fields marked *.
   </div>
@@ -127,7 +138,7 @@ body:not(.super-user) .coach-col{display:none;}
       <tbody id="bulkBody"></tbody>
     </table>
   </div>
-  <div style="padding:12px 16px"><button class="btn btn-outline btn-sm" id="addRowBtn2">+ Add Another Player</button></div>
+  <div class="bulk-bottom-actions"><button class="btn btn-outline btn-sm" id="addRowBtn2">+ Add Another Player</button><span class="hint">Use the scroll bar or arrow buttons to reach every attribute column.</span></div>
 </div>
 <div id="resultsBox" style="display:none;margin-top:20px"></div>
 </div>
@@ -144,7 +155,7 @@ body:not(.super-user) .coach-col{display:none;}
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById("notifPanel").classList.toggle("open");}
-function logout(){if(typeof Auth!=="undefined")Auth.clear();window.location.href="login.html?logout=1";}
+function logout(){logoutToLogin();}
 
 var COACH_NAV_ITEMS=[
   {label:"Dashboard",href:"coach-dashboard.html"},
@@ -173,9 +184,9 @@ var STRATEX_NAV_ITEMS=[
 ];
 
 function initNav(){
-  if(typeof Auth==="undefined"||!Auth.isLoggedIn()){window.location.href="login.html";return;}
+  if(typeof Auth==="undefined"||!Auth.isLoggedIn()){navigateClean("login.html");return;}
   var t=Auth.type;
-  if(t!=="Coach"&&t!=="Stratex"){window.location.href="login.html";return;}
+  if(t!=="Coach"&&t!=="Stratex"){navigateClean("login.html");return;}
   var items=t==="Stratex"?STRATEX_NAV_ITEMS:COACH_NAV_ITEMS;
   var nav=document.getElementById("sidebarNav");
   var cur=window.location.pathname.split("/").pop();

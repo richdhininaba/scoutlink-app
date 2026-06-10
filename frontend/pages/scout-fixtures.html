@@ -60,9 +60,9 @@
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function initNav(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u){
@@ -73,6 +73,15 @@ function initNav(){
 }
 function initials(f,l){return((f||'')[0]||(l||'')[0]||'?').toUpperCase()+((l||'')[0]||'').toUpperCase();}
 function formatDate(d){if(!d)return '--';try{var dt=new Date(d);return dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});}catch(e){return d;}}
+function setAttendance(id,status,btn){
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  api('POST','/api/scouts/fixtures/'+id+'/attendance',{status:status}).then(function(){
+    loadFixtures();
+  }).catch(function(e){
+    alert(e.message||'Could not save attendance.');
+    if(btn){btn.disabled=false;btn.textContent='Attend';}
+  });
+}
 
 function loadFixtures(){
   if(typeof api!=='function')return;
@@ -101,7 +110,12 @@ function loadFixtures(){
       html+='<div><div style="font-size:16px;font-weight:700;margin-bottom:4px">'+(fx.opponent||'Unknown Opponent')+format+'</div>';
       html+='<div style="font-size:13px;color:var(--text-secondary)">'+date+time+venue+'</div>';
       if(fx.notes)html+='<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">'+fx.notes+'</div>';
-      html+='</div></div>';
+      var att=(fx.attendance&&fx.attendance.status)||'';
+      html+='</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+        '<button class="btn btn-sm '+(att==='attending'?'btn-primary':'btn-outline')+'" data-attend="'+fx.id+'" data-status="attending">'+(att==='attending'?'Attending':'Attend')+'</button>'+
+        '<button class="btn btn-sm '+(att==='maybe'?'btn-primary':'btn-ghost')+'" data-attend="'+fx.id+'" data-status="maybe">Maybe</button>'+
+        '<button class="btn btn-sm '+(att==='not_attending'?'btn-primary':'btn-ghost')+'" data-attend="'+fx.id+'" data-status="not_attending">Not attending</button>'+
+      '</div></div>';
       if(players.length){
         html+='<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">';
         players.forEach(function(p){
@@ -116,6 +130,9 @@ function loadFixtures(){
     });
     html+='</div>';
     document.getElementById('fixturesList').innerHTML=html;
+    document.querySelectorAll('[data-attend]').forEach(function(btn){
+      btn.addEventListener('click',function(){setAttendance(this.getAttribute('data-attend'),this.getAttribute('data-status'),this);});
+    });
   }).catch(function(e){
     document.getElementById('kpiTotal').textContent='0';document.getElementById('kpiPlayers').textContent='0';document.getElementById('kpiTeams').textContent='0';document.getElementById('kpiNext').textContent='None';
     document.getElementById('fixturesList').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)"><p>Could not load fixtures.</p><p style="font-size:12px;margin-top:8px">'+e.message+'</p></div>';

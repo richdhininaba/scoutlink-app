@@ -60,10 +60,10 @@
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){if(typeof Auth!=='undefined')Auth.clear();navigateClean('login.html?logout=1');}
 
 function initNav(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u){

@@ -62,9 +62,9 @@
 <script src="../js/main.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
-function logout(){if(typeof Auth!=='undefined')Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){logoutToLogin();}
 function initNav(){
-  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){window.location.href='login.html';return;}
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
   if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
   var u=Auth.user,uel=document.getElementById('sidebarUser');
   if(uel&&u){
@@ -75,6 +75,17 @@ function initNav(){
 }
 function dispOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
 function fmtDate(str){if(!str)return '--';var d=new Date(str);var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();}
+function predictionSummary(result){
+  result=result||{};
+  if(result.summary)return result.summary;
+  if(result.paragraphs&&result.paragraphs.length)return result.paragraphs.slice(0,2).join(' ');
+  if(result.projection&&result.projection.length){
+    var last=result.projection[result.projection.length-1];
+    return 'The five-year view finishes at '+(last.projectedValueFormatted||'a projected value')+' with a projected ROI of '+(last.roiPercent||0)+'%.';
+  }
+  if(result.scenario)return 'The match scenario was '+result.scenario+'. '+(result.recommendation||'Review the player profile for the full prediction.');
+  return result.recommendation||result.suitability||result.focus||'Saved prediction';
+}
 
 function showEmpty(){
   document.getElementById('kpiRemaining').textContent='--';
@@ -125,7 +136,7 @@ function loadPredictions(){
       preds.map(function(pred){
         var pl=pred.players||{};
         var result=pred.result||{};
-        var summary=result.recommendation||result.suitability||result.summary||result.scenario||result.focus||'Saved prediction';
+        var summary=predictionSummary(result);
         return '<tr>'+
           '<td><b>'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</b></td>'+
           '<td style="color:var(--text-secondary);font-size:12px">'+(pl.team_name||'--')+'</td>'+

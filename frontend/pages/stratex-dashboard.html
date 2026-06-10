@@ -72,7 +72,7 @@
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return String(Math.round(n>10?n:n*10));}
 function posColor(g){return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
-function logout(){Auth.clear();window.location.href='login.html?logout=1';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 
 document.addEventListener('DOMContentLoaded',function(){
   if(!initStratexPage()) return;
