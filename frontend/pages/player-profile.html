@@ -23,6 +23,9 @@
 .compat-bar-fill{height:100%;border-radius:4px;}
 .section-heading{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
 .action-btn{min-height:40px;padding:8px 14px;font-size:13px;}
+.export-control{display:flex;align-items:center;gap:8px;background:#0a0f1e;border:1px solid var(--border,#30363d);border-radius:10px;padding:4px;min-height:44px;}
+.export-control select{min-height:34px;background:transparent!important;border:none!important;color:var(--text,#fff)!important;font-size:13px;font-weight:700;padding:0 8px;}
+.export-control select:focus{outline:none;box-shadow:none;}
 .video-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:14px;}
 .prediction-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .overall-gauge{text-align:center;padding:28px 20px;background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:14px;margin-bottom:20px}
@@ -239,15 +242,17 @@ alert(e.message||'Could not add to pipeline. Please contact info@scoutlink.app o
 
 function exportProfile(playerId){
 var btn=document.getElementById('btnExport');
-if(!confirm('Export this player profile? This will count against your scout team export cap.'))return;
-var fmt=(prompt('Choose export format: PDF or Excel','PDF')||'PDF').trim().toUpperCase();
+var select=document.getElementById('exportFormat');
+var fmt=(select&&select.value?select.value:'PDF').trim().toUpperCase();
 if(fmt!=='PDF'&&fmt!=='EXCEL'&&fmt!=='XLS')fmt='PDF';
+var label=fmt==='PDF'?'PDF':'Excel';
+if(!confirm('Export this player profile as '+label+'? This will count against your scout team export cap.'))return;
 if(btn){btn.disabled=true;btn.textContent='Exporting...';}
 api('POST','/api/exports/player',{playerId:playerId,format:fmt,source:'profile'}).then(function(r){
 downloadBase64(r.filename,r.mime,r.contentBase64);
-if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+if(btn){btn.disabled=false;btn.textContent='Download';}
 }).catch(function(e){
-if(btn){btn.disabled=false;btn.textContent='Export Profile';}
+if(btn){btn.disabled=false;btn.textContent='Download';}
 alert(e.message||'Could not export profile. Please contact info@scoutlink.app or your CS Manager if you have reached your cap.');
 });
 }
@@ -461,7 +466,7 @@ var btnLabel=_alreadyInPipeline?'In Pipeline':'Register Interest';
 var btnStyle=_alreadyInPipeline?'background:#1d9e75;color:#000;':'';
 actionBtns='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">'+
 '<button id="btnInterest" class="btn btn-primary action-btn" style="'+btnStyle+'" '+((_alreadyInPipeline)?'disabled':'')+'>'+btnLabel+'</button>'+
-'<button id="btnExport" class="btn btn-outline action-btn">Export Profile</button>'+
+'<div class="export-control"><select id="exportFormat" aria-label="Export format"><option value="PDF">PDF</option><option value="EXCEL">Excel</option></select><button id="btnExport" class="btn btn-outline action-btn">Download</button></div>'+
 '<button class="btn btn-outline action-btn" onclick="scrollToVideos()">&#9654; Watch Videos</button>'+
 '<span id="interestsRemainingCount" style="font-size:12px;color:#8b949e;margin-left:4px">'+interestsRem+' interests remaining</span>'+
 '</div>';
