@@ -126,7 +126,7 @@ router.post('/threads', requireAuth, requireRole('Scout'), async (req, res) => {
     res.status(201).json({ thread, coach });
   } catch(err) {
     console.error('[Chat create]', err);
-    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error', code: err.code || null, detail: err.message || null, dbDetail: err.details || null, hint: err.hint || null });
   }
 });
 
