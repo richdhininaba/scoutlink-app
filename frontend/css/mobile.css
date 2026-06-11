@@ -724,3 +724,21 @@ body { padding-bottom: 60px; }
     padding: 10px 12px !important;
   }
 }
+
+/* fix-coach-mobile-experience v3 coach rules */
+@media (max-width: 767px) {
+     .dashboard-grid, .stats-grid { grid-template-columns: 1fr 1fr !important; }
+     .player-list-row, .fixture-row, .video-card-row { flex-direction: column !important; gap: 8px !important; }
+     .form-group-inline { flex-direction: column !important; width: 100% !important; }
+     .main-content { padding: 16px !important; margin-left: 0 !important; width: 100% !important; }
+     .table-wrap, .data-table-wrap { overflow-x: scroll !important; -webkit-overflow-scrolling: touch !important; }
+     input, select, textarea { box-sizing: border-box !important; }
+     .btn-primary, .btn-full { width: 100% !important; justify-content: center !important; }
+     .card, .stat-card { padding: 16px !important; border-radius: 10px !important; }
+     .pitch-diagram, .formation-pitch { width: 100% !important; max-width: 100% !important; height: auto !important; min-height: 300px !important; }
+     .position-slot, .pitch-slot { width: 44px !important; height: 44px !important; font-size: 10px !important; }
+     .step-nav, .step-buttons { flex-direction: column !important; gap: 8px !important; width: 100% !important; }
+     .step-nav .btn, .step-buttons .btn { width: 100% !important; }
+     .kpi-value, .kpi-val { word-break: break-word !important; overflow: hidden !important; }
+     .video-grid, .reel-grid { grid-template-columns: 1fr !important; }
+}
