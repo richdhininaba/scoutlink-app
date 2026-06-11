@@ -15,7 +15,7 @@
 <div style="max-width:700px;margin:0 auto">
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ð Change Password</h3></div>
+<div class="table-header"><h3>Change Password</h3></div>
 <div style="padding:0 20px 20px">
 <div style="margin-bottom:14px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
 <div style="margin-bottom:16px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
@@ -23,7 +23,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ð Notification Preferences</h3></div>
+<div class="table-header"><h3>Notification Preferences</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n1" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">Scout Interest Alerts</div><div style="font-size:12px;color:#546E7A">Get notified when a scout views your profile</div></div></div>
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n2" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">In-App Notifications</div><div style="font-size:12px;color:#546E7A">See notifications in the platform</div></div></div>
@@ -32,7 +32,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ð¤ Profile Visibility</h3></div>
+<div class="table-header"><h3>Profile Visibility</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="vis1" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">Visible to Scouts</div><div style="font-size:12px;color:#546E7A">Allow scouts to discover and view your profile</div></div></div>
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="vis2" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">Show Transfer Value</div><div style="font-size:12px;color:#546E7A">Display your estimated transfer value on your profile</div></div></div>
@@ -40,7 +40,7 @@
 </div></div>
 
 <div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
-<div class="table-header"><h3 style="color:#EF5350">â ï¸ Danger Zone</h3></div>
+<div class="table-header"><h3 style="color:#EF5350">Danger Zone</h3></div>
 <div style="padding:0 20px 20px">
 <p style="color:#546E7A;margin-bottom:16px;font-size:14px">These actions are permanent. Contact support if you need help.</p>
 <button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="showToast('Contact support@stratexanalytics.co.uk to deactivate your account.','error')">Deactivate Account</button>
@@ -52,7 +52,7 @@
 <script src="../js/main.js"></script>
 <style>.tgl{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}.tgl input{opacity:0;width:0;height:0}.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#2d3f55;border-radius:24px;transition:.3s}.tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#546E7A;border-radius:50%;transition:.3s}input:checked+.tgl-slider{background:#5C6BC0}input:checked+.tgl-slider:before{transform:translateX(20px);background:#fff}</style>
 <script>
-var PLAYER_NAV=[{label:'Dashboard',href:'player-dashboard.html'},{label:'My Profile',href:'player-profile.html'},{label:'Videos',href:'player-videos.html'},{label:'Notifications',href:'player-notifications.html'},{label:'Settings',href:'player-settings.html'}];
+var PLAYER_NAV=[{label:'Dashboard',href:'player-dashboard.html'},{label:'My Profile',href:'player-profile-edit.html'},{label:'Videos',href:'player-video-reels.html'},{label:'Notifications',href:'player-notifications.html'},{label:'Settings',href:'player-settings.html'}];
 function initNav(){if(!Auth.isLoggedIn()||Auth.type!=='Player'){navigateClean('login.html');return;}
 if(typeof buildScoutNav==="function") buildScoutNav("sidebarNav","Player");var nav=document.getElementById('sidebarNav');var cur=window.location.pathname.split('/').pop();if(nav)nav.innerHTML=PLAYER_NAV.map(function(i){return'<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+i.href+'">'+i.label+'</a>';}).join('');var u=Auth.user;var uel=document.getElementById('sidebarUser');if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+u.firstName+' '+u.lastName+'</div><div class="user-role">Player</div></div></div>';}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},4000);}
