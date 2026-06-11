@@ -118,7 +118,7 @@ return ids.length;
 async function updateScoutSuperUser(req, res) {
 try {
 const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
-const { data, error } = await supabase.from('scouts').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
+const { data, error } = await supabase.from('scouts').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').maybeSingle();
 if (error || !data) return res.status(404).json({ error: 'Scout not found' });
 res.json({ message: isSuperUser ? 'Scout marked as super user' : 'Scout super user access removed', scout: data });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
@@ -127,7 +127,7 @@ res.json({ message: isSuperUser ? 'Scout marked as super user' : 'Scout super us
 async function updateCoachSuperUser(req, res) {
 try {
 const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
-const { data, error } = await supabase.from('coaches').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
+const { data, error } = await supabase.from('coaches').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').maybeSingle();
 if (error || !data) return res.status(404).json({ error: 'Coach not found' });
 res.json({ message: isSuperUser ? 'Coach marked as super user' : 'Coach super user access removed', coach: data });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
