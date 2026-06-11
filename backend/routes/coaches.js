@@ -115,8 +115,12 @@ const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: email
   console.error('[Email]', e.message);
   return { success: false, error: e.message };
 });
+if (!emailResult || !emailResult.success) {
+await supabase.from('coaches').delete().eq('id', newCoach.id);
+return res.status(502).json({ error: 'SendGrid did not accept the coach invite email. Coach was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
+}
 
-res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink, emailSent: !!emailResult?.success });
+res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

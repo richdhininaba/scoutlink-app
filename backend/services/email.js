@@ -41,10 +41,67 @@ function resetData(d) {
   const accountType = d.accountType || 'Player';
   const emailAddr = d.email || d.to || '';
   const resetCode = d.resetCode || d.loginCode || '';
+  const resetLink = d.resetLink || accountLink('/forgot-password', { code: resetCode, email: emailAddr, type: accountType });
+  const loginUrl = accountLink('/login', {});
   return {
-    resetLink: d.resetLink || accountLink('/forgot-password', { code: resetCode, email: emailAddr, type: accountType }),
-    loginUrl: accountLink('/login', {}),
+    resetLink,
+    reset_link: resetLink,
+    loginUrl,
+    login_url: loginUrl,
     accountType,
+    account_type: accountType,
+    resetCode,
+    reset_code: resetCode,
+    email: emailAddr,
+    ...d
+  };
+}
+
+function notificationData(d) {
+  d = d || {};
+  const title = d.title || d.subject || 'ScoutLink notification';
+  const body = d.body || d.message || '';
+  const actionLink = d.actionLink || d.action_link || brandBase();
+  const loginUrl = accountLink('/login', {});
+  return {
+    title,
+    subject: title,
+    notificationTitle: title,
+    notification_title: title,
+    body,
+    message: body,
+    notificationBody: body,
+    notification_body: body,
+    actionLink,
+    action_link: actionLink,
+    loginUrl,
+    login_url: loginUrl,
+    ...d
+  };
+}
+
+function registrationAlertData(d, accountType) {
+  d = d || {};
+  const firstName = d.firstName || d.first_name || '';
+  const lastName = d.lastName || d.last_name || '';
+  const emailAddr = d.email || d.emailAddr || '';
+  const reviewLink = d.reviewLink || accountLink('/stratex/registrations', {});
+  return {
+    accountType,
+    account_type: accountType,
+    firstName,
+    first_name: firstName,
+    lastName,
+    last_name: lastName,
+    fullName: (firstName + ' ' + lastName).trim(),
+    full_name: (firstName + ' ' + lastName).trim(),
+    email: emailAddr,
+    emailAddr,
+    email_addr: emailAddr,
+    reviewLink,
+    review_link: reviewLink,
+    requestId: d.requestId || d.request_id || '',
+    request_id: d.requestId || d.request_id || '',
     ...d
   };
 }
@@ -104,10 +161,10 @@ async function sendTemplateFallback({ to, templates, data }) {
 
 module.exports = {
   // SENDGRID_TEMPLATE_COACH_REG_ALERT — sent to Stratex admin when a new coach registers
-  sendCoachRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.coachRegAlert, data: d }),
+  sendCoachRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.coachRegAlert, data: registrationAlertData(d, 'Coach') }),
 
   // SENDGRID_TEMPLATE_SCOUT_REG_ALERT — sent to Stratex admin when a new scout registers
-  sendScoutRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data: d }),
+  sendScoutRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data: registrationAlertData(d, 'Scout') }),
 
   // SENDGRID_TEMPLATE_REG_APPROVED — sent to the applicant when their registration is approved
   sendRegApproved: (d) => {
@@ -123,13 +180,13 @@ module.exports = {
   },
 
   // SENDGRID_TEMPLATE_REG_DECLINED — sent to the applicant when their registration is declined
-  sendRegDeclined: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regDeclined, data: d }),
+  sendRegDeclined: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regDeclined, data: inviteData(d || {}) }),
 
   // SENDGRID_TEMPLATE_SCOUT_INTEREST — sent to a coach when a scout registers interest in one of their players
   sendScoutInterest: (d) => send({ to: d.to, templateId: config.sendgrid.templates.scoutInterest, data: d }),
 
   // SENDGRID_TEMPLATE_NOTIFICATION — sent as a general notification email
-  sendNotification: (d) => send({ to: d.to, templateId: config.sendgrid.templates.notification, data: d }),
+  sendNotification: (d) => send({ to: d.to, templateId: config.sendgrid.templates.notification, data: notificationData(d) }),
 
   // SENDGRID_TEMPLATE_COMPLETE_SIGNUP — sent to a user to complete their account setup
   // Also used by sendPlayerLoginCode when a coach adds a player
@@ -149,7 +206,14 @@ module.exports = {
   sendPlayerLoginCode: async (d) => {
     d = inviteData({ ...(d || {}), accountType: 'Player', firstName: (d && d.playerFirstName) || (d && d.firstName) || 'Player' });
     if (!d.to) return { success: false, error: 'No recipient' };
-    return send({ to: d.to, templateId: config.sendgrid.templates.completeSignup, data: d });
+    return sendTemplateFallback({
+      to: d.to,
+      templates: [
+        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup },
+        { name: 'regApproved', id: config.sendgrid.templates.regApproved }
+      ],
+      data: d
+    });
   },
 
   // SENDGRID_TEMPLATE_RESET_PASSWORD — sent when a user requests a password reset

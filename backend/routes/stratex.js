@@ -56,6 +56,11 @@ if (data) return { duplicate: true, field: 'phone' };
 return { duplicate: false };
 }
 
+async function removeInserted(table, id) {
+if (!table || !id) return;
+await supabase.from(table).delete().eq('id', id);
+}
+
 async function countBy(table, column, value) {
 try {
 const { count, error } = await supabase.from(table).select('id',{count:'exact',head:true}).eq(column, value);
@@ -273,7 +278,11 @@ exports_remaining: limits.exports, predictions_remaining: limits.predictions, in
 if (error) throw error;
 const completeLink = completeRegistrationLink('Scout', emailAddr, loginCode);
 const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Scout', completeLink });
-res.status(201).json({ message: 'Scout added. Complete-registration email sent.', scout: data, loginCode, completeLink, emailSent: !!emailResult?.success });
+if (!emailResult || !emailResult.success) {
+await removeInserted('scouts', data.id);
+return res.status(502).json({ error: 'SendGrid did not accept the scout invite email. Scout was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
+}
+res.status(201).json({ message: 'Scout added. Complete-registration email sent.', scout: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -296,7 +305,11 @@ registration_complete: false
 if (error) throw error;
 const completeLink = completeRegistrationLink('Coach', emailAddr, loginCode);
 const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink });
-res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coach: data, loginCode, completeLink, emailSent: !!emailResult?.success });
+if (!emailResult || !emailResult.success) {
+await removeInserted('coaches', data.id);
+return res.status(502).json({ error: 'SendGrid did not accept the coach invite email. Coach was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
+}
+res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coach: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -316,7 +329,11 @@ login_code: loginCode, login_code_expires: expires, registration_complete: false
 if (error) throw error;
 const completeLink = completeRegistrationLink('Stratex', emailAddr, loginCode);
 const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Stratex', completeLink });
-res.status(201).json({ message: 'Admin added. Complete-registration email sent.', admin: data, loginCode, completeLink, emailSent: !!emailResult?.success });
+if (!emailResult || !emailResult.success) {
+await removeInserted('stratex', data.id);
+return res.status(502).json({ error: 'SendGrid did not accept the admin invite email. Admin was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
+}
+res.status(201).json({ message: 'Admin added. Complete-registration email sent.', admin: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
