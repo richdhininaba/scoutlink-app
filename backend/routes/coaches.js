@@ -8,6 +8,10 @@ const config = require('../config');
 
 const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
 
+function isValidEmail(emailAddr) {
+return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
+}
+
 // My players - coaches only see players assigned to them (assigned_coach_id)
 // NOTE: coaches table requires is_super_user column (boolean, default false) - added via migration
 // Super user coaches see ALL players on their team
@@ -67,6 +71,7 @@ const { data: me } = await supabase.from('coaches').select('id,team_id,team_name
 if (!me || !me.is_super_user) return res.status(403).json({ error: 'Only super user coaches can add coaches' });
 const { firstName, lastName, emailAddr, phone, isSuperUser } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
+if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 
 // Check duplicates
 const tables = ['scouts','coaches','players','stratex'];

@@ -106,6 +106,19 @@ function registrationAlertData(d, accountType) {
   };
 }
 
+function registrationReceivedData(d, accountType) {
+  d = d || {};
+  const firstName = d.firstName || d.first_name || 'there';
+  return {
+    ...registrationAlertData(d, accountType),
+    firstName,
+    first_name: firstName,
+    title: 'We have received your ScoutLink registration',
+    subject: 'We have received your ScoutLink registration',
+    body: 'Thanks for registering with ScoutLink. The Stratex team has received your registration and will review it shortly. Please check your junk or spam folder if you do not see a response within 24 hours.'
+  };
+}
+
 // Lazy-load SendGrid to avoid crash if SENDGRID_API_KEY not set
 function getSgMail() {
   try {
@@ -202,10 +215,38 @@ async function sendTemplateFallback({ to, templates, data }) {
 
 module.exports = {
   // SENDGRID_TEMPLATE_COACH_REG_ALERT — sent to Stratex admin when a new coach registers
-  sendCoachRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.coachRegAlert, data: registrationAlertData(d, 'Coach') }),
+  sendCoachRegAlert: async (d) => {
+    const data = registrationAlertData(d, 'Coach');
+    const result = await send({ to: config.adminEmails, templateId: config.sendgrid.templates.coachRegAlert, data });
+    if (result.success) return { ...result, template: 'coachRegAlert' };
+    return sendPlain({
+      to: config.adminEmails,
+      subject: 'New coach registration: ' + (data.fullName || data.email),
+      text: 'A new coach registration has been submitted.\n\nName: ' + data.fullName + '\nEmail: ' + data.email + '\nTeam: ' + (data.teamName || data.team_name || '') + '\nLeague: ' + (data.league || '') + '\n\nReview it here: ' + data.reviewLink
+    });
+  },
 
   // SENDGRID_TEMPLATE_SCOUT_REG_ALERT — sent to Stratex admin when a new scout registers
-  sendScoutRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data: registrationAlertData(d, 'Scout') }),
+  sendScoutRegAlert: async (d) => {
+    const data = registrationAlertData(d, 'Scout');
+    const result = await send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data });
+    if (result.success) return { ...result, template: 'scoutRegAlert' };
+    return sendPlain({
+      to: config.adminEmails,
+      subject: 'New scout registration: ' + (data.fullName || data.email),
+      text: 'A new scout registration has been submitted.\n\nName: ' + data.fullName + '\nEmail: ' + data.email + '\nClub: ' + (data.scoutClub || data.scout_club || '') + '\nLeague: ' + (data.scoutLeague || data.scout_league || '') + '\n\nReview it here: ' + data.reviewLink
+    });
+  },
+
+  sendRegistrationReceived: async (d) => {
+    const accountType = d.accountType || d.account_type || 'Scout';
+    const data = registrationReceivedData(d, accountType);
+    return sendPlain({
+      to: data.email,
+      subject: 'We have received your ScoutLink registration',
+      text: 'Hi ' + data.firstName + ',\n\nThanks for registering with ScoutLink. We have seen your registration and the Stratex team will review it shortly.\n\nPlease check your junk or spam folder if you do not see a response within 24 hours.\n\nScoutLink by Stratex Analytics'
+    });
+  },
 
   // SENDGRID_TEMPLATE_REG_APPROVED — sent to the applicant when their registration is approved
   sendRegApproved: (d) => {

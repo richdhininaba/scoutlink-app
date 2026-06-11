@@ -12,6 +12,10 @@ const PLAN_LIMITS = {
   Enterprise: { exports: 99999, predictions: 99999, interests: 99999 }
 };
 
+function isValidEmail(emailAddr) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
+}
+
 function limitsFor(plan) {
   return PLAN_LIMITS[plan] || PLAN_LIMITS.Core;
 }
@@ -350,6 +354,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
     if (!me || !me.is_super_user) return res.status(403).json({ error: 'Only super user scouts can add scouts' });
     const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, subscriptionPlan } = req.body;
     if (!firstName || !lastName || !emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
+    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     const tables = ['scouts','coaches','players','stratex'];
     for (const t of tables) { const { data: eRow } = await supabase.from(t).select('id').eq('email',emailAddr.toLowerCase().trim()).maybeSingle(); if (eRow) return res.status(409).json({ error: 'This email is already registered on ScoutLink.' }); }
     if (phone) { const { data: pRow } = await supabase.from('scouts').select('id').eq('phone',phone.trim()).maybeSingle(); if (pRow) return res.status(409).json({ error: 'This phone number is already registered.' }); }

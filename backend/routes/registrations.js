@@ -69,9 +69,35 @@ function titleCase(v) {
   return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function isValidEmail(emailAddr) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
+}
+
 async function removeCreatedUser(accountType, id) {
   const table = accountType === 'Coach' ? 'coaches' : accountType === 'Scout' ? 'scouts' : null;
   if (table && id) await supabase.from(table).delete().eq('id', id);
+}
+
+async function removeRegistrationRequest(id) {
+  if (id) await supabase.from('registration_requests').delete().eq('id', id);
+}
+
+async function sendRegistrationEmails({ accountType, request, alertPayload }) {
+  const applicant = await email.sendRegistrationReceived({
+    accountType,
+    firstName: request.first_name,
+    lastName: request.last_name,
+    email: request.email,
+    requestId: request.id
+  }).catch(e => ({ success: false, error: e.message }));
+  if (!applicant || !applicant.success) return { success: false, stage: 'applicant confirmation', result: applicant };
+
+  const admin = accountType === 'Coach'
+    ? await email.sendCoachRegAlert(alertPayload).catch(e => ({ success: false, error: e.message }))
+    : await email.sendScoutRegAlert(alertPayload).catch(e => ({ success: false, error: e.message }));
+  if (!admin || !admin.success) return { success: false, stage: 'Stratex admin alert', result: admin };
+
+  return { success: true, applicant, admin };
 }
 
 // Public: coach registers
@@ -79,6 +105,7 @@ router.post('/coach', async (req, res) => {
   try {
     const { firstName, lastName, emailAddr, phone, teamName, county, league, roleAtClub, dataPolicyAgreed } = req.body;
     if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
+    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
     const dup = await checkDuplicates(emailAddr, phone);
     if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
@@ -90,8 +117,16 @@ router.post('/coach', async (req, res) => {
       data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending'
     }).select().single();
     if (error) throw error;
-    await email.sendCoachRegAlert({ firstName, lastName, email: emailAddr, teamName, county, league, roleAtClub, requestId: req2.id }).catch(e => console.error('[Email]', e.message));
-    res.status(201).json({ message: 'Registration submitted. You will be emailed once reviewed.', requestId: req2.id });
+    const emailResult = await sendRegistrationEmails({
+      accountType: 'Coach',
+      request: req2,
+      alertPayload: { firstName, lastName, email: emailAddr, teamName, county, league, roleAtClub, requestId: req2.id }
+    });
+    if (!emailResult.success) {
+      await removeRegistrationRequest(req2.id);
+      return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
+    }
+    res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -100,6 +135,7 @@ router.post('/scout', async (req, res) => {
   try {
     const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, dataPolicyAgreed } = req.body;
     if (!firstName||!lastName||!emailAddr||!scoutClub) return res.status(400).json({ error: 'firstName, lastName, email and scoutClub required' });
+    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
     const dup = await checkDuplicates(emailAddr, phone);
     if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
@@ -110,8 +146,16 @@ router.post('/scout', async (req, res) => {
       data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending'
     }).select().single();
     if (error) throw error;
-    await email.sendScoutRegAlert({ firstName, lastName, email: emailAddr, scoutClub, scoutLeague, requestId: req2.id }).catch(e => console.error('[Email]', e.message));
-    res.status(201).json({ message: 'Registration submitted. You will be emailed once reviewed.', requestId: req2.id });
+    const emailResult = await sendRegistrationEmails({
+      accountType: 'Scout',
+      request: req2,
+      alertPayload: { firstName, lastName, email: emailAddr, scoutClub, scoutLeague, requestId: req2.id }
+    });
+    if (!emailResult.success) {
+      await removeRegistrationRequest(req2.id);
+      return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
+    }
+    res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
   } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

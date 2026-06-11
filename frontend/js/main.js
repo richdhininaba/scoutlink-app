@@ -193,6 +193,21 @@ function ratingDisplay(r) {
   return String(Math.round(v));
 }
 
+function isValidEmailAddress(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function validateEmailInput(input) {
+  if (!input) return true;
+  const value = input.value.trim();
+  const ok = !value || isValidEmailAddress(value);
+  input.classList.toggle('field-invalid', !ok);
+  input.setAttribute('aria-invalid', ok ? 'false' : 'true');
+  if (!ok) input.setCustomValidity('Please enter a valid email address.');
+  else input.setCustomValidity('');
+  return ok;
+}
+
 const SL_COUNTRY_CITIES = {
   England:['London','Manchester','Liverpool','Birmingham','Leeds','Bristol','Sheffield','Nottingham','Southampton','Newcastle','Leicester','Coventry','Derby','Reading','Oxford','Cambridge','Brighton','Portsmouth','Plymouth','Norwich','York'],
   Scotland:['Glasgow','Edinburgh','Aberdeen','Dundee','Inverness','Stirling'],
@@ -250,6 +265,7 @@ window.Auth = Auth; window.api = api; window.formatValue = formatValue;
 window.formatSalary = formatSalary; window.relTime = relTime;
 window.initials = initials; window.posGroupColor = posGroupColor; window.ratingColor = ratingColor;
 window.ratingDisplay = ratingDisplay;
+window.isValidEmailAddress = isValidEmailAddress; window.validateEmailInput = validateEmailInput;
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
 window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
 window.navigateClean = navigateClean; window.logoutToLogin = logoutToLogin;
@@ -257,6 +273,10 @@ window.SL_COUNTRY_CITIES = SL_COUNTRY_CITIES; window.fillCountrySelect = fillCou
 window.attachCityAutocomplete = attachCityAutocomplete; window.canonicalChoice = canonicalChoice;
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[type="email"]').forEach(input => {
+    input.addEventListener('input', () => validateEmailInput(input));
+    input.addEventListener('blur', () => validateEmailInput(input));
+  });
   document.addEventListener('click', function(e) {
     const a = e.target.closest && e.target.closest('a[href]');
     if (!a || a.target || a.hasAttribute('download')) return;

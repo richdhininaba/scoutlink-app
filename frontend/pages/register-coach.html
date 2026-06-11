@@ -48,6 +48,8 @@ async function submitReg() {
   const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
   err.classList.remove('show'); suc.classList.remove('show');
   if (!document.getElementById('policyAgreed').checked) { err.textContent = 'Please agree to the data policy.'; err.classList.add('show'); return; }
+  if (!document.getElementById('firstName').value.trim() || !document.getElementById('lastName').value.trim() || !document.getElementById('emailAddr').value.trim() || !document.getElementById('teamName').value.trim()) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+  if (!validateEmailInput(document.getElementById('emailAddr'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
   try {
     const data = await api('POST', '/api/registrations/coach', {
       firstName: document.getElementById('firstName').value,

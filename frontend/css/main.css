@@ -153,6 +153,7 @@ label .required { color:var(--green); margin-left:2px; }
 .info-btn:hover { color:var(--green); }
 input,select,textarea { width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text); font-size:14px; font-family:inherit; transition:var(--transition); }
 input:focus,select:focus,textarea:focus { outline:none; border-color:var(--green); box-shadow:0 0 0 3px rgba(0,230,118,0.1); }
+input.field-invalid { border-color:#EF5350 !important; box-shadow:0 0 0 3px rgba(239,83,80,0.12) !important; }
 input::placeholder { color:var(--text3); }
 select option { background:var(--bg2); }
 textarea { resize:vertical; min-height:90px; }

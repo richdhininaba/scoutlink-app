@@ -58,7 +58,7 @@ function renderScouts(scouts){
   document.getElementById('scoutsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Club</th><th>Scout Team</th><th>Plan</th><th>Renewal</th><th>Super user</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
     scouts.map(function(s) {
       var team=s.scout_team?s.scout_team.team_name:'--';
-      return '<tr><td><b>'+safe(s.first_name)+' '+safe(s.last_name,'')+'</b></td><td>'+safe(s.email)+'</td><td>'+safe(s.club_name)+'</td><td>'+team+'</td><td><span class="badge badge-blue">'+safe(s.subscription_plan,'Core')+'</span></td><td>'+dateFmt(s.plan_end)+'</td><td><span class="badge '+(s.is_super_user?'badge-green':'badge-blue')+'">'+(s.is_super_user?'Yes':'No')+'</span></td><td><span class="badge '+(s.is_active?'badge-green':'badge-red')+'">'+(s.is_active?'Active':'Inactive')+'</span></td><td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap"><button class="btn btn-sm btn-outline" onclick="viewScout(\''+s.id+'\')">View details</button><button class="btn btn-sm btn-outline" onclick="toggleScoutSuperUser(\''+s.id+'\','+(!s.is_super_user)+')">'+(s.is_super_user?'Remove super':'Make super')+'</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteScout(\''+s.id+'\')">Delete</button></div></td></tr>';
+      return '<tr><td><b>'+safe(s.first_name)+' '+safe(s.last_name,'')+'</b></td><td>'+safe(s.email)+'</td><td>'+safe(s.club_name)+'</td><td>'+team+'</td><td><span class="badge badge-blue">'+safe(s.subscription_plan,'Core')+'</span></td><td>'+dateFmt(s.plan_end)+'</td><td><span class="badge '+(s.is_super_user?'badge-green':'badge-blue')+'">'+(s.is_super_user?'Yes':'No')+'</span></td><td><span class="badge '+(s.is_active?'badge-green':'badge-red')+'">'+(s.is_active?'Active':'Inactive')+'</span></td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="viewScout(\''+s.id+'\')">View profile</button></td></tr>';
     }).join('') + '</tbody></table>';
 }
 
@@ -72,7 +72,7 @@ async function viewScout(id){
     var s=d.scout||{}, team=d.scoutTeam||{}, u=d.usage||{};
     document.getElementById('modalTitle').textContent=safe(s.first_name)+' '+safe(s.last_name,'');
     document.getElementById('modalSubtitle').textContent=safe(s.email);
-    document.getElementById('scoutDetailBody').innerHTML='<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-sm btn-outline" onclick="toggleScoutSuperUser(\''+s.id+'\','+(!s.is_super_user)+')">'+(s.is_super_user?'Remove super-user access':'Make scout super user')+'</button></div><div class="detail-grid">'+
+    document.getElementById('scoutDetailBody').innerHTML='<div class="modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-sm btn-outline" onclick="toggleScoutSuperUser(\''+s.id+'\','+(!s.is_super_user)+')">'+(s.is_super_user?'Remove super-user access':'Make scout super user')+'</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteScout(\''+s.id+'\')">Delete scout</button></div><div class="detail-grid">'+
       stat('Scout team', safe(team.team_name,'Unassigned'))+
       stat('Club', safe(s.club_name))+
       stat('Subscription', safe(s.subscription_plan,'Core'))+
@@ -94,7 +94,7 @@ async function toggleScoutSuperUser(id,next){
   var action=next?'make '+name+' a super user':'remove super-user access from '+name;
   if(!confirm('Are you sure you want to '+action+'?')) return;
   try{
-    var d=await api('PATCH','/api/stratex/scouts/'+id+'/super-user',{isSuperUser:!!next});
+    var d=await api('POST','/api/stratex/scouts/'+id+'/super-user',{isSuperUser:!!next});
     allScouts=allScouts.map(function(s){return s.id===id?Object.assign({},s,{is_super_user:!!next}):s;});
     renderScouts(allScouts);
     if(document.getElementById('scoutModal').style.display==='block') viewScout(id);
@@ -109,6 +109,7 @@ async function deleteScout(id){
     await api('DELETE','/api/stratex/scouts/'+id);
     allScouts=allScouts.filter(function(s){return s.id!==id;});
     document.getElementById('scoutCount').textContent=allScouts.length+' scouts';
+    closeScoutModal();
     renderScouts(allScouts);
   }catch(e){alert('Could not delete scout: '+e.message);}
 }

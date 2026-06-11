@@ -58,7 +58,7 @@ function renderCoaches(coaches){
   document.getElementById('coachesTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Team</th><th>Role</th><th>Super user</th><th>Status</th><th>Joined</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
     coaches.map(function(c) {
       var team=c.academy_team?c.academy_team.team_name:c.team_name;
-      return '<tr><td><b>'+safe(c.first_name)+' '+safe(c.last_name,'')+'</b></td><td>'+safe(c.email)+'</td><td>'+safe(team)+'</td><td>'+safe(c.role_at_club,'Coach')+'</td><td><span class="badge '+(c.is_super_user?'badge-green':'badge-blue')+'">'+(c.is_super_user?'Yes':'No')+'</span></td><td><span class="badge '+(c.is_active?'badge-green':'badge-red')+'">'+(c.is_active?'Active':'Inactive')+'</span></td><td>'+dateFmt(c.created_at)+'</td><td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap"><button class="btn btn-sm btn-outline" onclick="viewCoach(\''+c.id+'\')">View details</button><button class="btn btn-sm btn-outline" onclick="toggleCoachSuperUser(\''+c.id+'\','+(!c.is_super_user)+')">'+(c.is_super_user?'Remove super':'Make super')+'</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteCoach(\''+c.id+'\')">Delete</button></div></td></tr>';
+      return '<tr><td><b>'+safe(c.first_name)+' '+safe(c.last_name,'')+'</b></td><td>'+safe(c.email)+'</td><td>'+safe(team)+'</td><td>'+safe(c.role_at_club,'Coach')+'</td><td><span class="badge '+(c.is_super_user?'badge-green':'badge-blue')+'">'+(c.is_super_user?'Yes':'No')+'</span></td><td><span class="badge '+(c.is_active?'badge-green':'badge-red')+'">'+(c.is_active?'Active':'Inactive')+'</span></td><td>'+dateFmt(c.created_at)+'</td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="viewCoach(\''+c.id+'\')">View profile</button></td></tr>';
     }).join('') + '</tbody></table>';
 }
 
@@ -72,7 +72,7 @@ async function viewCoach(id){
     var c=d.coach||{}, team=d.academyTeam||{}, st=d.stats||{};
     document.getElementById('modalTitle').textContent=safe(c.first_name)+' '+safe(c.last_name,'');
     document.getElementById('modalSubtitle').textContent=safe(c.email);
-    document.getElementById('coachDetailBody').innerHTML='<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-sm btn-outline" onclick="toggleCoachSuperUser(\''+c.id+'\','+(!c.is_super_user)+')">'+(c.is_super_user?'Remove super-user access':'Make coach super user')+'</button></div><div class="detail-grid">'+
+    document.getElementById('coachDetailBody').innerHTML='<div class="modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-sm btn-outline" onclick="toggleCoachSuperUser(\''+c.id+'\','+(!c.is_super_user)+')">'+(c.is_super_user?'Remove super-user access':'Make coach super user')+'</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteCoach(\''+c.id+'\')">Delete coach</button></div><div class="detail-grid">'+
       stat('Team', safe(team.team_name,c.team_name||'Unassigned'))+
       stat('Role', safe(c.role_at_club,'Coach'))+
       stat('Super user', c.is_super_user?'Yes':'No')+
@@ -92,7 +92,7 @@ async function toggleCoachSuperUser(id,next){
   var action=next?'make '+name+' a super user':'remove super-user access from '+name;
   if(!confirm('Are you sure you want to '+action+'?')) return;
   try{
-    await api('PATCH','/api/stratex/coaches/'+id+'/super-user',{isSuperUser:!!next});
+    await api('POST','/api/stratex/coaches/'+id+'/super-user',{isSuperUser:!!next});
     allCoaches=allCoaches.map(function(c){return c.id===id?Object.assign({},c,{is_super_user:!!next}):c;});
     renderCoaches(allCoaches);
     if(document.getElementById('coachModal').style.display==='block') viewCoach(id);
@@ -107,6 +107,7 @@ async function deleteCoach(id){
     await api('DELETE','/api/stratex/coaches/'+id);
     allCoaches=allCoaches.filter(function(c){return c.id!==id;});
     document.getElementById('coachCount').textContent=allCoaches.length+' coaches';
+    closeCoachModal();
     renderCoaches(allCoaches);
   }catch(e){alert('Could not delete coach: '+e.message);}
 }

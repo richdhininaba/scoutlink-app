@@ -107,6 +107,7 @@ async function submitScout() {
   const emailAddr = document.getElementById('s_email').value.trim();
   const scoutClub = document.getElementById('s_club').value.trim();
   if (!firstName || !lastName || !emailAddr || !scoutClub) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+  if (!validateEmailInput(document.getElementById('s_email'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
   const btn = document.querySelector('#scoutSection .btn');
   btn.disabled = true; btn.textContent = 'Submitting...';
   try {
@@ -125,6 +126,7 @@ async function submitCoach() {
   const emailAddr = document.getElementById('c_email').value.trim();
   const teamName = document.getElementById('c_team').value.trim();
   if (!firstName || !lastName || !emailAddr || !teamName) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+  if (!validateEmailInput(document.getElementById('c_email'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
   const btn = document.querySelector('#coachSection .btn');
   btn.disabled = true; btn.textContent = 'Submitting...';
   try {

@@ -18,6 +18,10 @@ function titleCase(v) {
 return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function isValidEmail(emailAddr) {
+return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
+}
+
 function completeRegistrationLink(accountType, emailAddr, loginCode) {
 const baseUrl = String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
 return baseUrl + '/complete-registration?code=' + encodeURIComponent(loginCode) + '&email=' + encodeURIComponent(String(emailAddr || '').toLowerCase().trim()) + '&type=' + encodeURIComponent(accountType);
@@ -111,6 +115,24 @@ if (error) throw error;
 return ids.length;
 }
 
+async function updateScoutSuperUser(req, res) {
+try {
+const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
+const { data, error } = await supabase.from('scouts').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
+if (error || !data) return res.status(404).json({ error: 'Scout not found' });
+res.json({ message: isSuperUser ? 'Scout marked as super user' : 'Scout super user access removed', scout: data });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+}
+
+async function updateCoachSuperUser(req, res) {
+try {
+const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
+const { data, error } = await supabase.from('coaches').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
+if (error || !data) return res.status(404).json({ error: 'Coach not found' });
+res.json({ message: isSuperUser ? 'Coach marked as super user' : 'Coach super user access removed', coach: data });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+}
+
 router.get('/dashboard', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const [{ count: totalPlayers }, { count: totalCoaches }, { count: totalScouts }, { count: pendingReqs }, { data: recentReqs }] = await Promise.all([
@@ -195,6 +217,11 @@ res.json({ data: (data||[]).map(c => ({ ...c, academy_team: c.team_id ? teamMap[
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
+router.patch('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), updateScoutSuperUser);
+router.post('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), updateScoutSuperUser);
+router.patch('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), updateCoachSuperUser);
+router.post('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), updateCoachSuperUser);
+
 router.get('/scouts/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const { data: scout, error } = await supabase.from('scouts').select('*').eq('id', req.params.id).single();
@@ -249,28 +276,11 @@ res.json({ message: 'Coach deleted', removed });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.patch('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), async (req, res) => {
-try {
-const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
-const { data, error } = await supabase.from('scouts').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
-if (error || !data) return res.status(404).json({ error: 'Scout not found' });
-res.json({ message: isSuperUser ? 'Scout marked as super user' : 'Scout super user access removed', scout: data });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
-});
-
-router.patch('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), async (req, res) => {
-try {
-const isSuperUser = req.body.isSuperUser === true || req.body.is_super_user === true;
-const { data, error } = await supabase.from('coaches').update({ is_super_user: isSuperUser }).eq('id', req.params.id).select('id,first_name,last_name,email,is_super_user').single();
-if (error || !data) return res.status(404).json({ error: 'Coach not found' });
-res.json({ message: isSuperUser ? 'Coach marked as super user' : 'Coach super user access removed', coach: data });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
-});
-
 router.post('/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, subscriptionPlan } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
+if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupS = await checkDuplicates(emailAddr, phone);
 if (dupS.duplicate) return res.status(409).json({ error: 'This ' + dupS.field + ' is already registered.' });
 const loginCode = await generateUniqueCode();
@@ -308,6 +318,7 @@ router.post('/coaches', requireAuth, requireRole('Stratex'), async (req, res) =>
 try {
 const { firstName, lastName, emailAddr, phone, teamName, roleAtClub, county, league } = req.body;
 if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
+if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupC = await checkDuplicates(emailAddr, phone);
 if (dupC.duplicate) return res.status(409).json({ error: 'This ' + dupC.field + ' is already registered.' });
 const loginCode = await generateUniqueCode();
@@ -335,6 +346,7 @@ router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => 
 try {
 const { firstName, lastName, emailAddr, role } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
+if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupA = await checkDuplicates(emailAddr, null);
 if (dupA.duplicate) return res.status(409).json({ error: 'This email is already registered.' });
 const loginCode = await generateUniqueCode();
