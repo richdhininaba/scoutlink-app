@@ -18,10 +18,21 @@ function inviteData(d) {
   const accountType = d.accountType || 'account';
   const emailAddr = d.email || d.to || '';
   const loginCode = d.loginCode || d.resetCode || '';
+  const firstName = d.firstName || d.first_name || d.playerFirstName || 'there';
+  const completeLink = d.completeLink || accountLink('/complete-registration', { code: loginCode, email: emailAddr, type: accountType });
+  const loginUrl = accountLink('/login', {});
   return {
-    loginUrl: accountLink('/login', {}),
-    completeLink: d.completeLink || accountLink('/complete-registration', { code: loginCode, email: emailAddr, type: accountType }),
+    loginUrl,
+    login_url: loginUrl,
+    completeLink,
+    complete_link: completeLink,
     accountType,
+    account_type: accountType,
+    firstName,
+    first_name: firstName,
+    loginCode,
+    login_code: loginCode,
+    email: emailAddr,
     ...d
   };
 }
@@ -77,8 +88,18 @@ const toArr = Array.isArray(to) ? to : [to];
     return { success: true };
   } catch(err) {
     console.error('[Email] Failed:', err?.response?.body || err.message);
-    return { success: false, error: err.message };
+    return { success: false, error: err.message, details: err?.response?.body || null };
   }
+}
+
+async function sendTemplateFallback({ to, templates, data }) {
+  const options = (templates || []).filter(t => t && t.id);
+  for (const t of options) {
+    const result = await send({ to, templateId: t.id, data });
+    if (result.success) return { ...result, template: t.name, templateId: t.id };
+    console.error('[Email] Template send failed for', t.name, result.error || result.details || 'unknown error');
+  }
+  return { success: false, error: 'No SendGrid template accepted the email', details: options.map(t => t.name).join(', ') || 'No templates configured' };
 }
 
 module.exports = {
@@ -89,7 +110,17 @@ module.exports = {
   sendScoutRegAlert: (d) => send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data: d }),
 
   // SENDGRID_TEMPLATE_REG_APPROVED — sent to the applicant when their registration is approved
-  sendRegApproved: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regApproved, data: d }),
+  sendRegApproved: (d) => {
+    d = inviteData(d || {});
+    return sendTemplateFallback({
+      to: d.to,
+      templates: [
+        { name: 'regApproved', id: config.sendgrid.templates.regApproved },
+        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup }
+      ],
+      data: d
+    });
+  },
 
   // SENDGRID_TEMPLATE_REG_DECLINED — sent to the applicant when their registration is declined
   sendRegDeclined: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regDeclined, data: d }),
@@ -104,7 +135,14 @@ module.exports = {
   // Also used by sendPlayerLoginCode when a coach adds a player
   sendCompleteSignup: async (d) => {
     d = inviteData(d || {});
-    return send({ to: d.to, templateId: config.sendgrid.templates.completeSignup, data: d });
+    return sendTemplateFallback({
+      to: d.to,
+      templates: [
+        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup },
+        { name: 'regApproved', id: config.sendgrid.templates.regApproved }
+      ],
+      data: d
+    });
   },
 
   // SENDGRID_TEMPLATE_COMPLETE_SIGNUP — used when a coach adds a player

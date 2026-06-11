@@ -69,6 +69,11 @@ function titleCase(v) {
   return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+async function removeCreatedUser(accountType, id) {
+  const table = accountType === 'Coach' ? 'coaches' : accountType === 'Scout' ? 'scouts' : null;
+  if (table && id) await supabase.from(table).delete().eq('id', id);
+}
+
 // Public: coach registers
 router.post('/coach', async (req, res) => {
   try {
@@ -172,22 +177,30 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
     return res.status(400).json({ error: 'Unsupported account type: ' + rq.account_type });
   }
 
-  await supabase.from('registration_requests').update({
-    status: 'approved', login_code: loginCode,
-    reviewed_by: req.user.email||'stratex', reviewed_at: new Date()
-  }).eq('id', req.params.id);
-
   // Build complete-registration link
   const baseUrl = config.brandUrl || 'https://scoutlink.app';
     const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=' + rq.account_type;
 
   // Send approved email using SENDGRID_TEMPLATE_REG_APPROVED
-  await email.sendRegApproved({
+  const emailResult = await email.sendRegApproved({
     to: rq.email, firstName: rq.first_name, loginCode,
     accountType: rq.account_type, completeLink, email: rq.email
-  }).catch(e => console.error('[Approve] email failed:', e.message));
+  }).catch(e => ({ success: false, error: e.message }));
+  if (!emailResult || !emailResult.success) {
+    await removeCreatedUser(rq.account_type, newUser && newUser.id);
+    console.error('[Approve] email failed; approval rolled back:', emailResult);
+    return res.status(502).json({
+      error: 'SendGrid did not accept the approval email. Registration is still pending.',
+      details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
+    });
+  }
 
-  res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink });
+  await supabase.from('registration_requests').update({
+    status: 'approved', login_code: loginCode,
+    reviewed_by: req.user.email||'stratex', reviewed_at: new Date()
+  }).eq('id', req.params.id);
+
+  res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
   } catch(err) { console.error('[Approve] error:', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
