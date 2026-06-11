@@ -14,6 +14,7 @@
     '/stratex/scouts': '/frontend/pages/stratex-scouts.html',
     '/stratex/coaches': '/frontend/pages/stratex-coaches.html',
     '/stratex/scout-teams': '/frontend/pages/stratex-scout-teams.html',
+    '/stratex/school-teams': '/frontend/pages/stratex-school-teams.html',
     '/stratex/non-pro-academies': '/frontend/pages/stratex-school-teams.html',
     '/stratex/award-nominations': '/frontend/pages/stratex-award-nominations.html',
     '/stratex/showcase-events': '/frontend/pages/stratex-showcase-events.html',
