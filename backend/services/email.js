@@ -149,6 +149,47 @@ const toArr = Array.isArray(to) ? to : [to];
   }
 }
 
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[ch]);
+}
+
+async function sendPlain({ to, subject, text, html }) {
+  if (!config.sendgrid.apiKey) {
+    console.warn('[Email] SENDGRID_API_KEY not configured - skipping plain email send');
+    return { success: false, skipped: true };
+  }
+  const sgMail = getSgMail();
+  if (!sgMail) return { success: false, error: 'SendGrid not available' };
+  const toArr = Array.isArray(to) ? to : [to];
+  const safeText = String(text || '').trim();
+  const msgHtml = html || '<div style="font-family:Inter,Arial,sans-serif;line-height:1.5;color:#111827">' +
+    '<h2 style="margin:0 0 16px;color:#07111f">' + escapeHtml(subject || 'ScoutLink') + '</h2>' +
+    '<p style="white-space:pre-line;margin:0 0 20px">' + escapeHtml(safeText) + '</p>' +
+    '<p style="margin:0;color:#64748b;font-size:13px">ScoutLink by Stratex Analytics</p>' +
+    '</div>';
+  const msgs = toArr.map(addr => ({
+    to: addr,
+    from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
+    subject: subject || 'ScoutLink',
+    text: safeText || subject || 'ScoutLink notification',
+    html: msgHtml
+  }));
+  try {
+    for (const m of msgs) await sgMail.send(m);
+    console.log('[Email] Sent plain email to', toArr.join(', '), 'subject:', subject || 'ScoutLink');
+    return { success: true, template: 'plain' };
+  } catch(err) {
+    console.error('[Email] Plain send failed:', err?.response?.body || err.message);
+    return { success: false, error: err.message, details: err?.response?.body || null };
+  }
+}
+
 async function sendTemplateFallback({ to, templates, data }) {
   const options = (templates || []).filter(t => t && t.id);
   for (const t of options) {
@@ -186,7 +227,16 @@ module.exports = {
   sendScoutInterest: (d) => send({ to: d.to, templateId: config.sendgrid.templates.scoutInterest, data: d }),
 
   // SENDGRID_TEMPLATE_NOTIFICATION — sent as a general notification email
-  sendNotification: (d) => send({ to: d.to, templateId: config.sendgrid.templates.notification, data: notificationData(d) }),
+  sendNotification: async (d) => {
+    d = notificationData(d || {});
+    const templateResult = await send({ to: d.to, templateId: config.sendgrid.templates.notification, data: d });
+    if (templateResult.success) return { ...templateResult, template: 'notification' };
+    return sendPlain({
+      to: d.to,
+      subject: d.title || 'ScoutLink notification',
+      text: (d.body || d.message || 'You have a new ScoutLink notification.') + '\n\nOpen ScoutLink: ' + (d.actionLink || d.loginUrl || brandBase())
+    });
+  },
 
   // SENDGRID_TEMPLATE_COMPLETE_SIGNUP — sent to a user to complete their account setup
   // Also used by sendPlayerLoginCode when a coach adds a player
@@ -220,6 +270,12 @@ module.exports = {
   sendResetPassword: async (d) => {
     d = resetData(d || {});
     if (!d.to) return { success: false, error: 'No recipient' };
-    return send({ to: d.to, templateId: config.sendgrid.templates.resetPassword, data: d });
+    const templateResult = await send({ to: d.to, templateId: config.sendgrid.templates.resetPassword, data: d });
+    if (templateResult.success) return { ...templateResult, template: 'resetPassword' };
+    return sendPlain({
+      to: d.to,
+      subject: 'Reset your ScoutLink password',
+      text: 'Hi ' + (d.firstName || d.first_name || 'there') + ',\n\nYour ScoutLink reset code is: ' + d.resetCode + '\n\nUse it here: ' + d.resetLink + '\n\nThis code expires shortly.'
+    });
   },
 };
