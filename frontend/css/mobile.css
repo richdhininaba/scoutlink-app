@@ -742,3 +742,252 @@ body { padding-bottom: 60px; }
      .kpi-value, .kpi-val { word-break: break-word !important; overflow: hidden !important; }
      .video-grid, .reel-grid { grid-template-columns: 1fr !important; }
 }
+
+/* ScoutLink phone experience v3 - core action polish */
+@media (max-width: 767px) {
+  body.mobile-drawer-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
+  .topbar-right.mobile-action-group,
+  .table-header.mobile-action-group {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .topbar-right.mobile-action-group::-webkit-scrollbar,
+  .table-header.mobile-action-group::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .topbar-right {
+    max-width: 48vw !important;
+    min-width: 0 !important;
+  }
+
+  .topbar-right .btn,
+  .topbar-right button:not(.notif-btn) {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  .table-header .btn,
+  .table-header button,
+  .table-header select {
+    min-height: 40px !important;
+    max-width: 100% !important;
+  }
+
+  .table-header select {
+    flex: 1 1 150px !important;
+  }
+
+  .page-content > .tab-bar,
+  .tab-bar {
+    display: flex !important;
+    gap: 8px !important;
+    padding-bottom: 2px !important;
+    max-width: 100% !important;
+  }
+
+  .tab-bar .tab-btn {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .table-card > div[style*="padding"],
+  .form-container,
+  .modal form,
+  .detail-box {
+    min-width: 0 !important;
+  }
+
+  .form-group {
+    margin-bottom: 14px !important;
+  }
+
+  .form-group label {
+    display: block !important;
+    margin-bottom: 7px !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100% !important;
+    min-height: 44px !important;
+    line-height: 1.25 !important;
+  }
+
+  textarea {
+    min-height: 96px !important;
+  }
+
+  .form-actions,
+  .modal-actions,
+  .actions,
+  .step-buttons {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .form-actions .btn,
+  .modal-actions .btn,
+  .actions .btn,
+  .step-buttons .btn,
+  .table-card > div[style*="padding"] > .btn,
+  .table-card > div[style*="padding"] > button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .mobile-card-table tbody {
+    padding: 10px !important;
+  }
+
+  .mobile-card-table tr {
+    box-shadow: none !important;
+  }
+
+  .mobile-card-table td {
+    font-size: 13px !important;
+  }
+
+  .mobile-card-table td:first-child {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+  }
+
+  .mobile-card-table td .badge {
+    display: inline-flex !important;
+    max-width: 100% !important;
+  }
+
+  .mobile-card-table td.mobile-actions-cell,
+  .mobile-card-table td:last-child {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  .mobile-card-table td.mobile-actions-cell > div,
+  .mobile-card-table td:last-child > div {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .mobile-card-table td.mobile-actions-cell .btn,
+  .mobile-card-table td:last-child .btn,
+  .mobile-card-table td.mobile-actions-cell button,
+  .mobile-card-table td:last-child button {
+    min-height: 40px !important;
+    width: 100% !important;
+  }
+
+  .mobile-sheet-modal.detail-modal,
+  .mobile-sheet-modal.modal-overlay,
+  .detail-modal,
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .detail-box,
+  .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92svh !important;
+    margin: auto 0 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    overflow-y: auto !important;
+    padding: 18px !important;
+  }
+
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .detail-stat {
+    min-width: 0 !important;
+    padding: 12px !important;
+  }
+
+  .detail-label {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  .detail-value {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .kpi-grid,
+  .dashboard-grid,
+  .stats-grid,
+  .metric-grid {
+    gap: 10px !important;
+  }
+
+  .kpi-card,
+  .stat-card,
+  .metric,
+  .table-card {
+    border-color: rgba(148,163,184,.18) !important;
+  }
+
+  .bulk-table-wrap {
+    border: 1px solid rgba(148,163,184,.18) !important;
+    border-radius: 12px !important;
+  }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+  .topbar-right {
+    max-width: 58vw !important;
+  }
+
+  .detail-box,
+  .modal {
+    max-height: calc(100svh - 50px) !important;
+    border-radius: 14px !important;
+    margin: 0 auto !important;
+    max-width: min(92vw, 900px) !important;
+  }
+
+  .detail-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .form-row,
+  .form-row.cols-3,
+  .filter-row,
+  .controls-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .mobile-card-table tbody {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .form-actions,
+  .modal-actions,
+  .actions,
+  .step-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
