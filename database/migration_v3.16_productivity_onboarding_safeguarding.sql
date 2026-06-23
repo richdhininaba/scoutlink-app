@@ -218,3 +218,138 @@ select 'STX-RJINABA', 'RJ', 'Inaba', 'rodhinjunior.inaba@stratexanalytics.co.uk'
   (select id from public.stratex where lower(email) = 'richdhin@stratexanalytics.co.uk' limit 1),
   array['acquisition','product_demo'], true, false
 where not exists (select 1 from public.stratex where lower(email) = 'rodhinjunior.inaba@stratexanalytics.co.uk');
+
+-- Keep Stratex product-demo access alive with dedicated demo accounts.
+with demo_hash as (
+  select password_hash from public.stratex where lower(email) = 'richdhin@stratexanalytics.co.uk' and password_hash is not null limit 1
+),
+demo_academy_insert as (
+  insert into public.school_academy_teams (team_name, county, league, contact_email, city, country, address_line, postcode)
+  select 'ScoutLink Demo Non Pro Academy', 'London', 'London Youth League', 'demo@scoutlink.app', 'London', 'England', 'ScoutLink Demo Ground', 'SW1A 1AA'
+  where exists (select 1 from demo_hash)
+    and not exists (select 1 from public.school_academy_teams where lower(team_name) = 'scoutlink demo non pro academy')
+  returning id, team_name
+),
+demo_academy as (
+  select id, team_name from demo_academy_insert
+  union all
+  select id, team_name from public.school_academy_teams where lower(team_name) = 'scoutlink demo non pro academy' limit 1
+),
+demo_scout_team_insert as (
+  insert into public.scout_teams (team_name, league, tier, country, formation, playing_style, club_name, scout_region, preferred_positions, age_groups)
+  select 'ScoutLink Demo Scout Team', 'EFL League Two', 4, 'England', '4-3-3', 'High press', 'ScoutLink Demo FC', 'London', array['ST','CM','CB'], array['U16','U17','U18']
+  where exists (select 1 from demo_hash)
+    and not exists (select 1 from public.scout_teams where lower(team_name) = 'scoutlink demo scout team')
+  returning id
+),
+demo_scout_team as (
+  select id from demo_scout_team_insert
+  union all
+  select id from public.scout_teams where lower(team_name) = 'scoutlink demo scout team' limit 1
+),
+demo_coach_update as (
+  update public.coaches c
+  set first_name = 'Coach',
+      last_name = 'Test',
+      team_id = (select id from demo_academy limit 1),
+      team_name = (select team_name from demo_academy limit 1),
+      role_at_club = 'Head Coach',
+      data_policy_agreed = true,
+      password_hash = (select password_hash from demo_hash limit 1),
+      login_code = null,
+      login_code_expires = null,
+      is_active = true,
+      registration_complete = true,
+      is_super_user = true,
+      team_county = 'London',
+      team_league = 'London Youth League'
+  where lower(c.email) = 'coach@test.scoutlink.com'
+  returning id
+),
+demo_coach_insert as (
+  insert into public.coaches (coach_id, first_name, last_name, email, phone, team_id, team_name, role_at_club, data_policy_agreed, password_hash, is_active, registration_complete, is_super_user, team_county, team_league)
+  select 'CHC-TEST', 'Coach', 'Test', 'coach@test.scoutlink.com', null, (select id from demo_academy limit 1), (select team_name from demo_academy limit 1), 'Head Coach', true, (select password_hash from demo_hash limit 1), true, true, true, 'London', 'London Youth League'
+  where exists (select 1 from demo_hash)
+    and not exists (select 1 from public.coaches where lower(email) = 'coach@test.scoutlink.com')
+  returning id
+),
+demo_coach as (
+  select id from demo_coach_update
+  union all select id from demo_coach_insert
+  union all select id from public.coaches where lower(email) = 'coach@test.scoutlink.com' limit 1
+)
+update public.players p
+set first_name = 'Player',
+    last_name = 'Test',
+    date_of_birth = coalesce(date_of_birth, '2009-05-21'::date),
+    age = 17,
+    age_group = 'U18',
+    nationality = 'England',
+    position_group = 'Forward',
+    specific_position = 'ST',
+    primary_position = 'ST',
+    foot = 'Right',
+    team_id = (select id from demo_academy limit 1),
+    team_name = (select team_name from demo_academy limit 1),
+    assigned_coach_id = (select id from demo_coach limit 1),
+    password_hash = (select password_hash from demo_hash limit 1),
+    is_active = true,
+    registration_complete = true,
+    overall_rating = coalesce(overall_rating, 79),
+    transfer_value = coalesce(transfer_value, 126000),
+    appearances = coalesce(appearances, 7),
+    goals = coalesce(goals, 5),
+    assists = coalesce(assists, 2)
+where lower(p.email) = 'player@test.scoutlink.com';
+
+with demo_hash as (
+  select password_hash from public.stratex where lower(email) = 'richdhin@stratexanalytics.co.uk' and password_hash is not null limit 1
+),
+demo_academy as (
+  select id, team_name from public.school_academy_teams where lower(team_name) = 'scoutlink demo non pro academy' limit 1
+),
+demo_coach as (
+  select id from public.coaches where lower(email) = 'coach@test.scoutlink.com' limit 1
+)
+insert into public.players (player_id, first_name, last_name, email, date_of_birth, age, age_group, nationality, position_group, specific_position, primary_position, foot, team_id, team_name, assigned_coach_id, password_hash, is_active, registration_complete, overall_rating, transfer_value, appearances, goals, assists)
+select 'PLY-TEST', 'Player', 'Test', 'player@test.scoutlink.com', '2009-05-21'::date, 17, 'U18', 'England', 'Forward', 'ST', 'ST', 'Right', (select id from demo_academy limit 1), (select team_name from demo_academy limit 1), (select id from demo_coach limit 1), (select password_hash from demo_hash limit 1), true, true, 79, 126000, 7, 5, 2
+where exists (select 1 from demo_hash)
+  and not exists (select 1 from public.players where lower(email) = 'player@test.scoutlink.com');
+
+with demo_hash as (
+  select password_hash from public.stratex where lower(email) = 'richdhin@stratexanalytics.co.uk' and password_hash is not null limit 1
+),
+demo_scout_team as (
+  select id from public.scout_teams where lower(team_name) = 'scoutlink demo scout team' limit 1
+)
+update public.scouts s
+set first_name = 'Scout',
+    last_name = 'Test',
+    club_name = 'ScoutLink Demo FC',
+    club_league = 'EFL League Two',
+    scout_team_id = (select id from demo_scout_team limit 1),
+    preferences_set = true,
+    password_hash = (select password_hash from demo_hash limit 1),
+    login_code = null,
+    login_code_expires = null,
+    is_active = true,
+    is_super_user = true,
+    registration_complete = true,
+    subscription_plan = coalesce(subscription_plan, 'PRO'),
+    plan_start = coalesce(plan_start, now()),
+    plan_end = coalesce(plan_end, now() + interval '1 year'),
+    exports_remaining = coalesce(exports_remaining, 100),
+    predictions_remaining = coalesce(predictions_remaining, 100),
+    interests_remaining = coalesce(interests_remaining, 100)
+where lower(s.email) = 'scout@test.scoutlink.com';
+
+with demo_hash as (
+  select password_hash from public.stratex where lower(email) = 'richdhin@stratexanalytics.co.uk' and password_hash is not null limit 1
+),
+demo_scout_team as (
+  select id from public.scout_teams where lower(team_name) = 'scoutlink demo scout team' limit 1
+)
+insert into public.scouts (scout_id, first_name, last_name, email, phone, club_name, club_league, scout_team_id, preferences_set, password_hash, is_active, is_super_user, registration_complete, subscription_plan, plan_start, plan_end, exports_remaining, predictions_remaining, interests_remaining)
+select 'SCT-TEST', 'Scout', 'Test', 'scout@test.scoutlink.com', null, 'ScoutLink Demo FC', 'EFL League Two', (select id from demo_scout_team limit 1), true, (select password_hash from demo_hash limit 1), true, true, true, 'PRO', now(), now() + interval '1 year', 100, 100, 100
+where exists (select 1 from demo_hash)
+  and not exists (select 1 from public.scouts where lower(email) = 'scout@test.scoutlink.com');
