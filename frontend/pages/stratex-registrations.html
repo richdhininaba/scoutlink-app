@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Registrations - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css">
@@ -38,7 +38,7 @@
 
 <div class="modal-overlay" id="approveModal">
   <div class="modal">
-    <div class="modal-header"><h3 class="modal-title">Approve Registration</h3><button class="modal-close" onclick="closeApprove()">&times;Â</button></div>
+    <div class="modal-header"><h3 class="modal-title">Approve Registration</h3><button class="modal-close" onclick="closeApprove()" aria-label="Close">&times;</button></div>
     <div id="approveScoutPlan" style="display:none">
       <div class="form-group"><label>Subscription Plan <span class="required">*</span></label>
         <select id="planSelect">
@@ -48,6 +48,28 @@
           <option value="Enterprise">Enterprise - Custom/unlimited</option>
         </select>
       </div>
+    </div>
+    <div id="approveScoutSafeguarding" style="display:none;border:1px solid #243447;background:#07111f;border-radius:12px;padding:14px;margin-bottom:16px">
+      <h4 style="margin:0 0 10px;color:#fff">Scout safeguarding gate</h4>
+      <p style="color:#8ea2b5;font-size:12px;line-height:1.5;margin-bottom:12px">Every item below is a genuine gate. If any item cannot be confirmed, hold the application and request more information instead of approving.</p>
+      <div style="display:grid;gap:8px">
+        <label><input type="checkbox" class="safeguard-check" data-key="identity"> Identity confirmed against submitted document and profile photo</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="dbs"> Enhanced DBS checked and suitable for U16 player data access</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="faCredentials"> FA/scouting licence, club letter, or professional scouting history verified</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="clubAssociation"> Club/organisation association or independent scout status verified</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="contactDetails"> Contact details checked and not linked to a flagged application</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="noSafeguardingFlags"> No unresolved safeguarding red flags</label>
+        <label><input type="checkbox" class="safeguard-check" data-key="termsAccepted"> Terms and data access agreement confirmed and timestamped</label>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group"><label>DBS certificate number</label><input id="dbsNumber" placeholder="Certificate number"></div>
+        <div class="form-group"><label>DBS issue date</label><input type="date" id="dbsIssueDate"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>DBS level</label><select id="dbsLevel"><option value="">Select level</option><option value="enhanced">Enhanced</option><option value="standard">Standard</option><option value="basic">Basic</option></select></div>
+        <div class="form-group"><label>Supporting files</label><input type="file" id="safeguardFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></div>
+      </div>
+      <div class="form-group"><label>Review notes</label><textarea id="safeguardNotes" placeholder="Explain any name discrepancy, follow-up, or verification source."></textarea></div>
     </div>
     <p style="color:#B0BEC5;font-size:14px;margin-bottom:20px">Approve this registration? A login code will be sent by email.</p>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
@@ -59,7 +81,7 @@
 
 <div class="modal-overlay" id="declineModal">
   <div class="modal">
-    <div class="modal-header"><h3 class="modal-title">Decline Registration</h3><button class="modal-close" onclick="closeDecline()">&times;Â</button></div>
+    <div class="modal-header"><h3 class="modal-title">Decline Registration</h3><button class="modal-close" onclick="closeDecline()" aria-label="Close">&times;</button></div>
     <div class="form-group"><label>Reason for Declining <span class="required">*</span></label>
       <select id="declineReasonSel">
         <option value="">Select a reason...</option>
@@ -80,7 +102,7 @@
 </div>
 
 <div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Â</button></div>
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" aria-label="Close notifications" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;</button></div>
   <div class="notif-list" id="notifList"></div>
 </div>
 <script src="../js/stratex-nav.js"></script>
@@ -142,6 +164,10 @@ function openApprove(id, type) {
   pendingApproveId = id;
   pendingApproveType = type;
   document.getElementById('approveScoutPlan').style.display = type === 'Scout' ? 'block' : 'none';
+  document.getElementById('approveScoutSafeguarding').style.display = type === 'Scout' ? 'block' : 'none';
+  document.querySelectorAll('.safeguard-check').forEach(function(c){c.checked=false;});
+  ['dbsNumber','dbsIssueDate','dbsLevel','safeguardNotes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var files=document.getElementById('safeguardFiles'); if(files)files.value='';
   document.getElementById('approveModal').classList.add('open');
 }
 function closeApprove() { document.getElementById('approveModal').classList.remove('open'); pendingApproveId = null; pendingApproveType = null; }
@@ -151,6 +177,11 @@ async function confirmApprove() {
   suc.classList.remove('show'); err.classList.remove('show');
   var body = {};
   if (pendingApproveType === 'Scout') body.subscriptionPlan = document.getElementById('planSelect').value;
+  if (pendingApproveType === 'Scout') {
+    body.safeguardingReview = await buildSafeguardingReview();
+    var allChecked = Object.keys(body.safeguardingReview.checklist).every(function(k){return body.safeguardingReview.checklist[k]===true;});
+    if(!allChecked){err.textContent='Every safeguarding gate must be checked before approval.';err.classList.add('show');return;}
+  }
   try {
     await api('POST', '/api/registrations/' + pendingApproveId + '/approve', body);
     closeApprove();
@@ -158,6 +189,26 @@ async function confirmApprove() {
     suc.classList.add('show');
     loadReqs(currentStatus);
   } catch(e) { err.textContent = e.message; err.classList.add('show'); }
+}
+
+function readSafeguardingFile(file){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(){resolve({name:file.name,size:file.size,type:file.type,lastModified:file.lastModified,dataUrl:reader.result});};
+    reader.onerror=function(){reject(new Error('Could not read '+file.name));};
+    reader.readAsDataURL(file);
+  });
+}
+async function buildSafeguardingReview(){
+  var checklist={};
+  document.querySelectorAll('.safeguard-check').forEach(function(c){checklist[c.dataset.key]=!!c.checked;});
+  var files=[].slice.call(document.getElementById('safeguardFiles').files||[]);
+  var docs=[];
+  for(var i=0;i<files.length;i++){
+    if(files[i].size>900000){throw new Error(files[i].name+' is too large. Please upload files under 900KB for database storage.');}
+    docs.push(await readSafeguardingFile(files[i]));
+  }
+  return {checklist:checklist,dbsCertificateNumber:document.getElementById('dbsNumber').value.trim(),dbsIssueDate:document.getElementById('dbsIssueDate').value,dbsLevel:document.getElementById('dbsLevel').value,documents:docs,notes:document.getElementById('safeguardNotes').value.trim()};
 }
 
 function openDecline(id) { pendingDeclineId = id; document.getElementById('declineModal').classList.add('open'); }

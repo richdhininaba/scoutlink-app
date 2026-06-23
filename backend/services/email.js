@@ -32,7 +32,13 @@ function inviteData(d) {
     first_name: firstName,
     loginCode,
     login_code: loginCode,
+    code: loginCode,
     email: emailAddr,
+    to: d.to || emailAddr,
+    recipientEmail: emailAddr,
+    recipient_email: emailAddr,
+    ctaUrl: completeLink,
+    cta_url: completeLink,
     ...d
   };
 }
@@ -283,11 +289,18 @@ module.exports = {
   // Also used by sendPlayerLoginCode when a coach adds a player
   sendCompleteSignup: async (d) => {
     d = inviteData(d || {});
+    const accountType = String(d.accountType || d.account_type || '').toLowerCase();
+    const primary = (accountType === 'player' || accountType === 'stratex')
+      ? { name: 'completeSignup', id: config.sendgrid.templates.completeSignup }
+      : { name: 'regApproved', id: config.sendgrid.templates.regApproved };
+    const secondary = primary.name === 'completeSignup'
+      ? { name: 'regApproved', id: config.sendgrid.templates.regApproved }
+      : { name: 'completeSignup', id: config.sendgrid.templates.completeSignup };
     return sendTemplateFallback({
       to: d.to,
       templates: [
-        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup },
-        { name: 'regApproved', id: config.sendgrid.templates.regApproved }
+        primary,
+        secondary
       ],
       data: d
     });

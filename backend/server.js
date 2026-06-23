@@ -46,6 +46,7 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/season', require('./routes/season'));
 app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/fixtures', require('./routes/fixtures'));
+app.use('/api/onboarding', require('./routes/onboarding'));
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });

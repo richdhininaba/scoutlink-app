@@ -991,12 +991,13 @@ function renderStep5(){
     evtSummary='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em">Events</div>'+
     evts.map(function(e){
       var m=e.minute!==undefined?e.minute+'min Ã¢ÂÂ ':'';
+      m=e.minute!==undefined?e.minute+'min - ':'';
       if(e.type==='goal'){var assister=e.assist?playerName(e.assist):'';return '<div style="font-size:12px;padding:3px 0">&#9917; '+m+playerName(e.playerId)+(assister?' (assist: '+assister+')':'')+'</div>';}
       if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">&#9646; '+m+playerName(e.playerId)+' Ã¢ÂÂ Yellow card</div>';
       if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">&#9646; '+m+playerName(e.playerId)+' Ã¢ÂÂ Red card</div>';
       if(e.type==='substitution') return '<div style="font-size:12px;padding:3px 0;color:#42A5F5">&#8645; '+m+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
       return '';
-    }).join('')+'</div>';
+    }).join('').replace(/\u00c3[^<]*Yellow card/g,' - Yellow card').replace(/\u00c3[^<]*Red card/g,' - Red card')+'</div>';
   }
 
   document.getElementById('stepContent').innerHTML=

@@ -22,6 +22,47 @@ function isValidEmail(emailAddr) {
 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
+const ADMIN_ROLE_PERMISSIONS = {
+Management: ['management','acquisition','safeguarding','nominations','operations','product_demo'],
+Acquisition: ['acquisition','safeguarding','product_demo'],
+Safeguarding: ['safeguarding','registrations'],
+Nominations: ['nominations','showcase'],
+Operations: ['operations','support','showcase'],
+Support: ['support'],
+ProductDemo: ['product_demo']
+};
+
+function canonicalLeagueName(v) {
+return String(v || '').trim().replace(/\s+/g, ' ');
+}
+
+async function ensureLeagueOption(name, userId) {
+const leagueName = canonicalLeagueName(name);
+if (!leagueName) return null;
+const { data: existing } = await supabase.from('league_options').select('*').ilike('name', leagueName).maybeSingle();
+if (existing) return existing;
+const { data, error } = await supabase.from('league_options').insert({ name: leagueName, created_by: userId || null }).select().single();
+if (error) throw error;
+return data;
+}
+
+function validateScoutSafeguardingReview(review) {
+review = review || {};
+const checklist = review.checklist || {};
+const required = ['identity','dbs','faCredentials','clubAssociation','contactDetails','noSafeguardingFlags','termsAccepted'];
+const missing = required.filter(k => checklist[k] !== true);
+const dbsDate = review.dbsIssueDate ? new Date(review.dbsIssueDate) : null;
+const threeYearsAgo = new Date(Date.now() - 3 * 365 * 24 * 60 * 60 * 1000);
+const docs = Array.isArray(review.documents) ? review.documents : [];
+if (missing.length) return { ok: false, error: 'Scout approval is blocked until every safeguarding gate is checked: ' + missing.join(', ') };
+if (!review.dbsCertificateNumber) return { ok: false, error: 'DBS certificate number is required.' };
+if (!dbsDate || Number.isNaN(dbsDate.getTime())) return { ok: false, error: 'DBS issue date is required.' };
+if (dbsDate < threeYearsAgo) return { ok: false, error: 'Enhanced DBS issue date must be within the last three years.' };
+if (String(review.dbsLevel || '').toLowerCase() !== 'enhanced') return { ok: false, error: 'DBS level must be enhanced.' };
+if (!docs.length) return { ok: false, error: 'At least one supporting document must be attached before approving a scout.' };
+return { ok: true };
+}
+
 function completeRegistrationLink(accountType, emailAddr, loginCode) {
 const baseUrl = String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
 return baseUrl + '/complete-registration?code=' + encodeURIComponent(loginCode) + '&email=' + encodeURIComponent(String(emailAddr || '').toLowerCase().trim()) + '&type=' + encodeURIComponent(accountType);
@@ -344,17 +385,22 @@ res.status(201).json({ message: 'Coach added. Complete-registration email sent.'
 
 router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { firstName, lastName, emailAddr, role } = req.body;
+const { firstName, lastName, emailAddr, role, adminRole, jobTitle, managerId, annualLeaveDays, contractData } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
 if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupA = await checkDuplicates(emailAddr, null);
 if (dupA.duplicate) return res.status(409).json({ error: 'This email is already registered.' });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 7*24*60*60*1000);
+const nextAdminRole = adminRole || role || 'Support';
 const { data, error } = await supabase.from('stratex').insert({
 stratex_id: generateId('STX'), first_name: firstName.trim(), last_name: lastName.trim(),
-email: emailAddr.toLowerCase().trim(), role: role || 'admin', is_active: true,
-login_code: loginCode, login_code_expires: expires, registration_complete: false
+email: emailAddr.toLowerCase().trim(), role: role || nextAdminRole, admin_role: nextAdminRole,
+job_title: jobTitle || nextAdminRole, manager_id: managerId || null,
+permissions: ADMIN_ROLE_PERMISSIONS[nextAdminRole] || ADMIN_ROLE_PERMISSIONS.Support,
+annual_leave_days: Number(annualLeaveDays) || 25,
+contract_data: contractData || {},
+is_active: true, login_code: loginCode, login_code_expires: expires, registration_complete: false
 }).select().single();
 if (error) throw error;
 const completeLink = completeRegistrationLink('Stratex', emailAddr, loginCode);
@@ -364,6 +410,80 @@ await removeInserted('stratex', data.id);
 return res.status(502).json({ error: 'SendGrid did not accept the admin invite email. Admin was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
 }
 res.status(201).json({ message: 'Admin added. Complete-registration email sent.', admin: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/leagues', requireAuth, requireRole('Stratex','Coach'), async (req, res) => {
+try {
+const { data, error } = await supabase.from('league_options').select('*').eq('is_active', true).order('name');
+if (error) throw error;
+res.json({ data: data || [] });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/leagues', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const league = await ensureLeagueOption(req.body.name, req.user.id);
+if (!league) return res.status(400).json({ error: 'League name required' });
+res.status(201).json({ data: league, message: 'League saved' });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/org', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const [{ data: admins, error: adminErr }, { data: leave }, { data: meetings }] = await Promise.all([
+supabase.from('stratex').select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,annual_leave_days,contract_data,is_active,created_at,last_login,registration_complete').order('first_name'),
+supabase.from('stratex_time_off').select('*').order('created_at', { ascending: false }).limit(100),
+supabase.from('stratex_meetings').select('*').order('meeting_date', { ascending: true }).limit(100)
+]);
+if (adminErr) throw adminErr;
+res.json({ admins: admins || [], leave: leave || [], meetings: meetings || [], rolePermissions: ADMIN_ROLE_PERMISSIONS });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.patch('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const body = req.body || {};
+const patch = {};
+if (body.adminRole) { patch.admin_role = body.adminRole; patch.role = body.adminRole; patch.permissions = ADMIN_ROLE_PERMISSIONS[body.adminRole] || ADMIN_ROLE_PERMISSIONS.Support; }
+if (body.jobTitle !== undefined) patch.job_title = body.jobTitle || null;
+if (body.managerId !== undefined) patch.manager_id = body.managerId || null;
+if (body.annualLeaveDays !== undefined) patch.annual_leave_days = Number(body.annualLeaveDays) || 25;
+if (body.contractData !== undefined) patch.contract_data = body.contractData || {};
+if (body.isActive !== undefined) patch.is_active = !!body.isActive;
+patch.updated_at = new Date().toISOString();
+const { data, error } = await supabase.from('stratex').update(patch).eq('id', req.params.id).select().maybeSingle();
+if (error || !data) return res.status(404).json({ error: 'Admin not found' });
+res.json({ message: 'Admin updated', admin: data });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.delete('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+if (req.params.id === req.user.id) return res.status(400).json({ error: 'You cannot delete your own admin account.' });
+const { error } = await supabase.from('stratex').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', req.params.id);
+if (error) throw error;
+res.json({ message: 'Admin deactivated' });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/org/leave', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { stratexId, leaveType, startDate, endDate, notes } = req.body;
+if (!stratexId || !leaveType || !startDate || !endDate) return res.status(400).json({ error: 'Admin, leave type, start date and end date are required.' });
+const { data, error } = await supabase.from('stratex_time_off').insert({ stratex_id: stratexId, leave_type: leaveType, start_date: startDate, end_date: endDate, notes: notes || null }).select().single();
+if (error) throw error;
+res.status(201).json({ message: 'Leave recorded', data });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/org/meetings', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { title, meetingDate, location, attendees, notes } = req.body;
+if (!title || !meetingDate) return res.status(400).json({ error: 'Meeting title and date are required.' });
+const { data, error } = await supabase.from('stratex_meetings').insert({ created_by: req.user.id, title, meeting_date: meetingDate, location: location || null, attendees: attendees || [], notes: notes || null }).select().single();
+if (error) throw error;
+res.status(201).json({ message: 'Meeting booked', data });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -402,7 +522,8 @@ router.post('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res
 try {
 const { team_name, league, tier, country, formation, playing_style } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const { data, error } = await supabase.from('scout_teams').insert({ team_name, league:league||null, tier:tier||null, country:country?titleCase(country):'England', formation:formation||null, playing_style:playing_style||null }).select().single();
+const savedLeague = await ensureLeagueOption(league, req.user.id);
+const { data, error } = await supabase.from('scout_teams').insert({ team_name, league:savedLeague?savedLeague.name:null, tier:tier||null, country:country?titleCase(country):'England', formation:formation||null, playing_style:playing_style||null }).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Scout team created' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -462,7 +583,8 @@ router.post('/school-teams', requireAuth, requireRole('Stratex'), async (req, re
 try {
 const { team_name, county, city, country, league, contact_email } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county?titleCase(county):null, city:city?titleCase(city):(county?titleCase(county):null), country:country?titleCase(country):'England', league:league||null, contact_email:contact_email||null }).select().single();
+const savedLeague = await ensureLeagueOption(league, req.user.id);
+const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county?titleCase(county):null, city:city?titleCase(city):(county?titleCase(county):null), country:country?titleCase(country):'England', league:savedLeague?savedLeague.name:null, contact_email:contact_email||null }).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Non Pro Academy created' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }

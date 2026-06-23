@@ -6,6 +6,7 @@ const { hashPassword, verifyPassword, signToken, generateLoginCode } = require('
 const email = require('../services/email');
 
 const TABLE_MAP = { Player:'players', Coach:'coaches', Scout:'scouts', Stratex:'stratex' };
+const ROLE_ORDER = ['Stratex','Scout','Coach','Player'];
 
 // Helper: generate unique login code across all user tables
 async function generateUniqueCode(table) {
@@ -21,11 +22,84 @@ async function generateUniqueCode(table) {
   throw new Error('Could not generate unique login code');
 }
 
+async function findActiveAccounts(emailAddr) {
+const em = String(emailAddr || '').toLowerCase().trim();
+if (!em) return [];
+const rows = await Promise.all(ROLE_ORDER.map(accountType => {
+const table = TABLE_MAP[accountType];
+return supabase.from(table).select('*').eq('email', em).eq('is_active', true).maybeSingle()
+.then(r => ({ accountType, table, user: r.data || null, error: r.error }));
+}));
+return rows.filter(r => r.user);
+}
+
+async function onboardingStatus(accountType, userId) {
+try {
+const { data } = await supabase.from('onboarding_progress')
+.select('setup_wizard_completed,product_tour_completed')
+.eq('account_type', accountType).eq('user_id', userId).maybeSingle();
+return data || { setup_wizard_completed: false, product_tour_completed: false };
+} catch(e) {
+return { setup_wizard_completed: true, product_tour_completed: true };
+}
+}
+
+function rolePayload(accounts, includeDemo) {
+const roles = accounts.map(a => ({
+accountType: a.accountType,
+label: a.accountType === 'Stratex' ? 'Stratex admin dashboard' : a.accountType + ' dashboard',
+userId: a.user.id,
+firstName: a.user.first_name,
+lastName: a.user.last_name
+}));
+if (includeDemo) {
+roles.push(
+{ accountType: 'Coach', demo: true, label: 'Test coach walkthrough' },
+{ accountType: 'Scout', demo: true, label: 'Test scout walkthrough' },
+{ accountType: 'Player', demo: true, label: 'Test player walkthrough' }
+);
+}
+return roles;
+}
+
 router.post('/login', async (req, res) => {
 try {
 const { email: rawEmail, loginCode, password, accountType } = req.body;
-if (!rawEmail || !accountType) return res.status(400).json({ error: 'email and accountType required' });
-const table = TABLE_MAP[accountType];
+if (!rawEmail) return res.status(400).json({ error: 'email required' });
+
+if (!accountType) {
+const accounts = await findActiveAccounts(rawEmail);
+if (!accounts.length) return res.status(401).json({ error: 'Invalid login credentials' });
+if (password) {
+const verified = [];
+for (const a of accounts) {
+if (a.user.password_hash && await verifyPassword(password, a.user.password_hash)) verified.push(a);
+}
+if (!verified.length) return res.status(401).json({ error: 'Invalid login credentials' });
+const hasStratex = verified.some(a => a.accountType === 'Stratex');
+if (verified.length > 1 || hasStratex) {
+const stx = verified.find(a => a.accountType === 'Stratex');
+const stratexToken = stx ? signToken({ id: stx.user.id, email: stx.user.email, accountType: 'Stratex', role: stx.user.role || 'Stratex' }) : null;
+return res.json({
+requiresRoleSelection: true,
+roles: rolePayload(verified, hasStratex),
+stratexToken,
+stratexUser: stx ? { id: stx.user.id, firstName: stx.user.first_name, lastName: stx.user.last_name, email: stx.user.email, adminRole: stx.user.admin_role || stx.user.role || null } : null
+});
+}
+req.body.accountType = verified[0].accountType;
+} else if (loginCode) {
+const matched = accounts.filter(a => a.user.login_code === String(loginCode || '').toUpperCase());
+if (!matched.length) return res.status(401).json({ error: 'Invalid login code' });
+if (matched.length > 1) return res.json({ requiresRoleSelection: true, roles: rolePayload(matched, matched.some(a => a.accountType === 'Stratex')) });
+req.body.accountType = matched[0].accountType;
+} else {
+return res.status(400).json({ error: 'loginCode or password required' });
+}
+}
+
+const selectedType = req.body.accountType || accountType;
+const table = TABLE_MAP[selectedType];
 if (!table) return res.status(400).json({ error: 'Invalid accountType' });
 const { data: user } = await supabase.from(table).select('*').eq('email', rawEmail.toLowerCase().trim()).eq('is_active', true).single();
 if (!user) return res.status(401).json({ error: 'Invalid login credentials' });
@@ -44,12 +118,34 @@ await supabase.from(table).update({ last_login: new Date() }).eq('id', user.id);
 return res.status(400).json({ error: 'loginCode or password required' });
 }
 
-const token = signToken({ id: user.id, email: user.email, accountType, role: user.role || accountType });
-const needsPrefs = accountType === 'Scout' && !user.preferences_set;
+const token = signToken({ id: user.id, email: user.email, accountType: selectedType, role: user.role || selectedType });
+const needsPrefs = selectedType === 'Scout' && !user.preferences_set;
+const onboarding = await onboardingStatus(selectedType, user.id);
 const needsRegistration = loginCode && user.registration_complete === false;
-res.json({ token, accountType, needsPreferences: needsPrefs, needsRegistration,
+res.json({ token, accountType: selectedType, needsPreferences: needsPrefs, needsRegistration,
+needsOnboarding: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.setup_wizard_completed,
+needsTour: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.product_tour_completed,
 user: { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email,
-isSuper: user.is_super_user || false } });
+isSuper: user.is_super_user || false, adminRole: user.admin_role || user.role || null } });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/test-access', require('../utils/auth').requireAuth, async (req, res) => {
+try {
+if (req.user.accountType !== 'Stratex') return res.status(403).json({ error: 'Only Stratex admins can open test experiences' });
+const accountType = req.body.accountType;
+const demoEmails = {
+Coach: 'coach@test.scoutlink.com',
+Scout: 'scout@test.scoutlink.com',
+Player: 'player@test.scoutlink.com'
+};
+const emailAddr = demoEmails[accountType];
+const table = TABLE_MAP[accountType];
+if (!emailAddr || !table) return res.status(400).json({ error: 'Choose Coach, Scout or Player test access' });
+const { data: user, error } = await supabase.from(table).select('*').eq('email', emailAddr).eq('is_active', true).maybeSingle();
+if (error || !user) return res.status(404).json({ error: 'Test ' + accountType.toLowerCase() + ' account is not available' });
+const token = signToken({ id: user.id, email: user.email, accountType, role: 'StratexTest' + accountType, demoMode: true, actingStratexId: req.user.id });
+res.json({ token, accountType, demoMode: true, user: { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email, isSuper: user.is_super_user || false } });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

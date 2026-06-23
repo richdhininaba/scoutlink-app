@@ -46,7 +46,7 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 <div id="section-password">
 <div class="form-group"><label>Email Address</label><input type="email" id="email" placeholder="your@email.com" autocomplete="email"></div>
 <div class="form-group"><label>Password</label><input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-<div class="form-group"><label>Account Type</label>
+<div class="form-group" style="display:none"><label>Account Type</label>
 <select id="accountType">
 <option value="Scout">Scout</option>
 <option value="Coach">Coach</option>
@@ -61,7 +61,7 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 <div id="section-code" style="display:none">
 <div class="form-group"><label>Email Address</label><input type="email" id="codeEmail" placeholder="your@email.com"></div>
 <div class="form-group"><label>Login Code</label><input type="text" id="loginCode" placeholder="e.g. S8CA3G" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" maxlength="6" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doCodeLogin()"></div>
-<div class="form-group"><label>Account Type</label>
+<div class="form-group" style="display:none"><label>Account Type</label>
 <select id="codeAccountType">
 <option value="Scout">Scout</option>
 <option value="Coach">Coach</option>
@@ -70,6 +70,12 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 </select></div>
 <button class="btn btn-primary" id="codeBtn" onclick="doCodeLogin()"><span id="codeBtnText">Sign In with Code</span><div class="spinner" id="codeSpinner" style="display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;"></div></button>
 <p style="color:var(--sl-muted);font-size:12px;margin-top:12px;text-align:center">Login codes are sent in your approval email. They expire after 7 days.</p>
+</div>
+
+<div id="roleChooser" style="display:none;margin-top:1rem">
+  <div style="font-weight:800;margin-bottom:6px">Choose where you want to go</div>
+  <p style="color:var(--sl-muted);font-size:13px;margin-bottom:12px">We found more than one available experience for this email.</p>
+  <div id="roleOptions" style="display:grid;gap:8px"></div>
 </div>
 
 <hr class="divider">
@@ -85,7 +91,9 @@ var CLEAN_ROUTES={
   'stratex-dashboard.html':'/stratex/dashboard',
   'scout-dashboard.html':'/scout/dashboard',
   'coach-dashboard.html':'/coach/dashboard',
-  'player-dashboard.html':'/player/dashboard'
+  'coach-onboarding.html':'/coach/onboarding',
+  'player-dashboard.html':'/player/dashboard',
+  'scout-onboarding.html':'/scout/onboarding'
 };
 function cleanRouteFor(href){
   var url=new URL(href,window.location.href);
@@ -119,20 +127,52 @@ function switchTab(t){
 }
 function showError(msg){var el=document.getElementById('errorMsg');el.textContent=msg;el.classList.add('show');}
 function hideError(){document.getElementById('errorMsg').classList.remove('show');}
+var pendingLogin=null;
+
+function showRoleChooser(d, mode, creds){
+  pendingLogin={mode:mode,creds:creds,stratexToken:d.stratexToken||null,stratexUser:d.stratexUser||null};
+  document.getElementById('roleChooser').style.display='block';
+  document.getElementById('roleOptions').innerHTML=(d.roles||[]).map(function(r,idx){
+    return '<button class="btn" style="background:#0a0f1e;color:var(--sl-text);border:1px solid var(--sl-border);text-align:left" onclick="chooseRole('+idx+')">'+(r.demo?'Demo: ':'')+(r.label||r.accountType)+'</button>';
+  }).join('');
+  pendingLogin.roles=d.roles||[];
+}
+
+async function chooseRole(idx){
+  var r=pendingLogin&&pendingLogin.roles?pendingLogin.roles[idx]:null;
+  if(!r)return;
+  hideError();
+  try{
+    if(r.demo){
+      if(!pendingLogin.stratexToken)throw new Error('Please continue to the Stratex dashboard first.');
+      var tr=await fetch(API+'/api/auth/test-access',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+pendingLogin.stratexToken},body:JSON.stringify({accountType:r.accountType})});
+      var td=await tr.json();
+      if(!tr.ok)throw new Error(td.error||'Could not open test experience');
+      storeAndRedirect(td);
+      return;
+    }
+    var body={email:pendingLogin.creds.email,accountType:r.accountType};
+    if(pendingLogin.mode==='code')body.loginCode=pendingLogin.creds.loginCode;else body.password=pendingLogin.creds.password;
+    var rr=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var rd=await rr.json();
+    if(!rr.ok)throw new Error(rd.error||'Could not sign in');
+    storeAndRedirect(rd);
+  }catch(e){showError(e.message);}
+}
 
 async function doLogin(){
   hideError();
   var em=document.getElementById('email').value.trim();
   var pw=document.getElementById('password').value;
-  var at=document.getElementById('accountType').value;
   if(!em||!pw){showError('Please enter your email and password.');return;}
   document.getElementById('loginBtn').disabled=true;
   document.getElementById('btnText').style.display='none';
   document.getElementById('spinner').style.display='block';
   try{
-    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw,accountType:at})});
+    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,password:pw})});
     var d=await r.json();
     if(!r.ok)throw new Error(d.error||'Invalid credentials');
+    if(d.requiresRoleSelection){document.getElementById('loginBtn').disabled=false;document.getElementById('btnText').style.display='inline';document.getElementById('spinner').style.display='none';showRoleChooser(d,'password',{email:em,password:pw});return;}
     storeAndRedirect(d);
   }catch(e){showError(e.message);document.getElementById('loginBtn').disabled=false;document.getElementById('btnText').style.display='inline';document.getElementById('spinner').style.display='none';}
 }
@@ -141,15 +181,15 @@ async function doCodeLogin(){
   hideError();
   var em=document.getElementById('codeEmail').value.trim();
   var code=document.getElementById('loginCode').value.trim().toUpperCase();
-  var at=document.getElementById('codeAccountType').value;
   if(!em||!code){showError('Please enter your email and login code.');return;}
   document.getElementById('codeBtn').disabled=true;
   document.getElementById('codeBtnText').style.display='none';
   document.getElementById('codeSpinner').style.display='block';
   try{
-    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,loginCode:code,accountType:at})});
+    var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,loginCode:code})});
     var d=await r.json();
     if(!r.ok)throw new Error(d.error||'Invalid login code');
+    if(d.requiresRoleSelection){document.getElementById('codeBtn').disabled=false;document.getElementById('codeBtnText').style.display='inline';document.getElementById('codeSpinner').style.display='none';showRoleChooser(d,'code',{email:em,loginCode:code});return;}
     localStorage.setItem('sl_token',d.token);
     localStorage.setItem('sl_type',d.accountType);
     localStorage.setItem('sl_user',JSON.stringify(d.user));
@@ -167,7 +207,7 @@ function storeAndRedirect(d){
   localStorage.setItem('sl_user',JSON.stringify(d.user));
   localStorage.setItem('sl_user_id',d.user.id);
   localStorage.setItem('sl_user_email',d.user.email);
-  var map={Stratex:'stratex-dashboard.html',Scout:d.needsPreferences?'scout-preferences.html':'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};
+  var map={Stratex:'stratex-dashboard.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
   window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }
 </script><script src="../js/mobile.js"></script>

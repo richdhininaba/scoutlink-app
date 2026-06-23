@@ -15,6 +15,74 @@ button, .btn, a.btn, .nav-item {
   min-width: 44px;
 }
 
+/* ScoutLink phone experience v4 - phone-specific shell and chat */
+@media (max-width: 767px) {
+  .topbar-hamburger {
+    min-width: 46px !important;
+    width: 46px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(7,17,31,.92) !important;
+    border-color: rgba(255,255,255,.22) !important;
+  }
+  .hamburger-label { display: none !important; }
+  .hamburger-icon span { background: #fff !important; }
+  .topbar { padding-left: 66px !important; }
+  .chat-shell {
+    border: 0 !important;
+    background: transparent !important;
+  }
+  .chat-shell.chat-mobile-list .thread-list {
+    display: block !important;
+    min-height: calc(100svh - 82px) !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #07111f !important;
+  }
+  .chat-shell.chat-mobile-list .thread-item {
+    min-height: 68px !important;
+    padding: 12px 14px !important;
+    border-radius: 0 !important;
+  }
+  .chat-shell.chat-mobile-conversation {
+    inset: 58px 0 0 !important;
+  }
+  .chat-shell.chat-mobile-conversation .chat-head {
+    min-height: 58px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+  .chat-mobile-back {
+    width: fit-content !important;
+    border: 0 !important;
+    color: #fff !important;
+  }
+  .messages {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .msg {
+    font-size: 14px !important;
+    line-height: 1.38 !important;
+  }
+  .composer {
+    position: sticky !important;
+    bottom: 0 !important;
+  }
+  .composer textarea {
+    border-radius: 20px !important;
+    padding: 12px 14px !important;
+  }
+  .composer .btn {
+    border-radius: 999px !important;
+  }
+  .org-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Text overflow protection */
 .sl-table td span, .notif-body, .topbar-title {
   overflow: hidden;
@@ -828,6 +896,30 @@ body { padding-bottom: 60px; }
   }
 }
 
+/* Final mobile shell overrides */
+@media (max-width: 767px) {
+  .topbar { padding-left: 66px !important; }
+  .topbar-hamburger {
+    min-width: 46px !important;
+    width: 46px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    border-color: rgba(255,255,255,.22) !important;
+  }
+  .hamburger-label { display: none !important; }
+  .hamburger-icon span { background: #fff !important; }
+  .chat-shell.chat-mobile-list .chat-pane { display: none !important; }
+  .chat-shell.chat-mobile-conversation .thread-list { display: none !important; }
+  .chat-shell.chat-mobile-conversation .chat-pane {
+    display: flex !important;
+    position: fixed !important;
+    inset: 58px 0 0 !important;
+    z-index: 840 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+}
+
 /* fix-coach-mobile-experience v3 coach rules */
 @media (max-width: 767px) {
      .dashboard-grid, .stats-grid { grid-template-columns: 1fr 1fr !important; }
@@ -1117,5 +1209,29 @@ body { padding-bottom: 60px; }
   .actions,
   .step-buttons {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ScoutLink final phone cascade - keep this last */
+@media (max-width: 767px) {
+  .topbar { padding-left: 66px !important; }
+  .topbar-hamburger {
+    min-width: 46px !important;
+    width: 46px !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    border-color: rgba(255,255,255,.22) !important;
+  }
+  .hamburger-label { display: none !important; }
+  .hamburger-icon span { background: #fff !important; }
+  .chat-shell.chat-mobile-list .chat-pane { display: none !important; }
+  .chat-shell.chat-mobile-conversation .thread-list { display: none !important; }
+  .chat-shell.chat-mobile-conversation .chat-pane {
+    display: flex !important;
+    position: fixed !important;
+    inset: 58px 0 0 !important;
+    z-index: 840 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
   }
 }

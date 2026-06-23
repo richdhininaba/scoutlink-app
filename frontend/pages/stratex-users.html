@@ -38,7 +38,7 @@
           <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="scoutEmail" placeholder="scout@example.com"></div>
           <div class="form-group"><label>Phone</label><input type="text" id="scoutPhone" placeholder="+44..."></div>
           <div class="form-group"><label>Club / Organisation</label><input type="text" id="scoutClub" placeholder="e.g. Liverpool FC"></div>
-          <div class="form-group"><label>League / Region</label><input type="text" id="scoutLeague" placeholder="e.g. Premier League"></div>
+          <div class="form-group"><label>League / Region</label><div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input type="text" id="scoutLeague" placeholder="Type or select league"><button type="button" class="btn btn-sm btn-outline" id="addScoutLeagueBtn">+ Add</button></div></div>
           <div class="form-group"><label>Subscription Plan <span class="required">*</span></label>
             <select id="scoutPlan">
               <option value="Core">Core - 1 seat, 30 exports/yr, 120 predictions/yr</option>
@@ -63,7 +63,7 @@
           <div class="form-group"><label>Team Name <span class="required">*</span></label><input type="text" id="coachTeam" placeholder="e.g. Manchester City U18"></div>
           <div class="form-group"><label>Role at Club</label><input type="text" id="coachRole" placeholder="e.g. Head Coach"></div>
           <div class="form-group"><label>County</label><input type="text" id="coachCounty" placeholder="e.g. Greater Manchester"></div>
-          <div class="form-group"><label>League</label><input type="text" id="coachLeague" placeholder="e.g. North West Youth League"></div>
+          <div class="form-group"><label>League</label><div style="display:grid;grid-template-columns:1fr auto;gap:8px"><input type="text" id="coachLeague" placeholder="Type or select league"><button type="button" class="btn btn-sm btn-outline" id="addCoachLeagueBtn">+ Add</button></div></div>
           <button class="btn btn-primary" onclick="addCoach()">Add Coach and Send Login Code</button>
         </div>
       </div>
@@ -77,8 +77,10 @@
           <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="adminLast" placeholder="Last name"></div>
           <div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="adminEmail" placeholder="admin@example.com"></div>
           <div class="form-group"><label>Admin Role</label>
-            <select id="adminRole"><option value="admin">Admin</option><option value="ops">Operations Admin</option><option value="support">Support Admin</option></select>
+            <select id="adminRole"><option value="Management">Management</option><option value="Acquisition">Acquisition</option><option value="Safeguarding">Safeguarding</option><option value="Nominations">Nominations</option><option value="Operations">Operations</option><option value="Support">Support</option><option value="ProductDemo">Product Demo</option></select>
           </div>
+          <div class="form-group"><label>Job Title</label><input type="text" id="adminJobTitle" placeholder="e.g. Client Success Manager"></div>
+          <div class="form-group"><label>Reports To</label><select id="adminManager"><option value="">No direct manager</option></select></div>
           <button class="btn btn-primary" onclick="addAdmin()">Add Admin and Send Login Code</button>
         </div>
       </div>
@@ -92,11 +94,13 @@
 </div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/leagues.js"></script>
 <script>
 function initNav(){initStratexPage();}
 function logout() { Auth.clear(); navigateClean('login.html?logout=1'); }
 function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
 var activeTab = 'scouts';
+var orgAdmins = [];
 function switchTab(tab, btn) {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -156,14 +160,25 @@ async function addAdmin() {
   try {
     var res = await api('POST', '/api/stratex/admins', {
       firstName: fn, lastName: ln, emailAddr: em,
-      role: document.getElementById('adminRole').value
+      adminRole: document.getElementById('adminRole').value,
+      jobTitle: document.getElementById('adminJobTitle').value.trim() || document.getElementById('adminRole').value,
+      managerId: document.getElementById('adminManager').value || null
     });
     suc.textContent = res.message; suc.classList.add('show');
-    ['adminFirst','adminLast','adminEmail'].forEach(function(id) { document.getElementById(id).value = ''; });
-    document.getElementById('adminRole').value = 'admin';
+    ['adminFirst','adminLast','adminEmail','adminJobTitle'].forEach(function(id) { document.getElementById(id).value = ''; });
+    document.getElementById('adminRole').value = 'Support';
+    loadOrgManagers();
   } catch(e) { err.textContent = e.message; err.classList.add('show'); }
 }
-document.addEventListener('DOMContentLoaded', function() { initNav(); });
+async function loadOrgManagers(){
+  try{
+    var d=await api('GET','/api/stratex/org');
+    orgAdmins=d.admins||[];
+    var sel=document.getElementById('adminManager');
+    if(sel)sel.innerHTML='<option value="">No direct manager</option>'+orgAdmins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+a.first_name+' '+a.last_name+' - '+(a.job_title||a.admin_role||a.role||'Admin')+'</option>';}).join('');
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', function() { initNav(); if(window.bindLeagueInput){bindLeagueInput('scoutLeague','addScoutLeagueBtn');bindLeagueInput('coachLeague','addCoachLeagueBtn');} loadOrgManagers(); });
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

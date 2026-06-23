@@ -19,6 +19,23 @@ const DECLINE_REASONS = [
   'Duplicate registration','Account suspended','Other'
   ];
 
+function validateScoutSafeguardingReview(review) {
+  review = review || {};
+  const checklist = review.checklist || {};
+  const required = ['identity','dbs','faCredentials','clubAssociation','contactDetails','noSafeguardingFlags','termsAccepted'];
+  const missing = required.filter(k => checklist[k] !== true);
+  const docs = Array.isArray(review.documents) ? review.documents : [];
+  const dbsDate = review.dbsIssueDate ? new Date(review.dbsIssueDate) : null;
+  const threeYearsAgo = new Date(Date.now() - 3 * 365 * 24 * 60 * 60 * 1000);
+  if (missing.length) return { ok: false, error: 'Scout approval blocked. Complete every safeguarding gate: ' + missing.join(', ') };
+  if (!review.dbsCertificateNumber) return { ok: false, error: 'DBS certificate number is required.' };
+  if (!dbsDate || Number.isNaN(dbsDate.getTime())) return { ok: false, error: 'DBS issue date is required.' };
+  if (dbsDate < threeYearsAgo) return { ok: false, error: 'Enhanced DBS issue date must be within the last three years.' };
+  if (String(review.dbsLevel || '').toLowerCase() !== 'enhanced') return { ok: false, error: 'DBS level must be enhanced.' };
+  if (!docs.length) return { ok: false, error: 'Attach at least one safeguarding document before approving a scout.' };
+  return { ok: true };
+}
+
 // Helper: generate a login code unique across all user tables
 async function generateUniqueCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -177,7 +194,7 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
 // Stratex: approve
 router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
-    const { subscriptionPlan } = req.body;
+    const { subscriptionPlan, safeguardingReview } = req.body;
     const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
     if (rqErr || !rq) return res.status(404).json({ error: 'Registration request not found' });
     if (rq.status !== 'pending') return res.status(400).json({ error: 'Registration is not pending' });
@@ -202,6 +219,8 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
     if (error) { console.error('[Approve] coach insert error:', error); throw error; }
     newUser = data;
   } else if (rq.account_type === 'Scout') {
+    const reviewValidation = validateScoutSafeguardingReview(safeguardingReview);
+    if (!reviewValidation.ok) return res.status(400).json({ error: reviewValidation.error });
     const plan = subscriptionPlan||'Core';
     const limits = PLAN_LIMITS[plan]||PLAN_LIMITS.Core;
     const { data, error } = await supabase.from('scouts').insert({
@@ -241,8 +260,25 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
 
   await supabase.from('registration_requests').update({
     status: 'approved', login_code: loginCode,
-    reviewed_by: req.user.email||'stratex', reviewed_at: new Date()
+    reviewed_by: req.user.email||'stratex', reviewed_at: new Date(),
+    safeguarding_review: safeguardingReview || {},
+    safeguarding_documents: safeguardingReview && safeguardingReview.documents ? safeguardingReview.documents : []
   }).eq('id', req.params.id);
+
+  if (rq.account_type === 'Scout') {
+    await supabase.from('scout_verification_reviews').insert({
+      registration_request_id: rq.id,
+      scout_id: newUser.id,
+      reviewed_by: req.user.id || null,
+      checklist: safeguardingReview.checklist || {},
+      documents: safeguardingReview.documents || [],
+      dbs_certificate_number: safeguardingReview.dbsCertificateNumber || null,
+      dbs_issue_date: safeguardingReview.dbsIssueDate || null,
+      dbs_level: safeguardingReview.dbsLevel || null,
+      status: 'approved',
+      notes: safeguardingReview.notes || null
+    });
+  }
 
   res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
   } catch(err) { console.error('[Approve] error:', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
