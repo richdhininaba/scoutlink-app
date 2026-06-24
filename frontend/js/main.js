@@ -109,7 +109,7 @@ const Auth = {
   isLoggedIn() { return !!this.token && !!this.user; },
   redirectToDashboard() {
     const map = { Player:'player-dashboard.html', Coach:'coach-dashboard.html',
-      Scout:'scout-dashboard.html', Stratex:'stratex-dashboard.html' };
+      Scout:'scout-dashboard.html', Stratex:'experience-select.html' };
     const dest = map[this.type] || 'login.html';
     window.location.href = cleanRouteFor(dest);
   }

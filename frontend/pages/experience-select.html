@@ -103,6 +103,7 @@ async function enterExperience(idx){
   }
 }
 async function load(){
+  if(isDemoMode()&&typeof restoreAdminSessionForSelector==='function') restoreAdminSessionForSelector();
   if(!Auth.isLoggedIn()){navigateClean('login.html');return;}
   try{
     var d=await api('GET','/api/auth/experiences');

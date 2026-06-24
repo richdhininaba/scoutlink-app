@@ -117,7 +117,7 @@ if(params.get('code')){
 }
 
 // Redirect if already logged in
-try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(cleanRouteFor(m[typ]));}}catch(e){}
+try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'experience-select.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(cleanRouteFor(m[typ]));}}catch(e){}
 
 function switchTab(t){
   document.getElementById('section-password').style.display=t==='password'?'block':'none';
