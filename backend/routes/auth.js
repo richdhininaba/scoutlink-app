@@ -27,7 +27,7 @@ const em = String(emailAddr || '').toLowerCase().trim();
 if (!em) return [];
 const rows = await Promise.all(ROLE_ORDER.map(accountType => {
 const table = TABLE_MAP[accountType];
-return supabase.from(table).select('*').eq('email', em).eq('is_active', true).maybeSingle()
+return supabase.from(table).select('*').eq('email', em).eq('is_active', true).eq('is_demo', false).maybeSingle()
 .then(r => ({ accountType, table, user: r.data || null, error: r.error }));
 }));
 return rows.filter(r => r.user);
@@ -44,7 +44,7 @@ return { setup_wizard_completed: true, product_tour_completed: true };
 }
 }
 
-function rolePayload(accounts, includeDemo) {
+function rolePayload(accounts) {
 const roles = accounts.map(a => ({
 accountType: a.accountType,
 label: a.accountType === 'Stratex' ? 'Stratex admin dashboard' : a.accountType + ' dashboard',
@@ -52,14 +52,59 @@ userId: a.user.id,
 firstName: a.user.first_name,
 lastName: a.user.last_name
 }));
-if (includeDemo) {
-roles.push(
-{ accountType: 'Coach', demo: true, label: 'Test coach walkthrough' },
-{ accountType: 'Scout', demo: true, label: 'Test scout walkthrough' },
-{ accountType: 'Player', demo: true, label: 'Test player walkthrough' }
-);
-}
 return roles;
+}
+
+function publicUser(user) {
+return { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email,
+isSuper: user.is_super_user || false, adminRole: user.admin_role || user.role || null };
+}
+
+function accountDescription(accountType, demo) {
+if (accountType === 'Stratex') return 'Manage registrations, users, organisations, showcases and platform operations.';
+if (accountType === 'Coach') return demo ? 'Walk through squad management, player creation, fixtures and match facts.' : 'Manage your squad, player profiles, fixtures, match facts and video evidence.';
+if (accountType === 'Scout') return demo ? 'Explore player search, profiles, pipeline, predictions, exports and coach chat.' : 'Search players, register interest, run predictions and manage your pipeline.';
+if (accountType === 'Player') return demo ? 'Preview the player profile, notifications and video reel experience.' : 'View and maintain your player-facing profile.';
+return 'Open this ScoutLink experience.';
+}
+
+async function accountForEmail(accountType, emailAddr) {
+const table = TABLE_MAP[accountType];
+if (!table) return null;
+const { data } = await supabase.from(table).select('*').eq('email', String(emailAddr || '').toLowerCase().trim()).eq('is_active', true).eq('is_demo', false).maybeSingle();
+return data || null;
+}
+
+async function demoAccount(accountType) {
+const demoEmails = {
+Coach: 'coach@test.scoutlink.com',
+Scout: 'scout@test.scoutlink.com',
+Player: 'player@test.scoutlink.com'
+};
+const table = TABLE_MAP[accountType];
+const emailAddr = demoEmails[accountType];
+if (!table || !emailAddr) return null;
+const { data } = await supabase.from(table).select('*').eq('email', emailAddr).eq('is_active', true).eq('is_demo', true).maybeSingle();
+return data || null;
+}
+
+async function buildExperienceList(user) {
+if (user.accountType === 'Stratex') {
+return [
+{ accountType: 'Stratex', label: 'Stratex Admin', description: accountDescription('Stratex'), demo: false, admin: true },
+{ accountType: 'Coach', label: 'Coach demo', description: accountDescription('Coach', true), demo: true },
+{ accountType: 'Scout', label: 'Scout demo', description: accountDescription('Scout', true), demo: true },
+{ accountType: 'Player', label: 'Player demo', description: accountDescription('Player', true), demo: true }
+];
+}
+const accounts = await findActiveAccounts(user.email);
+return accounts.map(a => ({
+accountType: a.accountType,
+label: a.accountType,
+description: accountDescription(a.accountType),
+demo: false,
+current: a.accountType === user.accountType
+}));
 }
 
 router.post('/login', async (req, res) => {
@@ -77,22 +122,23 @@ if (a.user.password_hash && await verifyPassword(password, a.user.password_hash)
 }
 if (!verified.length) return res.status(401).json({ error: 'Invalid login credentials' });
 const hasStratex = verified.some(a => a.accountType === 'Stratex');
-if (verified.length > 1 || hasStratex) {
-const stx = verified.find(a => a.accountType === 'Stratex');
-const stratexToken = stx ? signToken({ id: stx.user.id, email: stx.user.email, accountType: 'Stratex', role: stx.user.role || 'Stratex' }) : null;
+if (hasStratex) {
+req.body.accountType = 'Stratex';
+} else if (verified.length > 1) {
 return res.json({
 requiresRoleSelection: true,
-roles: rolePayload(verified, hasStratex),
-stratexToken,
-stratexUser: stx ? { id: stx.user.id, firstName: stx.user.first_name, lastName: stx.user.last_name, email: stx.user.email, adminRole: stx.user.admin_role || stx.user.role || null } : null
+roles: rolePayload(verified)
 });
-}
+} else {
 req.body.accountType = verified[0].accountType;
+}
 } else if (loginCode) {
 const matched = accounts.filter(a => a.user.login_code === String(loginCode || '').toUpperCase());
 if (!matched.length) return res.status(401).json({ error: 'Invalid login code' });
-if (matched.length > 1) return res.json({ requiresRoleSelection: true, roles: rolePayload(matched, matched.some(a => a.accountType === 'Stratex')) });
-req.body.accountType = matched[0].accountType;
+const stxMatched = matched.find(a => a.accountType === 'Stratex');
+if (stxMatched) req.body.accountType = 'Stratex';
+else if (matched.length > 1) return res.json({ requiresRoleSelection: true, roles: rolePayload(matched) });
+else req.body.accountType = matched[0].accountType;
 } else {
 return res.status(400).json({ error: 'loginCode or password required' });
 }
@@ -101,7 +147,7 @@ return res.status(400).json({ error: 'loginCode or password required' });
 const selectedType = req.body.accountType || accountType;
 const table = TABLE_MAP[selectedType];
 if (!table) return res.status(400).json({ error: 'Invalid accountType' });
-const { data: user } = await supabase.from(table).select('*').eq('email', rawEmail.toLowerCase().trim()).eq('is_active', true).single();
+const { data: user } = await supabase.from(table).select('*').eq('email', rawEmail.toLowerCase().trim()).eq('is_active', true).eq('is_demo', false).single();
 if (!user) return res.status(401).json({ error: 'Invalid login credentials' });
 
 if (loginCode) {
@@ -125,27 +171,53 @@ const needsRegistration = loginCode && user.registration_complete === false;
 res.json({ token, accountType: selectedType, needsPreferences: needsPrefs, needsRegistration,
 needsOnboarding: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.setup_wizard_completed,
 needsTour: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.product_tour_completed,
-user: { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email,
-isSuper: user.is_super_user || false, adminRole: user.admin_role || user.role || null } });
+user: publicUser(user) });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/experiences', require('../utils/auth').requireAuth, async (req, res) => {
+try {
+const experiences = await buildExperienceList(req.user);
+res.json({ data: experiences, current: req.user.accountType, demoMode: !!req.user.demoMode, showSwitcher: experiences.length > 1 || req.user.accountType === 'Stratex' || !!req.user.demoMode });
+} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/switch-experience', require('../utils/auth').requireAuth, async (req, res) => {
+try {
+const accountType = req.body.accountType;
+const includeTour = req.body.includeTour === true;
+if (!TABLE_MAP[accountType]) return res.status(400).json({ error: 'Invalid accountType' });
+let user = null;
+let demoMode = false;
+let role = accountType;
+if (req.body.demo === true) {
+if (req.user.accountType !== 'Stratex') return res.status(403).json({ error: 'Only Stratex admins can open demo experiences' });
+if (accountType === 'Stratex') return res.status(400).json({ error: 'The admin experience is not a demo account' });
+user = await demoAccount(accountType);
+if (!user) return res.status(404).json({ error: accountType + ' demo is not available' });
+demoMode = true;
+role = 'StratexTest' + accountType;
+} else {
+user = await accountForEmail(accountType, req.user.email);
+if (!user) return res.status(404).json({ error: 'That experience is not available for this account' });
+}
+const tokenPayload = { id: user.id, email: user.email, accountType, role, demoMode };
+if (demoMode) tokenPayload.actingStratexId = req.user.id;
+const token = signToken(tokenPayload);
+res.json({ token, accountType, demoMode, includeTour, user: publicUser(user) });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.post('/test-access', require('../utils/auth').requireAuth, async (req, res) => {
 try {
 if (req.user.accountType !== 'Stratex') return res.status(403).json({ error: 'Only Stratex admins can open test experiences' });
+req.body.demo = true;
+req.url = '/switch-experience';
 const accountType = req.body.accountType;
-const demoEmails = {
-Coach: 'coach@test.scoutlink.com',
-Scout: 'scout@test.scoutlink.com',
-Player: 'player@test.scoutlink.com'
-};
-const emailAddr = demoEmails[accountType];
-const table = TABLE_MAP[accountType];
-if (!emailAddr || !table) return res.status(400).json({ error: 'Choose Coach, Scout or Player test access' });
-const { data: user, error } = await supabase.from(table).select('*').eq('email', emailAddr).eq('is_active', true).maybeSingle();
-if (error || !user) return res.status(404).json({ error: 'Test ' + accountType.toLowerCase() + ' account is not available' });
+const user = await demoAccount(accountType);
+if (!user) return res.status(404).json({ error: 'Test ' + String(accountType || '').toLowerCase() + ' account is not available' });
 const token = signToken({ id: user.id, email: user.email, accountType, role: 'StratexTest' + accountType, demoMode: true, actingStratexId: req.user.id });
-res.json({ token, accountType, demoMode: true, user: { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email, isSuper: user.is_super_user || false } });
+res.json({ token, accountType, demoMode: true, includeTour: req.body.includeTour === true, user: publicUser(user) });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

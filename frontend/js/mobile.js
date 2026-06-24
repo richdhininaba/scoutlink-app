@@ -40,6 +40,78 @@
     });
   }
 
+  function navIcon(label) {
+    var key = String(label || '').toLowerCase();
+    if (key.indexOf('dashboard') >= 0) return 'H';
+    if (key.indexOf('player') >= 0 || key.indexOf('squad') >= 0 || key.indexOf('profile') >= 0) return 'P';
+    if (key.indexOf('add') >= 0) return '+';
+    if (key.indexOf('fixture') >= 0 || key.indexOf('registrations') >= 0) return 'F';
+    if (key.indexOf('chat') >= 0) return 'C';
+    if (key.indexOf('search') >= 0) return 'S';
+    if (key.indexOf('pipeline') >= 0) return 'L';
+    if (key.indexOf('prediction') >= 0) return 'R';
+    if (key.indexOf('settings') >= 0) return 'G';
+    if (key.indexOf('demo') >= 0) return 'D';
+    return '*';
+  }
+
+  function primaryItemsForRole(role) {
+    if (role === 'Coach') return [
+      { label:'Home', href:'coach-dashboard.html' },
+      { label:'Squad', href:'coach-my-players.html' },
+      { label:'Add', href:'add-player.html' },
+      { label:'Fixtures', href:'coach-fixtures.html' },
+      { label:'Chat', href:'coach-chat.html' }
+    ];
+    if (role === 'Scout') return [
+      { label:'Home', href:'scout-dashboard.html' },
+      { label:'Search', href:'player-search.html' },
+      { label:'Pipeline', href:'scout-pipeline.html' },
+      { label:'Predict', href:'scout-predictions.html' },
+      { label:'Chat', href:'scout-chat.html' }
+    ];
+    if (role === 'Player') return [
+      { label:'Home', href:'player-dashboard.html' },
+      { label:'Profile', href:'player-profile-edit.html' },
+      { label:'Reels', href:'player-video-reels.html' },
+      { label:'Alerts', href:'player-notifications.html' },
+      { label:'Settings', href:'player-settings.html' }
+    ];
+    if (role === 'Stratex') return [
+      { label:'Home', href:'stratex-dashboard.html' },
+      { label:'Requests', href:'stratex-registrations.html' },
+      { label:'Users', href:'stratex-users.html' },
+      { label:'Demo', href:'experience-select.html' },
+      { label:'Settings', href:'stratex-settings.html' }
+    ];
+    return [];
+  }
+
+  function initBottomNav(){
+    if (!isPhone()) return;
+    if (!window.Auth || !Auth.isLoggedIn()) return;
+    var items = primaryItemsForRole(Auth.type);
+    if (!items.length) return;
+    var existing = document.getElementById('mobileBottomNav');
+    if (!existing) {
+      existing = document.createElement('nav');
+      existing.id = 'mobileBottomNav';
+      existing.className = 'mobile-bottom-nav';
+      existing.setAttribute('aria-label', 'Primary mobile navigation');
+      document.body.appendChild(existing);
+    }
+    var cur = window.location.pathname.split('/').pop();
+    existing.innerHTML = items.map(function(item){
+      var href = typeof cleanRouteFor === 'function' ? cleanRouteFor(item.href) : item.href;
+      var active = cur === item.href || window.location.pathname === href;
+      return '<a class="mobile-bottom-item' + (active ? ' active' : '') + '" href="' + href + '">' +
+        '<span class="mobile-bottom-icon" aria-hidden="true">' + navIcon(item.label) + '</span>' +
+        '<span class="mobile-bottom-label">' + item.label + '</span>' +
+        '</a>';
+    }).join('');
+    document.body.classList.add('has-mobile-bottom-nav');
+  }
+
   function initMobileNav(){
     var sidebar = document.getElementById('sidebar');
     var topbar = document.querySelector('.topbar');
@@ -99,7 +171,7 @@
       });
       document.getElementById('sidebarBackdrop').addEventListener('click', closeDrawer);
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeDrawer(); });
-      window.addEventListener('resize', function(){ if (!isPhone()) closeDrawer(); enhanceTablesForMobile(); enhanceChatMobile(); });
+      window.addEventListener('resize', function(){ if (!isPhone()) closeDrawer(); enhanceTablesForMobile(); enhanceChatMobile(); initBottomNav(); });
     }
 
     sidebar.querySelectorAll('.nav-item').forEach(function(item){
@@ -183,7 +255,7 @@
       var back = document.createElement('button');
       back.type = 'button';
       back.className = 'chat-mobile-back btn btn-sm btn-ghost';
-      back.textContent = 'Back to chats';
+      back.textContent = 'Back';
       back.addEventListener('click', function(){ setMobileChatMode('list'); });
       head.insertBefore(back, head.firstChild);
     }
@@ -214,6 +286,7 @@
     enhanceTablesForMobile();
     enhanceActionGroups();
     enhanceChatMobile();
+    initBottomNav();
     fitLongText();
   }
 
@@ -235,5 +308,6 @@
 
   window.initMobileNav = initMobileNav;
   window.setMobileChatMode = setMobileChatMode;
+  window.initBottomNav = initBottomNav;
   window.refreshMobileLayout = init;
 })();

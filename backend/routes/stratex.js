@@ -6,6 +6,7 @@ const { requireAuth, requireRole, generateLoginCode, generateId } = require('../
 const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
 const config = require('../config');
+const { applyRealDataFilter } = require('../utils/demo');
 
 const SCOUT_PLAN_LIMITS = {
 Core: { seats:1, exports:30, predictions:120, interests:200 },
@@ -177,9 +178,9 @@ res.json({ message: isSuperUser ? 'Coach marked as super user' : 'Coach super us
 router.get('/dashboard', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const [{ count: totalPlayers }, { count: totalCoaches }, { count: totalScouts }, { count: pendingReqs }, { data: recentReqs }] = await Promise.all([
-supabase.from('players').select('id',{count:'exact',head:true}).eq('is_active',true),
-supabase.from('coaches').select('id',{count:'exact',head:true}).eq('is_active',true),
-supabase.from('scouts').select('id',{count:'exact',head:true}).eq('is_active',true),
+supabase.from('players').select('id',{count:'exact',head:true}).eq('is_active',true).eq('is_demo', false),
+supabase.from('coaches').select('id',{count:'exact',head:true}).eq('is_active',true).eq('is_demo', false),
+supabase.from('scouts').select('id',{count:'exact',head:true}).eq('is_active',true).eq('is_demo', false),
 supabase.from('registration_requests').select('id',{count:'exact',head:true}).eq('status','pending'),
 supabase.from('registration_requests').select('*').eq('status','pending').order('created_at',{ascending:false}).limit(10),
 ]);
@@ -190,7 +191,7 @@ res.json({ totalPlayers, totalCoaches, totalScouts, pendingReqs, recentPendingRe
 router.get('/rankings', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
 try {
 const { posGroup, minAge, maxAge, page=1, limit=50 } = req.query;
-let q = supabase.from('players').select('id,first_name,last_name,age,position_group,specific_position,team_name,overall_rating,transfer_value,predicted_salary_weekly,nationality_code,height_category,build_category',{count:'exact'}).eq('is_active',true).not('overall_rating','is',null);
+let q = supabase.from('players').select('id,first_name,last_name,age,position_group,specific_position,team_name,overall_rating,transfer_value,predicted_salary_weekly,nationality_code,height_category,build_category',{count:'exact'}).eq('is_active',true).eq('is_demo', false).not('overall_rating','is',null);
 if (posGroup) q = q.eq('position_group', posGroup);
 if (minAge) q = q.gte('age', Number(minAge));
 if (maxAge) q = q.lte('age', Number(maxAge));
@@ -219,8 +220,8 @@ res.json({ comparisons, team });
 
 router.get('/teams', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
 try {
-const { data: coachTeams } = await supabase.from('coaches').select('team_name').eq('is_active', true).not('team_name','is',null);
-const { data: playerTeams } = await supabase.from('players').select('team_name').eq('is_active', true).not('team_name','is',null);
+const { data: coachTeams } = await supabase.from('coaches').select('team_name').eq('is_active', true).eq('is_demo', false).not('team_name','is',null);
+const { data: playerTeams } = await supabase.from('players').select('team_name').eq('is_active', true).eq('is_demo', false).not('team_name','is',null);
 const all = new Set();
 (coachTeams||[]).forEach(r => r.team_name && all.add(r.team_name));
 (playerTeams||[]).forEach(r => r.team_name && all.add(r.team_name));
@@ -231,7 +232,7 @@ res.json({ teams: Array.from(all).sort() });
 router.get('/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const { limit=200 } = req.query;
-const { data, error, count } = await supabase.from('scouts').select('*',{count:'exact'}).order('created_at',{ascending:false}).limit(Number(limit));
+const { data, error, count } = await supabase.from('scouts').select('*',{count:'exact'}).eq('is_demo', false).order('created_at',{ascending:false}).limit(Number(limit));
 if (error) throw error;
 const teamIds = [...new Set((data||[]).map(s => s.scout_team_id).filter(Boolean))];
 let teamMap = {};
@@ -246,7 +247,7 @@ res.json({ data: (data||[]).map(s => ({ ...s, scout_team: s.scout_team_id ? team
 router.get('/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const { limit=200 } = req.query;
-const { data, error, count } = await supabase.from('coaches').select('*',{count:'exact'}).order('created_at',{ascending:false}).limit(Number(limit));
+const { data, error, count } = await supabase.from('coaches').select('*',{count:'exact'}).eq('is_demo', false).order('created_at',{ascending:false}).limit(Number(limit));
 if (error) throw error;
 const teamIds = [...new Set((data||[]).map(c => c.team_id).filter(Boolean))];
 let teamMap = {};
@@ -512,7 +513,7 @@ res.json({ message: 'Plan updated to ' + subscriptionPlan });
 // =================== SCOUT TEAMS ===================
 router.get('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { data, error, count } = await supabase.from('scout_teams').select('*',{count:'exact'}).order('team_name');
+const { data, error, count } = await supabase.from('scout_teams').select('*',{count:'exact'}).eq('is_demo', false).order('team_name');
 if (error) throw error;
 res.json({ data: data||[], total: count||0 });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -544,7 +545,7 @@ res.json({ message: 'Scout team and assigned scouts removed', scoutsRemoved });
 // Get scouts assigned to a scout team
 router.get('/scout-teams/:id/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { data, error } = await supabase.from('scouts').select('id,first_name,last_name,email,club_name,scout_id').eq('scout_team_id', req.params.id);
+const { data, error } = await supabase.from('scouts').select('id,first_name,last_name,email,club_name,scout_id').eq('scout_team_id', req.params.id).eq('is_demo', false);
 if (error) throw error;
 res.json({ data: data||[] });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -573,7 +574,7 @@ res.json({ message: 'Scout removed from team' });
 // =================== SCHOOL / ACADEMY TEAMS ===================
 router.get('/school-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { data, error, count } = await supabase.from('school_academy_teams').select('*',{count:'exact'}).order('team_name');
+const { data, error, count } = await supabase.from('school_academy_teams').select('*',{count:'exact'}).eq('is_demo', false).order('team_name');
 if (error) throw error;
 res.json({ data: data||[], total: count||0 });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -607,7 +608,7 @@ res.json({ message: 'Non Pro Academy and assigned users removed', playersRemoved
 // Get coaches for a school team
 router.get('/school-teams/:id/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { data, error } = await supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,created_at,last_login,is_active').eq('team_id', req.params.id);
+const { data, error } = await supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,created_at,last_login,is_active').eq('team_id', req.params.id).eq('is_demo', false);
 if (error) throw error;
 res.json({ data: data||[] });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }

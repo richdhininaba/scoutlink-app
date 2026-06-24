@@ -13,6 +13,7 @@ const {
   calculateValueAnalysis
 } = require('../engines/compatibility');
 const email = require('../services/email');
+const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 
 // Height/weight range maps
 const HEIGHT_RANGES = {
@@ -198,11 +199,13 @@ router.get('/build-ranges', (_, res) => res.json(BUILD_RANGES));
 
 router.get('/locations', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
   try {
-    const { data: players } = await supabase
+    let playerQ = supabase
       .from('players')
       .select('team_id')
       .eq('is_active', true)
       .not('team_id', 'is', null);
+    playerQ = applyRealDataFilter(playerQ, req);
+    const { data: players } = await playerQ;
     const ids = [...new Set((players || []).map(p => p.team_id).filter(Boolean))];
     if (!ids.length) return res.json({ data: [] });
     const { data: teams, error } = await supabase
@@ -219,7 +222,9 @@ router.get('/locations', requireAuth, requireRole('Scout','Stratex'), async (req
 // Count active players
 router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
-    const { count, error } = await supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    let q = supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    q = applyRealDataFilter(q, req);
+    const { count, error } = await q;
     if (error) throw error;
     res.json({ count: count || 0 });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -233,6 +238,7 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
       'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_id,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot,date_of_birth',
       { count: 'exact' }
     ).eq('is_active', true);
+    q = applyRealDataFilter(q, req);
     if (city) {
       const { data: cityTeams, error: cityErr } = await supabase
         .from('school_academy_teams')
@@ -315,6 +321,7 @@ try {
 if (req.user.accountType === 'Player' && req.user.id !== req.params.id) return res.status(403).json({ error: 'Forbidden' });
 const { data, error } = await supabase.from('players').select('*').eq('id', req.params.id).single();
 if (error||!data) return res.status(404).json({ error: 'Player not found' });
+if (data.is_demo && !isDemoSession(req)) return res.status(404).json({ error: 'Player not found' });
 const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', req.params.id).order('match_date', { ascending: false }).limit(10);
 const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
 // Fetch upcoming fixtures for this player's team
@@ -393,6 +400,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       gk_sweeping: b.gkSweeping||null,
       avatar_config: b.avatarConfig||null,
       is_active: true,
+      ...demoWriteFields(req),
     };
     Object.assign(playerData, scoringPayload(playerData));
     const { data, error } = await supabase.from('players').insert(playerData).select().single();
@@ -409,7 +417,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     const recipientEmail = b.parentEmail || b.email || null;
     let emailSent = false;
     let emailTemplate = null;
-    if (recipientEmail) {
+    if (recipientEmail && !isDemoSession(req)) {
       try {
         const emailResult = await email.sendPlayerLoginCode({
           to: recipientEmail,
@@ -424,7 +432,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
 
     let coachEmailSent = false;
     let coachEmailTemplate = null;
-    if (req.user.accountType === 'Coach' && req.user.email) {
+    if (req.user.accountType === 'Coach' && req.user.email && !isDemoSession(req)) {
       try {
         const coachEmailResult = await email.sendNotification({
           to: req.user.email,
@@ -444,7 +452,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     }
     
     // Notify coach
-    if (req.user.accountType === 'Coach') {
+    if (req.user.accountType === 'Coach' && !isDemoSession(req)) {
       try {
         await supabase.from('notifications').insert({
           recipient_id: req.user.id, recipient_type: 'Coach',
@@ -506,6 +514,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           gk_distribution: p.gkDistribution||null, gk_communication: p.gkCommunication||null,
           gk_sweeping: p.gkSweeping||null,
           is_active: true,
+          ...demoWriteFields(req),
         };
         Object.assign(playerData, scoringPayload(playerData));
         const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,team_id,team_name,assigned_coach_id').single();
@@ -520,7 +529,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         }).eq('id', created.id);
         let emailSent = false;
         const recipientEmail = p.parentEmail || p.email || null;
-        if (recipientEmail) {
+        if (recipientEmail && !isDemoSession(req)) {
           const emailResult = await email.sendPlayerLoginCode({
             to: recipientEmail,
             email: recipientEmail,
@@ -535,7 +544,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         results.errors.push({ player: p.firstName + ' ' + p.lastName, error: e.message });
       }
     }
-    if (req.user.accountType === 'Coach' && results.created.length) {
+    if (req.user.accountType === 'Coach' && results.created.length && !isDemoSession(req)) {
       try {
         const lines = results.created.map(playerCodeLine);
         const sentCount = results.created.filter(p => p.emailSent).length;

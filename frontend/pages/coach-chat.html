@@ -36,7 +36,7 @@
 <div class="dashboard-main">
 <div class="topbar"><span class="topbar-title">Chat</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
-<div class="chat-shell">
+<div class="chat-shell chat-mobile-list">
 <div class="thread-list"><div class="table-header"><h3>Conversations</h3><button class="btn btn-sm btn-outline" id="refreshThreads">Refresh</button></div><div id="threadList"><div class="loading-state"><div class="spinner"></div></div></div></div>
 <div class="chat-pane">
 <div class="chat-head"><div><div id="chatTitle" style="font-size:16px;font-weight:900">Select a conversation</div><div id="chatMeta" style="font-size:12px;color:var(--text3);margin-top:4px">Chats appear after a scout adds a player to their pipeline.</div></div><a id="profileLink" class="btn btn-sm btn-outline" href="#" style="display:none;text-decoration:none">View player</a></div>
@@ -68,11 +68,11 @@ function otherContact(t){
  return [person.email,club].filter(Boolean).join(' - ');
 }
 function threadInitials(name){var parts=String(name||'').trim().split(/\s+/).filter(Boolean);return ((parts[0]||'')[0]||'').toUpperCase()+((parts[1]||'')[0]||'').toUpperCase();}
-function threadTime(t){var raw=t.last_message_at||t.updated_at||t.created_at;if(!raw)return '';return new Date(raw).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}
+function threadTime(t){var raw=t.lastMessageAt||t.last_message_at||t.updated_at||t.created_at;if(!raw)return '';return new Date(raw).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}
 function renderThreads(){
  var box=document.getElementById('threadList');
- if(!_threads.length){box.innerHTML='<div style="padding:34px 18px;text-align:center;color:var(--text3);font-size:13px">No chats yet. Scouts can start one from their pipeline.</div>';return;}
- box.innerHTML=_threads.map(function(t,i){var p=t.players||{},name=otherName(t),player=((p.first_name||'')+' '+(p.last_name||'')).trim();return '<div class="thread-item '+(_activeThread&&_activeThread.id===t.id?'active':'')+'" data-thread="'+t.id+'"><div class="thread-avatar">'+esc(threadInitials(name)||'SL')+'</div><div class="thread-main"><div class="thread-title">'+esc(name)+(t.unreadCount?'<span class="unread-pill">'+t.unreadCount+'</span>':'')+'</div><div class="thread-meta">'+esc(player||'Player')+' - '+esc(p.team_name||'Team')+'</div><div class="thread-meta">'+esc(otherContact(t))+'</div></div><div class="thread-side"><span>'+esc(threadTime(t))+'</span><span aria-hidden="true">&rsaquo;</span></div></div>';}).join('');
+ if(!_threads.length){box.innerHTML='<div class="chat-empty-mobile"><h3>No chats yet</h3><p>Scouts can start a conversation after adding one of your players to their pipeline.</p><a class="btn btn-sm btn-outline" href="coach-my-players.html">View squad</a></div>';return;}
+ box.innerHTML=_threads.map(function(t,i){var p=t.players||{},name=otherName(t),player=((p.first_name||'')+' '+(p.last_name||'')).trim();var preview=t.lastMessagePreview||('About '+(player||'a player'));return '<div class="thread-item '+(_activeThread&&_activeThread.id===t.id?'active':'')+'" data-thread="'+t.id+'"><div class="thread-avatar">'+esc(threadInitials(name)||'SL')+'</div><div class="thread-main"><div class="thread-title">'+esc(name)+(t.unreadCount?'<span class="unread-pill">'+t.unreadCount+'</span>':'')+'</div><div class="thread-meta">'+esc(preview)+'</div><div class="thread-meta">'+esc(player||'Player')+' - '+esc(p.team_name||'Team')+'</div></div><div class="thread-side"><span>'+esc(threadTime(t))+'</span><span aria-hidden="true">&rsaquo;</span></div></div>';}).join('');
  box.querySelectorAll('[data-thread]').forEach(function(el){el.addEventListener('click',function(){selectThread(this.getAttribute('data-thread'));});});
 }
 function loadThreads(){
@@ -84,6 +84,7 @@ function selectThread(id){
  var p=_activeThread.players||{};
  document.getElementById('chatTitle').textContent=otherName(_activeThread);
  document.getElementById('chatMeta').textContent=[((p.first_name||'')+' '+(p.last_name||'')+' - '+(p.team_name||'')).trim(),otherContact(_activeThread)].filter(Boolean).join(' | ');
+ if(window.innerWidth<=768&&window.setMobileChatMode)window.setMobileChatMode('conversation');
  var profile=document.getElementById('profileLink');profile.style.display='inline-flex';profile.href='player-profile.html?id='+_activeThread.player_id;
  api('GET','/api/chat/threads/'+id+'/messages').then(function(d){renderMessages(d.data||[]);}).catch(function(e){document.getElementById('messages').innerHTML='<div style="margin:auto;color:#f44336">'+e.message+'</div>';});
  updateShareState();

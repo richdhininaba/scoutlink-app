@@ -6,6 +6,7 @@ const CLEAN_ROUTES = {
   'index.html':'/',
   'login.html':'/login',
   'forgot-password.html':'/forgot-password',
+  'experience-select.html':'/experience-select',
   'register.html':'/register',
   'register-scout.html':'/register/scout',
   'register-coach.html':'/register/coach',
@@ -104,7 +105,7 @@ const Auth = {
     localStorage.setItem('sl_user', JSON.stringify(user));
     localStorage.setItem('sl_type', type);
   },
-  clear() { ['sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email','sl_user_role','sl_user_data'].forEach(k => localStorage.removeItem(k)); },
+  clear() { ['sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email','sl_user_role','sl_user_data','sl_demo_mode','sl_demo_tour','sl_admin_token','sl_admin_user','sl_admin_type','sl_experience_switcher','sl_force_tour'].forEach(k => localStorage.removeItem(k)); },
   isLoggedIn() { return !!this.token && !!this.user; },
   redirectToDashboard() {
     const map = { Player:'player-dashboard.html', Coach:'coach-dashboard.html',
@@ -113,6 +114,52 @@ const Auth = {
     window.location.href = cleanRouteFor(dest);
   }
 };
+
+function isDemoMode() {
+  return localStorage.getItem('sl_demo_mode') === '1';
+}
+
+function restoreAdminSessionForSelector() {
+  var token = localStorage.getItem('sl_admin_token');
+  var rawUser = localStorage.getItem('sl_admin_user');
+  if (!token || !rawUser) return false;
+  try {
+    var user = JSON.parse(rawUser);
+    Auth.set(token, user, localStorage.getItem('sl_admin_type') || 'Stratex');
+    localStorage.removeItem('sl_demo_mode');
+    localStorage.removeItem('sl_demo_tour');
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function openExperienceSelector() {
+  if (isDemoMode()) restoreAdminSessionForSelector();
+  navigateClean('experience-select.html');
+}
+
+async function maybeShowExperienceSwitcher() {
+  if (!Auth.isLoggedIn()) return;
+  var shouldShow = isDemoMode() || Auth.type === 'Stratex' || localStorage.getItem('sl_experience_switcher') === '1';
+  if (!shouldShow) {
+    try {
+      var d = await api('GET', '/api/auth/experiences');
+      shouldShow = !!d.showSwitcher;
+      localStorage.setItem('sl_experience_switcher', shouldShow ? '1' : '0');
+    } catch(e) {}
+  }
+  if (!shouldShow || document.getElementById('experienceSwitchBtn')) return;
+  var right = document.querySelector('.topbar-right');
+  if (!right) return;
+  var btn = document.createElement('button');
+  btn.id = 'experienceSwitchBtn';
+  btn.type = 'button';
+  btn.className = 'btn btn-sm btn-outline experience-switch-btn';
+  btn.textContent = isDemoMode() ? 'Switch demo' : 'Switch experience';
+  btn.addEventListener('click', openExperienceSelector);
+  right.insertBefore(btn, right.firstChild);
+}
 
 // API helper - handles 401 by clearing auth and redirecting to login
 async function api(method, path, body) {
@@ -272,10 +319,13 @@ window.isValidEmailAddress = isValidEmailAddress; window.validateEmailInput = va
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
 window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
 window.navigateClean = navigateClean; window.logoutToLogin = logoutToLogin;
+window.isDemoMode = isDemoMode; window.openExperienceSelector = openExperienceSelector;
+window.restoreAdminSessionForSelector = restoreAdminSessionForSelector;
 window.SL_COUNTRY_CITIES = SL_COUNTRY_CITIES; window.fillCountrySelect = fillCountrySelect;
 window.attachCityAutocomplete = attachCityAutocomplete; window.canonicalChoice = canonicalChoice;
 
 document.addEventListener('DOMContentLoaded', () => {
+  maybeShowExperienceSwitcher();
   document.querySelectorAll('input[type="email"]').forEach(input => {
     input.addEventListener('input', () => validateEmailInput(input));
     input.addEventListener('blur', () => validateEmailInput(input));

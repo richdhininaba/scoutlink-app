@@ -2,6 +2,7 @@
   var routes = {
     '/login': '/frontend/pages/login.html',
     '/forgot-password': '/frontend/pages/forgot-password.html',
+    '/experience-select': '/frontend/pages/experience-select.html',
     '/register': '/frontend/pages/register.html',
     '/register/scout': '/frontend/pages/register-scout.html',
     '/register/coach': '/frontend/pages/register-coach.html',

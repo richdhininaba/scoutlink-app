@@ -4,6 +4,7 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { getPosGroup, analysePlayer } = require('../engines/compatibility');
+const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 
 const PLAN_LIMITS = {
   Core: { exports: 30, predictions: 120, interests: 200 },
@@ -244,6 +245,7 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
     if (prefs.formation) scoutTeam.formation = prefs.formation;
     if (prefs.playingStyle) scoutTeam.playing_style = prefs.playingStyle;
     let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,overall_rating,transfer_value,predicted_salary_weekly,team_id,team_name,height_category,build_category,nationality,date_of_birth,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,foot,gk_diving,gk_handling,gk_kicking,gk_reflexes,gk_positioning,gk_distribution,gk_communication,gk_sweeping').eq('is_active', true);
+    q = applyRealDataFilter(q, req);
     if (prefs.minAppearances && Number(prefs.minAppearances) > 0) q = q.gte('appearances', Number(prefs.minAppearances));
     q = q.order('overall_rating', { ascending: false }).limit(100);
     const { data: players, error } = await q;
@@ -288,7 +290,9 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
 
 router.get('/players-count', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
-    const { count, error } = await supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    let q = supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    q = applyRealDataFilter(q, req);
+    const { count, error } = await q;
     if (error) throw error;
     res.json({ count: count || 0 });
   } catch (err) { res.status(500).json({ error: 'Internal server error' }); }
@@ -364,10 +368,10 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
     const {generateId} = require('../utils/auth'); const config = require('../config'); const emailSvc = require('../services/email');
     const PL = {Core:{exports:30,predictions:120,interests:200},Plus:{exports:120,predictions:600,interests:1000},Elite:{exports:500,predictions:1200,interests:99999},Enterprise:{exports:99999,predictions:99999,interests:99999}};
     const plan = subscriptionPlan||'Core'; const limits = PL[plan]||PL.Core; const expires = new Date(Date.now()+7*24*60*60*1000);
-    const { data: newScout, error } = await supabase.from('scouts').insert({scout_id:generateId('SCT'),first_name:firstName.trim(),last_name:lastName.trim(),email:emailAddr.toLowerCase().trim(),phone:phone||null,club_name:scoutClub||me.club_name||null,club_league:scoutLeague||null,scout_team_id:me.scout_team_id||null,login_code:loginCode,login_code_expires:expires,is_active:true,preferences_set:false,is_super_user:false,registration_complete:false,subscription_plan:plan,plan_start:new Date(),plan_end:new Date(Date.now()+365*24*60*60*1000),exports_remaining:limits.exports,predictions_remaining:limits.predictions,interests_remaining:limits.interests}).select().single();
+    const { data: newScout, error } = await supabase.from('scouts').insert({scout_id:generateId('SCT'),first_name:firstName.trim(),last_name:lastName.trim(),email:emailAddr.toLowerCase().trim(),phone:phone||null,club_name:scoutClub||me.club_name||null,club_league:scoutLeague||null,scout_team_id:me.scout_team_id||null,login_code:loginCode,login_code_expires:expires,is_active:true,preferences_set:false,is_super_user:false,registration_complete:false,subscription_plan:plan,plan_start:new Date(),plan_end:new Date(Date.now()+365*24*60*60*1000),exports_remaining:limits.exports,predictions_remaining:limits.predictions,interests_remaining:limits.interests,...demoWriteFields(req)}).select().single();
     if (error) throw error;
     const baseUrl = config.brandUrl||'https://scoutlink.app'; const cl = baseUrl+'/complete-registration?code='+loginCode+'&email='+encodeURIComponent(emailAddr.toLowerCase())+'&type=Scout';
-    const emailResult = await emailSvc.sendCompleteSignup({to:emailAddr,email:emailAddr,firstName,loginCode,accountType:'Scout',completeLink:cl}).catch(e=>({success:false,error:e.message}));
+    const emailResult = isDemoSession(req) ? { success: true, template: 'demo-no-email' } : await emailSvc.sendCompleteSignup({to:emailAddr,email:emailAddr,firstName,loginCode,accountType:'Scout',completeLink:cl}).catch(e=>({success:false,error:e.message}));
     if (!emailResult || !emailResult.success) {
       await supabase.from('scouts').delete().eq('id', newScout.id);
       return res.status(502).json({ error: 'SendGrid did not accept the scout invite email. Scout was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
@@ -602,10 +606,10 @@ router.get('/rankings', requireAuth, requireRole('Scout','Stratex'), async (req,
       { data: topCleanSheets },
       { data: topExpensive },
     ] = await Promise.all([
-      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,goals,overall_rating,transfer_value').eq('is_active', true).order('goals', { ascending: false }).limit(5),
-      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,assists,overall_rating,transfer_value').eq('is_active', true).order('assists', { ascending: false }).limit(5),
-      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,clean_sheets,overall_rating,transfer_value').eq('is_active', true).in('position_group', ['Goalkeeper','Defender']).order('clean_sheets', { ascending: false }).limit(5),
-      supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,transfer_value,overall_rating').eq('is_active', true).not('transfer_value', 'is', null).order('transfer_value', { ascending: false }).limit(5),
+      applyRealDataFilter(supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,goals,overall_rating,transfer_value').eq('is_active', true), req).order('goals', { ascending: false }).limit(5),
+      applyRealDataFilter(supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,assists,overall_rating,transfer_value').eq('is_active', true), req).order('assists', { ascending: false }).limit(5),
+      applyRealDataFilter(supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,clean_sheets,overall_rating,transfer_value').eq('is_active', true), req).in('position_group', ['Goalkeeper','Defender']).order('clean_sheets', { ascending: false }).limit(5),
+      applyRealDataFilter(supabase.from('players').select('id,first_name,last_name,team_name,age_group,position_group,transfer_value,overall_rating').eq('is_active', true), req).not('transfer_value', 'is', null).order('transfer_value', { ascending: false }).limit(5),
     ]);
     
     // Most interested: count scouts per player in recruitment_pipeline

@@ -207,16 +207,31 @@ router.get('/threads', requireAuth, requireRole('Scout','Coach'), async (req, re
     if (error) throw error;
     const ids = (data || []).map(t => t.id);
     const unreadByThread = {};
+    const lastByThread = {};
     if (ids.length) {
-      const { data: unread } = await supabase
+      const [{ data: unread }, { data: latest }] = await Promise.all([
+        supabase
         .from('chat_messages')
         .select('thread_id')
         .in('thread_id', ids)
         .neq('sender_id', req.user.id)
-        .eq('is_read', false);
+        .eq('is_read', false),
+        supabase
+        .from('chat_messages')
+        .select('thread_id,body,created_at,sender_type,message_kind')
+        .in('thread_id', ids)
+        .order('created_at', { ascending: false })
+        .limit(500)
+      ]);
       (unread || []).forEach(m => { unreadByThread[m.thread_id] = (unreadByThread[m.thread_id] || 0) + 1; });
+      (latest || []).forEach(m => {
+        if (!lastByThread[m.thread_id]) lastByThread[m.thread_id] = m;
+      });
     }
-    res.json({ data: (data || []).map(t => ({ ...t, unreadCount: unreadByThread[t.id] || 0 })) });
+    res.json({ data: (data || []).map(t => {
+      const last = lastByThread[t.id] || null;
+      return { ...t, unreadCount: unreadByThread[t.id] || 0, lastMessagePreview: last ? (last.body || 'Shared item') : '', lastMessageAt: last ? last.created_at : (t.last_message_at || t.updated_at) };
+    }) });
   } catch(err) {
     console.error('[Chat threads]', err);
     res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });

@@ -5,6 +5,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
 const email = require('../services/email');
 const config = require('../config');
+const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 
 const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
 
@@ -24,6 +25,7 @@ let q = supabase.from('players')
 .select('id,first_name,last_name,age,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config,appearances,goals,assists,clean_sheets,yellow_cards,red_cards')
 .eq('is_active', true)
 .order('last_name');
+q = applyRealDataFilter(q, req);
 
 if (coach.is_super_user) {
 // Super user sees all players on the team
@@ -56,6 +58,7 @@ const { data: me } = await supabase.from('coaches').select('id,team_id,team_name
 if (!me) return res.status(404).json({ error: 'Not found' });
 if (!me.is_super_user) return res.status(403).json({ error: 'Only super user coaches can view team coaches' });
 let q = supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,is_super_user,registration_complete').eq('is_active', true).neq('id', req.user.id);
+q = applyRealDataFilter(q, req);
 if (me.team_id) q = q.eq('team_id', me.team_id);
 else if (me.team_name) q = q.eq('team_name', me.team_name);
 const { data, error } = await q;
@@ -110,13 +113,14 @@ email: emailAddr.toLowerCase().trim(), phone: phone||null,
 team_name: me.team_name, team_id: me.team_id,
 role_at_club: 'Coach',
 data_policy_agreed: true, login_code: loginCode, login_code_expires: expires,
-is_active: true, is_super_user: !!isSuperUser, registration_complete: false
+is_active: true, is_super_user: !!isSuperUser, registration_complete: false,
+...demoWriteFields(req)
 }).select().single();
 if (error) throw error;
 
 const baseUrl = config.brandUrl||'https://scoutlink.app';
 const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(emailAddr.toLowerCase()) + '&type=Coach';
-const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
+const emailResult = isDemoSession(req) ? { success: true, template: 'demo-no-email' } : await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
   console.error('[Email]', e.message);
   return { success: false, error: e.message };
 });
@@ -167,9 +171,11 @@ router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => 
     }
     
     // Get all players for this team
-    const { data: players, error: pErr } = await supabase.from('players')
+    let playerQ = supabase.from('players')
       .select('id,first_name,last_name,overall_rating,transfer_value,position_group,appearances')
       .eq('team_id', teamId).eq('is_active', true);
+    playerQ = applyRealDataFilter(playerQ, req);
+    const { data: players, error: pErr } = await playerQ;
     if (pErr) throw pErr;
     
     const playerList = players || [];

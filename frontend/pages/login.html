@@ -86,6 +86,7 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 const API = 'https://scoutlink-api.vercel.app';
 var CLEAN_ROUTES={
   'login.html':'/login',
+  'experience-select.html':'/experience-select',
   'complete-registration.html':'/complete-registration',
   'scout-preferences.html':'/scout/preferences',
   'stratex-dashboard.html':'/stratex/dashboard',
@@ -133,7 +134,7 @@ function showRoleChooser(d, mode, creds){
   pendingLogin={mode:mode,creds:creds,stratexToken:d.stratexToken||null,stratexUser:d.stratexUser||null};
   document.getElementById('roleChooser').style.display='block';
   document.getElementById('roleOptions').innerHTML=(d.roles||[]).map(function(r,idx){
-    return '<button class="btn" style="background:#0a0f1e;color:var(--sl-text);border:1px solid var(--sl-border);text-align:left" onclick="chooseRole('+idx+')">'+(r.demo?'Demo: ':'')+(r.label||r.accountType)+'</button>';
+    return '<button class="btn" style="background:#0a0f1e;color:var(--sl-text);border:1px solid var(--sl-border);text-align:left" onclick="chooseRole('+idx+')">'+(r.label||r.accountType)+'</button>';
   }).join('');
   pendingLogin.roles=d.roles||[];
 }
@@ -143,14 +144,6 @@ async function chooseRole(idx){
   if(!r)return;
   hideError();
   try{
-    if(r.demo){
-      if(!pendingLogin.stratexToken)throw new Error('Please continue to the Stratex dashboard first.');
-      var tr=await fetch(API+'/api/auth/test-access',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+pendingLogin.stratexToken},body:JSON.stringify({accountType:r.accountType})});
-      var td=await tr.json();
-      if(!tr.ok)throw new Error(td.error||'Could not open test experience');
-      storeAndRedirect(td);
-      return;
-    }
     var body={email:pendingLogin.creds.email,accountType:r.accountType};
     if(pendingLogin.mode==='code')body.loginCode=pendingLogin.creds.loginCode;else body.password=pendingLogin.creds.password;
     var rr=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -207,7 +200,7 @@ function storeAndRedirect(d){
   localStorage.setItem('sl_user',JSON.stringify(d.user));
   localStorage.setItem('sl_user_id',d.user.id);
   localStorage.setItem('sl_user_email',d.user.email);
-  var map={Stratex:'stratex-dashboard.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
+  var map={Stratex:'experience-select.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
   window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }
 </script><script src="../js/mobile.js"></script>

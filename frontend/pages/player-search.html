@@ -241,7 +241,9 @@ function renderResults(players,total,page){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  initNav();loadLocations();loadPlayers(1);
+  initNav();
+  if(window.matchMedia&&window.matchMedia('(max-width: 768px)').matches){viewMode='cards';document.getElementById('tabCards').className='btn btn-sm active-tab';document.getElementById('tabTable').className='btn btn-sm btn-ghost';}
+  loadLocations();loadPlayers(1);
   document.getElementById('notifToggle').addEventListener('click',toggleNotifPanel);
   document.getElementById('closeNotifBtn').addEventListener('click',toggleNotifPanel);
   document.getElementById('logoutBtn').addEventListener('click',logout);
