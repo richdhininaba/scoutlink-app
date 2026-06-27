@@ -28,16 +28,16 @@
 </div>
 </div>
 <div class="page-content">
-<div class="kpi-grid">
+<div class="kpi-grid coach-dashboard-kpis">
 <div class="kpi-card"><div class="kpi-label">My players</div><div class="kpi-value green" id="kpiPlayers">-</div></div>
 <div class="kpi-card"><div class="kpi-label">Scouts interested</div><div class="kpi-value" id="kpiInterest">-</div></div>
-<div class="kpi-card"><div class="kpi-label">Top rated player</div><div class="kpi-value green" id="kpiTop">-</div></div>
+<div class="kpi-card" data-mobile-hide="true"><div class="kpi-label">Top rated player</div><div class="kpi-value green" id="kpiTop">-</div></div>
 <div class="kpi-card"><div class="kpi-label">Total squad value</div><div class="kpi-value" id="kpiValue">-</div></div>
 </div>
 <div class="table-card">
 <div class="table-header">
 <div><h3>My squad</h3></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div class="coach-dashboard-actions" style="display:flex;gap:8px;flex-wrap:wrap">
 <a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk import</a>
 <a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
 </div>
@@ -76,6 +76,7 @@
 
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/mobile-coach.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 function ratingCol(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
@@ -89,6 +90,7 @@ if(Number(p.goals)>0||Number(p.assists)>0||Number(p.clean_sheets)>0)done++;
 return Math.min(100,Math.round(done/11*100));
 }
 function mobilePlayerCard(p){
+if(window.renderCoachMobilePlayerCard)return window.renderCoachMobilePlayerCard(p);
 var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
 var ovNum=parseFloat(p.overall_rating||0);var ovPct=ovNum>10?ovNum:ovNum*10;
 var comp=playerCompletion(p);

@@ -57,7 +57,8 @@ return roles;
 
 function publicUser(user) {
 return { id: user.id, firstName: user.first_name, lastName: user.last_name, email: user.email,
-isSuper: user.is_super_user || false, adminRole: user.admin_role || user.role || null };
+isSuper: user.is_super_user || false, adminRole: user.admin_role || user.role || null,
+isDemo: !!user.is_demo, teamName: user.team_name || user.club_name || null };
 }
 
 function accountDescription(accountType, demo) {
@@ -75,26 +76,69 @@ const { data } = await supabase.from(table).select('*').eq('email', String(email
 return data || null;
 }
 
-async function demoAccount(accountType) {
+function demoEmailPattern(accountType) {
+if (accountType === 'Coach') return 'demo.coach%@scoutlink.app';
+if (accountType === 'Scout') return 'demo.scout%@scoutlink.app';
+if (accountType === 'Player') return 'demo.player%@scoutlink.app';
+return null;
+}
+
+async function demoAccountOptions(accountType) {
+const table = TABLE_MAP[accountType];
+if (!table) return [];
+const select = accountType === 'Scout'
+? 'id,first_name,last_name,email,club_name,is_demo'
+: 'id,first_name,last_name,email,team_name,is_demo';
+let q = supabase.from(table).select(select).eq('is_active', true).eq('is_demo', true);
+const pattern = demoEmailPattern(accountType);
+if (pattern) q = q.like('email', pattern);
+const limit = accountType === 'Player' ? 1 : 5;
+const { data } = await q.order('email').limit(limit);
+return (data || []).map(row => ({
+id: row.id,
+firstName: row.first_name,
+lastName: row.last_name,
+email: row.email,
+teamName: row.team_name || row.club_name || '',
+label: [row.first_name, row.last_name].filter(Boolean).join(' ') || row.email
+}));
+}
+
+async function demoAccount(accountType, demoUserId) {
 const demoEmails = {
 Coach: 'coach@test.scoutlink.com',
 Scout: 'scout@test.scoutlink.com',
-Player: 'player@test.scoutlink.com'
+Player: 'demo.player01@scoutlink.app'
 };
 const table = TABLE_MAP[accountType];
-const emailAddr = demoEmails[accountType];
-if (!table || !emailAddr) return null;
+if (!table) return null;
+if (demoUserId) {
+const { data } = await supabase.from(table).select('*').eq('id', demoUserId).eq('is_active', true).eq('is_demo', true).maybeSingle();
+return data || null;
+}
+const pattern = demoEmailPattern(accountType);
+if (pattern) {
+const { data } = await supabase.from(table).select('*').eq('is_active', true).eq('is_demo', true).like('email', pattern).order('email').limit(1);
+if ((data || [])[0]) return data[0];
+}
+const emailAddr = demoEmails[accountType] || (accountType === 'Player' ? 'player@test.scoutlink.com' : null);
+if (!emailAddr) return null;
 const { data } = await supabase.from(table).select('*').eq('email', emailAddr).eq('is_active', true).eq('is_demo', true).maybeSingle();
 return data || null;
 }
 
 async function buildExperienceList(user) {
 if (user.accountType === 'Stratex') {
+const [demoCoaches, demoScouts, demoPlayers] = await Promise.all([
+demoAccountOptions('Coach'),
+demoAccountOptions('Scout'),
+demoAccountOptions('Player')
+]);
 return [
 { accountType: 'Stratex', label: 'Stratex Admin', description: accountDescription('Stratex'), demo: false, admin: true },
-{ accountType: 'Coach', label: 'Coach demo', description: accountDescription('Coach', true), demo: true },
-{ accountType: 'Scout', label: 'Scout demo', description: accountDescription('Scout', true), demo: true },
-{ accountType: 'Player', label: 'Player demo', description: accountDescription('Player', true), demo: true }
+{ accountType: 'Coach', label: 'Coach demo', description: accountDescription('Coach', true), demo: true, demoUsers: demoCoaches },
+{ accountType: 'Scout', label: 'Scout demo', description: accountDescription('Scout', true), demo: true, demoUsers: demoScouts },
+{ accountType: 'Player', label: 'Player demo', description: accountDescription('Player', true), demo: true, demoUsers: demoPlayers }
 ];
 }
 const accounts = await findActiveAccounts(user.email);
@@ -193,7 +237,7 @@ let role = accountType;
 if (req.body.demo === true) {
 if (req.user.accountType !== 'Stratex') return res.status(403).json({ error: 'Only Stratex admins can open demo experiences' });
 if (accountType === 'Stratex') return res.status(400).json({ error: 'The admin experience is not a demo account' });
-user = await demoAccount(accountType);
+user = await demoAccount(accountType, req.body.demoUserId);
 if (!user) return res.status(404).json({ error: accountType + ' demo is not available' });
 demoMode = true;
 role = 'StratexTest' + accountType;
@@ -214,7 +258,7 @@ if (req.user.accountType !== 'Stratex') return res.status(403).json({ error: 'On
 req.body.demo = true;
 req.url = '/switch-experience';
 const accountType = req.body.accountType;
-const user = await demoAccount(accountType);
+const user = await demoAccount(accountType, req.body.demoUserId);
 if (!user) return res.status(404).json({ error: 'Test ' + String(accountType || '').toLowerCase() + ' account is not available' });
 const token = signToken({ id: user.id, email: user.email, accountType, role: 'StratexTest' + accountType, demoMode: true, actingStratexId: req.user.id });
 res.json({ token, accountType, demoMode: true, includeTour: req.body.includeTour === true, user: publicUser(user) });

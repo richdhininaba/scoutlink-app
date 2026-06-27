@@ -24,6 +24,11 @@ body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;m
 .tour-toggle{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:10px;padding:10px;}
 .tour-toggle input{width:20px;height:20px;accent-color:var(--green,#00e676);}
 .tour-toggle span{font-size:13px;color:#dce7f3;font-weight:800;}
+.demo-user-list{display:grid;gap:8px;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:10px;padding:8px;}
+.demo-user-option{width:100%;min-height:44px;text-align:left;border:1px solid rgba(148,163,184,.16);background:#0b1320;color:#dce7f3;border-radius:9px;padding:8px 10px;cursor:pointer;}
+.demo-user-option strong{display:block;font-size:13px;color:#fff;}
+.demo-user-option span{display:block;font-size:11px;color:#8ea2b5;margin-top:2px;}
+.demo-user-option.active{border-color:var(--green,#00e676);box-shadow:0 0 0 1px rgba(0,230,118,.18) inset;}
 .selector-msg{min-height:20px;color:var(--text3,#8ea2b5);font-size:13px;}
 @media(max-width:768px){
   .selector-shell{padding:18px 14px 92px;}
@@ -51,6 +56,7 @@ body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;m
 <script src="../js/main.js"></script>
 <script>
 var experiences=[];
+var selectedDemoUsers={};
 function roleHome(type){
   return {Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'}[type]||'login.html';
 }
@@ -61,14 +67,24 @@ function render(){
   if(!experiences.length){grid.innerHTML='';document.getElementById('selectorMsg').textContent='No additional experiences are available for this account.';return;}
   document.getElementById('selectorMsg').textContent='Select an experience. Turn on the product tour when you want a guided walkthrough.';
   grid.innerHTML=experiences.map(function(x,i){
+    if(x.demo&&(x.demoUsers||[]).length&&!selectedDemoUsers[i]) selectedDemoUsers[i]=x.demoUsers[0].id;
+    var userChoices=(x.demo&&(x.demoUsers||[]).length)?'<div class="demo-user-list" aria-label="Choose demo user">'+x.demoUsers.map(function(u){
+      var active=selectedDemoUsers[i]===u.id;
+      return '<button type="button" class="demo-user-option '+(active?'active':'')+'" data-demo-card="'+i+'" data-demo-user="'+esc(u.id)+'"><strong>'+esc(u.label||((u.firstName||'')+' '+(u.lastName||''))||u.email)+'</strong><span>'+esc(u.teamName||u.email||'Demo account')+'</span></button>';
+    }).join('')+'</div>':'';
     return '<article class="experience-card '+(x.admin?'admin':'')+'">'+
       '<span class="experience-badge">'+esc(badgeText(x))+'</span>'+
       '<h2>'+esc(x.label||x.accountType)+'</h2>'+
       '<p>'+esc(x.description||'Open this ScoutLink experience.')+'</p>'+
+      userChoices+
       '<label class="tour-toggle"><input type="checkbox" id="tour-'+i+'"><span>Include product tour</span></label>'+
       '<button class="btn btn-primary" type="button" data-enter="'+i+'">Enter as '+esc(x.accountType)+'</button>'+
     '</article>';
   }).join('');
+  grid.querySelectorAll('[data-demo-user]').forEach(function(btn){btn.addEventListener('click',function(){
+    selectedDemoUsers[this.dataset.demoCard]=this.dataset.demoUser;
+    render();
+  });});
   grid.querySelectorAll('[data-enter]').forEach(function(btn){btn.addEventListener('click',function(){enterExperience(Number(this.dataset.enter));});});
 }
 function storeAdminIfNeeded(){
@@ -90,7 +106,7 @@ async function enterExperience(idx){
       navigateClean(roleHome(x.accountType)+(includeTour?'?tour=1':''));
       return;
     }
-    var d=await api('POST','/api/auth/switch-experience',{accountType:x.accountType,demo:!!x.demo,includeTour:includeTour});
+    var d=await api('POST','/api/auth/switch-experience',{accountType:x.accountType,demo:!!x.demo,includeTour:includeTour,demoUserId:x.demo?selectedDemoUsers[idx]:null});
     if(x.demo) storeAdminIfNeeded();
     Auth.set(d.token,d.user,d.accountType);
     localStorage.setItem('sl_demo_mode',d.demoMode?'1':'0');

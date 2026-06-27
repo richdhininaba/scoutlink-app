@@ -34,10 +34,10 @@
 </div>
 <div class="page-content">
 <!-- Squad KPIs -->
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+<div class="coach-players-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
 <div class="kpi-card"><div class="kpi-label">Total players</div><div class="kpi-value green" id="kpiTotal">-</div></div>
 <div class="kpi-card"><div class="kpi-label">Avg overall</div><div class="kpi-value" id="kpiAvg">-</div><div class="kpi-sub">/ 100</div></div>
-<div class="kpi-card"><div class="kpi-label">Top player</div><div class="kpi-value green" id="kpiTop" style="font-size:16px">-</div></div>
+<div class="kpi-card" data-mobile-hide="true"><div class="kpi-label">Top player</div><div class="kpi-value green" id="kpiTop" style="font-size:16px">-</div></div>
 <div class="kpi-card"><div class="kpi-label">Squad value</div><div class="kpi-value" id="kpiValue">-</div></div>
 </div>
 <!-- Filters -->
@@ -61,6 +61,7 @@
 </div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/mobile-coach.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return n>10?Math.round(n):Math.round(n*10);}
 function ovPct(v){var n=parseFloat(v);if(isNaN(n))return 0;return n>10?Math.min(n,100):Math.min(n*10,100);}
@@ -159,6 +160,7 @@ function renderPlayers(){
 var search=(document.getElementById('searchInput').value||'').toLowerCase();
 var posF=document.getElementById('posFilter').value;
 var mode=document.getElementById('viewMode').value;
+if(window.isScoutLinkPhone&&window.isScoutLinkPhone()) mode='grid';
 var filtered=allPlayers.filter(function(p){
 var nm=!search||(p.first_name+' '+p.last_name).toLowerCase().includes(search);
 var pos=!posF||p.position_group===posF;
@@ -172,6 +174,10 @@ else renderTable(filtered);
 function renderGrid(players){
 var html='<div class="player-grid">';
 players.forEach(function(p){
+if(window.isScoutLinkPhone&&window.isScoutLinkPhone()&&window.renderCoachMyPlayerCard){
+html+=window.renderCoachMyPlayerCard(p,{coachControl:coachAssignControl(p),url:'player-profile.html?id='+p.id});
+return;
+}
 var ov=dispOverall(p.overall_rating);
 var pct=ovPct(p.overall_rating);
 var ovColor=attrColor(pct);

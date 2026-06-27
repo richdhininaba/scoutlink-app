@@ -28,14 +28,32 @@
     ]
   };
   var index = 0;
+  var started = false;
   function role(){ return (window.Auth && Auth.type) || localStorage.getItem('sl_type'); }
-  function key(name){ return 'sl_tour_' + name + '_' + role(); }
+  function tourScope(){
+    var mode = (typeof isDemoMode === 'function' && isDemoMode()) ? 'demo' : 'real';
+    var userId = (window.Auth && Auth.user && Auth.user.id) || localStorage.getItem('sl_user_id') || 'anon';
+    return role() + '_' + mode + '_' + userId;
+  }
+  function key(name){ return 'sl_tour_' + name + '_' + tourScope(); }
+  function legacyKey(name){ return 'sl_tour_' + name + '_' + role(); }
+  function seenKey(){ return key('seen'); }
   function shouldRun(){
     var r = role();
     if (!tours[r]) return false;
     var qs = new URLSearchParams(window.location.search);
     if (sessionStorage.getItem('sl_force_tour_' + r) === '1') return true;
-    return qs.get('tour') === '1' || (!localStorage.getItem('sl_tour_seen_' + r) && !sessionStorage.getItem(key('skipped')));
+    return qs.get('tour') === '1' || (!localStorage.getItem(seenKey()) && !sessionStorage.getItem(key('dismissed')) && !sessionStorage.getItem(legacyKey('skipped')));
+  }
+  async function saveTourStatus(status){
+    var r = role();
+    if (typeof api !== 'function' || !tours[r]) return;
+    var payload = {
+      status: status,
+      stepIndex: index,
+      checkpoints: (tours[r] || []).map(function(x){ return x[0]; })
+    };
+    try { await api('POST','/api/onboarding/tour', payload); } catch(e) {}
   }
   function render(){
     var r = role(), steps = tours[r];
@@ -49,6 +67,10 @@
       existing.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,12,.72);z-index:2000;display:flex;align-items:flex-end;justify-content:center;padding:18px';
       document.body.appendChild(existing);
     }
+    if (!started) {
+      started = true;
+      saveTourStatus('started');
+    }
     var s = steps[index];
     existing.innerHTML = '<div style="width:min(560px,100%);background:#111827;border:1px solid #243447;border-radius:16px;padding:18px;box-shadow:0 24px 80px rgba(0,0,0,.45)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px"><span style="color:#00e676;font-weight:900;font-size:12px;text-transform:uppercase">Step '+(index+1)+' of '+steps.length+'</span><button class="btn btn-sm btn-ghost" onclick="window.finishProductTour(true)">Skip</button></div><h3 style="margin:0 0 8px;color:#fff">'+s[0]+'</h3><p style="color:#B0BEC5;line-height:1.55;margin:0 0 16px">'+s[1]+'</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn btn-outline" onclick="window.prevProductTour()" '+(index===0?'disabled':'')+'>Back</button><button class="btn btn-primary" onclick="window.nextProductTour()">'+(index===steps.length-1?'Finish':'Next')+'</button></div></div>';
   }
@@ -58,11 +80,12 @@
     var r = role();
     sessionStorage.removeItem('sl_force_tour_' + r);
     sessionStorage.removeItem(key('index'));
-    if (skipped) sessionStorage.setItem(key('skipped'), '1');
-    localStorage.setItem('sl_tour_seen_' + r, '1');
+    var status = skipped ? 'dismissed' : 'completed';
+    if (skipped) sessionStorage.setItem(key('dismissed'), '1');
+    localStorage.setItem(seenKey(), status);
     var el = document.getElementById('slProductTour');
     if (el) el.remove();
-    try { if (typeof api === 'function') await api('POST','/api/onboarding/tour',{checkpoints:(tours[r]||[]).map(function(x){return x[0];})}); } catch(e) {}
+    await saveTourStatus(status);
   };
   document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ if (shouldRun()) render(); }, 350); });
 })();

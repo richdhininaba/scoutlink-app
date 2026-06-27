@@ -76,7 +76,7 @@ function renderThreads(){
  box.querySelectorAll('[data-thread]').forEach(function(el){el.addEventListener('click',function(){selectThread(this.getAttribute('data-thread'));});});
 }
 function loadThreads(){
- api('GET','/api/chat/threads').then(function(d){_threads=d.data||[];renderThreads();if(!_activeThread&&_threads[0]&&window.innerWidth>=768)selectThread(_threads[0].id);if(window.innerWidth<768&&window.setMobileChatMode)window.setMobileChatMode('list');}).catch(function(e){document.getElementById('threadList').innerHTML='<div style="padding:24px;color:#f44336">'+e.message+'</div>';});
+ api('GET','/api/chat/threads').then(function(d){_threads=d.data||[];renderThreads();if(!_activeThread&&_threads[0]&&window.innerWidth>768)selectThread(_threads[0].id);if(window.innerWidth<=768&&window.setMobileChatMode)window.setMobileChatMode('list');}).catch(function(e){document.getElementById('threadList').innerHTML='<div style="padding:24px;color:#f44336">'+e.message+'</div>';});
 }
 function selectThread(id){
  _activeThread=_threads.find(function(t){return t.id===id;})||null;renderThreads();

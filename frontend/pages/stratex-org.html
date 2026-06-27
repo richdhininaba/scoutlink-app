@@ -5,13 +5,44 @@
 <link rel="stylesheet" href="../css/main.css">
 <link rel="stylesheet" href="../css/mobile.css">
 <style>
-.org-grid{display:grid;gap:14px}
-.org-person{border:1px solid #243447;background:#0d1117;border-radius:12px;padding:16px}
-.org-person .name{font-weight:900;color:#fff;font-size:16px}
-.org-person .title{color:#00e676;font-weight:800;font-size:12px;margin-top:4px}
-.org-person .meta{color:#8ea2b5;font-size:12px;margin-top:4px}
-.org-children{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.org-board{background:#0f1620;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden}
+.org-board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.14)}
+.org-board-head h3{margin:0;font-size:18px}
+.org-board-head p{margin:4px 0 0;color:#8ea2b5;font-size:12px}
+.org-chart{overflow:auto;padding:30px;background:radial-gradient(circle at top,rgba(0,230,118,.04),transparent 34%),#0b111c}
+.org-tree{display:flex;justify-content:center;min-width:max-content}
+.org-branch{position:relative;display:flex;flex-direction:column;align-items:center}
+.org-node-wrap{position:relative;display:flex;justify-content:center}
+.org-branch.has-children>.org-node-wrap:after{content:"";position:absolute;left:50%;bottom:-24px;height:24px;border-left:1px solid rgba(148,163,184,.28)}
+.org-children{position:relative;display:flex;gap:18px;justify-content:center;padding-top:48px}
+.org-children:before{content:"";position:absolute;top:24px;left:calc(50% / var(--child-count,1));right:calc(50% / var(--child-count,1));border-top:1px solid rgba(148,163,184,.28)}
+.org-children>.org-branch:before{content:"";position:absolute;top:24px;left:50%;height:24px;border-left:1px solid rgba(148,163,184,.28)}
+.org-person{width:230px;min-height:178px;border:1px solid rgba(148,163,184,.2);background:#111827;border-radius:12px;padding:14px;box-shadow:0 16px 42px rgba(0,0,0,.22)}
+.org-person.root{border-color:rgba(0,230,118,.45);box-shadow:0 20px 60px rgba(0,230,118,.08)}
+.org-person-top{display:flex;align-items:flex-start;gap:10px}
+.org-avatar{width:44px;height:44px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#00e676;color:#001b12;font-size:13px;font-weight:900;flex:0 0 auto}
+.org-name{font-weight:900;color:#fff;font-size:15px;line-height:1.2}
+.org-title{color:#00e676;font-weight:800;font-size:12px;line-height:1.35;margin-top:4px}
+.org-meta{color:#8ea2b5;font-size:11px;line-height:1.45;margin-top:4px;overflow-wrap:anywhere}
+.org-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+.org-report-count{font-size:11px;color:#8ea2b5;font-weight:800}
+.org-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mini-form{display:grid;gap:10px}
+.org-actions-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}
+@media(max-width:768px){
+  .org-board-head{padding:12px;display:grid}
+  .org-chart{overflow:visible;padding:12px}
+  .org-tree{display:block;min-width:0}
+  .org-branch{display:block;border-left:1px solid rgba(148,163,184,.22);padding-left:12px;margin-left:6px}
+  .org-node-wrap{display:block}
+  .org-branch.has-children>.org-node-wrap:after,.org-children:before,.org-children>.org-branch:before{display:none}
+  .org-children{display:grid;gap:10px;padding-top:10px}
+  .org-person{width:100%;min-height:0;padding:12px;border-radius:12px}
+  .org-avatar{width:38px;height:38px}
+  .org-name{font-size:14px}
+  .org-title{font-size:11px}
+  .org-actions-grid{grid-template-columns:1fr}
+}
 </style></head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -19,8 +50,16 @@
 <div class="topbar"><span class="topbar-title">Org View</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
 <div class="form-error" id="msgErr" style="margin-bottom:12px"></div><div class="form-success" id="msgOk" style="margin-bottom:12px"></div>
-<div class="table-card"><div class="table-header"><h3>Stratex Analytics org</h3><a class="btn btn-sm btn-primary" href="stratex-users.html">Add admin</a></div><div style="padding:20px"><div id="orgTree" class="org-grid"><div class="loading-state"><div class="spinner"></div></div></div></div></div>
-<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px" class="org-actions-grid">
+
+<section class="org-board">
+  <div class="org-board-head">
+    <div><h3>Stratex Analytics org</h3><p>Reporting lines, admin roles and direct reports.</p></div>
+    <a class="btn btn-sm btn-primary" href="stratex-users.html">Add admin</a>
+  </div>
+  <div class="org-chart"><div id="orgTree" class="org-tree"><div class="loading-state"><div class="spinner"></div></div></div></div>
+</section>
+
+<div class="org-actions-grid">
 <div class="table-card"><div class="table-header"><h3>Book Leave / Sick Leave</h3></div><div style="padding:20px" class="mini-form">
 <select id="leaveAdmin"></select><select id="leaveType"><option value="annual_leave">Annual leave</option><option value="sick_leave">Sick leave</option><option value="other">Other</option></select>
 <input type="date" id="leaveStart"><input type="date" id="leaveEnd"><textarea id="leaveNotes" placeholder="Notes"></textarea><button class="btn btn-primary" onclick="bookLeave()">Save leave</button>
@@ -34,22 +73,40 @@
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var admins=[], leave=[], meetings=[];
+var admins=[], leave=[], meetings=[], canManageSensitive=false, collapsed={};
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function safe(v){return (v===null||v===undefined||v==='')?'--':String(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function showMsg(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}
-function roleBadge(a){return '<span class="badge badge-blue">'+safe(a.admin_role||a.role||'Support')+'</span>';}
-function personCard(a){
-  var canDelete=Auth.user&&Auth.user.id!==a.id;
-  return '<div class="org-person"><div style="display:flex;justify-content:space-between;gap:10px;align-items:start"><div><div class="name">'+safe(a.first_name)+' '+safe(a.last_name)+'</div><div class="title">'+safe(a.job_title||a.admin_role||a.role)+'</div><div class="meta">'+safe(a.email)+'</div><div style="margin-top:8px">'+roleBadge(a)+'</div></div><div style="display:grid;gap:6px">'+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div><div class="meta">Leave allowance: '+safe(a.annual_leave_days)+' days</div></div>';
+function initialsFrom(a){return ((a.first_name||'')[0]||'').toUpperCase()+((a.last_name||'')[0]||'').toUpperCase();}
+function roleBadge(a){return '<span class="badge badge-blue">'+safe(a.admin_role||a.role||'Read Only')+'</span>';}
+function personCard(a,children,isRoot){
+  var canDelete=canManageSensitive&&Auth.user&&Auth.user.id!==a.id;
+  var isCollapsed=!!collapsed[a.id];
+  return '<article class="org-person '+(isRoot?'root':'')+'">'+
+    '<div class="org-person-top"><div class="org-avatar">'+safe(initialsFrom(a)||'SL')+'</div><div style="min-width:0"><div class="org-name">'+safe(a.first_name)+' '+safe(a.last_name)+'</div><div class="org-title">'+safe(a.job_title||a.admin_role||a.role)+'</div><div class="org-meta">'+safe(a.email)+'</div></div></div>'+
+    '<div class="org-footer"><div>'+roleBadge(a)+'<div class="org-report-count">'+children.length+' direct report'+(children.length===1?'':'s')+'</div></div>'+
+    '<div class="org-actions">'+(children.length?'<button class="btn btn-sm btn-outline" onclick="toggleNode(\''+a.id+'\')">'+(isCollapsed?'Expand':'Collapse')+'</button>':'')+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div>'+
+  '</article>';
+}
+function treeData(){
+  var active=admins.filter(function(a){return a.is_active!==false;});
+  var byManager={};
+  active.forEach(function(a){var key=a.manager_id||'root';if(!byManager[key])byManager[key]=[];byManager[key].push(a);});
+  Object.keys(byManager).forEach(function(k){byManager[k].sort(function(a,b){return String(a.first_name+' '+a.last_name).localeCompare(String(b.first_name+' '+b.last_name));});});
+  var founder=active.find(function(a){return (a.email||'').toLowerCase()==='richdhin@stratexanalytics.co.uk';})||active.find(function(a){return !a.manager_id;})||active[0];
+  return {founder:founder,byManager:byManager};
+}
+function renderNode(a,byManager,isRoot){
+  var children=(byManager[a.id]||[]).filter(function(c){return c.id!==a.id;});
+  var childHtml=children.length&&!collapsed[a.id]?'<div class="org-children" style="--child-count:'+children.length+'">'+children.map(function(c){return renderNode(c,byManager,false);}).join('')+'</div>':'';
+  return '<div class="org-branch '+(children.length?'has-children':'')+'"><div class="org-node-wrap">'+personCard(a,children,isRoot)+'</div>'+childHtml+'</div>';
 }
 function renderOrg(){
-  var root=admins.find(function(a){return (a.email||'').toLowerCase()==='richdhin@stratexanalytics.co.uk';})||admins.find(function(a){return !a.manager_id;});
-  if(!root){document.getElementById('orgTree').innerHTML='<div style="color:#8ea2b5">No admin users found.</div>';return;}
-  var children=admins.filter(function(a){return a.manager_id===root.id&&a.id!==root.id;});
-  var others=admins.filter(function(a){return a.id!==root.id&&children.indexOf(a)<0;});
-  document.getElementById('orgTree').innerHTML=personCard(root)+'<div class="org-children">'+children.map(personCard).join('')+'</div>'+(others.length?'<h4 style="margin-top:14px">Other admins</h4><div class="org-children">'+others.map(personCard).join('')+'</div>':'');
+  var tree=treeData();
+  if(!tree.founder){document.getElementById('orgTree').innerHTML='<div style="color:#8ea2b5">No admin users found.</div>';return;}
+  document.getElementById('orgTree').innerHTML=renderNode(tree.founder,tree.byManager,true);
 }
+function toggleNode(id){collapsed[id]=!collapsed[id];renderOrg();}
 function fillSelects(){
   var opts=admins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+safe(a.first_name)+' '+safe(a.last_name)+' - '+safe(a.job_title||a.admin_role||a.role)+'</option>';}).join('');
   document.getElementById('leaveAdmin').innerHTML=opts;
@@ -60,7 +117,7 @@ function renderContracts(){
   if(window.refreshMobileLayout)refreshMobileLayout();
 }
 async function loadOrg(){
-  var d=await api('GET','/api/stratex/org');admins=d.admins||[];leave=d.leave||[];meetings=d.meetings||[];renderOrg();fillSelects();renderContracts();
+  var d=await api('GET','/api/stratex/org');admins=d.admins||[];leave=d.leave||[];meetings=d.meetings||[];canManageSensitive=!!d.canManageSensitive;renderOrg();fillSelects();renderContracts();
 }
 async function deactivateAdmin(id){if(!confirm('Deactivate this admin?'))return;await api('DELETE','/api/stratex/admins/'+id);showMsg('msgOk','Admin deactivated.');loadOrg();}
 async function bookLeave(){try{await api('POST','/api/stratex/org/leave',{stratexId:document.getElementById('leaveAdmin').value,leaveType:document.getElementById('leaveType').value,startDate:document.getElementById('leaveStart').value,endDate:document.getElementById('leaveEnd').value,notes:document.getElementById('leaveNotes').value});showMsg('msgOk','Leave saved.');loadOrg();}catch(e){showMsg('msgErr',e.message);}}

@@ -22,7 +22,9 @@ async function upsertProgress(accountType, userId, patch) {
   return data;
 }
 
-router.get('/me', requireAuth, requireRole('Coach','Scout'), async (req, res) => {
+const TOUR_ROLES = ['Coach','Scout','Stratex','Player'];
+
+router.get('/me', requireAuth, requireRole(...TOUR_ROLES), async (req, res) => {
   try {
     const { data } = await supabase.from('onboarding_progress')
       .select('*').eq('account_type', req.user.accountType).eq('user_id', req.user.id).maybeSingle();
@@ -95,13 +97,25 @@ router.post('/scout-wizard', requireAuth, requireRole('Scout'), async (req, res)
   }
 });
 
-router.post('/tour', requireAuth, requireRole('Coach','Scout'), async (req, res) => {
+router.post('/tour', requireAuth, requireRole(...TOUR_ROLES), async (req, res) => {
   try {
+    const body = req.body || {};
+    const allowed = ['started','completed','dismissed'];
+    const status = allowed.includes(body.status) ? body.status : 'completed';
+    const now = new Date().toISOString();
+    const tourData = {
+      status,
+      stepIndex: Number.isFinite(Number(body.stepIndex)) ? Number(body.stepIndex) : 0,
+      checkpoints: Array.isArray(body.checkpoints) ? body.checkpoints : [],
+      updatedAt: now
+    };
+    if (status === 'completed') tourData.completedAt = now;
+    if (status === 'dismissed') tourData.dismissedAt = now;
     const progress = await upsertProgress(req.user.accountType, req.user.id, {
-      product_tour_completed: true,
-      tour_data: { completedAt: new Date().toISOString(), checkpoints: req.body?.checkpoints || [] }
+      product_tour_completed: status === 'completed' || status === 'dismissed',
+      tour_data: tourData
     });
-    res.json({ message: 'Product tour marked complete', data: progress });
+    res.json({ message: 'Product tour progress saved', data: progress });
   } catch(err) {
     console.error('[Tour onboarding]', err);
     res.status(500).json({ error: 'Internal server error' });

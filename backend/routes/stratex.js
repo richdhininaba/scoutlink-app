@@ -24,14 +24,56 @@ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
 const ADMIN_ROLE_PERMISSIONS = {
-Management: ['management','acquisition','safeguarding','nominations','operations','product_demo'],
-Acquisition: ['acquisition','safeguarding','product_demo'],
-Safeguarding: ['safeguarding','registrations'],
-Nominations: ['nominations','showcase'],
-Operations: ['operations','support','showcase'],
-Support: ['support'],
-ProductDemo: ['product_demo']
+Management: ['management','admin_users','delete_users','permissions','acquisition','safeguarding','registrations','operations','product_demo','read_only'],
+Operations: ['operations','registrations','support','showcase','product_demo','read_only'],
+Acquisition: ['acquisition','registrations','product_demo','read_only'],
+'Safeguarding Reviewer': ['safeguarding','registrations','read_only'],
+'Product Demo': ['product_demo','read_only'],
+'Read Only': ['read_only'],
+Safeguarding: ['safeguarding','registrations','read_only'],
+Nominations: ['operations','showcase','read_only'],
+Support: ['support','read_only'],
+ProductDemo: ['product_demo','read_only']
 };
+
+function normalizeAdminRole(role) {
+const raw = String(role || '').trim();
+const aliases = {
+Safeguarding: 'Safeguarding Reviewer',
+ProductDemo: 'Product Demo',
+'Product Demo': 'Product Demo',
+Support: 'Read Only',
+Nominations: 'Operations',
+'ReadOnly': 'Read Only',
+'Read Only': 'Read Only'
+};
+return aliases[raw] || (ADMIN_ROLE_PERMISSIONS[raw] ? raw : 'Read Only');
+}
+
+function adminPermissions(role) {
+const normalized = normalizeAdminRole(role);
+return ADMIN_ROLE_PERMISSIONS[normalized] || ADMIN_ROLE_PERMISSIONS['Read Only'];
+}
+
+async function loadCurrentAdmin(req) {
+const { data } = await supabase.from('stratex').select('id,email,admin_role,role,permissions,is_active').eq('id', req.user.id).maybeSingle();
+return data || null;
+}
+
+function canManageSensitiveAdmin(admin) {
+if (!admin || admin.is_active === false) return false;
+const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
+return normalizeAdminRole(admin.admin_role || admin.role) === 'Management' || perms.includes('management') || perms.includes('permissions');
+}
+
+async function requireSensitiveAdmin(req, res) {
+const current = await loadCurrentAdmin(req);
+if (!canManageSensitiveAdmin(current)) {
+res.status(403).json({ error: 'Only Management admins can change admin permissions or deactivate admins.' });
+return null;
+}
+return current;
+}
 
 function canonicalLeagueName(v) {
 return String(v || '').trim().replace(/\s+/g, ' ');
@@ -386,6 +428,8 @@ res.status(201).json({ message: 'Coach added. Complete-registration email sent.'
 
 router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await requireSensitiveAdmin(req, res);
+if (!currentAdmin) return;
 const { firstName, lastName, emailAddr, role, adminRole, jobTitle, managerId, annualLeaveDays, contractData } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
 if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
@@ -393,12 +437,12 @@ const dupA = await checkDuplicates(emailAddr, null);
 if (dupA.duplicate) return res.status(409).json({ error: 'This email is already registered.' });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 7*24*60*60*1000);
-const nextAdminRole = adminRole || role || 'Support';
+const nextAdminRole = normalizeAdminRole(adminRole || role || 'Read Only');
 const { data, error } = await supabase.from('stratex').insert({
 stratex_id: generateId('STX'), first_name: firstName.trim(), last_name: lastName.trim(),
-email: emailAddr.toLowerCase().trim(), role: role || nextAdminRole, admin_role: nextAdminRole,
+email: emailAddr.toLowerCase().trim(), role: nextAdminRole, admin_role: nextAdminRole,
 job_title: jobTitle || nextAdminRole, manager_id: managerId || null,
-permissions: ADMIN_ROLE_PERMISSIONS[nextAdminRole] || ADMIN_ROLE_PERMISSIONS.Support,
+permissions: adminPermissions(nextAdminRole),
 annual_leave_days: Number(annualLeaveDays) || 25,
 contract_data: contractData || {},
 is_active: true, login_code: loginCode, login_code_expires: expires, registration_complete: false
@@ -432,21 +476,24 @@ res.status(201).json({ data: league, message: 'League saved' });
 
 router.get('/org', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await loadCurrentAdmin(req);
 const [{ data: admins, error: adminErr }, { data: leave }, { data: meetings }] = await Promise.all([
 supabase.from('stratex').select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,annual_leave_days,contract_data,is_active,created_at,last_login,registration_complete').order('first_name'),
 supabase.from('stratex_time_off').select('*').order('created_at', { ascending: false }).limit(100),
 supabase.from('stratex_meetings').select('*').order('meeting_date', { ascending: true }).limit(100)
 ]);
 if (adminErr) throw adminErr;
-res.json({ admins: admins || [], leave: leave || [], meetings: meetings || [], rolePermissions: ADMIN_ROLE_PERMISSIONS });
+res.json({ admins: admins || [], leave: leave || [], meetings: meetings || [], rolePermissions: ADMIN_ROLE_PERMISSIONS, canManageSensitive: canManageSensitiveAdmin(currentAdmin), currentAdmin });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.patch('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await requireSensitiveAdmin(req, res);
+if (!currentAdmin) return;
 const body = req.body || {};
 const patch = {};
-if (body.adminRole) { patch.admin_role = body.adminRole; patch.role = body.adminRole; patch.permissions = ADMIN_ROLE_PERMISSIONS[body.adminRole] || ADMIN_ROLE_PERMISSIONS.Support; }
+if (body.adminRole) { const nextRole = normalizeAdminRole(body.adminRole); patch.admin_role = nextRole; patch.role = nextRole; patch.permissions = adminPermissions(nextRole); }
 if (body.jobTitle !== undefined) patch.job_title = body.jobTitle || null;
 if (body.managerId !== undefined) patch.manager_id = body.managerId || null;
 if (body.annualLeaveDays !== undefined) patch.annual_leave_days = Number(body.annualLeaveDays) || 25;
@@ -461,6 +508,8 @@ res.json({ message: 'Admin updated', admin: data });
 
 router.delete('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await requireSensitiveAdmin(req, res);
+if (!currentAdmin) return;
 if (req.params.id === req.user.id) return res.status(400).json({ error: 'You cannot delete your own admin account.' });
 const { error } = await supabase.from('stratex').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', req.params.id);
 if (error) throw error;

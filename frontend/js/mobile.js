@@ -7,6 +7,25 @@
     return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
   }
 
+  function ensureMobileAppStyles(){
+    if (document.querySelector('link[href$="mobile-app.css"]')) return;
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '../css/mobile-app.css';
+    document.head.appendChild(link);
+  }
+
+  function slug(v){
+    return String(v || '').toLowerCase().replace(/\.html$/,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'index';
+  }
+
+  function applyBodyContext(){
+    var path = window.location.pathname.split('/').filter(Boolean).pop() || 'index';
+    document.body.classList.add('mobile-route-' + slug(path));
+    if (window.Auth && Auth.type) document.body.classList.add('mobile-role-' + String(Auth.type).toLowerCase());
+    if (typeof isDemoMode === 'function' && isDemoMode()) document.body.classList.add('mobile-demo-mode');
+  }
+
   function closeDrawer(){
     var sidebar = document.getElementById('sidebar');
     var backdrop = document.getElementById('sidebarBackdrop');
@@ -241,10 +260,13 @@
     if (!shell) return;
     if (!isPhone()) {
       shell.classList.remove('chat-mobile-list','chat-mobile-conversation');
+      document.body.classList.remove('mobile-chat-list','mobile-chat-conversation');
       return;
     }
     shell.classList.toggle('chat-mobile-list', mode !== 'conversation');
     shell.classList.toggle('chat-mobile-conversation', mode === 'conversation');
+    document.body.classList.toggle('mobile-chat-list', mode !== 'conversation');
+    document.body.classList.toggle('mobile-chat-conversation', mode === 'conversation');
   }
 
   function enhanceChatMobile(){
@@ -282,6 +304,8 @@
   }
 
   function init(){
+    ensureMobileAppStyles();
+    applyBodyContext();
     initMobileNav();
     enhanceTablesForMobile();
     enhanceActionGroups();
