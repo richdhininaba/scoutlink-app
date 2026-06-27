@@ -255,16 +255,44 @@ from numbered_scouts s
 join numbered_players p on ((p.rn - s.sn) % 8) = 0
 where p.rn <= 45;
 
-with first_pipeline as (
-  select rp.*, row_number() over(partition by rp.scout_id order by rp.created_at, rp.id) rn
+with coach_scout_pairs as (
+  select c.team_ord, c.id coach_id, s.id scout_id, (select id from demo_scout_team_ids limit 1) scout_team_id
+  from demo_coach_ids c
+  join demo_scout_ids s on s.scout_ord = c.team_ord
+), first_players as (
+  select distinct on (assigned_coach_id) id player_id, assigned_coach_id coach_id
+  from players
+  where email like 'demo.player%@scoutlink.app'
+  order by assigned_coach_id, overall_rating desc nulls last, player_id
+), existing_pipeline as (
+  select rp.id, rp.scout_id, rp.player_id
   from recruitment_pipeline rp
-  join scouts s on s.id = rp.scout_id and s.email like 'demo.scout%@scoutlink.app'
+  join coach_scout_pairs pair on pair.scout_id = rp.scout_id
+  join first_players fp on fp.player_id = rp.player_id and fp.coach_id = pair.coach_id
+), inserted_pipeline as (
+  insert into recruitment_pipeline(scout_id,player_id,scout_team_id,stage,notes,interest_level,is_active)
+  select pair.scout_id, fp.player_id, pair.scout_team_id, 'interested',
+         'Demo opening thread: player is in the scout pipeline so messaging is allowed.',
+         8, true
+  from coach_scout_pairs pair
+  join first_players fp on fp.coach_id = pair.coach_id
+  where not exists (
+    select 1 from existing_pipeline ep where ep.scout_id = pair.scout_id and ep.player_id = fp.player_id
+  )
+  returning id,scout_id,player_id
+), pipeline_for_threads as (
+  select pair.scout_id, pair.coach_id, fp.player_id, coalesce(ep.id, ip.id) pipeline_id
+  from coach_scout_pairs pair
+  join first_players fp on fp.coach_id = pair.coach_id
+  left join existing_pipeline ep on ep.scout_id = pair.scout_id and ep.player_id = fp.player_id
+  left join inserted_pipeline ip on ip.scout_id = pair.scout_id and ip.player_id = fp.player_id
 ), inserted_threads as (
   insert into chat_threads(scout_id,coach_id,player_id,pipeline_id,status,last_message_at,created_at,updated_at)
-  select fp.scout_id, p.assigned_coach_id, fp.player_id, fp.id, 'open', now() - (fp.rn * interval '11 minutes'), now() - interval '2 hours', now() - (fp.rn * interval '11 minutes')
-  from first_pipeline fp
-  join players p on p.id = fp.player_id
-  where fp.rn = 1
+  select scout_id, coach_id, player_id, pipeline_id, 'open',
+         now() - (row_number() over(order by coach_id) * interval '11 minutes'),
+         now() - interval '2 hours',
+         now() - (row_number() over(order by coach_id) * interval '11 minutes')
+  from pipeline_for_threads
   returning id,scout_id,coach_id,player_id
 )
 insert into chat_messages(thread_id,sender_id,sender_type,body,is_read,created_at,message_kind,metadata)
