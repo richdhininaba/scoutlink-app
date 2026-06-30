@@ -244,7 +244,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
   const baseUrl = config.brandUrl || 'https://scoutlink.app';
     const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=' + rq.account_type;
 
-  // Send approved email using SENDGRID_TEMPLATE_REG_APPROVED
+  // Send approved email using the central Registration Approved template.
   const emailResult = await email.sendRegApproved({
     to: rq.email, firstName: rq.first_name, loginCode,
     accountType: rq.account_type, completeLink, email: rq.email

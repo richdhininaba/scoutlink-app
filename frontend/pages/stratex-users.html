@@ -178,7 +178,19 @@ async function loadOrgManagers(){
     if(sel)sel.innerHTML='<option value="">No direct manager</option>'+orgAdmins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+a.first_name+' '+a.last_name+' - '+(a.job_title||a.admin_role||a.role||'Admin')+'</option>';}).join('');
   }catch(e){}
 }
-document.addEventListener('DOMContentLoaded', function() { initNav(); if(window.bindLeagueInput){bindLeagueInput('scoutLeague','addScoutLeagueBtn');bindLeagueInput('coachLeague','addCoachLeagueBtn');} loadOrgManagers(); });
+document.addEventListener('DOMContentLoaded', function() {
+  initNav();
+  if(window.bindLeagueInput){bindLeagueInput('scoutLeague','addScoutLeagueBtn');bindLeagueInput('coachLeague','addCoachLeagueBtn');}
+  var requestedTab = new URLSearchParams(window.location.search).get('tab');
+  if (requestedTab === 'admins') {
+    var adminTab = document.querySelector('.tab-btn:nth-child(3)');
+    if (adminTab) switchTab('admins', adminTab);
+  } else if (requestedTab === 'coaches') {
+    var coachTab = document.querySelector('.tab-btn:nth-child(2)');
+    if (coachTab) switchTab('coaches', coachTab);
+  }
+  loadOrgManagers();
+});
 </script>
 <script src="../js/mobile.js"></script>
 </body></html>

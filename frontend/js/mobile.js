@@ -56,7 +56,61 @@
     topbar.querySelectorAll('button,a').forEach(function(el){
       var txt = (el.textContent || '').trim().toLowerCase();
       if (txt === 'sign out' || txt === 'logout') el.classList.add('desktop-signout');
+      if (el.id === 'experienceSwitchBtn' || el.classList.contains('experience-switch-btn')) {
+        el.classList.add('mobile-menu-only-action');
+      }
     });
+  }
+
+  function bindSidebarClose(sidebar){
+    if (!sidebar) return;
+    sidebar.querySelectorAll('a[href],button').forEach(function(item){
+      if (item.dataset.mobileCloseBound || item.id === 'mobileHamburger') return;
+      item.dataset.mobileCloseBound = '1';
+      item.addEventListener('click', function(){
+        if (isPhone()) setTimeout(closeDrawer, 0);
+      });
+    });
+  }
+
+  function ensureSidebarMobileActions(sidebar){
+    if (!sidebar) return;
+    var canSwitch = window.Auth && Auth.isLoggedIn && Auth.isLoggedIn() &&
+      ((typeof isDemoMode === 'function' && isDemoMode()) ||
+        Auth.type === 'Stratex' ||
+        localStorage.getItem('sl_experience_switcher') === '1');
+    var wrap = document.getElementById('mobileSidebarActions');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'mobileSidebarActions';
+      wrap.className = 'sidebar-mobile-actions';
+      sidebar.appendChild(wrap);
+    }
+    var switchCopy = (typeof isDemoMode === 'function' && isDemoMode()) ? 'Switch demo' : 'Switch experience';
+    var switchHtml = canSwitch
+      ? '<button id="mobileSidebarSwitchExperience" class="btn btn-outline" type="button">' + switchCopy + '</button>'
+      : '';
+    wrap.innerHTML = switchHtml + '<button id="mobileSidebarSignoutBtn" class="btn btn-ghost" type="button">Sign out</button>';
+
+    var switchBtn = document.getElementById('mobileSidebarSwitchExperience');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', function(){
+        closeDrawer();
+        if (typeof openExperienceSelector === 'function') openExperienceSelector();
+      });
+    }
+    var signoutBtn = document.getElementById('mobileSidebarSignoutBtn');
+    if (signoutBtn) {
+      signoutBtn.addEventListener('click', function(){
+        closeDrawer();
+        if (typeof logout === 'function') logout();
+        else if (typeof logoutToLogin === 'function') logoutToLogin();
+        else {
+          localStorage.clear();
+          window.location.href = '/login?logout=1';
+        }
+      });
+    }
   }
 
   function navIcon(label) {
@@ -158,21 +212,9 @@
       topbar.insertBefore(ham, topbar.firstChild);
     }
 
-    if (!document.getElementById('mobileSidebarSignout')) {
-      var soWrap = document.createElement('div');
-      soWrap.id = 'mobileSidebarSignout';
-      soWrap.className = 'sidebar-signout-mobile';
-      soWrap.innerHTML = '<button class="btn btn-ghost" type="button">Sign out</button>';
-      sidebar.appendChild(soWrap);
-      soWrap.querySelector('button').addEventListener('click', function(){
-        if (typeof logout === 'function') logout();
-        else if (typeof logoutToLogin === 'function') logoutToLogin();
-        else {
-          localStorage.clear();
-          window.location.href = '/login?logout=1';
-        }
-      });
-    }
+    var oldSignout = document.getElementById('mobileSidebarSignout');
+    if (oldSignout) oldSignout.remove();
+    ensureSidebarMobileActions(sidebar);
 
     if (!document.getElementById('sidebarBackdrop')) {
       var bd = document.createElement('div');
@@ -190,7 +232,7 @@
       });
       document.getElementById('sidebarBackdrop').addEventListener('click', closeDrawer);
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeDrawer(); });
-      window.addEventListener('resize', function(){ if (!isPhone()) closeDrawer(); enhanceTablesForMobile(); enhanceChatMobile(); initBottomNav(); });
+      window.addEventListener('resize', function(){ if (!isPhone()) closeDrawer(); enhanceTablesForMobile(); enhanceChatMobile(); initBottomNav(); normalizeTopbar(); });
     }
 
     sidebar.querySelectorAll('.nav-item').forEach(function(item){
@@ -199,6 +241,7 @@
         item.addEventListener('click', function(){ if (isPhone()) closeDrawer(); });
       }
     });
+    bindSidebarClose(sidebar);
 
     var sn = document.getElementById('sidebarNav');
     if (sn && window.MutationObserver && !sn.dataset.mobileObserver) {
@@ -210,6 +253,7 @@
             item.addEventListener('click', function(){ if (isPhone()) closeDrawer(); });
           }
         });
+        bindSidebarClose(sidebar);
       }).observe(sn, { childList:true, subtree:true });
     }
 

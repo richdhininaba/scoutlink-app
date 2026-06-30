@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hiring - ScoutLink Stratex</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="../css/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.hiring-grid{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:16px;align-items:start}
+.form-grid{display:grid;gap:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+textarea{min-height:84px}.job-list{display:grid;gap:10px;padding:16px}.job-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:12px;padding:12px}.job-row h4{margin:0 0 5px}.job-row p{margin:0;color:#8ea2b5;font-size:12px}
+.recipient-box{display:grid;gap:6px;max-height:130px;overflow:auto;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:10px;padding:8px}.recipient-box label{display:flex;gap:8px;align-items:center;font-size:12px;color:#c9d6e2}
+.apps-wrap{margin-top:16px}.application-row button{white-space:nowrap}
+@media(max-width:1000px){.hiring-grid{grid-template-columns:1fr}.two,.three{grid-template-columns:1fr}}
+</style></head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Hiring</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
+<div class="page-content">
+<div class="form-error" id="err"></div><div class="form-success" id="ok"></div>
+<div class="hiring-grid">
+  <section class="table-card">
+    <div class="table-header"><h3 id="formTitle">Create job post</h3><button class="btn btn-sm btn-outline" onclick="resetForm()">New</button></div>
+    <div style="padding:18px" class="form-grid">
+      <input id="jobTitle" placeholder="Job title *">
+      <div class="two"><input id="department" placeholder="Department / team"><input id="location" placeholder="Location"></div>
+      <div class="three"><select id="workingType"><option>Remote</option><option>Hybrid</option><option>On-site</option></select><input id="employmentType" placeholder="Employment type"><input id="contractType" placeholder="Contract type"></div>
+      <div class="three"><input id="salaryMin" type="number" placeholder="Salary min"><input id="salaryMax" type="number" placeholder="Salary max"><select id="salaryUnit"><option value="hourly">Hourly</option><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="annually" selected>Annually</option></select></div>
+      <div class="two"><input id="releaseAt" type="datetime-local"><input id="closingAt" type="datetime-local"></div>
+      <select id="status"><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="live">Live</option><option value="closed">Closed</option><option value="archived">Archived</option></select>
+      <textarea id="aboutCompany" placeholder="About the company"></textarea>
+      <textarea id="roleOverview" placeholder="Role overview"></textarea>
+      <textarea id="responsibilities" placeholder="What you will be doing"></textarea>
+      <textarea id="mustHaves" placeholder="Must-haves"></textarea>
+      <textarea id="niceToHaves" placeholder="Nice-to-haves"></textarea>
+      <div class="two"><input id="interviewStageCount" type="number" min="1" value="1" placeholder="Number of interview stages"><textarea id="interviewProcess" placeholder="Interview process / stages"></textarea></div>
+      <div><label style="font-size:12px;color:#8ea2b5;font-weight:900;text-transform:uppercase">Application alert recipients</label><div class="recipient-box" id="recipients">Loading admins...</div></div>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveJob()">Save job post</button>
+    </div>
+  </section>
+  <section class="table-card">
+    <div class="table-header"><h3>Job posts</h3><a class="btn btn-sm btn-outline" href="/careers" target="_blank">Public careers</a></div>
+    <div class="job-list" id="jobList"><div class="loading-state"><div class="spinner"></div></div></div>
+  </section>
+</div>
+<section class="table-card apps-wrap">
+  <div class="table-header"><h3>Applications</h3><button class="btn btn-sm btn-outline" onclick="loadApplications()">Refresh</button></div>
+  <div style="overflow:auto"><table class="sl-table"><thead><tr><th>Candidate</th><th>Role</th><th>Email</th><th>Phone</th><th>Submitted</th><th>CV</th></tr></thead><tbody id="appsBody"></tbody></table></div>
+</section>
+</div></div></div>
+<script src="../js/stratex-nav.js"></script><script src="../js/main.js"></script>
+<script>
+var jobs=[],admins=[],editingId=null;
+function logout(){logoutToLogin();}function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function show(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}
+function dtLocal(v){if(!v)return'';var d=new Date(v);if(Number.isNaN(d.getTime()))return'';d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);}
+function isoFrom(id){var v=document.getElementById(id).value;return v?new Date(v).toISOString():null;}
+function selectedRecipients(){return Array.prototype.slice.call(document.querySelectorAll('[data-recipient]:checked')).map(function(cb){return{stratexId:cb.dataset.id,email:cb.value};});}
+function resetForm(){editingId=null;document.getElementById('formTitle').textContent='Create job post';['jobTitle','department','location','employmentType','contractType','salaryMin','salaryMax','releaseAt','closingAt','aboutCompany','roleOverview','responsibilities','mustHaves','niceToHaves','interviewProcess'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('workingType').value='Remote';document.getElementById('salaryUnit').value='annually';document.getElementById('status').value='draft';document.getElementById('interviewStageCount').value='1';document.querySelectorAll('[data-recipient]').forEach(function(cb){cb.checked=false;});}
+function fillForm(j){editingId=j.id;document.getElementById('formTitle').textContent='Edit job post';jobTitle.value=j.job_title||'';department.value=j.department||'';location.value=j.location||'';workingType.value=j.working_type||'Remote';employmentType.value=j.employment_type||'';contractType.value=j.contract_type||'';salaryMin.value=j.salary_min||'';salaryMax.value=j.salary_max||'';salaryUnit.value=j.salary_unit||'annually';releaseAt.value=dtLocal(j.release_at);closingAt.value=dtLocal(j.closing_at);status.value=j.status||'draft';aboutCompany.value=j.about_company||'';roleOverview.value=j.role_overview||'';responsibilities.value=j.responsibilities||'';mustHaves.value=j.must_haves||'';niceToHaves.value=j.nice_to_haves||'';interviewStageCount.value=j.interview_stage_count||1;interviewProcess.value=j.interview_process||'';var emails=(j.notification_recipients||[]).map(function(r){return r.email;});document.querySelectorAll('[data-recipient]').forEach(function(cb){cb.checked=emails.indexOf(cb.value)>-1;});window.scrollTo({top:0,behavior:'smooth'});}
+function payload(){return{jobTitle:jobTitle.value.trim(),department:department.value.trim(),location:location.value.trim(),workingType:workingType.value,employmentType:employmentType.value.trim(),contractType:contractType.value.trim(),salaryMin:salaryMin.value,salaryMax:salaryMax.value,salaryUnit:salaryUnit.value,releaseAt:isoFrom('releaseAt'),closingAt:isoFrom('closingAt'),status:status.value,aboutCompany:aboutCompany.value.trim(),roleOverview:roleOverview.value.trim(),responsibilities:responsibilities.value.trim(),mustHaves:mustHaves.value.trim(),niceToHaves:niceToHaves.value.trim(),interviewStageCount:interviewStageCount.value,interviewProcess:interviewProcess.value.trim(),notificationRecipients:selectedRecipients()};}
+async function saveJob(){try{if(!jobTitle.value.trim())throw new Error('Job title is required.');var btn=saveBtn;btn.disabled=true;var method=editingId?'PATCH':'POST';var path=editingId?'/api/stratex/jobs/'+editingId:'/api/stratex/jobs';var d=await api(method,path,payload());show('ok',d.message||'Job saved.');resetForm();await loadJobs();}catch(e){show('err',e.message);}finally{saveBtn.disabled=false;}}
+function renderJobs(){var box=document.getElementById('jobList');if(!jobs.length){box.innerHTML='<div style="color:#8ea2b5">No jobs yet.</div>';return;}box.innerHTML=jobs.map(function(j){return '<div class="job-row"><div><h4>'+safe(j.job_title)+'</h4><p>'+safe([j.department,j.location,j.working_type,j.status].filter(Boolean).join(' - '))+'</p></div><div style="display:flex;gap:8px"><a class="btn btn-sm btn-outline" target="_blank" href="/careers/'+safe(j.slug)+'">View</a><button class="btn btn-sm btn-primary" data-edit="'+j.id+'">Edit</button></div></div>';}).join('');box.querySelectorAll('[data-edit]').forEach(function(b){b.onclick=function(){fillForm(jobs.find(function(j){return j.id===b.dataset.edit;}));};});}
+async function loadJobs(){var d=await api('GET','/api/stratex/jobs');jobs=d.data||[];renderJobs();}
+function renderRecipients(){var box=document.getElementById('recipients');box.innerHTML=admins.filter(function(a){return a.is_active!==false&&a.email;}).map(function(a){return '<label><input type="checkbox" data-recipient data-id="'+safe(a.id)+'" value="'+safe(a.email)+'"> <span>'+safe((a.first_name||'')+' '+(a.last_name||''))+' - '+safe(a.email)+'</span></label>';}).join('')||'<span style="color:#8ea2b5;font-size:12px">No admins found. Fallback will be Richdhin.</span>';}
+async function loadAdmins(){var d=await api('GET','/api/stratex/org');admins=d.admins||[];renderRecipients();}
+function renderApps(rows){var body=document.getElementById('appsBody');if(!rows.length){body.innerHTML='<tr><td colspan="6" style="color:#8ea2b5">No applications yet.</td></tr>';return;}body.innerHTML=rows.map(function(a){var job=a.job_posts||{};return '<tr class="application-row"><td><b>'+safe(a.first_name+' '+a.last_name)+'</b><br><span style="color:#8ea2b5">'+safe(a.application_ref)+'</span></td><td>'+safe(job.job_title||'')+'</td><td>'+safe(a.email)+'</td><td>'+safe(a.phone)+'</td><td>'+safe(a.submitted_at?new Date(a.submitted_at).toLocaleString('en-GB'):'')+'</td><td><button class="btn btn-sm btn-outline" data-cv="'+a.id+'">Open CV</button></td></tr>';}).join('');body.querySelectorAll('[data-cv]').forEach(function(b){b.onclick=async function(){try{var d=await api('GET','/api/stratex/job-applications/'+b.dataset.cv+'/cv-url');window.open(d.url,'_blank','noopener');}catch(e){show('err',e.message);}};});if(window.refreshMobileLayout)refreshMobileLayout();}
+async function loadApplications(){var d=await api('GET','/api/stratex/job-applications');renderApps(d.data||[]);}
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();Promise.all([loadAdmins(),loadJobs(),loadApplications()]).catch(function(e){show('err',e.message);});});
+</script><script src="../js/mobile.js"></script>
+</body></html>

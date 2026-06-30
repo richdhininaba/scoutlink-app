@@ -16,6 +16,10 @@ const CLEAN_ROUTES = {
   'stratex-registrations.html':'/stratex/registrations',
   'stratex-users.html':'/stratex/users',
   'stratex-org.html':'/stratex/org',
+  'stratex-hiring.html':'/stratex/hiring',
+  'stratex-leave.html':'/stratex/leave',
+  'stratex-meetings.html':'/stratex/meetings',
+  'stratex-contracts-pay.html':'/stratex/contracts-pay',
   'stratex-players.html':'/stratex/players',
   'stratex-scouts.html':'/stratex/scouts',
   'stratex-coaches.html':'/stratex/coaches',
@@ -56,7 +60,9 @@ const CLEAN_ROUTES = {
   'player-profile-edit.html':'/player/edit-profile',
   'player-video-reels.html':'/player/video-reels',
   'player-notifications.html':'/player/notifications',
-  'player-settings.html':'/player/settings'
+  'player-settings.html':'/player/settings',
+  'careers.html':'/careers',
+  'career-detail.html':'/careers'
 };
 
 function cleanRouteFor(href) {

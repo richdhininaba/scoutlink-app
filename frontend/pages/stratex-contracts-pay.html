@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contracts & Pay - ScoutLink Stratex</title>
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/mobile.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>.contract-card{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,minmax(120px,180px));gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}.contract-card:last-child{border-bottom:0}.muted{color:#8ea2b5;font-size:12px}.contract-name{font-weight:900}@media(max-width:760px){.contract-card{grid-template-columns:1fr;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:12px;margin:10px;padding:12px}}</style>
+</head><body><div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main"><div class="topbar"><span class="topbar-title">Contracts & Pay</span><div class="topbar-right"><a class="btn btn-sm btn-outline" href="stratex-users.html">Add admin</a><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
+<div class="page-content">
+<section class="table-card"><div class="table-header"><div><h3>Contracts and pay</h3><p style="margin:4px 0 0;color:#8ea2b5;font-size:12px">A focused HR view of Stratex admin contract metadata.</p></div></div><div id="contracts"><div class="loading-state"><div class="spinner"></div></div></div></section>
+</div></div></div>
+<script src="../js/stratex-nav.js"></script><script src="../js/main.js"></script><script>
+function logout(){logoutToLogin();}function safe(v){return String(v==null||v===''?'--':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function render(admins){var box=document.getElementById('contracts');if(!admins.length){box.innerHTML='<div style="padding:20px;color:#8ea2b5">No admin users found.</div>';return;}box.innerHTML=admins.map(function(a){var c=a.contract_data||{};return '<article class="contract-card"><div><div class="contract-name">'+safe((a.first_name||'')+' '+(a.last_name||''))+'</div><div class="muted">'+safe(a.job_title||a.admin_role||a.role)+' - '+safe(a.email)+'</div></div><div><div class="muted">Contract</div><b>'+safe(c.contractType||c.contract_type||'Not uploaded')+'</b></div><div><div class="muted">Pay</div><b>'+safe(c.pay||c.salary||'Not set')+'</b></div><div><div class="muted">Status</div>'+(a.is_active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-red">Inactive</span>')+'</div></article>';}).join('');}
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();api('GET','/api/stratex/org').then(function(d){render(d.admins||[]);}).catch(function(e){document.getElementById('contracts').innerHTML='<div style="padding:20px;color:#ffb4b4">'+safe(e.message)+'</div>';});});
+</script><script src="../js/mobile.js"></script></body></html>

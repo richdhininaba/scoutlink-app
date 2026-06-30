@@ -35,6 +35,7 @@ app.use('/api/players', require('./routes/players'));
 app.use('/api/match-facts', require('./routes/matchFacts'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/stratex', require('./routes/stratex'));
+app.use('/api/stratex', require('./routes/stratexJobs'));
 app.use('/api/scouts', require('./routes/scouts'));
 app.use('/api/scout', require('./routes/scouts')); // alias for frontend scout routes
 app.use('/api/coaches', require('./routes/coaches'));
@@ -47,6 +48,7 @@ app.use('/api/season', require('./routes/season'));
 app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/fixtures', require('./routes/fixtures'));
 app.use('/api/onboarding', require('./routes/onboarding'));
+app.use('/api/careers', require('./routes/careers'));
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });

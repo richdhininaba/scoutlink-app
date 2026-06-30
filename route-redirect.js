@@ -12,6 +12,10 @@
     '/stratex/registrations': '/frontend/pages/stratex-registrations.html',
     '/stratex/users': '/frontend/pages/stratex-users.html',
     '/stratex/org': '/frontend/pages/stratex-org.html',
+    '/stratex/hiring': '/frontend/pages/stratex-hiring.html',
+    '/stratex/leave': '/frontend/pages/stratex-leave.html',
+    '/stratex/meetings': '/frontend/pages/stratex-meetings.html',
+    '/stratex/contracts-pay': '/frontend/pages/stratex-contracts-pay.html',
     '/stratex/players': '/frontend/pages/stratex-players.html',
     '/stratex/scouts': '/frontend/pages/stratex-scouts.html',
     '/stratex/coaches': '/frontend/pages/stratex-coaches.html',
@@ -53,9 +57,11 @@
     '/player/edit-profile': '/frontend/pages/player-profile-edit.html',
     '/player/video-reels': '/frontend/pages/player-video-reels.html',
     '/player/notifications': '/frontend/pages/player-notifications.html',
-    '/player/settings': '/frontend/pages/player-settings.html'
+    '/player/settings': '/frontend/pages/player-settings.html',
+    '/careers': '/frontend/pages/careers.html'
   };
   var path = window.location.pathname.replace(/\/$/, '') || '/';
   var target = routes[path];
+  if (!target && path.indexOf('/careers/') === 0) target = '/frontend/pages/career-detail.html';
   if (target) window.location.replace(target + window.location.search + window.location.hash);
 })();

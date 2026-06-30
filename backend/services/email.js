@@ -1,8 +1,10 @@
 'use strict';
+
 const config = require('../config');
+const { templateByKey, missingRequired } = require('./emailTemplates');
 
 function brandBase() {
-  return String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
+  return String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '').replace('https://www.scoutlink.app', 'https://scoutlink.app');
 }
 
 function accountLink(path, params) {
@@ -10,79 +12,85 @@ function accountLink(path, params) {
   Object.keys(params || {}).forEach(k => {
     if (params[k] !== undefined && params[k] !== null && params[k] !== '') qs.set(k, params[k]);
   });
-  const q = qs.toString();
-  return brandBase() + path + (q ? '?' + q : '');
+  const query = qs.toString();
+  return brandBase() + path + (query ? '?' + query : '');
+}
+
+function prettyDate(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  return date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function getSgMail() {
+  try {
+    const sgMail = require('@sendgrid/mail');
+    if (config.sendgrid.apiKey) sgMail.setApiKey(config.sendgrid.apiKey);
+    return sgMail;
+  } catch (err) {
+    console.warn('[Email] @sendgrid/mail not available:', err.message);
+    return null;
+  }
+}
+
+function withDefaults(data) {
+  return {
+    brandUrl: brandBase(),
+    year: String(new Date().getFullYear()),
+    ...(data || {})
+  };
+}
+
+async function sendTemplate({ to, templateKey, data }) {
+  const template = templateByKey(templateKey);
+  if (!template) return { success: false, error: 'Unknown SendGrid template: ' + templateKey };
+  const payload = withDefaults(data);
+  const missing = missingRequired(templateKey, payload);
+  if (missing.length) {
+    const message = template.name + ' missing required template data: ' + missing.join(', ');
+    console.warn('[Email]', message);
+    return { success: false, error: message, missing, template: template.name, templateId: template.id };
+  }
+  if (!config.sendgrid.apiKey) {
+    console.warn('[Email] SENDGRID_API_KEY not configured - cannot send', template.name);
+    return { success: false, skipped: true, error: 'SENDGRID_API_KEY not configured', template: template.name, templateId: template.id };
+  }
+  const sgMail = getSgMail();
+  if (!sgMail) return { success: false, error: 'SendGrid not available', template: template.name, templateId: template.id };
+  const recipients = (Array.isArray(to) ? to : [to]).map(v => String(v || '').trim()).filter(Boolean);
+  if (!recipients.length) return { success: false, error: 'No recipient', template: template.name, templateId: template.id };
+
+  try {
+    for (const addr of recipients) {
+      await sgMail.send({
+        to: addr,
+        from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
+        templateId: template.id,
+        dynamicTemplateData: payload
+      });
+    }
+    console.log('[Email] Sent', template.name, 'to', recipients.join(', '));
+    return { success: true, template: template.name, templateId: template.id };
+  } catch (err) {
+    console.error('[Email] Failed', template.name + ':', err?.response?.body || err.message);
+    return { success: false, error: err.message, details: err?.response?.body || null, template: template.name, templateId: template.id };
+  }
 }
 
 function inviteData(d) {
-  const accountType = d.accountType || 'account';
+  d = d || {};
+  const accountType = d.accountType || d.account_type || 'Account';
   const emailAddr = d.email || d.to || '';
-  const loginCode = d.loginCode || d.resetCode || '';
+  const loginCode = d.loginCode || d.login_code || d.code || '';
   const firstName = d.firstName || d.first_name || d.playerFirstName || 'there';
   const completeLink = d.completeLink || accountLink('/complete-registration', { code: loginCode, email: emailAddr, type: accountType });
-  const loginUrl = accountLink('/login', {});
   return {
-    loginUrl,
-    login_url: loginUrl,
-    completeLink,
-    complete_link: completeLink,
-    accountType,
-    account_type: accountType,
+    ...d,
     firstName,
-    first_name: firstName,
-    loginCode,
-    login_code: loginCode,
-    code: loginCode,
     email: emailAddr,
-    to: d.to || emailAddr,
-    recipientEmail: emailAddr,
-    recipient_email: emailAddr,
-    ctaUrl: completeLink,
-    cta_url: completeLink,
-    ...d
-  };
-}
-
-function resetData(d) {
-  const accountType = d.accountType || 'Player';
-  const emailAddr = d.email || d.to || '';
-  const resetCode = d.resetCode || d.loginCode || '';
-  const resetLink = d.resetLink || accountLink('/forgot-password', { code: resetCode, email: emailAddr, type: accountType });
-  const loginUrl = accountLink('/login', {});
-  return {
-    resetLink,
-    reset_link: resetLink,
-    loginUrl,
-    login_url: loginUrl,
     accountType,
-    account_type: accountType,
-    resetCode,
-    reset_code: resetCode,
-    email: emailAddr,
-    ...d
-  };
-}
-
-function notificationData(d) {
-  d = d || {};
-  const title = d.title || d.subject || 'ScoutLink notification';
-  const body = d.body || d.message || '';
-  const actionLink = d.actionLink || d.action_link || brandBase();
-  const loginUrl = accountLink('/login', {});
-  return {
-    title,
-    subject: title,
-    notificationTitle: title,
-    notification_title: title,
-    body,
-    message: body,
-    notificationBody: body,
-    notification_body: body,
-    actionLink,
-    action_link: actionLink,
-    loginUrl,
-    login_url: loginUrl,
-    ...d
+    loginCode,
+    completeLink
   };
 }
 
@@ -90,246 +98,160 @@ function registrationAlertData(d, accountType) {
   d = d || {};
   const firstName = d.firstName || d.first_name || '';
   const lastName = d.lastName || d.last_name || '';
-  const emailAddr = d.email || d.emailAddr || '';
-  const reviewLink = d.reviewLink || accountLink('/stratex/registrations', {});
+  const emailAddr = d.email || d.emailAddr || d.email_addr || '';
   return {
-    accountType,
-    account_type: accountType,
+    ...d,
     firstName,
-    first_name: firstName,
     lastName,
-    last_name: lastName,
-    fullName: (firstName + ' ' + lastName).trim(),
-    full_name: (firstName + ' ' + lastName).trim(),
     email: emailAddr,
-    emailAddr,
-    email_addr: emailAddr,
-    reviewLink,
-    review_link: reviewLink,
-    requestId: d.requestId || d.request_id || '',
-    request_id: d.requestId || d.request_id || '',
-    ...d
+    teamName: d.teamName || d.team_name || d.scoutClub || d.scout_club || d.clubName || d.club_name || 'Not provided',
+    submittedAt: d.submittedAt || d.submitted_at || prettyDate(d.created_at || d.createdAt),
+    brandUrl: brandBase(),
+    registrationId: d.registrationId || d.registration_id || d.requestId || d.request_id || '',
+    roleLabel: accountType
   };
 }
 
 function registrationReceivedData(d, accountType) {
   d = d || {};
-  const firstName = d.firstName || d.first_name || 'there';
   return {
-    ...registrationAlertData(d, accountType),
-    firstName,
-    first_name: firstName,
-    title: 'We have received your ScoutLink registration',
-    subject: 'We have received your ScoutLink registration',
-    body: 'Thanks for registering with ScoutLink. The Stratex team has received your registration and will review it shortly. Please check your junk or spam folder if you do not see a response within 24 hours.'
+    firstName: d.firstName || d.first_name || 'there',
+    roleLabel: String(accountType || d.accountType || d.account_type || 'account').toLowerCase(),
+    teamName: d.teamName || d.team_name || '',
+    clubName: d.clubName || d.club_name || d.scoutClub || d.scout_club || '',
+    applicationReference: d.applicationReference || d.application_reference || d.requestId || d.request_id || ''
   };
 }
 
-// Lazy-load SendGrid to avoid crash if SENDGRID_API_KEY not set
-function getSgMail() {
-  try {
-    const sgMail = require('@sendgrid/mail');
-    if (config.sendgrid.apiKey) {
-      sgMail.setApiKey(config.sendgrid.apiKey);
-      return sgMail;
-    }
-  } catch(e) {
-    console.warn('[Email] @sendgrid/mail not available:', e.message);
-  }
-  return null;
+function declinedData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    reason: d.reason || d.declineReason || d.decline_reason || d.customReason || ''
+  };
 }
 
-async function send({ to, templateId, data }) {
-  if (!config.sendgrid.apiKey) {
-    console.warn('[Email] SENDGRID_API_KEY not configured - skipping email send');
-    return { success: false, skipped: true };
-  }
-  if (!templateId) {
-    console.warn('[Email] No templateId provided - skipping email send');
-    return { success: false, skipped: true };
-  }
+function scoutInterestData(d) {
+  d = d || {};
+  return {
+    ...d,
+    playerFirstName: d.playerFirstName || d.player_first_name || '',
+    playerLastName: d.playerLastName || d.player_last_name || '',
+    scoutFirstName: d.scoutFirstName || d.scout_first_name || '',
+    scoutLastName: d.scoutLastName || d.scout_last_name || '',
+    scoutTeamName: d.scoutTeamName || d.scout_team_name || d.teamName || d.team_name || d.clubName || d.club_name || 'ScoutLink scout',
+    profileUrl: d.profileUrl || d.profile_url || accountLink('/player/profile', { id: d.playerId || d.player_id || '' }),
+    message: d.message || ''
+  };
+}
+
+function jobApplicationReceivedData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    jobTitle: d.jobTitle || d.job_title || '',
+    department: d.department || '',
+    applicationId: d.applicationId || d.application_id || '',
+    submittedAt: d.submittedAt || d.submitted_at || prettyDate(d.created_at || d.submittedAt),
+    jobUrl: d.jobUrl || d.job_url || ''
+  };
+}
+
+function jobApplicationAlertData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || '',
+    lastName: d.lastName || d.last_name || '',
+    email: d.email || '',
+    phone: d.phone || '',
+    jobTitle: d.jobTitle || d.job_title || '',
+    applicationUrl: d.applicationUrl || d.application_url || '',
+    department: d.department || '',
+    location: d.location || '',
+    workingType: d.workingType || d.working_type || '',
+    employmentType: d.employmentType || d.employment_type || '',
+    salaryRange: d.salaryRange || d.salary_range || '',
+    submittedAt: d.submittedAt || d.submitted_at || prettyDate(d.created_at || d.submittedAt),
+    applicationId: d.applicationId || d.application_id || '',
+    jobId: d.jobId || d.job_id || '',
+    cvFileName: d.cvFileName || d.cv_file_name || '',
+    cvUrl: d.cvUrl || d.cv_url || '',
+    jobUrl: d.jobUrl || d.job_url || ''
+  };
+}
+
+async function sendResetPassword(d) {
+  const templateId = config.sendgrid.templates.resetPassword;
+  const payload = withDefaults({
+    resetLink: d.resetLink || accountLink('/forgot-password', { code: d.resetCode || d.loginCode, email: d.email || d.to, type: d.accountType || 'Player' }),
+    resetCode: d.resetCode || d.loginCode || '',
+    firstName: d.firstName || d.first_name || 'there',
+    email: d.email || d.to || '',
+    accountType: d.accountType || 'Player',
+    ...(d || {})
+  });
+  if (!templateId) return { success: false, error: 'SENDGRID_TEMPLATE_RESET_PASSWORD not configured' };
+  if (!config.sendgrid.apiKey) return { success: false, skipped: true, error: 'SENDGRID_API_KEY not configured' };
   const sgMail = getSgMail();
   if (!sgMail) return { success: false, error: 'SendGrid not available' };
-
-const toArr = Array.isArray(to) ? to : [to];
-  const msgs = toArr.map(addr => ({
-    to: addr,
-    from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
-    templateId,
-    dynamicTemplateData: { brandUrl: config.brandUrl, year: new Date().getFullYear(), ...data }
-  }));
   try {
-    for (const m of msgs) await sgMail.send(m);
-    console.log('[Email] Sent to', toArr.join(', '), 'template:', templateId);
-    return { success: true };
-  } catch(err) {
-    console.error('[Email] Failed:', err?.response?.body || err.message);
-    return { success: false, error: err.message, details: err?.response?.body || null };
+    await sgMail.send({
+      to: d.to || d.email,
+      from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
+      templateId,
+      dynamicTemplateData: payload
+    });
+    return { success: true, template: 'Reset Password', templateId };
+  } catch (err) {
+    return { success: false, error: err.message, details: err?.response?.body || null, templateId };
   }
 }
 
-function escapeHtml(value) {
-  return String(value || '').replace(/[&<>"']/g, ch => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  })[ch]);
-}
-
-async function sendPlain({ to, subject, text, html }) {
-  if (!config.sendgrid.apiKey) {
-    console.warn('[Email] SENDGRID_API_KEY not configured - skipping plain email send');
-    return { success: false, skipped: true };
-  }
+async function sendNotification(d) {
+  const templateId = config.sendgrid.templates.notification;
+  if (!templateId) return { success: false, error: 'SENDGRID_TEMPLATE_NOTIFICATION not configured' };
+  if (!config.sendgrid.apiKey) return { success: false, skipped: true, error: 'SENDGRID_API_KEY not configured' };
   const sgMail = getSgMail();
   if (!sgMail) return { success: false, error: 'SendGrid not available' };
-  const toArr = Array.isArray(to) ? to : [to];
-  const safeText = String(text || '').trim();
-  const msgHtml = html || '<div style="font-family:Inter,Arial,sans-serif;line-height:1.5;color:#111827">' +
-    '<h2 style="margin:0 0 16px;color:#07111f">' + escapeHtml(subject || 'ScoutLink') + '</h2>' +
-    '<p style="white-space:pre-line;margin:0 0 20px">' + escapeHtml(safeText) + '</p>' +
-    '<p style="margin:0;color:#64748b;font-size:13px">ScoutLink by Stratex Analytics</p>' +
-    '</div>';
-  const msgs = toArr.map(addr => ({
-    to: addr,
-    from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
-    subject: subject || 'ScoutLink',
-    text: safeText || subject || 'ScoutLink notification',
-    html: msgHtml
-  }));
+  const payload = withDefaults({
+    title: d.title || d.subject || 'ScoutLink notification',
+    subject: d.title || d.subject || 'ScoutLink notification',
+    body: d.body || d.message || '',
+    message: d.body || d.message || '',
+    actionLink: d.actionLink || d.action_link || brandBase(),
+    ...(d || {})
+  });
   try {
-    for (const m of msgs) await sgMail.send(m);
-    console.log('[Email] Sent plain email to', toArr.join(', '), 'subject:', subject || 'ScoutLink');
-    return { success: true, template: 'plain' };
-  } catch(err) {
-    console.error('[Email] Plain send failed:', err?.response?.body || err.message);
-    return { success: false, error: err.message, details: err?.response?.body || null };
+    await sgMail.send({
+      to: d.to,
+      from: { email: config.sendgrid.fromEmail, name: config.sendgrid.fromName },
+      templateId,
+      dynamicTemplateData: payload
+    });
+    return { success: true, template: 'Notification', templateId };
+  } catch (err) {
+    return { success: false, error: err.message, details: err?.response?.body || null, templateId };
   }
-}
-
-async function sendTemplateFallback({ to, templates, data }) {
-  const options = (templates || []).filter(t => t && t.id);
-  for (const t of options) {
-    const result = await send({ to, templateId: t.id, data });
-    if (result.success) return { ...result, template: t.name, templateId: t.id };
-    console.error('[Email] Template send failed for', t.name, result.error || result.details || 'unknown error');
-  }
-  return { success: false, error: 'No SendGrid template accepted the email', details: options.map(t => t.name).join(', ') || 'No templates configured' };
 }
 
 module.exports = {
-  // SENDGRID_TEMPLATE_COACH_REG_ALERT — sent to Stratex admin when a new coach registers
-  sendCoachRegAlert: async (d) => {
-    const data = registrationAlertData(d, 'Coach');
-    const result = await send({ to: config.adminEmails, templateId: config.sendgrid.templates.coachRegAlert, data });
-    if (result.success) return { ...result, template: 'coachRegAlert' };
-    return sendPlain({
-      to: config.adminEmails,
-      subject: 'New coach registration: ' + (data.fullName || data.email),
-      text: 'A new coach registration has been submitted.\n\nName: ' + data.fullName + '\nEmail: ' + data.email + '\nTeam: ' + (data.teamName || data.team_name || '') + '\nLeague: ' + (data.league || '') + '\n\nReview it here: ' + data.reviewLink
-    });
+  sendTemplate,
+  sendCoachRegAlert: (d) => sendTemplate({ to: config.adminEmails, templateKey: 'coachRegAlert', data: registrationAlertData(d, 'Coach') }),
+  sendScoutRegAlert: (d) => sendTemplate({ to: config.adminEmails, templateKey: 'scoutRegAlert', data: registrationAlertData(d, 'Scout') }),
+  sendRegistrationReceived: (d) => {
+    const accountType = d.accountType || d.account_type || 'account';
+    return sendTemplate({ to: d.to || d.email, templateKey: 'registrationReceived', data: registrationReceivedData(d, accountType) });
   },
-
-  // SENDGRID_TEMPLATE_SCOUT_REG_ALERT — sent to Stratex admin when a new scout registers
-  sendScoutRegAlert: async (d) => {
-    const data = registrationAlertData(d, 'Scout');
-    const result = await send({ to: config.adminEmails, templateId: config.sendgrid.templates.scoutRegAlert, data });
-    if (result.success) return { ...result, template: 'scoutRegAlert' };
-    return sendPlain({
-      to: config.adminEmails,
-      subject: 'New scout registration: ' + (data.fullName || data.email),
-      text: 'A new scout registration has been submitted.\n\nName: ' + data.fullName + '\nEmail: ' + data.email + '\nClub: ' + (data.scoutClub || data.scout_club || '') + '\nLeague: ' + (data.scoutLeague || data.scout_league || '') + '\n\nReview it here: ' + data.reviewLink
-    });
-  },
-
-  sendRegistrationReceived: async (d) => {
-    const accountType = d.accountType || d.account_type || 'Scout';
-    const data = registrationReceivedData(d, accountType);
-    return sendPlain({
-      to: data.email,
-      subject: 'We have received your ScoutLink registration',
-      text: 'Hi ' + data.firstName + ',\n\nThanks for registering with ScoutLink. We have seen your registration and the Stratex team will review it shortly.\n\nPlease check your junk or spam folder if you do not see a response within 24 hours.\n\nScoutLink by Stratex Analytics'
-    });
-  },
-
-  // SENDGRID_TEMPLATE_REG_APPROVED — sent to the applicant when their registration is approved
-  sendRegApproved: (d) => {
-    d = inviteData(d || {});
-    return sendTemplateFallback({
-      to: d.to,
-      templates: [
-        { name: 'regApproved', id: config.sendgrid.templates.regApproved },
-        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup }
-      ],
-      data: d
-    });
-  },
-
-  // SENDGRID_TEMPLATE_REG_DECLINED — sent to the applicant when their registration is declined
-  sendRegDeclined: (d) => send({ to: d.to, templateId: config.sendgrid.templates.regDeclined, data: inviteData(d || {}) }),
-
-  // SENDGRID_TEMPLATE_SCOUT_INTEREST — sent to a coach when a scout registers interest in one of their players
-  sendScoutInterest: (d) => send({ to: d.to, templateId: config.sendgrid.templates.scoutInterest, data: d }),
-
-  // SENDGRID_TEMPLATE_NOTIFICATION — sent as a general notification email
-  sendNotification: async (d) => {
-    d = notificationData(d || {});
-    const templateResult = await send({ to: d.to, templateId: config.sendgrid.templates.notification, data: d });
-    if (templateResult.success) return { ...templateResult, template: 'notification' };
-    return sendPlain({
-      to: d.to,
-      subject: d.title || 'ScoutLink notification',
-      text: (d.body || d.message || 'You have a new ScoutLink notification.') + '\n\nOpen ScoutLink: ' + (d.actionLink || d.loginUrl || brandBase())
-    });
-  },
-
-  // SENDGRID_TEMPLATE_COMPLETE_SIGNUP — sent to a user to complete their account setup
-  // Also used by sendPlayerLoginCode when a coach adds a player
-  sendCompleteSignup: async (d) => {
-    d = inviteData(d || {});
-    const accountType = String(d.accountType || d.account_type || '').toLowerCase();
-    const primary = (accountType === 'player' || accountType === 'stratex')
-      ? { name: 'completeSignup', id: config.sendgrid.templates.completeSignup }
-      : { name: 'regApproved', id: config.sendgrid.templates.regApproved };
-    const secondary = primary.name === 'completeSignup'
-      ? { name: 'regApproved', id: config.sendgrid.templates.regApproved }
-      : { name: 'completeSignup', id: config.sendgrid.templates.completeSignup };
-    return sendTemplateFallback({
-      to: d.to,
-      templates: [
-        primary,
-        secondary
-      ],
-      data: d
-    });
-  },
-
-  // SENDGRID_TEMPLATE_COMPLETE_SIGNUP — used when a coach adds a player
-  sendPlayerLoginCode: async (d) => {
-    d = inviteData({ ...(d || {}), accountType: 'Player', firstName: (d && d.playerFirstName) || (d && d.firstName) || 'Player' });
-    if (!d.to) return { success: false, error: 'No recipient' };
-    return sendTemplateFallback({
-      to: d.to,
-      templates: [
-        { name: 'completeSignup', id: config.sendgrid.templates.completeSignup },
-        { name: 'regApproved', id: config.sendgrid.templates.regApproved }
-      ],
-      data: d
-    });
-  },
-
-  // SENDGRID_TEMPLATE_RESET_PASSWORD — sent when a user requests a password reset
-  sendResetPassword: async (d) => {
-    d = resetData(d || {});
-    if (!d.to) return { success: false, error: 'No recipient' };
-    const templateResult = await send({ to: d.to, templateId: config.sendgrid.templates.resetPassword, data: d });
-    if (templateResult.success) return { ...templateResult, template: 'resetPassword' };
-    return sendPlain({
-      to: d.to,
-      subject: 'Reset your ScoutLink password',
-      text: 'Hi ' + (d.firstName || d.first_name || 'there') + ',\n\nYour ScoutLink reset code is: ' + d.resetCode + '\n\nUse it here: ' + d.resetLink + '\n\nThis code expires shortly.'
-    });
-  },
+  sendRegApproved: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'regApproved', data: inviteData(d) }),
+  sendRegDeclined: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'regDeclined', data: declinedData(d) }),
+  sendScoutInterest: (d) => sendTemplate({ to: d.to, templateKey: 'scoutInterest', data: scoutInterestData(d) }),
+  sendCompleteSignup: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'completeSignup', data: inviteData(d) }),
+  sendPlayerLoginCode: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'completeSignup', data: inviteData({ ...(d || {}), accountType: 'Player', firstName: (d && (d.playerFirstName || d.firstName)) || 'Player' }) }),
+  sendJobApplicationReceived: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationReceived', data: jobApplicationReceivedData(d) }),
+  sendJobApplicationAlert: (d) => sendTemplate({ to: d.to, templateKey: 'jobApplicationAlert', data: jobApplicationAlertData(d) }),
+  sendNotification,
+  sendResetPassword,
+  brandBase,
+  accountLink,
+  prettyDate
 };

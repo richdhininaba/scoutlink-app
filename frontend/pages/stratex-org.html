@@ -28,7 +28,10 @@
 .org-report-count{font-size:11px;color:#8ea2b5;font-weight:800}
 .org-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mini-form{display:grid;gap:10px}
-.org-actions-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.org-modal{display:none;position:fixed;inset:0;background:rgba(2,6,12,.72);z-index:1400;align-items:center;justify-content:center;padding:16px}
+.org-modal.open{display:flex}
+.org-modal-card{width:min(520px,100%);background:#111827;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.42)}
+.org-modal-body{padding:18px;display:grid;gap:10px}
 @media(max-width:768px){
   .org-board-head{padding:12px;display:grid}
   .org-chart{overflow:visible;padding:12px}
@@ -41,7 +44,6 @@
   .org-avatar{width:38px;height:38px}
   .org-name{font-size:14px}
   .org-title{font-size:11px}
-  .org-actions-grid{grid-template-columns:1fr}
 }
 </style></head><body>
 <div class="dashboard">
@@ -54,26 +56,27 @@
 <section class="org-board">
   <div class="org-board-head">
     <div><h3>Stratex Analytics org</h3><p>Reporting lines, admin roles and direct reports.</p></div>
-    <a class="btn btn-sm btn-primary" href="stratex-users.html">Add admin</a>
+    <a class="btn btn-sm btn-primary" href="stratex-users.html?tab=admins">Add admin</a>
   </div>
   <div class="org-chart"><div id="orgTree" class="org-tree"><div class="loading-state"><div class="spinner"></div></div></div></div>
 </section>
-
-<div class="org-actions-grid">
-<div class="table-card"><div class="table-header"><h3>Book Leave / Sick Leave</h3></div><div style="padding:20px" class="mini-form">
-<select id="leaveAdmin"></select><select id="leaveType"><option value="annual_leave">Annual leave</option><option value="sick_leave">Sick leave</option><option value="other">Other</option></select>
-<input type="date" id="leaveStart"><input type="date" id="leaveEnd"><textarea id="leaveNotes" placeholder="Notes"></textarea><button class="btn btn-primary" onclick="bookLeave()">Save leave</button>
-</div></div>
-<div class="table-card"><div class="table-header"><h3>Book Meeting</h3></div><div style="padding:20px" class="mini-form">
-<input id="meetingTitle" placeholder="Meeting title"><input type="datetime-local" id="meetingDate"><input id="meetingLocation" placeholder="Location or video link"><select id="meetingAttendees" multiple size="5"></select><textarea id="meetingNotes" placeholder="Agenda / notes"></textarea><button class="btn btn-primary" onclick="bookMeeting()">Book meeting</button>
-</div></div>
-</div>
-<div class="table-card" style="margin-top:16px"><div class="table-header"><h3>Contracts and pay</h3></div><div id="contractsTable" style="padding:0 20px 20px"></div></div>
 </div></div></div>
+<div class="org-modal" id="editModal">
+  <div class="org-modal-card">
+    <div class="table-header"><h3>Edit admin</h3><button class="modal-close" onclick="closeEdit()" aria-label="Close">&times;</button></div>
+    <div class="org-modal-body">
+      <input type="hidden" id="editId">
+      <label>Job title</label><input id="editJobTitle" placeholder="Job title">
+      <label>Permission role</label><select id="editAdminRole"><option>Management</option><option>Operations</option><option>Acquisition</option><option>Safeguarding Reviewer</option><option>Product Demo</option><option>Read Only</option></select>
+      <label>Reports to</label><select id="editManager"></select>
+      <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-outline" onclick="closeEdit()">Cancel</button><button class="btn btn-primary" onclick="saveEdit()">Save changes</button></div>
+    </div>
+  </div>
+</div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
-var admins=[], leave=[], meetings=[], canManageSensitive=false, collapsed={};
+var admins=[], canManageSensitive=false, collapsed={};
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function safe(v){return (v===null||v===undefined||v==='')?'--':String(v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function showMsg(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}
@@ -85,7 +88,7 @@ function personCard(a,children,isRoot){
   return '<article class="org-person '+(isRoot?'root':'')+'">'+
     '<div class="org-person-top"><div class="org-avatar">'+safe(initialsFrom(a)||'SL')+'</div><div style="min-width:0"><div class="org-name">'+safe(a.first_name)+' '+safe(a.last_name)+'</div><div class="org-title">'+safe(a.job_title||a.admin_role||a.role)+'</div><div class="org-meta">'+safe(a.email)+'</div></div></div>'+
     '<div class="org-footer"><div>'+roleBadge(a)+'<div class="org-report-count">'+children.length+' direct report'+(children.length===1?'':'s')+'</div></div>'+
-    '<div class="org-actions">'+(children.length?'<button class="btn btn-sm btn-outline" onclick="toggleNode(\''+a.id+'\')">'+(isCollapsed?'Expand':'Collapse')+'</button>':'')+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div>'+
+    '<div class="org-actions">'+(children.length?'<button class="btn btn-sm btn-outline" onclick="toggleNode(\''+a.id+'\')">'+(isCollapsed?'Expand':'Collapse')+'</button>':'')+(canManageSensitive?'<button class="btn btn-sm btn-outline" onclick="openEdit(\''+a.id+'\')">Edit</button>':'')+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div>'+
   '</article>';
 }
 function treeData(){
@@ -107,21 +110,27 @@ function renderOrg(){
   document.getElementById('orgTree').innerHTML=renderNode(tree.founder,tree.byManager,true);
 }
 function toggleNode(id){collapsed[id]=!collapsed[id];renderOrg();}
-function fillSelects(){
-  var opts=admins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+safe(a.first_name)+' '+safe(a.last_name)+' - '+safe(a.job_title||a.admin_role||a.role)+'</option>';}).join('');
-  document.getElementById('leaveAdmin').innerHTML=opts;
-  document.getElementById('meetingAttendees').innerHTML=opts;
-}
-function renderContracts(){
-  document.getElementById('contractsTable').innerHTML='<table class="sl-table"><thead><tr><th>Name</th><th>Role</th><th>Contract</th><th>Pay</th><th>Status</th></tr></thead><tbody>'+admins.map(function(a){var c=a.contract_data||{};return '<tr><td><b>'+safe(a.first_name)+' '+safe(a.last_name)+'</b></td><td>'+safe(a.job_title||a.admin_role)+'</td><td>'+safe(c.contractType||c.contract_type||'Not uploaded')+'</td><td>'+safe(c.pay||c.salary||'Not set')+'</td><td>'+(a.is_active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-red">Inactive</span>')+'</td></tr>';}).join('')+'</tbody></table>';
-  if(window.refreshMobileLayout)refreshMobileLayout();
-}
 async function loadOrg(){
-  var d=await api('GET','/api/stratex/org');admins=d.admins||[];leave=d.leave||[];meetings=d.meetings||[];canManageSensitive=!!d.canManageSensitive;renderOrg();fillSelects();renderContracts();
+  var d=await api('GET','/api/stratex/org');admins=d.admins||[];canManageSensitive=!!d.canManageSensitive;renderOrg();
 }
 async function deactivateAdmin(id){if(!confirm('Deactivate this admin?'))return;await api('DELETE','/api/stratex/admins/'+id);showMsg('msgOk','Admin deactivated.');loadOrg();}
-async function bookLeave(){try{await api('POST','/api/stratex/org/leave',{stratexId:document.getElementById('leaveAdmin').value,leaveType:document.getElementById('leaveType').value,startDate:document.getElementById('leaveStart').value,endDate:document.getElementById('leaveEnd').value,notes:document.getElementById('leaveNotes').value});showMsg('msgOk','Leave saved.');loadOrg();}catch(e){showMsg('msgErr',e.message);}}
-async function bookMeeting(){try{var attendees=Array.prototype.map.call(document.getElementById('meetingAttendees').selectedOptions,function(o){return o.value;});await api('POST','/api/stratex/org/meetings',{title:document.getElementById('meetingTitle').value,meetingDate:document.getElementById('meetingDate').value,location:document.getElementById('meetingLocation').value,attendees:attendees,notes:document.getElementById('meetingNotes').value});showMsg('msgOk','Meeting booked.');loadOrg();}catch(e){showMsg('msgErr',e.message);}}
+function openEdit(id){
+  var a=admins.find(function(x){return x.id===id;});if(!a)return;
+  document.getElementById('editId').value=a.id;
+  document.getElementById('editJobTitle').value=a.job_title||'';
+  document.getElementById('editAdminRole').value=a.admin_role||a.role||'Read Only';
+  document.getElementById('editManager').innerHTML='<option value="">No direct manager</option>'+admins.filter(function(x){return x.id!==a.id&&x.is_active!==false;}).map(function(x){return '<option value="'+x.id+'">'+safe(x.first_name+' '+x.last_name+' - '+(x.job_title||x.admin_role||x.role||''))+'</option>';}).join('');
+  document.getElementById('editManager').value=a.manager_id||'';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEdit(){document.getElementById('editModal').classList.remove('open');}
+async function saveEdit(){
+  try{
+    var id=document.getElementById('editId').value;
+    await api('PATCH','/api/stratex/admins/'+id,{jobTitle:document.getElementById('editJobTitle').value.trim(),adminRole:document.getElementById('editAdminRole').value,managerId:document.getElementById('editManager').value||null});
+    closeEdit();showMsg('msgOk','Admin updated.');loadOrg();
+  }catch(e){showMsg('msgErr',e.message);}
+}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadOrg().catch(function(e){document.getElementById('orgTree').innerHTML='<div style="color:#EF5350">'+e.message+'</div>';});});
 </script>
 <script src="../js/mobile.js"></script>
