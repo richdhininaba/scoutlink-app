@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Careers - Stratex Analytics</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{background:#080d14;color:#f8fafc;font-family:Inter,sans-serif;min-height:100vh}
+.public-shell{min-height:100vh}
+.public-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(18px,5vw,64px);border-bottom:1px solid rgba(148,163,184,.14);background:#0b111c}
+.brand{font-size:22px;font-weight:900;color:#fff;text-decoration:none}.brand span{color:#1d9e75}
+.hero{padding:76px clamp(18px,5vw,64px) 34px;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.75fr);gap:52px;align-items:end}
+.eyebrow{display:inline-flex;border:1px solid rgba(29,158,117,.35);border-radius:999px;padding:6px 10px;color:#1d9e75;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+h1{font-size:clamp(42px,5vw,72px);line-height:.98;margin:18px 0 0;letter-spacing:0;max-width:760px}
+.hero p{max-width:520px;color:#9fb0c2;font-size:16px;line-height:1.7;margin:0}
+.jobs{padding:12px clamp(18px,5vw,64px) 72px;display:grid;gap:14px;max-width:1180px;margin:0 auto}
+.job-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;background:#111827;border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:18px;text-decoration:none;color:#fff}
+.job-card:hover{border-color:rgba(29,158,117,.55);background:#121f2d}
+.job-card h2{margin:0 0 8px;font-size:20px}.job-meta{display:flex;gap:8px;flex-wrap:wrap;color:#9fb0c2;font-size:12px;font-weight:800}.pill{background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:999px;padding:6px 9px}
+.open-arrow{color:#1d9e75;font-weight:900}.empty{background:#111827;border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:28px;color:#9fb0c2;max-width:720px}
+@media(max-width:700px){.public-nav{padding:16px}.hero{padding:30px 16px 18px;display:block}.jobs{padding:8px 16px 48px}.job-card{grid-template-columns:1fr}.open-arrow{display:none}.empty{max-width:none}}
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
+<main class="public-shell">
+  <nav class="public-nav"><a class="brand" href="/">Scout<span>Link</span></a><a class="btn btn-sm btn-outline" href="/login">Log in</a></nav>
+  <section class="hero"><span class="eyebrow">Stratex careers</span><h1>Build the future of football intelligence.</h1><p>Join the team behind ScoutLink, where product, data and football operations come together to help talent get seen with better evidence.</p></section>
+  <section class="jobs" id="jobs"><div class="empty">Loading live roles...</div></section>
+</main>
+<script src="../js/main.js"></script>
+<script>
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function money(n){return n?('GBP '+Number(n).toLocaleString('en-GB',{maximumFractionDigits:0})):'';}
+function salary(j){if(!j.salaryMin&&!j.salaryMax)return '';var v=j.salaryMin&&j.salaryMax?money(j.salaryMin)+'-'+money(j.salaryMax):money(j.salaryMin||j.salaryMax);return v+' '+(j.salaryUnit||'annually');}
+function render(rows){
+  var box=document.getElementById('jobs');
+  if(!rows.length){box.innerHTML='<div class="empty"><h2 style="margin:0 0 8px;color:#fff">No open roles right now</h2><p style="margin:0;line-height:1.5">Check back soon for new Stratex and ScoutLink opportunities.</p></div>';return;}
+  box.innerHTML=rows.map(function(j){return '<a class="job-card" href="/careers/'+encodeURIComponent(j.slug)+'"><div><h2>'+esc(j.jobTitle)+'</h2><div class="job-meta">'+[j.department,j.location,j.workingType,j.employmentType,salary(j)].filter(Boolean).map(function(x){return '<span class="pill">'+esc(x)+'</span>';}).join('')+'</div></div><span class="open-arrow">View role</span></a>';}).join('');
+}
+fetch(API+'/api/careers').then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not load roles');return d;});}).then(function(d){render(d.data||[]);}).catch(function(e){document.getElementById('jobs').innerHTML='<div class="empty" style="color:#ffb4b4">'+esc(e.message)+'</div>';});
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
+</body></html>

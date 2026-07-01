@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Player Preferences â€“ ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body class="form-page">
+<div class="form-page-inner">
+<div class="form-container wide">
+  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">âš¡ Scout<span style="color:#00E676">Link</span></a></div>
+  <h1 class="form-title">What kind of player are you looking for?</h1>
+  <p class="form-subtitle">Set your criteria to get personalised player recommendations. You can change these at any time.</p>
+  <div class="form-error" id="formError"></div>
+  <div class="pref-section">
+    <h3>Preferred Position(s)</h3>
+    <div class="pref-chips" id="positionChips">
+      <span class="chip" data-val="GK">Goalkeeper</span>
+      <span class="chip" data-val="CB">Centre Back</span><span class="chip" data-val="LB">Left Back</span><span class="chip" data-val="RB">Right Back</span>
+      <span class="chip" data-val="CDM">Defensive Mid</span><span class="chip" data-val="CM">Central Mid</span><span class="chip" data-val="CAM">Attacking Mid</span>
+      <span class="chip" data-val="LM">Left Mid</span><span class="chip" data-val="RM">Right Mid</span>
+      <span class="chip" data-val="LW">Left Wing</span><span class="chip" data-val="RW">Right Wing</span>
+      <span class="chip" data-val="ST">Striker</span><span class="chip" data-val="CF">Centre Forward</span>
+    </div>
+  </div>
+  <div class="form-divider"></div>
+  <div class="pref-section">
+    <h3>Formation Focus</h3>
+    <div class="pref-chips" id="formationChips">
+      <span class="chip" data-val="4-4-2">4-4-2</span><span class="chip" data-val="4-3-3">4-3-3</span>
+      <span class="chip" data-val="4-2-3-1">4-2-3-1</span><span class="chip" data-val="3-5-2">3-5-2</span>
+      <span class="chip" data-val="3-4-3">3-4-3</span><span class="chip" data-val="5-3-2">5-3-2</span>
+      <span class="chip" data-val="4-1-4-1">4-1-4-1</span><span class="chip" data-val="Any">Any Formation</span>
+    </div>
+  </div>
+  <div class="form-divider"></div>
+  <div class="pref-section">
+    <h3>Playing Style</h3>
+    <div class="pref-chips" id="styleChips">
+      <span class="chip" data-val="possession">Possession-based</span>
+      <span class="chip" data-val="counter">Counter-attack</span>
+      <span class="chip" data-val="pressing">High Press</span>
+      <span class="chip" data-val="direct">Direct Play</span>
+      <span class="chip" data-val="tiki-taka">Tiki-Taka</span>
+      <span class="chip" data-val="physical">Physical & Robust</span>
+      <span class="chip" data-val="flexible">Flexible</span>
+    </div>
+  </div>
+  <div class="form-divider"></div>
+  <div class="form-row">
+    <div class="form-group"><label>Minimum Age</label><select id="ageMin"><option value="12">12</option><option value="13">13</option><option value="14" selected>14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option></select></div>
+    <div class="form-group"><label>Maximum Age</label><select id="ageMax"><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21" selected>21</option><option value="23">23</option><option value="25">25</option></select></div>
+    <div class="form-group"><label>Preferred Foot</label><select id="footPref"><option value="any">Any</option><option value="Right">Right</option><option value="Left">Left</option><option value="Both">Both</option></select></div>
+  </div>
+  <div class="form-group"><label>Preferred Build</label>
+    <div class="range-grid" id="buildRange">
+      <div class="range-option" data-value="very_slight"><div class="range-label">Very Slight</div><div class="range-value">50-58 kg</div></div>
+      <div class="range-option" data-value="slight"><div class="range-label">Slight</div><div class="range-value">58-65 kg</div></div>
+      <div class="range-option active" data-value="any"><div class="range-label">Any Build</div><div class="range-value">No preference</div></div>
+      <div class="range-option" data-value="athletic"><div class="range-label">Athletic</div><div class="range-value">72-80 kg</div></div>
+      <div class="range-option" data-value="powerful"><div class="range-label">Powerful</div><div class="range-value">88-96 kg</div></div>
+    </div>
+    <input type="hidden" id="buildPreference" value="any">
+  </div>
+  <div class="form-group"><label>Additional Requirements</label><textarea id="otherReqs" placeholder="e.g. Must be comfortable playing out from the back, strong in aerial duels..." rows="3"></textarea></div>
+  <button class="btn btn-primary btn-full btn-lg" onclick="savePrefs()">Save Preferences & Go to Dashboard</button>
+</div>
+</div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Scout') { navigateClean('login.html'); return; }
+  if (typeof buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Scout');
+  var u = Auth.user, uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#00E676;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  initChips('positionChips','positions',false);
+  initChips('formationChips','formation',true);
+  initChips('styleChips','style',true);
+  document.querySelectorAll('#buildRange .range-option').forEach(o => {
+    o.addEventListener('click', () => { document.querySelectorAll('#buildRange .range-option').forEach(x=>x.classList.remove('active')); o.classList.add('active'); document.getElementById('buildPreference').value=o.dataset.value; });
+  });
+  // Load existing prefs
+  api('GET','/api/scouts/preferences').then(d => {
+    if (d.preferences) {
+      (d.preferences.preferredPositions||[]).forEach(v => { const el=document.querySelector('#positionChips [data-val="'+v+'"]'); if(el){el.classList.add('active');selected.positions.push(v);} });
+    }
+  }).catch(()=>{});
+});
+async function savePrefs() {
+  const err=document.getElementById('formError'); err.classList.remove('show');
+  try {
+    await api('POST','/api/scouts/preferences',{
+      preferredPositions: selected.positions, formationFocus: selected.formation,
+      playingStyle: selected.style, buildPreference: document.getElementById('buildPreference').value,
+      ageRangeMin: Number(document.getElementById('ageMin').value),
+      ageRangeMax: Number(document.getElementById('ageMax').value),
+      footPreference: document.getElementById('footPref').value,
+      otherRequirements: document.getElementById('otherReqs').value
+    });
+    navigateClean('scout-dashboard.html');
+  } catch(e){err.textContent=e.message;err.classList.add('show');}
+}
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
+</body></html>

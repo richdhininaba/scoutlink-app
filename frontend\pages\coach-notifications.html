@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Notifications - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.notif-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all .2s;border-left:4px solid transparent;}
+.notif-card.unread{border-left-color:#1d9e75;background:rgba(29,158,117,.04);}
+.notif-card:hover{border-color:#1d9e75;transform:translateY(-1px);}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#1d9e75;flex-shrink:0;margin-top:4px;}
+.notif-dot.read{background:transparent;border:2px solid #30363d;}
+.notif-title{font-size:14px;font-weight:700;color:#ffffff;margin-bottom:4px;}
+.notif-body{font-size:13px;color:#8b949e;line-height:1.5;margin-bottom:6px;}
+.notif-time{font-size:11px;color:#546E7A;}
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-chip{padding:5px 14px;border-radius:20px;border:1.5px solid #30363d;background:transparent;color:#8b949e;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit;transition:all .2s;}
+.filter-chip.active{background:#1d9e75;color:#000;border-color:#1d9e75;}
+</style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Notifications</span>
+<div class="topbar-right">
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+<div><h2 style="font-size:22px;font-weight:700">Notifications</h2><p style="color:#8b949e;font-size:13px;margin-top:4px">Stay updated with your latest activity</p></div>
+<button class="btn btn-sm btn-outline" id="markAllReadBtn">Mark all read</button>
+</div>
+<div class="filter-bar">
+<button class="filter-chip active" data-filter="all">All</button>
+<button class="filter-chip" data-filter="scout_interest">Scout interest</button>
+<button class="filter-chip" data-filter="match_fact">Match facts</button>
+<button class="filter-chip" data-filter="recruitment">Recruitment</button>
+<button class="filter-chip" data-filter="system">System</button>
+</div>
+<div id="notifsContainer"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div>
+</div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function initNav(){
+if(!Auth.isLoggedIn()||Auth.type!=='Coach'){navigateClean('login.html');return;}
+if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+var u=Auth.user,uel=document.getElementById('sidebarUser');
+if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+function relTime(ts){var d=new Date(ts),now=new Date(),diff=Math.floor((now-d)/1000);if(diff<60)return'Just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return Math.floor(diff/86400)+'d ago';}
+
+var allNotifs=[];
+var currentFilter='all';
+
+function renderNotifs(notifs){
+var c=document.getElementById('notifsContainer');
+if(!notifs.length){
+c.innerHTML='<div style="text-align:center;padding:60px;color:#546E7A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:16px;opacity:.3"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg><p style="font-size:14px">No notifications yet</p><p style="font-size:12px;margin-top:4px">Activity notifications will appear here</p></div>';
+return;
+}
+c.innerHTML=notifs.map(function(n){
+return '<div class="notif-card '+(n.read||n.is_read?'':'unread')+'" data-id="'+n.id+'">'+
+'<div class="notif-dot '+(n.read||n.is_read?'read':'')+'" title="'+(n.read||n.is_read?'Read':'Unread')+'"></div>'+
+'<div style="flex:1">'+
+'<div class="notif-title">'+escHtml(n.title||'Notification')+'</div>'+
+'<div class="notif-body">'+escHtml(n.body||n.message||'')+'</div>'+
+'<div class="notif-time">'+relTime(n.created_at)+'</div>'+
+'</div>'+
+'</div>';
+}).join('');
+var unread=notifs.filter(function(n){return !(n.read||n.is_read);}).length;
+document.getElementById('notifBadge').textContent=unread;
+document.getElementById('notifBadge').style.display=unread?'inline-flex':'none';
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+async function loadNotifs(){
+try{
+var d=await api('GET','/api/notifications?limit=50&type=coach');
+allNotifs=d.data||d.notifications||[];
+renderNotifs(allNotifs);
+}catch(e){
+document.getElementById('notifsContainer').innerHTML='<div style="text-align:center;padding:60px;color:#546E7A"><p>Could not load notifications.</p></div>';
+}
+}
+
+async function markRead(id){
+try{await api('PATCH','/api/notifications/'+id+'/read');}catch(e){}
+var n=allNotifs.find(function(x){return x.id===id;});
+if(n){n.read=true;n.is_read=true;applyFilter();}
+updateNotifBadge();
+}
+
+async function markAllRead(){
+try{await api('PATCH','/api/notifications/read-all');}catch(e){}
+allNotifs.forEach(function(n){n.read=true;n.is_read=true;});
+applyFilter();
+updateNotifBadge();
+}
+
+function applyFilter(){
+var filtered=currentFilter==='all'?allNotifs:allNotifs.filter(function(n){return n.type===currentFilter||n.notification_type===currentFilter;});
+renderNotifs(filtered);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+initNav();
+document.getElementById('logoutBtn').addEventListener('click',logout);
+document.getElementById('markAllReadBtn').addEventListener('click',markAllRead);
+document.getElementById('notifsContainer').addEventListener('click',function(e){
+var card=e.target.closest('.notif-card');
+if(card&&card.dataset.id) markRead(card.dataset.id);
+});
+document.querySelector('.filter-bar').addEventListener('click',function(e){
+var chip=e.target.closest('.filter-chip');
+if(!chip) return;
+document.querySelectorAll('.filter-chip').forEach(function(c){c.classList.remove('active');});
+chip.classList.add('active');
+currentFilter=chip.dataset.filter;
+applyFilter();
+});
+loadNotifs();
+});
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
+</body></html>
