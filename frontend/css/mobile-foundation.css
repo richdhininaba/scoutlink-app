@@ -1,0 +1,190 @@
+/* ScoutLink phone foundation. Desktop starts at 768px. */
+@media (max-width: 767px) {
+  :root {
+    --m-bg: #070d16;
+    --m-surface: #101720;
+    --m-surface-2: #0b1420;
+    --m-card: #111a27;
+    --m-border: rgba(148, 163, 184, 0.18);
+    --m-border-strong: rgba(148, 163, 184, 0.28);
+    --m-text: #f4f7fb;
+    --m-muted: #9aa8b8;
+    --m-soft: #718096;
+    --m-green: #1d9e75;
+    --m-green-2: #25c08d;
+    --m-red: #ef5350;
+    --m-yellow: #ffca28;
+    --m-radius: 16px;
+    --m-radius-sm: 12px;
+    --m-pad: 16px;
+    --m-gap: 12px;
+    --mobile-header-height: 58px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body {
+    background: var(--m-bg);
+    color: var(--m-text);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  h1, h2, h3, h4, p { overflow-wrap: anywhere; }
+  h1 { font-size: 22px; line-height: 1.12; letter-spacing: 0; }
+  h2 { font-size: 19px; line-height: 1.18; letter-spacing: 0; }
+  h3 { font-size: 16px; line-height: 1.22; letter-spacing: 0; }
+  h4 { font-size: 14px; line-height: 1.25; letter-spacing: 0; }
+
+  .btn,
+  button.btn,
+  a.btn {
+    min-height: 40px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  .btn-sm { min-height: 38px; padding: 0 12px; font-size: 12px; }
+  .btn-lg { min-height: 44px; padding: 0 16px; font-size: 14px; }
+  .btn-primary { background: var(--m-green); border-color: var(--m-green); color: #06120e; font-weight: 850; }
+  .btn-outline { border-color: rgba(29, 158, 117, 0.55); color: #70f2bd; background: transparent; }
+  .btn-ghost { color: var(--m-muted); background: transparent; border-color: transparent; }
+
+  .page-content {
+    padding: calc(var(--mobile-header-height) + 14px) 14px 28px;
+    max-width: 100%;
+  }
+
+  body.has-mobile-shell .dashboard-main { margin-left: 0; width: 100%; min-width: 0; }
+  body.has-mobile-shell .topbar { display: none !important; }
+  body.has-mobile-shell .sidebar { display: none !important; }
+
+  .table-card,
+  .kpi-card,
+  .form-container,
+  .modal-box,
+  .player-card,
+  .player-card2,
+  .job-card,
+  .apply-card,
+  .job-main,
+  .not-found {
+    border-radius: var(--m-radius);
+    border-color: var(--m-border);
+  }
+
+  .table-card {
+    overflow: hidden;
+    background: var(--m-surface);
+    margin-bottom: 14px;
+  }
+
+  .table-header {
+    padding: 14px 16px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .table-header h3 { font-size: 15px; }
+
+  input,
+  select,
+  textarea,
+  .form-input {
+    width: 100%;
+    max-width: 100%;
+    min-height: 42px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .form-row,
+  .form-row.cols-3,
+  .field-grid,
+  .coach-form-grid,
+  .two,
+  .three {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tab-bar,
+  .filter-bar,
+  .topbar-right,
+  .form-actions,
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tab-bar::-webkit-scrollbar,
+  .filter-bar::-webkit-scrollbar,
+  .topbar-right::-webkit-scrollbar,
+  .form-actions::-webkit-scrollbar,
+  .modal-actions::-webkit-scrollbar { display: none; }
+
+  .kpi-grid,
+  .scout-kpi-grid,
+  .coach-players-kpis {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .kpi-card {
+    padding: 14px;
+    min-height: auto;
+  }
+
+  .kpi-label { font-size: 10px; letter-spacing: .06em; }
+  .kpi-value { font-size: 24px !important; line-height: 1.05; }
+  .kpi-sub { font-size: 11px; }
+
+  .mobile-hidden,
+  [data-mobile-hide="true"] { display: none !important; }
+
+  .mobile-only { display: block !important; }
+  .desktop-only-table { display: none !important; }
+
+  .sl-table,
+  table {
+    max-width: 100%;
+  }
+
+  body.mobile-menu-open {
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-only,
+  .mobile-header,
+  .mobile-menu-backdrop,
+  .mobile-menu-drawer,
+  .mobile-phone-view,
+  .mobile-desktop-message { display: none !important; }
+}

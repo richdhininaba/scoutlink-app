@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Profile - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .profile-hero{background:linear-gradient(135deg,var(--bg2) 0%,#111827 100%);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden;}
@@ -513,17 +515,17 @@ if(result.birthQuarter)html+='<p style="font-size:12px;color:#8b949e;margin-top:
 }else if(predType==='positional_ceiling'){
 html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.ceiling||result.message||'Analysis complete.')+'</p>';
 if(result.reliabilityNote)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.reliabilityNote+'</p>';
-html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> • Appearances: <b>'+(result.appearances||0)+'</b></p>';
+html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> â€¢ Appearances: <b>'+(result.appearances||0)+'</b></p>';
 }else if(predType==='consistency_score'){
 if(result.insufficient){html+='<p style="font-size:13px;color:#FF9800">'+result.message+'</p>';}
-else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> • Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
+else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> â€¢ Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
 }else if(predType==='attribute_trajectory'){
 if(result.currentOverall)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current overall: <b style="color:#1d9e75">'+result.currentOverall+'</b> | Focus: <b style="color:#fff">'+(result.trainingFocus||'Balanced')+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> — High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> â€” High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
 if(result.lowConfidenceWarning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.lowConfidenceWarning+'</p>';
 }else if(predType==='value_trajectory'){
 if(result.currentValue)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current value: <b style="color:#1d9e75">'+result.currentValue+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> — High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> â€” High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
 if(result.note)html+='<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
 }else if(predType==='scenario_simulation'){
 html+='<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px;display:flex;justify-content:space-between"><span style="color:#8b949e">Baseline compatibility</span><b style="color:#fff">'+(result.baselineCompatibility||'--')+'</b></div>';
@@ -839,6 +841,8 @@ console.error('[PlayerProfile]',e);
 });
 });
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>
 

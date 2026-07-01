@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Chat - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .chat-shell{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;min-height:calc(100vh - 120px);}
@@ -36,7 +38,7 @@
 <div class="dashboard-main">
 <div class="topbar"><span class="topbar-title">Chat</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
-<div class="chat-shell chat-mobile-list">
+<div class="chat-shell mobile-chat-list">
 <div class="thread-list"><div class="table-header"><h3>Conversations</h3><button class="btn btn-sm btn-outline" id="refreshThreads">Refresh</button></div><div id="threadList"><div class="loading-state"><div class="spinner"></div></div></div></div>
 <div class="chat-pane">
 <div class="chat-head"><div><div id="chatTitle" style="font-size:16px;font-weight:900">Select a conversation</div><div id="chatMeta" style="font-size:12px;color:var(--text3);margin-top:4px">Chats appear after a scout adds a player to their pipeline.</div></div><a id="profileLink" class="btn btn-sm btn-outline" href="#" style="display:none;text-decoration:none">View player</a></div>
@@ -150,5 +152,7 @@ function shareSelected(){
 }
 document.addEventListener('DOMContentLoaded',function(){initNav();loadThreads();loadShareOptions();document.getElementById('refreshThreads').addEventListener('click',loadThreads);document.getElementById('sendBtn').addEventListener('click',sendMessage);document.getElementById('shareType').addEventListener('change',renderShareTarget);document.getElementById('shareBtn').addEventListener('click',shareSelected);});
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

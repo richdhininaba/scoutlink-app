@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Login - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>
 :root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -203,5 +205,7 @@ function storeAndRedirect(d){
   var map={Stratex:'experience-select.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
   window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }
-</script><script src="../js/mobile.js"></script>
+</script><script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

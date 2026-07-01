@@ -1,12 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Register – ScoutLink</title>
+<title>Register â€“ ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .toggle-row{display:flex;gap:0;border:2px solid #1e2a3a;border-radius:12px;overflow:hidden;margin-bottom:28px;}
@@ -17,13 +19,13 @@
 </head>
 <body class="form-page">
 <div class="form-page-inner"><div class="form-container">
-<div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+<div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">âš¡ Scout<span style="color:#00E676">Link</span></a></div>
 <h1 class="form-title" id="regTitle">Register as Scout</h1>
 <p class="form-subtitle" id="regSubtitle">Submit your details for Stratex review. You'll hear back within 24 hours.</p>
 
 <div class="toggle-row">
-  <button class="toggle-btn active" id="btnScout" onclick="switchTab('scout')">🔍 I'm a Scout</button>
-  <button class="toggle-btn" id="btnCoach" onclick="switchTab('coach')">🏋️ I'm a Coach</button>
+  <button class="toggle-btn active" id="btnScout" onclick="switchTab('scout')">ðŸ” I'm a Scout</button>
+  <button class="toggle-btn" id="btnCoach" onclick="switchTab('coach')">ðŸ‹ï¸ I'm a Coach</button>
 </div>
 
 <div class="form-error" id="formError"></div>
@@ -136,6 +138,8 @@ async function submitCoach() {
   } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Coach Registration'; }
 }
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body>
 </html>

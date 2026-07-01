@@ -8,6 +8,7 @@
     '/register/coach': '/frontend/pages/register-coach.html',
     '/data-policy': '/frontend/pages/data-policy.html',
     '/complete-registration': '/frontend/pages/complete-registration.html',
+    '/404': '/frontend/pages/404.html',
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
     '/stratex/registrations': '/frontend/pages/stratex-registrations.html',
     '/stratex/users': '/frontend/pages/stratex-users.html',

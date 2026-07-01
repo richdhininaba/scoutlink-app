@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Experience selector - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;min-height:100vh;}
@@ -30,7 +32,7 @@ body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;m
 .demo-user-option span{display:block;font-size:11px;color:#8ea2b5;margin-top:2px;}
 .demo-user-option.active{border-color:var(--green,#00e676);box-shadow:0 0 0 1px rgba(0,230,118,.18) inset;}
 .selector-msg{min-height:20px;color:var(--text3,#8ea2b5);font-size:13px;}
-@media(max-width:768px){
+@media(max-width:767px){
   .selector-shell{padding:18px 14px 92px;}
   .selector-top{align-items:flex-start;}
   .selector-title h1{font-size:30px;}
@@ -133,5 +135,7 @@ async function load(){
 document.getElementById('logoutBtn').addEventListener('click',function(){Auth.clear();navigateClean('login.html?logout=1');});
 document.addEventListener('DOMContentLoaded',load);
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

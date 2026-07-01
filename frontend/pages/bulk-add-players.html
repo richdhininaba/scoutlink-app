@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Bulk Add Players - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
@@ -59,7 +61,7 @@ body:not(.super-user) .coach-col{display:none;}
 .form-error.show{display:block;}
 .form-success{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);color:var(--accent);padding:10px 14px;border-radius:6px;display:none;}
 .form-success.show{display:block;}
-@media(max-width:768px){
+@media(max-width:767px){
   .bulk-table th,.bulk-table td{display:table-cell!important;}
   .bulk-table{min-width:2520px;}
   .bulk-import-card{max-width:calc(100vw - 24px);}
@@ -398,5 +400,7 @@ document.addEventListener("DOMContentLoaded",function(){
   });
 });
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

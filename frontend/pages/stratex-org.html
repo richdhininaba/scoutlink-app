@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Org View - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>
 .org-board{background:#0f1620;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden}
 .org-board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.14)}
@@ -32,7 +34,7 @@
 .org-modal.open{display:flex}
 .org-modal-card{width:min(520px,100%);background:#111827;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.42)}
 .org-modal-body{padding:18px;display:grid;gap:10px}
-@media(max-width:768px){
+@media(max-width:767px){
   .org-board-head{padding:12px;display:grid}
   .org-chart{overflow:visible;padding:12px}
   .org-tree{display:block;min-width:0}
@@ -133,5 +135,7 @@ async function saveEdit(){
 }
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadOrg().catch(function(e){document.getElementById('orgTree').innerHTML='<div style="color:#EF5350">'+e.message+'</div>';});});
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

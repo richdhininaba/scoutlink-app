@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Coach dashboard - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -76,7 +78,6 @@
 
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
-<script src="../js/mobile-coach.js"></script>
 <script>
 function dispOverall(v){var n=parseFloat(v);if(isNaN(n))return '--';return (n>10?n/10:n).toFixed(1);}
 function ratingCol(pct){return pct>=80?'#1d9e75':pct>=65?'#FFC107':pct>=50?'#FF9800':'#f44336';}
@@ -95,10 +96,10 @@ var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
 var ovNum=parseFloat(p.overall_rating||0);var ovPct=ovNum>10?ovNum:ovNum*10;
 var comp=playerCompletion(p);
 var val=p.transfer_value?('\xA3'+Number(p.transfer_value).toLocaleString('en-GB',{maximumFractionDigits:0})):'Calculating';
-return '<article class="coach-mobile-player-card">'+
-'<div class="coach-mobile-player-head"><div><h4>'+escHtml(name)+'</h4><p>'+escHtml(p.age_group||'Age group TBC')+' - '+escHtml(p.specific_position||p.primary_position||'Position TBC')+'</p></div><strong style="color:'+ratingCol(ovPct)+'">'+displayOverall100(p.overall_rating)+'</strong></div>'+
-'<div class="coach-mobile-player-facts"><span><b>'+escHtml(val)+'</b><small>Value</small></span><span><b>'+escHtml(p.appearances||0)+'</b><small>Apps</small></span><span><b>'+escHtml(p.goals||0)+'</b><small>Goals</small></span></div>'+
-'<div class="coach-mobile-completion"><div><span>Profile completion</span><b>'+comp+'%</b></div><i style="width:'+comp+'%"></i></div>'+
+return '<article class="mobile-list-card">'+
+'<div class="mobile-list-head"><div><h4>'+escHtml(name)+'</h4><p>'+escHtml(p.age_group||'Age group TBC')+' - '+escHtml(p.specific_position||p.primary_position||'Position TBC')+'</p></div><strong style="color:'+ratingCol(ovPct)+'">'+displayOverall100(p.overall_rating)+'</strong></div>'+
+'<div class="mobile-fact-grid"><span><b>'+escHtml(val)+'</b><small>Value</small></span><span><b>'+escHtml(p.appearances||0)+'</b><small>Apps</small></span><span><b>'+escHtml(p.goals||0)+'</b><small>Goals</small></span></div>'+
+'<div class="mobile-progress"><div><span>Profile completion</span><b>'+comp+'%</b></div><i style="width:'+comp+'%"></i></div>'+
 '<a class="btn btn-sm btn-outline" href="player-profile.html?id='+p.id+'">View / edit profile</a>'+
 '</article>';
 }
@@ -303,5 +304,7 @@ document.getElementById('seasonSummaryModal').style.display='flex';
 }
 </script>
 <script src="../js/product-tour.js"></script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

@@ -1,14 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Player Preferences – ScoutLink</title>
+<title>Player Preferences â€“ ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head><body class="form-page">
 <div class="form-page-inner">
 <div class="form-container wide">
-  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">⚡ Scout<span style="color:#00E676">Link</span></a></div>
+  <div class="form-logo"><a href="../index.html" style="font-size:28px;font-weight:900">âš¡ Scout<span style="color:#00E676">Link</span></a></div>
   <h1 class="form-title">What kind of player are you looking for?</h1>
   <p class="form-subtitle">Set your criteria to get personalised player recommendations. You can change these at any time.</p>
   <div class="form-error" id="formError"></div>
@@ -105,5 +107,7 @@ async function savePrefs() {
   } catch(e){err.textContent=e.message;err.classList.add('show');}
 }
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

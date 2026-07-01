@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Hiring - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .hiring-grid{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:16px;align-items:start}
@@ -68,5 +70,7 @@ async function loadAdmins(){var d=await api('GET','/api/stratex/org');admins=d.a
 function renderApps(rows){var body=document.getElementById('appsBody');if(!rows.length){body.innerHTML='<tr><td colspan="6" style="color:#8ea2b5">No applications yet.</td></tr>';return;}body.innerHTML=rows.map(function(a){var job=a.job_posts||{};return '<tr class="application-row"><td><b>'+safe(a.first_name+' '+a.last_name)+'</b><br><span style="color:#8ea2b5">'+safe(a.application_ref)+'</span></td><td>'+safe(job.job_title||'')+'</td><td>'+safe(a.email)+'</td><td>'+safe(a.phone)+'</td><td>'+safe(a.submitted_at?new Date(a.submitted_at).toLocaleString('en-GB'):'')+'</td><td><button class="btn btn-sm btn-outline" data-cv="'+a.id+'">Open CV</button></td></tr>';}).join('');body.querySelectorAll('[data-cv]').forEach(function(b){b.onclick=async function(){try{var d=await api('GET','/api/stratex/job-applications/'+b.dataset.cv+'/cv-url');window.open(d.url,'_blank','noopener');}catch(e){show('err',e.message);}};});if(window.refreshMobileLayout)refreshMobileLayout();}
 async function loadApplications(){var d=await api('GET','/api/stratex/job-applications');renderApps(d.data||[]);}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();Promise.all([loadAdmins(),loadJobs(),loadApplications()]).catch(function(e){show('err',e.message);});});
-</script><script src="../js/mobile.js"></script>
+</script><script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

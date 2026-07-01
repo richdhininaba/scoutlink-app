@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player rankings - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
@@ -68,7 +70,7 @@ function initNav(){
   }
   if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
-function fmtVal(v){if(!v||v<1000)return '—';if(v>=1000000)return '£'+(v/1000000).toFixed(1)+'M';return '£'+Math.round(v/1000)+'K';}
+function fmtVal(v){if(!v||v<1000)return 'â€”';if(v>=1000000)return 'Â£'+(v/1000000).toFixed(1)+'M';return 'Â£'+Math.round(v/1000)+'K';}
 function initials(f,l){return((f||'?')[0]+(l||'?')[0]).toUpperCase();}
 function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#17a2b8',Forward:'#ff6b35'}[g]||'var(--accent)';}
 function rankBadge(i){var cls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';return '<div class="rank-badge '+cls+'">'+(i+1)+'</div>';}
@@ -116,5 +118,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('logoutBtn').addEventListener('click',logout);
 });
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

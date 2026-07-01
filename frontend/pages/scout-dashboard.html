@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Scout dashboard - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .compat-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;border:3px solid;}
@@ -136,7 +138,7 @@ function confLabel(apps){if(!apps||apps===0)return'Very Low';if(apps<=2)return'L
 
 function initNav(){
 if(!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
-// Check preferences — if not set, redirect to setup
+// Check preferences â€” if not set, redirect to setup
 if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
 var u=Auth.user,uel=document.getElementById('sidebarUser');
 if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent,#1d9e75);color:#fff">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
@@ -272,5 +274,7 @@ return '<tr>'+
 }
 </script>
 <script src="../js/product-tour.js"></script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>

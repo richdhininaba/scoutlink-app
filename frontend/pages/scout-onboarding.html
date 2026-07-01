@@ -1,7 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Scout setup - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>.wizard{max-width:840px;margin:0 auto}.wizard-step{display:none}.wizard-step.active{display:block}.pill-grid{display:flex;flex-wrap:wrap;gap:8px}.pill{border:1px solid #243447;background:#07111f;color:#cbd5e1;border-radius:999px;padding:8px 12px;cursor:pointer}.pill.active{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.08)}.progress-chip{display:inline-flex;padding:6px 10px;border:1px solid rgba(0,230,118,.35);border-radius:999px;color:#00e676;font-size:12px;font-weight:800}</style>
 </head><body><div class="dashboard"><nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main"><div class="topbar"><span class="topbar-title">Scout setup</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="finishLater()">Skip for now</button></div></div>
@@ -40,4 +42,6 @@ function nextStep(){showStep(step+1);}function prevStep(){showStep(step-1);}
 function updateSummary(){summary.innerHTML='You are set up to scout <b>'+((selected('position').join(', '))||'all priority positions')+'</b> across <b>'+(region.value||'your region')+'</b>, with a priority on <b>'+((selected('weakness').join(', '))||'team needs you select')+'</b>. Alerts: <b>'+alerts.options[alerts.selectedIndex].text+'</b>.';}
 async function saveWizard(){try{var body={teamWeaknesses:selected('weakness'),preferredPositions:selected('position'),ageGroups:selected('age'),scoutCountry:country.value,scoutRegion:region.value,alertPreference:alerts.value,setupSummary:summary.textContent};await api('POST','/api/onboarding/scout-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['feed','filters','profile','shortlist','alerts','chat']});navigateClean('player-search.html?setup=done');}catch(e){err.textContent=e.message;err.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
-</script><script src="../js/mobile.js"></script></body></html>
+</script><script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script></body></html>

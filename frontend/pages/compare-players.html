@@ -1,9 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Compare Players - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile.css">
+<link rel="stylesheet" href="../css/mobile-foundation.css">
+<link rel="stylesheet" href="../css/mobile-shell.css">
+<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -27,7 +29,7 @@
 .score-line-head{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
 .score-line-track{height:6px;background:#21262d;border-radius:999px;overflow:hidden}
 .score-line-fill{height:100%;border-radius:999px}
-@media(max-width:768px){.compare-grid{grid-template-columns:1fr}.attr-compare-row{grid-template-columns:1fr}}
+@media(max-width:767px){.compare-grid{grid-template-columns:1fr}.attr-compare-row{grid-template-columns:1fr}}
 </style>
 </head><body>
 <div class="dashboard">
@@ -388,5 +390,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('player2').addEventListener('change',updateComparison);
 });
 </script>
-<script src="../js/mobile.js"></script>
+<script src="../js/mobile-navigation.js"></script>
+<script src="../js/mobile-shell.js"></script>
+<script src="../js/mobile-page-adapters.js"></script>
 </body></html>
