@@ -174,7 +174,7 @@ function inviteCoach(){
 }
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
-  var theme=localStorage.getItem('sl_theme')||'dark';
+  var theme=localStorage.getItem('sl_theme')||'light';
   document.getElementById('darkThemeBtn').classList.toggle('active',theme!=='light');
   document.getElementById('lightThemeBtn').classList.toggle('active',theme==='light');
   document.getElementById('darkThemeBtn').addEventListener('click',function(){setTheme('dark');});

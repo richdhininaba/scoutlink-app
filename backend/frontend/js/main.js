@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 // ScoutLink Frontend v2.2 - All experiences complete
 const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
 
@@ -83,7 +83,7 @@ function applyCleanUrl() {
 }
 
 function applyTheme(theme) {
-  const next = theme === 'light' ? 'light' : 'dark';
+  const next = theme === 'dark' ? 'dark' : 'light';
   document.body.classList.toggle('theme-light', next === 'light');
   document.body.classList.toggle('theme-dark', next === 'dark');
   localStorage.setItem('sl_theme', next);
@@ -99,7 +99,7 @@ function logoutToLogin() {
 }
 
 applyCleanUrl();
-document.addEventListener('DOMContentLoaded', function(){ applyTheme(localStorage.getItem('sl_theme') || 'dark'); });
+document.addEventListener('DOMContentLoaded', function(){ applyTheme(localStorage.getItem('sl_theme') || 'light'); });
 
 // Auth
 const Auth = {
@@ -363,3 +363,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Auth.isLoggedIn()) Auth.redirectToDashboard();
   }
 });
+

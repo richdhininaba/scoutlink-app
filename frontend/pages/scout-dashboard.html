@@ -258,6 +258,25 @@ var activeStages={};var avgInterest=0;var latest=null;
 pipeData.forEach(function(row){var st=stageLabel(row.stage);activeStages[st]=(activeStages[st]||0)+1;avgInterest+=Number(row.interest_level)||0;if(!latest||new Date(row.updated_at||row.created_at)>new Date(latest.updated_at||latest.created_at))latest=row;});
 avgInterest=pipeData.length?Math.round((avgInterest/pipeData.length)*10)/10:0;
 var latestLabel=latest&&latest.players?((latest.players.first_name||'')+' '+(latest.players.last_name||'')).trim():'--';
+if(window.isScoutLinkPhone&&window.isScoutLinkPhone()){
+document.getElementById('pipelinePreview').innerHTML=
+'<div class="pipeline-summary">'+
+'<div class="pipeline-mini"><b>'+pipeData.length+'</b><span>Recent players</span></div>'+
+'<div class="pipeline-mini"><b>'+Object.keys(activeStages).length+'</b><span>Active stages</span></div>'+
+'<div class="pipeline-mini"><b>'+avgInterest+'</b><span>Avg interest</span></div>'+
+'</div>'+
+'<div class="phone-dashboard-pipeline">'+pipeData.map(function(row){
+var pl=row.players||{};
+var name=((pl.first_name||'')+' '+(pl.last_name||'')).trim()||'Player';
+return '<article class="phone-pipeline-card compact">'+
+'<div class="phone-pipeline-head"><div class="user-avatar" style="background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div><div><h4>'+name+'</h4><p><span>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</span><span>'+(pl.specific_position||pl.primary_position||'--')+'</span></p></div></div>'+
+'<div class="phone-pipeline-grid"><span><small>Stage</small><b><i class="stage-chip '+stageClass(row.stage)+'">'+stageLabel(row.stage)+'</i></b></span><span><small>Age group</small><b>'+(pl.age_group||'--')+'</b></span></div>'+
+'<a href="player-profile.html?id='+(pl.id||'')+'" class="btn btn-sm btn-outline">View</a>'+
+'</article>';
+}).join('')+'</div>'+
+'<div class="pipeline-footer"><div class="pipeline-stage-note"><b>Latest:</b> '+latestLabel+'</div><a href="scout-pipeline.html" class="btn btn-sm btn-outline">Manage pipeline</a></div>';
+return;
+}
 document.getElementById('pipelinePreview').innerHTML=
 '<div class="pipeline-summary">'+
 '<div class="pipeline-mini"><b>'+pipeData.length+'</b><span>Recent players</span></div>'+

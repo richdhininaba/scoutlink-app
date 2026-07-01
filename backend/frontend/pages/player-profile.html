@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Profile - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
@@ -519,17 +519,17 @@ if(result.birthQuarter)html+='<p style="font-size:12px;color:#8b949e;margin-top:
 }else if(predType==='positional_ceiling'){
 html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.ceiling||result.message||'Analysis complete.')+'</p>';
 if(result.reliabilityNote)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.reliabilityNote+'</p>';
-html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> â€¢ Appearances: <b>'+(result.appearances||0)+'</b></p>';
+html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> Ã¢â‚¬Â¢ Appearances: <b>'+(result.appearances||0)+'</b></p>';
 }else if(predType==='consistency_score'){
 if(result.insufficient){html+='<p style="font-size:13px;color:#FF9800">'+result.message+'</p>';}
-else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> â€¢ Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
+else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> Ã¢â‚¬Â¢ Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
 }else if(predType==='attribute_trajectory'){
 if(result.currentOverall)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current overall: <b style="color:#1d9e75">'+result.currentOverall+'</b> | Focus: <b style="color:#fff">'+(result.trainingFocus||'Balanced')+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> â€” High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> Ã¢â‚¬â€ High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
 if(result.lowConfidenceWarning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.lowConfidenceWarning+'</p>';
 }else if(predType==='value_trajectory'){
 if(result.currentValue)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current value: <b style="color:#1d9e75">'+result.currentValue+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> â€” High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> Ã¢â‚¬â€ High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
 if(result.note)html+='<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
 }else if(predType==='scenario_simulation'){
 html+='<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px;display:flex;justify-content:space-between"><span style="color:#8b949e">Baseline compatibility</span><b style="color:#fff">'+(result.baselineCompatibility||'--')+'</b></div>';
@@ -548,9 +548,21 @@ document.addEventListener('DOMContentLoaded',function(){
 initNav();
 var params=new URLSearchParams(window.location.search);
 var playerId=params.get('id');
+if(!playerId && Auth.type==='Player' && Auth.user){
+  playerId=Auth.user.playerId||Auth.user.player_id||Auth.user.linkedPlayerId||Auth.user.linked_player_id||Auth.user.id;
+}
+if(!playerId && Auth.type==='Player'){
+  try{
+    var stored=JSON.parse(localStorage.getItem('sl_user')||'{}');
+    playerId=stored.playerId||stored.player_id||stored.linkedPlayerId||stored.linked_player_id||stored.id||'';
+  }catch(_e){}
+}
 if(!playerId){
-document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">No player ID specified. <a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
-return;
+  var ownProfile=Auth.type==='Player';
+  document.getElementById('profileContent').innerHTML= ownProfile
+    ? '<div class="profile-card" style="text-align:center;padding:28px;color:var(--text3)"><h2 style="color:var(--text)">We could not link this player account yet.</h2><p style="margin-top:8px">Your account is signed in, but ScoutLink could not find the player profile attached to it. Please ask your coach or contact support.</p></div>'
+    : '<div style="text-align:center;padding:48px;color:var(--text3)">No player selected. <a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse players</a></div>';
+  return;
 }
 
 api('GET','/api/players/'+playerId).then(async function(d){
@@ -570,7 +582,7 @@ var interestsRem=typeof d.interestsRemaining==='number'?d.interestsRemaining:200
 _interestsRemaining=interestsRem;
 _alreadyInPipeline=!!pipelineStatus;
 
-document.getElementById('profileTitle').textContent=(p.first_name||'')+' '+(p.last_name||'');
+document.getElementById('profileTitle').textContent=Auth.type==='Player'?'My Profile':((p.first_name||'')+' '+(p.last_name||''));
 
 // Age out warning
 var ageOutBanner='';
@@ -849,4 +861,5 @@ console.error('[PlayerProfile]',e);
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 

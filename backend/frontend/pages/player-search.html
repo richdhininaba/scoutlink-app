@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Database - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
@@ -129,6 +129,7 @@ function formatValue(v){if(!v||v<1000)return '-';if(v>=1000000)return (''+Math.r
 function initials(f,l){return ((f||'')[0]||(l||'')[0]||'?').toUpperCase()+((l||'')[0]||'').toUpperCase();}
 function sentenceCase(v){return String(v||'--').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function locationText(p){return p.team_city||p.city||p.location||'--';}
+function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
 var viewMode='table',currentPage=1,debounceTimer;
 
@@ -177,6 +178,30 @@ function loadLocations(){
 }
 </script><script>
 function renderResults(players,total,page){
+  if(window.isScoutLinkPhone && window.isScoutLinkPhone() && viewMode==='table'){
+    var list='<div class="phone-list-results">';
+    players.forEach(function(p){
+      var ov=dispOverall(p.overall_rating);
+      var ovNum=parseFloat(p.overall_rating||0);
+      var ovPct=ovNum>10?ovNum:ovNum*10;
+      var pCol=posColor(p.position_group);
+      var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
+      var pos=p.specific_position||p.primary_position||'--';
+      var age=p.age||'--';
+      var comp=Math.round(p.compatibilityScore||0);
+      list+='<article class="phone-list-row">'+
+        '<div class="phone-player-avatar" style="background:'+pCol+';color:'+(pCol==='#FFC107'?'#111827':'#fff')+'">'+h(initials(p.first_name,p.last_name))+'</div>'+
+        '<div class="phone-list-main"><h4>'+h(name)+'</h4><p>'+h(pos)+' - '+h(age)+' yrs - '+h(locationText(p))+'</p></div>'+
+        '<div class="phone-list-score" style="color:'+attrColor(ovPct)+'">'+h(ov)+'</div>'+
+        '<div class="phone-list-meta"><small>Compatibility '+comp+'% - '+h(formatValue(p.transfer_value||0))+' - '+h(p.team_name||'Free Agent')+'</small><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View profile</a></div>'+
+      '</article>';
+    });
+    list+='</div>';
+    document.getElementById('resultsContainer').innerHTML=list;
+    var totalPages=Math.ceil(total/18);
+    document.getElementById('pagination').innerHTML=totalPages>1?Array.from({length:Math.min(totalPages,10)},function(_,i){return '<button class="btn btn-sm '+(i+1===page?'btn-primary':'btn-ghost')+'" data-page="'+(i+1)+'">'+(i+1)+'</button>';}).join(''):'';
+    return;
+  }
   if(viewMode==='cards'){
     var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">';
     players.forEach(function(p){
@@ -247,8 +272,7 @@ function renderResults(players,total,page){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  initNav();
-  if(window.matchMedia&&window.matchMedia('(max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px))').matches){viewMode='cards';document.getElementById('tabCards').className='btn btn-sm active-tab';document.getElementById('tabTable').className='btn btn-sm btn-ghost';}
+  initNav();  if(window.matchMedia&&window.matchMedia('(max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px))').matches){viewMode='table';document.getElementById('tabTable').className='btn btn-sm active-tab';document.getElementById('tabCards').className='btn btn-sm btn-ghost';}
   loadLocations();loadPlayers(1);
   document.getElementById('notifToggle').addEventListener('click',toggleNotifPanel);
   document.getElementById('closeNotifBtn').addEventListener('click',toggleNotifPanel);
@@ -281,3 +305,4 @@ document.addEventListener('DOMContentLoaded',function(){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+

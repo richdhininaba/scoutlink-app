@@ -312,6 +312,17 @@
     if (!searchFilters || searchFilters.dataset.phoneFilters === '1') return;
     searchFilters.dataset.phoneFilters = '1';
     searchFilters.classList.add('phone-filter-block');
+    if (routeKey() === 'player-search' && !searchFilters.querySelector('.phone-filter-toggle')) {
+      var toggle = document.createElement('button');
+      toggle.className = 'phone-filter-toggle btn btn-outline';
+      toggle.type = 'button';
+      toggle.textContent = 'Filters';
+      toggle.addEventListener('click', function () {
+        searchFilters.classList.toggle('phone-filters-open');
+        toggle.textContent = searchFilters.classList.contains('phone-filters-open') ? 'Hide filters' : 'Filters';
+      });
+      searchFilters.insertBefore(toggle, searchFilters.firstElementChild);
+    }
   }
 
   function setupPlayerOptions() {
@@ -327,7 +338,7 @@
       '<a href="player-profile.html"><b>View my profile</b><span>Profile and evidence</span></a>' +
       '<a href="player-video-reels.html"><b>Add video reel</b><span>Your own clips</span></a>' +
       '<a href="player-profile.html#fixtureSection"><b>Fixtures</b><span>Upcoming games</span></a>' +
-      '<a href="player-profile.html#matchSection"><b>Match stats</b><span>Recent facts</span></a>' +
+
       '<a href="player-notifications.html"><b>Notifications</b><span>Interest and updates</span></a>' +
       '<a href="player-settings.html"><b>Settings</b><span>Account and support</span></a>';
     content.insertBefore(box, content.firstChild);
@@ -444,3 +455,4 @@
   });
   window.addEventListener('resize', refresh);
 })();
+

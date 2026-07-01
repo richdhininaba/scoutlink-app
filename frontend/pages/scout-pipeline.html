@@ -156,7 +156,8 @@ document.addEventListener('DOMContentLoaded',function(){
       grouped[s].push(r);
     });
 
-    var html='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Estimated value</th><th>Stage</th><th>Move to stage</th><th>Coach</th><th>Added</th><th></th></tr></thead><tbody>';
+    var isPhoneView=window.isScoutLinkPhone&&window.isScoutLinkPhone();
+    var html=isPhoneView?'<div class="phone-pipeline-cards">':'<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Position</th><th>Overall</th><th>Estimated value</th><th>Stage</th><th>Move to stage</th><th>Coach</th><th>Added</th><th></th></tr></thead><tbody>';
 
     stages.forEach(function(stage){
       var stageRows=grouped[stage]||[];
@@ -170,6 +171,30 @@ document.addEventListener('DOMContentLoaded',function(){
         var tv=fmtVal(p.transfer_value);
         var tvDisp=tv||'Calculating';
         var tvColor=tv?'#1d9e75':'#8b949e';
+        if(isPhoneView){
+          var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
+          var stageNow=(r.stage||'watching').toLowerCase().replace(/ /g,'_');
+          html+='<article class="phone-pipeline-card">'+
+            '<div class="phone-pipeline-head"><div class="user-avatar">'+initials(p.first_name,p.last_name)+'</div><div><h4>'+name+'</h4><p><span>'+(p.age_group||'Age TBC')+'</span><span>'+(p.team_name||'Team TBC')+'</span></p></div></div>'+
+            '<div class="phone-pipeline-grid">'+
+              '<span><small>Position</small><b>'+((p.specific_position||p.primary_position||'--'))+'</b></span>'+
+              '<span><small>Overall</small><b style="color:'+compatColor(ovP)+'">'+ov+'</b></span>'+
+              '<span><small>Estimated value</small><b>'+tvDisp+'</b></span>'+
+              '<span><small>Added</small><b>'+(r.created_at?r.created_at.slice(0,10):'--')+'</b></span>'+
+            '</div>'+
+            '<label class="phone-stage-label">Move to stage<select class="stage-select" data-pipeline-id="'+rid+'" data-badge-id="mobile-stage-badge-'+rid+'">'+
+              '<option value="watching"'+(stageNow==='watching'?' selected':'')+'>Watching</option>'+
+              '<option value="interested"'+(stageNow==='interested'?' selected':'')+'>Interested</option>'+
+              '<option value="shortlisted"'+(stageNow==='shortlisted'?' selected':'')+'>Shortlisted</option>'+
+              '<option value="trial_pending"'+(stageNow==='trial_pending'?' selected':'')+'>Trial pending</option>'+
+              '<option value="approached"'+(stageNow==='approached'?' selected':'')+'>Approached</option>'+
+              '<option value="negotiating"'+(stageNow==='negotiating'?' selected':'')+'>Negotiating</option>'+
+            '</select></label>'+
+            '<span class="stage-chip '+stageClass(stageNow)+'" id="mobile-stage-badge-'+rid+'" data-stage="'+stageNow+'">'+stageNow.replace(/_/g,' ')+'</span>'+
+            '<div class="phone-pipeline-actions"><button class="btn btn-outline" data-chat-player="'+pid+'">Message coach</button><a href="player-profile.html?id='+pid+'" class="btn btn-primary">View</a></div>'+
+          '</article>';
+          return;
+        }
         html+='<tr>' +
           '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:32px;height:32px;font-size:11px">'+initials(p.first_name,p.last_name)+'</div><div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b><div style="font-size:11px;color:var(--text3)">'+(p.age_group||((p.age||'')+'yrs')||'--')+'</div></div></div></td>'+
           '<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
@@ -192,37 +217,7 @@ document.addEventListener('DOMContentLoaded',function(){
       });
     });
 
-    html+='</tbody></table></div>';
-    if(window.isScoutLinkPhone&&window.isScoutLinkPhone()){
-      html+='<div class="phone-pipeline-cards">'+rows.map(function(r){
-        var p=r.players||{};
-        var pid=p.id||'';
-        var rid=r.id||'';
-        var stage=(r.stage||'watching').toLowerCase().replace(/ /g,'_');
-        var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
-        var pos=p.specific_position||p.primary_position||'--';
-        var ov=dispOv(p.overall_rating);
-        var ovN=parseFloat(p.overall_rating||0);var ovP=ovN>10?ovN:ovN*10;
-        var tv=fmtVal(p.transfer_value)||'Calculating';
-        return '<article class="phone-pipeline-card">'+
-          '<div class="phone-pipeline-head"><div class="user-avatar">'+initials(p.first_name,p.last_name)+'</div><div><h4>'+name+'</h4><p><span>'+((p.age_group||'Age TBC'))+'</span><span>'+pos+'</span></p></div></div>'+
-          '<div class="phone-pipeline-grid">'+
-          '<span><small>Overall</small><b style="color:'+compatColor(ovP)+'">'+ov+'</b></span>'+
-          '<span><small>Estimated value</small><b>'+tv+'</b></span>'+
-          '<span><small>Stage</small><b><i class="stage-chip '+stageClass(stage)+'" id="mobile-stage-badge-'+rid+'" data-stage="'+stage+'">'+stage.replace(/_/g,' ')+'</i></b></span>'+
-          '<span><small>Added</small><b>'+(r.created_at?r.created_at.slice(0,10):'--')+'</b></span>'+
-          '</div>'+
-          '<label class="phone-stage-label">Move to stage<select class="stage-select" data-pipeline-id="'+rid+'" data-badge-id="mobile-stage-badge-'+rid+'">'+
-          '<option value="watching"'+(stage==='watching'?' selected':'')+'>Watching</option>'+
-          '<option value="interested"'+(stage==='interested'?' selected':'')+'>Interested</option>'+
-          '<option value="trial_pending"'+(stage==='trial_pending'?' selected':'')+'>Trial pending</option>'+
-          '<option value="approached"'+(stage==='approached'?' selected':'')+'>Approached</option>'+
-          '<option value="negotiating"'+(stage==='negotiating'?' selected':'')+'>Negotiating</option>'+
-          '</select></label>'+
-          '<div class="phone-pipeline-actions"><button class="btn btn-outline" data-chat-player="'+pid+'">Message coach</button><a href="player-profile.html?id='+pid+'" class="btn btn-primary">View</a></div>'+
-          '</article>';
-      }).join('')+'</div>';
-    }
+    html+=isPhoneView?'</div>':'</tbody></table></div>';
     document.getElementById('pipelineContent').innerHTML=html;
     document.querySelectorAll('.stage-select').forEach(function(sel){
       sel.addEventListener('change',function(){

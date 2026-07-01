@@ -54,7 +54,7 @@
     if (!tours[r]) return false;
     var qs = new URLSearchParams(window.location.search);
     if (sessionStorage.getItem('sl_force_tour_' + r) === '1') return true;
-    return qs.get('tour') === '1' || (!localStorage.getItem(seenKey()) && !sessionStorage.getItem(key('dismissed')) && !sessionStorage.getItem(legacyKey('skipped')));
+    return qs.get('tour') === '1';
   }
   async function saveTourStatus(status){
     var r = role();
@@ -120,6 +120,13 @@
     var saved = parseInt(sessionStorage.getItem(key('index')) || '0', 10);
     if (!Number.isNaN(saved) && saved >= 0 && saved < steps.length) index = saved;
     var step = steps[index];
+    if (!step || !step.route) {
+      sessionStorage.removeItem(key('index'));
+      sessionStorage.removeItem('sl_force_tour_' + r);
+      index = 0;
+      step = steps[index];
+      if (!step || !step.route) return;
+    }
     if (goToStepRoute(step)) return;
     var token = ++renderToken;
     ensureStyles();

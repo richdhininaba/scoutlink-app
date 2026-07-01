@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 (function () {
   function item(label, href, icon) {
@@ -8,9 +8,7 @@
   var coach = [
     item('Dashboard', 'coach-dashboard.html', 'grid'),
     item('My players', 'coach-my-players.html', 'user'),
-    item('Add player', 'add-player.html', 'plus'),
-    item('Bulk import', 'bulk-add-players.html', 'upload'),
-    item('Match facts', 'match-facts.html', 'clipboard'),
+    item('Add player', 'add-player.html', 'plus'),    item('Match facts', 'match-facts.html', 'clipboard'),
     item('Fixtures', 'coach-fixtures.html', 'calendar'),
     item('Video reels', 'coach-video-reels.html', 'video'),
     item('Chat', 'coach-chat.html', 'message'),
@@ -70,3 +68,4 @@
     Stratex: stratex
   };
 })();
+

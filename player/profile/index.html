@@ -549,9 +549,21 @@ document.addEventListener('DOMContentLoaded',function(){
 initNav();
 var params=new URLSearchParams(window.location.search);
 var playerId=params.get('id');
+if(!playerId && Auth.type==='Player' && Auth.user){
+  playerId=Auth.user.playerId||Auth.user.player_id||Auth.user.linkedPlayerId||Auth.user.linked_player_id||Auth.user.id;
+}
+if(!playerId && Auth.type==='Player'){
+  try{
+    var stored=JSON.parse(localStorage.getItem('sl_user')||'{}');
+    playerId=stored.playerId||stored.player_id||stored.linkedPlayerId||stored.linked_player_id||stored.id||'';
+  }catch(_e){}
+}
 if(!playerId){
-document.getElementById('profileContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text3)">No player ID specified. <a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse Players</a></div>';
-return;
+  var ownProfile=Auth.type==='Player';
+  document.getElementById('profileContent').innerHTML= ownProfile
+    ? '<div class="profile-card" style="text-align:center;padding:28px;color:var(--text3)"><h2 style="color:var(--text)">We could not link this player account yet.</h2><p style="margin-top:8px">Your account is signed in, but ScoutLink could not find the player profile attached to it. Please ask your coach or contact support.</p></div>'
+    : '<div style="text-align:center;padding:48px;color:var(--text3)">No player selected. <a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-block">Browse players</a></div>';
+  return;
 }
 
 api('GET','/api/players/'+playerId).then(async function(d){
@@ -571,7 +583,7 @@ var interestsRem=typeof d.interestsRemaining==='number'?d.interestsRemaining:200
 _interestsRemaining=interestsRem;
 _alreadyInPipeline=!!pipelineStatus;
 
-document.getElementById('profileTitle').textContent=(p.first_name||'')+' '+(p.last_name||'');
+document.getElementById('profileTitle').textContent=Auth.type==='Player'?'My Profile':((p.first_name||'')+' '+(p.last_name||''));
 
 // Age out warning
 var ageOutBanner='';
@@ -850,5 +862,6 @@ console.error('[PlayerProfile]',e);
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 
 

@@ -800,11 +800,11 @@ function updateEventsLog(){
   if(!state.events.length){el.textContent='No events yet';return;}
   el.innerHTML=state.events.map(function(e){
     var min=(e.minute||0)+'min';
-    if(e.type==='goal') return '<div style="padding:3px 0">&#9917; '+min+' Goal ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ '+playerName(e.playerId)+'</div>';
-    if(e.type==='assist') return '<div style="padding:3px 0">&#128314; '+min+' Assist ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ '+playerName(e.playerId)+'</div>';
-    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">&#9646; '+min+' Yellow card ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ '+playerName(e.playerId)+'</div>';
-    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">&#9646; '+min+' Red card ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ '+playerName(e.playerId)+'</div>';
-    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">&#8645; '+min+' Sub ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
+    if(e.type==='goal') return '<div style="padding:3px 0">Goal - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='assist') return '<div style="padding:3px 0">Assist - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">Yellow card - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">Red card - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">Sub - '+min+' - '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
     return '';
   }).join('');
 }
@@ -1000,8 +1000,8 @@ function renderStep5(){
       var m=e.minute!==undefined?e.minute+'min ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ ':'';
       m=e.minute!==undefined?e.minute+'min - ':'';
       if(e.type==='goal'){var assister=e.assist?playerName(e.assist):'';return '<div style="font-size:12px;padding:3px 0">&#9917; '+m+playerName(e.playerId)+(assister?' (assist: '+assister+')':'')+'</div>';}
-      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">&#9646; '+m+playerName(e.playerId)+' ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ Yellow card</div>';
-      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">&#9646; '+m+playerName(e.playerId)+' ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ Red card</div>';
+      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">Yellow card - '+m+playerName(e.playerId)+'</div>';
+      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">Red card - '+m+playerName(e.playerId)+'</div>';
       if(e.type==='substitution') return '<div style="font-size:12px;padding:3px 0;color:#42A5F5">&#8645; '+m+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
       return '';
     }).join('').replace(/\u00c3[^<]*Yellow card/g,' - Yellow card').replace(/\u00c3[^<]*Red card/g,' - Red card')+'</div>';

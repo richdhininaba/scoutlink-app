@@ -329,8 +329,9 @@ function updateComparison(){
   var html='';
 
   if(p1||p2){
-    html+='<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Player comparison</h3><div style="font-size:12px;color:#8b949e">Select both players to compare side by side</div></div><div style="padding:16px">'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    var phone=window.isScoutLinkPhone&&window.isScoutLinkPhone();
+    html+='<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Player comparison</h3><div style="font-size:12px;color:#8b949e">'+(phone?'Stacked mobile comparison':'Select both players to compare side by side')+'</div></div><div style="padding:16px">'+
+      '<div class="'+(phone?'phone-compare-stack':'')+'" style="display:grid;grid-template-columns:'+(phone?'1fr':'1fr 1fr')+';gap:16px;max-width:100%">';
     html+=p1?renderSinglePanel(p1,'left',p2):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the left dropdown</div>';
     html+=p2?renderSinglePanel(p2,'right',p1):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the right dropdown</div>';
     html+='</div></div></div>';

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Match facts - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
@@ -93,7 +93,7 @@
 <script src="../js/main.js"></script>
 <script>
 /* =====================================================================
-   MATCH FACTS ÃƒÂ¢Ã‚Â€Ã‚Â” LIVE FORMATION PITCH + POST-GAME MODE
+   MATCH FACTS ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ LIVE FORMATION PITCH + POST-GAME MODE
    ===================================================================== */
 'use strict';
 
@@ -121,7 +121,7 @@ var state = {
 var myPlayers = [];
 var currentStep = 1;
 
-// ---- Formation definitions ÃƒÂ¢Ã‚Â€Ã‚Â” slot positions as % top, % left ----
+// ---- Formation definitions ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ slot positions as % top, % left ----
 // Pitch orientation: GK at bottom (high top %), forwards at top (low top %)
 // For 11-a-side, 9, 7, 5
 var FORMATION_SLOTS = {
@@ -319,7 +319,7 @@ function applySelectedFixture(id){
 }
 
 /* =====================================================================
-   STEP 1 ÃƒÂ¢Ã‚Â€Ã‚Â” MODE AND SETUP
+   STEP 1 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ MODE AND SETUP
    ===================================================================== */
 function renderStep1(){
   setStep(1);
@@ -388,7 +388,7 @@ function renderStep1(){
   if(!state.matchDate) document.getElementById('mfDate').value=new Date().toISOString().split('T')[0];
 }
 /* =====================================================================
-   STEP 2 ÃƒÂ¢Ã‚Â€Ã‚Â” FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
+   STEP 2 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
    ===================================================================== */
 function goToStep2(){
   state.fixtureId=document.getElementById('mfFixture').value||null;
@@ -587,7 +587,7 @@ function updateAssignStatus(slots){
   if(nextBtn) nextBtn.disabled=!allDone;
 }
 /* =====================================================================
-   STEP 3 ÃƒÂ¢Ã‚Â€Ã‚Â” LIVE MATCH WITH TIMER AND PITCH
+   STEP 3 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ LIVE MATCH WITH TIMER AND PITCH
    ===================================================================== */
 function renderStep3Live(){
   setStep(3);
@@ -799,16 +799,16 @@ function updateEventsLog(){
   if(!state.events.length){el.textContent='No events yet';return;}
   el.innerHTML=state.events.map(function(e){
     var min=(e.minute||0)+'min';
-    if(e.type==='goal') return '<div style="padding:3px 0">&#9917; '+min+' Goal ÃƒÂ¢Ã‚Â€Ã‚Â” '+playerName(e.playerId)+'</div>';
-    if(e.type==='assist') return '<div style="padding:3px 0">&#128314; '+min+' Assist ÃƒÂ¢Ã‚Â€Ã‚Â” '+playerName(e.playerId)+'</div>';
-    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">&#9646; '+min+' Yellow card ÃƒÂ¢Ã‚Â€Ã‚Â” '+playerName(e.playerId)+'</div>';
-    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">&#9646; '+min+' Red card ÃƒÂ¢Ã‚Â€Ã‚Â” '+playerName(e.playerId)+'</div>';
-    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">&#8645; '+min+' Sub ÃƒÂ¢Ã‚Â€Ã‚Â” '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
+    if(e.type==='goal') return '<div style="padding:3px 0">Goal - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='assist') return '<div style="padding:3px 0">Assist - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='yellow_card') return '<div style="padding:3px 0;color:#FFC107">Yellow card - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='red_card') return '<div style="padding:3px 0;color:#f44336">Red card - '+min+' - '+playerName(e.playerId)+'</div>';
+    if(e.type==='substitution') return '<div style="padding:3px 0;color:#42A5F5">Sub - '+min+' - '+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
     return '';
   }).join('');
 }
 /* =====================================================================
-   POST-GAME MODE ÃƒÂ¢Ã‚Â€Ã‚Â” STEP 2 (EVENTS)
+   POST-GAME MODE ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ STEP 2 (EVENTS)
    ===================================================================== */
 function renderStep2Post(){
   setStep(2);
@@ -897,7 +897,7 @@ function goToStep3Post(){
 }
 
 /* =====================================================================
-   STEP 4 ÃƒÂ¢Ã‚Â€Ã‚Â” PLAYER RATINGS
+   STEP 4 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ PLAYER RATINGS
    ===================================================================== */
 function renderStep4(){
   setStep(4);
@@ -996,11 +996,11 @@ function renderStep5(){
        ...state.redCards.map(function(id){return {type:'red_card',playerId:id};})];;
     evtSummary='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em">Events</div>'+
     evts.map(function(e){
-      var m=e.minute!==undefined?e.minute+'min ÃƒÂ¢Ã‚Â€Ã‚Â” ':'';
+      var m=e.minute!==undefined?e.minute+'min ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ ':'';
       m=e.minute!==undefined?e.minute+'min - ':'';
       if(e.type==='goal'){var assister=e.assist?playerName(e.assist):'';return '<div style="font-size:12px;padding:3px 0">&#9917; '+m+playerName(e.playerId)+(assister?' (assist: '+assister+')':'')+'</div>';}
-      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">&#9646; '+m+playerName(e.playerId)+' ÃƒÂ¢Ã‚Â€Ã‚Â” Yellow card</div>';
-      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">&#9646; '+m+playerName(e.playerId)+' ÃƒÂ¢Ã‚Â€Ã‚Â” Red card</div>';
+      if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">Yellow card - '+m+playerName(e.playerId)+'</div>';
+      if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">Red card - '+m+playerName(e.playerId)+'</div>';
       if(e.type==='substitution') return '<div style="font-size:12px;padding:3px 0;color:#42A5F5">&#8645; '+m+playerName(e.playerOffId)+' OFF / '+playerName(e.playerOnId)+' ON</div>';
       return '';
     }).join('').replace(/\u00c3[^<]*Yellow card/g,' - Yellow card').replace(/\u00c3[^<]*Red card/g,' - Red card')+'</div>';

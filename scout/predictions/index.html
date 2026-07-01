@@ -82,6 +82,7 @@ function initNav(){
 }
 function dispOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
 function fmtDate(str){if(!str)return '--';var d=new Date(str);var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function predictionSummary(result){
   result=result||{};
   if(result.summary)return result.summary;
@@ -136,6 +137,24 @@ function loadPredictions(){
 
     if(!preds.length){
       document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
+      return;
+    }
+
+    if(window.isScoutLinkPhone&&window.isScoutLinkPhone()){
+      document.getElementById('predList').innerHTML='<div class="phone-prediction-cards">'+preds.map(function(pred){
+        var pl=pred.players||{};
+        var result=pred.result||{};
+        var summary=predictionSummary(result);
+        return '<article class="phone-prediction-card">'+
+          '<h4>'+esc((pl.first_name||'Unknown')+' '+(pl.last_name||''))+'</h4>'+
+          '<div class="phone-prediction-row"><span>Team</span><b>'+esc(pl.team_name||'--')+'</b></div>'+
+          '<div class="phone-prediction-row"><span>Position</span><b>'+esc(pl.position_group||'--')+'</b></div>'+
+          '<div class="phone-prediction-row"><span>Prediction type</span><b>'+esc(pred.prediction_type||'Prediction')+'</b></div>'+
+          '<div class="phone-prediction-row"><span>Date run</span><b>'+esc(fmtDate(pred.run_at||pred.created_at))+'</b></div>'+
+          '<p class="phone-prediction-summary">'+esc(summary)+'</p>'+
+          '<a href="player-profile.html?id='+encodeURIComponent(pred.player_id||'')+'" class="btn btn-sm btn-outline">View player</a>'+
+        '</article>';
+      }).join('')+'</div>';
       return;
     }
 
