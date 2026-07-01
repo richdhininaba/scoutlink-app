@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+<base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Predictions - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
+.btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+.btn-sm{padding:6px 12px;font-size:13px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:900;color:var(--text);}
+.kpi-value.green{color:var(--accent);}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.sl-table{width:100%;border-collapse:collapse;}
+.sl-table th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);border-bottom:1px solid var(--border);}
+.sl-table td{padding:12px;border-bottom:1px solid var(--border);font-size:14px;}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent)">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+  <span class="topbar-title">Predictions</span>
+  <div class="topbar-right">
+    <button class="notif-btn" id="notifToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign Out</button>
+  </div>
+</div>
+<div class="page-content">
+<div id="predSummary" class="kpi-grid" style="margin-bottom:20px">
+  <div class="kpi-card"><div class="kpi-label">Predictions Remaining</div><div class="kpi-value green" id="kpiRemaining">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Plan Limit</div><div class="kpi-value" id="kpiLimit">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Current Plan</div><div class="kpi-value" id="kpiPlan" style="font-size:20px">-</div></div>
+  <div class="kpi-card"><div class="kpi-label">Total Run</div><div class="kpi-value" id="kpiRun">-</div></div>
+</div>
+<div class="table-card">
+  <div class="table-header">
+    <div><h3 style="font-size:16px;font-weight:700">Prediction History</h3><p style="font-size:12px;color:var(--text-secondary);margin-top:2px">All predictions you have run</p></div>
+    <a href="player-search.html" class="btn btn-sm btn-outline" style="text-decoration:none">Find Players</a>
+  </div>
+  <div id="predList"><div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Loading predictions...</span></div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button id="closeNotifBtn" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">x</button></div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
+function logout(){logoutToLogin();}
+function initNav(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
+  if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u){
+    var ini=(u.firstName||'?')[0]+(u.lastName||'?')[0];
+    uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">'+ini.toUpperCase()+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role" style="color:var(--text-secondary);font-size:12px">Scout</div></div></div>';
+  }
+  if(typeof updateNotifBadge==='function')updateNotifBadge();
+}
+function dispOv(v){var n=parseFloat(v);return isNaN(n)?'--':(n>10?n/10:n).toFixed(1);}
+function fmtDate(str){if(!str)return '--';var d=new Date(str);var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();}
+function predictionSummary(result){
+  result=result||{};
+  if(result.summary)return result.summary;
+  if(result.paragraphs&&result.paragraphs.length)return result.paragraphs.slice(0,2).join(' ');
+  if(result.projection&&result.projection.length){
+    var last=result.projection[result.projection.length-1];
+    return 'The five-year view finishes at '+(last.projectedValueFormatted||'a projected value')+' with a projected ROI of '+(last.roiPercent||0)+'%.';
+  }
+  if(result.scenario)return 'The match scenario was '+result.scenario+'. '+(result.recommendation||'Review the player profile for the full prediction.');
+  return result.recommendation||result.suitability||result.focus||'Saved prediction';
+}
+
+function showEmpty(){
+  document.getElementById('kpiRemaining').textContent='--';
+  document.getElementById('kpiLimit').textContent='--';
+  document.getElementById('kpiPlan').textContent='Core';
+  document.getElementById('kpiRun').textContent='0';
+  document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><div style="font-size:40px;margin-bottom:12px">&#128202;</div><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
+}
+
+function loadPredictions(){
+  if(typeof api!=='function')return;
+  api('GET','/api/predictions').then(function(d){
+    var preds=d.data||[];
+    var remaining=d.remaining!==undefined?d.remaining:null;
+    var planLimit=d.planLimit||120;
+    var plan=d.plan||'Core';
+
+    var dispRemaining=remaining!==null?(planLimit>=99999?'Unlimited':remaining):'--';
+    var dispLimit=planLimit>=99999?'Unlimited':planLimit;
+    document.getElementById('kpiRemaining').textContent=dispRemaining;
+    document.getElementById('kpiLimit').textContent=dispLimit;
+    document.getElementById('kpiPlan').textContent=String(plan).toUpperCase();
+    document.getElementById('kpiRun').textContent=d.teamUsed!=null?d.teamUsed:preds.length;
+
+    // Usage bar
+    if(remaining!==null && plan!=='Elite'){
+      var used=planLimit-remaining;
+      var pct=Math.round((used/planLimit)*100);
+      var barColor=remaining<10?'#f85149':remaining<30?'#FF9800':'var(--accent)';
+      document.getElementById('predSummary').insertAdjacentHTML('afterend',
+        '<div style="margin-bottom:20px;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:10px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px"><span>Predictions used</span><span style="font-weight:700;color:var(--text)">'+used+' / '+planLimit+'</span></div><div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+barColor+';border-radius:4px;transition:width .4s"></div></div></div>'
+      );
+    }
+
+    // Zero credits banner
+    if(remaining===0 && plan!=='Elite'){
+      document.getElementById('predSummary').insertAdjacentHTML('afterend',
+        '<div style="margin-bottom:20px;padding:16px 18px;background:rgba(255,152,0,.1);border:1px solid #FF9800;border-radius:10px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">&#9888;</span><div><div style="font-weight:700;color:#FF9800;margin-bottom:2px">All prediction credits used</div><div style="font-size:13px;color:#E2E8F0">You have used all your prediction credits for this plan. Contact us to upgrade.</div></div></div>'
+      );
+    }
+
+    if(!preds.length){
+      document.getElementById('predList').innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text-secondary)"><h3 style="margin-bottom:8px">No predictions yet</h3><p style="font-size:13px">Go to a player profile to run your first prediction.</p><a href="player-search.html" class="btn btn-primary" style="margin-top:14px;display:inline-flex;text-decoration:none">Browse players</a></div>';
+      return;
+    }
+
+    document.getElementById('predList').innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>Prediction type</th><th>Date run</th><th>Result summary</th><th></th></tr></thead><tbody>'+
+      preds.map(function(pred){
+        var pl=pred.players||{};
+        var result=pred.result||{};
+        var summary=predictionSummary(result);
+        return '<tr>'+
+          '<td><b>'+(pl.first_name||'Unknown')+' '+(pl.last_name||'')+'</b></td>'+
+          '<td style="color:var(--text-secondary);font-size:12px">'+(pl.team_name||'--')+'</td>'+
+          '<td><span style="font-size:11px;padding:2px 8px;background:rgba(23,162,186,.12);color:#17a2b8;border-radius:4px">'+(pl.position_group||'--')+'</span></td>'+
+          '<td style="font-size:12px;color:var(--text-secondary)">'+(pred.prediction_type||'Prediction')+'</td>'+
+          '<td style="color:var(--text-secondary);font-size:12px">'+fmtDate(pred.run_at||pred.created_at)+'</td>'+
+          '<td style="font-size:12px;color:var(--text-secondary);max-width:360px">'+summary+'</td>'+
+          '<td><a href="player-profile.html?id='+pred.player_id+'" class="btn btn-sm btn-outline" style="text-decoration:none">View player</a></td>'+
+          '</tr>';
+      }).join('')+'</tbody></table></div>';
+  }).catch(function(){showEmpty();});
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();loadPredictions();
+  document.getElementById('notifToggle').addEventListener('click',toggleNotifPanel);
+  document.getElementById('closeNotifBtn').addEventListener('click',toggleNotifPanel);
+  document.getElementById('logoutBtn').addEventListener('click',logout);
+});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
+

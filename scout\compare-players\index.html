@@ -1,0 +1,402 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head>
+<base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Compare Players - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.compare-card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px}
+.attr-compare-row{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center;gap:8px;margin-bottom:8px}
+.attr-bar-left{height:8px;border-radius:4px;margin-left:auto}
+.attr-bar-right{height:8px;border-radius:4px}
+.player-select{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#ffffff;font-size:14px;font-family:inherit;outline:none;width:100%}
+.player-select:focus{border-color:#1d9e75}
+.big-stat{font-size:48px;font-weight:900;line-height:1;text-align:center}
+.stat-label{font-size:11px;color:#8b949e;text-align:center;text-transform:uppercase;letter-spacing:.04em;margin-top:4px}
+.rec-row{padding:12px;background:#0d1117;border-radius:8px;margin-bottom:8px;font-size:13px;color:#8b949e;line-height:1.5}
+.rec-row strong{color:#ffffff}
+.filter-btn{padding:5px 12px;border-radius:6px;border:1px solid #30363d;font-size:12px;font-weight:700;cursor:pointer;background:#0d1117;color:#8b949e;transition:all .2s}
+.filter-btn.active{border-color:#1d9e75;background:rgba(29,158,117,.1);color:#1d9e75}
+.mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.mini-metric{background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:10px}
+.mini-metric span{display:block;font-size:9px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800;margin-bottom:5px}
+.mini-metric b{font-size:16px}
+.score-line{margin-bottom:8px}
+.score-line-head{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.score-line-track{height:6px;background:#21262d;border-radius:999px;overflow:hidden}
+.score-line-fill{height:100%;border-radius:999px}
+@media(max-width:767px){.compare-grid{grid-template-columns:1fr}.attr-compare-row{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Compare Players</span>
+<div class="topbar-right">
+<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
+</div>
+</div>
+<div class="page-content">
+
+<!-- Player selectors -->
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Select Two Players to Compare</h3></div>
+<div style="padding:16px">
+<div class="compare-grid">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em">Player 1</label>
+<div style="display:flex;gap:6px">
+<button class="filter-btn active" id="f1All">All Players</button>
+<button class="filter-btn" id="f1Pipeline">Pipeline Only</button>
+</div>
+</div>
+<input type="text" id="search1" placeholder="Search by name..." class="player-select" style="margin-bottom:8px">
+<select id="player1" class="player-select" size="1"><option value="">Select player...</option></select>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+<label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em">Player 2</label>
+<div style="display:flex;gap:6px">
+<button class="filter-btn active" id="f2All">All Players</button>
+<button class="filter-btn" id="f2Pipeline">Pipeline Only</button>
+</div>
+</div>
+<input type="text" id="search2" placeholder="Search by name..." class="player-select" style="margin-bottom:8px">
+<select id="player2" class="player-select" size="1"><option value="">Select player...</option></select>
+</div>
+</div>
+</div>
+</div>
+
+<div id="compareResult"></div>
+
+</div>
+</div>
+</div>
+
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+var _allPlayers=[], _pipelineIds=[], _scoutTeam=null,_scoutPrefs={};
+var _filter1='all', _filter2='all';
+
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+function logout(){logoutToLogin();}
+function toggleNotifPanel(){}
+
+function dOv(v){var n=parseFloat(v);return isNaN(n)?0:(n>10?n:n*10);}
+function dDisp(v){var n=dOv(v);return n.toFixed(1);}
+function cColor(s){return s>=80?'#1d9e75':s>=65?'#FFC107':s>=50?'#FF9800':'#f44336';}
+function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#1d9e75';}
+function fmtVal(v){var n=Number(v)||0;if(!n)return 'N/A';if(n>=1000000)return '\u00a3'+(n/1000000).toFixed(2)+'m';if(n>=1000)return '\u00a3'+(n/1000).toFixed(0)+'k';return '\u00a3'+n;}
+function calcAge(dob){if(!dob)return '--';var d=new Date(dob),t=new Date();var a=t.getFullYear()-d.getFullYear();if(t<new Date(t.getFullYear(),d.getMonth(),d.getDate()))a--;return a;}
+function ageGroup(dob){if(!dob)return '--';var a=calcAge(dob);if(a<=6)return 'U7';if(a<=7)return 'U8';if(a<=8)return 'U9';if(a<=9)return 'U10';if(a<=10)return 'U11';if(a<=11)return 'U12';if(a<=12)return 'U13';if(a<=13)return 'U14';if(a<=14)return 'U15';if(a<=15)return 'U16';if(a<=16)return 'U17';return 'Open';}
+function score(v){var n=Number(v);return isNaN(n)?0:Math.max(0,Math.min(100,Math.round(n)));}
+function metric(label,val,color){return '<div class="mini-metric"><span>'+label+'</span><b style="color:'+(color||'#fff')+'">'+val+'</b></div>';}
+function scoreLine(label,val,color){var v=score(val),c=color||cColor(v);return '<div class="score-line"><div class="score-line-head"><span style="color:#8b949e">'+label+'</span><b style="color:'+c+'">'+v+'</b></div><div class="score-line-track"><div class="score-line-fill" style="width:'+v+'%;background:'+c+'"></div></div></div>';}
+
+function populateSelect(selId, players){
+  var sel=document.getElementById(selId);
+  var curVal=sel.value;
+  sel.innerHTML='<option value="">Select player...</option>';
+  players.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.id;
+    opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' \u2013 '+(p.age_group||ageGroup(p.date_of_birth)||'')+(p.specific_position?' ('+p.specific_position+')':'')+' '+(p.team_name?'| '+p.team_name:'');
+    if(p.id===curVal) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function getFilteredPlayers(filter){
+  if(filter==='pipeline') return _allPlayers.filter(function(p){return _pipelineIds.indexOf(p.id)>=0;});
+  return _allPlayers;
+}
+
+function searchPlayers(searchId, selId, filter){
+  var q=document.getElementById(searchId).value.toLowerCase();
+  var base=getFilteredPlayers(filter);
+  var filtered=q?base.filter(function(p){return((p.first_name||'')+' '+(p.last_name||'')).toLowerCase().includes(q);}):base;
+  populateSelect(selId,filtered.slice(0,100));
+}
+
+var ATTRS=['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
+var ATTR_LABELS={pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',jumping:'Jumping',composure:'Composure',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling'};
+
+function calcCompatScore(player){
+  if(player&&player.compatibilityScore!==undefined&&player.compatibilityScore!==null)return Math.round(Number(player.compatibilityScore)||0);
+  if(!_scoutTeam||((_scoutTeam.team_weaknesses||[]).length===0)) return null;
+  var weaknessAttrs={
+    'Insufficient Game Pace and Speed':['pace','agility','stamina'],
+    'Physical Fragility and Injury Risk':['stamina','strength'],
+    'Lack of Physical Presence':['strength','jumping','heading'],
+    'Weak Defensive Base':['defending','positioning','tackling'],
+    'Poor Defensive Output':['tackling','defending','positioning'],
+    'Low Team Chemistry and Leadership':['vision','passing','composure'],
+    'Technical Deficiencies Under Pressure':['composure','dribbling','passing'],
+    'Tactical Awareness Gaps':['positioning','composure','vision'],
+    'Poor Goal Output':['shooting','positioning'],
+  };
+  var total=0, count=0;
+  (_scoutTeam.team_weaknesses||[]).forEach(function(w){
+    var attrs=weaknessAttrs[w]||[];
+    attrs.forEach(function(a){
+      total+=dOv(player[a]);count++;
+    });
+  });
+  return count>0?Math.min(100,Math.round(total/count)):50;
+}
+
+function renderAnalysisSummary(p){
+  var o=p.overallBreakdown||{};
+  var c=p.compatibility||((p.compatibilityBreakdown||{}).compatibility)||p.compatibilityBreakdown||{};
+  var pos=p.positionRatings||{};
+  var roles=(pos.sorted||[]).slice(0,3);
+  var html='';
+  if(Object.keys(o).length){
+    html+='<div style="margin:14px 0"><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Overall breakdown</div>'+
+    '<div class="mini-grid">'+
+    metric('Readiness',score(o.currentReadiness),cColor(o.currentReadiness))+
+    metric('Potential',score(o.potentialRating),cColor(o.potentialRating))+
+    metric('Confidence',o.dataConfidenceLabel||score(o.dataConfidenceScore),cColor(o.dataConfidenceScore))+
+    '</div>'+
+    scoreLine('Technical',o.technicalScore,'#1d9e75')+scoreLine('Tactical IQ',o.tacticalIQScore,'#00BCD4')+scoreLine('Physical',o.physicalProfileScore,'#58a6ff')+scoreLine('Match output',o.matchOutputScore,'#FFC107')+
+    '</div>';
+  }
+  if(roles.length){
+    html+='<div style="margin:14px 0"><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Position ratings</div><div class="mini-grid">'+roles.map(function(r){return metric(r.role,score(r.score),cColor(r.score));}).join('')+'</div></div>';
+  }
+  if(Object.keys(c).length){
+    html+='<div style="margin:14px 0"><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Compatibility breakdown</div>'+
+    scoreLine('Need fit',c.needFit,'#1d9e75')+scoreLine('Role fit',c.roleFit,'#00BCD4')+scoreLine('Formation fit',c.formationPositionFit,'#8B5CF6')+scoreLine('Evidence fit',c.matchEvidenceFit,'#FFC107')+
+    '</div>';
+  }
+  return html;
+}
+
+function renderSinglePanel(p, side, otherP){
+  var ov=dOv(p.overall_rating);
+  var ovColor=cColor(ov);
+  var compat=calcCompatScore(p);
+  var tv=fmtVal(p.transfer_value);
+  var apps=parseInt(p.appearances)||0;
+  var goals=parseInt(p.goals)||0;
+  var assts=parseInt(p.assists)||0;
+  var cs=parseInt(p.clean_sheets)||0;
+  var yc=parseInt(p.yellow_cards)||0;
+  var rc=parseInt(p.red_cards)||0;
+  var gpg=apps>0?(goals/apps).toFixed(2):'0.00';
+  var apg=apps>0?(assts/apps).toFixed(2):'0.00';
+  var cspg=apps>0?(cs/apps).toFixed(2):'0.00';
+  var ag=p.age_group||ageGroup(p.date_of_birth)||'--';
+  var pos=p.specific_position||p.primary_position||'--';
+  var name=(p.first_name||'')+' '+(p.last_name||'');
+  var teamName=p.team_name||'Free agent';
+
+  var attrRows='';
+  ATTRS.forEach(function(a){
+    var v1=dOv(p[a]);
+    var v2=otherP?dOv(otherP[a]):null;
+    var barColor='#1d9e75';
+    if(v2!==null){barColor=v1>=v2?'#1d9e75':'#FF9800';}
+    var w=Math.round(v1);
+    attrRows+='<div style="margin-bottom:8px">';
+    attrRows+='<div style="display:flex;justify-content:space-between;margin-bottom:3px">';
+    attrRows+='<span style="font-size:11px;color:#8b949e;font-weight:600;text-transform:uppercase">'+ATTR_LABELS[a]+'</span>';
+    attrRows+='<span style="font-size:12px;font-weight:700;color:'+barColor+'">'+v1.toFixed(1)+'</span>';
+    attrRows+='</div>';
+    attrRows+='<div style="height:6px;background:#21262d;border-radius:3px">';
+    attrRows+='<div style="height:100%;width:'+w+'%;background:'+barColor+';border-radius:3px"></div>';
+    attrRows+='</div></div>';
+  });
+
+  var compatHtml='';
+  if(compat!==null){
+    compatHtml='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Compatibility</span><span style="font-size:14px;font-weight:800;color:'+cColor(compat)+'">'+compat+'</span></div>';
+  } else {
+    compatHtml='<div style="padding:8px 0;border-bottom:1px solid #21262d;font-size:11px;color:#8b949e">Complete team setup to see compatibility</div>';
+  }
+
+  return '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;height:100%">'+
+    '<div style="text-align:center;margin-bottom:16px">'+
+    '<div style="font-size:32px;font-weight:900;color:'+ovColor+'">'+ov.toFixed(1)+'</div>'+
+    '<div style="font-size:11px;color:#8b949e;margin-bottom:8px">Overall rating</div>'+
+    '<div style="font-size:18px;font-weight:800;color:#ffffff">'+name+'</div>'+
+    '<div style="font-size:12px;color:#8b949e;margin-top:4px">'+ag+' &bull; '+pos+'</div>'+
+    '<div style="font-size:12px;color:#8b949e">'+teamName+'</div>'+
+    '<a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="margin-top:10px;text-decoration:none">View profile</a>'+
+    '</div>'+
+    '<div style="margin-bottom:16px">'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Transfer value</span><span style="font-size:14px;font-weight:700;color:#1d9e75">'+tv+'</span></div>'+
+    compatHtml+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Appearances</span><span style="font-size:14px;font-weight:700;color:#fff">'+apps+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Goals per game</span><span style="font-size:14px;font-weight:700;color:#1d9e75">'+gpg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Assists per game</span><span style="font-size:14px;font-weight:700;color:#58a6ff">'+apg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Clean sheets per game</span><span style="font-size:14px;font-weight:700;color:#FFC107">'+cspg+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d"><span style="font-size:12px;color:#8b949e">Yellow cards</span><span style="font-size:14px;font-weight:700;color:#FFC107">'+yc+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:12px;color:#8b949e">Red cards</span><span style="font-size:14px;font-weight:700;color:#f44336">'+rc+'</span></div>'+
+    '</div>'+
+    renderAnalysisSummary(p)+
+    '<div><div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Attributes</div>'+
+    attrRows+
+    '</div>'+
+    '</div>';
+}
+
+function renderRecommendations(p1,p2){
+  if(!_scoutTeam||!(_scoutTeam.team_weaknesses||[]).length){
+    return '<div style="padding:16px;color:#8b949e;text-align:center">Please complete your team setup to see recommendations based on your team weaknesses.</div>';
+  }
+  if(!p1||!p2){
+    return '<div style="padding:16px;color:#8b949e;text-align:center">Select both players to see recommendations.</div>';
+  }
+  var weaknessAttrs={
+    'Insufficient Game Pace and Speed':['pace','agility','stamina'],
+    'Physical Fragility and Injury Risk':['stamina','strength'],
+    'Lack of Physical Presence':['strength','jumping','heading'],
+    'Weak Defensive Base':['defending','positioning','tackling'],
+    'Poor Defensive Output':['tackling','defending','positioning'],
+    'Low Team Chemistry and Leadership':['vision','passing','composure'],
+    'Technical Deficiencies Under Pressure':['composure','dribbling','passing'],
+    'Tactical Awareness Gaps':['positioning','composure','vision'],
+    'Poor Goal Output':['shooting','positioning'],
+  };
+  var html='';
+  var setupBits=[];
+  if((_scoutTeam.team_weaknesses||[]).length)setupBits.push('weaknesses: '+(_scoutTeam.team_weaknesses||[]).join(', '));
+  if((_scoutPrefs.roleExpectations||[]).length)setupBits.push('role expectations: '+_scoutPrefs.roleExpectations.join(', '));
+  if((_scoutPrefs.longTermGoals||[]).length)setupBits.push('long-term goals: '+_scoutPrefs.longTermGoals.join(', '));
+  if(_scoutPrefs.playingStyle)setupBits.push('playing style: '+_scoutPrefs.playingStyle);
+  (_scoutTeam.team_weaknesses||[]).forEach(function(w){
+    var attrs=weaknessAttrs[w]||['overall_rating'];
+    var key=attrs[0];
+    var v1=dOv(p1[key]);var v2=dOv(p2[key]);
+    var n1=(p1.first_name||'')+' '+(p1.last_name||'');
+    var n2=(p2.first_name||'')+' '+(p2.last_name||'');
+    var sentence='';
+    if(Math.abs(v1-v2)<0.5){
+      sentence='Both players are equally matched in this area.';
+    } else {
+      var winner=v1>v2?n1:n2;var score=Math.max(v1,v2);
+      sentence='<strong>'+winner+'</strong> is the stronger fit with a '+ATTR_LABELS[key]+' score of '+score.toFixed(1)+'.';
+    }
+    html+='<div class="rec-row"><span style="color:#8b949e;font-size:12px">For <strong style="color:#fff">'+w+'</strong>: </span>'+sentence+'</div>';
+  });
+  var n1=(p1.first_name||'')+' '+(p1.last_name||'');
+  var n2=(p2.first_name||'')+' '+(p2.last_name||'');
+  var c1=calcCompatScore(p1)||dOv(p1.overall_rating);
+  var c2=calcCompatScore(p2)||dOv(p2.overall_rating);
+  var preferred=c1>=c2?n1:n2;
+  var subLabels=[['Need fit','needFit'],['Role fit','roleFit'],['Formation fit','formationPositionFit'],['Evidence fit','matchEvidenceFit']];
+  var bc1=(p1.compatibility||((p1.compatibilityBreakdown||{}).compatibility)||p1.compatibilityBreakdown||{});
+  var bc2=(p2.compatibility||((p2.compatibilityBreakdown||{}).compatibility)||p2.compatibilityBreakdown||{});
+  html+='<p style="font-size:12px;color:#B0BEC5;line-height:1.7;margin-top:12px">Based on '+(setupBits.join('; ')||'your current scout setup')+', ScoutLink would currently lean towards <strong style="color:#fff">'+preferred+'</strong> with compatibility scores of <strong style="color:#1d9e75">'+Math.round(c1)+'</strong> versus <strong style="color:#FFC107">'+Math.round(c2)+'</strong>. The recommendation weighs need fit, role fit, tactical/formation fit, evidence strength and value risk alongside the headline overall rating.</p>';
+  html+='<div style="margin-top:10px">'+subLabels.map(function(pair){var v1=Number(bc1[pair[1]]||0),v2=Number(bc2[pair[1]]||0);var win=v1>=v2?n1:n2;return '<div class="rec-row"><strong>'+pair[0]+':</strong> '+win+' leads '+Math.round(v1)+' to '+Math.round(v2)+'.</div>';}).join('')+'</div>';
+  html+='<p style="font-size:12px;color:#B0BEC5;line-height:1.7;margin-top:8px">For an immediate recruitment decision, favour the player who wins the need and role-fit lines. For a longer-term pathway, use the profile prediction tools to test position fit, value risk and development upside before moving the player to a later pipeline stage.</p>';
+  return html;
+}
+
+function updateComparison(){
+  var p1id=document.getElementById('player1').value;
+  var p2id=document.getElementById('player2').value;
+  var p1=p1id?_allPlayers.find(function(p){return p.id===p1id;}):null;
+  var p2=p2id?_allPlayers.find(function(p){return p.id===p2id;}):null;
+
+  if(!p1&&!p2){document.getElementById('compareResult').innerHTML='';return;}
+
+  var html='';
+
+  if(p1||p2){
+    html+='<div class="table-card" style="margin-bottom:20px"><div class="table-header"><h3>Player comparison</h3><div style="font-size:12px;color:#8b949e">Select both players to compare side by side</div></div><div style="padding:16px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    html+=p1?renderSinglePanel(p1,'left',p2):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the left dropdown</div>';
+    html+=p2?renderSinglePanel(p2,'right',p1):'<div style="background:#161b22;border:1px dashed #30363d;border-radius:12px;padding:40px;text-align:center;color:#8b949e;height:100%">Select a player from the right dropdown</div>';
+    html+='</div></div></div>';
+  }
+
+  html+='<div class="table-card"><div class="table-header"><h3>Scout recommendation</h3><span style="font-size:12px;color:#8b949e">Based on your team weaknesses</span></div><div style="padding:16px">'+renderRecommendations(p1,p2)+'</div></div>';
+
+  document.getElementById('compareResult').innerHTML=html;
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();
+
+  api('GET','/api/scouts/setup').then(function(d){
+    _scoutTeam=d.scoutTeam||null;
+    // Merge team weaknesses from preferences into scoutTeam
+    var prefs = d.preferences||{};
+    _scoutPrefs=prefs;
+    var weakSlugs = prefs.teamWeaknesses||[];
+    var WMAP = {'insufficient_game_pace_and_speed':'Insufficient Game Pace and Speed','physical_fragility_and_injury_risk':'Physical Fragility and Injury Risk','lack_of_physical_presence':'Lack of Physical Presence','weak_defensive_base':'Weak Defensive Base','poor_defensive_output':'Poor Defensive Output','low_team_chemistry_and_leadership':'Low Team Chemistry and Leadership','technical_deficiencies_under_pressure':'Technical Deficiencies Under Pressure','tactical_awareness_gaps':'Tactical Awareness Gaps','poor_goal_output':'Poor Goal Output','poor_set_pieces':'Insufficient Game Pace and Speed','high_defensive_line':'Weak Defensive Base','slow_build_up':'Tactical Awareness Gaps','weak_left_flank':'Lack of Physical Presence','pace_exploitable':'Insufficient Game Pace and Speed','poor_second_ball':'Tactical Awareness Gaps'};
+    if(_scoutTeam) _scoutTeam.team_weaknesses = weakSlugs.map(function(s){return WMAP[s]||s;});
+  }).catch(function(){});
+
+  api('GET','/api/scouts/pipeline?limit=200').then(function(d){
+    _pipelineIds=(d.data||[]).map(function(r){return r.player_id||((r.players||{}).id);}).filter(Boolean);
+  }).catch(function(){});
+
+  api('GET','/api/players?limit=200').then(function(d){
+    _allPlayers=d.data||[];
+    if(!_allPlayers.length){
+      document.getElementById('compareResult').innerHTML='<div style="text-align:center;padding:48px;color:#8b949e">Could not load players. Please try again.</div>';
+      return;
+    }
+    populateSelect('player1',_allPlayers.slice(0,200));
+    populateSelect('player2',_allPlayers.slice(0,200));
+  }).catch(function(e){
+    console.error('load players failed',e.message);
+    document.getElementById('compareResult').innerHTML='<div style="text-align:center;padding:48px;color:#8b949e">Could not load players: '+e.message+'</div>';
+  });
+
+  document.getElementById('search1').addEventListener('input',function(){searchPlayers('search1','player1',_filter1);});
+  document.getElementById('search2').addEventListener('input',function(){searchPlayers('search2','player2',_filter2);});
+
+  document.getElementById('f1All').addEventListener('click',function(){
+    _filter1='all';this.classList.add('active');document.getElementById('f1Pipeline').classList.remove('active');
+    searchPlayers('search1','player1','all');
+  });
+  document.getElementById('f1Pipeline').addEventListener('click',function(){
+    _filter1='pipeline';this.classList.add('active');document.getElementById('f1All').classList.remove('active');
+    searchPlayers('search1','player1','pipeline');
+  });
+  document.getElementById('f2All').addEventListener('click',function(){
+    _filter2='all';this.classList.add('active');document.getElementById('f2Pipeline').classList.remove('active');
+    searchPlayers('search2','player2','all');
+  });
+  document.getElementById('f2Pipeline').addEventListener('click',function(){
+    _filter2='pipeline';this.classList.add('active');document.getElementById('f2All').classList.remove('active');
+    searchPlayers('search2','player2','pipeline');
+  });
+
+  document.getElementById('player1').addEventListener('change',updateComparison);
+  document.getElementById('player2').addEventListener('change',updateComparison);
+});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
+
