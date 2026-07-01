@@ -3,9 +3,6 @@
 <title>Login - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>
 :root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -34,7 +31,10 @@ input:focus,select:focus{outline:none;border-color:var(--sl-green);}
 .tab-row{display:flex;gap:8px;margin-bottom:1.5rem;}
 .tab{flex:1;padding:8px;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;}
 .tab.active{background:var(--sl-green);color:#000;border-color:var(--sl-green);}
-</style></head><body>
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
 <div class="login-wrap">
 <div class="brand"><h1>Scout<span>Link</span></h1><p>Football Player Intelligence Platform</p></div>
 <div class="card">
@@ -205,7 +205,8 @@ function storeAndRedirect(d){
   var map={Stratex:'experience-select.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
   window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }
-</script><script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

@@ -1,5 +1,8 @@
 'use strict';
 const express = require('express');
+const crypto = require('crypto');
+const path = require('path');
+const multer = require('multer');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
@@ -7,6 +10,20 @@ const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
 const config = require('../config');
 const { applyRealDataFilter } = require('../utils/demo');
+
+const contractUpload = multer({
+storage: multer.memoryStorage(),
+limits: { fileSize: 10 * 1024 * 1024 },
+fileFilter: (req, file, cb) => {
+const allowed = new Set([
+'application/pdf',
+'application/msword',
+'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]);
+if (!allowed.has(file.mimetype)) return cb(new Error('Contract must be a PDF, DOC or DOCX file.'));
+cb(null, true);
+}
+});
 
 const SCOUT_PLAN_LIMITS = {
 Core: { seats:1, exports:30, predictions:120, interests:200 },
@@ -64,6 +81,40 @@ function canManageSensitiveAdmin(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
 return normalizeAdminRole(admin.admin_role || admin.role) === 'Management' || perms.includes('management') || perms.includes('permissions');
+}
+
+function canManageContracts(admin) {
+if (!admin || admin.is_active === false) return false;
+const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
+const role = normalizeAdminRole(admin.admin_role || admin.role);
+return role === 'Management' || role === 'Operations' || perms.includes('management') || perms.includes('operations');
+}
+
+function visibleAdminIdsForContracts(current, admins) {
+if (!current) return new Set();
+if (canManageSensitiveAdmin(current)) return new Set((admins || []).map(a => a.id));
+const visible = new Set([current.id]);
+let changed = true;
+while (changed) {
+changed = false;
+(admins || []).forEach(a => {
+if (a.manager_id && visible.has(a.manager_id) && !visible.has(a.id)) {
+visible.add(a.id);
+changed = true;
+}
+});
+}
+return visible;
+}
+
+function contractPatchFromBody(body) {
+const next = {};
+if (body.payAmount !== undefined) next.payAmount = body.payAmount === '' ? null : Number(body.payAmount);
+if (body.payFrequency !== undefined) next.payFrequency = String(body.payFrequency || '').trim() || null;
+if (body.payStatus !== undefined) next.payStatus = String(body.payStatus || '').trim() || null;
+if (body.contractType !== undefined) next.contractType = String(body.contractType || '').trim() || null;
+if (body.notes !== undefined) next.notes = String(body.notes || '').trim() || null;
+return next;
 }
 
 async function requireSensitiveAdmin(req, res) {
@@ -472,6 +523,102 @@ const league = await ensureLeagueOption(req.body.name, req.user.id);
 if (!league) return res.status(400).json({ error: 'League name required' });
 res.status(201).json({ data: league, message: 'League saved' });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.get('/contracts-pay', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const currentAdmin = await loadCurrentAdmin(req);
+const { data: admins, error } = await supabase
+.from('stratex')
+.select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,annual_leave_days,contract_data,is_active,created_at,last_login')
+.order('first_name');
+if (error) throw error;
+const ids = visibleAdminIdsForContracts(currentAdmin, admins || []);
+const rows = (admins || []).filter(a => ids.has(a.id));
+res.json({ data: rows, canEdit: canManageContracts(currentAdmin), canManageSensitive: canManageSensitiveAdmin(currentAdmin) });
+} catch(err) { console.error('[Stratex contracts list]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.patch('/contracts-pay/:id/pay', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const currentAdmin = await loadCurrentAdmin(req);
+if (!canManageContracts(currentAdmin)) return res.status(403).json({ error: 'You do not have permission to update pay or contract details.' });
+const { data: admins, error: adminErr } = await supabase.from('stratex').select('id,manager_id,contract_data,is_active').order('first_name');
+if (adminErr) throw adminErr;
+const ids = visibleAdminIdsForContracts(currentAdmin, admins || []);
+if (!ids.has(req.params.id)) return res.status(403).json({ error: 'You can only update your reporting tree.' });
+const target = (admins || []).find(a => a.id === req.params.id);
+const contractData = { ...(target && target.contract_data && typeof target.contract_data === 'object' ? target.contract_data : {}), ...contractPatchFromBody(req.body || {}) };
+const { data, error } = await supabase
+.from('stratex')
+.update({ contract_data: contractData, updated_at: new Date().toISOString() })
+.eq('id', req.params.id)
+.select('id,first_name,last_name,email,role,admin_role,job_title,manager_id,contract_data,is_active')
+.maybeSingle();
+if (error || !data) return res.status(404).json({ error: 'Admin not found' });
+res.json({ message: 'Contract and pay details updated.', data });
+} catch(err) { console.error('[Stratex contracts update]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/contracts-pay/:id/contract', requireAuth, requireRole('Stratex'), contractUpload.single('contract'), async (req, res) => {
+try {
+const currentAdmin = await loadCurrentAdmin(req);
+if (!canManageContracts(currentAdmin)) return res.status(403).json({ error: 'You do not have permission to upload contracts.' });
+if (!req.file) return res.status(400).json({ error: 'Please choose a contract file.' });
+const { data: admins, error: adminErr } = await supabase.from('stratex').select('id,manager_id,contract_data,is_active').order('first_name');
+if (adminErr) throw adminErr;
+const ids = visibleAdminIdsForContracts(currentAdmin, admins || []);
+if (!ids.has(req.params.id)) return res.status(403).json({ error: 'You can only upload contracts for your reporting tree.' });
+const target = (admins || []).find(a => a.id === req.params.id);
+try {
+await supabase.storage.createBucket('stratex-contracts', { public: false, fileSizeLimit: 10 * 1024 * 1024, allowedMimeTypes: ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'] });
+} catch (_) {}
+const ext = path.extname(req.file.originalname || '').toLowerCase() || '.pdf';
+const filePath = req.params.id + '/' + Date.now() + '-' + crypto.randomUUID() + ext;
+const { error: uploadErr } = await supabase.storage.from('stratex-contracts').upload(filePath, req.file.buffer, {
+contentType: req.file.mimetype,
+upsert: false,
+metadata: { uploadedBy: req.user.id, source: 'stratex_contracts_pay' }
+});
+if (uploadErr) throw uploadErr;
+const contractData = {
+...(target && target.contract_data && typeof target.contract_data === 'object' ? target.contract_data : {}),
+contractBucket: 'stratex-contracts',
+contractPath: filePath,
+contractFileName: req.file.originalname,
+contractMimeType: req.file.mimetype,
+contractFileSize: req.file.size,
+contractUploadedAt: new Date().toISOString(),
+contractUploadedBy: req.user.id
+};
+const { data, error } = await supabase
+.from('stratex')
+.update({ contract_data: contractData, updated_at: new Date().toISOString() })
+.eq('id', req.params.id)
+.select('id,first_name,last_name,email,role,admin_role,job_title,manager_id,contract_data,is_active')
+.maybeSingle();
+if (error || !data) return res.status(404).json({ error: 'Admin not found' });
+res.json({ message: 'Contract uploaded.', data });
+} catch(err) {
+console.error('[Stratex contract upload]', err);
+res.status(err && err.message && err.message.includes('Contract must') ? 400 : 500).json({ error: err.message || 'Could not upload contract' });
+}
+});
+
+router.get('/contracts-pay/:id/contract-url', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const currentAdmin = await loadCurrentAdmin(req);
+const { data: admins, error: adminErr } = await supabase.from('stratex').select('id,manager_id,contract_data,is_active').order('first_name');
+if (adminErr) throw adminErr;
+const ids = visibleAdminIdsForContracts(currentAdmin, admins || []);
+if (!ids.has(req.params.id)) return res.status(403).json({ error: 'You can only view contracts in your reporting tree.' });
+const target = (admins || []).find(a => a.id === req.params.id);
+const contractData = target && target.contract_data && typeof target.contract_data === 'object' ? target.contract_data : {};
+if (!contractData.contractPath) return res.status(404).json({ error: 'No contract has been uploaded.' });
+const { data, error } = await supabase.storage.from(contractData.contractBucket || 'stratex-contracts').createSignedUrl(contractData.contractPath, 60 * 10);
+if (error) throw error;
+res.json({ url: data.signedUrl, expiresIn: 600, fileName: contractData.contractFileName || 'contract' });
+} catch(err) { console.error('[Stratex contract URL]', err); res.status(500).json({ error: 'Could not create secure contract link' }); }
 });
 
 router.get('/org', requireAuth, requireRole('Stratex'), async (req, res) => {

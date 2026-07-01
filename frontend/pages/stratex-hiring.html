@@ -3,18 +3,20 @@
 <title>Hiring - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-.hiring-grid{display:grid;grid-template-columns:minmax(0,430px) minmax(0,1fr);gap:16px;align-items:start}
-.form-grid{display:grid;gap:10px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-textarea{min-height:84px}.job-list{display:grid;gap:10px;padding:16px}.job-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:12px;padding:12px}.job-row h4{margin:0 0 5px}.job-row p{margin:0;color:#8ea2b5;font-size:12px}
-.recipient-box{display:grid;gap:6px;max-height:130px;overflow:auto;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:10px;padding:8px}.recipient-box label{display:flex;gap:8px;align-items:center;font-size:12px;color:#c9d6e2}
+.hiring-grid{display:grid;grid-template-columns:minmax(620px,760px) minmax(420px,1fr);gap:22px;align-items:start;max-width:1680px;margin:0 auto}
+.hiring-grid .table-card{border-radius:16px;overflow:hidden}
+.form-grid{display:grid;gap:14px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-grid input,.form-grid select{min-height:42px}
+textarea{min-height:108px;resize:vertical}.job-list{display:grid;gap:12px;padding:18px}.job-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:14px}.job-row h4{margin:0 0 5px}.job-row p{margin:0;color:#8ea2b5;font-size:12px}
+.recipient-box{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto;background:#07111f;border:1px solid rgba(148,163,184,.14);border-radius:12px;padding:10px}.recipient-box label{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#c9d6e2;line-height:1.35}
 .apps-wrap{margin-top:16px}.application-row button{white-space:nowrap}
-@media(max-width:1000px){.hiring-grid{grid-template-columns:1fr}.two,.three{grid-template-columns:1fr}}
-</style></head><body>
+@media(max-width:1200px){.hiring-grid{grid-template-columns:1fr}.two,.three{grid-template-columns:1fr}.recipient-box{grid-template-columns:1fr}}
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
@@ -70,7 +72,8 @@ async function loadAdmins(){var d=await api('GET','/api/stratex/org');admins=d.a
 function renderApps(rows){var body=document.getElementById('appsBody');if(!rows.length){body.innerHTML='<tr><td colspan="6" style="color:#8ea2b5">No applications yet.</td></tr>';return;}body.innerHTML=rows.map(function(a){var job=a.job_posts||{};return '<tr class="application-row"><td><b>'+safe(a.first_name+' '+a.last_name)+'</b><br><span style="color:#8ea2b5">'+safe(a.application_ref)+'</span></td><td>'+safe(job.job_title||'')+'</td><td>'+safe(a.email)+'</td><td>'+safe(a.phone)+'</td><td>'+safe(a.submitted_at?new Date(a.submitted_at).toLocaleString('en-GB'):'')+'</td><td><button class="btn btn-sm btn-outline" data-cv="'+a.id+'">Open CV</button></td></tr>';}).join('');body.querySelectorAll('[data-cv]').forEach(function(b){b.onclick=async function(){try{var d=await api('GET','/api/stratex/job-applications/'+b.dataset.cv+'/cv-url');window.open(d.url,'_blank','noopener');}catch(e){show('err',e.message);}};});if(window.refreshMobileLayout)refreshMobileLayout();}
 async function loadApplications(){var d=await api('GET','/api/stratex/job-applications');renderApps(d.data||[]);}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();Promise.all([loadAdmins(),loadJobs(),loadApplications()]).catch(function(e){show('err',e.message);});});
-</script><script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

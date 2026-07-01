@@ -3,9 +3,6 @@
 <title>Player rankings - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
@@ -28,6 +25,9 @@
 .ranking-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
 @media(max-width:700px){.ranking-grid{grid-template-columns:1fr;}}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -70,7 +70,7 @@ function initNav(){
   }
   if(typeof updateNotifBadge==='function')updateNotifBadge();
 }
-function fmtVal(v){if(!v||v<1000)return 'â€”';if(v>=1000000)return 'Â£'+(v/1000000).toFixed(1)+'M';return 'Â£'+Math.round(v/1000)+'K';}
+function fmtVal(v){if(!v||v<1000)return '--';if(v>=1000000)return '\u00a3'+(v/1000000).toFixed(1)+'M';return '\u00a3'+Math.round(v/1000)+'K';}
 function initials(f,l){return((f||'?')[0]+(l||'?')[0]).toUpperCase();}
 function pColor(g){return{Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#17a2b8',Forward:'#ff6b35'}[g]||'var(--accent)';}
 function rankBadge(i){var cls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';return '<div class="rank-badge '+cls+'">'+(i+1)+'</div>';}
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('logoutBtn').addEventListener('click',logout);
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

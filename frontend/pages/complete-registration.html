@@ -3,9 +3,6 @@
 <title>Complete Registration - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>
 :root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -44,7 +41,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sl-green
 .avatar-opt.selected{border-color:var(--sl-green);background:rgba(0,200,83,.08);}
 .avatar-opt .emoji{font-size:24px;}
 .avatar-opt .label{font-size:11px;color:var(--sl-muted);margin-top:4px;}
-</style></head><body>
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
 <div class="wrap">
 <div class="brand"><h1>Scout<span>Link</span></h1><p id="welcomeMsg">Welcome! Let's get you set up.</p></div>
 <div class="card">
@@ -57,50 +57,50 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sl-green
 <div class="form-group"><label>Email Address</label><input type="email" id="s1Email" placeholder="your@email.com"></div>
 <div class="form-group"><label>Login Code</label><input type="text" id="s1Code" placeholder="6-character code from your email" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" maxlength="6" oninput="this.value=this.value.toUpperCase()"></div>
 <div class="form-group"><label>Account Type</label><select id="s1Type"><option value="Scout">Scout</option><option value="Coach">Coach</option><option value="Player">Player</option><option value="Stratex">Stratex Admin</option></select></div>
-<button class="btn btn-primary" onclick="verifyCode()">Continue â†’</button>
+<button class="btn btn-primary" onclick="verifyCode()">Continue</button>
 </div>
 
 <!-- STEP 2: Set password -->
 <div class="step" id="step2">
 <div class="step-header"><div class="step-label">Step 2</div><div class="step-title">Create Your Password</div></div>
-<div class="success">âœ“ Identity verified! Now create a secure password for future logins.</div>
+<div class="success">Identity verified. Now create a secure password for future logins.</div>
 <div class="form-group"><label>Password (min 8 characters)</label><input type="password" id="s2Password" placeholder="Create a strong password"></div>
 <div class="form-group"><label>Confirm Password</label><input type="password" id="s2Confirm" placeholder="Repeat your password"></div>
-<button class="btn btn-primary" onclick="setPassword()">Set Password â†’</button>
+<button class="btn btn-primary" onclick="setPassword()">Set password</button>
 </div>
 
-<!-- STEP 3a: Scout â€” enter team weaknesses -->
+<!-- STEP 3a: Scout - enter team weaknesses -->
 <div class="step" id="step3scout">
-<div class="step-header"><div class="step-label">Step 3 â€” Scout Setup</div><div class="step-title">Your Team's Weaknesses</div></div>
+<div class="step-header"><div class="step-label">Step 3 - Scout setup</div><div class="step-title">Your team's weaknesses</div></div>
 <p style="color:var(--sl-muted);font-size:13px;margin-bottom:12px">Select the weaknesses of the team you're scouting for. This powers the compatibility engine.</p>
 <div class="weakness-grid" id="weaknessGrid"></div>
-<button class="btn btn-primary" style="margin-top:16px" onclick="saveWeaknesses()">Save & Go to Dashboard â†’</button>
+<button class="btn btn-primary" style="margin-top:16px" onclick="saveWeaknesses()">Save and go to dashboard</button>
 </div>
 
-<!-- STEP 3b: Player â€” create avatar -->
+<!-- STEP 3b: Player - create avatar -->
 <div class="step" id="step3player">
-<div class="step-header"><div class="step-label">Step 3 â€” Player Setup</div><div class="step-title">Create Your Avatar</div></div>
+<div class="step-header"><div class="step-label">Step 3 - Player setup</div><div class="step-title">Create your avatar</div></div>
 <p style="color:var(--sl-muted);font-size:13px;margin-bottom:4px">Choose a skin tone:</p>
 <div class="avatar-grid" id="skinGrid"></div>
 <p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a hair style:</p>
 <div class="avatar-grid" id="hairGrid"></div>
 <p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a kit colour:</p>
 <div class="avatar-grid" id="kitGrid"></div>
-<button class="btn btn-primary" style="margin-top:16px" onclick="saveAvatar()">Save Avatar & Go to Dashboard â†’</button>
+<button class="btn btn-primary" style="margin-top:16px" onclick="saveAvatar()">Save avatar and go to dashboard</button>
 </div>
 
-<!-- STEP 3c: Coach â€” add first player prompt -->
+<!-- STEP 3c: Coach - add first player prompt -->
 <div class="step" id="step3coach">
-<div class="step-header"><div class="step-label">Step 3 â€” Coach Setup</div><div class="step-title">Add Your Players</div></div>
+<div class="step-header"><div class="step-label">Step 3 - Coach setup</div><div class="step-title">Add your players</div></div>
 <p style="color:var(--sl-muted);font-size:13px;margin-bottom:16px">You don't have any players assigned yet. Would you like to add your first player now?</p>
-<button class="btn btn-primary" onclick="goAddPlayer()" style="margin-bottom:10px">Add Players Now â†’</button>
-<button class="btn" style="background:var(--sl-border);color:var(--sl-text)" onclick="skipToCoachDash()">Skip for Now</button>
+<button class="btn btn-primary" onclick="goAddPlayer()" style="margin-bottom:10px">Add players now</button>
+<button class="btn" style="background:var(--sl-border);color:var(--sl-text)" onclick="skipToCoachDash()">Skip for now</button>
 </div>
 
 <!-- STEP 4: Done -->
 <div class="step" id="stepDone">
 <div style="text-align:center;padding:2rem 0">
-<div style="font-size:48px;margin-bottom:16px">ðŸŽ‰</div>
+<div style="font-size:18px;font-weight:900;margin-bottom:16px;color:var(--sl-green)">Complete</div>
 <h2 style="color:var(--sl-green);margin-bottom:8px">You're all set!</h2>
 <p style="color:var(--sl-muted);margin-bottom:24px">Your account is ready. Redirecting to your dashboard...</p>
 </div>
@@ -134,7 +134,7 @@ applyCleanUrl();
 // Pre-fill from URL params (email link)
 var params = new URLSearchParams(window.location.search);
 if(params.get('token')){
-  // Came from login with code â€” already verified
+  // Came from login with code - already verified
   token = params.get('token');
   accountType = params.get('type') || localStorage.getItem('sl_type');
   var u = JSON.parse(localStorage.getItem('sl_user')||'{}');
@@ -224,9 +224,9 @@ async function saveWeaknesses(){
 }
 
 // PLAYER: avatar
-var skinOptions=[{emoji:'ðŸ‘¤',label:'Light',val:'light'},{emoji:'ðŸŸ¤',label:'Medium',val:'medium'},{emoji:'â¬›',label:'Dark',val:'dark'},{emoji:'ðŸŸ¡',label:'Tan',val:'tan'}];
-var hairOptions=[{emoji:'ðŸ’‡',label:'Short',val:'short'},{emoji:'ðŸ¦±',label:'Curly',val:'curly'},{emoji:'ðŸ§¢',label:'Cap',val:'cap'},{emoji:'ðŸ¦²',label:'Bald',val:'bald'}];
-var kitOptions=[{emoji:'ðŸ”µ',label:'Blue',val:'blue'},{emoji:'ðŸ”´',label:'Red',val:'red'},{emoji:'âš«',label:'Black',val:'black'},{emoji:'ðŸŸ¢',label:'Green',val:'green'}];
+var skinOptions=[{emoji:'',label:'Light',val:'light'},{emoji:'',label:'Medium',val:'medium'},{emoji:'',label:'Dark',val:'dark'},{emoji:'',label:'Tan',val:'tan'}];
+var hairOptions=[{emoji:'',label:'Short',val:'short'},{emoji:'',label:'Curly',val:'curly'},{emoji:'',label:'Cap',val:'cap'},{emoji:'',label:'Bald',val:'bald'}];
+var kitOptions=[{emoji:'',label:'Blue',val:'blue'},{emoji:'',label:'Red',val:'red'},{emoji:'',label:'Black',val:'black'},{emoji:'',label:'Green',val:'green'}];
 var avatarConfig={skin:'light',hair:'short',kit:'blue'};
 
 function buildAvatarGrids(){
@@ -266,7 +266,8 @@ function goToDash(){
     window.location.href=cleanRouteFor(m[accountType]||'login.html');
   },1500);
 }
-</script><script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+</script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

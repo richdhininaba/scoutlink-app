@@ -3,9 +3,6 @@
 <title>Notifications - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .notif-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all .2s;border-left:4px solid transparent;}
@@ -20,6 +17,9 @@
 .filter-chip{padding:5px 14px;border-radius:20px;border:1.5px solid #30363d;background:transparent;color:#8b949e;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit;transition:all .2s;}
 .filter-chip.active{background:#1d9e75;color:#000;border-color:#1d9e75;}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -136,7 +136,7 @@ applyFilter();
 loadNotifs();
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

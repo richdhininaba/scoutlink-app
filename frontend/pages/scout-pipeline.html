@@ -3,9 +3,6 @@
 <title>My Pipeline - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .stage-chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
@@ -15,6 +12,9 @@
 .stage-negotiating{background:rgba(255,87,34,.15);color:#FF7043;}
 .stage-header{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:16px 20px 8px;border-bottom:1px solid var(--border);}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

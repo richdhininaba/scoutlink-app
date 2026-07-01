@@ -225,8 +225,8 @@ async function updateNotifBadge() {
 }
 
 // Format helpers
-function formatValue(v) { return v >= 1000000 ? '£'+(v/1000000).toFixed(2)+'M' : v >= 1000 ? '£'+(v/1000).toFixed(0)+'K' : '£'+v; }
-function formatSalary(v) { return v >= 1000 ? '£'+(v/1000).toFixed(1)+'K/wk' : '£'+v+'/wk'; }
+function formatValue(v) { return v >= 1000000 ? '\u00a3'+(v/1000000).toFixed(2)+'M' : v >= 1000 ? '\u00a3'+(v/1000).toFixed(0)+'K' : '\u00a3'+v; }
+function formatSalary(v) { return v >= 1000 ? '\u00a3'+(v/1000).toFixed(1)+'K/wk' : '\u00a3'+v+'/wk'; }
 function relTime(dateStr) {
   const d = (Date.now()-new Date(dateStr).getTime())/1000;
   if (d<60) return 'just now'; if (d<3600) return Math.floor(d/60)+'m ago';

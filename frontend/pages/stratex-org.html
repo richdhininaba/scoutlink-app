@@ -3,30 +3,27 @@
 <title>Org View - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <style>
-.org-board{background:#0f1620;border:1px solid rgba(148,163,184,.18);border-radius:14px;overflow:hidden}
-.org-board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.14)}
+.org-board{background:#0f1620;border:1px solid rgba(148,163,184,.18);border-radius:18px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.18)}
+.org-board-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid rgba(148,163,184,.14)}
 .org-board-head h3{margin:0;font-size:18px}
 .org-board-head p{margin:4px 0 0;color:#8ea2b5;font-size:12px}
-.org-chart{overflow:auto;padding:30px;background:radial-gradient(circle at top,rgba(0,230,118,.04),transparent 34%),#0b111c}
+.org-chart{overflow:auto;padding:54px 40px 48px;background:radial-gradient(circle at top,rgba(0,230,118,.065),transparent 36%),#0b111c}
 .org-tree{display:flex;justify-content:center;min-width:max-content}
 .org-branch{position:relative;display:flex;flex-direction:column;align-items:center}
 .org-node-wrap{position:relative;display:flex;justify-content:center}
-.org-branch.has-children>.org-node-wrap:after{content:"";position:absolute;left:50%;bottom:-24px;height:24px;border-left:1px solid rgba(148,163,184,.28)}
-.org-children{position:relative;display:flex;gap:18px;justify-content:center;padding-top:48px}
-.org-children:before{content:"";position:absolute;top:24px;left:calc(50% / var(--child-count,1));right:calc(50% / var(--child-count,1));border-top:1px solid rgba(148,163,184,.28)}
-.org-children>.org-branch:before{content:"";position:absolute;top:24px;left:50%;height:24px;border-left:1px solid rgba(148,163,184,.28)}
-.org-person{width:230px;min-height:178px;border:1px solid rgba(148,163,184,.2);background:#111827;border-radius:12px;padding:14px;box-shadow:0 16px 42px rgba(0,0,0,.22)}
+.org-branch.has-children>.org-node-wrap:after{content:"";position:absolute;left:50%;bottom:-30px;height:30px;border-left:1px solid rgba(148,163,184,.3)}
+.org-children{position:relative;display:flex;gap:34px;justify-content:center;padding-top:62px}
+.org-children:before{content:"";position:absolute;top:30px;left:calc(50% / var(--child-count,1));right:calc(50% / var(--child-count,1));border-top:1px solid rgba(148,163,184,.3)}
+.org-children>.org-branch:before{content:"";position:absolute;top:30px;left:50%;height:32px;border-left:1px solid rgba(148,163,184,.3)}
+.org-person{width:274px;min-height:196px;border:1px solid rgba(148,163,184,.22);background:#111827;border-radius:16px;padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.24)}
 .org-person.root{border-color:rgba(0,230,118,.45);box-shadow:0 20px 60px rgba(0,230,118,.08)}
 .org-person-top{display:flex;align-items:flex-start;gap:10px}
-.org-avatar{width:44px;height:44px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#00e676;color:#001b12;font-size:13px;font-weight:900;flex:0 0 auto}
-.org-name{font-weight:900;color:#fff;font-size:15px;line-height:1.2}
+.org-avatar{width:48px;height:48px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;background:#00e676;color:#001b12;font-size:13px;font-weight:900;flex:0 0 auto}
+.org-name{font-weight:900;color:#fff;font-size:16px;line-height:1.2}
 .org-title{color:#00e676;font-weight:800;font-size:12px;line-height:1.35;margin-top:4px}
 .org-meta{color:#8ea2b5;font-size:11px;line-height:1.45;margin-top:4px;overflow-wrap:anywhere}
-.org-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+.org-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:18px}
 .org-report-count{font-size:11px;color:#8ea2b5;font-weight:800}
 .org-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mini-form{display:grid;gap:10px}
@@ -47,7 +44,10 @@
   .org-name{font-size:14px}
   .org-title{font-size:11px}
 }
-</style></head><body>
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
@@ -135,7 +135,7 @@ async function saveEdit(){
 }
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadOrg().catch(function(e){document.getElementById('orgTree').innerHTML='<div style="color:#EF5350">'+e.message+'</div>';});});
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

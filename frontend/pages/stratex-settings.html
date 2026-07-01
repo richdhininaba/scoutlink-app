@@ -3,10 +3,10 @@
 <title>Settings - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -17,7 +17,7 @@
 <div style="max-width:700px;margin:0 auto">
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ðŸ” Change Password</h3></div>
+<div class="table-header"><h3>Change password</h3></div>
 <div style="padding:0 20px 20px">
 <div style="margin-bottom:14px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
 <div style="margin-bottom:16px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px;box-sizing:border-box"></div>
@@ -25,7 +25,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>ðŸ”” Notification Preferences</h3></div>
+<div class="table-header"><h3>Notification preferences</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n1" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">Email Notifications</div><div style="font-size:12px;color:#546E7A">Receive admin updates via email</div></div></div>
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#1e2a3a;border-radius:8px"><label class="tgl"><input type="checkbox" id="n2" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#E0E0E0">New Registrations</div><div style="font-size:12px;color:#546E7A">Alert when new registrations are submitted</div></div></div>
@@ -34,7 +34,7 @@
 </div></div>
 
 <div class="table-card" style="margin-bottom:20px">
-<div class="table-header"><h3>âš™ï¸ Platform Settings</h3></div>
+<div class="table-header"><h3>Platform settings</h3></div>
 <div style="padding:0 20px 20px">
 <div style="display:flex;gap:16px;flex-wrap:wrap">
 <div style="flex:1;min-width:200px;margin-bottom:14px"><label style="display:block;font-size:13px;color:#90A4AE;margin-bottom:6px;font-weight:600">Default Player Rating Scale</label><select id="ratingScale" style="width:100%;padding:10px 14px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:8px;color:#E0E0E0;font-size:14px"><option>0-10</option></select></div>
@@ -44,7 +44,7 @@
 </div></div>
 
 <div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
-<div class="table-header"><h3 style="color:#EF5350">âš ï¸ Danger Zone</h3></div>
+<div class="table-header"><h3 style="color:#EF5350">Danger zone</h3></div>
 <div style="padding:0 20px 20px">
 <p style="color:#546E7A;margin-bottom:16px;font-size:14px">These actions are permanent and affect all platform data.</p>
 <button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="showToast('Contact Stratex Engineering to reset platform data.','error')">Reset Platform Data</button>
@@ -60,7 +60,7 @@ function initNav(){initStratexPage();}
 function toggleNotifPanel(){document.getElementById('notifPanel')&&document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();updateNotifBadge();});
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

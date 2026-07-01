@@ -3,9 +3,6 @@
 <title>Scout dashboard - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .compat-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;border:3px solid;}
@@ -49,6 +46,9 @@
 @media(max-width:980px){.dashboard-two-col{grid-template-columns:1fr;}.dashboard-two-col>.table-card{height:auto;min-height:0;}#recommendedPlayers,#pipelinePreview{overflow:visible}.recommended-list,.pipeline-table-wrap{overflow:visible;}}
 @media(max-width:620px){.pipeline-summary{grid-template-columns:1fr;}}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -274,7 +274,7 @@ return '<tr>'+
 }
 </script>
 <script src="../js/product-tour.js"></script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

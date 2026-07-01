@@ -3,9 +3,6 @@
 <title>Match facts - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .step-indicator{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
@@ -58,6 +55,9 @@
 .timer-score{font-size:20px;font-weight:900;color:#fff;margin-top:8px;}
 .halftime-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;z-index:50;}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -1143,7 +1143,7 @@ document.addEventListener('DOMContentLoaded',function(){
   Promise.all([profileReq,fixturesReq,playersReq]).finally(function(){renderStep1();});
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

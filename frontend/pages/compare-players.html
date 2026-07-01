@@ -3,9 +3,6 @@
 <title>Compare Players - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -31,6 +28,9 @@
 .score-line-fill{height:100%;border-radius:999px}
 @media(max-width:767px){.compare-grid{grid-template-columns:1fr}.attr-compare-row{grid-template-columns:1fr}}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('player2').addEventListener('change',updateComparison);
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

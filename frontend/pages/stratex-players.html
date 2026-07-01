@@ -3,10 +3,10 @@
 <title>Players - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -19,7 +19,7 @@
 <div style="background:#162032;border-radius:14px;max-width:520px;margin:40px auto;padding:28px;border:1px solid #2d3f55">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
 <h3 style="margin:0;color:#E0E0E0" id="editModalTitle">Edit Player Ratings</h3>
-<button onclick="closeEditModal()" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Ã‚ÂƒÃƒÂ‚Ã‚Â—</button>
+<button onclick="closeEditModal()" style="background:none;border:none;color:#546E7A;font-size:22px;cursor:pointer;line-height:1">&times;Ã‚ÂƒÃƒÂ‚Ã‚Â - </button>
 </div>
 <div id="editForm" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 <div><label style="display:block;font-size:12px;color:#90A4AE;margin-bottom:4px">Pace (0-10)</label><input type="number" id="e_pace" min="0" max="10" step="0.1" style="width:100%;padding:8px 10px;background:#1e2a3a;border:1.5px solid #2d3f55;border-radius:7px;color:#E0E0E0;font-size:13px;box-sizing:border-box"></div>
@@ -91,7 +91,7 @@ async function confirmDelete(){if(!deleteTargetId)return;document.getElementById
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='success'?'#1B5E20':'#B71C1C';t.style.color='#fff';t.style.display='block';setTimeout(function(){t.style.display='none';},3500);}
 </script>
 </div></div></div>
-<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Ã‚ÂƒÃƒÂ‚Ã‚Â—</button></div><div class="notif-list" id="notifList"></div></div>
+<div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;Ã‚ÂƒÃƒÂ‚Ã‚Â - </button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script>
@@ -100,7 +100,7 @@ function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function toggleNotifPanel(){document.getElementById('notifPanel').classList.toggle('open');}
 document.addEventListener('DOMContentLoaded',function(){initNav();if(typeof loadPage==='function')loadPage();});
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

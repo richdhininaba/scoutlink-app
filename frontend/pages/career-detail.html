@@ -15,7 +15,10 @@ body{background:#080d14;color:#f8fafc;font-family:Inter,sans-serif;min-height:10
 .job-body{display:grid;gap:22px;padding:28px}.section h2{font-size:17px;margin:0 0 9px}.section p{white-space:pre-line;color:#b5c4d4;line-height:1.65;margin:0}
 .apply-card{position:sticky;top:20px;padding:20px}.apply-card h2{margin:0 0 8px}.apply-card p{color:#9fb0c2;font-size:13px;line-height:1.5;margin:0 0 16px}.form-grid{display:grid;gap:10px}.form-grid input{min-height:44px}.file-note{font-size:12px;color:#8ea2b5}.msg{display:none;border-radius:10px;padding:11px 12px;font-size:13px;line-height:1.4}.msg.show{display:block}.ok{background:rgba(29,158,117,.12);color:#70f2bd;border:1px solid rgba(29,158,117,.35)}.err{background:rgba(239,83,80,.1);color:#ffb4b4;border:1px solid rgba(239,83,80,.28)}
 @media(max-width:900px){.layout{grid-template-columns:1fr;padding:20px 14px 54px}.apply-card{position:static}.job-head,.job-body{padding:18px}.public-nav{padding:16px}}
-</style></head><body>
+</style><link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
+</head><body>
 <nav class="public-nav"><a class="brand" href="/">Scout<span>Link</span></a><a class="btn btn-sm btn-outline" href="/careers">All roles</a></nav>
 <main class="layout">
   <article class="job-main" id="jobMain"><div class="job-head"><span class="eyebrow">Loading role</span><h1>Please wait...</h1></div></article>
@@ -56,4 +59,7 @@ document.getElementById('applyForm').addEventListener('submit',function(e){
   fetch(API+'/api/careers/'+encodeURIComponent(job.slug)+'/apply',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not submit application');return d;});}).then(function(d){show('ok','Application submitted. Reference: '+(d.applicationId||'received'));document.getElementById('applyForm').reset();}).catch(function(err){show('err',err.message);}).finally(function(){btn.disabled=false;btn.textContent='Submit application';});
 });
 </script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

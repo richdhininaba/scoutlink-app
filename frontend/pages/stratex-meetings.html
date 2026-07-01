@@ -1,10 +1,11 @@
 ﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meetings - ScoutLink Stratex</title>
-<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body><div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main"><div class="topbar"><span class="topbar-title">Meetings</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
@@ -22,6 +23,7 @@ function render(){meetingAttendees.innerHTML=admins.filter(function(a){return a.
 async function load(){var d=await api('GET','/api/stratex/org');admins=d.admins||[];meetings=d.meetings||[];render();}
 async function bookMeeting(){try{if(!meetingTitle.value.trim()||!meetingDate.value)throw new Error('Meeting title and date are required.');var attendees=Array.prototype.map.call(meetingAttendees.selectedOptions,function(o){return o.value;});await api('POST','/api/stratex/org/meetings',{title:meetingTitle.value.trim(),meetingDate:new Date(meetingDate.value).toISOString(),location:meetingLocation.value.trim(),attendees:attendees,notes:meetingNotes.value.trim()});show('ok','Meeting booked.');['meetingTitle','meetingDate','meetingLocation','meetingNotes'].forEach(function(id){document.getElementById(id).value='';});load();}catch(e){show('err',e.message);}}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();load().catch(function(e){show('err',e.message);});});
-</script><script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script></body></html>
+</script><script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
+</body></html>

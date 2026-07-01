@@ -6,9 +6,6 @@
   <title>Page Not Found - ScoutLink</title>
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/main.css">
-  <link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body{min-height:100vh;background:#080d14;color:var(--text);font-family:Inter,system-ui,sans-serif;display:grid;place-items:center;padding:24px}
@@ -29,6 +26,9 @@
     .support a{color:var(--green);text-decoration:none;font-weight:800}
     @media(max-width:640px){body{padding:14px}.not-found{padding:22px;border-radius:14px}.brand-row{align-items:flex-start;flex-direction:column;margin-bottom:26px}.actions{display:grid}.metric-row{grid-template-columns:1fr}.btn{width:100%;justify-content:center}}
   </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head>
 <body>
   <main class="not-found">
@@ -40,9 +40,9 @@
     <h1>This page is out of play.</h1>
     <p>The link may have moved, or the route may have been typed incorrectly. Head back to ScoutLink and pick up from the right account area.</p>
     <div class="actions">
-      <a class="btn btn-primary" href="/login">Sign in</a>
       <a class="btn btn-outline" href="/">ScoutLink home</a>
-      <button class="btn btn-ghost" type="button" onclick="history.length>1?history.back():window.location.href='/'">Go back</button>
+      <a class="btn btn-primary" href="/login">Sign in</a>
+      <a class="btn btn-ghost" href="mailto:info@scoutlink.app">Contact support</a>
     </div>
     <div class="metric-row">
       <div class="metric"><strong>Scout</strong><span>Player intelligence</span></div>
@@ -51,5 +51,8 @@
     </div>
     <div class="support">Need help? Contact <a href="mailto:info@scoutlink.app">info@scoutlink.app</a>.</div>
   </main>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body>
 </html>

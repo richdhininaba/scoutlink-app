@@ -3,9 +3,6 @@
 <title>My players - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px;}
@@ -18,6 +15,9 @@
 .filter-bar input,.filter-bar select{padding:8px 12px;background:#111827;border:1px solid #1e2a3a;border-radius:8px;color:#e2e8f0;font-size:13px;}
 .coach-assign-select{width:100%;margin-top:10px;padding:8px 10px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e2e8f0;font-size:12px;}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -232,7 +232,7 @@ html+='</tbody></table></div>';
 document.getElementById('playersContainer').innerHTML=html;
 }
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

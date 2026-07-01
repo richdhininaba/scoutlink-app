@@ -3,9 +3,6 @@
 <title>Chat - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .chat-shell{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;min-height:calc(100vh - 120px);}
@@ -32,6 +29,9 @@
 .composer textarea{min-height:46px;max-height:120px;resize:vertical;}
 @media(max-width:900px){.chat-shell{grid-template-columns:1fr}.thread-list{max-height:320px}.msg{max-width:92%;}}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--green)">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -152,7 +152,7 @@ function shareSelected(){
 }
 document.addEventListener('DOMContentLoaded',function(){initNav();loadThreads();loadShareOptions();document.getElementById('refreshThreads').addEventListener('click',loadThreads);document.getElementById('sendBtn').addEventListener('click',sendMessage);document.getElementById('shareType').addEventListener('change',renderShareTarget);document.getElementById('shareBtn').addEventListener('click',shareSelected);});
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

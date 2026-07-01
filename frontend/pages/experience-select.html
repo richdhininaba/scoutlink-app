@@ -3,9 +3,6 @@
 <title>Experience selector - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;min-height:100vh;}
@@ -41,6 +38,9 @@ body{background:#080d14;color:var(--text,#f8fafc);font-family:Inter,sans-serif;m
   .experience-card .btn{width:100%;justify-content:center;}
 }
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <main class="selector-shell">
   <div class="selector-top">
@@ -135,7 +135,7 @@ async function load(){
 document.getElementById('logoutBtn').addEventListener('click',function(){Auth.clear();navigateClean('login.html?logout=1');});
 document.addEventListener('DOMContentLoaded',load);
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

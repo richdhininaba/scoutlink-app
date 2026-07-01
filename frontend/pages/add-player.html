@@ -3,9 +3,6 @@
 <title>Add Player - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
-<link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 .form-group{margin-bottom:14px}
@@ -28,6 +25,9 @@
 .info-btn{background:none;border:none;color:#8b949e;cursor:pointer;font-size:11px;padding:0 2px}
 @media(max-width:600px){.form-row,.form-row.cols-3{grid-template-columns:1fr}.range-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('submitBtn').addEventListener('click',submitPlayer);
 });
 </script>
-<script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>

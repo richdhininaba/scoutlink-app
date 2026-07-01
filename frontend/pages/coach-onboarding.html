@@ -1,10 +1,11 @@
 ﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Coach setup - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css"><link rel="stylesheet" href="../css/mobile-foundation.css">
-<link rel="stylesheet" href="../css/mobile-shell.css">
-<link rel="stylesheet" href="../css/mobile-pages.css">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <style>.wizard{max-width:820px;margin:0 auto}.wizard-step{display:none}.wizard-step.active{display:block}.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.progress-chip{display:inline-flex;padding:6px 10px;border:1px solid rgba(0,230,118,.35);border-radius:999px;color:#00e676;font-size:12px;font-weight:800}.player-preview{border:1px solid #243447;background:#07111f;border-radius:12px;padding:14px;margin-top:12px}</style>
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 </head><body><div class="dashboard"><nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main"><div class="topbar"><span class="topbar-title">Coach setup</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="finishLater()">Skip for now</button></div></div>
 <div class="page-content"><div class="wizard"><div class="table-card"><div class="table-header"><h3 id="stepTitle">Tell us about your squad and we will build the workspace around it.</h3><span class="progress-chip" id="stepChip">1 of 4</span></div><div style="padding:24px">
@@ -42,6 +43,7 @@ function nextStep(){if(step===0){var size=Number(document.getElementById('squadS
 function prevStep(){showStep(step-1);}
 async function saveWizard(){try{var body={team:{teamName:teamName.value,league:league.value,city:city.value},squadSize:squadSize.value,squadList:squadList.value,assistantInviteEmail:assistantEmail.value,firstPlayer:{firstName:pFirst.value,lastName:pLast.value,dateOfBirth:pDob.value,birthYear:pBirthYear.value,position:pPosition.value,foot:pFoot.value}};await api('POST','/api/onboarding/coach-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['dashboard','roster','profile','match_facts','video','assistant_invite']});navigateClean('coach-dashboard.html?tour=done');}catch(e){var er=document.getElementById('err');er.textContent=e.message;er.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
-</script><script src="../js/mobile-navigation.js"></script>
-<script src="../js/mobile-shell.js"></script>
-<script src="../js/mobile-page-adapters.js"></script></body></html>
+</script><script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
+</body></html>
