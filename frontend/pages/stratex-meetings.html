@@ -3,9 +3,9 @@
 <title>Meetings - ScoutLink Stratex</title>
 <link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/phone-base.css">
-<link rel="stylesheet" href="/css/phone-shell.css">
-<link rel="stylesheet" href="/css/phone-pages.css">
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -27,7 +27,7 @@ function render(){meetingAttendees.innerHTML=admins.filter(function(a){return a.
 async function load(){var d=await api('GET','/api/stratex/org');admins=d.admins||[];meetings=d.meetings||[];render();}
 async function bookMeeting(){try{if(!meetingTitle.value.trim()||!meetingDate.value)throw new Error('Meeting title and date are required.');var attendees=Array.prototype.map.call(meetingAttendees.selectedOptions,function(o){return o.value;});await api('POST','/api/stratex/org/meetings',{title:meetingTitle.value.trim(),meetingDate:new Date(meetingDate.value).toISOString(),location:meetingLocation.value.trim(),attendees:attendees,notes:meetingNotes.value.trim()});show('ok','Meeting booked.');['meetingTitle','meetingDate','meetingLocation','meetingNotes'].forEach(function(id){document.getElementById(id).value='';});load();}catch(e){show('err',e.message);}}
 document.addEventListener('DOMContentLoaded',function(){initStratexPage();load().catch(function(e){show('err',e.message);});});
-</script><script src="/js/phone-routes.js"></script>
-<script src="/js/phone-shell.js"></script>
-<script src="/js/phone-pages.js"></script>
+</script><script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
 </body></html>

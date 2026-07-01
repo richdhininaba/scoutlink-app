@@ -3,9 +3,9 @@
 <title>Scout setup - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <style>.wizard{max-width:840px;margin:0 auto}.wizard-step{display:none}.wizard-step.active{display:block}.pill-grid{display:flex;flex-wrap:wrap;gap:8px}.pill{border:1px solid #243447;background:#07111f;color:#cbd5e1;border-radius:999px;padding:8px 12px;cursor:pointer}.pill.active{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.08)}.progress-chip{display:inline-flex;padding:6px 10px;border:1px solid rgba(0,230,118,.35);border-radius:999px;color:#00e676;font-size:12px;font-weight:800}</style>
-<link rel="stylesheet" href="/css/phone-base.css">
-<link rel="stylesheet" href="/css/phone-shell.css">
-<link rel="stylesheet" href="/css/phone-pages.css">
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -47,7 +47,7 @@ function nextStep(){showStep(step+1);}function prevStep(){showStep(step-1);}
 function updateSummary(){summary.innerHTML='You are set up to scout <b>'+((selected('position').join(', '))||'all priority positions')+'</b> across <b>'+(region.value||'your region')+'</b>, with a priority on <b>'+((selected('weakness').join(', '))||'team needs you select')+'</b>. Alerts: <b>'+alerts.options[alerts.selectedIndex].text+'</b>.';}
 async function saveWizard(){try{var body={teamWeaknesses:selected('weakness'),preferredPositions:selected('position'),ageGroups:selected('age'),scoutCountry:country.value,scoutRegion:region.value,alertPreference:alerts.value,setupSummary:summary.textContent};await api('POST','/api/onboarding/scout-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['feed','filters','profile','shortlist','alerts','chat']});navigateClean('player-search.html?setup=done');}catch(e){err.textContent=e.message;err.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
-</script><script src="/js/phone-routes.js"></script>
-<script src="/js/phone-shell.js"></script>
-<script src="/js/phone-pages.js"></script>
+</script><script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
 </body></html>

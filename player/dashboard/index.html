@@ -1,5 +1,189 @@
-<!doctype html><html><head><meta charset="utf-8"><title>ScoutLink</title><script src="/route-redirect.js"></script><script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>My Profile - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.attr-meter{margin-bottom:10px;}
+.attr-meter-header{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;}
+.attr-name{font-weight:600;color:#94a3b8;text-transform:capitalize;}
+.attr-val{font-weight:700;}
+.attr-bar{background:#1e2a3a;border-radius:4px;height:6px;overflow:hidden;}
+.attr-bar-fill{height:100%;border-radius:4px;background:var(--accent,#1d9e75);transition:width 0.5s;}
+.attr-bar-fill.amber{background:#FFC107;}
+.attr-bar-fill.red{background:#f44336;}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body><p>Loading ScoutLink...</p></body></html>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+  <div class="topbar">
+    <span class="topbar-title">My Profile</span>
+    <div class="topbar-right">
+      <button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+  <div class="page-content" id="profileContent"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;</button></div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+var PLAYER_NAV = [
+  {label:'Dashboard', href:'player-dashboard.html'},
+  {label:'My Profile', href:'player-profile-edit.html'},
+  {label:'Video Reels', href:'player-video-reels.html'},
+  {label:'Notifications', href:'player-notifications.html'},
+  {label:'Settings', href:'player-settings.html'}
+];
+function initNav() {
+  if (!Auth.isLoggedIn() || Auth.type !== 'Player') { navigateClean('login.html'); return; }
+  if (typeof buildPlayerNav === 'function') buildPlayerNav('sidebarNav', 'Dashboard');
+  var u = Auth.user;
+  var uel = document.getElementById('sidebarUser');
+  if (uel && u) uel.innerHTML = '<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">' + initials(u.firstName, u.lastName) + '</div><div><div class="user-name">' + (u.firstName || '') + ' ' + (u.lastName || '') + '</div><div class="user-role">Player</div></div></div>';
+  if (typeof updateNotifBadge === 'function') updateNotifBadge();
+}
+function logout() { Auth.clear(); navigateClean('login.html?logout=1'); }
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
+function safe(v,fb){return(v!==null&&v!==undefined&&v!=='')?v:(fb||'N/A');}
+function fmtVal(v){var n=Number(v)||0;if(!n)return 'N/A';if(n>=1000000)return '\u00a3'+(n/1000000).toFixed(2)+'m';if(n>=1000)return '\u00a3'+(n/1000).toFixed(0)+'k';return '\u00a3'+n;}
+function getOvBand(ov100){
+  if(ov100>=90)return{label:'Elite grassroots',color:'#7ee8a2'};
+  if(ov100>=80)return{label:'Excellent',color:'#1d9e75'};
+  if(ov100>=70)return{label:'Strong',color:'#FFC107'};
+  if(ov100>=55)return{label:'Promising',color:'#FF9800'};
+  if(ov100>=40)return{label:'Emerging',color:'#f44336'};
+  return{label:'Developing',color:'#f85149'};
+}
+function dispAttr(val){
+  if(val===null||val===undefined)return '--';
+  var v=parseFloat(val);if(isNaN(v))return '--';
+  return(v>10?v/10:v).toFixed(1);
+}
+function barPct(val){
+  if(val===null||val===undefined)return 0;
+  var v=parseFloat(val);if(isNaN(v))return 0;
+  return Math.round(v>10?v:v*10);
+}
+function barClass(val){var p=barPct(val);return p>=80?'':p>=60?' amber':' red';}
+function attrColor(val){var p=barPct(val);return p>=80?'#1d9e75':p>=60?'#FFC107':p>=50?'#FF9800':'#f44336';}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initNav();
+  var u = Auth.user;
+  if (!u) { navigateClean('login.html'); return; }
+  api('GET', '/api/players/' + u.id).then(function(d) {
+    if (!d || !d.player) {
+      document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#8b949e">Could not load your profile. Please contact your coach.</div>';
+      return;
+    }
+    var p = d.player;
+    var v = d.videos || [];
+    var el = document.getElementById('profileContent');
+    var ov = parseFloat(p.overall_rating || 0);
+    var ov100 = ov > 10 ? Math.round(ov) : Math.round(ov * 10);
+    var band = getOvBand(ov100);
+    var omr = parseFloat(p.overall_match_rating || p.overall_rating || 0);
+    var omr100 = omr > 10 ? Math.round(omr) : Math.round(omr * 10);
+    var omrBand = getOvBand(omr100);
+    var apps = parseInt(p.appearances) || 0;
+    var goals = parseInt(p.goals) || 0;
+    var assts = parseInt(p.assists) || 0;
+    var cs = parseInt(p.clean_sheets) || 0;
+    var isGK = (p.position_group || '').toLowerCase() === 'goalkeeper';
+    var outfieldAttrs = ['pace','agility','strength','stamina','shooting','passing','dribbling','defending','composure','crossing','vision','positioning','heading','tackling','jumping'];
+    var gkAttrs = ['gk_diving','gk_reflexes','gk_handling','gk_positioning','gk_kicking','gk_distribution','gk_communication','gk_sweeping'];
+    var attrsToShow = isGK ? gkAttrs : outfieldAttrs;
+    var attrLabels = {pace:'Pace',agility:'Agility',strength:'Strength',stamina:'Stamina',shooting:'Shooting',passing:'Passing',dribbling:'Dribbling',defending:'Defending',composure:'Composure',crossing:'Crossing',vision:'Vision',positioning:'Positioning',heading:'Heading',tackling:'Tackling',jumping:'Jumping',gk_diving:'Diving',gk_reflexes:'Reflexes',gk_handling:'Handling',gk_positioning:'Positioning',gk_kicking:'Kicking',gk_distribution:'Distribution',gk_communication:'Communication',gk_sweeping:'Sweeping'};
+
+    var attrHtml = attrsToShow.map(function(a){
+      var val = p[a];
+      var pct = barPct(val);
+      var col = attrColor(val);
+      var display = dispAttr(val);
+      return '<div class="attr-meter"><div class="attr-meter-header"><span class="attr-name">' + (attrLabels[a]||a) + '</span><span class="attr-val" style="color:' + col + '">' + display + '</span></div><div class="attr-bar"><div class="attr-bar-fill' + barClass(val) + '" style="width:' + pct + '%;background:' + col + '"></div></div></div>';
+    }).join('');
+
+    var videoHtml = '';
+    if (v.length) {
+      videoHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">' +
+        v.slice(0, 4).map(function(vid) {
+          var url = vid.video_url || vid.url || '#';
+          return '<div style="background:#21262d;border:1px solid #30363d;border-radius:10px;padding:14px"><div style="font-weight:600;font-size:13px;margin-bottom:4px;color:#fff">' + (vid.title || 'Match video') + '</div>' +
+            '<div style="font-size:11px;color:#1d9e75;margin-bottom:8px">' + (vid.category || 'Highlight') + '</div>' +
+            '<a href="' + url + '" target="_blank" class="btn btn-sm btn-outline" style="text-decoration:none">&#9654; Watch</a></div>';
+        }).join('') + '</div>';
+    } else {
+      videoHtml = '<div style="color:#8b949e;font-size:13px;padding:16px 0">No videos uploaded yet. Your coach can add highlights for you.</div>';
+    }
+
+    el.innerHTML =
+      '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
+        '<div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">' +
+            '<div style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">' + initials(p.first_name,p.last_name) + '</div>' +
+            '<div style="font-size:18px;font-weight:800;color:#fff">' + safe(p.first_name) + ' ' + safe(p.last_name,'') + '</div>' +
+            '<div style="font-size:12px;color:#8b949e;margin-top:4px">' + safe(p.specific_position||p.primary_position||p.position_group) + ' &bull; ' + safe(p.age_group) + '</div>' +
+            '<div style="font-size:12px;color:#8b949e;margin-top:2px">' + safe(p.team_name) + '</div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:16px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Overall match performance</div>' +
+            '<div style="text-align:center">' +
+              '<div style="font-size:48px;font-weight:900;color:' + omrBand.color + ';line-height:1">' + (apps > 0 ? omr100 : '--') + '</div>' +
+              '<div style="font-size:11px;color:#8b949e;margin-top:4px">' + (apps > 0 ? '/100' : 'No match data') + '</div>' +
+              '<div style="font-size:13px;font-weight:700;color:' + omrBand.color + ';margin-top:8px">' + omrBand.label + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Estimated value</div>' +
+            '<div style="font-size:22px;font-weight:900;color:#1d9e75">' + fmtVal(p.transfer_value) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#1d9e75">' + apps + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Appearances</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#58a6ff">' + goals + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Goals</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#1d9e75">' + assts + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Assists</div></div>' +
+            '<div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center"><div style="font-size:28px;font-weight:900;color:#FFC107">' + cs + '</div><div style="font-size:11px;color:#8b949e;text-transform:uppercase;font-weight:700;margin-top:4px">Clean sheets</div></div>' +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:20px">' +
+            '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:16px">Attributes</div>' +
+            attrHtml +
+          '</div>' +
+          '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+              '<div style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em">My video reels</div>' +
+              '<a href="player-video-reels.html" style="font-size:12px;color:#1d9e75;text-decoration:none">View all</a>' +
+            '</div>' +
+            videoHtml +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }).catch(function(e) {
+    document.getElementById('profileContent').innerHTML = '<div style="text-align:center;padding:48px;color:#8b949e">Could not load profile: ' + e.message + '</div>';
+  });
+});
+</script>
+<script src="../js/product-tour.js"></script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>

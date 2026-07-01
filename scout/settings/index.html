@@ -1,5 +1,146 @@
-<!doctype html><html><head><meta charset="utf-8"><title>ScoutLink</title><script src="/route-redirect.js"></script><script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Settings - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.tgl{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#30363d;border-radius:24px;transition:.3s}
+.tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#8b949e;border-radius:50%;transition:.3s}
+input:checked+.tgl-slider{background:#1d9e75}
+input:checked+.tgl-slider:before{transform:translateX(20px);background:#000}
+.form-field{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#ffffff;font-size:14px;font-family:inherit;outline:none;width:100%;box-sizing:border-box}
+.form-field:focus{border-color:#1d9e75}
+.seg{display:inline-flex;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:#8b949e;border-radius:6px;padding:8px 16px;font-weight:800;cursor:pointer}
+.seg button.active{background:#1d9e75;color:#fff}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body><p>Loading ScoutLink...</p></body></html>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Settings</span>
+<div class="topbar-right">
+<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button>
+</div></div>
+<div class="page-content">
+<div id="toast" style="display:none;position:fixed;top:20px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-weight:600;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)"></div>
+<div style="max-width:700px">
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Appearance</h3></div>
+<div style="padding:0 20px 20px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px;background:#0d1117;border-radius:8px;flex-wrap:wrap">
+<div><div style="font-weight:600;color:#ffffff">Theme</div><div style="font-size:12px;color:#8b949e">Choose how ScoutLink appears for your user.</div></div>
+<div class="seg" role="group" aria-label="Theme">
+<button type="button" id="darkThemeBtn" class="active">Dark</button>
+<button type="button" id="lightThemeBtn">Light</button>
+</div>
+</div>
+</div></div>
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Change Password</h3></div>
+<div style="padding:0 20px 20px">
+<div style="margin-bottom:14px"><label style="display:block;font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:700">New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" class="form-field"></div>
+<div style="margin-bottom:16px"><label style="display:block;font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:700">Confirm Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" class="form-field"></div>
+<button class="btn btn-primary" id="changePassBtn">Update Password</button>
+</div></div>
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Notification Preferences</h3></div>
+<div style="padding:0 20px 20px">
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n1" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#ffffff">Email Notifications</div><div style="font-size:12px;color:#8b949e">Receive updates via email</div></div></div>
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n2" checked><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#ffffff">In-App Notifications</div><div style="font-size:12px;color:#8b949e">See notifications in the platform</div></div></div>
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n3"><span class="tgl-slider"></span></label><div><div style="font-weight:600;color:#ffffff">Platform Updates</div><div style="font-size:12px;color:#8b949e">Platform announcements</div></div></div>
+<button class="btn btn-primary" id="savePrefsBtn">Save Preferences</button>
+</div></div>
+<div class="table-card" style="margin-bottom:20px;border:1px solid rgba(29,158,117,.3)">
+<div class="table-header"><h3>Team Setup</h3></div>
+<div style="padding:0 20px 20px"><p style="color:#8b949e;margin-bottom:16px;font-size:14px">Configure your scouting team profile, weaknesses and player search criteria.</p>
+<a href="scout-setup.html" class="btn btn-primary">Go to Team Setup &#8594;</a></div></div>
+<div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
+<div class="table-header"><h3 style="color:#EF5350">Danger Zone</h3></div>
+<div style="padding:0 20px 20px"><p style="color:#8b949e;margin-bottom:16px;font-size:14px">Contact support to deactivate your account.</p>
+<button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" id="deactivateBtn">Deactivate Account</button>
+</div></div>
+</div></div></div></div>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Scout'){navigateClean('login.html');return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Scout');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Scout</div></div></div>';
+  updateNotifBadge();
+}
+function logout(){logoutToLogin();}
+function toggleNotifPanel(){}
+function showToast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  t.style.background=type==='success'?'#1d9e75':'#f44336';t.style.color='#fff';
+  setTimeout(function(){t.style.display='none';},3000);
+}
+function setThemeButtons(theme){
+  theme=theme==='light'?'light':'dark';
+  document.getElementById('darkThemeBtn').classList.toggle('active',theme==='dark');
+  document.getElementById('lightThemeBtn').classList.toggle('active',theme==='light');
+  if(typeof applyTheme==='function')applyTheme(theme);else document.body.classList.toggle('theme-light',theme==='light');
+}
+function saveSettings(theme){
+  setThemeButtons(theme);
+  localStorage.setItem('sl_theme',theme);
+  return api('PATCH','/api/scouts/settings',{
+    theme:theme,
+    emailAlerts:document.getElementById('n1').checked,
+    pushAlerts:document.getElementById('n2').checked,
+    weeklySummary:document.getElementById('n3').checked
+  });
+}
+function loadSettings(){
+  api('GET','/api/scouts/settings').then(function(r){
+    var s=r.settings||{};
+    setThemeButtons(s.theme||localStorage.getItem('sl_theme')||'dark');
+    document.getElementById('n1').checked=s.emailAlerts!==false;
+    document.getElementById('n2').checked=s.pushAlerts!==false;
+    document.getElementById('n3').checked=s.weeklySummary===true;
+  }).catch(function(){setThemeButtons(localStorage.getItem('sl_theme')||'dark');});
+}
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();
+  loadSettings();
+  document.getElementById('darkThemeBtn').addEventListener('click',function(){saveSettings('dark').then(function(){showToast('Theme saved.','success');}).catch(function(e){showToast('Error: '+e.message,'error');});});
+  document.getElementById('lightThemeBtn').addEventListener('click',function(){saveSettings('light').then(function(){showToast('Theme saved.','success');}).catch(function(e){showToast('Error: '+e.message,'error');});});
+  document.getElementById('changePassBtn').addEventListener('click',function(){
+    var np=document.getElementById('newPassword').value;
+    var cp=document.getElementById('confirmPassword').value;
+    if(!np||np.length<8){showToast('Password must be at least 8 characters','error');return;}
+    if(np!==cp){showToast('Passwords do not match','error');return;}
+    api('POST','/api/auth/change-password',{password:np}).then(function(){
+      showToast('Password updated successfully','success');
+      document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';
+    }).catch(function(e){showToast('Error: '+e.message,'error');});
+  });
+  document.getElementById('savePrefsBtn').addEventListener('click',function(){
+    saveSettings(localStorage.getItem('sl_theme')||'dark').then(function(){showToast('Preferences saved.','success');}).catch(function(e){showToast('Error: '+e.message,'error');});
+  });
+  document.getElementById('deactivateBtn').addEventListener('click',function(){showToast('Contact support@stratexanalytics.co.uk to deactivate.','error');});
+});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>

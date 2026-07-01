@@ -1,5 +1,107 @@
-<!doctype html><html><head><meta charset="utf-8"><title>ScoutLink</title><script src="/route-redirect.js"></script><script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Video Reels - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-top:16px}
+.video-card{background:var(--card,#161b22);border:1px solid #30363d;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.video-card-title{font-size:15px;font-weight:700;color:#ffffff}
+.video-badge{display:inline-block;background:rgba(29,158,117,.15);color:#1d9e75;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid rgba(29,158,117,.3)}
+.video-desc{font-size:13px;color:#8b949e;line-height:1.5;flex:1}
+.video-actions{display:flex;gap:8px;margin-top:4px}
+.empty-state{text-align:center;padding:64px 20px;color:#8b949e}
+.empty-state .icon{font-size:48px;margin-bottom:16px}
+.empty-state h3{font-size:18px;font-weight:700;color:#8b949e;margin-bottom:8px}
+.empty-state p{font-size:14px;line-height:1.6;max-width:360px;margin:0 auto}
+@media(max-width:767px){.video-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.video-grid{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body><p>Loading ScoutLink...</p></body></html>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Video reels</span>
+<div class="topbar-right">
+<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<div class="table-card">
+<div class="table-header">
+<div><h3>My highlight reels</h3><p style="font-size:12px;color:#8b949e;margin-top:2px">Match highlights and training videos uploaded by your coach</p></div>
+</div>
+<div style="padding:16px" id="videoContent">
+<div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading videos...</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="notif-panel" id="notifPanel">
+<div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&#215;</button></div>
+<div class="notif-list" id="notifList"></div>
+</div>
+<script src="../js/player-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Player'){navigateClean('login.html');return;}
+  if(typeof buildPlayerNav==='function') buildPlayerNav('sidebarNav','Video reels');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Player</div></div></div>';
+  if(typeof updateNotifBadge==='function') updateNotifBadge();
+}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+function toggleNotifPanel(){var p=document.getElementById('notifPanel');if(p)p.classList.toggle('open');}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();
+  var u=Auth.user;
+  if(!u){navigateClean('login.html');return;}
+
+  api('GET','/api/players/'+u.id).then(function(d){
+    var videos=(d&&d.videos)||[];
+    var el=document.getElementById('videoContent');
+    if(!videos.length){
+      el.innerHTML='<div class="empty-state"><div class="icon">&#127916;</div><h3>No video reels yet</h3><p>No video reels have been uploaded yet. Your coach can upload match highlights and training videos for you.</p></div>';
+      return;
+    }
+    var html='<div class="video-grid">';
+    videos.forEach(function(v){
+      var url=v.video_url||v.url||'#';
+      var cat=v.category||v.video_type||'Highlight';
+      html+='<div class="video-card">'+
+        '<div class="video-card-title">'+(v.title||'Match video')+'</div>'+
+        '<div><span class="video-badge">'+cat+'</span></div>'+
+        '<div class="video-desc">'+(v.description||'No description provided')+'</div>'+
+        '<div class="video-actions">'+
+        '<a href="'+url+'" target="_blank" rel="noopener" class="btn btn-sm btn-primary">&#9654; Watch</a>'+
+        '</div>'+
+        '</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }).catch(function(e){
+    document.getElementById('videoContent').innerHTML='<div style="text-align:center;padding:48px;color:#8b949e">Could not load videos: '+e.message+'</div>';
+  });
+});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>

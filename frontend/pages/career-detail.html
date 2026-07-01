@@ -15,9 +15,9 @@ body{background:#080d14;color:#f8fafc;font-family:Inter,sans-serif;min-height:10
 .job-body{display:grid;gap:22px;padding:28px}.section h2{font-size:17px;margin:0 0 9px}.section p{white-space:pre-line;color:#b5c4d4;line-height:1.65;margin:0}
 .apply-card{position:sticky;top:20px;padding:20px}.apply-card h2{margin:0 0 8px}.apply-card p{color:#9fb0c2;font-size:13px;line-height:1.5;margin:0 0 16px}.form-grid{display:grid;gap:10px}.form-grid input{min-height:44px}.file-note{font-size:12px;color:#8ea2b5}.msg{display:none;border-radius:10px;padding:11px 12px;font-size:13px;line-height:1.4}.msg.show{display:block}.ok{background:rgba(29,158,117,.12);color:#70f2bd;border:1px solid rgba(29,158,117,.35)}.err{background:rgba(239,83,80,.1);color:#ffb4b4;border:1px solid rgba(239,83,80,.28)}
 @media(max-width:900px){.layout{grid-template-columns:1fr;padding:20px 14px 54px}.apply-card{position:static}.job-head,.job-body{padding:18px}.public-nav{padding:16px}}
-</style><link rel="stylesheet" href="/css/phone-base.css">
-<link rel="stylesheet" href="/css/phone-shell.css">
-<link rel="stylesheet" href="/css/phone-pages.css">
+</style><link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -63,7 +63,7 @@ document.getElementById('applyForm').addEventListener('submit',function(e){
   fetch(API+'/api/careers/'+encodeURIComponent(job.slug)+'/apply',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not submit application');return d;});}).then(function(d){show('ok','Application submitted. Reference: '+(d.applicationId||'received'));document.getElementById('applyForm').reset();}).catch(function(err){show('err',err.message);}).finally(function(){btn.disabled=false;btn.textContent='Submit application';});
 });
 </script>
-<script src="/js/phone-routes.js"></script>
-<script src="/js/phone-shell.js"></script>
-<script src="/js/phone-pages.js"></script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
 </body></html>

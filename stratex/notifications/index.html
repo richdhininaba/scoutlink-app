@@ -1,5 +1,118 @@
-<!doctype html><html><head><meta charset="utf-8"><title>ScoutLink</title><script src="/route-redirect.js"></script><script type="text/javascript">
+<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Notifications - ScoutLink admin</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
+.notif-card{display:flex;gap:14px;align-items:flex-start;padding:16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.notif-card:hover{background:rgba(255,255,255,0.03);}
+.notif-card.unread{background:rgba(29,158,117,0.05);}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px;}
+.notif-dot.read{background:#30363d;}
+.badge-blue{background:rgba(41,121,255,.15);color:#58a6ff;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;}
+.btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+.btn-sm{padding:6px 12px;font-size:13px;}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body><p>Loading ScoutLink...</p></body></html>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent)">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+  <span class="topbar-title">Notifications</span>
+  <div class="topbar-right">
+    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign out</button>
+  </div>
+</div>
+<div class="page-content">
+<div class="table-card">
+  <div class="table-header">
+    <div><h3 style="font-size:16px;font-weight:700">All notifications</h3><p id="notifSubtitle" style="font-size:12px;color:var(--text-secondary);margin-top:2px">Loading...</p></div>
+    <button class="btn btn-sm btn-outline" id="markAllReadBtn">Mark all read</button>
+  </div>
+  <div id="notifContent"><div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Loading notifications...</span></div></div>
+</div>
+</div>
+</div>
+</div>
+<script src="../js/stratex-nav.js"></script>
+<script src="../js/main.js"></script>
+<script>
+function initNav(){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()||Auth.type!=='Stratex'){navigateClean('login.html');return;}
+  if(typeof buildStratexNav==='function')buildStratexNav('sidebarNav',Auth.user);
+  if(typeof updateNotifBadge==='function')updateNotifBadge();
+}
+function logout(){if(typeof Auth!=='undefined')Auth.clear();navigateClean('login.html?logout=1');}
+function relTime(ts){if(!ts)return '';var d=new Date(ts),n=new Date();var s=Math.floor((n-d)/1000);if(s<60)return 'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+
+function renderNotif(n){
+  return '<div class="notif-card '+(n.is_read?'':'unread')+'" data-notif-id="'+n.id+'" style="border-radius:0">'+
+    '<div class="notif-dot '+(n.is_read?'read':'')+'" data-notif-id="'+n.id+'"></div>'+
+    '<div style="flex:1"><div style="font-weight:700;font-size:14px;margin-bottom:4px">'+n.title+'</div>'+
+    '<div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px">'+n.body+'</div>'+
+    '<div style="font-size:11px;color:var(--text-secondary)">'+relTime(n.created_at)+
+    (n.recipient_type?' &middot; <span class="badge-blue">'+n.recipient_type+'</span>':'')+
+    '</div></div></div>';
+}
+
+function loadNotifications(){
+  if(typeof api!=='function')return;
+  api('GET','/api/notifications?limit=100').then(function(d){
+    var rows=d.data||[];
+    var unread=rows.filter(function(r){return !r.is_read;}).length;
+    document.getElementById('notifSubtitle').textContent=rows.length+' notifications'+
+      (unread?' ('+unread+' unread)':'');
+    if(!rows.length){
+      document.getElementById('notifContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)">No notifications yet.</div>';
+      return;
+    }
+    document.getElementById('notifContent').innerHTML=rows.map(renderNotif).join('');
+  }).catch(function(){
+    document.getElementById('notifContent').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)">Could not load notifications.</div>';
+  });
+}
+
+function markRead(id){
+  if(typeof api!=='function')return;
+  api('PATCH','/api/notifications/'+id+'/read').then(function(){loadNotifications();}).catch(function(){});
+}
+
+function markAllRead(){
+  if(typeof api!=='function')return;
+  api('PATCH','/api/notifications/read-all').then(function(){loadNotifications();}).catch(function(){});
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();loadNotifications();
+  document.getElementById('logoutBtn').addEventListener('click',logout);
+  document.getElementById('markAllReadBtn').addEventListener('click',markAllRead);
+  document.getElementById('notifContent').addEventListener('click',function(e){
+    var card=e.target.closest('[data-notif-id]');
+    if(card&&card.dataset.notifId&&!e.target.classList.contains('notif-card')){
+      markRead(card.dataset.notifId);
+    } else if(card&&card.dataset.notifId&&card.classList.contains('notif-card')){
+      markRead(card.dataset.notifId);
+    }
+  });
+});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
