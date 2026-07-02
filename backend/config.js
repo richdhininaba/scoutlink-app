@@ -9,7 +9,10 @@ module.exports = {
   supabase: {
     url: process.env.SUPABASE_URL,
     anonKey: process.env.SUPABASE_ANON_KEY,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY
+      || process.env.SUPABASE_SERVICE_KEY
+      || process.env.SUPABASE_SECRET_KEY
+      || process.env.SUPABASE_SERVICE_ROLE,
     // JWT secret from Supabase project settings -> API -> JWT Settings
     jwtSecret: process.env.SUPABASE_JWT_SECRET,
   },
