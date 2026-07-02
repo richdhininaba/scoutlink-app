@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Career - Stratex Analytics</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{background:#f6f8fb;color:#111827;font-family:Inter,sans-serif;min-height:100vh}
+.public-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px clamp(16px,5vw,64px);border-bottom:1px solid #e5e7eb;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);position:sticky;top:0;z-index:10}
+.brand{font-size:22px;font-weight:950;color:#111827;text-decoration:none}.brand span{color:#0f9f75}
+.page{max-width:1240px;margin:0 auto;padding:28px clamp(16px,5vw,64px) 72px}
+.back-link{display:inline-flex;align-items:center;gap:8px;color:#047857;text-decoration:none;font-weight:900;font-size:13px;margin-bottom:16px}
+.job-layout{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:22px;align-items:start}
+.hero-card,.content-card,.apply-card,.meta-card{background:#fff;border:1px solid #e5e7eb;border-radius:24px;box-shadow:0 20px 54px rgba(15,23,42,.08)}
+.hero-card{padding:30px;background:radial-gradient(circle at top right,rgba(15,159,117,.13),transparent 42%),#fff;margin-bottom:18px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;color:#047857;background:#ecfdf5;border:1px solid rgba(15,159,117,.22);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.06em}
+.hero-card h1{font-size:clamp(36px,5vw,64px);line-height:1;margin:18px 0 14px;letter-spacing:0;color:#0f172a;max-width:820px}
+.summary{font-size:17px;line-height:1.7;color:#475569;max-width:760px;margin:0 0 22px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.hero-actions .btn{min-height:42px}
+.meta-card{padding:18px;margin-bottom:18px}.meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.meta-item{background:#f8fafc;border:1px solid #edf1f5;border-radius:16px;padding:13px}.meta-label{display:block;color:#64748b;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}.meta-value{display:block;color:#111827;font-size:14px;font-weight:850;line-height:1.35;overflow-wrap:anywhere}
+.content-card{padding:28px;display:grid;gap:24px}.section h2{font-size:18px;margin:0 0 10px;color:#111827}.formatted{color:#475569;line-height:1.68;font-size:15px}.formatted p{margin:0 0 11px}.formatted p:last-child{margin-bottom:0}.formatted ul,.formatted ol{margin:0 0 12px 21px;padding:0}.formatted li{margin:6px 0}.formatted strong{color:#111827}.formatted em{color:#334155}.formatted u{text-underline-offset:3px}
+.apply-card{position:sticky;top:94px;padding:20px}.apply-card h2{margin:0 0 8px;color:#111827;font-size:22px}.apply-card p{color:#64748b;font-size:13px;line-height:1.5;margin:0 0 16px}.snapshot{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}.snapshot span{border-radius:999px;background:#f1f5f9;border:1px solid #e5e7eb;color:#475569;padding:7px 9px;font-size:11px;font-weight:900}
+.form-grid{display:grid;gap:11px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid input{min-height:44px;background:#fff!important;color:#111827!important;border-color:#e5e7eb!important;border-radius:12px}.file-note{font-size:12px;color:#64748b;line-height:1.45}.msg{display:none;border-radius:12px;padding:11px 12px;font-size:13px;line-height:1.4;margin-bottom:12px}.msg.show{display:block}.ok{background:rgba(15,159,117,.12);color:#047857;border:1px solid rgba(15,159,117,.35)}.err{background:rgba(220,38,38,.08);color:#dc2626;border:1px solid rgba(220,38,38,.2)}
+.notice-card{background:#fff;border:1px solid #e5e7eb;border-radius:24px;padding:34px;box-shadow:0 20px 54px rgba(15,23,42,.08);max-width:820px}.notice-card h1{font-size:clamp(32px,5vw,54px);line-height:1.04;margin:12px 0;color:#0f172a}.notice-card p{color:#64748b;line-height:1.65;margin:0 0 20px}
+@media(max-width:980px){.job-layout{grid-template-columns:1fr}.apply-card{position:static}.meta-grid{grid-template-columns:1fr 1fr}.page{padding:20px 16px 54px}.hero-card,.content-card,.apply-card,.meta-card,.notice-card{border-radius:20px}.hero-card,.content-card{padding:20px}.public-nav{position:static}}
+@media(max-width:560px){.page{padding:16px 14px 44px}.hero-card h1{font-size:34px}.summary{font-size:15px}.hero-actions,.hero-actions .btn,.form-row{display:grid;grid-template-columns:1fr;width:100%}.meta-grid{grid-template-columns:1fr}.apply-card{padding:18px}.content-card{gap:20px}.formatted{font-size:14px}}
+</style><link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<nav class="public-nav"><a class="brand" href="/">Scout<span>Link</span></a><a class="btn btn-sm btn-outline" href="/careers">All roles</a></nav>
+<main class="page">
+  <a class="back-link" href="/careers">Back to careers</a>
+  <div id="jobRoot">
+    <div class="notice-card"><span class="eyebrow">Loading role</span><h1>Please wait...</h1><p>We are loading the role details.</p></div>
+  </div>
+</main>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
+<script>
+var job=null;
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function getSlug(){var params=new URLSearchParams(window.location.search);var qs=params.get('slug');if(qs)return qs;var parts=window.location.pathname.split('/').filter(Boolean);var last=parts[parts.length-1]||'';if(!last||last==='careers'||last==='career-detail.html')return'';try{return decodeURIComponent(last);}catch(_){return last;}}
+function money(n){return n?('GBP '+Number(n).toLocaleString('en-GB',{maximumFractionDigits:0})):'';}
+function compensationLabel(j){var map={paid_role:'Paid role',unpaid_internship:'Unpaid internship',paid_internship:'Paid internship',commission_based:'Commission-based pay'};return map[j.compensationType]||'';}
+function salary(j){if(j.salaryUnit==='commission'||j.compensationType==='commission_based')return j.compensationNotes?'Competitive commission-based pay':'Commission-based pay';if(j.compensationType==='unpaid_internship')return 'Unpaid internship';if(!j.salaryMin&&!j.salaryMax)return '';var v=j.salaryMin&&j.salaryMax?money(j.salaryMin)+'-'+money(j.salaryMax):money(j.salaryMin||j.salaryMax);return v+' '+(j.salaryUnit||'annually');}
+function positionsText(j,prefix){var n=parseInt(j.positionsAvailable,10);if(!n||n<1)return'';return (prefix?'Positions: ':'')+n+' '+(n===1?'position':'positions');}
+function inlineFormat(s){return s.replace(/\+\+(.+?)\+\+/g,'<u>$1</u>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
+function richText(text){if(!text)return'';var html='',list=null;function close(){if(list){html+='</'+list+'>';list=null;}}String(text).replace(/\r\n/g,'\n').split('\n').forEach(function(raw){var line=esc(raw).trim();if(!line){close();return;}var bullet=line.match(/^[-*]\s+(.+)/);var ordered=line.match(/^\d+\.\s+(.+)/);if(bullet){if(list!=='ul'){close();html+='<ul>';list='ul';}html+='<li>'+inlineFormat(bullet[1])+'</li>';return;}if(ordered){if(list!=='ol'){close();html+='<ol>';list='ol';}html+='<li>'+inlineFormat(ordered[1])+'</li>';return;}close();html+='<p>'+inlineFormat(line)+'</p>';});close();return html;}
+function section(title,text){return String(text||'').trim()?'<section class="section"><h2>'+esc(title)+'</h2><div class="formatted">'+richText(text)+'</div></section>':'';}
+function meta(label,value){return value?'<div class="meta-item"><span class="meta-label">'+esc(label)+'</span><span class="meta-value">'+esc(value)+'</span></div>':'';}
+function summaryText(j){return String(j.roleOverview||j.responsibilities||'').replace(/\r\n/g,'\n').split('\n').map(function(x){return x.replace(/^[-*]\s+/,'').replace(/^\d+\.\s+/,'').trim();}).filter(Boolean)[0]||'Review the role details below and apply with your CV.';}
+function snapshot(j){return [j.department,j.location,j.workingType,j.employmentType,salary(j),positionsText(j,true)].filter(Boolean).map(function(x){return '<span>'+esc(x)+'</span>';}).join('');}
+function render(j){
+  document.title=j.jobTitle+' - Stratex Careers';
+  var metaHtml=meta('Department',j.department)+meta('Location',j.location)+meta('Working type',j.workingType)+meta('Employment', [j.employmentType,j.contractType].filter(Boolean).join(' - '))+meta('Pay type',salary(j)||compensationLabel(j))+meta('Positions available',positionsText(j,false));
+  document.getElementById('jobRoot').innerHTML=
+    '<div class="job-layout"><div><section class="hero-card"><span class="eyebrow">'+esc([j.department||'Commercial','Live role'].join(' - '))+'</span><h1>'+esc(j.jobTitle)+'</h1><p class="summary">'+esc(summaryText(j))+'</p><div class="hero-actions"><a class="btn btn-primary" href="#applySection">Apply now</a><a class="btn btn-outline" href="/careers">View all roles</a></div></section>'+
+    (metaHtml?'<section class="meta-card"><div class="meta-grid">'+metaHtml+'</div></section>':'')+
+    '<section class="content-card">'+section('About Stratex Analytics',j.aboutCompany)+section('Role overview',j.roleOverview)+section('What you will be doing',j.responsibilities)+section('Must-haves',j.mustHaves)+section('Nice-to-haves',j.niceToHaves)+section('Benefits of working here',j.benefits)+section('Compensation notes',j.compensationNotes)+section('Interview process',(j.interviewStageCount?j.interviewStageCount+' interview '+(parseInt(j.interviewStageCount,10)===1?'stage':'stages')+'\n':'')+(j.interviewProcess||''))+section('Application instructions',j.applicationInstructions)+'</section></div>'+
+    '<aside class="apply-card" id="applySection"><h2>Ready to apply?</h2><p>Send your details and CV. The Stratex team will confirm receipt by email.</p><div class="snapshot">'+snapshot(j)+'</div><div class="msg ok" id="ok"></div><div class="msg err" id="err"></div><form class="form-grid" id="applyForm"><div class="form-row"><input id="firstName" name="firstName" placeholder="First name" required><input id="lastName" name="lastName" placeholder="Last name" required></div><input id="email" name="email" type="email" placeholder="Email address" required><input id="phone" name="phone" placeholder="Phone number" required><input id="cv" name="cv" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required><div class="file-note">PDF, DOC or DOCX only. Maximum 5MB.</div><button class="btn btn-primary" id="submitBtn" type="submit">Submit application</button></form></aside></div>';
+  bindApply();
+}
+function renderNotice(title,body){document.getElementById('jobRoot').innerHTML='<div class="notice-card"><span class="eyebrow">Role unavailable</span><h1>'+esc(title)+'</h1><p>'+esc(body||'Please return to the careers page to view current roles.')+'</p><a class="btn btn-primary" href="/careers">View current roles</a></div>';}
+function show(id,msg){var el=document.getElementById(id);if(!el)return;el.textContent=msg;el.classList.add('show');}
+function clearMsgs(){['ok','err'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('show');});}
+function bindApply(){var form=document.getElementById('applyForm');if(!form)return;form.addEventListener('submit',function(e){e.preventDefault();clearMsgs();if(!job){show('err','This role is not available.');return;}var file=document.getElementById('cv').files[0];if(file&&file.size>5*1024*1024){show('err','Please upload a CV under 5MB.');return;}var btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='Submitting...';var fd=new FormData(form);fetch(API+'/api/careers/'+encodeURIComponent(job.slug)+'/apply',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not submit application');return d;});}).then(function(d){show('ok',(d.message||'Application submitted successfully.')+(d.applicationId?' Reference: '+d.applicationId:''));form.reset();}).catch(function(err){show('err',err.message||'Could not submit application.');}).finally(function(){btn.disabled=false;btn.textContent='Submit application';});});}
+var slug=getSlug();
+if(!slug){renderNotice('Role not found','The role link is missing a job slug.');}
+else{fetch(API+'/api/careers/'+encodeURIComponent(slug)).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not load this job');return d;});}).then(function(d){job=d.data;render(job);}).catch(function(e){console.error('[Careers detail]',e);var msg=e.message||'Could not load this job.';renderNotice(msg,msg.indexOf('no longer')>-1?'This role is not currently accepting applications.':'The role may have moved, closed or been archived.');});}
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
