@@ -102,6 +102,19 @@ function logoutToLogin() {
 applyCleanUrl();
 document.addEventListener('DOMContentLoaded', function(){ applyTheme(localStorage.getItem('sl_theme') || 'light'); });
 
+function clearProductTourState() {
+  try {
+    Object.keys(sessionStorage).forEach(function(k) {
+      if (/^sl_tour_|^sl_force_tour_|^sl_product_tour|product_tour/i.test(k) || k === 'sl_demo_tour') sessionStorage.removeItem(k);
+    });
+    Object.keys(localStorage).forEach(function(k) {
+      if (/^sl_tour_|^sl_force_tour_|^sl_product_tour|product_tour/i.test(k) || k === 'sl_demo_tour' || k === 'sl_force_tour') localStorage.removeItem(k);
+    });
+  } catch (_) {}
+}
+
+clearProductTourState();
+
 // Auth
 const Auth = {
   get token() { return localStorage.getItem('sl_token'); },
@@ -111,10 +124,12 @@ const Auth = {
     localStorage.setItem('sl_token', token);
     localStorage.setItem('sl_user', JSON.stringify(user));
     localStorage.setItem('sl_type', type);
+    clearProductTourState();
   },
   clear() {
-    ['sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email','sl_user_role','sl_user_data','sl_demo_mode','sl_demo_tour','sl_admin_token','sl_admin_user','sl_admin_type','sl_experience_switcher','sl_force_tour'].forEach(k => localStorage.removeItem(k));
-    ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_started_at'].forEach(k => sessionStorage.removeItem(k));
+    ['sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email','sl_user_role','sl_user_data','sl_demo_mode','sl_admin_token','sl_admin_user','sl_admin_type','sl_experience_switcher'].forEach(k => localStorage.removeItem(k));
+    ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_started_at','sl_heap_demo_sid'].forEach(k => sessionStorage.removeItem(k));
+    clearProductTourState();
   },
   isLoggedIn() { return !!this.token && !!this.user; },
   redirectToDashboard() {
@@ -145,7 +160,7 @@ function restoreAdminSessionForSelector() {
     var user = JSON.parse(rawUser);
     Auth.set(token, user, localStorage.getItem('sl_admin_type') || 'Stratex');
     localStorage.removeItem('sl_demo_mode');
-    localStorage.removeItem('sl_demo_tour');
+    clearProductTourState();
     return true;
   } catch(e) {
     return false;
@@ -288,7 +303,7 @@ function demoRoleUser(role) {
   return { id:'demo-coach-marcus', firstName:'Marcus', lastName:'Reed', email:'marcus.reed@example.test', teamName:'Northgate United (Demo)' };
 }
 
-function startPublicDemo(role, includeTour) {
+function startPublicDemo(role) {
   const nextRole = role === 'Scout' ? 'Scout' : 'Coach';
   const user = demoRoleUser(nextRole);
   sessionStorage.setItem('sl_public_demo', '1');
@@ -297,13 +312,14 @@ function startPublicDemo(role, includeTour) {
   if (!sessionStorage.getItem('sl_public_demo_state')) setDemoState(demoInitialState());
   localStorage.setItem('sl_demo_mode', '1');
   Auth.set('public-demo-session', user, nextRole);
-  if (includeTour) sessionStorage.setItem('sl_force_tour_' + nextRole, '1');
+  clearProductTourState();
   navigateClean(nextRole === 'Scout' ? 'scout-dashboard.html' : 'coach-dashboard.html');
 }
 
 function exitPublicDemo() {
-  ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_started_at'].forEach(k => sessionStorage.removeItem(k));
-  ['sl_token','sl_user','sl_type','sl_demo_mode','sl_demo_tour'].forEach(k => localStorage.removeItem(k));
+  ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_started_at','sl_heap_demo_sid'].forEach(k => sessionStorage.removeItem(k));
+  ['sl_token','sl_user','sl_type','sl_demo_mode'].forEach(k => localStorage.removeItem(k));
+  clearProductTourState();
   navigateClean('demo.html');
 }
 
@@ -521,8 +537,10 @@ function insertPublicDemoBanner() {
   const banner = document.createElement('div');
   banner.id = 'publicDemoBanner';
   banner.className = 'public-demo-banner';
-  banner.textContent = demoBannerText();
-  host.insertBefore(banner, host.firstChild);
+  banner.innerHTML = '<span class="public-demo-badge">Demo</span><span>' + demoBannerText() + '</span>';
+  const topbar = host.querySelector ? host.querySelector('.topbar') : null;
+  if (topbar && topbar.parentNode === host) host.insertBefore(banner, topbar.nextSibling);
+  else host.insertBefore(banner, host.firstChild);
 }
 
 function applyPublicDemoChrome() {

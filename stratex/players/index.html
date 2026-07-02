@@ -99,6 +99,7 @@ function showToast(msg,type){var t=document.getElementById('toast');t.textConten
 <div class="notif-panel" id="notifPanel"><div class="notif-panel-header"><h3>Notifications</h3><button onclick="toggleNotifPanel()" style="background:none;border:none;color:#B0BEC5;font-size:20px;cursor:pointer">&times;</button></div><div class="notif-list" id="notifList"></div></div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 function initNav(){initStratexPage();}
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}

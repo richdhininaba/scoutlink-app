@@ -36,7 +36,8 @@
 </section>
 <div id="navButtons" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px"><button class="btn btn-outline" onclick="prevStep()">Back</button><button class="btn btn-primary" onclick="nextStep()">Next</button></div>
 </div></div></div></div></div></div>
-<script src="../js/main.js"></script><script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script><script src="../js/scout-nav.js"></script>
 <script>
 var step=0,steps=[],weaknesses=['Tactical awareness gaps','Insufficient game pace and speed','Low team chemistry and leadership','Weak set-piece defending','Need left-footed balance','Need a mobile goalkeeper','Need final-third creativity','Need defensive recovery pace'],positions=['Goalkeeper','Right Back','Centre Back','Left Back','Defensive Midfielder','Central Midfielder','Attacking Midfielder','Right Winger','Left Winger','Striker'],ages=['U13','U14','U15','U16','U17','U18'];
 function finishLater(){navigateClean('scout-dashboard.html');}
@@ -46,7 +47,7 @@ function init(){if(!Auth.isLoggedIn()||Auth.type!=='Scout')return navigateClean(
 function showStep(i){step=Math.max(0,Math.min(i,steps.length-1));steps.forEach(function(s,idx){s.classList.toggle('active',idx===step);});stepTitle.textContent=steps[step].dataset.title;stepChip.textContent=steps[step].dataset.chip;navButtons.style.display=(step===0||step===steps.length-1)?'none':'grid';if(step===steps.length-1)updateSummary();}
 function nextStep(){showStep(step+1);}function prevStep(){showStep(step-1);}
 function updateSummary(){summary.innerHTML='You are set up to scout <b>'+((selected('position').join(', '))||'all priority positions')+'</b> across <b>'+(region.value||'your region')+'</b>, with a priority on <b>'+((selected('weakness').join(', '))||'team needs you select')+'</b>. Alerts: <b>'+alerts.options[alerts.selectedIndex].text+'</b>.';}
-async function saveWizard(){try{var body={teamWeaknesses:selected('weakness'),preferredPositions:selected('position'),ageGroups:selected('age'),scoutCountry:country.value,scoutRegion:region.value,alertPreference:alerts.value,setupSummary:summary.textContent};await api('POST','/api/onboarding/scout-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['feed','filters','profile','shortlist','alerts','chat']});navigateClean('player-search.html?setup=done');}catch(e){err.textContent=e.message;err.classList.add('show');}}
+async function saveWizard(){try{var body={teamWeaknesses:selected('weakness'),preferredPositions:selected('position'),ageGroups:selected('age'),scoutCountry:country.value,scoutRegion:region.value,alertPreference:alerts.value,setupSummary:summary.textContent};await api('POST','/api/onboarding/scout-wizard',body);navigateClean('player-search.html?setup=done');}catch(e){err.textContent=e.message;err.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
 </script><script src="../js/phone-routes.js"></script>
 <script src="../js/phone-shell.js"></script>

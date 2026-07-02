@@ -36,11 +36,11 @@ return rows.filter(r => r.user);
 async function onboardingStatus(accountType, userId) {
 try {
 const { data } = await supabase.from('onboarding_progress')
-.select('setup_wizard_completed,product_tour_completed')
+.select('setup_wizard_completed')
 .eq('account_type', accountType).eq('user_id', userId).maybeSingle();
-return data || { setup_wizard_completed: false, product_tour_completed: false };
+return data || { setup_wizard_completed: false };
 } catch(e) {
-return { setup_wizard_completed: true, product_tour_completed: true };
+return { setup_wizard_completed: true };
 }
 }
 
@@ -214,7 +214,6 @@ const onboarding = await onboardingStatus(selectedType, user.id);
 const needsRegistration = loginCode && user.registration_complete === false;
 res.json({ token, accountType: selectedType, needsPreferences: needsPrefs, needsRegistration,
 needsOnboarding: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.setup_wizard_completed,
-needsTour: (selectedType === 'Coach' || selectedType === 'Scout') && !onboarding.product_tour_completed,
 user: publicUser(user) });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });

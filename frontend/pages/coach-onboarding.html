@@ -38,7 +38,8 @@
 </section>
 <div class="choice-row" id="navButtons" style="margin-top:20px"><button class="btn btn-outline" onclick="prevStep()">Back</button><button class="btn btn-primary" onclick="nextStep()">Next</button></div>
 </div></div></div></div></div></div>
-<script src="../js/main.js"></script><script src="../js/leagues.js"></script><script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script><script src="../js/leagues.js"></script><script src="../js/scout-nav.js"></script>
 <script>
 var step=0,steps=[];
 function finishLater(){navigateClean('coach-dashboard.html');}
@@ -46,7 +47,7 @@ function init(){if(!Auth.isLoggedIn()||Auth.type!=='Coach')return navigateClean(
 function showStep(i){step=Math.max(0,Math.min(i,steps.length-1));steps.forEach(function(s,idx){s.classList.toggle('active',idx===step);});document.getElementById('stepTitle').textContent=steps[step].dataset.title;document.getElementById('stepChip').textContent=steps[step].dataset.chip;document.getElementById('navButtons').style.display=step===steps.length-1?'none':'grid';}
 function nextStep(){if(step===0){var size=Number(document.getElementById('squadSize').value||0);document.getElementById('conciergeCopy').textContent=size>=8?'That is a proper squad. Drop a simple list here and ScoutLink can help turn it into profiles.':'You can still paste a quick list, or keep going and add players yourself.';} if(step===2){var fn=document.getElementById('pFirst').value||'First';var ln=document.getElementById('pLast').value||'Player';document.getElementById('playerPreview').innerHTML='<b>'+fn+' '+ln+'</b><div style="color:#8ea2b5;font-size:12px">'+document.getElementById('pPosition').value+' - '+document.getElementById('pFoot').value+' foot - profile starts at 40%</div>';}showStep(step+1);}
 function prevStep(){showStep(step-1);}
-async function saveWizard(){try{var body={team:{teamName:teamName.value,league:league.value,city:city.value},squadSize:squadSize.value,squadList:squadList.value,assistantInviteEmail:assistantEmail.value,firstPlayer:{firstName:pFirst.value,lastName:pLast.value,dateOfBirth:pDob.value,birthYear:pBirthYear.value,position:pPosition.value,foot:pFoot.value}};await api('POST','/api/onboarding/coach-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['dashboard','roster','profile','match_facts','video','assistant_invite']});navigateClean('coach-dashboard.html?tour=done');}catch(e){var er=document.getElementById('err');er.textContent=e.message;er.classList.add('show');}}
+async function saveWizard(){try{var body={team:{teamName:teamName.value,league:league.value,city:city.value},squadSize:squadSize.value,squadList:squadList.value,assistantInviteEmail:assistantEmail.value,firstPlayer:{firstName:pFirst.value,lastName:pLast.value,dateOfBirth:pDob.value,birthYear:pBirthYear.value,position:pPosition.value,foot:pFoot.value}};await api('POST','/api/onboarding/coach-wizard',body);navigateClean('coach-dashboard.html?setup=done');}catch(e){var er=document.getElementById('err');er.textContent=e.message;er.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
 </script><script src="../js/phone-routes.js"></script>
 <script src="../js/phone-shell.js"></script>

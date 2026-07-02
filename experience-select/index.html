@@ -21,9 +21,6 @@ body{background:#f6f8fb;color:#111827;font-family:Inter,sans-serif;min-height:10
 .experience-card.admin .experience-badge{border-color:rgba(15,159,117,.35);color:#047857;}
 .experience-card h2{font-size:20px;margin:0;color:#111827;letter-spacing:-.01em;}
 .experience-card p{color:#64748b;font-size:13px;line-height:1.5;margin:0;flex:1;}
-.tour-toggle{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:10px;}
-.tour-toggle input{width:20px;height:20px;accent-color:#0f9f75;}
-.tour-toggle span{font-size:13px;color:#334155;font-weight:850;}
 .demo-user-list{display:grid;gap:8px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:8px;}
 .demo-user-option{width:100%;min-height:44px;text-align:left;border:1px solid #e5e7eb;background:#fff;color:#111827;border-radius:12px;padding:9px 11px;cursor:pointer;}
 .demo-user-option strong{display:block;font-size:13px;color:#111827;}
@@ -55,12 +52,13 @@ body{background:#f6f8fb;color:#111827;font-family:Inter,sans-serif;min-height:10
   <section class="selector-title">
     <div class="experience-badge">Product access</div>
     <h1>Choose your ScoutLink experience</h1>
-    <p>Open the admin view, move between linked real roles, or launch a guided demo without logging out. Demo sessions are isolated from real platform records and are used for walkthroughs only.</p>
+    <p>Open the admin view, move between linked real roles, or launch a guided demo without logging out. Demo sessions are isolated from real platform records.</p>
   </section>
   <div id="selectorMsg" class="selector-msg">Loading experiences...</div>
   <section class="experience-grid" id="experienceGrid"></section>
 </main>
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 var experiences=[];
 var selectedDemoUsers={};
@@ -72,7 +70,7 @@ function badgeText(x){if(x.admin)return 'Admin view'; if(x.demo)return 'Demo exp
 function render(){
   var grid=document.getElementById('experienceGrid');
   if(!experiences.length){grid.innerHTML='';document.getElementById('selectorMsg').textContent='No additional experiences are available for this account.';return;}
-  document.getElementById('selectorMsg').textContent='Select an experience. Turn on the product tour when you want a guided walkthrough.';
+  document.getElementById('selectorMsg').textContent='Select an experience. Demo sessions use isolated records and do not affect live customer data.';
   grid.innerHTML=experiences.map(function(x,i){
     if(x.demo&&(x.demoUsers||[]).length&&!selectedDemoUsers[i]) selectedDemoUsers[i]=x.demoUsers[0].id;
     var userChoices=(x.demo&&(x.demoUsers||[]).length)?'<div class="demo-user-list" aria-label="Choose demo user">'+x.demoUsers.map(function(u){
@@ -84,7 +82,6 @@ function render(){
       '<h2>'+esc(x.label||x.accountType)+'</h2>'+
       '<p>'+esc(x.description||'Open this ScoutLink experience.')+'</p>'+
       userChoices+
-      '<label class="tour-toggle"><input type="checkbox" id="tour-'+i+'"><span>Include product tour</span></label>'+
       '<button class="btn btn-primary" type="button" data-enter="'+i+'">Enter as '+esc(x.accountType)+'</button>'+
     '</article>';
   }).join('');
@@ -103,30 +100,27 @@ function storeAdminIfNeeded(){
 }
 function clearExperienceRoutingState(){
   Object.keys(sessionStorage).forEach(function(k){
-    if(/^sl_tour_|^sl_force_tour_|onboarding|redirect/i.test(k)) sessionStorage.removeItem(k);
+    if(/^sl_tour_|^sl_force_tour_|^sl_product_tour|product_tour|onboarding|redirect/i.test(k)) sessionStorage.removeItem(k);
   });
-  ['sl_redirect_after_login','sl_onboarding_step','sl_pending_route','sl_last_demo_route'].forEach(function(k){ localStorage.removeItem(k); });
+  ['sl_redirect_after_login','sl_onboarding_step','sl_pending_route','sl_last_demo_route','sl_demo_tour','sl_force_tour'].forEach(function(k){ localStorage.removeItem(k); });
 }
 async function enterExperience(idx){
   var x=experiences[idx]; if(!x)return;
-  var includeTour=!!document.getElementById('tour-'+idx).checked;
   var msg=document.getElementById('selectorMsg');
   msg.textContent='Opening '+(x.label||x.accountType)+'...';
   clearExperienceRoutingState();
   try{
     storeAdminIfNeeded();
     if(!x.demo && x.accountType===Auth.type){
-      if(includeTour) sessionStorage.setItem('sl_force_tour_'+x.accountType,'1');
-      navigateClean(roleHome(x.accountType)+(includeTour?'?tour=1':''));
+      navigateClean(roleHome(x.accountType));
       return;
     }
-    var d=await api('POST','/api/auth/switch-experience',{accountType:x.accountType,demo:!!x.demo,includeTour:includeTour,demoUserId:x.demo?selectedDemoUsers[idx]:null});
+    var d=await api('POST','/api/auth/switch-experience',{accountType:x.accountType,demo:!!x.demo,demoUserId:x.demo?selectedDemoUsers[idx]:null});
     if(x.demo) storeAdminIfNeeded();
     Auth.set(d.token,d.user,d.accountType);
     localStorage.setItem('sl_demo_mode',d.demoMode?'1':'0');
     localStorage.setItem('sl_experience_switcher','1');
-    if(includeTour) sessionStorage.setItem('sl_force_tour_'+d.accountType,'1');
-    navigateClean(roleHome(d.accountType)+(includeTour?'?tour=1':''));
+    navigateClean(roleHome(d.accountType));
   }catch(e){
     msg.textContent=e.message||'Could not open that experience.';
     msg.style.color='#ffb4b4';

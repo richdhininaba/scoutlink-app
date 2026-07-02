@@ -22,9 +22,9 @@ async function upsertProgress(accountType, userId, patch) {
   return data;
 }
 
-const TOUR_ROLES = ['Coach','Scout','Stratex','Player'];
+const ONBOARDING_ROLES = ['Coach','Scout','Stratex','Player'];
 
-router.get('/me', requireAuth, requireRole(...TOUR_ROLES), async (req, res) => {
+router.get('/me', requireAuth, requireRole(...ONBOARDING_ROLES), async (req, res) => {
   try {
     const { data } = await supabase.from('onboarding_progress')
       .select('*').eq('account_type', req.user.accountType).eq('user_id', req.user.id).maybeSingle();
@@ -32,9 +32,7 @@ router.get('/me', requireAuth, requireRole(...TOUR_ROLES), async (req, res) => {
       account_type: req.user.accountType,
       user_id: req.user.id,
       setup_wizard_completed: false,
-      product_tour_completed: false,
-      wizard_data: {},
-      tour_data: {}
+      wizard_data: {}
     }});
   } catch(err) {
     console.error('[Onboarding me]', err);
@@ -93,31 +91,6 @@ router.post('/scout-wizard', requireAuth, requireRole('Scout'), async (req, res)
     res.json({ message: 'Scout setup saved', data: progress, preferences: prefs });
   } catch(err) {
     console.error('[Scout onboarding]', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.post('/tour', requireAuth, requireRole(...TOUR_ROLES), async (req, res) => {
-  try {
-    const body = req.body || {};
-    const allowed = ['started','completed','dismissed'];
-    const status = allowed.includes(body.status) ? body.status : 'completed';
-    const now = new Date().toISOString();
-    const tourData = {
-      status,
-      stepIndex: Number.isFinite(Number(body.stepIndex)) ? Number(body.stepIndex) : 0,
-      checkpoints: Array.isArray(body.checkpoints) ? body.checkpoints : [],
-      updatedAt: now
-    };
-    if (status === 'completed') tourData.completedAt = now;
-    if (status === 'dismissed') tourData.dismissedAt = now;
-    const progress = await upsertProgress(req.user.accountType, req.user.id, {
-      product_tour_completed: status === 'completed' || status === 'dismissed',
-      tour_data: tourData
-    });
-    res.json({ message: 'Product tour progress saved', data: progress });
-  } catch(err) {
-    console.error('[Tour onboarding]', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
