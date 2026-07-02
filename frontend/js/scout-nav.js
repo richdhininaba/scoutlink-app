@@ -73,6 +73,11 @@ function buildScoutNav(containerId, role) {
   if (role === 'Coach') navItems = COACH_NAV_ITEMS;
   else if (role === 'Player') navItems = PLAYER_NAV_ITEMS;
   else navItems = SCOUT_NAV_ITEMS;
+  if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) {
+    navItems = navItems.filter(function(item) {
+      return String(item.label || '').toLowerCase() !== 'settings' && String(item.href || '').toLowerCase().indexOf('settings') === -1;
+    });
+  }
   var cur = window.location.pathname.split('/').pop();
   container.innerHTML = navItems.map(function(item) {
     var isActive = (cur === item.href);

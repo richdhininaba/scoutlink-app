@@ -24,11 +24,11 @@
 .section-heading{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px;}
 .action-btn{min-height:40px;padding:8px 14px;font-size:13px;}
 .export-menu-wrap{position:relative;display:inline-flex;}
-.export-menu{position:absolute;top:calc(100% + 8px);left:0;min-width:190px;background:#0a0f1e;border:1px solid var(--border,#30363d);border-radius:10px;padding:6px;display:none;z-index:60;box-shadow:0 18px 50px rgba(0,0,0,.42);}
+.export-menu{position:absolute;top:calc(100% + 8px);left:0;min-width:190px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;padding:6px;display:none;z-index:60;box-shadow:0 18px 50px rgba(15,23,42,.16);}
 .export-menu.open{display:block;}
-.export-option{width:100%;display:flex;align-items:flex-start;gap:8px;background:transparent;border:none;color:var(--text,#fff);border-radius:8px;padding:10px;text-align:left;cursor:pointer;font-weight:800;}
-.export-option:hover{background:rgba(29,158,117,.12);}
-.export-option small{display:block;color:#8b949e;font-weight:600;margin-top:2px;line-height:1.25;}
+.export-option{width:100%;display:flex;align-items:flex-start;gap:8px;background:transparent;border:none;color:#111827;border-radius:8px;padding:10px;text-align:left;cursor:pointer;font-weight:800;}
+.export-option:hover{background:#ecfdf5;color:#047857;}
+.export-option small{display:block;color:#64748b;font-weight:600;margin-top:2px;line-height:1.25;}
 .video-card{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:14px;}
 .prediction-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
 .breakdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
@@ -62,6 +62,7 @@
 .gauge-desc-val{font-size:15px;font-weight:700}
 .performance-panel{background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:18px;margin-bottom:20px;}
 .performance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
+.performance-grid>div{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px;min-height:116px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
 .confidence-note{margin-top:12px;background:rgba(255,152,0,.08);border:1px solid rgba(255,152,0,.24);border-radius:8px;padding:12px 14px;color:#E2E8F0;font-size:12px;line-height:1.5;}
 .match-meta-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--text3);}
 .result-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:800;}
@@ -159,7 +160,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -224,6 +225,13 @@ var POSITION_ORDER=['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM'
 function positionName(code){var c=String(code||'').trim().toUpperCase();return POSITION_LABELS[c]||safe(code);}
 function positionOptionsHtml(){return '<option value="">Auto-detect best fit</option>'+POSITION_ORDER.map(function(code){return '<option value="'+code+'">'+POSITION_LABELS[code]+'</option>';}).join('');}
 function positionText(text){var s=safe(text);POSITION_ORDER.slice().sort(function(a,b){return b.length-a.length;}).forEach(function(code){s=s.replace(new RegExp('\\b'+code+'\\b','g'),POSITION_LABELS[code]);});return s;}
+function htmlParagraphs(value){
+var raw=String(value==null?'':value);
+raw=raw.replace(/\\n\\n/g,'\n\n').replace(/\\n/g,'\n');
+var parts=raw.split(/\n{2,}/).map(function(p){return p.trim();}).filter(Boolean);
+if(!parts.length)parts=[raw.trim()].filter(Boolean);
+return parts.map(function(p){return '<p style="font-size:13px;color:#4b5563;line-height:1.6;margin:0 0 10px">'+positionText(p)+'</p>';}).join('');
+}
 function buildAttrBar(label,val){var n=parseFloat(val);var pct=isNaN(n)?0:Math.min(100,Math.round(n>10?n:n*10));var col=pct>=70?'#1d9e75':pct>=50?'#FFC107':'#f44336';return '<div class="attr-row"><span class="attr-label">'+label+'</span><div class="attr-bar-wrap"><div class="attr-bar-inner" style="width:'+pct+'%;background:'+col+'"></div></div><span class="attr-num" style="color:'+col+'">'+((!isNaN(n))?(n>10?n/10:n).toFixed(1):'--')+'</span></div>';}
 function statBadge(label,val){return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-lbl">'+label+'</div></div>';}
 function scoreVal(v){var n=Number(v);return isNaN(n)?0:Math.max(0,Math.min(100,Math.round(n)));}
@@ -488,9 +496,9 @@ var html='<div style="background:#0d1117;border-radius:8px;padding:16px;margin-t
 html+='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font-size:16px;font-weight:800">'+safe(result.type)+'</div><div style="font-size:12px;color:#8b949e">'+safe(result.summary||result.recommendation||result.financialGoal||result.scenario)+'</div></div><button class="btn btn-sm btn-outline" onclick="exportLastPrediction()">Export PDF</button></div>';
 if(result.confidence)html+='<div style="font-size:12px;color:#8b949e;margin-bottom:12px"><b style="color:#fff">Data confidence:</b> '+safe(result.confidence.label)+' - '+safe(result.confidence.note)+'</div>';
 if(result.seasons){html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><label style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#8b949e">View year</label><select id="devYearSelect" onchange="renderDevelopmentYear(this.value)" style="max-width:160px">'+result.seasons.map(function(s){return '<option value="'+s.year+'">Year '+s.year+'</option>';}).join('')+'</select></div><div id="devYearDetail"></div><p style="font-size:13px;color:#B0BEC5;line-height:1.6;margin-top:12px">'+safe((result.paragraphs&&result.paragraphs[0])||result.summary)+'</p>';}
-else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+safe(s.horizon)+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><p style="font-size:13px;color:#B0BEC5;margin-top:12px;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.recommendation)+'</p>';}
-else if(result.topRoles){html+='<div class="breakdown-grid">'+breakdownMetric('Best current role',positionName(result.bestCurrentPosition),scoreDisplay(result.bestCurrentScore),'#1d9e75')+breakdownMetric('Best future role',positionName(result.bestFuturePosition),scoreDisplay(result.bestFutureScore),'#FFC107')+breakdownMetric('Target role',result.targetPosition?positionName(result.targetPosition):'Not selected',scoreDisplay(result.targetScore),'#58a6ff')+breakdownMetric('Verdict',safe(result.targetVerdict),'Gap vs best: '+safe(result.targetGapVsBest),'#fff')+'</div><p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+positionText((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.summary)+'</p>'+result.topRoles.map(function(r){return breakdownBar(positionName(r.role),r.score,cColor(r.score));}).join('')+'<div class="position-pill-grid">'+(result.conversionCandidates||[]).map(function(c){return '<div class="position-pill"><span>'+positionName(c.role)+'</span><b>'+safe(c.score)+'</b><small style="display:block;color:#8b949e">'+positionText(c.reason)+'</small></div>';}).join('')+'</div>';}
-else if(result.evidence){html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+safe((result.paragraphs&&result.paragraphs.join('\\n\\n'))||result.predictedBehaviour)+'</p><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
+else if(result.projection){html+='<table class="sl-table"><thead><tr><th>Year</th><th>Projected value</th><th>Total cost</th><th>ROI</th></tr></thead><tbody>'+result.projection.map(function(s){return'<tr><td>'+safe(s.horizon)+'</td><td>'+safe(s.projectedValueFormatted)+'</td><td>'+safe(s.totalCostFormatted)+'</td><td>'+s.roiPercent+'%</td></tr>';}).join('')+'</tbody></table><div style="margin-top:12px">'+htmlParagraphs((result.paragraphs&&result.paragraphs.join('\n\n'))||result.recommendation)+'</div>';}
+else if(result.topRoles){html+='<div class="breakdown-grid">'+breakdownMetric('Best current role',positionName(result.bestCurrentPosition),scoreDisplay(result.bestCurrentScore),'#1d9e75')+breakdownMetric('Best future role',positionName(result.bestFuturePosition),scoreDisplay(result.bestFutureScore),'#FFC107')+breakdownMetric('Target role',result.targetPosition?positionName(result.targetPosition):'Not selected',scoreDisplay(result.targetScore),'#58a6ff')+breakdownMetric('Verdict',safe(result.targetVerdict),'Gap vs best: '+safe(result.targetGapVsBest),'#fff')+'</div><div>'+htmlParagraphs((result.paragraphs&&result.paragraphs.join('\n\n'))||result.summary)+'</div>'+result.topRoles.map(function(r){return breakdownBar(positionName(r.role),r.score,cColor(r.score));}).join('')+'<div class="position-pill-grid">'+(result.conversionCandidates||[]).map(function(c){return '<div class="position-pill"><span>'+positionName(c.role)+'</span><b>'+safe(c.score)+'</b><small style="display:block;color:#8b949e">'+positionText(c.reason)+'</small></div>';}).join('')+'</div>';}
+else if(result.evidence){html+='<div>'+htmlParagraphs((result.paragraphs&&result.paragraphs.join('\n\n'))||result.predictedBehaviour)+'</div><div style="font-size:32px;font-weight:900;color:'+cColor(result.scenarioScore||0)+'">'+(result.scenarioScore||0)+'/100</div><div style="font-size:12px;color:#8b949e;margin-bottom:10px">'+safe(result.recommendation)+' - Risk: '+safe(result.risk)+'</div>'+result.evidence.map(function(e){var v=e.score||0;return'<div class="compat-bar-row"><div class="compat-bar-label"><span>'+attrLabel(e.attribute)+'</span><span>'+v+'</span></div><div class="compat-bar-bg"><div class="compat-bar-fill" style="width:'+v+'%;background:'+cColor(v)+'"></div></div></div>';}).join('');}
 else{html+='<pre style="white-space:pre-wrap;color:#B0BEC5;font-size:12px">'+JSON.stringify(result,null,2)+'</pre>';}
 html+='<p style="font-size:11px;color:#8b949e;margin-top:12px">'+safe(result.disclaimer)+'</p></div>';
 return html;
@@ -862,7 +870,6 @@ console.error('[PlayerProfile]',e);
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
-
 
 
 

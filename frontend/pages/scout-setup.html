@@ -15,11 +15,12 @@
 .fg input:focus,.fg select:focus{border-color:#1d9e75}
 .chk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:8px}
 .chk-item{display:flex;align-items:center;gap:10px;background:#0d1117;border:1.5px solid #30363d;border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+.chk-input{position:absolute;opacity:0;pointer-events:none;}
 .chk-item:hover{border-color:#1d9e75;background:rgba(29,158,117,.04)}
 .chk-item.sel{border-color:#1d9e75;background:rgba(29,158,117,.08)}
 .chk-dot{width:16px;height:16px;border-radius:4px;border:2px solid #30363d;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:10px;font-weight:900;color:transparent}
 .chk-item.sel .chk-dot{background:#1d9e75;border-color:#1d9e75;color:#000}
-.chk-lbl{font-size:13px;font-weight:600;color:#8b949e;pointer-events:none}
+.chk-lbl{font-size:13px;font-weight:600;color:#8b949e;pointer-events:auto}
 .chk-item.sel .chk-lbl{color:#ffffff}
 .limit-note{font-size:11px;color:#FF9800;margin-top:6px}
 .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -36,7 +37,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -182,15 +183,22 @@ function toggleChk(el, arr, limit, gridId){
 function buildGrid(id,items,selArr,limit){
   var c=document.getElementById(id);if(!c)return;c.innerHTML='';
   items.forEach(function(item){
-    var div=document.createElement('div');
-    div.className='chk-item'+(selArr.indexOf(item)>=0?' sel':'');
-    div.setAttribute('data-val',item);
-    div.innerHTML='<div class="chk-dot">&#10003;</div><span class="chk-lbl">'+item+'</span>';
-    div.addEventListener('click',function(e){
-      e.preventDefault();
-      toggleChk(this,selArr,limit,id);
+    var label=document.createElement('label');
+    label.className='chk-item'+(selArr.indexOf(item)>=0?' sel':'');
+    label.setAttribute('data-val',item);
+    label.setAttribute('tabindex','0');
+    label.innerHTML='<input class="chk-input" type="checkbox" '+(selArr.indexOf(item)>=0?'checked':'')+'><div class="chk-dot">&#10003;</div><span class="chk-lbl">'+item+'</span>';
+    function toggle(e){
+      if(e) e.preventDefault();
+      toggleChk(label,selArr,limit,id);
+      var input=label.querySelector('.chk-input');
+      if(input) input.checked=label.classList.contains('sel');
+    }
+    label.addEventListener('click',toggle);
+    label.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){toggle(e);}
     });
-    c.appendChild(div);
+    c.appendChild(label);
   });
 }
 

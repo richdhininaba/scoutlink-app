@@ -15,7 +15,8 @@
 
 /* ScoutLink light product finish
    This file loads after page-level CSS, so these rules intentionally neutralise
-   old dark page styles on desktop and phone without touching page logic. */
+   old dark page styles on phone without touching desktop page logic. */
+@media (max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
 :root {
   --bg: #f6f8fb;
   --bg0: #f6f8fb;
@@ -256,6 +257,7 @@ textarea {
 
 .video-frame {
   background: #0f172a !important;
+}
 }
 
 @media (min-width: 951px) {

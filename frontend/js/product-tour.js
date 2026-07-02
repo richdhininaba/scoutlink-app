@@ -39,6 +39,9 @@
   };
 
   function role(){ return (window.Auth && Auth.type) || localStorage.getItem('sl_type'); }
+  function dashboardRoute(r) {
+    return { Coach:'/coach/dashboard', Scout:'/scout/dashboard', Stratex:'/stratex/dashboard', Player:'/player/profile' }[r || role()] || '/';
+  }
   function tourScope(){
     var mode = (typeof isDemoMode === 'function' && isDemoMode()) ? 'demo' : 'real';
     var userId = (window.Auth && Auth.user && Auth.user.id) || localStorage.getItem('sl_user_id') || 'anon';
@@ -58,6 +61,10 @@
   }
   async function saveTourStatus(status){
     var r = role();
+    if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) {
+      sessionStorage.setItem(key('status'), status);
+      return;
+    }
     if (typeof api !== 'function' || !tours[r]) return;
     var payload = { status: status, stepIndex: index, checkpoints: (tours[r] || []).map(function(x){ return x.title; }) };
     try { await api('POST','/api/onboarding/tour', payload); } catch(e) {}
@@ -111,7 +118,7 @@
     if (document.getElementById('slProductTourStyles')) return;
     var s = document.createElement('style');
     s.id = 'slProductTourStyles';
-    s.textContent = '#slProductTour{position:fixed;inset:0;z-index:2400;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;padding:18px}#slProductTour .tour-card{pointer-events:auto;width:min(560px,100%);background:#fff;color:#111827;border:1px solid #e5e7eb;border-radius:20px;padding:18px;box-shadow:0 24px 80px rgba(15,23,42,.24)}#slProductTour .tour-step{color:#047857;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.04em}#slProductTour h3{margin:8px 0;color:#111827;font-size:18px}#slProductTour p{color:#64748b;line-height:1.55;margin:0 0 16px;font-size:14px}#slProductTour .tour-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (min-width:951px){#slProductTour{align-items:flex-start;justify-content:flex-end;padding:86px 28px 28px}}';
+    s.textContent = '#slProductTour{position:fixed;inset:0;z-index:2400;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;padding:18px}#slProductTour.is-fallback{align-items:center;justify-content:center}#slProductTour .tour-card{pointer-events:auto;width:min(560px,100%);background:#fff;color:#111827;border:1px solid #e5e7eb;border-radius:20px;padding:18px;box-shadow:0 24px 80px rgba(15,23,42,.24)}#slProductTour .tour-step{color:#047857;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.04em}#slProductTour h3{margin:8px 0;color:#111827;font-size:18px}#slProductTour p{color:#64748b;line-height:1.55;margin:0 0 16px;font-size:14px}#slProductTour .tour-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}#slProductTour .tour-actions .btn{min-height:40px;justify-content:center}#slProductTour .tour-actions .tour-exit{grid-column:1 / -1;color:#047857}@media (min-width:951px){#slProductTour:not(.is-fallback){align-items:flex-start;justify-content:flex-end;padding:86px 28px 28px}}';
     document.head.appendChild(s);
   }
   async function render(){
@@ -140,8 +147,9 @@
       existing.id = 'slProductTour';
       document.body.appendChild(existing);
     }
+    existing.classList.toggle('is-fallback', !el);
     if (!started) { started = true; saveTourStatus('started'); }
-    existing.innerHTML = '<div class="tour-card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span class="tour-step">Step '+(index+1)+' of '+steps.length+'</span><button class="btn btn-sm btn-ghost" onclick="window.finishProductTour(true)">Skip</button></div><h3>'+esc(step.title)+'</h3><p>'+esc(step.body)+(el?'':' This widget could not be highlighted on this page, but you can continue the tour.')+'</p><div class="tour-actions"><button class="btn btn-outline" onclick="window.prevProductTour()" '+(index===0?'disabled':'')+'>Back</button><button class="btn btn-primary" onclick="window.nextProductTour()">'+(index===steps.length-1?'Finish':'Next')+'</button></div></div>';
+    existing.innerHTML = '<div class="tour-card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span class="tour-step">Step '+(index+1)+' of '+steps.length+'</span><button class="btn btn-sm btn-ghost" onclick="window.finishProductTour(true)">Skip tour</button></div><h3>'+esc(step.title)+'</h3><p>'+esc(step.body)+(el?'':' This widget could not be highlighted on this page, but you can continue the tour safely.')+'</p><div class="tour-actions"><button class="btn btn-outline" onclick="window.prevProductTour()" '+(index===0?'disabled':'')+'>Back</button><button class="btn btn-primary" onclick="window.nextProductTour()">'+(index===steps.length-1?'Finish':'Next')+'</button><button class="btn btn-outline tour-exit" onclick="window.exitProductTourToDashboard()">Exit to dashboard</button></div></div>';
   }
   window.prevProductTour = function(){ index = Math.max(0, index - 1); sessionStorage.setItem(key('index'), String(index)); render(); };
   window.nextProductTour = function(){ var r = role(), steps = tours[r] || []; if (index >= steps.length - 1) return window.finishProductTour(false); index++; sessionStorage.setItem(key('index'), String(index)); render(); };
@@ -156,6 +164,16 @@
     var el = document.getElementById('slProductTour');
     if (el) el.remove();
     await saveTourStatus(status);
+  };
+  window.exitProductTourToDashboard = async function(){
+    var r = role();
+    sessionStorage.removeItem('sl_force_tour_' + r);
+    sessionStorage.removeItem(key('index'));
+    removeHighlight();
+    var el = document.getElementById('slProductTour');
+    if (el) el.remove();
+    await saveTourStatus('dismissed');
+    window.location.href = cleanRoute(dashboardRoute(r));
   };
   document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ if (shouldRun()) render(); }, 350); });
   window.addEventListener('resize', function(){ if (document.getElementById('slProductTour')) render(); });

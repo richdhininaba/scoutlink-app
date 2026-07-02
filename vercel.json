@@ -6,6 +6,7 @@
     { "source": "/login", "destination": "/frontend/pages/login.html" },
     { "source": "/forgot-password", "destination": "/frontend/pages/forgot-password.html" },
     { "source": "/experience-select", "destination": "/frontend/pages/experience-select.html" },
+    { "source": "/demo", "destination": "/frontend/pages/demo.html" },
     { "source": "/404", "destination": "/frontend/pages/404.html" },
     { "source": "/register", "destination": "/frontend/pages/register.html" },
     { "source": "/register/scout", "destination": "/frontend/pages/register-scout.html" },

@@ -10,8 +10,12 @@
 .step{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;border:2px solid #30363d;color:#8b949e;}
 .step.active{border-color:#1d9e75;color:#1d9e75;background:rgba(29,158,117,.08);}
 .step.done{border-color:rgba(29,158,117,.4);color:rgba(29,158,117,.7);background:rgba(29,158,117,.04);}
-.mode-card{background:#161b22;border:2px solid #30363d;border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;text-align:center;}
-.mode-card:hover,.mode-card.sel{border-color:#1d9e75;background:rgba(29,158,117,.06);}
+.mode-card{background:#fff;border:2px solid #d1d5db;border-radius:14px;padding:24px;cursor:pointer;transition:all .2s;text-align:center;color:#111827;position:relative;}
+.mode-card:hover{border-color:#0f9f75;background:#f8fffb;}
+.mode-card:focus{outline:3px solid rgba(15,159,117,.22);outline-offset:3px;}
+.mode-card.sel{border-color:#0f9f75;background:#ECFDF5;box-shadow:0 0 0 1px rgba(15,159,117,.18) inset;}
+.mode-card .mode-selected{display:none;margin-top:12px;color:#047857;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;}
+.mode-card.sel .mode-selected{display:inline-flex;}
 .mode-icon{font-size:40px;margin-bottom:12px;}
 .mode-title{font-size:16px;font-weight:700;margin-bottom:6px;}
 .mode-desc{font-size:12px;color:#8b949e;}
@@ -60,7 +64,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -343,8 +347,8 @@ function renderStep1(){
   document.getElementById('stepContent').innerHTML=
   '<div class="table-card"><div class="table-header"><h3>Select match mode</h3></div><div style="padding:20px">'+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'+
-  '<div class="mode-card" data-mode="post"><div class="mode-icon">&#128203;</div><div class="mode-title">Post-game mode</div><div class="mode-desc">Enter match events and ratings after the game.</div></div>'+
-  '<div class="mode-card" data-mode="live"><div class="mode-icon">&#9654;</div><div class="mode-title">Live game mode</div><div class="mode-desc">Record events in real time during the match.</div></div>'+
+  '<div class="mode-card" data-mode="post" tabindex="0" role="button" aria-pressed="'+(state.mode==='post'?'true':'false')+'"><div class="mode-icon">Post</div><div class="mode-title">Post-game mode</div><div class="mode-desc">Enter match events and ratings after the game.</div><div class="mode-selected">Selected</div></div>'+
+  '<div class="mode-card" data-mode="live" tabindex="0" role="button" aria-pressed="'+(state.mode==='live'?'true':'false')+'"><div class="mode-icon">Live</div><div class="mode-title">Live game mode</div><div class="mode-desc">Record events in real time during the match.</div><div class="mode-selected">Selected</div></div>'+
   '</div>'+
   '<hr style="border-color:#30363d;margin-bottom:20px">'+
   '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Use upcoming fixture (optional)</label>'+
@@ -370,10 +374,12 @@ function renderStep1(){
 
   document.querySelectorAll('.mode-card').forEach(function(card){
     if(state.mode===card.getAttribute('data-mode')) card.classList.add('sel');
-    card.addEventListener('click',function(){
-      document.querySelectorAll('.mode-card').forEach(function(c){c.classList.remove('sel');});
-      this.classList.add('sel'); state.mode=this.getAttribute('data-mode');
-    });
+    function chooseMode(){
+      document.querySelectorAll('.mode-card').forEach(function(c){c.classList.remove('sel');c.setAttribute('aria-pressed','false');});
+      card.classList.add('sel'); card.setAttribute('aria-pressed','true'); state.mode=card.getAttribute('data-mode');
+    }
+    card.addEventListener('click',chooseMode);
+    card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseMode();}});
   });
   document.getElementById('mfFormat').addEventListener('change',function(){
     var fmt=this.value;
@@ -1151,6 +1157,5 @@ document.addEventListener('DOMContentLoaded',function(){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
-
 
 

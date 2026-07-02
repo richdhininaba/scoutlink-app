@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="css/phone-shell.css">
 <link rel="stylesheet" href="css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head>
@@ -26,7 +26,7 @@
       <a href="pages/register.html?type=coach" data-heap-cta="coaches_nav">Coaches</a>
       <a href="pages/register.html" data-heap-cta="scouts_nav">Scouts</a>
       <a href="#product-preview" data-heap-cta="product_nav">Product</a>
-      <a href="pages/experience-select.html" data-heap-cta="demo_nav">Demo</a>
+      <a href="pages/demo.html">Demo</a>
       <a href="pages/careers.html" data-heap-cta="careers_nav">Careers</a>
     </div>
     <div class="nav-cta">
@@ -48,7 +48,7 @@
         <p>ScoutLink helps coaches build structured player profiles, scouts search by fit, and players be represented through match evidence, ratings and video.</p>
         <div class="home-actions">
           <a href="pages/register.html?type=coach" class="btn btn-primary btn-lg" data-heap-cta="register_coach_clicked">Register as Coach</a>
-          <a href="pages/experience-select.html" class="btn btn-outline btn-lg" data-heap-cta="explore_demo_clicked">Explore demo</a>
+          <a href="pages/demo.html" class="btn btn-outline btn-lg">Explore demo</a>
           <a href="pages/register.html" class="home-text-link" data-heap-cta="register_scout_clicked">Register as Scout</a>
         </div>
       </div>
@@ -150,7 +150,7 @@
     <div class="container role-grid">
       <article class="role-card"><h3>For Coaches</h3><p>Turn team activity into useful evidence.</p><ul><li>Manage squad profiles</li><li>Add fixtures and match facts</li><li>Control scout conversations</li></ul><a class="btn btn-primary" href="pages/register.html?type=coach" data-heap-cta="register_coach_clicked">Register as Coach</a></article>
       <article class="role-card"><h3>For Scouts</h3><p>Find players who match your real recruitment need.</p><ul><li>Search by compatibility</li><li>Build a pipeline</li><li>Export structured profiles</li></ul><a class="btn btn-outline" href="pages/register.html" data-heap-cta="register_scout_clicked">Register as Scout</a></article>
-      <article class="role-card"><h3>For Players and Families</h3><p>See the profile scouts use to understand performance.</p><ul><li>Evidence-led profile</li><li>Video reels</li><li>Clear progress indicators</li></ul><a class="btn btn-outline" href="pages/experience-select.html" data-heap-cta="explore_demo_clicked">Explore demo</a></article>
+      <article class="role-card"><h3>For Players and Families</h3><p>See the profile scouts use to understand performance.</p><ul><li>Evidence-led profile</li><li>Video reels</li><li>Clear progress indicators</li></ul><a class="btn btn-outline" href="pages/demo.html">Explore demo</a></article>
     </div>
   </section>
 
@@ -176,7 +176,7 @@
       <p>ScoutLink by Stratex Analytics</p>
     </div>
     <div class="footer-links">
-      <div class="link-col"><h4>Product</h4><a href="#product-preview">Preview</a><a href="pages/experience-select.html">Demo</a><a href="pages/login.html">Sign in</a></div>
+      <div class="link-col"><h4>Product</h4><a href="#product-preview">Preview</a><a href="pages/demo.html">Demo</a><a href="pages/login.html">Sign in</a></div>
       <div class="link-col"><h4>Roles</h4><a href="pages/register.html?type=coach">Coaches</a><a href="pages/register.html">Scouts</a><a href="pages/register.html">Players</a></div>
       <div class="link-col"><h4>Company</h4><a href="pages/careers.html">Careers</a><a href="mailto:info@scoutlink.app">Contact</a><a href="pages/data-policy.html">Privacy</a></div>
     </div>
@@ -202,7 +202,7 @@
     search: {
       title: 'Scout search',
       insight: 'Search and filter by position, location, rating and compatibility before opening a full profile.',
-      html: '<div class="preview-search"><input value="Forward" aria-label="Preview search"><button class="btn btn-primary" type="button">Search</button></div><div class="preview-list"><article><b>Carter Hill</b><small>ST - London - Compatibility 78%</small></article><article><b>Micah Powell</b><small>RW - Manchester - Compatibility 76%</small></article></div><a class="btn btn-outline" href="pages/experience-select.html" data-heap-cta="explore_demo_clicked">Explore scout demo</a>'
+      html: '<div class="preview-search"><input value="Forward" aria-label="Preview search"><button class="btn btn-primary" type="button">Search</button></div><div class="preview-list"><article><b>Carter Hill</b><small>ST - London - Compatibility 78%</small></article><article><b>Micah Powell</b><small>RW - Manchester - Compatibility 76%</small></article></div><a class="btn btn-outline" href="pages/demo.html">Explore scout demo</a>'
     },
     profile: {
       title: 'Player profile',
@@ -222,32 +222,21 @@
   };
   var stage = document.getElementById('previewStage');
   var aside = document.getElementById('previewAside');
-  function track(name, props) {
-    try { if (window.heap && typeof window.heap.track === 'function') window.heap.track(name, props || {}); } catch (e) {}
-  }
   function render(key) {
     var item = data[key] || data.coach;
     document.querySelectorAll('.preview-tab').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.preview === key); });
     if (stage) stage.innerHTML = '<div class="preview-title-row"><span>ScoutLink module</span><h3>' + item.title + '</h3></div>' + item.html;
-    if (aside) aside.innerHTML = '<span>Product insight</span><p>' + item.insight + '</p><a href="pages/experience-select.html" class="btn btn-outline" data-heap-cta="explore_demo_clicked">Open demo</a>';
+    if (aside) aside.innerHTML = '<span>Product insight</span><p>' + item.insight + '</p><a href="pages/demo.html" class="btn btn-outline">Open demo</a>';
   }
   document.querySelectorAll('.preview-tab').forEach(function(btn){
     btn.addEventListener('click', function(){
       render(btn.dataset.preview);
-      track('homepage_preview_tab_clicked', { tab: btn.dataset.preview });
     });
-  });
-  document.addEventListener('click', function(e){
-    var cta = e.target.closest('[data-heap-cta]');
-    if (!cta) return;
-    var eventName = cta.dataset.heapCta;
-    track(eventName === 'register_coach_clicked' || eventName === 'register_scout_clicked' || eventName === 'explore_demo_clicked' ? eventName : 'homepage_cta_clicked', { cta: eventName, text: cta.textContent.trim() });
   });
   render('coach');
 })();
 </script>
 </body>
 </html>
-
 
 

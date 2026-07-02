@@ -29,7 +29,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -52,7 +52,7 @@
 </div>
 <div class="page-content">
 <div class="filter-card">
-  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;flex-wrap:wrap">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.2fr auto;gap:12px;align-items:end;flex-wrap:wrap">
     <div class="form-group" style="margin:0">
       <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Search Player</label>
       <input type="text" id="searchInput" placeholder="Name..." style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:100%">
@@ -80,6 +80,20 @@
     <div class="form-group" style="margin:0">
       <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Max Age</label>
       <input type="number" id="maxAge" placeholder="e.g. 16" min="6" max="16" style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:100%">
+    </div>
+    <div class="form-group" style="margin:0">
+      <label style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em">Sort by</label>
+      <select id="sortMode" style="background:var(--bg);border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;width:100%">
+        <option value="compatibility">Most compatible</option>
+        <option value="overall">Highest overall rating</option>
+        <option value="goals">Most goals</option>
+        <option value="assists">Most assists</option>
+        <option value="appearances">Most appearances</option>
+        <option value="clean_sheets">Most clean sheets</option>
+        <option value="value">Highest estimated value</option>
+        <option value="newest">Newest added</option>
+        <option value="updated">Recently updated</option>
+      </select>
     </div>
     <button class="btn btn-primary" id="searchBtn" style="margin-bottom:0">Search</button>
   </div>
@@ -131,7 +145,7 @@ function sentenceCase(v){return String(v||'--').replace(/_/g,' ').toLowerCase().
 function locationText(p){return p.team_city||p.city||p.location||'--';}
 function h(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
-var viewMode='table',currentPage=1,debounceTimer;
+var viewMode='table',currentPage=1,debounceTimer,sortMode='compatibility';
 
 function setView(mode){
   viewMode=mode;
@@ -153,10 +167,12 @@ function loadPlayers(page){
   if(minAge)url+='&minAge='+minAge;
   if(maxAge)url+='&maxAge='+maxAge;
   if(city)url+='&city='+encodeURIComponent(city);
+  sortMode=document.getElementById('sortMode')?document.getElementById('sortMode').value:'compatibility';
+  url+='&sort='+encodeURIComponent(sortMode);
   document.getElementById('resultsContainer').innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:32px;color:var(--text-secondary)"><div class="spinner"></div><span>Searching...</span></div>';
   if(typeof api!=='function')return;
   api('GET',url).then(function(d){
-    var players=d.data||[];
+    var players=sortPlayers(d.data||[],sortMode);
     document.getElementById('resultCount').textContent=(d.total||0)+' players found';
     if(!players.length){
       document.getElementById('resultsContainer').innerHTML='<div style="text-align:center;padding:48px;color:var(--text-secondary)"><p style="font-size:16px;font-weight:600;margin-bottom:8px">No players found</p><p style="font-size:13px">Try adjusting your search filters.</p></div>';
@@ -165,6 +181,16 @@ function loadPlayers(page){
     renderResults(players,d.total||0,page);
   }).catch(function(e){
     document.getElementById('resultsContainer').innerHTML='<div style="padding:24px;color:#f85149">Error: '+e.message+'</div>';
+  });
+}
+
+function sortPlayers(players,mode){
+  var keyMap={compatibility:'compatibilityScore',overall:'overall_rating',goals:'goals',assists:'assists',appearances:'appearances',clean_sheets:'clean_sheets',value:'transfer_value'};
+  return (players||[]).slice().sort(function(a,b){
+    if(mode==='newest')return new Date(b.created_at||0)-new Date(a.created_at||0);
+    if(mode==='updated')return new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0);
+    var key=keyMap[mode]||'compatibilityScore';
+    return (Number(b[key])||0)-(Number(a[key])||0);
   });
 }
 
@@ -189,11 +215,12 @@ function renderResults(players,total,page){
       var pos=p.specific_position||p.primary_position||'--';
       var age=p.age||'--';
       var comp=Math.round(p.compatibilityScore||0);
+      var compColor=attrColor(comp);
       list+='<article class="phone-list-row">'+
         '<div class="phone-player-avatar" style="background:'+pCol+';color:'+(pCol==='#FFC107'?'#111827':'#fff')+'">'+h(initials(p.first_name,p.last_name))+'</div>'+
         '<div class="phone-list-main"><h4>'+h(name)+'</h4><p>'+h(pos)+' - '+h(age)+' yrs - '+h(locationText(p))+'</p></div>'+
-        '<div class="phone-list-score" style="color:'+attrColor(ovPct)+'">'+h(ov)+'</div>'+
-        '<div class="phone-list-meta"><small>Compatibility '+comp+'% - '+h(formatValue(p.transfer_value||0))+' - '+h(p.team_name||'Free Agent')+'</small><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View profile</a></div>'+
+        '<div class="phone-list-score" style="color:'+compColor+'">'+h(comp)+'%</div>'+
+        '<div class="phone-list-meta"><small>Overall '+h(ov)+'/100 - '+h(formatValue(p.transfer_value||0))+' - '+h(p.team_name||'Free Agent')+'</small><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View profile</a></div>'+
       '</article>';
     });
     list+='</div>';
@@ -221,7 +248,8 @@ function renderResults(players,total,page){
       html+='<div style="width:38px;height:38px;border-radius:50%;background:'+pCol+';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:'+(pCol==='#FFC107'?'#000':'#fff')+'">'+initials(p.first_name,p.last_name)+'</div>';
       html+='<div><div style="font-weight:700;font-size:14px">'+p.first_name+' '+p.last_name+'</div>';
       html+='<div style="font-size:12px;color:var(--text-secondary)">'+(p.specific_position||p.primary_position||'--')+' &middot; '+(p.age||'--')+' yrs &middot; '+locationText(p)+'</div></div></div>';
-      html+='<div style="font-size:24px;font-weight:900;color:'+ovColor+'">'+ov+'</div></div>';
+      var comp=Math.round(p.compatibilityScore||0);
+      html+='<div style="text-align:right"><div style="font-size:24px;font-weight:900;color:'+attrColor(comp)+'">'+comp+'%</div><small style="color:var(--text-secondary);font-size:10px;text-transform:uppercase;font-weight:800">Compatibility</small></div></div>';
       keyAttrs.forEach(function(a){
         var pct=attrPct(a[1]);var col=attrColor(pct);
         html+='<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px">';
@@ -232,13 +260,13 @@ function renderResults(players,total,page){
       html+='<div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px">';
       html+='<span style="color:var(--accent);font-weight:700">'+formatValue(p.transfer_value||0)+'</span>';
       html+='<span style="color:var(--text-secondary)">'+(p.team_name||'Free Agent')+'</span></div>';
-      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font-size:12px;color:#FFC107;font-weight:800">Compatibility '+Math.round(p.compatibilityScore||0)+'%</span><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" onclick="event.stopPropagation()">VIEW PROFILE</a></div></div>';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font-size:12px;color:var(--text-secondary);font-weight:800">Overall '+ov+'/100</span><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" onclick="event.stopPropagation()">VIEW PROFILE</a></div></div>';
     });
     html+='</div>';
     document.getElementById('resultsContainer').innerHTML=html;
   } else {
     var thtml='<div style="overflow-x:auto"><table class="sl-table"><thead><tr>';
-    thtml+='<th>Player</th><th>Position</th><th>Age</th><th>Location</th><th>Height</th><th>Build</th><th>Club</th><th>Overall rating</th><th>Compatibility</th><th></th>';
+    thtml+='<th>Player</th><th>Position</th><th>Age</th><th>Location</th><th>Height</th><th>Build</th><th>Club</th><th>Compatibility</th><th>Overall rating</th><th></th>';
     thtml+='</tr></thead><tbody>';
     players.forEach(function(p){
       var ov=dispOverall(p.overall_rating);
@@ -253,8 +281,8 @@ function renderResults(players,total,page){
       thtml+='<td><span class="badge-blue">'+sentenceCase(p.height_category)+'</span></td>';
       thtml+='<td style="font-size:12px">'+sentenceCase(p.build_category)+'</td>';
       thtml+='<td style="font-size:12px;color:var(--text-secondary)">'+(p.team_name||'--')+'</td>';
-      thtml+='<td style="font-weight:800;color:'+attrColor(ovPct)+'">'+ov+'</td>';
       thtml+='<td style="color:#FFC107;font-weight:800">'+Math.round(p.compatibilityScore||0)+'%</td>';
+      thtml+='<td style="font-weight:800;color:'+attrColor(ovPct)+'">'+ov+'</td>';
       thtml+='<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="text-decoration:none">VIEW PROFILE</a></td>';
       thtml+='</tr>';
     });
@@ -280,6 +308,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.getElementById('searchBtn').addEventListener('click',function(){loadPlayers(1);});
   document.getElementById('posFilter').addEventListener('change',function(){loadPlayers(1);});
   document.getElementById('locationFilter').addEventListener('change',function(){loadPlayers(1);});
+  document.getElementById('sortMode').addEventListener('change',function(){loadPlayers(1);});
   document.getElementById('tabCards').addEventListener('click',function(){setView('cards');});
   document.getElementById('tabTable').addEventListener('click',function(){setView('table');});
   document.getElementById('searchInput').addEventListener('input',function(){
