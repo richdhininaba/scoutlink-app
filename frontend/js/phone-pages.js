@@ -235,7 +235,7 @@
           { label: 'Registrations', sub: 'Review requests', href: 'stratex-registrations.html' },
           { label: 'Users', sub: 'Manage access', href: 'stratex-users.html' },
           { label: 'Org', sub: 'Reporting lines', href: 'stratex-org.html' },
-          { label: 'Hiring', sub: 'Careers admin', href: 'stratex-hiring.html' },
+          { label: 'Hiring', sub: 'Careers admin', href: '/stratex/hiring' },
           { label: 'Players', sub: 'Database', href: 'stratex-players.html' },
           { label: 'Scouts', sub: 'Accounts', href: 'stratex-scouts.html' },
           { label: 'Coaches', sub: 'Accounts', href: 'stratex-coaches.html' },

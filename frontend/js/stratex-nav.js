@@ -7,7 +7,7 @@ var STRATEX_NAV_ITEMS = [
   {label:'Registrations', href:'stratex-registrations.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'},
   {label:'Users', href:'stratex-users.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'},
   {label:'Org view', href:'stratex-org.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="8" y="14" width="8" height="7"/><path d="M7 10v2a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2"/></svg>'},
-  {label:'Hiring', href:'stratex-hiring.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>'},
+  {label:'Hiring', href:'/stratex/hiring', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>'},
   {label:'Leave / Sick Leave', href:'stratex-leave.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>'},
   {label:'Meetings', href:'stratex-meetings.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 11l-3-3 3-3"/><path d="M18 8h-5"/></svg>'},
   {label:'Contracts & Pay', href:'stratex-contracts-pay.html', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>'},
@@ -26,8 +26,9 @@ function buildStratexNav(navElId, userObj) {
   var nav = document.getElementById(navElId || 'sidebarNav');
   if (!nav) return;
   var cur = window.location.pathname.split('/').pop();
+  var path = window.location.pathname.replace(/\/$/, '') || '/';
   nav.innerHTML = STRATEX_NAV_ITEMS.map(function(item) {
-    var active = cur === item.href ? ' active' : '';
+    var active = (cur === item.href || path === item.href) ? ' active' : '';
     return '<a class="nav-item' + active + '" href="' + item.href + '" style="display:flex;align-items:center;gap:10px">' +
       item.icon + '<span>' + item.label + '</span></a>';
   }).join('');

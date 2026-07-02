@@ -46,7 +46,7 @@
     item('Registrations', 'stratex-registrations.html', 'file'),
     item('Users', 'stratex-users.html', 'users'),
     item('Org view', 'stratex-org.html', 'org'),
-    item('Hiring', 'stratex-hiring.html', 'briefcase'),
+    item('Hiring', '/stratex/hiring', 'briefcase'),
     item('Leave / Sick Leave', 'stratex-leave.html', 'calendar'),
     item('Meetings', 'stratex-meetings.html', 'users'),
     item('Contracts & Pay', 'stratex-contracts-pay.html', 'file'),
