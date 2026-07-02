@@ -10,6 +10,7 @@ const WORKING_TYPES = ['Remote', 'Hybrid', 'On-site'];
 const SALARY_UNITS = ['hourly', 'daily', 'monthly', 'annually', 'commission'];
 const COMPENSATION_TYPES = ['paid_role', 'unpaid_internship', 'paid_internship', 'commission_based'];
 const MANAGE_JOB_ROLES = ['Management', 'Operations', 'Acquisition'];
+const DUPLICATE_SLUG_MESSAGE = 'A job post with this title already exists. Open the existing job and edit it instead.';
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
@@ -69,6 +70,10 @@ function validationError(message) {
   const err = new Error(message);
   err.code = 'VALIDATION_ERROR';
   return err;
+}
+
+function isDuplicateSlugError(err) {
+  return err && err.code === '23505' && String(err.message || err.details || '').indexOf('job_posts_slug_key') !== -1;
 }
 
 function cleanPositiveInt(value, fallback) {
@@ -194,6 +199,13 @@ router.post('/jobs', requireAuth, requireRole('Stratex'), async (req, res) => {
     const payload = normalizeJobPayload(req.body || {});
     payload.created_by = req.user.id;
     payload.updated_by = req.user.id;
+    const { data: existingSlug, error: slugCheckError } = await supabase
+      .from('job_posts')
+      .select('id,job_title,slug')
+      .eq('slug', payload.slug)
+      .maybeSingle();
+    if (slugCheckError) throw slugCheckError;
+    if (existingSlug) return res.status(409).json({ error: DUPLICATE_SLUG_MESSAGE, existingJobId: existingSlug.id });
     const { data, error } = await supabase.from('job_posts').insert(payload).select().single();
     if (error) throw error;
     await saveRecipients(data.id, req.body.notificationRecipients || req.body.notification_recipients || []);
@@ -201,6 +213,7 @@ router.post('/jobs', requireAuth, requireRole('Stratex'), async (req, res) => {
   } catch (err) {
     console.error('[Stratex job create]', err);
     if (err.code === 'VALIDATION_ERROR') return res.status(400).json({ error: err.message });
+    if (isDuplicateSlugError(err)) return res.status(409).json({ error: DUPLICATE_SLUG_MESSAGE });
     res.status(500).json({ error: 'Role could not be saved. Please check the required fields and try again.' });
   }
 });
@@ -223,6 +236,7 @@ router.patch('/jobs/:id', requireAuth, requireRole('Stratex'), async (req, res) 
   } catch (err) {
     console.error('[Stratex job update]', err);
     if (err.code === 'VALIDATION_ERROR') return res.status(400).json({ error: err.message });
+    if (isDuplicateSlugError(err)) return res.status(409).json({ error: DUPLICATE_SLUG_MESSAGE });
     res.status(500).json({ error: 'Role could not be saved. Please check the required fields and try again.' });
   }
 });

@@ -64,6 +64,15 @@
   };
   var path = window.location.pathname.replace(/\/$/, '') || '/';
   var target = routes[path];
-  if (!target && path.indexOf('/careers/') === 0) target = '/frontend/pages/career-detail.html';
+  if (!target && path.indexOf('/careers/') === 0) {
+    var slug = path.split('/').filter(Boolean).slice(1).join('/');
+    if (slug) {
+      target = '/frontend/pages/career-detail.html';
+      var params = new URLSearchParams(window.location.search);
+      if (!params.get('slug')) params.set('slug', slug);
+      window.location.replace(target + '?' + params.toString() + window.location.hash);
+      return;
+    }
+  }
   if (target) window.location.replace(target + window.location.search + window.location.hash);
 })();

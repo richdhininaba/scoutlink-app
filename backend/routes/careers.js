@@ -61,8 +61,6 @@ function publicJob(job) {
     currency: job.currency,
     compensationType: job.compensation_type,
     compensationNotes: job.compensation_notes,
-    reportingToId: job.reporting_to_id,
-    reportingToName: job.reporting_to_name,
     positionsAvailable: job.positions_available,
     releaseAt: job.release_at,
     closingAt: job.closing_at,
@@ -125,7 +123,9 @@ router.get('/', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   try {
     const { data: job, error } = await supabase.from('job_posts').select('*').eq('slug', req.params.slug).maybeSingle();
-    if (error || !visibleJob(job)) return res.status(404).json({ error: 'Job not found.' });
+    if (error) throw error;
+    if (!job) return res.status(404).json({ error: 'Role not found.' });
+    if (!visibleJob(job)) return res.status(404).json({ error: 'This role is no longer available.' });
     res.json({ data: publicJob(job) });
   } catch (err) {
     console.error('[Careers detail]', err);
