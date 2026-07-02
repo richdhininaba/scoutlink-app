@@ -324,6 +324,15 @@ if (error||!data) return res.status(404).json({ error: 'Player not found' });
 if (data.is_demo && !isDemoSession(req)) return res.status(404).json({ error: 'Player not found' });
 const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', req.params.id).order('match_date', { ascending: false }).limit(10);
 const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', req.params.id).order('created_at', { ascending: false });
+let team = null;
+if (data.team_id) {
+const { data: teamRow } = await supabase
+  .from('school_academy_teams')
+  .select('id,team_name,league,league_name,league_fulltime_url,team_website_url,city,county,country')
+  .eq('id', data.team_id)
+  .maybeSingle();
+team = teamRow || null;
+}
 // Fetch upcoming fixtures for this player's team
 let upcomingFixtures = [];
 if (data.team_id) {
@@ -345,6 +354,7 @@ if (req.user.accountType === 'Scout') analysisContext = await getScoutAnalysisCo
 const analysis = analysePlayer(data, analysisContext.team, matches || [], analysisContext.prefs);
 const playerWithBreakdowns = {
 ...data,
+team,
 overallBreakdown: analysis.overallBreakdown,
 positionRatings: analysis.positionRatings,
 valueAnalysis: analysis.valueAnalysis,
@@ -352,7 +362,7 @@ compatibility: req.user.accountType === 'Scout' ? analysis.compatibility : null,
 compatibilityScore: req.user.accountType === 'Scout' ? analysis.compatibilityScore : null,
 compatibilityBreakdown: req.user.accountType === 'Scout' ? analysis.compatibilityBreakdown : null
 };
-res.json({ player: playerWithBreakdowns, analysis, recentMatches: matches||[], videos: videos||[], upcomingFixtures, pipelineStatus, interestsRemaining });
+res.json({ player: playerWithBreakdowns, team, analysis, recentMatches: matches||[], videos: videos||[], upcomingFixtures, pipelineStatus, interestsRemaining });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 

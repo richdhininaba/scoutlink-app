@@ -188,12 +188,23 @@ function demoPlayer(seed) {
   const p = positions[seed % positions.length];
   const n = names[seed % names.length];
   const rating = 70 + (seed * 3 % 15);
+  const isEastbrook = seed % 2 === 1;
+  const team = {
+    id: isEastbrook ? 'demo-team-eastbrook' : 'demo-team-northgate',
+    team_name: isEastbrook ? 'Eastbrook Athletic (Demo)' : 'Northgate United (Demo)',
+    league_name: isEastbrook ? 'Camden Youth League' : 'Camden & Islington Youth Football League',
+    league_fulltime_url: isEastbrook ? 'https://fulltime.thefa.com/index.html?league=163194129' : 'https://fulltime.thefa.com/index.html?league=331847893',
+    team_website_url: isEastbrook ? 'https://example.com/eastbrook-demo' : 'https://example.com/northgate-demo',
+    city: p[2],
+    country: 'England'
+  };
   return {
     id: 'demo-player-' + (seed + 1),
     first_name: n[0],
     last_name: n[1],
-    team_id: seed % 2 ? 'demo-team-eastbrook' : 'demo-team-northgate',
-    team_name: seed % 2 ? 'Eastbrook Athletic (Demo)' : 'Northgate United (Demo)',
+    team_id: team.id,
+    team_name: team.team_name,
+    team: team,
     team_city: p[2],
     position_group: p[0],
     specific_position: p[1],
@@ -475,7 +486,7 @@ function publicDemoApi(method, path, body) {
   const playerMatch = pathname.match(/^\/api\/players\/([^/]+)$/);
   if (method === 'GET' && playerMatch) {
     const player = players.find(p => p.id === playerMatch[1]) || players[0];
-    return ok({ player, matchFacts:demoMatchesFor(player.id,state), matches:demoMatchesFor(player.id,state), recentMatches:demoMatchesFor(player.id,state), fixtures:state.fixtures, upcomingFixtures:state.fixtures, videos:(state.videos||[]).filter(v => v.player_id === player.id), analysis:demoAnalysis(player,state) });
+    return ok({ player, team:player.team||null, matchFacts:demoMatchesFor(player.id,state), matches:demoMatchesFor(player.id,state), recentMatches:demoMatchesFor(player.id,state), fixtures:state.fixtures, upcomingFixtures:state.fixtures, videos:(state.videos||[]).filter(v => v.player_id === player.id), analysis:demoAnalysis(player,state) });
   }
   const analyseMatch = pathname.match(/^\/api\/players\/([^/]+)\/analyse$/);
   if (method === 'POST' && analyseMatch) {
@@ -537,7 +548,7 @@ function insertPublicDemoBanner() {
   const banner = document.createElement('div');
   banner.id = 'publicDemoBanner';
   banner.className = 'public-demo-banner';
-  banner.innerHTML = '<span class="public-demo-badge">Demo</span><span>' + demoBannerText() + '</span>';
+  banner.innerHTML = '<div class="public-demo-main"><span class="public-demo-badge">Demo</span><span>' + demoBannerText() + '</span></div><div class="public-demo-cta"><span>Ready to use this with your real team?</span><a href="' + cleanRouteFor('register.html') + '">Register as Scout</a><a href="' + cleanRouteFor('register.html?type=coach') + '">Register as Coach</a></div>';
   const topbar = host.querySelector ? host.querySelector('.topbar') : null;
   if (topbar && topbar.parentNode === host) host.insertBefore(banner, topbar.nextSibling);
   else host.insertBefore(banner, host.firstChild);

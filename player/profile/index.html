@@ -718,6 +718,14 @@ var heightRange=safe(p.height_range_cm);
 var heightFeet=cmRangeToFeet(p.height_range_cm);
 var buildLabel=sentenceCase(p.build_category);
 var profileIntelHtml=renderOverallBreakdownBlock(profileAnalysis,p)+(Auth.type==='Scout'?renderCompatibilityBlock(profileAnalysis)+renderValueAnalysisBlock(profileAnalysis,p):'');
+var teamMeta=p.team||d.team||{};
+var teamLinksHtml='';
+if(teamMeta.team_website_url||teamMeta.league_fulltime_url){
+teamLinksHtml='<div class="team-external-links" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">';
+if(teamMeta.team_website_url)teamLinksHtml+='<a class="btn btn-outline action-btn team-external-link" href="'+safe(teamMeta.team_website_url)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-height:36px;padding:7px 12px">View team website</a>';
+if(teamMeta.league_fulltime_url)teamLinksHtml+='<a class="btn btn-outline action-btn team-external-link" href="'+safe(teamMeta.league_fulltime_url)+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none;min-height:36px;padding:7px 12px">View league on FA Full-Time</a>';
+teamLinksHtml+='</div>';
+}
 
 // ===================== RENDER =====================
 document.getElementById('profileContent').innerHTML=
@@ -730,6 +738,7 @@ ageOutBanner+
 '<div class="profile-name-block" style="flex:1;min-width:180px">'+
 '<h2 style="font-size:22px;font-weight:800;margin:0 0 4px">'+safe(p.first_name)+' '+safe(p.last_name)+'</h2>'+
 '<div style="font-size:14px;color:#8b949e;margin-bottom:8px">'+positionName(p.specific_position||p.primary_position)+' &bull; '+safe(p.age_group)+' &bull; '+safe(p.team_name)+'</div>'+
+teamLinksHtml+
 '<div class="profile-tag-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">Overall: '+ov100+'/100</span>'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">'+safe(p.foot)+' foot</span>'+

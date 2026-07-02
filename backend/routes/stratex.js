@@ -130,12 +130,46 @@ function canonicalLeagueName(v) {
 return String(v || '').trim().replace(/\s+/g, ' ');
 }
 
-async function ensureLeagueOption(name, userId) {
+function normalizeOptionalUrl(v) {
+const value = String(v || '').trim();
+if (!value) return null;
+if (!/^https?:\/\//i.test(value)) {
+const err = new Error('URL must start with http:// or https://');
+err.status = 400;
+throw err;
+}
+return value;
+}
+
+function teamUrlPayload(body) {
+const leagueName = canonicalLeagueName(body.league_name || body.league);
+const leagueFullTimeUrl = normalizeOptionalUrl(body.league_fulltime_url || body.fulltime_url);
+const teamWebsiteUrl = normalizeOptionalUrl(body.team_website_url);
+return { leagueName, leagueFullTimeUrl, teamWebsiteUrl };
+}
+
+async function ensureLeagueOption(name, userId, fulltimeUrl, teamWebsiteUrl) {
 const leagueName = canonicalLeagueName(name);
 if (!leagueName) return null;
 const { data: existing } = await supabase.from('league_options').select('*').ilike('name', leagueName).maybeSingle();
-if (existing) return existing;
-const { data, error } = await supabase.from('league_options').insert({ name: leagueName, created_by: userId || null }).select().single();
+if (existing) {
+const patch = {};
+if (fulltimeUrl && !existing.fulltime_url) patch.fulltime_url = fulltimeUrl;
+if (teamWebsiteUrl && !existing.team_website_url) patch.team_website_url = teamWebsiteUrl;
+if (Object.keys(patch).length) {
+const { data: updated, error: updateError } = await supabase.from('league_options').update(patch).eq('id', existing.id).select().single();
+if (updateError) throw updateError;
+return updated;
+}
+return existing;
+}
+const { data, error } = await supabase.from('league_options').insert({
+name: leagueName,
+fulltime_url: fulltimeUrl || null,
+team_website_url: teamWebsiteUrl || null,
+url_status: fulltimeUrl ? 'admin_entry' : 'needs_admin_entry',
+created_by: userId || null
+}).select().single();
 if (error) throw error;
 return data;
 }
@@ -519,10 +553,11 @@ res.json({ data: data || [] });
 
 router.post('/leagues', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const league = await ensureLeagueOption(req.body.name, req.user.id);
+const urls = teamUrlPayload(req.body || {});
+const league = await ensureLeagueOption(req.body.name || urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
 if (!league) return res.status(400).json({ error: 'League name required' });
 res.status(201).json({ data: league, message: 'League saved' });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 router.get('/contracts-pay', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -717,13 +752,46 @@ res.json({ data: data||[], total: count||0 });
 
 router.post('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { team_name, league, tier, country, formation, playing_style } = req.body;
+const { team_name, tier, country, formation, playing_style } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const savedLeague = await ensureLeagueOption(league, req.user.id);
-const { data, error } = await supabase.from('scout_teams').insert({ team_name, league:savedLeague?savedLeague.name:null, tier:tier||null, country:country?titleCase(country):'England', formation:formation||null, playing_style:playing_style||null }).select().single();
+const urls = teamUrlPayload(req.body);
+const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
+const { data, error } = await supabase.from('scout_teams').insert({
+team_name,
+league:savedLeague?savedLeague.name:null,
+league_name:savedLeague?savedLeague.name:(urls.leagueName || null),
+league_fulltime_url:urls.leagueFullTimeUrl || (savedLeague && savedLeague.fulltime_url) || null,
+team_website_url:urls.teamWebsiteUrl || null,
+tier:tier||null,
+country:country?titleCase(country):'England',
+formation:formation||null,
+playing_style:playing_style||null
+}).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Scout team created' });
-} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
+});
+
+router.patch('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const updates = {};
+if (req.body.team_name !== undefined) updates.team_name = String(req.body.team_name || '').trim();
+if (req.body.tier !== undefined) updates.tier = req.body.tier || null;
+if (req.body.country !== undefined) updates.country = req.body.country ? titleCase(req.body.country) : null;
+if (req.body.formation !== undefined) updates.formation = req.body.formation || null;
+if (req.body.playing_style !== undefined) updates.playing_style = req.body.playing_style || null;
+const urls = teamUrlPayload(req.body);
+if (req.body.league !== undefined || req.body.league_name !== undefined) {
+const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
+updates.league = savedLeague ? savedLeague.name : (urls.leagueName || null);
+updates.league_name = savedLeague ? savedLeague.name : (urls.leagueName || null);
+}
+if (req.body.league_fulltime_url !== undefined || req.body.fulltime_url !== undefined) updates.league_fulltime_url = urls.leagueFullTimeUrl;
+if (req.body.team_website_url !== undefined) updates.team_website_url = urls.teamWebsiteUrl;
+const { data, error } = await supabase.from('scout_teams').update(updates).eq('id', req.params.id).select().single();
+if (error) throw error;
+res.json({ data, message: 'Scout team updated' });
+} catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 router.delete('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -778,13 +846,46 @@ res.json({ data: data||[], total: count||0 });
 
 router.post('/school-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const { team_name, county, city, country, league, contact_email } = req.body;
+const { team_name, county, city, country, contact_email } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
-const savedLeague = await ensureLeagueOption(league, req.user.id);
-const { data, error } = await supabase.from('school_academy_teams').insert({ team_name, county:county?titleCase(county):null, city:city?titleCase(city):(county?titleCase(county):null), country:country?titleCase(country):'England', league:savedLeague?savedLeague.name:null, contact_email:contact_email||null }).select().single();
+const urls = teamUrlPayload(req.body);
+const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
+const { data, error } = await supabase.from('school_academy_teams').insert({
+team_name,
+county:county?titleCase(county):null,
+city:city?titleCase(city):(county?titleCase(county):null),
+country:country?titleCase(country):'England',
+league:savedLeague?savedLeague.name:null,
+league_name:savedLeague?savedLeague.name:(urls.leagueName || null),
+league_fulltime_url:urls.leagueFullTimeUrl || (savedLeague && savedLeague.fulltime_url) || null,
+team_website_url:urls.teamWebsiteUrl || null,
+contact_email:contact_email||null
+}).select().single();
 if (error) throw error;
 res.status(201).json({ data, message: 'Non Pro Academy created' });
-} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
+});
+
+router.patch('/school-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const updates = {};
+if (req.body.team_name !== undefined) updates.team_name = String(req.body.team_name || '').trim();
+if (req.body.county !== undefined) updates.county = req.body.county ? titleCase(req.body.county) : null;
+if (req.body.city !== undefined) updates.city = req.body.city ? titleCase(req.body.city) : null;
+if (req.body.country !== undefined) updates.country = req.body.country ? titleCase(req.body.country) : null;
+if (req.body.contact_email !== undefined) updates.contact_email = req.body.contact_email || null;
+const urls = teamUrlPayload(req.body);
+if (req.body.league !== undefined || req.body.league_name !== undefined) {
+const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
+updates.league = savedLeague ? savedLeague.name : (urls.leagueName || null);
+updates.league_name = savedLeague ? savedLeague.name : (urls.leagueName || null);
+}
+if (req.body.league_fulltime_url !== undefined || req.body.fulltime_url !== undefined) updates.league_fulltime_url = urls.leagueFullTimeUrl;
+if (req.body.team_website_url !== undefined) updates.team_website_url = urls.teamWebsiteUrl;
+const { data, error } = await supabase.from('school_academy_teams').update(updates).eq('id', req.params.id).select().single();
+if (error) throw error;
+res.json({ data, message: 'Non Pro Academy updated' });
+} catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 router.delete('/school-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
