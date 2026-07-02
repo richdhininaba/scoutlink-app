@@ -7,7 +7,7 @@ const { requireAuth, requireRole } = require('../utils/auth');
 
 const JOB_STATUSES = ['draft', 'scheduled', 'live', 'closed', 'archived'];
 const WORKING_TYPES = ['Remote', 'Hybrid', 'On-site'];
-const SALARY_UNITS = ['hourly', 'daily', 'monthly', 'annually'];
+const SALARY_UNITS = ['hourly', 'daily', 'monthly', 'annually', 'commission'];
 const COMPENSATION_TYPES = ['paid_role', 'unpaid_internship', 'paid_internship', 'commission_based'];
 const MANAGE_JOB_ROLES = ['Management', 'Operations', 'Acquisition'];
 
@@ -59,26 +59,61 @@ function cleanNumber(value, fallback) {
   return Number.isFinite(num) ? num : null;
 }
 
+function requiredError(fields) {
+  const err = new Error('Please complete: ' + fields.join(', ') + '.');
+  err.code = 'VALIDATION_ERROR';
+  return err;
+}
+
+function validationError(message) {
+  const err = new Error(message);
+  err.code = 'VALIDATION_ERROR';
+  return err;
+}
+
+function cleanPositiveInt(value, fallback) {
+  const raw = value === undefined ? fallback : value;
+  const text = String(raw ?? '').trim();
+  if (!text) return null;
+  if (!/^\d+$/.test(text)) return null;
+  const num = Number.parseInt(text, 10);
+  return num >= 1 ? num : null;
+}
+
 function normalizeJobPayload(body, existing) {
   const title = cleanText(body.jobTitle || body.job_title || existing?.job_title);
   const status = cleanText(body.status || existing?.status || 'draft').toLowerCase();
   const workingType = body.workingType || body.working_type || existing?.working_type || 'Remote';
   const salaryUnit = body.salaryUnit || body.salary_unit || existing?.salary_unit || 'annually';
   const compensationType = cleanText(body.compensationType || body.compensation_type || existing?.compensation_type || 'paid_role');
+  const employmentType = pickText(body, ['employmentType', 'employment_type'], existing?.employment_type);
+  const roleOverview = pickText(body, ['roleOverview', 'role_overview'], existing?.role_overview);
+  const responsibilities = pickText(body, ['responsibilities', 'whatYouWillBeDoing', 'what_you_will_be_doing'], existing?.responsibilities);
+  const reportingToId = pickText(body, ['reportingToId', 'reporting_to_id'], existing?.reporting_to_id);
+  const reportingToName = pickText(body, ['reportingToName', 'reporting_to_name'], existing?.reporting_to_name);
+  const hasPositionsInput = Object.prototype.hasOwnProperty.call(body, 'positionsAvailable') || Object.prototype.hasOwnProperty.call(body, 'positions_available');
+  const positionsAvailable = cleanPositiveInt(hasPositionsInput ? (body.positionsAvailable ?? body.positions_available) : undefined, existing?.positions_available);
   const stageCountRaw = body.interviewStageCount ?? body.interview_stage_count ?? existing?.interview_stage_count ?? 1;
   const interviewStageCount = Math.max(0, Number.parseInt(stageCountRaw, 10) || 0);
-  if (!title) throw new Error('Job title is required.');
-  if (!JOB_STATUSES.includes(status)) throw new Error('Invalid job status.');
-  if (!WORKING_TYPES.includes(workingType)) throw new Error('Invalid working type.');
-  if (!SALARY_UNITS.includes(salaryUnit)) throw new Error('Invalid salary unit.');
-  if (!COMPENSATION_TYPES.includes(compensationType)) throw new Error('Invalid compensation option.');
+  const missing = [];
+  if (!title) missing.push('Role title');
+  if (!employmentType) missing.push('Employment type');
+  if (!salaryUnit && !compensationType) missing.push('Pay type or pay frequency');
+  if (!roleOverview && !responsibilities) missing.push('Role overview or job description');
+  if (!reportingToId && !reportingToName) missing.push('Reporting to');
+  if (!positionsAvailable) missing.push('Number of positions available');
+  if (missing.length) throw requiredError(missing);
+  if (!JOB_STATUSES.includes(status)) throw validationError('Invalid job status.');
+  if (!WORKING_TYPES.includes(workingType)) throw validationError('Invalid working type.');
+  if (!SALARY_UNITS.includes(salaryUnit)) throw validationError('Invalid pay frequency.');
+  if (!COMPENSATION_TYPES.includes(compensationType)) throw validationError('Invalid compensation option.');
   return {
     job_title: title,
     slug: cleanText(body.slug || existing?.slug || slugify(title)),
     department: pickText(body, ['department'], existing?.department),
     location: pickText(body, ['location'], existing?.location),
     working_type: workingType,
-    employment_type: pickText(body, ['employmentType', 'employment_type'], existing?.employment_type),
+    employment_type: employmentType,
     contract_type: pickText(body, ['contractType', 'contract_type'], existing?.contract_type),
     compensation_type: compensationType,
     compensation_notes: pickText(body, ['compensationNotes', 'compensation_notes'], existing?.compensation_notes),
@@ -86,11 +121,14 @@ function normalizeJobPayload(body, existing) {
     salary_max: cleanNumber(body.salaryMax, existing?.salary_max),
     salary_unit: salaryUnit,
     currency: 'GBP',
+    reporting_to_id: reportingToId || null,
+    reporting_to_name: reportingToName || null,
+    positions_available: positionsAvailable,
     release_at: body.releaseAt !== undefined || body.release_at !== undefined ? (body.releaseAt || body.release_at || null) : existing?.release_at || null,
     closing_at: body.closingAt !== undefined || body.closing_at !== undefined ? (body.closingAt || body.closing_at || null) : existing?.closing_at || null,
     about_company: pickText(body, ['aboutCompany', 'about_company'], existing?.about_company),
-    role_overview: pickText(body, ['roleOverview', 'role_overview'], existing?.role_overview),
-    responsibilities: pickText(body, ['responsibilities', 'whatYouWillBeDoing', 'what_you_will_be_doing'], existing?.responsibilities),
+    role_overview: roleOverview,
+    responsibilities,
     must_haves: pickText(body, ['mustHaves', 'must_haves'], existing?.must_haves),
     nice_to_haves: pickText(body, ['niceToHaves', 'nice_to_haves'], existing?.nice_to_haves),
     benefits: pickText(body, ['benefits'], existing?.benefits),
@@ -162,7 +200,8 @@ router.post('/jobs', requireAuth, requireRole('Stratex'), async (req, res) => {
     res.status(201).json({ message: 'Job post saved', data: await attachRecipients(data) });
   } catch (err) {
     console.error('[Stratex job create]', err);
-    res.status(400).json({ error: err.message || 'Could not save job post' });
+    if (err.code === 'VALIDATION_ERROR') return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Role could not be saved. Please check the required fields and try again.' });
   }
 });
 
@@ -183,7 +222,8 @@ router.patch('/jobs/:id', requireAuth, requireRole('Stratex'), async (req, res) 
     res.json({ message: 'Job post updated', data: await attachRecipients(data) });
   } catch (err) {
     console.error('[Stratex job update]', err);
-    res.status(400).json({ error: err.message || 'Could not update job post' });
+    if (err.code === 'VALIDATION_ERROR') return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Role could not be saved. Please check the required fields and try again.' });
   }
 });
 

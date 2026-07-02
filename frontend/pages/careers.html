@@ -39,11 +39,12 @@ h1{font-size:clamp(42px,5vw,72px);line-height:.98;margin:18px 0 0;letter-spacing
 <script>
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function money(n){return n?('GBP '+Number(n).toLocaleString('en-GB',{maximumFractionDigits:0})):'';}
-function salary(j){if(!j.salaryMin&&!j.salaryMax)return '';var v=j.salaryMin&&j.salaryMax?money(j.salaryMin)+'-'+money(j.salaryMax):money(j.salaryMin||j.salaryMax);return v+' '+(j.salaryUnit||'annually');}
+function salary(j){if(j.salaryUnit==='commission'||j.compensationType==='commission_based')return 'Commission';if(j.compensationType==='unpaid_internship')return 'Unpaid internship';if(!j.salaryMin&&!j.salaryMax)return '';var v=j.salaryMin&&j.salaryMax?money(j.salaryMin)+'-'+money(j.salaryMax):money(j.salaryMin||j.salaryMax);return v+' '+(j.salaryUnit||'annually');}
+function positionsText(j){var n=parseInt(j.positionsAvailable,10);return n>0?'Positions available: '+n:'';}
 function render(rows){
   var box=document.getElementById('jobs');
   if(!rows.length){box.innerHTML='<div class="empty"><h2 style="margin:0 0 8px;color:#111827">No open roles right now</h2><p style="margin:0;line-height:1.5">Check back soon for new Stratex and ScoutLink opportunities.</p></div>';return;}
-  box.innerHTML=rows.map(function(j){return '<a class="job-card" href="/careers/'+encodeURIComponent(j.slug)+'"><div><h2>'+esc(j.jobTitle)+'</h2><div class="job-meta">'+[j.department,j.location,j.workingType,j.employmentType,salary(j)].filter(Boolean).map(function(x){return '<span class="pill">'+esc(x)+'</span>';}).join('')+'</div></div><span class="open-arrow">View role</span></a>';}).join('');
+  box.innerHTML=rows.map(function(j){return '<a class="job-card" href="/careers/'+encodeURIComponent(j.slug)+'"><div><h2>'+esc(j.jobTitle)+'</h2><div class="job-meta">'+[j.department,j.location,j.workingType,j.employmentType,salary(j),positionsText(j)].filter(Boolean).map(function(x){return '<span class="pill">'+esc(x)+'</span>';}).join('')+'</div></div><span class="open-arrow">View role</span></a>';}).join('');
 }
 fetch(API+'/api/careers').then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not load roles');return d;});}).then(function(d){render(d.data||[]);}).catch(function(e){document.getElementById('jobs').innerHTML='<div class="empty" style="color:#ffb4b4">'+esc(e.message)+'</div>';});
 </script>

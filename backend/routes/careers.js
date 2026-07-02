@@ -61,6 +61,9 @@ function publicJob(job) {
     currency: job.currency,
     compensationType: job.compensation_type,
     compensationNotes: job.compensation_notes,
+    reportingToId: job.reporting_to_id,
+    reportingToName: job.reporting_to_name,
+    positionsAvailable: job.positions_available,
     releaseAt: job.release_at,
     closingAt: job.closing_at,
     aboutCompany: job.about_company,
@@ -81,6 +84,8 @@ function applicationRef() {
 }
 
 function salaryRange(job) {
+  if (job.salary_unit === 'commission' || job.compensation_type === 'commission_based') return 'Commission';
+  if (job.compensation_type === 'unpaid_internship') return 'Unpaid internship';
   const min = job.salary_min ? Number(job.salary_min) : null;
   const max = job.salary_max ? Number(job.salary_max) : null;
   const unit = job.salary_unit || 'annually';

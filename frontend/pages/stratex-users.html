@@ -108,6 +108,7 @@ function logout() { Auth.clear(); navigateClean('login.html?logout=1'); }
 function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('open'); }
 var activeTab = 'scouts';
 var orgAdmins = [];
+var pendingVacancy = null;
 function switchTab(tab, btn) {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -183,12 +184,18 @@ async function loadOrgManagers(){
     orgAdmins=d.admins||[];
     var sel=document.getElementById('adminManager');
     if(sel)sel.innerHTML='<option value="">No direct manager</option>'+orgAdmins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+a.first_name+' '+a.last_name+' - '+(a.job_title||a.admin_role||a.role||'Admin')+'</option>';}).join('');
+    if(pendingVacancy){
+      if(document.getElementById('adminJobTitle'))document.getElementById('adminJobTitle').value=pendingVacancy.jobTitle||'';
+      if(sel&&pendingVacancy.managerId)sel.value=pendingVacancy.managerId;
+    }
   }catch(e){}
 }
 document.addEventListener('DOMContentLoaded', function() {
   initNav();
   if(window.bindLeagueInput){bindLeagueInput('scoutLeague','addScoutLeagueBtn');bindLeagueInput('coachLeague','addCoachLeagueBtn');}
   var requestedTab = new URLSearchParams(window.location.search).get('tab');
+  var params = new URLSearchParams(window.location.search);
+  pendingVacancy = params.get('vacancyJobId') ? { jobId: params.get('vacancyJobId'), managerId: params.get('managerId') || '', jobTitle: params.get('jobTitle') || '' } : null;
   if (requestedTab === 'admins') {
     var adminTab = document.querySelector('.tab-btn:nth-child(3)');
     if (adminTab) switchTab('admins', adminTab);
