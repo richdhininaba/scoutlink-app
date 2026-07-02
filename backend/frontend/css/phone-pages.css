@@ -13,6 +13,251 @@
   display: none !important;
 }
 
+/* ScoutLink light product finish
+   This file loads after page-level CSS, so these rules intentionally neutralise
+   old dark page styles on desktop and phone without touching page logic. */
+:root {
+  --bg: #f6f8fb;
+  --bg0: #f6f8fb;
+  --bg1: #f6f8fb;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card2: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --text2: #334155;
+  --text3: #64748b;
+  --text-secondary: #64748b;
+  --accent: #0f9f75;
+  --green: #0f9f75;
+}
+
+html,
+body,
+body.theme-dark,
+.dashboard,
+.dashboard-main,
+.page-content {
+  background: #f6f8fb !important;
+  color: #111827 !important;
+}
+
+.topbar,
+.sidebar,
+.table-card,
+.settings-panel,
+.profile-card,
+.compare-card,
+.contracts-card,
+.org-board,
+.org-person,
+.org-modal-card,
+.job-row,
+.recipient-box,
+.modal-box,
+.season-archive-card,
+.video-card,
+.prediction-card,
+.breakdown-card,
+.position-pill,
+.value-factor-row,
+.overall-gauge,
+.performance-panel,
+.stat-box,
+.attr-details summary,
+.attr-details .attr-inner,
+.fixture-row,
+.profile-metric-card,
+.physical-metric,
+.profile-modal-box,
+.video-modal-box,
+.mini-metric,
+.rec-row,
+.pipeline-mini,
+.filter-card,
+.scout-card,
+.sl-table tbody tr {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .06) !important;
+}
+
+.org-chart {
+  background: radial-gradient(circle at top, rgba(15, 159, 117, .08), transparent 36%), #f6f8fb !important;
+}
+
+.sidebar {
+  border-right: 1px solid #e5e7eb !important;
+}
+
+.topbar {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.sidebar-logo a,
+.brand,
+.org-name,
+.contract-person b,
+.contract-field b,
+.breakdown-card b,
+.value-factor-row b,
+.physical-metric b,
+.attr-details summary,
+.profile-modal-head h3,
+.video-modal-head h3,
+.table-header h3,
+.table-card h2,
+.table-card h3,
+.compare-card h3,
+.compare-card h4,
+.profile-card h2,
+.profile-card h3,
+.settings-panel h2,
+.settings-panel h3,
+.modal-box h3,
+.job-row h4 {
+  color: #111827 !important;
+}
+
+.sidebar-logo span,
+.brand span,
+.org-title,
+.green,
+.text-accent,
+.kpi-value.green,
+.stat-val.green {
+  color: #0f9f75 !important;
+}
+
+.sidebar-nav a,
+.nav-item,
+.topbar-title,
+.user-name,
+.org-meta,
+.org-report-count,
+.contract-person span,
+.contract-field span,
+.breakdown-card span,
+.breakdown-card small,
+.fixture-date,
+.fixture-venue,
+.gauge-desc-lbl,
+.stat-lbl,
+.section-heading,
+.value-factor-row span,
+.value-factor-row small,
+.physical-metric span,
+.modal-box p,
+.job-row p,
+.recipient-box label,
+.rec-row,
+.profile-card p,
+.table-card p {
+  color: #64748b !important;
+}
+
+.btn-primary,
+button.btn-primary,
+input[type="submit"],
+button[type="submit"] {
+  background: #0f9f75 !important;
+  color: #ffffff !important;
+  border-color: #0f9f75 !important;
+}
+
+.btn-outline,
+.btn-ghost,
+.btn-secondary,
+.action-btn,
+.pred-btn,
+.filter-btn,
+.export-option,
+.player-select,
+select,
+input,
+textarea {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+}
+
+.btn-outline:hover,
+.btn-ghost:hover,
+.action-btn:hover,
+.pred-btn:hover,
+.filter-btn:hover,
+.export-option:hover {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #86efac !important;
+}
+
+.attr-bar-wrap,
+.compat-bar-bg,
+.breakdown-bar-track,
+.score-line-track,
+[style*="background:#21262d"],
+[style*="background:#1e2a3a"] {
+  background: #e5e7eb !important;
+}
+
+[style*="background:#0a0f1e"],
+[style*="background:#0d1117"],
+[style*="background:#07111f"],
+[style*="background:#0b111c"],
+[style*="background:#0f1620"],
+[style*="background:#111820"],
+[style*="background:#111827"],
+[style*="background:#161b22"],
+[style*="background:var(--card,#161b22)"],
+[style*="background:var(--bg,#0d1117)"] {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+}
+
+[style*="color:#fff"],
+[style*="color:#ffffff"],
+[style*="color:var(--text,#fff)"],
+[style*="color:#e6edf3"],
+[style*="color:#E2E8F0"],
+[style*="color:#B0BEC5"] {
+  color: #111827 !important;
+}
+
+.btn-primary[style],
+.user-avatar[style],
+.home-avatar,
+.phone-avatar,
+.org-avatar {
+  color: #ffffff !important;
+}
+
+.org-avatar {
+  background: #0f9f75 !important;
+}
+
+.profile-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #eef7f4 100%) !important;
+}
+
+.export-menu,
+.profile-modal,
+.video-modal {
+  background: rgba(15, 23, 42, .42) !important;
+}
+
+.export-menu {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .14) !important;
+}
+
+.video-frame {
+  background: #0f172a !important;
+}
+
 @media (min-width: 951px) {
   .coach-squad-desktop { display: block !important; }
   .coach-squad-mobile,

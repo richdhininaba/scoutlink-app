@@ -59,7 +59,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -93,7 +93,7 @@
 <script src="../js/main.js"></script>
 <script>
 /* =====================================================================
-   MATCH FACTS ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ LIVE FORMATION PITCH + POST-GAME MODE
+   MATCH FACTS - LIVE FORMATION PITCH + POST-GAME MODE
    ===================================================================== */
 'use strict';
 
@@ -121,7 +121,7 @@ var state = {
 var myPlayers = [];
 var currentStep = 1;
 
-// ---- Formation definitions ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ slot positions as % top, % left ----
+// ---- Formation definitions - slot positions as % top, % left ----
 // Pitch orientation: GK at bottom (high top %), forwards at top (low top %)
 // For 11-a-side, 9, 7, 5
 var FORMATION_SLOTS = {
@@ -319,7 +319,7 @@ function applySelectedFixture(id){
 }
 
 /* =====================================================================
-   STEP 1 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ MODE AND SETUP
+   STEP 1 - MODE AND SETUP
    ===================================================================== */
 function renderStep1(){
   setStep(1);
@@ -388,7 +388,7 @@ function renderStep1(){
   if(!state.matchDate) document.getElementById('mfDate').value=new Date().toISOString().split('T')[0];
 }
 /* =====================================================================
-   STEP 2 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
+   STEP 2 - FORMATION PITCH DIAGRAM (PLAYER ASSIGNMENT)
    ===================================================================== */
 function goToStep2(){
   state.fixtureId=document.getElementById('mfFixture').value||null;
@@ -587,7 +587,7 @@ function updateAssignStatus(slots){
   if(nextBtn) nextBtn.disabled=!allDone;
 }
 /* =====================================================================
-   STEP 3 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ LIVE MATCH WITH TIMER AND PITCH
+   STEP 3 - LIVE MATCH WITH TIMER AND PITCH
    ===================================================================== */
 function renderStep3Live(){
   setStep(3);
@@ -808,7 +808,7 @@ function updateEventsLog(){
   }).join('');
 }
 /* =====================================================================
-   POST-GAME MODE ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ STEP 2 (EVENTS)
+   POST-GAME MODE - STEP 2 (EVENTS)
    ===================================================================== */
 function renderStep2Post(){
   setStep(2);
@@ -897,7 +897,7 @@ function goToStep3Post(){
 }
 
 /* =====================================================================
-   STEP 4 ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ PLAYER RATINGS
+   STEP 4 - PLAYER RATINGS
    ===================================================================== */
 function renderStep4(){
   setStep(4);
@@ -996,8 +996,7 @@ function renderStep5(){
        ...state.redCards.map(function(id){return {type:'red_card',playerId:id};})];;
     evtSummary='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em">Events</div>'+
     evts.map(function(e){
-      var m=e.minute!==undefined?e.minute+'min ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚â‚¬Ãƒâ€šÃ‚â€ ':'';
-      m=e.minute!==undefined?e.minute+'min - ':'';
+      var m=e.minute!==undefined?e.minute+'min - ':'';
       if(e.type==='goal'){var assister=e.assist?playerName(e.assist):'';return '<div style="font-size:12px;padding:3px 0">&#9917; '+m+playerName(e.playerId)+(assister?' (assist: '+assister+')':'')+'</div>';}
       if(e.type==='yellow_card') return '<div style="font-size:12px;padding:3px 0;color:#FFC107">Yellow card - '+m+playerName(e.playerId)+'</div>';
       if(e.type==='red_card') return '<div style="font-size:12px;padding:3px 0;color:#f44336">Red card - '+m+playerName(e.playerId)+'</div>';
@@ -1151,3 +1150,5 @@ document.addEventListener('DOMContentLoaded',function(){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
+

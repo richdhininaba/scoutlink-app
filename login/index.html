@@ -1,42 +1,43 @@
 ﻿<!DOCTYPE html>
 <html lang="en"><head>
-<base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Login - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <style>
-:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
+:root{--sl-green:#0f9f75;--sl-dark:#f6f8fb;--sl-card:#ffffff;--sl-border:#e5e7eb;--sl-text:#0f172a;--sl-muted:#64748b;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
-.login-wrap{width:100%;max-width:420px;}
-.brand{text-align:center;margin-bottom:2rem;}
-.brand h1{font-size:2.5rem;font-weight:900;color:var(--sl-green);letter-spacing:-1px;}
-.brand h1 span{color:var(--sl-text);}
-.brand p{color:var(--sl-muted);margin-top:0.5rem;}
-.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;}
-.form-group{margin-bottom:1.25rem;}
-label{display:block;font-size:0.875rem;font-weight:600;color:var(--sl-muted);margin-bottom:0.5rem;}
-input,select{width:100%;padding:0.75rem 1rem;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-text);font-size:0.95rem;transition:border-color 0.2s;}
-input:focus,select:focus{outline:none;border-color:var(--sl-green);}
-.btn{width:100%;padding:0.875rem;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:1rem;transition:all 0.2s;}
-.btn-primary{background:var(--sl-green);color:#000;}
-.btn-primary:hover{background:#00b548;}
+body{background:linear-gradient(180deg,#ffffff 0%,#f6f8fb 100%);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.login-wrap{width:100%;max-width:440px;}
+.brand{text-align:center;margin-bottom:1.6rem;}
+.brand h1{font-size:2.5rem;font-weight:950;color:var(--sl-text);letter-spacing:-1px;}
+.brand h1 span{color:var(--sl-green);}
+.brand p{color:var(--sl-muted);margin-top:0.45rem;}
+.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:22px;padding:2rem;box-shadow:0 24px 70px rgba(15,23,42,.10);}
+.form-group{margin-bottom:1.15rem;}
+label{display:block;font-size:0.8rem;font-weight:800;color:var(--sl-muted);margin-bottom:0.45rem;text-transform:uppercase;letter-spacing:.04em;}
+input,select{width:100%;min-height:46px;padding:0.75rem 1rem;background:#fff;border:1px solid var(--sl-border);border-radius:14px;color:var(--sl-text);font-size:0.95rem;transition:border-color 0.2s,box-shadow .2s;}
+input:focus,select:focus{outline:none;border-color:var(--sl-green);box-shadow:0 0 0 4px rgba(15,159,117,.12);}
+.btn{width:100%;min-height:44px;padding:0.75rem 1rem;border-radius:14px;border:1px solid transparent;cursor:pointer;font-weight:850;font-size:.95rem;transition:all 0.2s;}
+.btn-primary{background:var(--sl-green);color:#fff;}
+.btn-primary:hover{background:#047857;}
 .btn-primary:disabled{opacity:0.6;cursor:not-allowed;}
-.links{margin-top:1.5rem;text-align:center;font-size:0.875rem;color:var(--sl-muted);}
-.links a{color:var(--sl-green);text-decoration:none;}
-.divider{border:none;border-top:1px solid var(--sl-border);margin:1.5rem 0;}
-.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:8px;padding:0.75rem 1rem;font-size:0.875rem;margin-bottom:1rem;display:none;}
+.links{margin-top:1.35rem;text-align:center;font-size:0.875rem;color:var(--sl-muted);}
+.links a{color:var(--sl-green);text-decoration:none;font-weight:850;}
+.divider{border:none;border-top:1px solid var(--sl-border);margin:1.35rem 0;}
+.error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:12px;padding:0.75rem 1rem;font-size:0.875rem;margin-bottom:1rem;display:none;}
 .error.show{display:block;}
-.spinner{display:none;width:20px;height:20px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;}
+.spinner{display:none;width:20px;height:20px;border:2px solid rgba(255,255,255,0.45);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin:0 auto;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .tab-row{display:flex;gap:8px;margin-bottom:1.5rem;}
-.tab{flex:1;padding:8px;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;}
-.tab.active{background:var(--sl-green);color:#000;border-color:var(--sl-green);}
+.tab{flex:1;padding:10px;background:#f8fafc;border:1px solid var(--sl-border);border-radius:12px;color:var(--sl-muted);font-size:13px;font-weight:800;cursor:pointer;text-align:center;transition:all .2s;}
+.tab.active{background:#ecfdf5;color:#047857;border-color:rgba(15,159,117,.35);}
+#roleOptions .btn{background:#fff!important;color:var(--sl-text)!important;border:1px solid var(--sl-border)!important;text-align:left;}
 </style><link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -215,4 +216,7 @@ function storeAndRedirect(d){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
+
+
 

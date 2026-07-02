@@ -1,6 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en"><head>
-<base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Profile - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
@@ -159,7 +159,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -520,17 +520,17 @@ if(result.birthQuarter)html+='<p style="font-size:12px;color:#8b949e;margin-top:
 }else if(predType==='positional_ceiling'){
 html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.ceiling||result.message||'Analysis complete.')+'</p>';
 if(result.reliabilityNote)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.reliabilityNote+'</p>';
-html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> Ã¢â‚¬Â¢ Appearances: <b>'+(result.appearances||0)+'</b></p>';
+html+='<p style="font-size:12px;color:#8b949e;margin-top:8px">Overall: <b style="color:#1d9e75">'+(result.overallRating||'--')+'</b> &bull; Appearances: <b>'+(result.appearances||0)+'</b></p>';
 }else if(predType==='consistency_score'){
 if(result.insufficient){html+='<p style="font-size:13px;color:#FF9800">'+result.message+'</p>';}
-else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> Ã¢â‚¬Â¢ Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
+else{html+='<p style="font-size:13px;color:#B0BEC5;line-height:1.6">'+(result.message||result.label||'Analysis complete.')+'</p><p style="font-size:12px;color:#8b949e;margin-top:8px">Avg std dev: <b>'+(result.avgStdDev||'--')+'</b> &bull; Matches analysed: <b>'+(result.matchesAnalysed||0)+'</b></p>';}
 }else if(predType==='attribute_trajectory'){
 if(result.currentOverall)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current overall: <b style="color:#1d9e75">'+result.currentOverall+'</b> | Focus: <b style="color:#fff">'+(result.trainingFocus||'Balanced')+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> Ã¢â‚¬â€ High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+y.overallLow+'</b> - High: <b style="color:#1d9e75">'+y.overallHigh+'</b></span></div>';}).join('');}
 if(result.lowConfidenceWarning)html+='<p style="color:#FF9800;font-size:12px;margin-top:8px">'+result.lowConfidenceWarning+'</p>';
 }else if(predType==='value_trajectory'){
 if(result.currentValue)html+='<div style="margin-bottom:8px;font-size:13px;color:#8b949e">Current value: <b style="color:#1d9e75">'+result.currentValue+'</b></div>';
-if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> Ã¢â‚¬â€ High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
+if(result.trajectory&&result.trajectory.length){html+=result.trajectory.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px"><span style="color:#8b949e">Year '+y.year+'</span><span>Low: <b style="color:#FFC107">'+(y.projectedLow||'--')+'</b> - High: <b style="color:#1d9e75">'+(y.projectedHigh||'--')+'</b></span></div>';}).join('');}
 if(result.note)html+='<p style="color:#8b949e;font-size:12px;margin-top:8px">'+result.note+'</p>';
 }else if(predType==='scenario_simulation'){
 html+='<div style="padding:8px 0;border-bottom:1px solid #1e2a3a;font-size:13px;display:flex;justify-content:space-between"><span style="color:#8b949e">Baseline compatibility</span><b style="color:#fff">'+(result.baselineCompatibility||'--')+'</b></div>';
@@ -862,6 +862,8 @@ console.error('[PlayerProfile]',e);
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
+
 
 
 

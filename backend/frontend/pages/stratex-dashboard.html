@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><!-- fix-admin-experience-complete --><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Stratex admin dashboard - ScoutLink</title>
 <link rel="stylesheet" href="../css/variables.css">
@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -49,22 +49,22 @@
 <div id="topPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
 </div>
 </div>
-<div style="margin-top:20px;background:#111827;border:1px solid #1e2a3a;border-radius:12px;padding:20px">
+<div class="table-card platform-overview" style="margin-top:20px;padding:20px">
 <h3 style="margin-bottom:16px;color:#94a3b8;font-size:13px;text-transform:uppercase;letter-spacing:.5px">Platform overview</h3>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-<div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
+<div class="platform-stat" style="border-radius:14px;padding:14px;text-align:center">
 <div style="font-size:28px;font-weight:900;color:var(--accent,#1d9e75)" id="statPlayers">-</div>
 <div style="font-size:12px;color:#546E7A">Players registered</div>
 </div>
-<div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
+<div class="platform-stat" style="border-radius:14px;padding:14px;text-align:center">
 <div style="font-size:28px;font-weight:900;color:#42A5F5" id="statCoaches">-</div>
 <div style="font-size:12px;color:#546E7A">Coaches active</div>
 </div>
-<div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
+<div class="platform-stat" style="border-radius:14px;padding:14px;text-align:center">
 <div style="font-size:28px;font-weight:900;color:#FFC107" id="statScouts">-</div>
 <div style="font-size:12px;color:#546E7A">Scouts active</div>
 </div>
-<div style="background:var(--bg,#0d1117);border-radius:8px;padding:14px;text-align:center">
+<div class="platform-stat" style="border-radius:14px;padding:14px;text-align:center">
 <div style="font-size:28px;font-weight:900;color:#FF7043" id="statPending">-</div>
 <div style="font-size:12px;color:#546E7A">Awaiting review</div>
 </div>
@@ -160,3 +160,6 @@ async function loadDashboard(){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
+
+
