@@ -1659,6 +1659,123 @@ button[style*="background:#f44336"] {
   color:#0f172a !important;
 }
 
+body:not(.theme-dark) .profile-card,
+body.theme-light .profile-card,
+body:not(.theme-dark) .physical-summary,
+body.theme-light .physical-summary,
+body:not(.theme-dark) .position-lock-note,
+body.theme-light .position-lock-note {
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border-color:#e5e7eb !important;
+  box-shadow:0 12px 30px rgba(15,23,42,.06) !important;
+}
+
+body:not(.theme-dark) .physical-summary b,
+body.theme-light .physical-summary b,
+body:not(.theme-dark) .physical-summary span,
+body.theme-light .physical-summary span,
+body:not(.theme-dark) .physical-metric span,
+body.theme-light .physical-metric span,
+body:not(.theme-dark) .physical-metric b,
+body.theme-light .physical-metric b,
+body:not(.theme-dark) .value-factor-row span,
+body.theme-light .value-factor-row span,
+body:not(.theme-dark) .value-factor-row small,
+body.theme-light .value-factor-row small,
+body:not(.theme-dark) .value-factor-row b,
+body.theme-light .value-factor-row b,
+body:not(.theme-dark) .position-lock-note,
+body.theme-light .position-lock-note {
+  color:#0f172a !important;
+}
+
+body:not(.theme-dark) .physical-summary span,
+body.theme-light .physical-summary span,
+body:not(.theme-dark) .physical-metric span,
+body.theme-light .physical-metric span,
+body:not(.theme-dark) .value-factor-row small,
+body.theme-light .value-factor-row small,
+body:not(.theme-dark) .breakdown-card span,
+body.theme-light .breakdown-card span,
+body:not(.theme-dark) .breakdown-card small,
+body.theme-light .breakdown-card small,
+body:not(.theme-dark) [style*="color:#8b949e"],
+body.theme-light [style*="color:#8b949e"],
+body:not(.theme-dark) [style*="color:#B0BEC5"],
+body.theme-light [style*="color:#B0BEC5"] {
+  color:#64748b !important;
+}
+
+body:not(.theme-dark) .confidence-note,
+body.theme-light .confidence-note {
+  background:#fff7ed !important;
+  border-color:#fed7aa !important;
+  color:#7c2d12 !important;
+}
+
+body:not(.theme-dark) .chat-shell .thread-list,
+body:not(.theme-dark) .chat-shell .chat-pane,
+body:not(.theme-dark) .chat-shell .chat-head,
+body:not(.theme-dark) .chat-shell .composer,
+body:not(.theme-dark) .chat-shell .share-bar,
+body:not(.theme-dark) .chat-shell .thread-item,
+body.theme-light .chat-shell .thread-list,
+body.theme-light .chat-shell .chat-pane,
+body.theme-light .chat-shell .chat-head,
+body.theme-light .chat-shell .composer,
+body.theme-light .chat-shell .share-bar,
+body.theme-light .chat-shell .thread-item {
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border-color:#e5e7eb !important;
+}
+
+body:not(.theme-dark) .chat-shell .messages,
+body.theme-light .chat-shell .messages {
+  background:#f8fafc !important;
+  color:#0f172a !important;
+}
+
+body:not(.theme-dark) .chat-shell .msg,
+body.theme-light .chat-shell .msg {
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border-color:#e5e7eb !important;
+  box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+}
+
+body:not(.theme-dark) .chat-shell .msg.mine,
+body.theme-light .chat-shell .msg.mine {
+  background:#ecfdf5 !important;
+  border-color:#a7f3d0 !important;
+}
+
+body:not(.theme-dark) .chat-shell .share-card,
+body.theme-light .chat-shell .share-card {
+  background:#f8fafc !important;
+  border-color:#bbf7d0 !important;
+  color:#0f172a !important;
+}
+
+body:not(.theme-dark) .chat-shell .thread-title,
+body:not(.theme-dark) .chat-shell .msg .body,
+body:not(.theme-dark) .chat-shell .share-card-title,
+body.theme-light .chat-shell .thread-title,
+body.theme-light .chat-shell .msg .body,
+body.theme-light .chat-shell .share-card-title {
+  color:#0f172a !important;
+}
+
+body:not(.theme-dark) .chat-shell .thread-meta,
+body:not(.theme-dark) .chat-shell .msg .by,
+body:not(.theme-dark) .chat-shell .share-card-meta,
+body.theme-light .chat-shell .thread-meta,
+body.theme-light .chat-shell .msg .by,
+body.theme-light .chat-shell .share-card-meta {
+  color:#64748b !important;
+}
+
 .landing-page .btn-outline,
 .landing-page .btn-ghost {
   background:#ffffff !important;

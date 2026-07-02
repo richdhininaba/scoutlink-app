@@ -8,6 +8,7 @@ const { requireAuth, requireRole } = require('../utils/auth');
 const JOB_STATUSES = ['draft', 'scheduled', 'live', 'closed', 'archived'];
 const WORKING_TYPES = ['Remote', 'Hybrid', 'On-site'];
 const SALARY_UNITS = ['hourly', 'daily', 'monthly', 'annually'];
+const COMPENSATION_TYPES = ['paid_role', 'unpaid_internship', 'paid_internship', 'commission_based'];
 const MANAGE_JOB_ROLES = ['Management', 'Operations', 'Acquisition'];
 
 function isValidEmail(value) {
@@ -44,36 +45,58 @@ function cleanText(value) {
   return String(value || '').trim();
 }
 
+function pickText(body, keys, fallback) {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(body, key)) return cleanText(body[key]);
+  }
+  return cleanText(fallback);
+}
+
+function cleanNumber(value, fallback) {
+  if (value === undefined) return fallback ?? null;
+  if (value === null || value === '') return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
 function normalizeJobPayload(body, existing) {
   const title = cleanText(body.jobTitle || body.job_title || existing?.job_title);
   const status = cleanText(body.status || existing?.status || 'draft').toLowerCase();
   const workingType = body.workingType || body.working_type || existing?.working_type || 'Remote';
   const salaryUnit = body.salaryUnit || body.salary_unit || existing?.salary_unit || 'annually';
+  const compensationType = cleanText(body.compensationType || body.compensation_type || existing?.compensation_type || 'paid_role');
+  const stageCountRaw = body.interviewStageCount ?? body.interview_stage_count ?? existing?.interview_stage_count ?? 1;
+  const interviewStageCount = Math.max(0, Number.parseInt(stageCountRaw, 10) || 0);
   if (!title) throw new Error('Job title is required.');
   if (!JOB_STATUSES.includes(status)) throw new Error('Invalid job status.');
   if (!WORKING_TYPES.includes(workingType)) throw new Error('Invalid working type.');
   if (!SALARY_UNITS.includes(salaryUnit)) throw new Error('Invalid salary unit.');
+  if (!COMPENSATION_TYPES.includes(compensationType)) throw new Error('Invalid compensation option.');
   return {
     job_title: title,
     slug: cleanText(body.slug || existing?.slug || slugify(title)),
-    department: cleanText(body.department || existing?.department),
-    location: cleanText(body.location || existing?.location),
+    department: pickText(body, ['department'], existing?.department),
+    location: pickText(body, ['location'], existing?.location),
     working_type: workingType,
-    employment_type: cleanText(body.employmentType || body.employment_type || existing?.employment_type),
-    contract_type: cleanText(body.contractType || body.contract_type || existing?.contract_type),
-    salary_min: body.salaryMin !== undefined ? Number(body.salaryMin) || null : existing?.salary_min || null,
-    salary_max: body.salaryMax !== undefined ? Number(body.salaryMax) || null : existing?.salary_max || null,
+    employment_type: pickText(body, ['employmentType', 'employment_type'], existing?.employment_type),
+    contract_type: pickText(body, ['contractType', 'contract_type'], existing?.contract_type),
+    compensation_type: compensationType,
+    compensation_notes: pickText(body, ['compensationNotes', 'compensation_notes'], existing?.compensation_notes),
+    salary_min: cleanNumber(body.salaryMin, existing?.salary_min),
+    salary_max: cleanNumber(body.salaryMax, existing?.salary_max),
     salary_unit: salaryUnit,
     currency: 'GBP',
     release_at: body.releaseAt !== undefined || body.release_at !== undefined ? (body.releaseAt || body.release_at || null) : existing?.release_at || null,
     closing_at: body.closingAt !== undefined || body.closing_at !== undefined ? (body.closingAt || body.closing_at || null) : existing?.closing_at || null,
-    about_company: cleanText(body.aboutCompany || body.about_company || existing?.about_company),
-    role_overview: cleanText(body.roleOverview || body.role_overview || existing?.role_overview),
-    responsibilities: cleanText(body.responsibilities || body.whatYouWillBeDoing || body.what_you_will_be_doing || existing?.responsibilities),
-    must_haves: cleanText(body.mustHaves || body.must_haves || existing?.must_haves),
-    nice_to_haves: cleanText(body.niceToHaves || body.nice_to_haves || existing?.nice_to_haves),
-    interview_stage_count: Number(body.interviewStageCount || body.interview_stage_count || existing?.interview_stage_count || 1) || 1,
-    interview_process: cleanText(body.interviewProcess || body.interview_process || existing?.interview_process),
+    about_company: pickText(body, ['aboutCompany', 'about_company'], existing?.about_company),
+    role_overview: pickText(body, ['roleOverview', 'role_overview'], existing?.role_overview),
+    responsibilities: pickText(body, ['responsibilities', 'whatYouWillBeDoing', 'what_you_will_be_doing'], existing?.responsibilities),
+    must_haves: pickText(body, ['mustHaves', 'must_haves'], existing?.must_haves),
+    nice_to_haves: pickText(body, ['niceToHaves', 'nice_to_haves'], existing?.nice_to_haves),
+    benefits: pickText(body, ['benefits'], existing?.benefits),
+    application_instructions: pickText(body, ['applicationInstructions', 'application_instructions'], existing?.application_instructions),
+    interview_stage_count: interviewStageCount,
+    interview_process: pickText(body, ['interviewProcess', 'interview_process'], existing?.interview_process),
     status
   };
 }

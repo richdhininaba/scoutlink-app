@@ -45,15 +45,15 @@ const TEMPLATES = {
   },
   jobApplicationReceived: {
     name: 'Job Application Received',
-    id: 'd-a8e72760759d44338c9acc968e90fdd9',
+    id: 'd-a8e72760759d41338c9acc968e90fdd9',
     required: ['firstName', 'jobTitle', 'year'],
     optional: ['department', 'applicationId', 'submittedAt', 'jobUrl']
   },
   jobApplicationAlert: {
     name: 'Job Application Alert',
     id: 'd-9d826f9e9e724d7393807b5e031edce3',
-    required: ['firstName', 'lastName', 'email', 'phone', 'jobTitle', 'applicationUrl', 'year'],
-    optional: ['department', 'location', 'workingType', 'employmentType', 'salaryRange', 'submittedAt', 'applicationId', 'jobId', 'cvFileName', 'cvUrl', 'jobUrl']
+    required: ['firstName', 'lastName', 'email', 'jobTitle', 'applicationUrl', 'year'],
+    optional: ['phone', 'department', 'location', 'workingType', 'employmentType', 'salaryRange', 'submittedAt', 'applicationId', 'jobId', 'cvFileName', 'cvUrl', 'jobUrl']
   }
 };
 

@@ -59,6 +59,8 @@ function publicJob(job) {
     salaryMax: job.salary_max,
     salaryUnit: job.salary_unit,
     currency: job.currency,
+    compensationType: job.compensation_type,
+    compensationNotes: job.compensation_notes,
     releaseAt: job.release_at,
     closingAt: job.closing_at,
     aboutCompany: job.about_company,
@@ -66,6 +68,8 @@ function publicJob(job) {
     responsibilities: job.responsibilities,
     mustHaves: job.must_haves,
     niceToHaves: job.nice_to_haves,
+    benefits: job.benefits,
+    applicationInstructions: job.application_instructions,
     interviewStageCount: job.interview_stage_count,
     interviewProcess: job.interview_process,
     status: job.status
@@ -134,6 +138,7 @@ function cvUpload(req, res, next) {
 router.post('/:slug/apply', cvUpload, async (req, res) => {
   let insertedApplication = null;
   let filePath = null;
+  let shouldRollback = true;
   try {
     const { data: job, error } = await supabase.from('job_posts').select('*').eq('slug', req.params.slug).maybeSingle();
     if (error || !visibleJob(job)) return res.status(404).json({ error: 'Job not found.' });
@@ -182,11 +187,13 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       file_size: req.file.size
     }).select().single();
     if (fileErr) throw fileErr;
+    shouldRollback = false;
 
     const jobUrl = brandBase() + '/careers/' + job.slug;
     const applicationUrl = brandBase() + '/stratex/hiring?applicationId=' + encodeURIComponent(app.id);
     const { data: signedCv } = await supabase.storage.from('job-cvs').createSignedUrl(filePath, 60 * 60 * 24 * 7);
     const submittedAt = email.prettyDate ? email.prettyDate(app.submitted_at) : new Date(app.submitted_at).toLocaleString('en-GB');
+    const emailWarnings = [];
 
     const candidateEmail = await email.sendJobApplicationReceived({
       to: applicantEmail,
@@ -197,7 +204,10 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       submittedAt,
       jobUrl
     });
-    if (!candidateEmail.success) throw new Error('Candidate email failed: ' + (candidateEmail.error || 'unknown error'));
+    if (!candidateEmail.success) {
+      emailWarnings.push('candidate_confirmation');
+      console.error('[Careers apply email] Candidate confirmation failed:', candidateEmail.error || candidateEmail);
+    }
 
     const adminRecipients = await recipientsForJob(job.id);
     const adminEmail = await email.sendJobApplicationAlert({
@@ -220,15 +230,25 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       applicationUrl,
       jobUrl
     });
-    if (!adminEmail.success) throw new Error('Admin alert email failed: ' + (adminEmail.error || 'unknown error'));
+    if (!adminEmail.success) {
+      emailWarnings.push('admin_alert');
+      console.error('[Careers apply email] Admin alert failed:', adminEmail.error || adminEmail);
+    }
 
-    res.status(201).json({ message: 'Application submitted successfully.', applicationId: app.application_ref });
+    res.status(201).json({
+      message: emailWarnings.length
+        ? 'Application submitted successfully. Confirmation email delivery is pending.'
+        : 'Application submitted successfully.',
+      applicationId: app.application_ref,
+      emailStatus: emailWarnings.length ? 'partial' : 'sent',
+      emailWarnings
+    });
   } catch (err) {
     console.error('[Careers apply]', err);
-    if (filePath) {
+    if (shouldRollback && filePath) {
       try { await supabase.storage.from('job-cvs').remove([filePath]); } catch (_) {}
     }
-    if (insertedApplication?.id) {
+    if (shouldRollback && insertedApplication?.id) {
       try { await supabase.from('job_applications').delete().eq('id', insertedApplication.id); } catch (_) {}
     }
     res.status(500).json({ error: err.message || 'Could not submit application.' });
