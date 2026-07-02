@@ -6,15 +6,16 @@ if (!config.supabase.url) throw new Error('SUPABASE_URL not set');
 
 function createServiceRoleJwt() {
   if (!config.supabase.jwtSecret) return null;
+  const refMatch = String(config.supabase.url || '').match(/^https:\/\/([^.]+)\.supabase\.co/i);
+  const projectRef = refMatch ? refMatch[1] : undefined;
   return jwt.sign(
     {
       role: 'service_role',
       iss: 'supabase',
-      aud: 'authenticated',
-      sub: 'service-role',
+      ref: projectRef,
     },
     config.supabase.jwtSecret,
-    { expiresIn: '1h' }
+    { expiresIn: '10y' }
   );
 }
 
