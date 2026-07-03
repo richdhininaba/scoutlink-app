@@ -407,6 +407,9 @@ router.get('/job-applications', requireAuth, requireRole('Stratex'), async (req,
 
 router.get('/job-applications/:id/cv-url', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
+    if (!config.supabase.serviceRoleKey) {
+      return res.status(503).json({ error: 'Secure CV access is not configured.' });
+    }
     const { data: file, error } = await supabase.from('job_application_files').select('*').eq('application_id', req.params.id).maybeSingle();
     if (error || !file) return res.status(404).json({ error: 'CV file not found' });
     const { data, error: signedErr } = await supabase.storage.from(file.bucket || 'job-cvs').createSignedUrl(file.file_path, 60 * 10);

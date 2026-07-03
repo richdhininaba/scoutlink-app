@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const email = require('../services/email');
+const config = require('../config');
 
 const FALLBACK_ADMIN = 'richdhin@stratexanalytics.co.uk';
 const ALLOWED_MIME = new Set([
@@ -155,6 +156,11 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       return res.status(400).json({ error: 'First name, last name, valid email and phone number are required.' });
     }
     if (!req.file) return res.status(400).json({ error: 'CV upload is required.' });
+    if (!config.supabase.serviceRoleKey) {
+      return res.status(503).json({
+        error: 'CV uploads are temporarily unavailable. Please contact ScoutLink support.'
+      });
+    }
 
     const ref = applicationRef();
     const { data: app, error: appErr } = await supabase.from('job_applications').insert({
