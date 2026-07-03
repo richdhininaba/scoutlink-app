@@ -131,7 +131,8 @@ const routeMap = {
   '/player/video-reels': 'pages/player-video-reels.html',
   '/player/notifications': 'pages/player-notifications.html',
   '/player/settings': 'pages/player-settings.html',
-  '/careers': 'pages/careers.html'
+  '/careers': 'pages/careers.html',
+  '/careers/interview-availability': 'pages/interview-availability.html'
 };
 
 function sendFrontendFile(req, res, relativePath) {

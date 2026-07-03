@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateId } = require('../utils/auth');
@@ -14,9 +15,18 @@ const SALARY_UNITS = ['hourly', 'daily', 'monthly', 'annually', 'commission'];
 const COMPENSATION_TYPES = ['paid_role', 'unpaid_internship', 'paid_internship', 'commission_based'];
 const MANAGE_JOB_ROLES = ['Management', 'Operations', 'Acquisition'];
 const DUPLICATE_SLUG_MESSAGE = 'A job post with this title already exists. Open the existing job and edit it instead.';
+const FALLBACK_REPORTING_TO = {
+  fullName: 'Richdhin Inaba',
+  email: 'richdhin@stratexanalytics.co.uk',
+  jobTitle: 'Founder'
+};
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function tokenHash(token) {
+  return crypto.createHash('sha256').update(String(token || ''), 'utf8').digest('hex');
 }
 
 function slugify(value) {
@@ -36,6 +46,12 @@ function canManageJobs(admin) {
   return MANAGE_JOB_ROLES.includes(role) || perms.includes('management') || perms.includes('operations') || perms.includes('acquisition');
 }
 
+function requireServiceRole(res) {
+  if (config.supabase.serviceRoleKey) return true;
+  res.status(503).json({ error: 'Secure hiring administration is not configured. SUPABASE_SERVICE_ROLE_KEY is required on the server.' });
+  return false;
+}
+
 async function requireJobManager(req, res) {
   const admin = await currentAdmin(req);
   if (!canManageJobs(admin)) {
@@ -43,6 +59,71 @@ async function requireJobManager(req, res) {
     return null;
   }
   return admin;
+}
+
+async function resolveReportingTo(job) {
+  const fallback = { ...FALLBACK_REPORTING_TO };
+  if (!job) return fallback;
+  if (job.reporting_to_id) {
+    const { data } = await supabase
+      .from('stratex')
+      .select('first_name,last_name,email,job_title,admin_role,role,is_active')
+      .eq('id', job.reporting_to_id)
+      .maybeSingle();
+    if (data && data.is_active !== false) {
+      const fullName = [data.first_name, data.last_name].map(cleanText).filter(Boolean).join(' ');
+      return {
+        fullName: fullName || job.reporting_to_name || fallback.fullName,
+        email: isValidEmail(data.email) ? cleanText(data.email).toLowerCase() : fallback.email,
+        jobTitle: cleanText(data.job_title || data.admin_role || data.role) || fallback.jobTitle
+      };
+    }
+  }
+  return {
+    fullName: cleanText(job.reporting_to_name) || fallback.fullName,
+    email: fallback.email,
+    jobTitle: fallback.jobTitle
+  };
+}
+
+function applicationSelect() {
+  return '*, job_posts(*), job_application_files(id,bucket,file_name,mime_type,file_size,file_path,uploaded_at), job_interview_availability_slots(id,slot_start,slot_end,submitted_at), job_interview_availability_tokens(id,sent_at,expires_at,used_at)';
+}
+
+async function loadApplication(applicationId) {
+  const { data, error } = await supabase
+    .from('job_applications')
+    .select(applicationSelect())
+    .eq('id', applicationId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+function publicApplication(app) {
+  if (!app) return null;
+  const job = app.job_posts || {};
+  const files = app.job_application_files || [];
+  const slots = app.job_interview_availability_slots || [];
+  const tokens = app.job_interview_availability_tokens || [];
+  return {
+    ...app,
+    job_posts: job,
+    job_application_files: files,
+    job_interview_availability_slots: slots,
+    job_interview_availability_tokens: tokens,
+    availability: {
+      submittedAt: app.availability_submitted_at || (slots[0] && slots[0].submitted_at) || null,
+      slots: slots.map(s => ({
+        id: s.id,
+        start: s.slot_start,
+        end: s.slot_end,
+        submittedAt: s.submitted_at
+      })),
+      stageOneSentAt: app.stage_one_email_sent_at || null,
+      latestToken: tokens[0] || null
+    }
+  };
 }
 
 function cleanText(value) {
@@ -393,15 +474,28 @@ router.post('/jobs/:id/fill-vacancy', requireAuth, requireRole('Stratex'), async
 
 router.get('/job-applications', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
+    if (!requireServiceRole(res)) return;
     const { jobId } = req.query;
-    let q = supabase.from('job_applications').select('*, job_posts(job_title,department,status), job_application_files(id,file_name,mime_type,file_size,file_path)').order('submitted_at', { ascending: false }).limit(250);
+    let q = supabase.from('job_applications').select(applicationSelect()).order('submitted_at', { ascending: false }).limit(250);
     if (jobId) q = q.eq('job_post_id', jobId);
     const { data, error } = await q;
     if (error) throw error;
-    res.json({ data: data || [] });
+    res.json({ data: (data || []).map(publicApplication) });
   } catch (err) {
     console.error('[Stratex applications]', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.get('/job-applications/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    if (!requireServiceRole(res)) return;
+    const app = await loadApplication(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Application not found' });
+    res.json({ data: publicApplication(app) });
+  } catch (err) {
+    console.error('[Stratex application get]', err);
+    res.status(500).json({ error: 'Could not load application' });
   }
 });
 
@@ -418,6 +512,129 @@ router.get('/job-applications/:id/cv-url', requireAuth, requireRole('Stratex'), 
   } catch (err) {
     console.error('[Stratex application CV]', err);
     res.status(500).json({ error: 'Could not create secure CV link' });
+  }
+});
+
+router.delete('/job-applications/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    if (!requireServiceRole(res)) return;
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
+    const app = await loadApplication(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Application not found' });
+    const files = app.job_application_files || [];
+    const byBucket = {};
+    files.forEach((file) => {
+      const bucket = file.bucket || 'job-cvs';
+      if (!byBucket[bucket]) byBucket[bucket] = [];
+      if (file.file_path) byBucket[bucket].push(file.file_path);
+    });
+    for (const [bucket, paths] of Object.entries(byBucket)) {
+      if (paths.length) {
+        const { error: storageErr } = await supabase.storage.from(bucket).remove(paths);
+        if (storageErr) console.error('[Stratex application delete storage]', storageErr);
+      }
+    }
+    const { error } = await supabase.from('job_applications').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Application deleted' });
+  } catch (err) {
+    console.error('[Stratex application delete]', err);
+    res.status(500).json({ error: 'Could not delete application' });
+  }
+});
+
+router.post('/job-applications/:id/stage-one', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    if (!requireServiceRole(res)) return;
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
+    const app = await loadApplication(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Application not found' });
+    const job = app.job_posts || {};
+    const reportingTo = await resolveReportingTo(job);
+    const rawToken = crypto.randomBytes(32).toString('base64url');
+    const sentAt = new Date();
+    const expiresAt = new Date(sentAt.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const { data: tokenRow, error: tokenErr } = await supabase
+      .from('job_interview_availability_tokens')
+      .insert({
+        application_id: app.id,
+        token_hash: tokenHash(rawToken),
+        token_hint: rawToken.slice(0, 6),
+        sent_at: sentAt.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        created_by: req.user.id
+      })
+      .select()
+      .single();
+    if (tokenErr) throw tokenErr;
+    const interviewAvailabilityUrl = email.accountLink
+      ? email.accountLink('/careers/interview-availability', { token: rawToken })
+      : 'https://scoutlink.app/careers/interview-availability?token=' + encodeURIComponent(rawToken);
+    const emailResult = await email.sendJobApplicationStageOneEmail({
+      to: app.email,
+      firstName: app.first_name,
+      jobTitle: job.job_title,
+      interviewAvailabilityUrl,
+      reportingToFullName: reportingTo.fullName,
+      reportingToJobTitle: reportingTo.jobTitle
+    });
+    if (!emailResult.success) {
+      await supabase.from('job_interview_availability_tokens').delete().eq('id', tokenRow.id);
+      return res.status(502).json({
+        error: 'Stage One email could not be sent.',
+        details: emailResult.error || emailResult.details || 'SendGrid rejected the email.'
+      });
+    }
+    const { error: updateErr } = await supabase
+      .from('job_applications')
+      .update({ status: 'stage_one', stage_one_email_sent_at: sentAt.toISOString() })
+      .eq('id', app.id);
+    if (updateErr) throw updateErr;
+    res.json({
+      message: 'Candidate moved to Stage One and email sent.',
+      emailTemplate: emailResult.templateId,
+      interviewAvailabilityUrl
+    });
+  } catch (err) {
+    console.error('[Stratex application stage one]', err);
+    res.status(500).json({ error: 'Could not move application to Stage One' });
+  }
+});
+
+router.post('/job-applications/:id/decline', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    if (!requireServiceRole(res)) return;
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
+    const app = await loadApplication(req.params.id);
+    if (!app) return res.status(404).json({ error: 'Application not found' });
+    const job = app.job_posts || {};
+    const reportingTo = await resolveReportingTo(job);
+    const emailResult = await email.sendJobApplicationDeclineEmail({
+      to: app.email,
+      firstName: app.first_name,
+      jobTitle: job.job_title,
+      reportingToEmail: reportingTo.email,
+      reportingToFullName: reportingTo.fullName,
+      reportingToJobTitle: reportingTo.jobTitle
+    });
+    if (!emailResult.success) {
+      return res.status(502).json({
+        error: 'Decline email could not be sent.',
+        details: emailResult.error || emailResult.details || 'SendGrid rejected the email.'
+      });
+    }
+    const { error: updateErr } = await supabase
+      .from('job_applications')
+      .update({ status: 'declined', decline_email_sent_at: new Date().toISOString() })
+      .eq('id', app.id);
+    if (updateErr) throw updateErr;
+    res.json({ message: 'Application declined and email sent.', emailTemplate: emailResult.templateId });
+  } catch (err) {
+    console.error('[Stratex application decline]', err);
+    res.status(500).json({ error: 'Could not decline application' });
   }
 });
 

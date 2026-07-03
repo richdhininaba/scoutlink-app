@@ -180,6 +180,62 @@ function jobApplicationAlertData(d) {
   };
 }
 
+function jobApplicationStageOneData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    jobTitle: d.jobTitle || d.job_title || '',
+    interviewAvailabilityUrl: d.interviewAvailabilityUrl || d.interview_availability_url || '',
+    reportingToFullName: d.reportingToFullName || d.reporting_to_full_name || 'Richdhin Inaba',
+    reportingToJobTitle: d.reportingToJobTitle || d.reporting_to_job_title || 'Founder'
+  };
+}
+
+function jobApplicationDeclineData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    jobTitle: d.jobTitle || d.job_title || '',
+    reportingToEmail: d.reportingToEmail || d.reporting_to_email || 'richdhin@stratexanalytics.co.uk',
+    reportingToFullName: d.reportingToFullName || d.reporting_to_full_name || 'Richdhin Inaba',
+    reportingToJobTitle: d.reportingToJobTitle || d.reporting_to_job_title || 'Founder'
+  };
+}
+
+function interviewAvailabilitySubmittedData(d) {
+  d = d || {};
+  const slots = Array.isArray(d.slots) ? d.slots : [];
+  const lines = slots.map((slot) => '• ' + prettyDate(slot)).join('\n');
+  return {
+    title: 'Interview availability submitted',
+    subject: 'Interview availability submitted for ' + (d.jobTitle || d.job_title || 'a ScoutLink role'),
+    body: [
+      (d.applicantName || 'An applicant') + ' has submitted interview availability.',
+      'Email: ' + (d.applicantEmail || d.applicant_email || ''),
+      'Role: ' + (d.jobTitle || d.job_title || ''),
+      d.applicationRef ? 'Application reference: ' + d.applicationRef : '',
+      '',
+      lines || 'No slots were supplied.'
+    ].filter(line => line !== '').join('\n'),
+    message: [
+      (d.applicantName || 'An applicant') + ' has submitted interview availability.',
+      'Email: ' + (d.applicantEmail || d.applicant_email || ''),
+      'Role: ' + (d.jobTitle || d.job_title || ''),
+      d.applicationRef ? 'Application reference: ' + d.applicationRef : '',
+      '',
+      lines || 'No slots were supplied.'
+    ].filter(line => line !== '').join('\n'),
+    actionLink: d.applicationUrl || d.application_url || brandBase() + '/stratex/hiring',
+    applicantName: d.applicantName || d.applicant_name || '',
+    applicantEmail: d.applicantEmail || d.applicant_email || '',
+    jobTitle: d.jobTitle || d.job_title || '',
+    applicationRef: d.applicationRef || d.application_ref || '',
+    selectedSlots: lines,
+    reportingToFullName: d.reportingToFullName || d.reporting_to_full_name || '',
+    submittedAt: d.submittedAt || d.submitted_at || prettyDate()
+  };
+}
+
 async function sendResetPassword(d) {
   const templateId = config.sendgrid.templates.resetPassword;
   const payload = withDefaults({
@@ -249,6 +305,9 @@ module.exports = {
   sendPlayerLoginCode: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'completeSignup', data: inviteData({ ...(d || {}), accountType: 'Player', firstName: (d && (d.playerFirstName || d.firstName)) || 'Player' }) }),
   sendJobApplicationReceived: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationReceived', data: jobApplicationReceivedData(d) }),
   sendJobApplicationAlert: (d) => sendTemplate({ to: d.to, templateKey: 'jobApplicationAlert', data: jobApplicationAlertData(d) }),
+  sendJobApplicationStageOneEmail: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationStageOne', data: jobApplicationStageOneData(d) }),
+  sendJobApplicationDeclineEmail: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationDecline', data: jobApplicationDeclineData(d) }),
+  sendInterviewAvailabilitySubmittedAdminEmail: (d) => sendNotification({ ...(d || {}), ...interviewAvailabilitySubmittedData(d) }),
   sendNotification,
   sendResetPassword,
   brandBase,

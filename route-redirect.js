@@ -60,7 +60,8 @@
     '/player/video-reels': '/frontend/pages/player-video-reels.html',
     '/player/notifications': '/frontend/pages/player-notifications.html',
     '/player/settings': '/frontend/pages/player-settings.html',
-    '/careers': '/frontend/pages/careers.html'
+    '/careers': '/frontend/pages/careers.html',
+    '/careers/interview-availability': '/frontend/pages/interview-availability.html'
   };
   var path = window.location.pathname.replace(/\/$/, '') || '/';
   var target = routes[path];

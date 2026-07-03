@@ -64,6 +64,7 @@
     { "source": "/player/notifications", "destination": "/frontend/pages/player-notifications.html" },
     { "source": "/player/settings", "destination": "/frontend/pages/player-settings.html" },
     { "source": "/careers", "destination": "/frontend/pages/careers.html" },
+    { "source": "/careers/interview-availability", "destination": "/frontend/pages/interview-availability.html" },
     { "source": "/careers/:slug", "destination": "/frontend/pages/career-detail.html" },
     { "source": "/css/:path*", "destination": "/frontend/css/:path*" },
     { "source": "/js/:path*", "destination": "/frontend/js/:path*" },

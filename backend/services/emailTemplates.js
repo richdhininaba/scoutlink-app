@@ -54,6 +54,18 @@ const TEMPLATES = {
     id: 'd-9d826f9e9e724d7393807b5e031edce3',
     required: ['firstName', 'lastName', 'email', 'jobTitle', 'applicationUrl', 'year'],
     optional: ['phone', 'department', 'location', 'workingType', 'employmentType', 'salaryRange', 'submittedAt', 'applicationId', 'jobId', 'cvFileName', 'cvUrl', 'jobUrl']
+  },
+  jobApplicationStageOne: {
+    name: 'job application - normal interview',
+    id: 'd-3cd4184f942a4d32a3c7e1bb26b2ce63',
+    required: ['firstName', 'jobTitle', 'interviewAvailabilityUrl', 'reportingToFullName', 'reportingToJobTitle', 'year'],
+    optional: []
+  },
+  jobApplicationDecline: {
+    name: 'job application decline',
+    id: 'd-c492ab3e8388462194c5363b9c3ef0c7',
+    required: ['firstName', 'jobTitle', 'reportingToEmail', 'reportingToFullName', 'reportingToJobTitle', 'year'],
+    optional: []
   }
 };
 

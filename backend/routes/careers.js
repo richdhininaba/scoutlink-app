@@ -10,6 +10,11 @@ const email = require('../services/email');
 const config = require('../config');
 
 const FALLBACK_ADMIN = 'richdhin@stratexanalytics.co.uk';
+const FALLBACK_REPORTING_TO = {
+  fullName: 'Richdhin Inaba',
+  email: FALLBACK_ADMIN,
+  jobTitle: 'Founder'
+};
 const ALLOWED_MIME = new Set([
   'application/pdf',
   'application/msword',
@@ -31,6 +36,10 @@ function brandBase() {
 
 function cleanText(value) {
   return String(value || '').trim();
+}
+
+function tokenHash(token) {
+  return crypto.createHash('sha256').update(String(token || ''), 'utf8').digest('hex');
 }
 
 function isEmail(value) {
@@ -78,6 +87,17 @@ function publicJob(job) {
   };
 }
 
+function sourceMetadata(req) {
+  const fields = ['source', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  const meta = { source: 'public_careers' };
+  fields.forEach((field) => {
+    const value = cleanText(req.body?.[field] || req.query?.[field]);
+    if (value) meta[field] = value.slice(0, 200);
+  });
+  if (!meta.source) meta.source = 'public_careers';
+  return meta;
+}
+
 function applicationRef() {
   return 'APP-' + new Date().getFullYear() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
@@ -111,6 +131,87 @@ async function recipientsForJob(jobId) {
   return emails.length ? [...new Set(emails)] : [FALLBACK_ADMIN];
 }
 
+async function duplicateApplication(jobId, applicantEmail) {
+  const { data, error } = await supabase
+    .from('job_applications')
+    .select('id,email')
+    .eq('job_post_id', jobId)
+    .limit(500);
+  if (error) throw error;
+  const target = cleanText(applicantEmail).toLowerCase();
+  return (data || []).find(row => cleanText(row.email).toLowerCase() === target) || null;
+}
+
+async function resolveReportingTo(job) {
+  const fallback = { ...FALLBACK_REPORTING_TO };
+  if (!job) return fallback;
+  if (job.reporting_to_id) {
+    const { data } = await supabase
+      .from('stratex')
+      .select('first_name,last_name,email,job_title,admin_role,role,is_active')
+      .eq('id', job.reporting_to_id)
+      .maybeSingle();
+    if (data && data.is_active !== false) {
+      const fullName = [data.first_name, data.last_name].map(cleanText).filter(Boolean).join(' ');
+      return {
+        fullName: fullName || job.reporting_to_name || fallback.fullName,
+        email: isEmail(data.email) ? cleanText(data.email).toLowerCase() : fallback.email,
+        jobTitle: cleanText(data.job_title || data.admin_role || data.role) || fallback.jobTitle
+      };
+    }
+  }
+  return {
+    fullName: cleanText(job.reporting_to_name) || fallback.fullName,
+    email: fallback.email,
+    jobTitle: fallback.jobTitle
+  };
+}
+
+function nextInterviewSlots(sentAt) {
+  const start = sentAt ? new Date(sentAt) : new Date();
+  if (Number.isNaN(start.getTime())) start.setTime(Date.now());
+  const now = new Date();
+  const begin = start > now ? start : now;
+  const end = new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const slots = [];
+  const hours = [9, 10.5, 12, 14, 15.5, 17];
+  const day = new Date(begin);
+  day.setHours(0, 0, 0, 0);
+  while (day <= end) {
+    const weekday = day.getDay();
+    if (weekday !== 0 && weekday !== 6) {
+      hours.forEach((value) => {
+        const slot = new Date(day);
+        const hour = Math.floor(value);
+        const minute = value % 1 ? 30 : 0;
+        slot.setHours(hour, minute, 0, 0);
+        if (slot > begin && slot <= end) {
+          slots.push({
+            start: slot.toISOString(),
+            end: new Date(slot.getTime() + 30 * 60 * 1000).toISOString(),
+            label: slot.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          });
+        }
+      });
+    }
+    day.setDate(day.getDate() + 1);
+  }
+  return slots;
+}
+
+async function loadAvailabilityToken(rawToken) {
+  const hash = tokenHash(rawToken);
+  const { data: token, error } = await supabase
+    .from('job_interview_availability_tokens')
+    .select('*, job_applications(*, job_posts(*))')
+    .eq('token_hash', hash)
+    .maybeSingle();
+  if (error) throw error;
+  if (!token) return null;
+  if (new Date(token.expires_at).getTime() < Date.now()) return null;
+  return token;
+}
+
 router.get('/', async (req, res) => {
   try {
     const jobs = await loadVisibleJobs();
@@ -118,6 +219,110 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('[Careers list]', err);
     res.status(500).json({ error: 'Could not load careers.' });
+  }
+});
+
+router.get('/interview-availability', async (req, res) => {
+  try {
+    if (!config.supabase.serviceRoleKey) {
+      return res.status(503).json({ error: 'Interview availability is temporarily unavailable. Please contact ScoutLink support.' });
+    }
+    const tokenValue = cleanText(req.query.token);
+    if (!tokenValue) return res.status(400).json({ error: 'Availability link is missing a token.' });
+    const token = await loadAvailabilityToken(tokenValue);
+    if (!token) return res.status(404).json({ error: 'This availability link is invalid or has expired.' });
+    const application = token.job_applications;
+    const job = application?.job_posts || {};
+    const { data: existingSlots } = await supabase
+      .from('job_interview_availability_slots')
+      .select('slot_start,slot_end,submitted_at')
+      .eq('token_id', token.id)
+      .order('slot_start', { ascending: true });
+    res.json({
+      data: {
+        candidateName: [application?.first_name, application?.last_name].map(cleanText).filter(Boolean).join(' '),
+        firstName: application?.first_name || '',
+        jobTitle: job.job_title || '',
+        applicationRef: application?.application_ref || '',
+        sentAt: token.sent_at,
+        expiresAt: token.expires_at,
+        alreadySubmitted: !!token.used_at,
+        submittedAt: token.used_at || null,
+        slots: nextInterviewSlots(token.sent_at),
+        selectedSlots: (existingSlots || []).map(s => ({
+          start: s.slot_start,
+          end: s.slot_end,
+          submittedAt: s.submitted_at
+        }))
+      }
+    });
+  } catch (err) {
+    console.error('[Careers availability get]', err);
+    res.status(500).json({ error: 'Could not load interview availability.' });
+  }
+});
+
+router.post('/interview-availability', async (req, res) => {
+  try {
+    if (!config.supabase.serviceRoleKey) {
+      return res.status(503).json({ error: 'Interview availability is temporarily unavailable. Please contact ScoutLink support.' });
+    }
+    const tokenValue = cleanText(req.body.token);
+    const requestedSlots = Array.isArray(req.body.slots) ? req.body.slots : [];
+    if (!tokenValue) return res.status(400).json({ error: 'Availability link is missing a token.' });
+    if (!requestedSlots.length) return res.status(400).json({ error: 'Please select at least one interview slot.' });
+    const token = await loadAvailabilityToken(tokenValue);
+    if (!token) return res.status(404).json({ error: 'This availability link is invalid or has expired.' });
+    const allowed = new Set(nextInterviewSlots(token.sent_at).map(s => s.start));
+    const cleanSlots = [...new Set(requestedSlots.map(cleanText))].filter(slot => allowed.has(slot));
+    if (!cleanSlots.length) return res.status(400).json({ error: 'Please choose times from the available two-week window.' });
+    const rows = cleanSlots.map(slot => ({
+      application_id: token.application_id,
+      token_id: token.id,
+      slot_start: slot,
+      slot_end: new Date(new Date(slot).getTime() + 30 * 60 * 1000).toISOString()
+    }));
+    await supabase.from('job_interview_availability_slots').delete().eq('token_id', token.id);
+    const { error: slotErr } = await supabase.from('job_interview_availability_slots').insert(rows);
+    if (slotErr) throw slotErr;
+    const submittedAt = new Date().toISOString();
+    const { error: tokenErr } = await supabase
+      .from('job_interview_availability_tokens')
+      .update({ used_at: submittedAt })
+      .eq('id', token.id);
+    if (tokenErr) throw tokenErr;
+    const { error: appErr } = await supabase
+      .from('job_applications')
+      .update({ availability_submitted_at: submittedAt })
+      .eq('id', token.application_id);
+    if (appErr) throw appErr;
+
+    const application = token.job_applications;
+    const job = application?.job_posts || {};
+    const reportingTo = await resolveReportingTo(job);
+    const recipients = [...new Set([reportingTo.email, FALLBACK_ADMIN].map(v => cleanText(v).toLowerCase()).filter(isEmail))];
+    const applicationUrl = brandBase() + '/stratex/hiring?applicationId=' + encodeURIComponent(application.id);
+    const emailResult = await email.sendInterviewAvailabilitySubmittedAdminEmail({
+      to: recipients,
+      applicantName: [application.first_name, application.last_name].map(cleanText).filter(Boolean).join(' '),
+      applicantEmail: application.email,
+      jobTitle: job.job_title,
+      applicationRef: application.application_ref,
+      slots: cleanSlots,
+      applicationUrl,
+      reportingToFullName: reportingTo.fullName,
+      submittedAt: email.prettyDate ? email.prettyDate(submittedAt) : submittedAt
+    });
+    if (!emailResult.success) {
+      console.error('[Careers availability email]', emailResult.error || emailResult);
+    }
+    res.json({
+      message: 'Availability submitted successfully.',
+      emailStatus: emailResult.success ? 'sent' : 'pending'
+    });
+  } catch (err) {
+    console.error('[Careers availability post]', err);
+    res.status(500).json({ error: 'Could not submit interview availability.' });
   }
 });
 
@@ -156,10 +361,18 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       return res.status(400).json({ error: 'First name, last name, valid email and phone number are required.' });
     }
     if (!req.file) return res.status(400).json({ error: 'CV upload is required.' });
+    const originalExt = (path.extname(req.file.originalname || '') || '').toLowerCase();
+    if (!['.pdf', '.doc', '.docx'].includes(originalExt)) {
+      return res.status(400).json({ error: 'Please upload a PDF, DOC or DOCX CV under 5MB.' });
+    }
     if (!config.supabase.serviceRoleKey) {
       return res.status(503).json({
         error: 'CV uploads are temporarily unavailable. Please contact ScoutLink support.'
       });
+    }
+    const duplicate = await duplicateApplication(job.id, applicantEmail);
+    if (duplicate) {
+      return res.status(409).json({ error: 'You have already applied for this role.' });
     }
 
     const ref = applicationRef();
@@ -170,12 +383,12 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       last_name: lastName,
       email: applicantEmail,
       phone,
-      metadata: { source: 'public_careers' }
+      metadata: sourceMetadata(req)
     }).select().single();
     if (appErr) throw appErr;
     insertedApplication = app;
 
-    const ext = (path.extname(req.file.originalname || '') || '.pdf').toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const ext = originalExt.replace(/[^a-z0-9.]/g, '') || '.pdf';
     filePath = [job.id, app.id, Date.now() + '-' + crypto.randomUUID() + ext].join('/');
     await supabase.storage.createBucket('job-cvs', {
       public: false,
