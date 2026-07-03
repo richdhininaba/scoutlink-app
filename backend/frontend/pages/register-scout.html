@@ -1,14 +1,19 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Register as Scout - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
+<style>.declaration-list{display:grid;gap:10px;margin:14px 0 18px}.declaration-list label{display:flex;align-items:flex-start;gap:10px;color:#334155;font-size:13px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:650}.declaration-list input{width:auto;min-width:18px;margin-top:2px}</style>
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body class="form-page">
@@ -30,22 +35,26 @@
   <div class="form-divider"></div>
   <div class="policy-check">
     <input type="checkbox" id="policyAgreed">
-    <p>I agree to the <a href="/data-policy" target="_blank">ScoutLink Data Policy</a> and confirm I am an authorised representative of my club.</p>
+    <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+  </div>
+  <div class="declaration-list" aria-label="Scout verification declaration">
+    <label><input type="checkbox" id="declCapacity"> I confirm that I am using ScoutLink in a legitimate scouting, recruitment or football evaluation capacity. I will not misuse player information, attempt to contact minors directly outside approved safeguarding routes, scrape data, or share player information outside my organisation without permission.</label>
   </div>
   <button class="btn btn-primary btn-full" onclick="submitReg()">Submit Registration</button>
   <div class="form-divider"></div>
   <div class="form-link">Already registered? <a href="/login">Sign In</a></div>
 </div></div>
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 async function submitReg() {
   const err=document.getElementById('formError'),suc=document.getElementById('formSuccess');
   err.classList.remove('show');suc.classList.remove('show');
-  if(!document.getElementById('policyAgreed').checked){err.textContent='Please agree to the data policy.';err.classList.add('show');return;}
+  if(!document.getElementById('policyAgreed').checked||!document.getElementById('declCapacity').checked){err.textContent='Please accept the privacy, terms and scout verification declaration.';err.classList.add('show');return;}
   if(!document.getElementById('firstName').value.trim()||!document.getElementById('lastName').value.trim()||!document.getElementById('emailAddr').value.trim()||!document.getElementById('scoutClub').value.trim()){err.textContent='Please fill in all required fields.';err.classList.add('show');return;}
   if(!validateEmailInput(document.getElementById('emailAddr'))){err.textContent='Please enter a valid email address.';err.classList.add('show');return;}
   try {
-    const d=await api('POST','/api/registrations/scout',{firstName:document.getElementById('firstName').value,lastName:document.getElementById('lastName').value,emailAddr:document.getElementById('emailAddr').value,phone:document.getElementById('phone').value,scoutClub:document.getElementById('scoutClub').value,scoutLeague:document.getElementById('scoutLeague').value,dataPolicyAgreed:true});
+    const d=await api('POST','/api/registrations/scout',{firstName:document.getElementById('firstName').value,lastName:document.getElementById('lastName').value,emailAddr:document.getElementById('emailAddr').value,phone:document.getElementById('phone').value,scoutClub:document.getElementById('scoutClub').value,scoutLeague:document.getElementById('scoutLeague').value,dataPolicyAgreed:true,declarationVersion:'scout-verification-v1-2026-07',activityNoticeVersion:'platform-activity-v1-2026-07',declarations:{legitimateCapacity:true}});
     suc.textContent=d.message;suc.classList.add('show');document.querySelector('.btn').disabled=true;
   } catch(e){err.textContent=e.message;err.classList.add('show');}
 }

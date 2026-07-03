@@ -41,6 +41,7 @@ var SCOUT_NAV_ITEMS = [
   { icon: 'flag', label: 'Events', href: 'scout-events.html' },
   { icon: 'message', label: 'Chat', href: 'scout-chat.html' },
   { icon: 'bell', label: 'Notifications', href: 'scout-notifications.html' },
+  { icon: 'flag', label: 'Report a Concern', href: '/report-a-concern' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'scout-settings.html' },
 ];
 
@@ -54,6 +55,7 @@ var COACH_NAV_ITEMS = [
   { icon: 'video', label: 'Video reels', href: 'coach-video-reels.html' },
   { icon: 'message', label: 'Chat', href: 'coach-chat.html' },
   { icon: 'bell', label: 'Notifications', href: 'coach-notifications.html' },
+  { icon: 'flag', label: 'Report a Concern', href: '/report-a-concern' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'coach-settings.html' },
 ];
 
@@ -62,6 +64,7 @@ var PLAYER_NAV_ITEMS = [
   { icon: 'user', label: 'My profile', href: 'player-profile-edit.html' },
   { icon: 'video', label: 'Video reels', href: 'player-video-reels.html' },
   { icon: 'bell', label: 'Notifications', href: 'player-notifications.html' },
+  { icon: 'flag', label: 'Report a Concern', href: '/report-a-concern' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'player-settings.html' },
 ];
 
@@ -73,6 +76,11 @@ function buildScoutNav(containerId, role) {
   if (role === 'Coach') navItems = COACH_NAV_ITEMS;
   else if (role === 'Player') navItems = PLAYER_NAV_ITEMS;
   else navItems = SCOUT_NAV_ITEMS;
+  if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) {
+    navItems = navItems.filter(function(item) {
+      return String(item.label || '').toLowerCase() !== 'settings' && String(item.href || '').toLowerCase().indexOf('settings') === -1;
+    });
+  }
   var cur = window.location.pathname.split('/').pop();
   container.innerHTML = navItems.map(function(item) {
     var isActive = (cur === item.href);

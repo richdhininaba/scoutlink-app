@@ -1,9 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Register - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -12,12 +16,13 @@
 .toggle-btn{flex:1;padding:12px 0;background:transparent;border:none;color:#94a3b8;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.2s;}
 .toggle-btn.active{background:#00E676;color:#000;}
 .section{display:none;}.section.active{display:block;}
+.declaration-list{display:grid;gap:10px;margin:14px 0 18px}.declaration-list label{display:flex;align-items:flex-start;gap:10px;color:#334155;font-size:13px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:650}.declaration-list input{width:auto;min-width:18px;margin-top:2px}.notice-copy{font-size:13px;color:#475569;line-height:1.6;margin:0 0 12px}
 </style>
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head>
@@ -49,7 +54,10 @@
 <div class="form-divider"></div>
 <div class="policy-check">
   <input type="checkbox" id="s_policy">
-  <p>I agree to the <a href="/data-policy" target="_blank">ScoutLink Data Policy</a> and confirm I am an authorised representative of my club.</p>
+  <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+</div>
+<div class="declaration-list" aria-label="Scout verification declaration">
+  <label><input type="checkbox" id="s_decl_capacity"> I confirm that I am using ScoutLink in a legitimate scouting, recruitment or football evaluation capacity. I will not misuse player information, attempt to contact minors directly outside approved safeguarding routes, scrape data, or share player information outside my organisation without permission.</label>
 </div>
 <button class="btn btn-primary btn-full" onclick="submitScout()">Submit Scout Registration</button>
 </div>
@@ -75,7 +83,13 @@
 <div class="form-divider"></div>
 <div class="policy-check">
   <input type="checkbox" id="c_policy">
-  <p>I have read and agree to the <a href="/data-policy" target="_blank">ScoutLink Data Policy</a>. I confirm that for any player under the age of 16, I have obtained verifiable parental or guardian consent before adding their information to the platform.</p>
+  <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+</div>
+<div class="declaration-list" aria-label="Coach declarations">
+  <label><input type="checkbox" id="c_decl_authorised"> I confirm I am authorised to create or manage player profiles for this team, club, school or academy.</label>
+  <label><input type="checkbox" id="c_decl_under18"> I confirm that where a player is under 18, the necessary parent/guardian permissions or club/school notices are in place before I upload their information.</label>
+  <label><input type="checkbox" id="c_decl_dispute"> I understand that ScoutLink may remove player data if permission is disputed or cannot be evidenced.</label>
+  <label><input type="checkbox" id="c_decl_media"> I agree not to upload player photos or videos unless I have the correct permission.</label>
 </div>
 <button class="btn btn-primary btn-full" onclick="submitCoach()">Submit Coach Registration</button>
 </div>
@@ -85,6 +99,7 @@
 </div></div>
 
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 // Read ?type= param from URL to default the tab
 const urlType = new URLSearchParams(window.location.search).get('type');
@@ -107,7 +122,7 @@ function switchTab(tab) {
 async function submitScout() {
   const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
   err.classList.remove('show'); suc.classList.remove('show');
-  if (!document.getElementById('s_policy').checked) { err.textContent = 'Please agree to the data policy.'; err.classList.add('show'); return; }
+  if (!document.getElementById('s_policy').checked || !document.getElementById('s_decl_capacity').checked) { err.textContent = 'Please accept the privacy, terms and scout verification declaration.'; err.classList.add('show'); return; }
   const firstName = document.getElementById('s_firstName').value.trim();
   const lastName = document.getElementById('s_lastName').value.trim();
   const emailAddr = document.getElementById('s_email').value.trim();
@@ -117,7 +132,7 @@ async function submitScout() {
   const btn = document.querySelector('#scoutSection .btn');
   btn.disabled = true; btn.textContent = 'Submitting...';
   try {
-    const d = await api('POST', '/api/registrations/scout', { firstName, lastName, emailAddr, phone: document.getElementById('s_phone').value, scoutClub, scoutLeague: document.getElementById('s_league').value, dataPolicyAgreed: true });
+    const d = await api('POST', '/api/registrations/scout', { firstName, lastName, emailAddr, phone: document.getElementById('s_phone').value, scoutClub, scoutLeague: document.getElementById('s_league').value, dataPolicyAgreed: true, declarationVersion: 'scout-verification-v1-2026-07', activityNoticeVersion: 'platform-activity-v1-2026-07', declarations: { legitimateCapacity: true } });
     suc.textContent = d.message || 'Registration submitted! You will be emailed once reviewed.';
     suc.classList.add('show'); btn.disabled = true;
   } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Scout Registration'; }
@@ -126,7 +141,8 @@ async function submitScout() {
 async function submitCoach() {
   const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
   err.classList.remove('show'); suc.classList.remove('show');
-  if (!document.getElementById('c_policy').checked) { err.textContent = 'Please agree to the data policy.'; err.classList.add('show'); return; }
+  const coachDeclarationIds = ['c_decl_authorised','c_decl_under18','c_decl_dispute','c_decl_media'];
+  if (!document.getElementById('c_policy').checked || coachDeclarationIds.some(function(id){ return !document.getElementById(id).checked; })) { err.textContent = 'Please accept the privacy, terms and coach declarations.'; err.classList.add('show'); return; }
   const firstName = document.getElementById('c_firstName').value.trim();
   const lastName = document.getElementById('c_lastName').value.trim();
   const emailAddr = document.getElementById('c_email').value.trim();
@@ -136,7 +152,7 @@ async function submitCoach() {
   const btn = document.querySelector('#coachSection .btn');
   btn.disabled = true; btn.textContent = 'Submitting...';
   try {
-    const d = await api('POST', '/api/registrations/coach', { firstName, lastName, emailAddr, phone: document.getElementById('c_phone').value, teamName, county: document.getElementById('c_county').value, league: document.getElementById('c_league').value, roleAtClub: document.getElementById('c_role').value, dataPolicyAgreed: true });
+    const d = await api('POST', '/api/registrations/coach', { firstName, lastName, emailAddr, phone: document.getElementById('c_phone').value, teamName, county: document.getElementById('c_county').value, league: document.getElementById('c_league').value, roleAtClub: document.getElementById('c_role').value, dataPolicyAgreed: true, declarationVersion: 'coach-declarations-v1-2026-07', activityNoticeVersion: 'platform-activity-v1-2026-07', declarations: { authorised: true, under18Permissions: true, disputeRemoval: true, mediaPermission: true } });
     suc.textContent = d.message || 'Registration submitted! You will be emailed once reviewed.';
     suc.classList.add('show'); btn.disabled = true;
   } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Coach Registration'; }

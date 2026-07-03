@@ -415,7 +415,6 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
 
     const jobUrl = brandBase() + '/careers/' + job.slug;
     const applicationUrl = brandBase() + '/stratex/hiring?applicationId=' + encodeURIComponent(app.id);
-    const { data: signedCv } = await supabase.storage.from('job-cvs').createSignedUrl(filePath, 60 * 60 * 24 * 7);
     const submittedAt = email.prettyDate ? email.prettyDate(app.submitted_at) : new Date(app.submitted_at).toLocaleString('en-GB');
     const emailWarnings = [];
 
@@ -430,7 +429,10 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
     });
     if (!candidateEmail.success) {
       emailWarnings.push('candidate_confirmation');
-      console.error('[Careers apply email] Candidate confirmation failed:', candidateEmail.error || candidateEmail);
+      console.error('[Careers apply email] Candidate confirmation failed:', {
+        error: candidateEmail.error || 'SendGrid rejected the candidate confirmation email.',
+        template: candidateEmail.template
+      });
     }
 
     const adminRecipients = await recipientsForJob(job.id);
@@ -450,13 +452,17 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       applicationId: app.application_ref,
       jobId: job.id,
       cvFileName: fileRow.file_name,
-      cvUrl: signedCv?.signedUrl || '',
+      cvUrl: '',
+      cvPath: filePath,
       applicationUrl,
       jobUrl
     });
     if (!adminEmail.success) {
       emailWarnings.push('admin_alert');
-      console.error('[Careers apply email] Admin alert failed:', adminEmail.error || adminEmail);
+      console.error('[Careers apply email] Admin alert failed:', {
+        error: adminEmail.error || 'SendGrid rejected the admin alert email.',
+        template: adminEmail.template
+      });
     }
 
     res.status(201).json({
@@ -468,7 +474,7 @@ router.post('/:slug/apply', cvUpload, async (req, res) => {
       emailWarnings
     });
   } catch (err) {
-    console.error('[Careers apply]', err);
+    console.error('[Careers apply]', { code: err && err.code, message: err && err.message });
     if (shouldRollback && filePath) {
       try { await supabase.storage.from('job-cvs').remove([filePath]); } catch (_) {}
     }

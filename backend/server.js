@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
+const { supabase } = require('./db/supabase');
 
 const app = express();
 app.set('trust proxy', 1); // Required for Vercel/Heroku: trust first proxy for rate limiting
@@ -39,13 +40,38 @@ app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 const limiter = rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: 'Too many requests' } });
 const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30, message: { error: 'Too many auth attempts' } });
+const publicFormLimiter = rateLimit({
+  windowMs: 15*60*1000,
+  max: 60,
+  message: { error: 'Too many submissions. Please wait and try again.' }
+});
 app.use(limiter);
 
-app.get('/health', (_, res) => res.json({ status: 'ok', version: '2.2.0', timestamp: new Date().toISOString() }));
+async function healthHandler(_, res) {
+  const body = {
+    status: 'ok',
+    version: '2.2.0',
+    environment: config.nodeEnv,
+    services: { api: 'ok', supabase: 'unknown' },
+    timestamp: new Date().toISOString()
+  };
+  try {
+    const { error } = await supabase.from('stratex').select('id', { head: true, count: 'exact' }).limit(1);
+    body.services.supabase = error ? 'degraded' : 'ok';
+    if (error) body.status = 'degraded';
+  } catch (_) {
+    body.status = 'degraded';
+    body.services.supabase = 'degraded';
+  }
+  res.status(body.status === 'ok' ? 200 : 503).json(body);
+}
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // Routes
 app.use('/api/auth', authLimiter, require('./routes/auth'));
-app.use('/api/registrations', require('./routes/registrations'));
+app.use('/api/registrations', publicFormLimiter, require('./routes/registrations'));
 app.use('/api/players', require('./routes/players'));
 app.use('/api/match-facts', require('./routes/matchFacts'));
 app.use('/api/notifications', require('./routes/notifications'));
@@ -63,7 +89,8 @@ app.use('/api/season', require('./routes/season'));
 app.use('/api/showcase', require('./routes/showcase'));
 app.use('/api/fixtures', require('./routes/fixtures'));
 app.use('/api/onboarding', require('./routes/onboarding'));
-app.use('/api/careers', require('./routes/careers'));
+app.use('/api/careers', publicFormLimiter, require('./routes/careers'));
+app.use('/api/trust', publicFormLimiter, require('./routes/trust'));
 
 const frontendDir = [
   path.resolve(__dirname, 'frontend'),
@@ -80,6 +107,18 @@ const routeMap = {
   '/register/scout': 'pages/register-scout.html',
   '/register/coach': 'pages/register-coach.html',
   '/data-policy': 'pages/data-policy.html',
+  '/privacy-policy': 'pages/privacy-policy.html',
+  '/privacy': 'pages/privacy-policy.html',
+  '/terms': 'pages/terms.html',
+  '/terms-of-use': 'pages/terms.html',
+  '/cookie-policy': 'pages/cookie-policy.html',
+  '/cookies': 'pages/cookie-policy.html',
+  '/safeguarding': 'pages/safeguarding.html',
+  '/report-a-concern': 'pages/report-concern.html',
+  '/parent-guardian-notice': 'pages/parent-guardian-notice.html',
+  '/applicant-privacy-notice': 'pages/applicant-privacy-notice.html',
+  '/privacy-request': 'pages/privacy-request.html',
+  '/contact': 'pages/contact.html',
   '/complete-registration': 'pages/complete-registration.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
@@ -152,7 +191,10 @@ if (frontendDir) {
 }
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
-app.use((err, req, res, next) => { console.error('[Server]', err); res.status(500).json({ error: 'Internal server error' }); });
+app.use((err, req, res, next) => {
+  console.error('[Server]', { code: err && err.code, message: err && err.message });
+  res.status(500).json({ error: 'Internal server error' });
+});
 
 app.listen(config.port, () => {
   console.log('\u26a1 ScoutLink API v2.2 on http://localhost:' + config.port);

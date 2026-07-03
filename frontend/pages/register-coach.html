@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
+<style>.declaration-list{display:grid;gap:10px;margin:14px 0 18px}.declaration-list label{display:flex;align-items:flex-start;gap:10px;color:#334155;font-size:13px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:650}.declaration-list input{width:auto;min-width:18px;margin-top:2px}</style>
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -45,7 +46,13 @@
   <div class="form-divider"></div>
   <div class="policy-check">
     <input type="checkbox" id="policyAgreed">
-    <p>I have read and agree to the <a href="/data-policy" target="_blank">ScoutLink Data Policy</a>. I confirm that for any player under the age of 16, I have obtained verifiable parental or guardian consent before adding their information to the platform. I understand that ScoutLink is committed to safeguarding young people and that all data is handled in compliance with UK GDPR and KCSIE guidelines.</p>
+    <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+  </div>
+  <div class="declaration-list" aria-label="Coach declarations">
+    <label><input type="checkbox" id="declAuthorised"> I confirm I am authorised to create or manage player profiles for this team, club, school or academy.</label>
+    <label><input type="checkbox" id="declUnder18"> I confirm that where a player is under 18, the necessary parent/guardian permissions or club/school notices are in place before I upload their information.</label>
+    <label><input type="checkbox" id="declDispute"> I understand that ScoutLink may remove player data if permission is disputed or cannot be evidenced.</label>
+    <label><input type="checkbox" id="declMedia"> I agree not to upload player photos or videos unless I have the correct permission.</label>
   </div>
   <button class="btn btn-primary btn-full" onclick="submitReg()">Submit Registration</button>
   <div class="form-divider"></div>
@@ -58,7 +65,8 @@
 async function submitReg() {
   const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
   err.classList.remove('show'); suc.classList.remove('show');
-  if (!document.getElementById('policyAgreed').checked) { err.textContent = 'Please agree to the data policy.'; err.classList.add('show'); return; }
+  const declarationIds = ['declAuthorised','declUnder18','declDispute','declMedia'];
+  if (!document.getElementById('policyAgreed').checked || declarationIds.some(function(id){ return !document.getElementById(id).checked; })) { err.textContent = 'Please accept the privacy, terms and coach declarations.'; err.classList.add('show'); return; }
   if (!document.getElementById('firstName').value.trim() || !document.getElementById('lastName').value.trim() || !document.getElementById('emailAddr').value.trim() || !document.getElementById('teamName').value.trim()) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
   if (!validateEmailInput(document.getElementById('emailAddr'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
   try {
@@ -72,7 +80,10 @@ async function submitReg() {
       country: document.getElementById('teamCountry').value,
       league: document.getElementById('league').value,
       roleAtClub: document.getElementById('roleAtClub').value,
-      dataPolicyAgreed: true
+      dataPolicyAgreed: true,
+      declarationVersion: 'coach-declarations-v1-2026-07',
+      activityNoticeVersion: 'platform-activity-v1-2026-07',
+      declarations: { authorised: true, under18Permissions: true, disputeRemoval: true, mediaPermission: true }
     });
     suc.textContent = data.message; suc.classList.add('show');
     document.querySelector('.btn').disabled = true;

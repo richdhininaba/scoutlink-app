@@ -13,6 +13,7 @@
     item('Video reels', 'coach-video-reels.html', 'video'),
     item('Chat', 'coach-chat.html', 'message'),
     item('Notifications', 'coach-notifications.html', 'bell'),
+    item('Report a Concern', '/report-a-concern', 'flag'),
     item('Settings', 'coach-settings.html', 'settings')
   ];
 
@@ -29,6 +30,7 @@
     item('Events', 'scout-events.html', 'flag'),
     item('Chat', 'scout-chat.html', 'message'),
     item('Notifications', 'scout-notifications.html', 'bell'),
+    item('Report a Concern', '/report-a-concern', 'flag'),
     item('Settings', 'scout-settings.html', 'settings')
   ];
 
@@ -37,6 +39,7 @@
     item('My profile', 'player-profile.html', 'user'),
     item('Video reels', 'player-video-reels.html', 'video'),
     item('Notifications', 'player-notifications.html', 'bell'),
+    item('Report a Concern', '/report-a-concern', 'flag'),
     item('Settings', 'player-settings.html', 'settings')
   ];
 
@@ -58,6 +61,7 @@
     item('Award nominations', 'stratex-award-nominations.html', 'award'),
     item('Showcase events', 'stratex-showcase-events.html', 'calendar'),
     item('Notifications', 'stratex-notifications.html', 'bell'),
+    item('Report a Concern', '/report-a-concern', 'flag'),
     item('Settings', 'stratex-settings.html', 'settings')
   ];
 

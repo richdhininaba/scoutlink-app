@@ -510,7 +510,7 @@ router.get('/job-applications/:id/cv-url', requireAuth, requireRole('Stratex'), 
     if (signedErr) throw signedErr;
     res.json({ url: data.signedUrl, expiresIn: 600, fileName: file.file_name });
   } catch (err) {
-    console.error('[Stratex application CV]', err);
+    console.error('[Stratex application CV]', { code: err && err.code, message: err && err.message });
     res.status(500).json({ error: 'Could not create secure CV link' });
   }
 });

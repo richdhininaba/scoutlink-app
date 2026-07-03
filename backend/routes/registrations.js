@@ -90,6 +90,23 @@ function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
+function safeLog(label, err) {
+  console.error(label, { code: err && err.code, message: err && err.message });
+}
+
+function normalizeDeclarations(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function validateCoachDeclarations(declarations) {
+  const required = ['authorised', 'under18Permissions', 'disputeRemoval', 'mediaPermission'];
+  return required.every(key => declarations[key] === true);
+}
+
+function validateScoutDeclarations(declarations) {
+  return declarations.legitimateCapacity === true;
+}
+
 async function removeCreatedUser(accountType, id) {
   const table = accountType === 'Coach' ? 'coaches' : accountType === 'Scout' ? 'scouts' : null;
   if (table && id) await supabase.from(table).delete().eq('id', id);
@@ -121,9 +138,11 @@ async function sendRegistrationEmails({ accountType, request, alertPayload }) {
 router.post('/coach', async (req, res) => {
   try {
     const { firstName, lastName, emailAddr, phone, teamName, county, league, roleAtClub, dataPolicyAgreed } = req.body;
+    const declarations = normalizeDeclarations(req.body.declarations);
     if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
     if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
+    if (!validateCoachDeclarations(declarations)) return res.status(400).json({ error: 'Coach declarations are required.' });
     const dup = await checkDuplicates(emailAddr, phone);
     if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
     if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error: 'A registration request is already pending for this email.' });
@@ -131,7 +150,10 @@ router.post('/coach', async (req, res) => {
       account_type: 'Coach', first_name: firstName.trim(), last_name: lastName.trim(),
       email: emailAddr.toLowerCase().trim(), phone: phone||null, team_name: teamName,
       team_county: county?titleCase(county):null, team_league: league||null, role_at_club: roleAtClub||'Coach',
-      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending'
+      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending',
+      declaration_version: req.body.declarationVersion || 'coach-declarations-v1-2026-07',
+      activity_notice_version: req.body.activityNoticeVersion || 'platform-activity-v1-2026-07',
+      declarations
     }).select().single();
     if (error) throw error;
     const emailResult = await sendRegistrationEmails({
@@ -144,23 +166,28 @@ router.post('/coach', async (req, res) => {
       return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
     }
     res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { safeLog('[Registration coach]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // Public: scout registers
 router.post('/scout', async (req, res) => {
   try {
     const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, dataPolicyAgreed } = req.body;
+    const declarations = normalizeDeclarations(req.body.declarations);
     if (!firstName||!lastName||!emailAddr||!scoutClub) return res.status(400).json({ error: 'firstName, lastName, email and scoutClub required' });
     if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
+    if (!validateScoutDeclarations(declarations)) return res.status(400).json({ error: 'Scout verification declaration is required.' });
     const dup = await checkDuplicates(emailAddr, phone);
     if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
     if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error: 'A registration request is already pending for this email.' });
     const { data: req2, error } = await supabase.from('registration_requests').insert({
       account_type: 'Scout', first_name: firstName.trim(), last_name: lastName.trim(),
       email: emailAddr.toLowerCase().trim(), phone: phone||null, scout_club: scoutClub, scout_league: scoutLeague||null,
-      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending'
+      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending',
+      declaration_version: req.body.declarationVersion || 'scout-verification-v1-2026-07',
+      activity_notice_version: req.body.activityNoticeVersion || 'platform-activity-v1-2026-07',
+      declarations
     }).select().single();
     if (error) throw error;
     const emailResult = await sendRegistrationEmails({
@@ -173,7 +200,7 @@ router.post('/scout', async (req, res) => {
       return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
     }
     res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { safeLog('[Registration scout]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 // Stratex: list requests
@@ -188,7 +215,7 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
     const { data, error, count } = await q;
     if (error) throw error;
     res.json({ data: data||[], total: count||0, page: Number(page), limit: Number(limit) });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
+  } catch(err) { safeLog('[Registration list]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
 // Stratex: approve
@@ -216,7 +243,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
       data_policy_agreed: true, login_code: loginCode, login_code_expires: expires,
       is_active: true, is_super_user: false, registration_complete: false
     }).select().single();
-    if (error) { console.error('[Approve] coach insert error:', error); throw error; }
+    if (error) { safeLog('[Approve coach insert]', error); throw error; }
     newUser = data;
   } else if (rq.account_type === 'Scout') {
     const reviewValidation = validateScoutSafeguardingReview(safeguardingReview);
@@ -234,7 +261,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
       exports_remaining: limits.exports, predictions_remaining: limits.predictions,
       interests_remaining: limits.interests
     }).select().single();
-    if (error) { console.error('[Approve] scout insert error:', error); throw error; }
+    if (error) { safeLog('[Approve scout insert]', error); throw error; }
     newUser = data;
   } else {
     return res.status(400).json({ error: 'Unsupported account type: ' + rq.account_type });
@@ -251,7 +278,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
   }).catch(e => ({ success: false, error: e.message }));
   if (!emailResult || !emailResult.success) {
     await removeCreatedUser(rq.account_type, newUser && newUser.id);
-    console.error('[Approve] email failed; approval rolled back:', emailResult);
+    console.error('[Approve email failed; rolled back]', { error: emailResult && emailResult.error, template: emailResult && emailResult.template });
     return res.status(502).json({
       error: 'SendGrid did not accept the approval email. Registration is still pending.',
       details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
@@ -281,7 +308,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
   }
 
   res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-  } catch(err) { console.error('[Approve] error:', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
+  } catch(err) { safeLog('[Approve]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
 // Stratex: decline
@@ -300,7 +327,7 @@ router.post('/:id/decline', requireAuth, requireRole('Stratex'), async (req, res
     await email.sendRegDeclined({ to: rq.email, firstName: rq.first_name, declineReason: finalReason, accountType: rq.account_type })
     .catch(e => console.error('[Decline] email failed:', e.message));
     res.json({ message: 'Declined and email sent.' });
-  } catch(err) { console.error('[Decline] error:', err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { safeLog('[Decline]', err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.get('/decline-reasons', (_, res) => res.json(DECLINE_REASONS));

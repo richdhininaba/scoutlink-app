@@ -69,10 +69,10 @@ async function sendTemplate({ to, templateKey, data }) {
         dynamicTemplateData: payload
       });
     }
-    console.log('[Email] Sent', template.name, 'to', recipients.join(', '));
+    console.log('[Email] Sent', template.name, { recipientCount: recipients.length });
     return { success: true, template: template.name, templateId: template.id };
   } catch (err) {
-    console.error('[Email] Failed', template.name + ':', err?.response?.body || err.message);
+    console.error('[Email] Failed', template.name + ':', err.message);
     return { success: false, error: err.message, details: err?.response?.body || null, template: template.name, templateId: template.id };
   }
 }
@@ -176,6 +176,7 @@ function jobApplicationAlertData(d) {
     jobId: d.jobId || d.job_id || '',
     cvFileName: d.cvFileName || d.cv_file_name || '',
     cvUrl: d.cvUrl || d.cv_url || '',
+    cvPath: d.cvPath || d.cv_path || '',
     jobUrl: d.jobUrl || d.job_url || ''
   };
 }
