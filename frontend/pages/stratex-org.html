@@ -37,6 +37,8 @@
 .org-modal.open{display:flex}
 .org-modal-card{width:min(520px,100%);background:#111827;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.42)}
 .org-modal-body{padding:18px;display:grid;gap:10px}
+.fill-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fill-grid .full{grid-column:1/-1}
 @media(max-width:767px){
   .org-board-head{padding:12px;display:grid}
   .org-chart{overflow:visible;padding:12px}
@@ -85,6 +87,25 @@
     </div>
   </div>
 </div>
+<div class="org-modal" id="fillModal">
+  <div class="org-modal-card">
+    <div class="table-header"><h3>Fill vacancy</h3><button class="modal-close" onclick="closeFillVacancy()" aria-label="Close">&times;</button></div>
+    <div class="org-modal-body">
+      <input type="hidden" id="fillJobId">
+      <input type="hidden" id="fillManagerId">
+      <div class="form-success" id="fillContext" style="display:block"></div>
+      <div class="fill-grid">
+        <label>First name<input id="fillFirstName" autocomplete="given-name"></label>
+        <label>Last name<input id="fillLastName" autocomplete="family-name"></label>
+        <label class="full">Email<input id="fillEmail" type="email" autocomplete="email"></label>
+        <label>Phone<input id="fillPhone" autocomplete="tel"></label>
+        <label>Start date<input id="fillStartDate" type="date"></label>
+        <label class="full">Role / title<input id="fillJobTitle"></label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-outline" onclick="closeFillVacancy()">Cancel</button><button class="btn btn-primary" id="fillSaveBtn" onclick="saveFillVacancy()">Save and send invite</button></div>
+    </div>
+  </div>
+</div>
 <script src="../js/stratex-nav.js"></script>
 <script src="../js/main.js"></script>
 <script src="../js/heap-analytics.js"></script>
@@ -110,18 +131,31 @@ function activeVacanciesFor(a){
     var status=String(j.status||'').toLowerCase();
     if(status==='scheduled'){
       var release=j.release_at?new Date(j.release_at):null;
-      if(release&&!Number.isNaN(release.getTime())&&release>new Date())return false;
+      if(!release||Number.isNaN(release.getTime())||release>new Date())return false;
     }else if(status!=='live')return false;
     if((parseInt(j.positions_available,10)||0)<1)return false;
     if(j.reporting_to_id&&j.reporting_to_id===a.id)return true;
     return j.reporting_to_name&&String(j.reporting_to_name).trim().toLowerCase()===fullName;
-  });
+  }).filter(function(j){return openVacancyCount(j)>0;});
+}
+function vacancyFilledCount(j){
+  var title=String(j.job_title||'').trim().toLowerCase();
+  return admins.filter(function(a){
+    if(a.is_active===false)return false;
+    var meta=a.contract_data&&typeof a.contract_data==='object'?a.contract_data:{};
+    if(meta.vacancyJobId===j.id||meta.vacancy_job_id===j.id)return true;
+    return a.manager_id===j.reporting_to_id&&String(a.job_title||'').trim().toLowerCase()===title;
+  }).length;
+}
+function openVacancyCount(j){
+  return Math.max(0,(parseInt(j.positions_available,10)||1)-vacancyFilledCount(j));
 }
 function vacancyCard(j,manager){
   var count=Math.max(1,parseInt(j.positions_available,10)||1);
+  var filled=vacancyFilledCount(j);
+  var open=Math.max(0,count-filled);
   var managerName=((manager.first_name||'')+' '+(manager.last_name||'')).trim()||'selected manager';
-  var href='stratex-users.html?tab=admins&managerId='+encodeURIComponent(manager.id)+'&jobTitle='+encodeURIComponent(j.job_title||'')+'&vacancyJobId='+encodeURIComponent(j.id||'');
-  return '<article class="org-person vacancy"><span class="open-role-badge">Open role</span><div class="org-name">'+safe(j.job_title||'Vacancy')+'</div><div class="org-title">'+count+' vacanc'+(count===1?'y':'ies')+'</div><div class="org-meta">Reports to '+safe(managerName)+'</div><div class="org-footer"><div class="org-report-count">'+safe(String(j.status||'live')).toUpperCase()+'</div><div class="org-actions"><a class="btn btn-sm btn-outline" href="'+href+'">Fill vacancy</a></div></div></article>';
+  return '<article class="org-person vacancy"><span class="open-role-badge">Open role</span><div class="org-name">'+safe(j.job_title||'Vacancy')+'</div><div class="org-title">'+filled+' / '+count+' filled</div><div class="org-meta">Reports to '+safe(managerName)+'</div><div class="org-footer"><div class="org-report-count">'+open+' open vacanc'+(open===1?'y':'ies')+'</div><div class="org-actions"><button class="btn btn-sm btn-outline" onclick="openFillVacancy(\''+safe(j.id)+'\',\''+safe(manager.id)+'\')">Fill vacancy</button></div></div></article>';
 }
 function treeData(){
   var active=admins.filter(function(a){return a.is_active!==false;});
@@ -160,6 +194,36 @@ function openEdit(id){
   document.getElementById('editModal').classList.add('open');
 }
 function closeEdit(){document.getElementById('editModal').classList.remove('open');}
+function openFillVacancy(jobId,managerId){
+  var j=jobs.find(function(x){return x.id===jobId;});
+  var m=admins.find(function(x){return x.id===managerId;});
+  if(!j)return;
+  document.getElementById('fillJobId').value=jobId;
+  document.getElementById('fillManagerId').value=managerId||'';
+  document.getElementById('fillJobTitle').value=j.job_title||'';
+  document.getElementById('fillContext').textContent=(j.job_title||'Vacancy')+' reporting to '+(((m&&m.first_name)||'')+' '+((m&&m.last_name)||'')).trim()+'. '+vacancyFilledCount(j)+' / '+(parseInt(j.positions_available,10)||1)+' filled.';
+  ['fillFirstName','fillLastName','fillEmail','fillPhone','fillStartDate'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('fillModal').classList.add('open');
+}
+function closeFillVacancy(){document.getElementById('fillModal').classList.remove('open');}
+async function saveFillVacancy(){
+  var btn=document.getElementById('fillSaveBtn');
+  try{
+    var jobId=document.getElementById('fillJobId').value;
+    if(!jobId)throw new Error('No vacancy selected.');
+    btn.disabled=true;btn.textContent='Saving...';
+    await api('POST','/api/stratex/jobs/'+jobId+'/fill-vacancy',{
+      firstName:document.getElementById('fillFirstName').value.trim(),
+      lastName:document.getElementById('fillLastName').value.trim(),
+      email:document.getElementById('fillEmail').value.trim(),
+      phone:document.getElementById('fillPhone').value.trim(),
+      startDate:document.getElementById('fillStartDate').value,
+      jobTitle:document.getElementById('fillJobTitle').value.trim()
+    });
+    closeFillVacancy();showMsg('msgOk','Vacancy filled and invite email sent.');await loadOrg();
+  }catch(e){showMsg('msgErr',e.message||'Could not fill vacancy.');}
+  finally{btn.disabled=false;btn.textContent='Save and send invite';}
+}
 async function saveEdit(){
   try{
     var id=document.getElementById('editId').value;

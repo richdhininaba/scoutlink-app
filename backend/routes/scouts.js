@@ -5,6 +5,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { getPosGroup, analysePlayer } = require('../engines/compatibility');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
+const { sendDbError } = require('../utils/dbErrors');
 
 const PLAN_LIMITS = {
   Core: { exports: 30, predictions: 120, interests: 200 },
@@ -360,7 +361,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
     if (!firstName || !lastName || !emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
     if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     const tables = ['scouts','coaches','players','stratex'];
-    for (const t of tables) { const { data: eRow } = await supabase.from(t).select('id').eq('email',emailAddr.toLowerCase().trim()).maybeSingle(); if (eRow) return res.status(409).json({ error: 'This email is already registered on ScoutLink.' }); }
+    for (const t of tables) { const { data: eRow } = await supabase.from(t).select('id').eq('email',emailAddr.toLowerCase().trim()).maybeSingle(); if (eRow) return res.status(409).json({ error: t === 'scouts' ? 'A scout with this email already exists.' : 'This email is already registered on ScoutLink.' }); }
     if (phone) { const { data: pRow } = await supabase.from('scouts').select('id').eq('phone',phone.trim()).maybeSingle(); if (pRow) return res.status(409).json({ error: 'This phone number is already registered.' }); }
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let loginCode = '', attempts = 0;
     while (attempts < 20) { let c = ''; for (let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)]; const [s,co,p,stx] = await Promise.all([supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),supabase.from('players').select('id').eq('login_code',c).maybeSingle(),supabase.from('stratex').select('id').eq('login_code',c).maybeSingle()]); if (!s.data&&!co.data&&!p.data&&!stx.data){loginCode=c;break;} attempts++; }
@@ -377,7 +378,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
       return res.status(502).json({ error: 'SendGrid did not accept the scout invite email. Scout was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
     }
     res.status(201).json({message:'Scout added. Complete-registration email sent.',scoutId:newScout.id,loginCode,completeLink:cl,emailSent:true,emailTemplate:emailResult.template||null});
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch (err) { console.error(err); sendDbError(res, err); }
 });
 
 

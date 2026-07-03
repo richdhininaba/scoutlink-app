@@ -203,6 +203,8 @@ function loadPlayers(){
 }
 
 function doUpload(){
+  var MAX_VIDEO_UPLOAD_BYTES=4*1024*1024;
+  var VIDEO_TOO_LARGE_MESSAGE='This video is too large to upload. Please choose a smaller file.';
   var title=document.getElementById('videoTitle').value.trim();
   if(!title){alert('Please enter a video title.');return;}
   var btn=document.getElementById('uploadBtn');
@@ -219,6 +221,7 @@ function doUpload(){
 
   var file=document.getElementById('videoFile').files[0];
   if(!file){alert('Please select a video file.');btn.disabled=false;btn.textContent='Upload Video';return;}
+  if(file.size>MAX_VIDEO_UPLOAD_BYTES){msg.textContent=VIDEO_TOO_LARGE_MESSAGE;msg.style.color='#f44336';btn.disabled=false;btn.textContent='Upload Video';return;}
   uploadFileViaBackend(file,payload,btn,msg);
 }
 

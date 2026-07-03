@@ -3,7 +3,10 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
-const { requireAuth, requireRole } = require('../utils/auth');
+const { requireAuth, requireRole, generateId } = require('../utils/auth');
+const email = require('../services/email');
+const config = require('../config');
+const { duplicateMessage } = require('../utils/dbErrors');
 
 const JOB_STATUSES = ['draft', 'scheduled', 'live', 'closed', 'archived'];
 const WORKING_TYPES = ['Remote', 'Hybrid', 'On-site'];
@@ -73,7 +76,51 @@ function validationError(message) {
 }
 
 function isDuplicateSlugError(err) {
-  return err && err.code === '23505' && String(err.message || err.details || '').indexOf('job_posts_slug_key') !== -1;
+  return err && err.code === '23505' && [err.constraint, err.message, err.details, err.hint].filter(Boolean).join(' ').indexOf('job_posts_slug_key') !== -1;
+}
+
+function publicStatusOpen(job) {
+  const status = String(job?.status || '').toLowerCase();
+  if (status === 'live') return true;
+  if (status !== 'scheduled') return false;
+  const release = job.release_at ? new Date(job.release_at) : null;
+  return !!release && !Number.isNaN(release.getTime()) && release <= new Date();
+}
+
+async function generateUniqueStratexLoginCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempts = 0; attempts < 20; attempts += 1) {
+    let code = '';
+    for (let i = 0; i < 6; i += 1) code += chars[Math.floor(Math.random() * chars.length)];
+    const [s, co, p, stx] = await Promise.all([
+      supabase.from('scouts').select('id').eq('login_code', code).maybeSingle(),
+      supabase.from('coaches').select('id').eq('login_code', code).maybeSingle(),
+      supabase.from('players').select('id').eq('login_code', code).maybeSingle(),
+      supabase.from('stratex').select('id').eq('login_code', code).maybeSingle()
+    ]);
+    if (!s.data && !co.data && !p.data && !stx.data) return code;
+  }
+  throw new Error('Could not generate unique login code');
+}
+
+function completeRegistrationLink(emailAddr, loginCode) {
+  const baseUrl = String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
+  return baseUrl + '/complete-registration?code=' + encodeURIComponent(loginCode) + '&email=' + encodeURIComponent(String(emailAddr || '').toLowerCase().trim()) + '&type=Stratex';
+}
+
+async function filledVacancyCount(job) {
+  if (!job?.id) return 0;
+  const { data, error } = await supabase
+    .from('stratex')
+    .select('id,job_title,manager_id,contract_data,is_active')
+    .eq('is_active', true);
+  if (error) throw error;
+  const title = cleanText(job.job_title).toLowerCase();
+  return (data || []).filter(row => {
+    const meta = row.contract_data && typeof row.contract_data === 'object' ? row.contract_data : {};
+    if (meta.vacancyJobId === job.id || meta.vacancy_job_id === job.id) return true;
+    return row.manager_id === job.reporting_to_id && cleanText(row.job_title).toLowerCase() === title;
+  }).length;
 }
 
 function cleanPositiveInt(value, fallback) {
@@ -238,6 +285,109 @@ router.patch('/jobs/:id', requireAuth, requireRole('Stratex'), async (req, res) 
     if (err.code === 'VALIDATION_ERROR') return res.status(400).json({ error: err.message });
     if (isDuplicateSlugError(err)) return res.status(409).json({ error: DUPLICATE_SLUG_MESSAGE });
     res.status(500).json({ error: 'Role could not be saved. Please check the required fields and try again.' });
+  }
+});
+
+router.post('/jobs/:id/fill-vacancy', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
+
+    const { data: job, error: jobErr } = await supabase
+      .from('job_posts')
+      .select('*')
+      .eq('id', req.params.id)
+      .maybeSingle();
+    if (jobErr) throw jobErr;
+    if (!job) return res.status(404).json({ error: 'Job post not found.' });
+    if (!publicStatusOpen(job)) return res.status(400).json({ error: 'This vacancy is not open.' });
+
+    const positions = Math.max(1, Number.parseInt(job.positions_available, 10) || 1);
+    const filled = await filledVacancyCount(job);
+    if (filled >= positions) return res.status(409).json({ error: 'All positions for this vacancy have already been filled.' });
+
+    const firstName = cleanText(req.body.firstName || req.body.first_name);
+    const lastName = cleanText(req.body.lastName || req.body.last_name);
+    const emailAddr = cleanText(req.body.email || req.body.emailAddr || req.body.email_addr).toLowerCase();
+    const phone = cleanText(req.body.phone);
+    const jobTitle = cleanText(req.body.jobTitle || req.body.job_title || job.job_title);
+    const startDate = cleanText(req.body.startDate || req.body.start_date);
+    if (!firstName || !lastName || !emailAddr) return res.status(400).json({ error: 'First name, last name and email are required.' });
+    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+
+    const duplicateChecks = await Promise.all([
+      supabase.from('stratex').select('id').eq('email', emailAddr).maybeSingle(),
+      supabase.from('coaches').select('id').eq('email', emailAddr).maybeSingle(),
+      supabase.from('scouts').select('id').eq('email', emailAddr).maybeSingle(),
+      supabase.from('players').select('id').eq('email', emailAddr).maybeSingle()
+    ]);
+    if (duplicateChecks[0].data) return res.status(409).json({ error: 'A Stratex user with this email already exists.' });
+    if (duplicateChecks[1].data || duplicateChecks[2].data || duplicateChecks[3].data) return res.status(409).json({ error: 'This email is already registered on ScoutLink.' });
+
+    const loginCode = await generateUniqueStratexLoginCode();
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const contractData = {
+      vacancyJobId: job.id,
+      vacancyJobTitle: job.job_title,
+      vacancyFilledAt: new Date().toISOString(),
+      startDate: startDate || null,
+      phone: phone || null,
+      source: 'org_vacancy_fill'
+    };
+    const { data: newAdmin, error: insertErr } = await supabase
+      .from('stratex')
+      .insert({
+        stratex_id: generateId('STX'),
+        first_name: firstName,
+        last_name: lastName,
+        email: emailAddr,
+        role: 'Read Only',
+        admin_role: 'Read Only',
+        job_title: jobTitle || job.job_title,
+        manager_id: job.reporting_to_id || null,
+        permissions: ['read_only'],
+        annual_leave_days: 25,
+        contract_data: contractData,
+        is_active: true,
+        login_code: loginCode,
+        login_code_expires: expires,
+        registration_complete: false
+      })
+      .select()
+      .single();
+    if (insertErr) throw insertErr;
+
+    const completeLink = completeRegistrationLink(emailAddr, loginCode);
+    const emailResult = await email.sendCompleteSignup({
+      to: emailAddr,
+      email: emailAddr,
+      firstName,
+      loginCode,
+      accountType: 'Stratex',
+      completeLink
+    }).catch(e => ({ success: false, error: e.message, details: e.details }));
+    if (!emailResult || !emailResult.success) {
+      await supabase.from('stratex').delete().eq('id', newAdmin.id);
+      return res.status(502).json({
+        error: 'SendGrid did not accept the Stratex invite email. The vacancy was not filled.',
+        details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
+      });
+    }
+
+    res.status(201).json({
+      message: 'Vacancy filled. Complete-registration email sent.',
+      admin: newAdmin,
+      vacancy: { jobId: job.id, positionsAvailable: positions, filled: filled + 1, open: Math.max(0, positions - filled - 1) },
+      loginCode,
+      completeLink,
+      emailSent: true,
+      emailTemplate: emailResult.template || null
+    });
+  } catch (err) {
+    console.error('[Stratex fill vacancy]', err);
+    const duplicate = duplicateMessage(err);
+    if (duplicate) return res.status(409).json({ error: duplicate });
+    res.status(500).json({ error: 'Vacancy could not be filled. Please check the details and try again.' });
   }
 });
 

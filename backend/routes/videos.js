@@ -7,14 +7,25 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 
+const MAX_VIDEO_UPLOAD_BYTES = 4 * 1024 * 1024;
+const VIDEO_TOO_LARGE_MESSAGE = 'This video is too large to upload. Please choose a smaller file.';
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: MAX_VIDEO_UPLOAD_BYTES },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype || !file.mimetype.startsWith('video/')) return cb(new Error('Only video files can be uploaded'));
     cb(null, true);
   }
 });
+
+function uploadSingleVideo(req, res, next) {
+  upload.single('file')(req, res, err => {
+    if (!err) return next();
+    const isTooLarge = err.code === 'LIMIT_FILE_SIZE';
+    return res.status(isTooLarge ? 413 : 400).json({ error: isTooLarge ? VIDEO_TOO_LARGE_MESSAGE : err.message });
+  });
+}
 
 async function getCoachTeam(userId) {
   const { data: coachData, error: coachErr } = await supabase
@@ -97,8 +108,12 @@ router.post('/', requireAuth, requireRole('Player','Coach','Stratex'), async (re
   }
 });
 
+router.get('/upload', (req, res) => {
+  res.status(405).json({ error: 'Video uploads must use POST with a file.' });
+});
+
 // Upload video file to Supabase Storage and save the reel metadata.
-router.post('/upload', requireAuth, requireRole('Player','Coach','Stratex'), upload.single('file'), async (req, res) => {
+router.post('/upload', requireAuth, requireRole('Player','Coach','Stratex'), uploadSingleVideo, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'file required' });
     const { title, category, description, playerId } = req.body;
@@ -155,7 +170,7 @@ router.post('/upload', requireAuth, requireRole('Player','Coach','Stratex'), upl
     res.status(201).json({ message: 'Video uploaded', video: data });
   } catch(err) {
     console.error('[Videos UPLOAD] Error:', err.message, err.code, err.details);
-    res.status(500).json({ error: err.message || 'Video upload failed' });
+    res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 500).json({ error: err.code === 'LIMIT_FILE_SIZE' ? VIDEO_TOO_LARGE_MESSAGE : (err.message || 'Video upload failed') });
   }
 });
 

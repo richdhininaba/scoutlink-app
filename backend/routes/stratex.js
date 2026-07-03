@@ -10,6 +10,7 @@ const { analysePlayer } = require('../engines/compatibility');
 const email = require('../services/email');
 const config = require('../config');
 const { applyRealDataFilter } = require('../utils/demo');
+const { sendDbError } = require('../utils/dbErrors');
 
 const contractUpload = multer({
 storage: multer.memoryStorage(),
@@ -218,15 +219,25 @@ async function checkDuplicates(emailAddr, phone) {
 const em = emailAddr.toLowerCase().trim();
 for (const t of ['scouts','coaches','players','stratex']) {
 const { data } = await supabase.from(t).select('id').eq('email', em).maybeSingle();
-if (data) return { duplicate: true, field: 'email' };
+if (data) return { duplicate: true, field: 'email', table: t };
 }
 if (phone && phone.trim()) {
 for (const t of ['scouts','coaches']) {
 const { data } = await supabase.from(t).select('id').eq('phone', phone.trim()).maybeSingle();
-if (data) return { duplicate: true, field: 'phone' };
+if (data) return { duplicate: true, field: 'phone', table: t };
 }
 }
 return { duplicate: false };
+}
+
+function duplicatePrecheckMessage(result, fallback) {
+if (!result || !result.duplicate) return fallback || 'This record already exists.';
+if (result.table === 'players' && result.field === 'email') return 'A player with this email already exists.';
+if (result.table === 'coaches' && result.field === 'email') return 'A coach with this email already exists.';
+if (result.table === 'coaches' && result.field === 'phone') return 'A coach with this phone number already exists.';
+if (result.table === 'scouts' && result.field === 'email') return 'A scout with this email already exists.';
+if (result.table === 'stratex' && result.field === 'email') return 'A Stratex user with this email already exists.';
+return result.field === 'phone' ? 'This phone number is already registered.' : 'This email is already registered.';
 }
 
 async function removeInserted(table, id) {
@@ -451,7 +462,7 @@ const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, subscript
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
 if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupS = await checkDuplicates(emailAddr, phone);
-if (dupS.duplicate) return res.status(409).json({ error: 'This ' + dupS.field + ' is already registered.' });
+if (dupS.duplicate) return res.status(409).json({ error: duplicatePrecheckMessage(dupS) });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 365*24*60*60*1000);
 const planStart = new Date();
@@ -480,7 +491,7 @@ await removeInserted('scouts', data.id);
 return res.status(502).json({ error: 'SendGrid did not accept the scout invite email. Scout was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
 }
 res.status(201).json({ message: 'Scout added. Complete-registration email sent.', scout: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 router.post('/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -489,7 +500,7 @@ const { firstName, lastName, emailAddr, phone, teamName, roleAtClub, county, lea
 if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
 if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupC = await checkDuplicates(emailAddr, phone);
-if (dupC.duplicate) return res.status(409).json({ error: 'This ' + dupC.field + ' is already registered.' });
+if (dupC.duplicate) return res.status(409).json({ error: duplicatePrecheckMessage(dupC) });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 365*24*60*60*1000);
 const { data, error } = await supabase.from('coaches').insert({
@@ -508,7 +519,7 @@ await removeInserted('coaches', data.id);
 return res.status(502).json({ error: 'SendGrid did not accept the coach invite email. Coach was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
 }
 res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coach: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -519,7 +530,7 @@ const { firstName, lastName, emailAddr, role, adminRole, jobTitle, managerId, an
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
 if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
 const dupA = await checkDuplicates(emailAddr, null);
-if (dupA.duplicate) return res.status(409).json({ error: 'This email is already registered.' });
+if (dupA.duplicate) return res.status(409).json({ error: duplicatePrecheckMessage(dupA) });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 7*24*60*60*1000);
 const nextAdminRole = normalizeAdminRole(adminRole || role || 'Read Only');
@@ -540,7 +551,7 @@ await removeInserted('stratex', data.id);
 return res.status(502).json({ error: 'SendGrid did not accept the admin invite email. Admin was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
 }
 res.status(201).json({ message: 'Admin added. Complete-registration email sent.', admin: data, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 router.get('/leagues', requireAuth, requireRole('Stratex','Coach'), async (req, res) => {
@@ -685,7 +696,7 @@ patch.updated_at = new Date().toISOString();
 const { data, error } = await supabase.from('stratex').update(patch).eq('id', req.params.id).select().maybeSingle();
 if (error || !data) return res.status(404).json({ error: 'Admin not found' });
 res.json({ message: 'Admin updated', admin: data });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 router.delete('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {

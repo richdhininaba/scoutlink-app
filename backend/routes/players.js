@@ -14,6 +14,7 @@ const {
 } = require('../engines/compatibility');
 const email = require('../services/email');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
+const { duplicateMessage, sendDbError } = require('../utils/dbErrors');
 
 // Height/weight range maps
 const HEIGHT_RANGES = {
@@ -311,7 +312,7 @@ router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req,
       return res.json({ data: scored.slice(off, off + Number(limit)), total: scored.length, page: Number(page), limit: Number(limit) });
     }
     res.json({ data: enriched, total: count, page: Number(page), limit: Number(limit) });
-  } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
+  } catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 
@@ -551,7 +552,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         }
         results.created.push({ ...created, login_code: loginCode, emailSent, emailTemplate: created.emailTemplate || null });
       } catch(e) {
-        results.errors.push({ player: p.firstName + ' ' + p.lastName, error: e.message });
+        results.errors.push({ player: p.firstName + ' ' + p.lastName, error: duplicateMessage(e) || e.message });
       }
     }
     if (req.user.accountType === 'Coach' && results.created.length && !isDemoSession(req)) {
@@ -598,7 +599,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
       } catch(notifErr) { console.error('[PlayersBulk] Notification error:', notifErr.message); }
     }
     res.status(201).json({ message: results.created.length + ' players created, ' + results.errors.length + ' errors', ...results });
-  } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 // Update player
@@ -628,7 +629,7 @@ router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res)
       predicted_salary_weekly: salary.weeklyGross
     }).eq('id', data.id);
     res.json({ player: { ...data, ...scoring, predicted_salary_weekly: salary.weeklyGross } });
-  } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+  } catch(err) { sendDbError(res, err); }
 });
 
 // Analyse player vs team

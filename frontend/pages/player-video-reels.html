@@ -114,10 +114,13 @@ document.addEventListener('DOMContentLoaded',function(){
   });
 
   document.getElementById('playerUploadBtn').addEventListener('click',function(){
+    var MAX_VIDEO_UPLOAD_BYTES=4*1024*1024;
+    var VIDEO_TOO_LARGE_MESSAGE='This video is too large to upload. Please choose a smaller file.';
     var file=document.getElementById('playerVideoFile').files[0];
     var title=document.getElementById('playerVideoTitle').value.trim();
     var msg=document.getElementById('playerUploadMsg');
     if(!file){msg.textContent='Choose a video file first.';msg.style.color='#f44336';return;}
+    if(file.size>MAX_VIDEO_UPLOAD_BYTES){msg.textContent=VIDEO_TOO_LARGE_MESSAGE;msg.style.color='#f44336';return;}
     if(!title){msg.textContent='Add a video title.';msg.style.color='#f44336';return;}
     var fd=new FormData();
     fd.append('file',file);

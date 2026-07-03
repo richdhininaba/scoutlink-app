@@ -6,6 +6,7 @@ const { requireAuth, requireRole, generateLoginCode, generateId } = require('../
 const email = require('../services/email');
 const config = require('../config');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
+const { sendDbError } = require('../utils/dbErrors');
 
 const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
 
@@ -80,12 +81,12 @@ if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter
 const tables = ['scouts','coaches','players','stratex'];
 for (const t of tables) {
 const { data: eRow } = await supabase.from(t).select('id').eq('email', emailAddr.toLowerCase().trim()).maybeSingle();
-if (eRow) return res.status(409).json({ error: 'This email is already registered on ScoutLink.' });
+if (eRow) return res.status(409).json({ error: t === 'coaches' ? 'A coach with this email already exists.' : 'This email is already registered on ScoutLink.' });
 }
 if (phone) {
 for (const t of ['scouts','coaches']) {
 const { data: pRow } = await supabase.from(t).select('id').eq('phone', phone.trim()).maybeSingle();
-if (pRow) return res.status(409).json({ error: 'This phone number is already registered.' });
+if (pRow) return res.status(409).json({ error: t === 'coaches' ? 'A coach with this phone number already exists.' : 'This phone number is already registered.' });
 }
 }
 
@@ -130,7 +131,7 @@ return res.status(502).json({ error: 'SendGrid did not accept the coach invite e
 }
 
 res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-} catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error(err); sendDbError(res, err); }
 });
 
 // Assign a player to this coach (coach assigns themselves to a player, or super user assigns)
