@@ -89,7 +89,15 @@
 
   function navItems(role) {
     var routes = window.PhoneRoutes || {};
-    return routes[role] || routes[roleFromPath()] || [];
+    var items = routes[role] || routes[roleFromPath()] || [];
+    if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) {
+      return items.filter(function (item) {
+        var label = String(item.label || '').toLowerCase();
+        var href = String(item.href || '').toLowerCase();
+        return label !== 'settings' && href.indexOf('settings') === -1;
+      });
+    }
+    return items;
   }
 
   function activeHref(item) {
@@ -131,18 +139,20 @@
     var role = auth.role || roleFromPath();
     var name = ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || role + ' user';
     var demo = typeof window.isDemoMode === 'function' && window.isDemoMode();
-    var switchLabel = demo ? 'Switch demo' : 'Switch experience';
+    var publicDemo = typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode();
+    var switchLabel = publicDemo ? 'Exit demo' : (demo ? 'Switch demo' : 'Switch experience');
     var nav = navItems(role).map(function (n) {
       return '<a class="' + (activeHref(n) ? 'active' : '') + '" href="' + esc(cleanHref(n.href)) + '"><span class="phone-nav-icon">' + icon(n.icon) + '</span><span>' + esc(n.label) + '</span></a>';
     }).join('');
+    var footer = publicDemo
+      ? '<button type="button" class="phone-menu-action phone-signout" id="phoneSignOut">' + icon('box') + '<span>Exit demo</span></button>'
+      : '<button type="button" class="phone-menu-action phone-switch" id="phoneSwitchExperience">' + icon('box') + '<span>' + esc(switchLabel) + '</span></button>' +
+        '<button type="button" class="phone-menu-action phone-signout" id="phoneSignOut">' + icon('settings') + '<span>Sign out</span></button>';
     menu.innerHTML =
       '<div class="phone-menu-head"><div class="phone-brand">Scout<span>Link</span></div><button class="phone-menu-close" id="phoneMenuClose" type="button" aria-label="Close menu">&times;</button></div>' +
       '<div class="phone-user-card"><div class="phone-avatar">' + esc(initials(user)) + '</div><div><div class="phone-user-name">' + esc(name) + '</div><div class="phone-user-role">' + esc(role + (demo ? ' demo' : '')) + '</div></div></div>' +
       '<nav class="phone-nav" aria-label="Mobile navigation">' + nav + '</nav>' +
-      '<div class="phone-menu-footer">' +
-      '<button type="button" class="phone-menu-action phone-switch" id="phoneSwitchExperience">' + icon('box') + '<span>' + esc(switchLabel) + '</span></button>' +
-      '<button type="button" class="phone-menu-action phone-signout" id="phoneSignOut">' + icon('settings') + '<span>Sign out</span></button>' +
-      '</div>';
+      '<div class="phone-menu-footer">' + footer + '</div>';
   }
 
   function openMenu() {
@@ -197,11 +207,19 @@
     });
     if (switcher) switcher.addEventListener('click', function () {
       closeMenu(true);
+      if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode() && typeof window.exitPublicDemo === 'function') {
+        window.exitPublicDemo();
+        return;
+      }
       if (typeof window.openExperienceSelector === 'function') window.openExperienceSelector();
       else window.location.href = cleanHref('experience-select.html');
     });
     if (signOut) signOut.addEventListener('click', function () {
       closeMenu(true);
+      if (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode() && typeof window.exitPublicDemo === 'function') {
+        window.exitPublicDemo();
+        return;
+      }
       if (window.Auth && typeof window.Auth.clear === 'function') window.Auth.clear();
       window.location.href = cleanHref('login.html?logout=1');
     });

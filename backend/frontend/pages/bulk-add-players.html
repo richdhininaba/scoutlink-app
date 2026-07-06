@@ -1,6 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Bulk Add Players - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -27,14 +31,14 @@ body{background:var(--bg);color:var(--text);}
 .bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
 .bulk-table{border-collapse:collapse;white-space:nowrap;min-width:2520px;width:max-content;}
 .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
-.bulk-table th{background:#1c2128;color:var(--text-secondary);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
-.bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);color:#fff;border-radius:4px;font-size:12px;}
+.bulk-table th{background:#f8fafc;color:#475569;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
+.bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:#fff;border:1px solid #dbe3ea;color:#111827;border-radius:4px;font-size:12px;}
 .bulk-table input[type=number]{min-width:55px;}
 .bulk-table input[type=date]{min-width:120px;}
 .bulk-row-num{color:var(--text-secondary);text-align:center;font-weight:600;}
 .bulk-remove{background:none;border:none;color:#f85149;cursor:pointer;font-size:16px;padding:2px 6px;}
-.bulk-table th:last-child,.bulk-table td:last-child{position:sticky;right:0;background:#161b22;z-index:2;box-shadow:-8px 0 12px rgba(0,0,0,.22);}
-.bulk-table th:last-child{background:#1c2128;z-index:3;}
+.bulk-table th:last-child,.bulk-table td:last-child{position:sticky;right:0;background:#fff;z-index:2;box-shadow:-8px 0 12px rgba(15,23,42,.10);}
+.bulk-table th:last-child{background:#f8fafc;z-index:3;}
 body:not(.super-user) .coach-col{display:none;}
 .assignment-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;}
 .bulk-action-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
@@ -71,7 +75,7 @@ body:not(.super-user) .coach-col{display:none;}
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -159,6 +163,7 @@ body:not(.super-user) .coach-col{display:none;}
 </div>
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 function toggleNotifPanel(){document.getElementById("notifPanel").classList.toggle("open");}
 function logout(){logoutToLogin();}

@@ -1,13 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Meetings - ScoutLink Stratex</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body><div class="dashboard">
@@ -21,7 +25,8 @@
 <section class="table-card"><div class="table-header"><h3>Upcoming meetings</h3></div><div style="overflow:auto"><table class="sl-table"><thead><tr><th>Title</th><th>Date</th><th>Location</th><th>Attendees</th><th>Notes</th></tr></thead><tbody id="meetingRows"></tbody></table></div></section>
 </div></div></div></div>
 <style>@media(max-width:900px){.hr-grid{grid-template-columns:1fr!important}}</style>
-<script src="../js/stratex-nav.js"></script><script src="../js/main.js"></script><script>
+<script src="../js/stratex-nav.js"></script><script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script><script>
 var admins=[],meetings=[];function logout(){logoutToLogin();}function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}function show(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}function nameFor(id){var a=admins.find(function(x){return x.id===id;});return a?((a.first_name||'')+' '+(a.last_name||'')):id;}
 function render(){meetingAttendees.innerHTML=admins.filter(function(a){return a.is_active!==false;}).map(function(a){return '<option value="'+a.id+'">'+safe((a.first_name||'')+' '+(a.last_name||'')+' - '+(a.job_title||a.admin_role||''))+'</option>';}).join('');meetingRows.innerHTML=meetings.length?meetings.map(function(m){var at=(m.attendees||[]).map(nameFor).join(', ');return '<tr><td><b>'+safe(m.title)+'</b></td><td>'+safe(m.meeting_date?new Date(m.meeting_date).toLocaleString('en-GB'):'')+'</td><td>'+safe(m.location||'')+'</td><td>'+safe(at||'--')+'</td><td>'+safe(m.notes||'')+'</td></tr>';}).join(''):'<tr><td colspan="5" style="color:#8ea2b5">No meetings booked.</td></tr>';if(window.refreshMobileLayout)refreshMobileLayout();}
 async function load(){var d=await api('GET','/api/stratex/org');admins=d.admins||[];meetings=d.meetings||[];render();}

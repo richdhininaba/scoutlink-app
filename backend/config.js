@@ -27,4 +27,17 @@ module.exports = {
   },
   adminEmails: (process.env.ADMIN_EMAILS || 'richdhin@stratexanalytics.co.uk,lucy.ali@stratexanalytics.co.uk')
     .split(',').map(e => e.trim()).filter(Boolean),
+  contactAlerts: {
+    recipients: (process.env.CONTACT_ALERT_RECIPIENTS || process.env.ADMIN_EMAILS || 'richdhin@stratexanalytics.co.uk,lucy.ali@stratexanalytics.co.uk')
+      .split(',').map(e => e.trim()).filter(Boolean),
+    smtp: {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+      fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SENDGRID_FROM_EMAIL || 'info@scoutlink.app',
+      fromName: process.env.SMTP_FROM_NAME || 'ScoutLink Trust Alerts',
+    },
+  },
 };

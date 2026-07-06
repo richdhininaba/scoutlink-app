@@ -1,13 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Coach setup - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/main.css">
 <style>.wizard{max-width:820px;margin:0 auto}.wizard-step{display:none}.wizard-step.active{display:block}.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.progress-chip{display:inline-flex;padding:6px 10px;border:1px solid rgba(0,230,118,.35);border-radius:999px;color:#00e676;font-size:12px;font-weight:800}.player-preview{border:1px solid #243447;background:#07111f;border-radius:12px;padding:14px;margin-top:12px}</style>
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body><div class="dashboard"><nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
@@ -38,7 +42,8 @@
 </section>
 <div class="choice-row" id="navButtons" style="margin-top:20px"><button class="btn btn-outline" onclick="prevStep()">Back</button><button class="btn btn-primary" onclick="nextStep()">Next</button></div>
 </div></div></div></div></div></div>
-<script src="../js/main.js"></script><script src="../js/leagues.js"></script><script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script><script src="../js/leagues.js"></script><script src="../js/scout-nav.js"></script>
 <script>
 var step=0,steps=[];
 function finishLater(){navigateClean('coach-dashboard.html');}
@@ -46,7 +51,7 @@ function init(){if(!Auth.isLoggedIn()||Auth.type!=='Coach')return navigateClean(
 function showStep(i){step=Math.max(0,Math.min(i,steps.length-1));steps.forEach(function(s,idx){s.classList.toggle('active',idx===step);});document.getElementById('stepTitle').textContent=steps[step].dataset.title;document.getElementById('stepChip').textContent=steps[step].dataset.chip;document.getElementById('navButtons').style.display=step===steps.length-1?'none':'grid';}
 function nextStep(){if(step===0){var size=Number(document.getElementById('squadSize').value||0);document.getElementById('conciergeCopy').textContent=size>=8?'That is a proper squad. Drop a simple list here and ScoutLink can help turn it into profiles.':'You can still paste a quick list, or keep going and add players yourself.';} if(step===2){var fn=document.getElementById('pFirst').value||'First';var ln=document.getElementById('pLast').value||'Player';document.getElementById('playerPreview').innerHTML='<b>'+fn+' '+ln+'</b><div style="color:#8ea2b5;font-size:12px">'+document.getElementById('pPosition').value+' - '+document.getElementById('pFoot').value+' foot - profile starts at 40%</div>';}showStep(step+1);}
 function prevStep(){showStep(step-1);}
-async function saveWizard(){try{var body={team:{teamName:teamName.value,league:league.value,city:city.value},squadSize:squadSize.value,squadList:squadList.value,assistantInviteEmail:assistantEmail.value,firstPlayer:{firstName:pFirst.value,lastName:pLast.value,dateOfBirth:pDob.value,birthYear:pBirthYear.value,position:pPosition.value,foot:pFoot.value}};await api('POST','/api/onboarding/coach-wizard',body);await api('POST','/api/onboarding/tour',{checkpoints:['dashboard','roster','profile','match_facts','video','assistant_invite']});navigateClean('coach-dashboard.html?tour=done');}catch(e){var er=document.getElementById('err');er.textContent=e.message;er.classList.add('show');}}
+async function saveWizard(){try{var body={team:{teamName:teamName.value,league:league.value,city:city.value},squadSize:squadSize.value,squadList:squadList.value,assistantInviteEmail:assistantEmail.value,firstPlayer:{firstName:pFirst.value,lastName:pLast.value,dateOfBirth:pDob.value,birthYear:pBirthYear.value,position:pPosition.value,foot:pFoot.value}};await api('POST','/api/onboarding/coach-wizard',body);navigateClean('coach-dashboard.html?setup=done');}catch(e){var er=document.getElementById('err');er.textContent=e.message;er.classList.add('show');}}
 document.addEventListener('DOMContentLoaded',init);
 </script><script src="../js/phone-routes.js"></script>
 <script src="../js/phone-shell.js"></script>

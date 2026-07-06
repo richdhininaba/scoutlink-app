@@ -1,6 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Compare Players - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -32,7 +36,7 @@
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearEventProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
 </head><body>
@@ -91,6 +95,7 @@
 
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
 <script>
 var _allPlayers=[], _pipelineIds=[], _scoutTeam=null,_scoutPrefs={};
 var _filter1='all', _filter2='all';
@@ -317,6 +322,84 @@ function renderRecommendations(p1,p2){
   return html;
 }
 
+function text(v){return String(v===undefined||v===null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function playerName(p){return text(((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player');}
+function compatValue(p){var c=calcCompatScore(p);return c===null?Math.round(dOv(p.overall_rating)):Math.round(Number(c)||0);}
+function confidenceLabel(p){var apps=parseInt(p.appearances)||0;if(apps>=10)return 'High';if(apps>=5)return 'Medium';if(apps>0)return 'Low';return 'Very low';}
+function metricWinner(a,b){if(a===b)return 'level';return a>b?'p1':'p2';}
+function phoneMetric(label,p1Val,p2Val,p1Score,p2Score){
+  var win=metricWinner(Number(p1Score)||0,Number(p2Score)||0);
+  return '<div class="phone-compare-metric">'+
+    '<span>'+text(label)+'</span>'+
+    '<b class="'+(win==='p1'?'is-winner':'')+'">'+text(p1Val)+'</b>'+
+    '<b class="'+(win==='p2'?'is-winner':'')+'">'+text(p2Val)+'</b>'+
+  '</div>';
+}
+function renderPhonePlayerCard(p,compat){
+  var ov=Math.round(dOv(p.overall_rating));
+  return '<article class="phone-compare-player-card">'+
+    '<div><h4>'+playerName(p)+'</h4><p>'+text(p.age_group||ageGroup(p.date_of_birth)||'--')+' - '+text(p.specific_position||p.primary_position||'--')+'</p><p>'+text(p.team_name||'Free agent')+'</p></div>'+
+    '<div class="phone-compare-score" style="color:'+cColor(ov)+'">'+ov+'<span>/100</span></div>'+
+    '<div class="phone-compare-card-row"><span>Compatibility</span><b style="color:'+cColor(compat)+'">'+compat+'%</b></div>'+
+    '<div class="phone-compare-card-row"><span>Estimated value</span><b>'+text(fmtVal(p.transfer_value))+'</b></div>'+
+    '<a class="phone-compare-link" href="player-profile.html?id='+encodeURIComponent(p.id)+'">View profile</a>'+
+  '</article>';
+}
+function renderMobileRecommendation(p1,p2){
+  var c1=compatValue(p1),c2=compatValue(p2);
+  var best=c1>=c2?p1:p2;
+  var other=c1>=c2?p2:p1;
+  var bestName=playerName(best);
+  var otherName=playerName(other);
+  var bestCompat=Math.max(c1,c2);
+  var otherCompat=Math.min(c1,c2);
+  var weaknesses=(_scoutTeam&&(_scoutTeam.team_weaknesses||[]).length)?(_scoutTeam.team_weaknesses||[]).slice(0,3).join(', '):'your saved scout setup';
+  return '<div class="phone-compare-recommendation">'+
+    '<span class="phone-eyebrow">ScoutLink recommendation</span>'+
+    '<h3>'+bestName+' is the stronger current fit</h3>'+
+    '<p>'+bestName+' leads the comparison on the ScoutLink fit model at '+bestCompat+'% versus '+otherCompat+'% for '+otherName+'. The score weighs your setup, including '+text(weaknesses)+', alongside role fit, evidence strength, match output, profile confidence and estimated value risk.</p>'+
+    '<p>Use this as a recruitment shortlisting signal rather than a final decision. If the players are close, run a prediction on both profiles before moving either player into a later pipeline stage.</p>'+
+    '<div class="phone-compare-actions">'+
+      '<a class="phone-primary-action" href="player-profile.html?id='+encodeURIComponent(best.id)+'">View recommended profile</a>'+
+      '<button type="button" onclick="addRecommendedToPipeline(\''+String(best.id).replace(/'/g,'\\\'')+'\')">Add recommended to pipeline</button>'+
+    '</div>'+
+  '</div>';
+}
+function renderMobileComparison(p1,p2){
+  var c1=compatValue(p1),c2=compatValue(p2);
+  var apps1=parseInt(p1.appearances)||0,apps2=parseInt(p2.appearances)||0;
+  var goals1=parseInt(p1.goals)||0,goals2=parseInt(p2.goals)||0;
+  var assists1=parseInt(p1.assists)||0,assists2=parseInt(p2.assists)||0;
+  var value1=Number(p1.transfer_value)||0,value2=Number(p2.transfer_value)||0;
+  var ov1=Math.round(dOv(p1.overall_rating)),ov2=Math.round(dOv(p2.overall_rating));
+  var best=c1>=c2?p1:p2;
+  return '<div class="phone-compare-results">'+
+    '<section class="phone-compare-hero">'+
+      '<span class="phone-eyebrow">Player comparison</span>'+
+      '<h2>'+playerName(p1)+' vs '+playerName(p2)+'</h2>'+
+      '<p>Best current fit: <strong>'+playerName(best)+'</strong></p>'+
+    '</section>'+
+    '<section class="phone-compare-player-grid">'+renderPhonePlayerCard(p1,c1)+renderPhonePlayerCard(p2,c2)+'</section>'+
+    '<section class="phone-compare-table-card"><div class="phone-compare-table-head"><span>Metric</span><b>'+playerName(p1)+'</b><b>'+playerName(p2)+'</b></div>'+
+      phoneMetric('Overall',ov1+'/100',ov2+'/100',ov1,ov2)+
+      phoneMetric('Compatibility',c1+'%',c2+'%',c1,c2)+
+      phoneMetric('Transfer value',fmtVal(value1),fmtVal(value2),value1,value2)+
+      phoneMetric('Appearances',apps1,apps2,apps1,apps2)+
+      phoneMetric('Goals',goals1,goals2,goals1,goals2)+
+      phoneMetric('Assists',assists1,assists2,assists1,assists2)+
+      phoneMetric('Data confidence',confidenceLabel(p1),confidenceLabel(p2),apps1,apps2)+
+    '</section>'+
+    renderMobileRecommendation(p1,p2)+
+  '</div>';
+}
+function addRecommendedToPipeline(playerId){
+  api('POST','/api/players/'+encodeURIComponent(playerId)+'/scout-interest',{interestLevel:8,notes:'Added from mobile compare recommendation'}).then(function(){
+    alert('Added to your pipeline.');
+  }).catch(function(e){
+    alert((e&&e.message)||'Could not add this player to your pipeline.');
+  });
+}
+
 function updateComparison(){
   var p1id=document.getElementById('player1').value;
   var p2id=document.getElementById('player2').value;
@@ -324,6 +407,10 @@ function updateComparison(){
   var p2=p2id?_allPlayers.find(function(p){return p.id===p2id;}):null;
 
   if(!p1&&!p2){document.getElementById('compareResult').innerHTML='';return;}
+  if(window.isScoutLinkPhone&&window.isScoutLinkPhone()&&p1&&p2){
+    document.getElementById('compareResult').innerHTML=renderMobileComparison(p1,p2);
+    return;
+  }
 
   var html='';
 

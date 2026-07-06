@@ -15,6 +15,32 @@
 
 /* Final light-mode cleanup for phone surfaces that still had dark inline-era styles. */
 @media (max-width: 767px) {
+  body.phone-active .policy-check,
+  body.phone-active .declaration-list label {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.phone-active .policy-check input[type="checkbox"],
+  body.phone-active .declaration-list input[type="checkbox"] {
+    width: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    flex: 0 0 18px !important;
+    margin-top: 2px !important;
+  }
+
+  body.phone-active .policy-check p,
+  body.phone-active .declaration-list label {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
   body.phone-active,
   body.phone-active .dashboard-main,
   body.phone-active .page-content {
