@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
-const config = require('../config');
-const { sendContactAlert } = require('../services/contactAlerts');
+const { requireAuth, requireRole } = require('../utils/auth');
+const email = require('../services/email');
 
 function cleanText(value, max = 4000) {
   return String(value || '').trim().slice(0, max);
@@ -25,8 +25,24 @@ function isSafeguardingFlag(value) {
   return /safeguard|minor|child|inappropriate|false identity|urgent/i.test(value || '');
 }
 
-function safeAlertError(err) {
-  return cleanText(err && err.message ? err.message : err, 260) || 'Email alert failed';
+function safeEmailError(err) {
+  return cleanText(err && err.message ? err.message : err, 260) || 'Email confirmation failed';
+}
+
+function displaySubmissionType(value) {
+  const map = {
+    contact_message: 'Contact Us',
+    safeguarding_concern: 'Report a Concern',
+    privacy_request: 'Privacy Request',
+    parent_guardian_concern: 'Parent/Guardian Concern'
+  };
+  return map[value] || cleanText(value, 80) || 'Contact Us';
+}
+
+function confirmationSenderFor(type) {
+  return type === 'safeguarding_concern' || type === 'parent_guardian_concern'
+    ? email.sendTrustConcernConfirmation
+    : email.sendTrustContactConfirmation;
 }
 
 async function saveTrustSubmission(input) {
@@ -63,7 +79,7 @@ async function saveTrustSubmission(input) {
         metadata: {
           ...payload,
           trust_submissions_error_code: error.code || null,
-          trust_submissions_error_safe: safeAlertError(error),
+          trust_submissions_error_safe: safeEmailError(error),
         },
       })
       .select('id, created_at')
@@ -73,32 +89,35 @@ async function saveTrustSubmission(input) {
     data = fallback.data;
   }
 
-  const adminRecordUrl = config.brandUrl.replace(/\/$/, '') + '/stratex/dashboard';
-  const alertPayload = {
+  const confirmationPayload = {
     ...payload,
     id: data.id,
     submitted_at: data.submitted_at || data.created_at,
-    admin_record_url: adminRecordUrl,
+    submissionType: displaySubmissionType(payload.submission_type),
+    contactReason: payload.submission_type === 'contact_message' ? payload.concern_category : null,
   };
 
-  let alertResult = { success: false, skipped: true, error: 'Email alert not attempted' };
+  let confirmationResult = { success: false, skipped: true, error: 'Email confirmation not attempted' };
   try {
-    alertResult = await sendContactAlert(alertPayload);
+    confirmationResult = await confirmationSenderFor(payload.submission_type)(confirmationPayload);
   } catch (err) {
-    alertResult = { success: false, error: safeAlertError(err) };
+    confirmationResult = { success: false, error: safeEmailError(err) };
   }
 
   const updatePayload = {
-    email_alert_sent: !!alertResult.success,
-    email_alert_sent_at: alertResult.success ? new Date().toISOString() : null,
-    email_alert_error_safe: alertResult.success ? null : safeAlertError(alertResult.error),
+    user_confirmation_sent: !!confirmationResult.success,
+    user_confirmation_sent_at: confirmationResult.success ? new Date().toISOString() : null,
+    user_confirmation_error_safe: confirmationResult.success ? null : safeEmailError(confirmationResult.error),
   };
   if (storageTable === 'trust_submissions') {
-    await supabase.from('trust_submissions').update(updatePayload).eq('id', data.id);
+    const { error: updateError } = await supabase.from('trust_submissions').update(updatePayload).eq('id', data.id);
+    if (updateError) {
+      console.error('[Trust confirmation status]', { code: updateError.code, message: updateError.message });
+    }
   } else {
     await supabase.from('audit_logs').insert({
       actor_role: 'system',
-      action: 'public_trust_submission_email_alert_status',
+      action: 'public_trust_submission_user_confirmation_status',
       affected_table: 'audit_logs',
       affected_record_id: data.id,
       metadata: updatePayload,
@@ -108,8 +127,8 @@ async function saveTrustSubmission(input) {
   return {
     id: data.id,
     submittedAt: data.submitted_at || data.created_at,
-    emailAlertSent: !!alertResult.success,
-    emailAlertSkipped: !!alertResult.skipped,
+    userConfirmationSent: !!confirmationResult.success,
+    userConfirmationSkipped: !!confirmationResult.skipped,
     storageTable,
   };
 }
@@ -139,7 +158,7 @@ router.post('/contact', async (req, res) => {
       message: 'Message sent. We will review it and respond if a reply is needed.',
       submissionId: saved.id,
       submittedAt: saved.submittedAt,
-      emailAlertSent: saved.emailAlertSent,
+      userConfirmationSent: saved.userConfirmationSent,
     });
   } catch (err) {
     console.error('[Trust contact]', { code: err.code, message: err.message });
@@ -192,7 +211,7 @@ router.post('/safeguarding-concerns', async (req, res) => {
       concernId: data.id,
       submissionId: saved.id,
       submittedAt: data.created_at,
-      emailAlertSent: saved.emailAlertSent
+      userConfirmationSent: saved.userConfirmationSent
     });
   } catch (err) {
     console.error('[Trust safeguarding concern]', { code: err.code, message: err.message });
@@ -240,11 +259,72 @@ router.post('/privacy-requests', async (req, res) => {
       requestId: data.id,
       submissionId: saved.id,
       submittedAt: data.created_at,
-      emailAlertSent: saved.emailAlertSent
+      userConfirmationSent: saved.userConfirmationSent
     });
   } catch (err) {
     console.error('[Trust privacy request]', { code: err.code, message: err.message });
     res.status(500).json({ error: 'Could not submit the privacy request right now.' });
+  }
+});
+
+const TRUST_STATUSES = [
+  'new',
+  'investigating',
+  'awaiting_more_information',
+  'outcome_being_prepared',
+  'outcome_sent',
+  'resolved',
+  'closed'
+];
+
+router.get('/submissions', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '100', 10) || 100, 1), 300);
+    let q = supabase
+      .from('trust_submissions')
+      .select('id,submission_type,priority,concern_category,name,email,phone,role,organisation,player_or_team_mentioned,message,safeguarding_flag,source_page,submitted_at,status,assigned_to,user_confirmation_sent,user_confirmation_sent_at,user_confirmation_error_safe,internal_notes,created_at,updated_at')
+      .order('submitted_at', { ascending: false })
+      .limit(limit);
+    if (req.query.type) q = q.eq('submission_type', cleanText(req.query.type, 80));
+    if (req.query.status) q = q.eq('status', cleanText(req.query.status, 80));
+    if (req.query.priority) q = q.eq('priority', cleanText(req.query.priority, 80));
+    if (req.query.safeguarding === 'true') q = q.eq('safeguarding_flag', true);
+    if (req.query.safeguarding === 'false') q = q.eq('safeguarding_flag', false);
+    const { data, error } = await q;
+    if (error) throw error;
+    res.json({ data: data || [], statuses: TRUST_STATUSES });
+  } catch (err) {
+    console.error('[Trust submissions list]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not load reported concerns.' });
+  }
+});
+
+router.patch('/submissions/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const patch = { updated_at: new Date().toISOString() };
+    if (req.body.status !== undefined) {
+      const status = cleanText(req.body.status, 80);
+      if (!TRUST_STATUSES.includes(status)) return res.status(400).json({ error: 'Invalid status.' });
+      patch.status = status;
+    }
+    if (req.body.internalNotes !== undefined || req.body.internal_notes !== undefined) {
+      patch.internal_notes = cleanText(req.body.internalNotes || req.body.internal_notes, 5000) || null;
+    }
+    if (req.body.assignedTo !== undefined || req.body.assigned_to !== undefined) {
+      patch.assigned_to = cleanText(req.body.assignedTo || req.body.assigned_to, 100) || null;
+    }
+    const { data, error } = await supabase
+      .from('trust_submissions')
+      .update(patch)
+      .eq('id', req.params.id)
+      .select('id,submission_type,priority,concern_category,name,email,phone,role,organisation,player_or_team_mentioned,message,safeguarding_flag,source_page,submitted_at,status,assigned_to,user_confirmation_sent,user_confirmation_sent_at,user_confirmation_error_safe,internal_notes,created_at,updated_at')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Submission not found.' });
+    res.json({ message: 'Submission updated.', data });
+  } catch (err) {
+    console.error('[Trust submission update]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not update this submission.' });
   }
 });
 

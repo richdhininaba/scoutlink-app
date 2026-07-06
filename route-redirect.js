@@ -44,6 +44,7 @@
     '/stratex/award-nominations': '/frontend/pages/stratex-award-nominations.html',
     '/stratex/showcase-events': '/frontend/pages/stratex-showcase-events.html',
     '/stratex/notifications': '/frontend/pages/stratex-notifications.html',
+    '/stratex/concerns': '/frontend/pages/stratex-concerns.html',
     '/stratex/settings': '/frontend/pages/stratex-settings.html',
     '/coach/dashboard': '/frontend/pages/coach-dashboard.html',
     '/coach/onboarding': '/frontend/pages/coach-onboarding.html',

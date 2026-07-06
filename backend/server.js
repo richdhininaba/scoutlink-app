@@ -142,6 +142,7 @@ const routeMap = {
   '/stratex/award-nominations': 'pages/stratex-award-nominations.html',
   '/stratex/showcase-events': 'pages/stratex-showcase-events.html',
   '/stratex/notifications': 'pages/stratex-notifications.html',
+  '/stratex/concerns': 'pages/stratex-concerns.html',
   '/stratex/settings': 'pages/stratex-settings.html',
   '/coach/dashboard': 'pages/coach-dashboard.html',
   '/coach/onboarding': 'pages/coach-onboarding.html',

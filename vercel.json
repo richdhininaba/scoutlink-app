@@ -47,6 +47,7 @@
     { "source": "/stratex/award-nominations", "destination": "/frontend/pages/stratex-award-nominations.html" },
     { "source": "/stratex/showcase-events", "destination": "/frontend/pages/stratex-showcase-events.html" },
     { "source": "/stratex/notifications", "destination": "/frontend/pages/stratex-notifications.html" },
+    { "source": "/stratex/concerns", "destination": "/frontend/pages/stratex-concerns.html" },
     { "source": "/stratex/settings", "destination": "/frontend/pages/stratex-settings.html" },
     { "source": "/coach/dashboard", "destination": "/frontend/pages/coach-dashboard.html" },
     { "source": "/coach/onboarding", "destination": "/frontend/pages/coach-onboarding.html" },

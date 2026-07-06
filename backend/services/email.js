@@ -237,6 +237,40 @@ function interviewAvailabilitySubmittedData(d) {
   };
 }
 
+function safeTemplateText(value, max) {
+  return String(value == null ? '' : value)
+    .replace(/[<>]/g, '')
+    .replace(/\r\n/g, '\n')
+    .slice(0, max || 4000)
+    .trim();
+}
+
+function firstNameFrom(value) {
+  const name = safeTemplateText(value, 180);
+  if (!name) return 'there';
+  return name.split(/\s+/)[0] || 'there';
+}
+
+function trustConfirmationData(d) {
+  d = d || {};
+  const submittedAt = d.submittedAt || d.submitted_at || d.created_at || new Date().toISOString();
+  const submissionType = d.submissionType || d.submission_type || 'Contact Us';
+  const category = d.concernCategory || d.concern_category || d.category || d.reason || '';
+  return {
+    firstName: firstNameFrom(d.firstName || d.first_name || d.name || d.fullName || d.full_name),
+    submissionReference: safeTemplateText(d.submissionReference || d.submission_reference || d.id || '', 80),
+    submittedAt: prettyDate(submittedAt),
+    submissionType: safeTemplateText(submissionType, 120) || 'Contact Us',
+    concernCategory: safeTemplateText(category || 'Not applicable', 160) || 'Not applicable',
+    contactReason: safeTemplateText(d.contactReason || d.contact_reason || category || 'Not applicable', 160) || 'Not applicable',
+    role: safeTemplateText(d.role || 'Not provided', 120) || 'Not provided',
+    organisation: safeTemplateText(d.organisation || d.organization || 'Not provided', 220) || 'Not provided',
+    playerOrTeamMentioned: safeTemplateText(d.playerOrTeamMentioned || d.player_or_team_mentioned || 'Not provided', 220) || 'Not provided',
+    safeguardingFlag: d.safeguardingFlag === true || d.safeguarding_flag === true ? 'Yes' : 'No',
+    message: safeTemplateText(d.message || 'No message supplied.', 1800) || 'No message supplied.'
+  };
+}
+
 async function sendResetPassword(d) {
   const templateId = config.sendgrid.templates.resetPassword;
   const payload = withDefaults({
@@ -309,6 +343,8 @@ module.exports = {
   sendJobApplicationStageOneEmail: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationStageOne', data: jobApplicationStageOneData(d) }),
   sendJobApplicationDeclineEmail: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'jobApplicationDecline', data: jobApplicationDeclineData(d) }),
   sendInterviewAvailabilitySubmittedAdminEmail: (d) => sendNotification({ ...(d || {}), ...interviewAvailabilitySubmittedData(d) }),
+  sendTrustContactConfirmation: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'trustContactConfirmation', data: trustConfirmationData(d) }),
+  sendTrustConcernConfirmation: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'trustConcernConfirmation', data: trustConfirmationData(d) }),
   sendNotification,
   sendResetPassword,
   brandBase,

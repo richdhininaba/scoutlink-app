@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Concerns Reported - ScoutLink admin</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/frontend/css/variables.css">
+<link rel="stylesheet" href="/frontend/css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d}
+.concerns-layout{display:grid;gap:18px;max-width:1600px;margin:0 auto}
+.concerns-card{background:#0f1620;border:1px solid rgba(148,163,184,.18);border-radius:18px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.18)}
+.concerns-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid rgba(148,163,184,.14)}
+.concerns-head h3{font-size:18px;margin:0}.concerns-head p{margin:5px 0 0;color:#8ea2b5;font-size:12px;line-height:1.45}
+.concerns-filters{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;padding:16px 22px;border-bottom:1px solid rgba(148,163,184,.12);background:#0b111c}
+.concerns-filters select{min-height:40px}
+.concerns-table{width:100%;border-collapse:collapse}
+.concerns-table th,.concerns-table td{padding:13px 14px;border-bottom:1px solid rgba(148,163,184,.12);text-align:left;vertical-align:top;font-size:12px}
+.concerns-table th{color:#8ea2b5;text-transform:uppercase;letter-spacing:.06em;font-size:10px;background:#0b111c}
+.concerns-table td{color:#dbe7f3}.concerns-table tr:hover{background:rgba(255,255,255,.03)}
+.type-pill,.status-pill,.priority-pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.type-pill{background:rgba(41,121,255,.14);color:#58a6ff}.type-pill.concern{background:rgba(220,38,38,.13);color:#f87171}.type-pill.contact{background:rgba(15,159,117,.14);color:#34d399}
+.status-pill{background:rgba(148,163,184,.12);color:#dbe7f3}.priority-pill{background:rgba(245,158,11,.14);color:#fbbf24}.priority-pill.urgent{background:rgba(220,38,38,.14);color:#f87171}
+.safe-flag{font-weight:950;color:#f87171}.muted{color:#8ea2b5}.ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#94a3b8;font-size:11px}
+.drawer{position:fixed;inset:0;display:none;z-index:1000}.drawer.open{display:block}.drawer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62)}
+.drawer-panel{position:absolute;right:0;top:0;height:100%;width:min(620px,100%);background:#0f1620;border-left:1px solid rgba(148,163,184,.2);box-shadow:-20px 0 70px rgba(0,0,0,.38);display:flex;flex-direction:column}
+.drawer-head{display:flex;justify-content:space-between;gap:12px;padding:20px;border-bottom:1px solid rgba(148,163,184,.16)}
+.drawer-body{padding:20px;overflow:auto;display:grid;gap:16px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item{background:#0b111c;border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:12px}.detail-item span{display:block;color:#8ea2b5;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:900;margin-bottom:5px}.detail-item b{font-size:13px;color:#fff;overflow-wrap:anywhere}
+.message-box,.notes-box{white-space:pre-wrap;background:#0b111c;border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:14px;color:#e5edf5;font-size:13px;line-height:1.55}
+.drawer-actions{display:grid;gap:10px;padding:20px;border-top:1px solid rgba(148,163,184,.16);background:#0b111c}.drawer-actions textarea{min-height:110px}
+.empty-state{padding:42px;text-align:center;color:#8ea2b5}
+@media(max-width:900px){.concerns-filters{grid-template-columns:1fr 1fr}.concerns-table{display:block;overflow-x:auto}.detail-grid{grid-template-columns:1fr}}
+@media(max-width:767px){.concerns-card{background:#fff;border-color:#e5e7eb}.concerns-head,.concerns-filters{padding:14px;background:#fff}.concerns-head h3{color:#111827}.concerns-head p{color:#64748b}.concerns-filters{grid-template-columns:1fr}.concerns-table,.concerns-table tbody,.concerns-table tr,.concerns-table td{display:block;width:100%}.concerns-table thead{display:none}.concerns-table tr{border:1px solid #e5e7eb;border-radius:16px;margin:12px 14px;padding:12px;background:#fff}.concerns-table td{border:0;color:#111827;padding:7px 0}.concerns-table td::before{content:attr(data-label);display:block;color:#64748b;font-size:10px;text-transform:uppercase;font-weight:950;letter-spacing:.06em;margin-bottom:3px}.drawer-panel{width:100%;background:#fff}.drawer-head,.drawer-actions{background:#fff;border-color:#e5e7eb}.drawer-body{background:#f6f8fa}.detail-item,.message-box,.notes-box{background:#fff;border-color:#e5e7eb;color:#111827}.detail-item b{color:#111827}}
+</style>
+<link rel="stylesheet" href="/frontend/css/phone-base.css">
+<link rel="stylesheet" href="/frontend/css/phone-shell.css">
+<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent)">Link</span></a></div>
+  <div class="sidebar-nav" id="sidebarNav"></div>
+  <div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Concerns Reported</span><div class="topbar-right"><button class="btn btn-sm btn-outline" onclick="loadSubmissions()">Refresh</button><button class="btn btn-sm btn-outline" onclick="logoutToLogin()">Sign out</button></div></div>
+<div class="page-content">
+<div class="form-error" id="err"></div><div class="form-success" id="ok"></div>
+<section class="concerns-layout">
+  <div class="concerns-card">
+    <div class="concerns-head">
+      <div><h3>Concerns Reported</h3><p>Contact Us, Report a Concern, privacy and parent/guardian submissions are stored here for Stratex review.</p></div>
+      <a class="btn btn-sm btn-outline" href="/report-a-concern" target="_blank" rel="noopener">Public form</a>
+    </div>
+    <div class="concerns-filters">
+      <select id="typeFilter" aria-label="Filter by type"><option value="">All types</option><option value="contact_message">Contact Us</option><option value="safeguarding_concern">Report a Concern</option><option value="privacy_request">Privacy Request</option><option value="parent_guardian_concern">Parent/Guardian Concern</option></select>
+      <select id="statusFilter" aria-label="Filter by status"><option value="">All statuses</option></select>
+      <select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="standard">Standard</option><option value="urgent">Urgent</option></select>
+      <select id="safeFilter" aria-label="Filter safeguarding flag"><option value="">Safeguarding flag</option><option value="true">Flagged only</option><option value="false">Not flagged</option></select>
+      <button class="btn btn-sm btn-primary" onclick="loadSubmissions()">Apply filters</button>
+    </div>
+    <div id="submissionsBox"><div class="empty-state"><div class="spinner"></div><p>Loading submissions...</p></div></div>
+  </div>
+</section>
+</div></div></div>
+<div class="drawer" id="submissionDrawer" aria-hidden="true">
+  <div class="drawer-backdrop" onclick="closeDrawer()"></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+    <div class="drawer-head"><div><h3 id="drawerTitle" style="margin:0">Submission detail</h3><p id="drawerSub" class="muted" style="margin:5px 0 0"></p></div><button class="btn btn-sm btn-outline" onclick="closeDrawer()">Close</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-actions">
+      <select id="detailStatus" aria-label="Update status"></select>
+      <input id="detailOwner" placeholder="Assigned owner">
+      <textarea id="detailNotes" placeholder="Internal notes"></textarea>
+      <button class="btn btn-primary" onclick="saveSubmission()">Save status and notes</button>
+    </div>
+  </aside>
+</div>
+<script src="/frontend/js/stratex-nav.js"></script>
+<script src="/frontend/js/main.js"></script>
+<script src="/frontend/js/heap-analytics.js"></script>
+<script>
+var submissions=[],statuses=['new','investigating','awaiting_more_information','outcome_being_prepared','outcome_sent','resolved','closed'],selected=null;
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function label(v){return String(v||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
+function typeLabel(v){return ({contact_message:'Contact Us',safeguarding_concern:'Report a Concern',privacy_request:'Privacy Request',parent_guardian_concern:'Parent/Guardian Concern'})[v]||label(v||'Other');}
+function dateText(v){if(!v)return'--';try{return new Date(v).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});}catch(_){return'--';}}
+function show(id,msg){var el=document.getElementById(id);if(!el)return;el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}
+function statusOptions(value){return statuses.map(function(s){return'<option value="'+s+'" '+(s===value?'selected':'')+'>'+label(s)+'</option>';}).join('');}
+function initFilters(){document.getElementById('statusFilter').innerHTML='<option value="">All statuses</option>'+statusOptions('');}
+function filtersQuery(){var p=new URLSearchParams();['type','status','priority'].forEach(function(k){var el=document.getElementById(k+'Filter');if(el&&el.value)p.set(k,el.value);});var sf=document.getElementById('safeFilter');if(sf&&sf.value)p.set('safeguarding',sf.value);p.set('limit','200');return p.toString();}
+function renderRows(rows){
+  if(!rows.length){document.getElementById('submissionsBox').innerHTML='<div class="empty-state">No trust submissions match these filters.</div>';return;}
+  document.getElementById('submissionsBox').innerHTML='<table class="concerns-table"><thead><tr><th>Reference</th><th>Submitted</th><th>Type</th><th>Reporter</th><th>Reason</th><th>Safeguarding</th><th>Priority</th><th>Status</th><th>Owner</th><th>Action</th></tr></thead><tbody>'+rows.map(function(r){
+    var concern=r.submission_type==='safeguarding_concern'||r.submission_type==='parent_guardian_concern';
+    return '<tr><td data-label="Reference"><span class="ref">'+esc(String(r.id||'').slice(0,8))+'</span></td><td data-label="Submitted">'+esc(dateText(r.submitted_at||r.created_at))+'</td><td data-label="Type"><span class="type-pill '+(concern?'concern':'contact')+'">'+esc(typeLabel(r.submission_type))+'</span></td><td data-label="Reporter"><b>'+esc(r.name||'Not supplied')+'</b><br><span class="muted">'+esc(r.email||'')+'</span><br><span class="muted">'+esc(r.role||'')+'</span></td><td data-label="Reason">'+esc(r.concern_category||'General')+'<br><span class="muted">'+esc(r.organisation||'')+'</span></td><td data-label="Safeguarding">'+(r.safeguarding_flag?'<span class="safe-flag">Flagged</span>':'No')+'</td><td data-label="Priority"><span class="priority-pill '+(r.priority==='urgent'?'urgent':'')+'">'+esc(label(r.priority||'standard'))+'</span></td><td data-label="Status"><span class="status-pill">'+esc(label(r.status||'new'))+'</span></td><td data-label="Owner">'+esc(r.assigned_to||'Unassigned')+'</td><td data-label="Action"><button class="btn btn-sm btn-outline" onclick="openSubmission(\''+esc(r.id)+'\')">Open</button></td></tr>';
+  }).join('')+'</tbody></table>';
+}
+async function loadSubmissions(){
+  try{
+    var d=await api('GET','/api/trust/submissions?'+filtersQuery());
+    submissions=d.data||[];statuses=d.statuses||statuses;initFilters();renderRows(submissions);
+    if(window.refreshMobileLayout)window.refreshMobileLayout();
+  }catch(e){document.getElementById('submissionsBox').innerHTML='<div class="empty-state" style="color:#dc2626">'+esc(e.message||'Could not load submissions')+'</div>';}
+}
+function openSubmission(id){
+  selected=submissions.find(function(r){return String(r.id)===String(id);});if(!selected)return;
+  document.getElementById('drawerTitle').textContent=typeLabel(selected.submission_type);
+  document.getElementById('drawerSub').textContent='Reference '+String(selected.id||'').slice(0,8)+' - '+dateText(selected.submitted_at||selected.created_at);
+  document.getElementById('drawerBody').innerHTML='<div class="detail-grid">'+
+    '<div class="detail-item"><span>Reporter</span><b>'+esc(selected.name||'Not supplied')+'</b></div>'+
+    '<div class="detail-item"><span>Email</span><b>'+esc(selected.email||'')+'</b></div>'+
+    '<div class="detail-item"><span>Role</span><b>'+esc(selected.role||'Not provided')+'</b></div>'+
+    '<div class="detail-item"><span>Organisation/team</span><b>'+esc(selected.organisation||'Not provided')+'</b></div>'+
+    '<div class="detail-item"><span>Category / reason</span><b>'+esc(selected.concern_category||'General')+'</b></div>'+
+    '<div class="detail-item"><span>Player or team mentioned</span><b>'+esc(selected.player_or_team_mentioned||'Not provided')+'</b></div>'+
+    '<div class="detail-item"><span>Confirmation email</span><b>'+esc(selected.user_confirmation_sent?'Sent':'Not sent')+'</b></div>'+
+    '<div class="detail-item"><span>Safeguarding</span><b>'+esc(selected.safeguarding_flag?'Flagged':'No')+'</b></div>'+
+    '</div><div><h4>Full message</h4><div class="message-box">'+esc(selected.message||'No message supplied.')+'</div></div>'+
+    (selected.user_confirmation_error_safe?'<div><h4>Confirmation error</h4><div class="message-box">'+esc(selected.user_confirmation_error_safe)+'</div></div>':'')+
+    (selected.internal_notes?'<div><h4>Current internal notes</h4><div class="notes-box">'+esc(selected.internal_notes)+'</div></div>':'');
+  document.getElementById('detailStatus').innerHTML=statusOptions(selected.status||'new');
+  document.getElementById('detailOwner').value=selected.assigned_to||'';
+  document.getElementById('detailNotes').value=selected.internal_notes||'';
+  document.getElementById('submissionDrawer').classList.add('open');
+  document.getElementById('submissionDrawer').setAttribute('aria-hidden','false');
+}
+function closeDrawer(){document.getElementById('submissionDrawer').classList.remove('open');document.getElementById('submissionDrawer').setAttribute('aria-hidden','true');selected=null;}
+async function saveSubmission(){
+  if(!selected)return;
+  try{
+    var d=await api('PATCH','/api/trust/submissions/'+encodeURIComponent(selected.id),{status:document.getElementById('detailStatus').value,assignedTo:document.getElementById('detailOwner').value,internalNotes:document.getElementById('detailNotes').value});
+    show('ok','Submission updated.');closeDrawer();await loadSubmissions();
+  }catch(e){show('err',e.message||'Could not update submission');}
+}
+document.addEventListener('DOMContentLoaded',function(){
+  initStratexPage();initFilters();loadSubmissions();
+  ['typeFilter','statusFilter','priorityFilter','safeFilter'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('change',loadSubmissions);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
+});
+</script>
+<script src="/frontend/js/phone-routes.js"></script>
+<script src="/frontend/js/phone-shell.js"></script>
+<script src="/frontend/js/phone-pages.js"></script>
+</body></html>

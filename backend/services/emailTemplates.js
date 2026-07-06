@@ -66,6 +66,18 @@ const TEMPLATES = {
     id: 'd-c492ab3e8388462194c5363b9c3ef0c7',
     required: ['firstName', 'jobTitle', 'reportingToEmail', 'reportingToFullName', 'reportingToJobTitle', 'year'],
     optional: []
+  },
+  trustContactConfirmation: {
+    name: 'Contact Form Received',
+    id: process.env.SENDGRID_CONTACT_CONFIRMATION_TEMPLATE_ID || 'd-4c105e047fab49019f54864d740cba62',
+    required: ['firstName', 'submissionReference', 'submittedAt', 'submissionType', 'concernCategory', 'contactReason', 'role', 'organisation', 'playerOrTeamMentioned', 'safeguardingFlag', 'message', 'year'],
+    optional: []
+  },
+  trustConcernConfirmation: {
+    name: 'Concern Reported',
+    id: process.env.SENDGRID_CONCERN_CONFIRMATION_TEMPLATE_ID || 'd-1cd7761ae7684cb5b37e4230e905892e',
+    required: ['firstName', 'submissionReference', 'submittedAt', 'submissionType', 'concernCategory', 'contactReason', 'role', 'organisation', 'playerOrTeamMentioned', 'safeguardingFlag', 'message', 'year'],
+    optional: []
   }
 };
 

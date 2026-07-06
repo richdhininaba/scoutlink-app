@@ -38,6 +38,7 @@ const CLEAN_ROUTES = {
   'stratex-award-nominations.html':'/stratex/award-nominations',
   'stratex-showcase-events.html':'/stratex/showcase-events',
   'stratex-notifications.html':'/stratex/notifications',
+  'stratex-concerns.html':'/stratex/concerns',
   'stratex-settings.html':'/stratex/settings',
   'coach-dashboard.html':'/coach/dashboard',
   'coach-onboarding.html':'/coach/onboarding',
