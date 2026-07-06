@@ -1,6 +1,7 @@
 ﻿'use strict';
 // ScoutLink Frontend v2.2 - All experiences complete
 const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
+window.API = API;
 
 const CLEAN_ROUTES = {
   'index.html':'/',
@@ -159,7 +160,7 @@ function isPublicDemoMode() {
 }
 
 function demoBannerText() {
-  return 'This is a demo experience using fake coach, scout and player data. These are not real records.';
+  return 'This is demo data only. These players, teams, scouts and records are not real.';
 }
 
 function restoreAdminSessionForSelector() {
@@ -469,7 +470,7 @@ function publicDemoApi(method, path, body) {
     const limit = Number(url.searchParams.get('limit') || 5);
     return ok({ data:players.slice().sort((a,b)=>demoCompatibility(b)-demoCompatibility(a)).slice(0,limit).map(p=>Object.assign({}, p, { analysis: demoAnalysis(p,state) })) });
   }
-  if (method === 'GET' && pathname === '/api/scouts/pipeline') return ok({ data:state.pipeline, total:state.pipeline.length, planLimit:1200, interestsRemaining:1193, planName:'ELITE' });
+  if (method === 'GET' && pathname === '/api/scouts/pipeline') return ok({ data:state.pipeline, total:state.pipeline.length, planLimit:300, interestsRemaining:293, planName:'ELITE' });
   if (method === 'PATCH' && pathname.startsWith('/api/scouts/pipeline/')) {
     const id = pathname.split('/').pop();
     const item = state.pipeline.find(x => x.id === id);
@@ -509,7 +510,7 @@ function publicDemoApi(method, path, body) {
     if (player && !state.pipeline.some(x => x.player_id === player.id)) state.pipeline.unshift({ id:'demo-pipeline-' + Date.now(), player_id:player.id, player, stage:'interested', interest_level:body.interestLevel || 7, created_at:new Date().toISOString() });
     setDemoState(state); return ok({ success:true, interestsRemaining:999, message:'Added to your demo pipeline.' });
   }
-  if (method === 'GET' && pathname === '/api/predictions') return ok({ data:state.predictions, planLimit:1200, remaining:1192, currentPlan:'ELITE' });
+  if (method === 'GET' && pathname === '/api/predictions') return ok({ data:state.predictions, planLimit:900, remaining:892, currentPlan:'ELITE' });
   if (method === 'POST' && pathname === '/api/predictions/run') {
     const player = players.find(p => p.id === body.playerId) || players[0];
     const type = body.predictionType || 'position_fit';
@@ -548,7 +549,7 @@ function publicDemoApi(method, path, body) {
   if (method === 'POST' && pathname.includes('/share')) return ok({ success:true });
   if (method === 'GET' && pathname === '/api/notifications') return ok({ data:[], unreadCount:0 });
   if (method === 'GET') return ok({ data:[], total:0 });
-  return ok({ success:true, message:'Demo change saved for this session.' });
+  return ok({ success:false, message:'This action is disabled in the public demo.' });
 }
 
 function insertPublicDemoBanner() {
@@ -558,7 +559,13 @@ function insertPublicDemoBanner() {
   const banner = document.createElement('div');
   banner.id = 'publicDemoBanner';
   banner.className = 'public-demo-banner';
-  banner.innerHTML = '<div class="public-demo-main"><span class="public-demo-badge">Demo</span><span>' + demoBannerText() + '</span></div><div class="public-demo-cta"><span>Ready to use this with your real team?</span><a href="' + cleanRouteFor('register.html') + '">Register as Scout</a><a href="' + cleanRouteFor('register.html?type=coach') + '">Register as Coach</a></div>';
+  const role = sessionStorage.getItem('sl_public_demo_role') || Auth.type || 'Coach';
+  const roleCta = role === 'Scout'
+    ? '<a href="' + cleanRouteFor('register-scout.html') + '">Request Scout Access</a>'
+    : '<a href="' + cleanRouteFor('register-coach.html') + '">Register as Coach</a>';
+  banner.innerHTML = '<div class="public-demo-main"><span class="public-demo-badge">Demo</span><span>' + demoBannerText() + ' Register to start building real ScoutLink profiles.</span></div><div class="public-demo-cta"><a href="' + cleanRouteFor('index.html') + '">Back to home</a>' + roleCta + '<button type="button" class="public-demo-exit">Exit demo</button></div>';
+  const exitBtn = banner.querySelector('.public-demo-exit');
+  if (exitBtn) exitBtn.onclick = exitPublicDemo;
   const topbar = host.querySelector ? host.querySelector('.topbar') : null;
   if (topbar && topbar.parentNode === host) host.insertBefore(banner, topbar.nextSibling);
   else host.insertBefore(banner, host.firstChild);
@@ -567,6 +574,13 @@ function insertPublicDemoBanner() {
 function applyPublicDemoChrome() {
   if (!isPublicDemoMode()) return;
   document.body.classList.add('public-demo-mode');
+  const path = window.location.pathname.toLowerCase();
+  if (path.includes('settings') || path.includes('/stratex') || path.includes('experience-select') || path.includes('/admin')) {
+    window.alert('This action is disabled in the public demo.');
+    const role = sessionStorage.getItem('sl_public_demo_role') || Auth.type || 'Coach';
+    navigateClean(role === 'Scout' ? 'scout-dashboard.html' : 'coach-dashboard.html');
+    return;
+  }
   document.querySelectorAll('a[href*="settings"], a[href*="scout-settings"], a[href*="coach-settings"]').forEach(el => { el.style.display = 'none'; });
   document.querySelectorAll('#logoutBtn,[onclick*="logout"],.logout-btn').forEach(btn => {
     if (btn.tagName === 'A') btn.setAttribute('href', cleanRouteFor('demo.html'));
@@ -669,6 +683,29 @@ function relTime(dateStr) {
   if (d<86400) return Math.floor(d/3600)+'h ago'; return Math.floor(d/86400)+'d ago';
 }
 function initials(first,last) { return ((first||'')[0]||'').toUpperCase()+''+((last||'')[0]||'').toUpperCase(); }
+function hashString(value) {
+  var str = String(value || 'scoutlink');
+  var h = 0;
+  for (var i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function playerAvatarConfig(player) {
+  var p = player || {};
+  var cfg = p.avatar_config || p.avatarConfig || {};
+  var seed = hashString(p.id || p.player_id || ((p.first_name || '') + '-' + (p.last_name || '')));
+  var skin = cfg.skin || ['#f1c27d','#d6a06f','#8d5524','#c68642'][seed % 4];
+  var hair = cfg.hair || ['#1f2937','#3b2f2f','#111827','#6b4423'][(seed >> 2) % 4];
+  var kit = cfg.kit || ['#0f9f75','#2563eb','#f59e0b','#ef4444'][(seed >> 4) % 4];
+  return { skin: skin, hair: hair, kit: kit };
+}
+function playerAvatarMarkup(player, size) {
+  var p = player || {};
+  var cfg = playerAvatarConfig(p);
+  var name = ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Player';
+  var initialsText = initials(p.first_name, p.last_name) || 'SL';
+  var dim = Number(size) || 44;
+  return '<div class="sl-player-avatar" role="img" aria-label="Avatar for '+String(name).replace(/"/g,'&quot;')+'" style="--avatar-size:'+dim+'px;--avatar-skin:'+cfg.skin+';--avatar-hair:'+cfg.hair+';--avatar-kit:'+cfg.kit+'"><span class="sl-avatar-face"></span><span class="sl-avatar-hair"></span><span class="sl-avatar-kit"></span><strong>'+initialsText+'</strong></div>';
+}
 function posGroupColor(g) { return {Goalkeeper:'#FFC107',Defender:'#2979FF',Midfielder:'#00BCD4',Forward:'#FF5722'}[g]||'#00E676'; }
 // Rating color - works for both 0-10 and 0-100 scale
 function ratingColor(r) {
@@ -756,6 +793,7 @@ function attachCityAutocomplete(inputId, datalistId, countryId) {
 window.Auth = Auth; window.api = api; window.formatValue = formatValue;
 window.formatSalary = formatSalary; window.relTime = relTime;
 window.initials = initials; window.posGroupColor = posGroupColor; window.ratingColor = ratingColor;
+window.playerAvatarMarkup = playerAvatarMarkup; window.playerAvatarConfig = playerAvatarConfig;
 window.ratingDisplay = ratingDisplay;
 window.isValidEmailAddress = isValidEmailAddress; window.validateEmailInput = validateEmailInput;
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;

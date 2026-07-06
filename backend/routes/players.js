@@ -15,6 +15,7 @@ const {
 const email = require('../services/email');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { duplicateMessage, sendDbError } = require('../utils/dbErrors');
+const { limitsForPlan, effectiveLimits, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
 
 // Height/weight range maps
 const HEIGHT_RANGES = {
@@ -32,13 +33,6 @@ const BUILD_RANGES = {
   stocky: { label:'Stocky', range:'80-88 kg', min:80, max:88 },
   powerful: { label:'Powerful', range:'88-96 kg', min:88, max:96 },
   very_powerful:{ label:'Very Powerful', range:'96+ kg', min:96, max:120 },
-};
-
-const SCOUT_PLAN_LIMITS = {
-  Core: { exports: 30, predictions: 120, interests: 200 },
-  Plus: { exports: 120, predictions: 600, interests: 1000 },
-  Elite: { exports: 500, predictions: 1200, interests: 99999 },
-  Enterprise: { exports: 99999, predictions: 99999, interests: 99999 }
 };
 
 // Calculate age and age group from date_of_birth
@@ -685,8 +679,15 @@ const { notes, interestLevel = 7 } = req.body;
 const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
 const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id,subscription_plan,interests_remaining').eq('id', req.user.id).single();
 if (!player||!scout) return res.status(404).json({ error: 'Not found' });
-const plan = scout.subscription_plan || 'Core';
-const planLimit = (SCOUT_PLAN_LIMITS[plan] || SCOUT_PLAN_LIMITS.Core).interests;
+let plan = scout.subscription_plan || 'Core';
+let planLimit = limitsForPlan(plan).interests;
+if (scout.scout_team_id) {
+const { data: team } = await supabase.from('scout_teams').select('subscription_plan,limit_overrides').eq('id', scout.scout_team_id).maybeSingle();
+if (team) {
+plan = team.subscription_plan || plan;
+planLimit = effectiveLimits(plan, team.limit_overrides || {}).interests;
+}
+}
 const capScope = scout.scout_team_id ? { scout_team_id: scout.scout_team_id } : { scout_id: req.user.id };
 // Check if already in pipeline (any row for this scout+player)
 const { data: existing } = await supabase.from('recruitment_pipeline').select('id,stage,is_active').eq('scout_id', req.user.id).eq('player_id', req.params.id).maybeSingle();
@@ -704,7 +705,7 @@ const { count: usedInterests, error: usedErr } = await countQ;
 if (usedErr) throw usedErr;
 const remaining = Math.max(0, planLimit - (usedInterests || 0));
 if (remaining <= 0) {
-return res.status(402).json({ error: 'You have reached your interest cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.', interestsRemaining: 0, planLimit, plan });
+return res.status(402).json({ error: 'You have reached your ' + INTEREST_REQUEST_LABEL + ' cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.', interestsRemaining: 0, planLimit, plan });
 }
 // Upsert into pipeline (upsert handles any edge cases)
 const { error: upsertErr } = await supabase.from('recruitment_pipeline').upsert({

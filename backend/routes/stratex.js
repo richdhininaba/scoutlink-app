@@ -11,6 +11,7 @@ const email = require('../services/email');
 const config = require('../config');
 const { applyRealDataFilter } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
+const { limitsForPlan, effectiveLimits, addSubscriptionYear, displayLimit, normalizePlan, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
 
 const contractUpload = multer({
 storage: multer.memoryStorage(),
@@ -25,13 +26,6 @@ if (!allowed.has(file.mimetype)) return cb(new Error('Contract must be a PDF, DO
 cb(null, true);
 }
 });
-
-const SCOUT_PLAN_LIMITS = {
-Core: { seats:1, exports:30, predictions:120, interests:200 },
-Plus: { seats:3, exports:120, predictions:600, interests:1000 },
-Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
-Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
-};
 
 function titleCase(v) {
 return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
@@ -253,6 +247,53 @@ return count || 0;
 } catch(e) { return 0; }
 }
 
+async function countWhere(table, filters) {
+try {
+let q = supabase.from(table).select('id', { count: 'exact', head: true });
+Object.entries(filters || {}).forEach(([key, value]) => { q = q.eq(key, value); });
+const { count, error } = await q;
+if (error) return 0;
+return count || 0;
+} catch(e) { return 0; }
+}
+
+async function scoutTeamUsage(team) {
+if (!team || !team.id) return null;
+const plan = team.subscription_plan || 'Core';
+const allowed = effectiveLimits(plan, team.limit_overrides || {});
+const [seatsUsed, exportsUsed, predictionsUsed, interestsUsed] = await Promise.all([
+countWhere('scouts', { scout_team_id: team.id, is_demo: false }),
+countWhere('scout_exports', { scout_team_id: team.id }),
+countWhere('predictions_log', { scout_team_id: team.id }),
+countWhere('recruitment_pipeline', { scout_team_id: team.id, is_active: true })
+]);
+return {
+plan,
+status: team.status || 'draft',
+subscriptionStartAt: team.subscription_start_at || team.plan_start || null,
+subscriptionRenewalAt: team.subscription_renewal_at || team.plan_end || null,
+seats: { used: seatsUsed, allowed: allowed.seats, allowedLabel: displayLimit(allowed.seats) },
+exports: { used: exportsUsed, allowed: allowed.exports, allowedLabel: displayLimit(allowed.exports) },
+predictions: { used: predictionsUsed, allowed: allowed.predictions, allowedLabel: displayLimit(allowed.predictions) },
+interests: { used: interestsUsed, allowed: allowed.interests, allowedLabel: displayLimit(allowed.interests), label: INTEREST_REQUEST_LABEL }
+};
+}
+
+async function auditScoutTeam(teamId, adminId, action, previousValue, newValue, reason) {
+try {
+await supabase.from('scout_team_audit_logs').insert({
+scout_team_id: teamId,
+admin_id: adminId || null,
+action,
+previous_value: previousValue || null,
+new_value: newValue || null,
+reason: reason || null
+});
+} catch(e) {
+console.warn('[Scout team audit skipped]', e.message);
+}
+}
+
 async function deletePlayersByIds(playerIds) {
 const ids = (playerIds || []).filter(Boolean);
 if (!ids.length) return 0;
@@ -411,7 +452,7 @@ if (scout.scout_team_id) {
 const { data: team } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
 scoutTeam = team || null;
 }
-const limits = SCOUT_PLAN_LIMITS[scout.subscription_plan || 'Core'] || SCOUT_PLAN_LIMITS.Core;
+const limits = scoutTeam ? effectiveLimits(scoutTeam.subscription_plan || scout.subscription_plan || 'Core', scoutTeam.limit_overrides || {}) : limitsForPlan(scout.subscription_plan || 'Core');
 const interestsShown = await countBy('recruitment_pipeline', 'scout_id', scout.id);
 const showcaseResponses = await countBy('showcase_attendance', 'scout_id', scout.id);
 const usage = {
@@ -421,9 +462,10 @@ predictionsUsed: Math.max(0, (limits.predictions || 0) - (scout.predictions_rema
 predictionsRemaining: scout.predictions_remaining || 0,
 interestsShown,
 interestsRemaining: scout.interests_remaining || 0,
+interestLabel: INTEREST_REQUEST_LABEL,
 showcaseResponses
 };
-res.json({ scout, scoutTeam, usage });
+res.json({ scout, scoutTeam, teamUsage: scoutTeam ? await scoutTeamUsage(scoutTeam) : null, usage });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -467,14 +509,8 @@ const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 365*24*60*60*1000);
 const planStart = new Date();
 const planEnd = new Date(Date.now() + 365*24*60*60*1000);
-const PLAN_LIMITS = {
-Core: { seats:1, exports:30, predictions:120, interests:200 },
-Plus: { seats:3, exports:120, predictions:600, interests:1000 },
-Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
-Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
-};
 const plan = subscriptionPlan || 'Core';
-const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.Core;
+const limits = limitsForPlan(plan);
 const { data, error } = await supabase.from('scouts').insert({
 scout_id: generateId('SCT'), first_name: firstName.trim(), last_name: lastName.trim(),
 email: emailAddr.toLowerCase().trim(), phone: phone||null,
@@ -733,22 +769,17 @@ res.status(201).json({ message: 'Meeting booked', data });
 router.patch('/scouts/:id/plan', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const { subscriptionPlan } = req.body;
-const PLAN_LIMITS = {
-Core: { seats:1, exports:30, predictions:120, interests:200 },
-Plus: { seats:3, exports:120, predictions:600, interests:1000 },
-Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
-Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
-};
-const limits = PLAN_LIMITS[subscriptionPlan];
-if (!limits) return res.status(400).json({ error: 'Invalid plan. Use Core, Plus, Elite or Enterprise' });
+const plan = normalizePlan(subscriptionPlan);
+if (!plan) return res.status(400).json({ error: 'Invalid plan. Use Core, Plus, Elite or Enterprise' });
+const limits = limitsForPlan(plan);
 const planStart = new Date();
 const planEnd = new Date(Date.now() + 365*24*60*60*1000);
 const { error } = await supabase.from('scouts').update({
-subscription_plan: subscriptionPlan, plan_start: planStart, plan_end: planEnd,
+subscription_plan: plan, plan_start: planStart, plan_end: planEnd,
 exports_remaining: limits.exports, predictions_remaining: limits.predictions, interests_remaining: limits.interests
 }).eq('id', req.params.id);
 if (error) throw error;
-res.json({ message: 'Plan updated to ' + subscriptionPlan });
+res.json({ message: 'Plan updated to ' + plan });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -757,7 +788,8 @@ router.get('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res)
 try {
 const { data, error, count } = await supabase.from('scout_teams').select('*',{count:'exact'}).eq('is_demo', false).order('team_name');
 if (error) throw error;
-res.json({ data: data||[], total: count||0 });
+const usage = await Promise.all((data || []).map(t => scoutTeamUsage(t)));
+res.json({ data: (data||[]).map((t, i) => ({ ...t, usage: usage[i] })), total: count||0 });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -769,6 +801,10 @@ const urls = teamUrlPayload(req.body);
 const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
 const { data, error } = await supabase.from('scout_teams').insert({
 team_name,
+status:'draft',
+subscription_plan:req.body.subscription_plan || req.body.subscriptionPlan || 'Core',
+plan_limits:limitsForPlan(req.body.subscription_plan || req.body.subscriptionPlan || 'Core'),
+limit_overrides:{},
 league:savedLeague?savedLeague.name:null,
 league_name:savedLeague?savedLeague.name:(urls.leagueName || null),
 league_fulltime_url:urls.leagueFullTimeUrl || (savedLeague && savedLeague.fulltime_url) || null,
@@ -791,6 +827,10 @@ if (req.body.tier !== undefined) updates.tier = req.body.tier || null;
 if (req.body.country !== undefined) updates.country = req.body.country ? titleCase(req.body.country) : null;
 if (req.body.formation !== undefined) updates.formation = req.body.formation || null;
 if (req.body.playing_style !== undefined) updates.playing_style = req.body.playing_style || null;
+if (req.body.subscription_plan !== undefined || req.body.subscriptionPlan !== undefined) {
+updates.subscription_plan = req.body.subscription_plan || req.body.subscriptionPlan || 'Core';
+updates.plan_limits = limitsForPlan(updates.subscription_plan);
+}
 const urls = teamUrlPayload(req.body);
 if (req.body.league !== undefined || req.body.league_name !== undefined) {
 const savedLeague = await ensureLeagueOption(urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
@@ -803,6 +843,72 @@ const { data, error } = await supabase.from('scout_teams').update(updates).eq('i
 if (error) throw error;
 res.json({ data, message: 'Scout team updated' });
 } catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
+});
+
+router.get('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const { data, error } = await supabase.from('scout_teams').select('*').eq('id', req.params.id).eq('is_demo', false).maybeSingle();
+if (error || !data) return res.status(404).json({ error: 'Scout team not found' });
+res.json({ data, usage: await scoutTeamUsage(data) });
+} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.post('/scout-teams/:id/activate', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const admin = await requireSensitiveAdmin(req, res);
+if (!admin) return;
+const { data: team, error: loadErr } = await supabase.from('scout_teams').select('*').eq('id', req.params.id).maybeSingle();
+if (loadErr || !team) return res.status(404).json({ error: 'Scout team not found' });
+const plan = req.body.subscriptionPlan || req.body.subscription_plan || team.subscription_plan || 'Core';
+const limits = limitsForPlan(plan);
+const start = new Date();
+const renewal = addSubscriptionYear(start);
+const patch = {
+status:'Active',
+subscription_plan:plan,
+plan_limits:limits,
+subscription_start_at:start.toISOString(),
+subscription_renewal_at:renewal.toISOString(),
+current_year_started_at:start.toISOString(),
+current_year_ends_at:renewal.toISOString(),
+activated_at:start.toISOString(),
+activated_by:req.user.id,
+updated_at:start.toISOString()
+};
+const { data, error } = await supabase.from('scout_teams').update(patch).eq('id', req.params.id).select().single();
+if (error) throw error;
+await supabase.from('scouts').update({
+subscription_plan:plan,
+plan_start:start.toISOString(),
+plan_end:renewal.toISOString(),
+exports_remaining:limits.exports,
+predictions_remaining:limits.predictions,
+interests_remaining:limits.interests
+}).eq('scout_team_id', req.params.id);
+await auditScoutTeam(req.params.id, req.user.id, 'activate', { status: team.status || 'draft', subscription_plan: team.subscription_plan || null }, patch, req.body.reason || null);
+res.json({ message: 'Scout team activated', data, usage: await scoutTeamUsage(data) });
+} catch(err) { console.error('[Scout team activate]', err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
+});
+
+router.patch('/scout-teams/:id/limits', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const admin = await requireSensitiveAdmin(req, res);
+if (!admin) return;
+const { data: team, error: loadErr } = await supabase.from('scout_teams').select('*').eq('id', req.params.id).maybeSingle();
+if (loadErr || !team) return res.status(404).json({ error: 'Scout team not found' });
+const next = Object.assign({}, team.limit_overrides || {});
+['seats','exports','predictions','interests'].forEach(k => {
+if (req.body[k] !== undefined && req.body[k] !== '') next[k] = Math.max(0, Math.floor(Number(req.body[k]) || 0));
+});
+const { data, error } = await supabase.from('scout_teams').update({
+limit_overrides:next,
+override_reason:req.body.reason || null,
+updated_at:new Date().toISOString()
+}).eq('id', req.params.id).select().single();
+if (error) throw error;
+await auditScoutTeam(req.params.id, req.user.id, 'limit_override', team.limit_overrides || {}, next, req.body.reason || null);
+res.json({ message: 'Scout team limits updated', data, usage: await scoutTeamUsage(data) });
+} catch(err) { console.error('[Scout team limits]', err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
 router.delete('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
@@ -831,7 +937,19 @@ router.post('/scout-teams/:id/scouts', requireAuth, requireRole('Stratex'), asyn
 try {
 const { scout_id } = req.body;
 if (!scout_id) return res.status(400).json({ error: 'scout_id required' });
-const { error } = await supabase.from('scouts').update({ scout_team_id: req.params.id }).eq('id', scout_id);
+const { data: team, error: teamErr } = await supabase.from('scout_teams').select('id,status,subscription_plan,subscription_start_at,subscription_renewal_at,limit_overrides').eq('id', req.params.id).maybeSingle();
+if (teamErr || !team) return res.status(404).json({ error: 'Scout team not found' });
+const patch = { scout_team_id: req.params.id };
+if (String(team.status || '').toLowerCase() === 'active') {
+const limits = effectiveLimits(team.subscription_plan || 'Core', team.limit_overrides || {});
+patch.subscription_plan = team.subscription_plan || 'Core';
+patch.plan_start = team.subscription_start_at || null;
+patch.plan_end = team.subscription_renewal_at || null;
+patch.exports_remaining = limits.exports;
+patch.predictions_remaining = limits.predictions;
+patch.interests_remaining = limits.interests;
+}
+const { error } = await supabase.from('scouts').update(patch).eq('id', scout_id);
 if (error) throw error;
 res.json({ message: 'Scout added to team' });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }

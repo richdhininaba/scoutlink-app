@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
       '<div style="display:grid;grid-template-columns:280px 1fr;gap:20px">' +
         '<div>' +
           '<div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">' +
-            '<div style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">' + initials(p.first_name,p.last_name) + '</div>' +
+            (window.playerAvatarMarkup ? '<div style="display:flex;justify-content:center;margin:0 auto 12px">' + window.playerAvatarMarkup(p,72) + '</div>' : '<div style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">' + initials(p.first_name,p.last_name) + '</div>') +
             '<div style="font-size:18px;font-weight:800;color:#fff">' + safe(p.first_name) + ' ' + safe(p.last_name,'') + '</div>' +
             '<div style="font-size:12px;color:#8b949e;margin-top:4px">' + safe(p.specific_position||p.primary_position||p.position_group) + ' &bull; ' + safe(p.age_group) + '</div>' +
             '<div style="font-size:12px;color:#8b949e;margin-top:2px">' + safe(p.team_name) + '</div>' +

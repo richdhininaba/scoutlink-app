@@ -20,7 +20,8 @@
 .org-children{position:relative;display:flex;gap:48px;justify-content:center;padding-top:72px}
 .org-children:before{content:"";position:absolute;top:30px;left:calc(50% / var(--child-count,1));right:calc(50% / var(--child-count,1));border-top:1px solid rgba(148,163,184,.3)}
 .org-children>.org-branch:before{content:"";position:absolute;top:30px;left:50%;height:32px;border-left:1px solid rgba(148,163,184,.3)}
-.org-person{width:326px;min-height:208px;border:1px solid rgba(148,163,184,.22);background:#111827;border-radius:18px;padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.24)}
+.org-person{width:326px;min-height:208px;border:1px solid rgba(148,163,184,.22);background:#111827;border-radius:18px;padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.24);cursor:pointer}
+.org-person:focus{outline:2px solid rgba(0,230,118,.72);outline-offset:3px}
 .org-person.root{width:350px}
 .org-person.root{border-color:rgba(0,230,118,.45);box-shadow:0 20px 60px rgba(0,230,118,.08)}
 .org-person.vacancy{background:#f8fafc;border:1px dashed rgba(15,159,117,.7);box-shadow:none;color:#0f172a}
@@ -41,6 +42,10 @@
 .org-modal.open{display:flex}
 .org-modal-card{width:min(520px,100%);background:#111827;border:1px solid rgba(148,163,184,.2);border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.42)}
 .org-modal-body{padding:18px;display:grid;gap:10px}
+.org-detail-list{display:grid;gap:8px}
+.org-detail-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.14);font-size:13px}
+.org-detail-row span:first-child{color:#8ea2b5;font-weight:800}
+.org-detail-row span:last-child{color:#fff;font-weight:700;text-align:right;overflow-wrap:anywhere}
 .fill-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fill-grid .full{grid-column:1/-1}
 @media(max-width:767px){
@@ -79,6 +84,15 @@
   <div class="org-chart"><div id="orgTree" class="org-tree"><div class="loading-state"><div class="spinner"></div></div></div></div>
 </section>
 </div></div></div>
+<div class="org-modal" id="detailModal">
+  <div class="org-modal-card">
+    <div class="table-header"><h3 id="detailTitle">Admin details</h3><button class="modal-close" onclick="closeOrgDetail()" aria-label="Close">&times;</button></div>
+    <div class="org-modal-body">
+      <div id="detailBody" class="org-detail-list"></div>
+      <div id="detailActions" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"></div>
+    </div>
+  </div>
+</div>
 <div class="org-modal" id="editModal">
   <div class="org-modal-card">
     <div class="table-header"><h3>Edit admin</h3><button class="modal-close" onclick="closeEdit()" aria-label="Close">&times;</button></div>
@@ -123,10 +137,11 @@ function roleBadge(a){return '<span class="badge badge-blue">'+safe(a.admin_role
 function personCard(a,children,isRoot){
   var canDelete=canManageSensitive&&Auth.user&&Auth.user.id!==a.id;
   var isCollapsed=!!collapsed[a.id];
-  return '<article class="org-person '+(isRoot?'root':'')+'">'+
-    '<div class="org-person-top"><div class="org-avatar">'+safe(initialsFrom(a)||'SL')+'</div><div style="min-width:0"><div class="org-name">'+safe(a.first_name)+' '+safe(a.last_name)+'</div><div class="org-title">'+safe(a.job_title||a.admin_role||a.role)+'</div><div class="org-meta">'+safe(a.email)+'</div></div></div>'+
+  var meta=safe(a.department||a.team||a.admin_role||a.role||'Stratex');
+  return '<article class="org-person '+(isRoot?'root':'')+'" tabindex="0" role="button" aria-label="View '+safe(a.first_name)+' '+safe(a.last_name)+' details" onclick="openOrgDetail(\''+a.id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openOrgDetail(\''+a.id+'\');}">'+
+    '<div class="org-person-top"><div class="org-avatar">'+safe(initialsFrom(a)||'SL')+'</div><div style="min-width:0"><div class="org-name">'+safe(a.first_name)+' '+safe(a.last_name)+'</div><div class="org-title">'+safe(a.job_title||a.admin_role||a.role)+'</div><div class="org-meta">'+meta+'</div></div></div>'+
     '<div class="org-footer"><div>'+roleBadge(a)+'<div class="org-report-count">'+children.length+' direct report'+(children.length===1?'':'s')+'</div></div>'+
-    '<div class="org-actions">'+(children.length?'<button class="btn btn-sm btn-outline" onclick="toggleNode(\''+a.id+'\')">'+(isCollapsed?'Expand':'Collapse')+'</button>':'')+(canManageSensitive?'<button class="btn btn-sm btn-outline" onclick="openEdit(\''+a.id+'\')">Edit</button>':'')+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div>'+
+    '<div class="org-actions">'+(children.length?'<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();toggleNode(\''+a.id+'\')">'+(isCollapsed?'Expand':'Collapse')+'</button>':'')+(canManageSensitive?'<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openEdit(\''+a.id+'\')">Edit</button>':'')+(canDelete?'<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'</div></div>'+
   '</article>';
 }
 function activeVacanciesFor(a){
@@ -159,7 +174,7 @@ function vacancyCard(j,manager){
   var filled=vacancyFilledCount(j);
   var open=Math.max(0,count-filled);
   var managerName=((manager.first_name||'')+' '+(manager.last_name||'')).trim()||'selected manager';
-  return '<article class="org-person vacancy"><span class="open-role-badge">Open role</span><div class="org-name">'+safe(j.job_title||'Vacancy')+'</div><div class="org-title">'+filled+' / '+count+' filled</div><div class="org-meta">Reports to '+safe(managerName)+'</div><div class="org-footer"><div class="org-report-count">'+open+' open vacanc'+(open===1?'y':'ies')+'</div><div class="org-actions"><button class="btn btn-sm btn-outline" onclick="openFillVacancy(\''+safe(j.id)+'\',\''+safe(manager.id)+'\')">Fill vacancy</button></div></div></article>';
+  return '<article class="org-person vacancy" style="cursor:default"><span class="open-role-badge">Open role</span><div class="org-name">'+safe(j.job_title||'Vacancy')+'</div><div class="org-title">'+filled+' / '+count+' filled</div><div class="org-meta">Reports to '+safe(managerName)+'</div><div class="org-footer"><div class="org-report-count">'+open+' open vacanc'+(open===1?'y':'ies')+'</div><div class="org-actions"><button class="btn btn-sm btn-outline" onclick="openFillVacancy(\''+safe(j.id)+'\',\''+safe(manager.id)+'\')">Fill vacancy</button></div></div></article>';
 }
 function treeData(){
   var active=admins.filter(function(a){return a.is_active!==false;});
@@ -182,6 +197,31 @@ function renderOrg(){
   document.getElementById('orgTree').innerHTML=renderNode(tree.founder,tree.byManager,true);
 }
 function toggleNode(id){collapsed[id]=!collapsed[id];renderOrg();}
+function managerNameFor(id){
+  var m=admins.find(function(x){return x.id===id;});
+  return m?((m.first_name||'')+' '+(m.last_name||'')).trim():'No direct manager';
+}
+function openOrgDetail(id){
+  var a=admins.find(function(x){return x.id===id;});if(!a)return;
+  var children=admins.filter(function(x){return x.manager_id===a.id&&x.is_active!==false;});
+  document.getElementById('detailTitle').textContent=((a.first_name||'')+' '+(a.last_name||'')).trim()||'Admin details';
+  var rows=[
+    ['Job title',a.job_title||a.admin_role||a.role],
+    ['Permission role',a.admin_role||a.role||'Read Only'],
+    ['Reports to',a.manager_id?managerNameFor(a.manager_id):'No direct manager'],
+    ['Direct reports',children.length],
+    ['Status',a.is_active===false?'Inactive':'Active']
+  ];
+  if(canManageSensitive){
+    rows.splice(2,0,['Email',a.email],['Annual leave',((a.annual_leave_days||25)+' days')]);
+    if(a.last_login)rows.push(['Last active',new Date(a.last_login).toLocaleString('en-GB')]);
+  }
+  document.getElementById('detailBody').innerHTML=rows.map(function(r){return '<div class="org-detail-row"><span>'+safe(r[0])+'</span><span>'+safe(r[1])+'</span></div>';}).join('');
+  var canDelete=canManageSensitive&&Auth.user&&Auth.user.id!==a.id;
+  document.getElementById('detailActions').innerHTML=(canManageSensitive?'<button class="btn btn-outline" onclick="closeOrgDetail();openEdit(\''+a.id+'\')">Edit admin</button>':'')+(canDelete?'<button class="btn btn-ghost" onclick="closeOrgDetail();deactivateAdmin(\''+a.id+'\')">Deactivate</button>':'')+'<button class="btn btn-primary" onclick="closeOrgDetail()">Done</button>';
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeOrgDetail(){document.getElementById('detailModal').classList.remove('open');}
 async function loadOrg(){
   var results=await Promise.all([api('GET','/api/stratex/org'),api('GET','/api/stratex/jobs')]);
   var d=results[0], jobData=results[1];

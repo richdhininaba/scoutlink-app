@@ -102,6 +102,139 @@ async function createShareMessage(thread, user, type, referenceId, meta, dedupe 
   return message;
 }
 
+function internalRole(type) {
+  const raw = String(type || '').trim().toLowerCase();
+  if (raw === 'stratex' || raw === 'admin') return 'Stratex';
+  if (raw === 'coach') return 'Coach';
+  if (raw === 'scout') return 'Scout';
+  if (raw === 'player') {
+    const e = new Error('Players cannot be messaged directly.');
+    e.status = 400;
+    throw e;
+  }
+  const e = new Error('Recipient type must be Stratex, Coach or Scout.');
+  e.status = 400;
+  throw e;
+}
+
+function tableForRole(role) {
+  return role === 'Stratex' ? 'stratex' : role === 'Coach' ? 'coaches' : 'scouts';
+}
+
+async function loadInternalUser(role, id) {
+  const table = tableForRole(role);
+  const { data, error } = await supabase.from(table).select('id,first_name,last_name,email,is_active').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!data || data.is_active === false) {
+    const e = new Error('Recipient not found or inactive.');
+    e.status = 404;
+    throw e;
+  }
+  return data;
+}
+
+async function auditAdminMessage(threadId, messageId, actor, action, metadata) {
+  try {
+    await supabase.from('admin_message_audit_logs').insert({
+      thread_id: threadId || null,
+      message_id: messageId || null,
+      actor_id: actor?.id || null,
+      actor_type: actor?.accountType || null,
+      action,
+      metadata: metadata || {}
+    });
+  } catch(e) {
+    console.warn('[Admin message audit skipped]', e.message);
+  }
+}
+
+async function assertAdminThreadAccess(threadId, user) {
+  const { data: participant, error: participantErr } = await supabase
+    .from('admin_message_participants')
+    .select('*,admin_message_threads(*)')
+    .eq('thread_id', threadId)
+    .eq('participant_id', user.id)
+    .eq('participant_type', user.accountType)
+    .maybeSingle();
+  if (participantErr) throw participantErr;
+  if (!participant || !participant.admin_message_threads) {
+    const e = new Error('You cannot access this message thread.');
+    e.status = 403;
+    throw e;
+  }
+  return participant.admin_message_threads;
+}
+
+async function adminThreadRows(user) {
+  const { data: parts, error } = await supabase
+    .from('admin_message_participants')
+    .select('thread_id,last_read_at,archived_at,admin_message_threads(*)')
+    .eq('participant_id', user.id)
+    .eq('participant_type', user.accountType)
+    .is('archived_at', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  const threads = (parts || []).map(p => ({ participant: p, thread: p.admin_message_threads })).filter(x => x.thread);
+  const ids = threads.map(x => x.thread.id);
+  const latestByThread = {};
+  const unreadByThread = {};
+  const participantsByThread = {};
+  if (ids.length) {
+    const [{ data: latest }, { data: unread }, { data: participants }] = await Promise.all([
+      supabase.from('admin_messages').select('thread_id,body,created_at,sender_id,sender_type').in('thread_id', ids).order('created_at', { ascending: false }).limit(500),
+      supabase.from('admin_messages').select('thread_id').in('thread_id', ids).neq('sender_id', user.id),
+      supabase.from('admin_message_participants').select('thread_id,participant_id,participant_type').in('thread_id', ids)
+    ]);
+    (latest || []).forEach(m => { if (!latestByThread[m.thread_id]) latestByThread[m.thread_id] = m; });
+    const readMap = Object.fromEntries(threads.map(x => [x.thread.id, x.participant.last_read_at ? new Date(x.participant.last_read_at).getTime() : 0]));
+    (unread || []).forEach(m => {
+      const t = latestByThread[m.thread_id] ? new Date(latestByThread[m.thread_id].created_at).getTime() : Date.now();
+      if (t > (readMap[m.thread_id] || 0)) unreadByThread[m.thread_id] = (unreadByThread[m.thread_id] || 0) + 1;
+    });
+    const uniqueUsers = {};
+    (participants || []).forEach(p => {
+      const key = `${p.participant_type}:${p.participant_id}`;
+      uniqueUsers[key] = { id: p.participant_id, type: p.participant_type };
+    });
+    const displayByKey = {};
+    await Promise.all(Object.values(uniqueUsers).map(async p => {
+      try {
+        const record = await loadInternalUser(p.type, p.id);
+        displayByKey[`${p.type}:${p.id}`] = {
+          participant_id: p.id,
+          participant_type: p.type,
+          display_name: displayName(record),
+          email: record.email || ''
+        };
+      } catch(e) {
+        displayByKey[`${p.type}:${p.id}`] = {
+          participant_id: p.id,
+          participant_type: p.type,
+          display_name: p.type,
+          email: ''
+        };
+      }
+    }));
+    (participants || []).forEach(p => {
+      const key = `${p.participant_type}:${p.participant_id}`;
+      participantsByThread[p.thread_id] = participantsByThread[p.thread_id] || [];
+      participantsByThread[p.thread_id].push(displayByKey[key] || {
+        participant_id: p.participant_id,
+        participant_type: p.participant_type,
+        display_name: p.participant_type,
+        email: ''
+      });
+    });
+  }
+  return threads.map(x => ({
+    ...x.thread,
+    participants: participantsByThread[x.thread.id] || [],
+    lastMessagePreview: latestByThread[x.thread.id]?.body || '',
+    lastMessageAt: latestByThread[x.thread.id]?.created_at || x.thread.last_message_at || x.thread.updated_at,
+    unreadCount: unreadByThread[x.thread.id] || 0
+  }));
+}
+
 async function validatePlayerShare(thread, scoutId, playerId) {
   const pipeline = await loadPipelinePlayer(scoutId, playerId);
   if (!pipeline || !pipeline.players) {
@@ -361,6 +494,135 @@ router.post('/threads/:id/messages', requireAuth, requireRole('Scout','Coach'), 
     res.status(201).json({ message });
   } catch(err) {
     console.error('[Chat message]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.get('/admin/users', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const role = internalRole(req.query.type || 'Coach');
+    if (role === 'Player') return res.status(400).json({ error: 'Players cannot be messaged directly.' });
+    const { data, error } = await supabase
+      .from(tableForRole(role))
+      .select('id,first_name,last_name,email,is_active')
+      .eq('is_active', true)
+      .limit(200);
+    if (error) throw error;
+    res.json({ data: (data || []).map(u => ({ id: u.id, type: role, name: displayName(u), email: u.email || '' })) });
+  } catch(err) {
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.get('/admin/threads', requireAuth, requireRole('Stratex','Coach','Scout'), async (req, res) => {
+  try {
+    const data = await adminThreadRows(req.user);
+    res.json({ data });
+  } catch(err) {
+    console.error('[Admin message threads]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.post('/admin/threads', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const recipientType = internalRole(req.body.recipientType);
+    const recipientId = req.body.recipientId;
+    if (!recipientId) return res.status(400).json({ error: 'recipientId required' });
+    const body = String(req.body.body || '').trim();
+    if (!body) return res.status(400).json({ error: 'Message cannot be blank' });
+    await loadInternalUser(recipientType, recipientId);
+    const now = new Date().toISOString();
+    const { data: thread, error: threadErr } = await supabase.from('admin_message_threads').insert({
+      subject: String(req.body.subject || 'ScoutLink message').trim(),
+      created_by: req.user.id,
+      created_by_type: 'Stratex',
+      last_message_at: now,
+      updated_at: now
+    }).select().single();
+    if (threadErr) throw threadErr;
+    const participants = [
+      { thread_id: thread.id, participant_id: req.user.id, participant_type: 'Stratex', last_read_at: now },
+      { thread_id: thread.id, participant_id: recipientId, participant_type: recipientType }
+    ];
+    const { error: partErr } = await supabase.from('admin_message_participants').insert(participants);
+    if (partErr) throw partErr;
+    const { data: message, error: msgErr } = await supabase.from('admin_messages').insert({
+      thread_id: thread.id,
+      sender_id: req.user.id,
+      sender_type: 'Stratex',
+      body
+    }).select().single();
+    if (msgErr) throw msgErr;
+    await auditAdminMessage(thread.id, message.id, req.user, 'thread_created', { recipientType, recipientId });
+    await supabase.from('notifications').insert({
+      recipient_id: recipientId,
+      recipient_type: recipientType,
+      notification_type: 'admin_message',
+      title: 'New ScoutLink message',
+      body: 'You have a new operational message from ScoutLink.',
+      data: { threadId: thread.id }
+    });
+    res.status(201).json({ thread, message });
+  } catch(err) {
+    console.error('[Admin message create]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.get('/admin/threads/:id/messages', requireAuth, requireRole('Stratex','Coach','Scout'), async (req, res) => {
+  try {
+    const thread = await assertAdminThreadAccess(req.params.id, req.user);
+    const { data, error } = await supabase.from('admin_messages').select('*').eq('thread_id', thread.id).order('created_at', { ascending: true }).limit(300);
+    if (error) throw error;
+    const now = new Date().toISOString();
+    await supabase.from('admin_message_participants').update({ last_read_at: now }).eq('thread_id', thread.id).eq('participant_id', req.user.id).eq('participant_type', req.user.accountType);
+    await auditAdminMessage(thread.id, null, req.user, 'read', {});
+    res.json({ thread, data: data || [] });
+  } catch(err) {
+    console.error('[Admin message read]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.post('/admin/threads/:id/messages', requireAuth, requireRole('Stratex','Coach','Scout'), async (req, res) => {
+  try {
+    const thread = await assertAdminThreadAccess(req.params.id, req.user);
+    const body = String(req.body.body || '').trim();
+    if (!body) return res.status(400).json({ error: 'Message cannot be blank' });
+    const { data: message, error } = await supabase.from('admin_messages').insert({
+      thread_id: thread.id,
+      sender_id: req.user.id,
+      sender_type: req.user.accountType,
+      body
+    }).select().single();
+    if (error) throw error;
+    await supabase.from('admin_message_threads').update({ last_message_at: message.created_at, updated_at: message.created_at }).eq('id', thread.id);
+    const { data: others } = await supabase.from('admin_message_participants').select('participant_id,participant_type').eq('thread_id', thread.id).neq('participant_id', req.user.id);
+    await Promise.all((others || []).map(p => supabase.from('notifications').insert({
+      recipient_id: p.participant_id,
+      recipient_type: p.participant_type,
+      notification_type: 'admin_message',
+      title: 'New ScoutLink message',
+      body: 'You have a new reply in ScoutLink messages.',
+      data: { threadId: thread.id }
+    })));
+    await auditAdminMessage(thread.id, message.id, req.user, 'reply', {});
+    res.status(201).json({ message });
+  } catch(err) {
+    console.error('[Admin message reply]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+  }
+});
+
+router.patch('/admin/threads/:id/archive', requireAuth, requireRole('Stratex','Coach','Scout'), async (req, res) => {
+  try {
+    const thread = await assertAdminThreadAccess(req.params.id, req.user);
+    const now = new Date().toISOString();
+    await supabase.from('admin_message_participants').update({ archived_at: now }).eq('thread_id', thread.id).eq('participant_id', req.user.id).eq('participant_type', req.user.accountType);
+    await auditAdminMessage(thread.id, null, req.user, 'archive', {});
+    res.json({ message: 'Thread archived' });
+  } catch(err) {
     res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
   }
 });

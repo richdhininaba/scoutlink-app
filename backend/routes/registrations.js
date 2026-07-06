@@ -5,13 +5,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
 const email = require('../services/email');
 const config = require('../config');
-
-const PLAN_LIMITS = {
-  Core: { seats:1, exports:30, predictions:120, interests:200 },
-  Plus: { seats:3, exports:120, predictions:600, interests:1000 },
-  Elite: { seats:10, exports:500, predictions:1200, interests:99999 },
-  Enterprise: { seats:99999, exports:99999, predictions:99999, interests:99999 }
-};
+const { limitsForPlan } = require('../utils/scoutPlans');
 
 const DECLINE_REASONS = [
   'Unable to verify football team','Unable to verify professional club affiliation',
@@ -249,7 +243,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
     const reviewValidation = validateScoutSafeguardingReview(safeguardingReview);
     if (!reviewValidation.ok) return res.status(400).json({ error: reviewValidation.error });
     const plan = subscriptionPlan||'Core';
-    const limits = PLAN_LIMITS[plan]||PLAN_LIMITS.Core;
+    const limits = limitsForPlan(plan);
     const { data, error } = await supabase.from('scouts').insert({
       scout_id: generateId('SCT'), first_name: rq.first_name, last_name: rq.last_name,
       email: rq.email, phone: rq.phone||null,

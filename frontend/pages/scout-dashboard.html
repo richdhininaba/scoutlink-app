@@ -237,7 +237,7 @@ var ov=dispOverall(p.overall_rating);
 var conf=confLabel(p.appearances);
 return '<div class="rec-player-row">'+
 '<div class="rec-rank'+(i===0?' top':'')+'">'+String(i+1)+'</div>'+
-'<div style="width:38px;height:38px;border-radius:50%;background:'+pCol+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>'+
+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,38):'<div style="width:38px;height:38px;border-radius:50%;background:'+pCol+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>')+
 '<div style="flex:1;min-width:0">'+
 '<div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.first_name+' '+p.last_name+'</div>'+
 '<div style="font-size:12px;color:#546E7A">'+pos+' &middot; '+(p.age_group||((p.age||'--')+' yrs'))+' &middot; '+(p.team_name||'--')+'</div>'+
@@ -274,7 +274,7 @@ document.getElementById('pipelinePreview').innerHTML=
 var pl=row.players||{};
 var name=((pl.first_name||'')+' '+(pl.last_name||'')).trim()||'Player';
 return '<article class="phone-pipeline-card compact">'+
-'<div class="phone-pipeline-head"><div class="user-avatar" style="background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div><div><h4>'+name+'</h4><p><span>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</span><span>'+(pl.specific_position||pl.primary_position||'--')+'</span></p></div></div>'+
+'<div class="phone-pipeline-head">'+(window.playerAvatarMarkup?window.playerAvatarMarkup(pl,38):'<div class="user-avatar" style="background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div>')+'<div><h4>'+name+'</h4><p><span>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</span><span>'+(pl.specific_position||pl.primary_position||'--')+'</span></p></div></div>'+
 '<div class="phone-pipeline-grid"><span><small>Stage</small><b><i class="stage-chip '+stageClass(row.stage)+'">'+stageLabel(row.stage)+'</i></b></span><span><small>Age group</small><b>'+(pl.age_group||'--')+'</b></span></div>'+
 '<a href="player-profile.html?id='+(pl.id||'')+'" class="btn btn-sm btn-outline">View</a>'+
 '</article>';
@@ -292,7 +292,7 @@ document.getElementById('pipelinePreview').innerHTML=
 pipeData.map(function(row){
 var pl=row.players||{};
 return '<tr>'+
-'<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div><b>'+(pl.first_name||'')+' '+(pl.last_name||'')+'</b></div></td>'+
+'<td><div style="display:flex;align-items:center;gap:8px">'+(window.playerAvatarMarkup?window.playerAvatarMarkup(pl,30):'<div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+posGroupColor(pl.position_group)+'">'+initials(pl.first_name,pl.last_name)+'</div>')+'<b>'+(pl.first_name||'')+' '+(pl.last_name||'')+'</b></div></td>'+
 '<td>'+(pl.specific_position||pl.primary_position||'--')+'</td>'+
 '<td><span class="stage-chip '+stageClass(row.stage)+'">'+stageLabel(row.stage)+'</span></td>'+
 '<td>'+(pl.age_group||((pl.age||'--')+' yrs'))+'</td>'+

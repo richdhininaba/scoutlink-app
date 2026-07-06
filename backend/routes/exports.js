@@ -4,16 +4,18 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { analysePlayer } = require('../engines/compatibility');
+const { limitsForPlan, effectiveLimits } = require('../utils/scoutPlans');
 
-const PLAN_LIMITS = {
-  Core: { exports: 30 },
-  Plus: { exports: 120 },
-  Elite: { exports: 500 },
-  Enterprise: { exports: 99999 }
-};
-
-function limitFor(plan) {
-  return (PLAN_LIMITS[plan] || PLAN_LIMITS.Core).exports;
+async function limitForScout(scout) {
+  if (scout.scout_team_id) {
+    const { data: team } = await supabase
+      .from('scout_teams')
+      .select('subscription_plan,limit_overrides')
+      .eq('id', scout.scout_team_id)
+      .maybeSingle();
+    if (team) return effectiveLimits(team.subscription_plan || scout.subscription_plan || 'Core', team.limit_overrides || {}).exports;
+  }
+  return limitsForPlan(scout.subscription_plan || 'Core').exports;
 }
 
 function clean(value) {
@@ -466,7 +468,7 @@ router.post('/player', requireAuth, requireRole('Scout'), async (req, res) => {
     const { playerId, format = 'PDF', source = 'profile', predictionLogId } = req.body;
     if (!playerId) return res.status(400).json({ error: 'playerId required' });
     const scout = await loadScout(req.user.id);
-    const limit = limitFor(scout.subscription_plan || 'Core');
+    const limit = await limitForScout(scout);
     const used = await countTeamExports(scout);
     const remaining = Math.max(0, limit - used);
     if (remaining <= 0) {

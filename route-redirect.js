@@ -38,6 +38,7 @@
     '/stratex/players': '/frontend/pages/stratex-players.html',
     '/stratex/scouts': '/frontend/pages/stratex-scouts.html',
     '/stratex/coaches': '/frontend/pages/stratex-coaches.html',
+    '/stratex/messages': '/frontend/pages/stratex-messages.html',
     '/stratex/scout-teams': '/frontend/pages/stratex-scout-teams.html',
     '/stratex/school-teams': '/frontend/pages/stratex-school-teams.html',
     '/stratex/non-pro-academies': '/frontend/pages/stratex-school-teams.html',

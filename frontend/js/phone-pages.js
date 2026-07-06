@@ -135,7 +135,7 @@
     var pos = p.specific_position || p.primary_position || p.position_group || 'Position TBC';
     var age = p.age_group || (p.age ? p.age + ' yrs' : 'Age TBC');
     return '<article class="phone-player-card">' +
-      '<div class="phone-player-top"><div class="phone-player-avatar">' + esc(playerInitials(p)) + '</div><div class="phone-player-main"><h4>' + esc(playerName(p)) + '</h4><p>' + esc(age) + ' - ' + esc(pos) + '</p></div><div class="phone-rating">' + esc(overall100(p.overall_rating)) + '</div></div>' +
+      '<div class="phone-player-top">' + (window.playerAvatarMarkup ? window.playerAvatarMarkup(p,40) : '<div class="phone-player-avatar">' + esc(playerInitials(p)) + '</div>') + '<div class="phone-player-main"><h4>' + esc(playerName(p)) + '</h4><p>' + esc(age) + ' - ' + esc(pos) + '</p></div><div class="phone-rating">' + esc(overall100(p.overall_rating)) + '</div></div>' +
       '<div class="phone-player-facts"><span><b>' + esc(money(p.transfer_value || 0)) + '</b><small>Value</small></span><span><b>' + esc(p.appearances || 0) + '</b><small>Apps</small></span><span><b>' + esc(p.goals || 0) + '</b><small>Goals</small></span></div>' +
       '<div class="phone-progress"><div><span>Profile completion</span><b>' + comp + '%</b></div><i style="width:' + comp + '%"></i></div>' +
       (opts.coachControl || '') +

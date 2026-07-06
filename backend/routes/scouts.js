@@ -6,20 +6,14 @@ const { requireAuth, requireRole } = require('../utils/auth');
 const { getPosGroup, analysePlayer } = require('../engines/compatibility');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
-
-const PLAN_LIMITS = {
-  Core: { exports: 30, predictions: 120, interests: 200 },
-  Plus: { exports: 120, predictions: 600, interests: 1000 },
-  Elite: { exports: 500, predictions: 1200, interests: 99999 },
-  Enterprise: { exports: 99999, predictions: 99999, interests: 99999 }
-};
+const { limitsForPlan } = require('../utils/scoutPlans');
 
 function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
 function limitsFor(plan) {
-  return PLAN_LIMITS[plan] || PLAN_LIMITS.Core;
+  return limitsForPlan(plan);
 }
 
 async function teamUsage(table, scout) {
@@ -367,8 +361,7 @@ router.post('/add-scout', requireAuth, requireRole('Scout'), async (req, res) =>
     while (attempts < 20) { let c = ''; for (let i=0;i<6;i++) c += chars[Math.floor(Math.random()*chars.length)]; const [s,co,p,stx] = await Promise.all([supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),supabase.from('players').select('id').eq('login_code',c).maybeSingle(),supabase.from('stratex').select('id').eq('login_code',c).maybeSingle()]); if (!s.data&&!co.data&&!p.data&&!stx.data){loginCode=c;break;} attempts++; }
     if (!loginCode) return res.status(500).json({ error: 'Could not generate unique login code' });
     const {generateId} = require('../utils/auth'); const config = require('../config'); const emailSvc = require('../services/email');
-    const PL = {Core:{exports:30,predictions:120,interests:200},Plus:{exports:120,predictions:600,interests:1000},Elite:{exports:500,predictions:1200,interests:99999},Enterprise:{exports:99999,predictions:99999,interests:99999}};
-    const plan = subscriptionPlan||'Core'; const limits = PL[plan]||PL.Core; const expires = new Date(Date.now()+7*24*60*60*1000);
+    const plan = subscriptionPlan||'Core'; const limits = limitsForPlan(plan); const expires = new Date(Date.now()+7*24*60*60*1000);
     const { data: newScout, error } = await supabase.from('scouts').insert({scout_id:generateId('SCT'),first_name:firstName.trim(),last_name:lastName.trim(),email:emailAddr.toLowerCase().trim(),phone:phone||null,club_name:scoutClub||me.club_name||null,club_league:scoutLeague||null,scout_team_id:me.scout_team_id||null,login_code:loginCode,login_code_expires:expires,is_active:true,preferences_set:false,is_super_user:false,registration_complete:false,subscription_plan:plan,plan_start:new Date(),plan_end:new Date(Date.now()+365*24*60*60*1000),exports_remaining:limits.exports,predictions_remaining:limits.predictions,interests_remaining:limits.interests,...demoWriteFields(req)}).select().single();
     if (error) throw error;
     const baseUrl = config.brandUrl||'https://scoutlink.app'; const cl = baseUrl+'/complete-registration?code='+loginCode+'&email='+encodeURIComponent(emailAddr.toLowerCase())+'&type=Scout';

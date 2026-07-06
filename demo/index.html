@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <base href="/frontend/pages/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ScoutLink Demo | See How Grassroots Player Profiles Work</title>
@@ -83,10 +84,29 @@ body{margin:0;background:#f6f8fa;color:#111827;font-family:Inter,Arial,sans-seri
   </section>
 </main>
 <script src="../js/main.js"></script>
+<script>
+window.startPublicDemo = window.startPublicDemo || function(role){
+  var nextRole = role === 'Scout' ? 'Scout' : 'Coach';
+  var first = nextRole === 'Scout' ? 'Noah' : 'Marcus';
+  var last = nextRole === 'Scout' ? 'Patel' : 'Reed';
+  try {
+    sessionStorage.setItem('sl_public_demo','1');
+    sessionStorage.setItem('sl_public_demo_role',nextRole);
+    localStorage.setItem('sl_demo_mode','1');
+    localStorage.setItem('sl_token','public-demo-session');
+    localStorage.setItem('sl_type',nextRole);
+    localStorage.setItem('sl_user',JSON.stringify({id:nextRole==='Scout'?'demo-scout-noah':'demo-coach-marcus',firstName:first,lastName:last,email:first.toLowerCase()+'.'+last.toLowerCase()+'@example.test'}));
+  } catch(e) {}
+  window.location.href = nextRole === 'Scout' ? '/scout/dashboard' : '/coach/dashboard';
+};
+</script>
 <script src="../js/heap-analytics.js"></script>
 <script src="../js/phone-pages.js"></script>
 <script src="/frontend/js/public-footer.js"></script>
 </body>
 </html>
+
+
+
 
 

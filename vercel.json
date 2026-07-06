@@ -41,6 +41,7 @@
     { "source": "/stratex/players", "destination": "/frontend/pages/stratex-players.html" },
     { "source": "/stratex/scouts", "destination": "/frontend/pages/stratex-scouts.html" },
     { "source": "/stratex/coaches", "destination": "/frontend/pages/stratex-coaches.html" },
+    { "source": "/stratex/messages", "destination": "/frontend/pages/stratex-messages.html" },
     { "source": "/stratex/scout-teams", "destination": "/frontend/pages/stratex-scout-teams.html" },
     { "source": "/stratex/school-teams", "destination": "/frontend/pages/stratex-school-teams.html" },
     { "source": "/stratex/non-pro-academies", "destination": "/frontend/pages/stratex-school-teams.html" },

@@ -12,14 +12,9 @@ const {
   calculateOverallBreakdown,
   calculateValueAnalysis
 } = require('../engines/compatibility');
+const { limitsForPlan, effectiveLimits } = require('../utils/scoutPlans');
 
 const DISCLAIMER = 'ScoutLink predictions are deterministic estimates based on coach ratings, match facts, physical profile and current player data. They are decision-support outputs, not guarantees.';
-const PLAN_LIMITS = {
-  Core: { predictions: 120 },
-  Plus: { predictions: 600 },
-  Elite: { predictions: 1200 },
-  Enterprise: { predictions: 99999 }
-};
 
 const ATTRS = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
 const GK_ATTRS = ['gk_diving','gk_handling','gk_kicking','gk_reflexes','gk_positioning','gk_distribution','gk_communication','gk_sweeping'];
@@ -101,8 +96,16 @@ const MATCH_SCENARIOS = [
 
 const POSITION_TARGETS = ['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'];
 
-function planLimit(plan) {
-  return (PLAN_LIMITS[plan] || PLAN_LIMITS.Core).predictions;
+async function planLimitForScout(scout) {
+  if (scout.scout_team_id) {
+    const { data: team } = await supabase
+      .from('scout_teams')
+      .select('subscription_plan,limit_overrides')
+      .eq('id', scout.scout_team_id)
+      .maybeSingle();
+    if (team) return effectiveLimits(team.subscription_plan || scout.subscription_plan || 'Core', team.limit_overrides || {}).predictions;
+  }
+  return limitsForPlan(scout.subscription_plan || 'Core').predictions;
 }
 
 function clamp(n, min = 0, max = 100) {
@@ -467,7 +470,7 @@ router.post('/run', requireAuth, requireRole('Scout'), async (req, res) => {
     if (!playerId || !predictionType) return res.status(400).json({ error: 'playerId and predictionType required' });
 
     const scout = await loadScout(req.user.id);
-    const limit = planLimit(scout.subscription_plan || 'Core');
+    const limit = await planLimitForScout(scout);
     const used = await countTeamPredictions(scout);
     const remaining = Math.max(0, limit - used);
     if (remaining <= 0) {
@@ -512,7 +515,7 @@ router.get('/', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
     const scout = await loadScout(req.user.id);
     const plan = scout.subscription_plan || 'Core';
-    const planLimitValue = planLimit(plan);
+    const planLimitValue = await planLimitForScout(scout);
     const teamUsed = await countTeamPredictions(scout);
     const { data: logs, error } = await supabase.from('predictions_log')
       .select('id, player_id, prediction_type, input_params, result, run_at, players(id,first_name,last_name,team_name,position_group,overall_rating,age_group)')

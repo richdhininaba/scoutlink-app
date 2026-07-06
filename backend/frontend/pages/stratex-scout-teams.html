@@ -70,10 +70,16 @@
 <input id="nt_league_fulltime_url" placeholder="FA Full-Time league URL (optional)" class="form-input">
 <input id="nt_team_website_url" placeholder="Team website URL (optional)" class="form-input">
 <div id="nt_league_warning" style="display:none;color:#FFC107;font-size:12px;line-height:1.4"></div>
-<input id="nt_tier" type="number" min="1" max="10" placeholder="Tier" class="form-input">
-<select id="nt_country" class="form-input"></select>
-<input id="nt_formation" placeholder="Formation" class="form-input">
-<textarea id="nt_style" rows="3" placeholder="Playing style and weaknesses" class="form-input"></textarea>
+      <input id="nt_tier" type="number" min="1" max="10" placeholder="Tier" class="form-input">
+      <select id="nt_country" class="form-input"></select>
+      <input id="nt_formation" placeholder="Formation" class="form-input">
+      <select id="nt_plan" class="form-input">
+        <option value="Core">Core - 1 seat, 20 exports, 60 predictions, 30 coach-mediated interest requests</option>
+        <option value="Plus">Plus - 5 seats, 100 exports, 300 predictions, 120 coach-mediated interest requests</option>
+        <option value="Elite">Elite - 10 seats, 300 exports, 900 predictions, 300 coach-mediated interest requests</option>
+        <option value="Enterprise">Enterprise - Custom</option>
+      </select>
+      <textarea id="nt_style" rows="3" placeholder="Playing style and weaknesses" class="form-input"></textarea>
 </div>
 <div style="display:flex;gap:10px;margin-top:16px"><button class="btn btn-primary" onclick="createTeam()" style="flex:1">Create</button><button class="btn btn-ghost" onclick="document.getElementById('addTeamModal').style.display='none'" style="flex:1">Cancel</button></div>
 <div id="addTeamMsg" style="margin-top:10px;font-size:13px;text-align:center"></div>
@@ -96,6 +102,9 @@ var allTeams=[], allScouts=[], currentTeamId=null, teamScouts=[];
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function safe(v,f){return (v===null||v===undefined||v==='')?(f||'--'):String(v);}
 function infoRow(label,value){return '<div style="background:#0d1117;border:1px solid #243447;border-radius:8px;padding:12px"><div style="color:#90A4AE;font-size:12px;margin-bottom:4px">'+label+'</div><div style="color:#E0E0E0;font-weight:800">'+safe(value)+'</div></div>';}
+function limitLabel(v){return v===999999999||String(v).toLowerCase()==='custom'?'Custom':safe(v);}
+function usageLabel(u){return u?(safe(u.used,0)+' / '+limitLabel(u.allowedLabel||u.allowed)):'--';}
+function dateLabel(v){return v?new Date(v).toLocaleDateString('en-GB'):'Not started';}
 function validUrl(v){return !v||/^https?:\/\//i.test(String(v).trim());}
 function urlLink(label,url){return url?'<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="color:#1d9e75;text-decoration:none">'+label+'</a>':'--';}
 function showLeagueWarning(prefix,msg){var el=document.getElementById(prefix+'_league_warning');if(!el)return;el.textContent=msg||'';el.style.display=msg?'block':'none';}
@@ -120,15 +129,30 @@ async function loadPage(){
 }
 function renderTeams(){
   if(!allTeams.length){document.getElementById('teamsTable').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A">No scout teams yet</div>';return;}
-  document.getElementById('teamsTable').innerHTML='<table class="sl-table"><thead><tr><th>Team</th><th>League</th><th>Tier</th><th>Country</th><th>Formation</th><th>Scouts</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+allTeams.map(function(t){return '<tr style="cursor:pointer" onclick="openTeam(\''+t.id+'\')"><td><b>'+safe(t.team_name)+'</b></td><td>'+safe(t.league_name||t.league)+'</td><td>'+safe(t.tier)+'</td><td>'+safe(t.country)+'</td><td>'+safe(t.formation)+'</td><td><b>'+scoutCountForTeam(t.id)+'</b></td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openTeam(\''+t.id+'\')">View details</button></td></tr>';}).join('')+'</tbody></table>';
+  document.getElementById('teamsTable').innerHTML='<table class="sl-table"><thead><tr><th>Team</th><th>Status</th><th>Plan</th><th>League</th><th>Country</th><th>Scouts</th><th style="text-align:right">Actions</th></tr></thead><tbody>'+allTeams.map(function(t){return '<tr style="cursor:pointer" onclick="openTeam(\''+t.id+'\')"><td><b>'+safe(t.team_name)+'</b></td><td><span class="badge '+(String(t.status||'draft').toLowerCase()==='active'?'badge-green':'badge-blue')+'">'+safe(t.status||'draft')+'</span></td><td>'+safe(t.subscription_plan||'Core')+'</td><td>'+safe(t.league_name||t.league)+'</td><td>'+safe(t.country)+'</td><td><b>'+scoutCountForTeam(t.id)+'</b></td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();openTeam(\''+t.id+'\')">View details</button></td></tr>';}).join('')+'</tbody></table>';
 }
 async function openTeam(id){
   currentTeamId=id;
   var t=allTeams.find(function(x){return x.id===id;});
   if(!t)return;
+  try{
+    var full=await api('GET','/api/stratex/scout-teams/'+id);
+    if(full&&full.data){
+      t=Object.assign({},t,full.data,{usage:full.usage||t.usage});
+      allTeams=allTeams.map(function(x){return x.id===id?t:x;});
+    }
+  }catch(e){}
+  var usage=t.usage||{};
   document.getElementById('detailPanel').style.display='block';
   document.getElementById('panelTeamName').textContent=t.team_name;
-  document.getElementById('teamInfoGrid').innerHTML=infoRow('Team Name',t.team_name)+infoRow('League',t.league_name||t.league)+infoRow('FA Full-Time',urlLink('Open league',t.league_fulltime_url))+infoRow('Team Website',urlLink('Open website',t.team_website_url))+infoRow('Tier','Tier '+safe(t.tier))+infoRow('Country',t.country)+infoRow('Formation',t.formation);
+  document.getElementById('panelBadge').textContent=safe(t.status||'draft');
+  document.getElementById('panelBadge').className='badge '+(String(t.status||'draft').toLowerCase()==='active'?'badge-green':'badge-blue');
+  document.getElementById('teamInfoGrid').innerHTML=
+    infoRow('Team Name',t.team_name)+infoRow('Status',t.status||'draft')+infoRow('Plan',t.subscription_plan||'Core')+
+    infoRow('Subscription start',dateLabel(usage.subscriptionStartAt||t.subscription_start_at))+infoRow('Renewal date',dateLabel(usage.subscriptionRenewalAt||t.subscription_renewal_at))+
+    infoRow('Seats',usageLabel(usage.seats))+infoRow('Exports this year',usageLabel(usage.exports))+infoRow('Predictions this year',usageLabel(usage.predictions))+infoRow('Coach-mediated interest requests',usageLabel(usage.interests))+
+    infoRow('League',t.league_name||t.league)+infoRow('FA Full-Time',urlLink('Open league',t.league_fulltime_url))+infoRow('Team Website',urlLink('Open website',t.team_website_url))+infoRow('Tier','Tier '+safe(t.tier))+infoRow('Country',t.country)+infoRow('Formation',t.formation)+
+    '<div style="grid-column:1/-1;background:#0d1117;border:1px solid #243447;border-radius:8px;padding:12px;display:grid;gap:10px"><div style="color:#90A4AE;font-size:12px;font-weight:800">Subscription controls</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm btn-primary" onclick="activateCurrentTeam()">Activate / renew team year</button><button class="btn btn-sm btn-outline" onclick="showLimitOverride()">Override current-year limits</button></div><div id="limitOverrideBox" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px"><input id="ovSeats" class="form-input" type="number" min="0" placeholder="Seats"><input id="ovExports" class="form-input" type="number" min="0" placeholder="Exports"><input id="ovPredictions" class="form-input" type="number" min="0" placeholder="Predictions"><input id="ovInterests" class="form-input" type="number" min="0" placeholder="Interest requests"><input id="ovReason" class="form-input" placeholder="Reason"><button class="btn btn-primary" onclick="saveLimitOverride()">Save override</button></div><div id="teamSubscriptionMsg" style="font-size:12px;color:#8b949e"></div></div>';
   document.getElementById('edit_league').value=t.league_name||t.league||'';
   document.getElementById('edit_league_fulltime_url').value=t.league_fulltime_url||'';
   document.getElementById('edit_team_website_url').value=t.team_website_url||'';
@@ -148,7 +172,7 @@ async function loadTeamScouts(id){
 function openAddTeamModal(){document.getElementById('addTeamMsg').textContent='';document.getElementById('addTeamModal').style.display='block';}
 async function createTeam(){
   var urlFields=collectUrlFields('nt');if(!urlFields)return;
-  var body=Object.assign({team_name:document.getElementById('nt_name').value.trim(),tier:parseInt(document.getElementById('nt_tier').value)||null,country:document.getElementById('nt_country').value.trim()||'England',formation:document.getElementById('nt_formation').value.trim(),playing_style:document.getElementById('nt_style').value.trim()},urlFields);
+  var body=Object.assign({team_name:document.getElementById('nt_name').value.trim(),tier:parseInt(document.getElementById('nt_tier').value)||null,country:document.getElementById('nt_country').value.trim()||'England',formation:document.getElementById('nt_formation').value.trim(),playing_style:document.getElementById('nt_style').value.trim(),subscription_plan:document.getElementById('nt_plan').value},urlFields);
   if(!body.team_name){document.getElementById('addTeamMsg').textContent='Team name is required';return;}
   var d=await api('POST','/api/stratex/scout-teams',body);
   allTeams.push(d.data||d);
@@ -184,6 +208,37 @@ async function addScoutToTeam(){
   document.getElementById('addScoutModal').style.display='none';
   renderTeams();
   await loadTeamScouts(currentTeamId);
+}
+async function activateCurrentTeam(){
+  if(!currentTeamId)return;
+  if(!confirm('Activate or renew this scout team subscription year?'))return;
+  var msg=document.getElementById('teamSubscriptionMsg');if(msg)msg.textContent='Activating...';
+  try{
+    var d=await api('POST','/api/stratex/scout-teams/'+currentTeamId+'/activate',{reason:'Activated from Stratex Admin'});
+    var updated=Object.assign({},d.data||{},{usage:d.usage});
+    allTeams=allTeams.map(function(t){return t.id===currentTeamId?Object.assign({},t,updated):t;});
+    if(msg){msg.style.color='#1d9e75';msg.textContent='Team subscription is active.';}
+    renderTeams();await openTeam(currentTeamId);
+  }catch(e){if(msg){msg.style.color='#EF5350';msg.textContent=e.message||'Could not activate team.';}}
+}
+function showLimitOverride(){
+  var box=document.getElementById('limitOverrideBox');if(!box)return;
+  box.style.display=box.style.display==='grid'?'none':'grid';
+}
+async function saveLimitOverride(){
+  if(!currentTeamId)return;
+  var body={reason:(document.getElementById('ovReason')||{}).value||'Admin override'};
+  [['seats','ovSeats'],['exports','ovExports'],['predictions','ovPredictions'],['interests','ovInterests']].forEach(function(pair){
+    var el=document.getElementById(pair[1]);if(el&&el.value!=='')body[pair[0]]=el.value;
+  });
+  var msg=document.getElementById('teamSubscriptionMsg');if(msg)msg.textContent='Saving override...';
+  try{
+    var d=await api('PATCH','/api/stratex/scout-teams/'+currentTeamId+'/limits',body);
+    var updated=Object.assign({},d.data||{},{usage:d.usage});
+    allTeams=allTeams.map(function(t){return t.id===currentTeamId?Object.assign({},t,updated):t;});
+    if(msg){msg.style.color='#1d9e75';msg.textContent='Current-year limits updated.';}
+    await openTeam(currentTeamId);
+  }catch(e){if(msg){msg.style.color='#EF5350';msg.textContent=e.message||'Could not update limits.';}}
 }
 async function removeScoutFromTeam(id){
   if(!confirm('Remove this scout from the team?'))return;

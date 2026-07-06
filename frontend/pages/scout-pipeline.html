@@ -42,7 +42,7 @@
 
 <div class="kpi-grid" style="margin-bottom:20px">
 <div class="kpi-card">
-<div class="kpi-label">Interests Remaining</div>
+<div class="kpi-label">Coach-mediated requests remaining</div>
 <div class="kpi-value green" id="kpiInterests">-</div>
 </div>
 <div class="kpi-card">
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   api('GET','/api/scouts/profile').then(function(profile){
     var scout=profile.scout||{};
-    var LIMITS={Core:200,Plus:1000,Elite:99999};
+    var LIMITS={Core:30,Plus:120,Elite:300,Enterprise:999999};
     planName=scout.subscription_plan||'Core';
     planLimit=LIMITS[planName]||200;
     updatePipelineKpis();
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded',function(){
           var name=((p.first_name||'')+' '+(p.last_name||'')).trim()||'Player';
           var stageNow=(r.stage||'watching').toLowerCase().replace(/ /g,'_');
           html+='<article class="phone-pipeline-card">'+
-            '<div class="phone-pipeline-head"><div class="user-avatar">'+initials(p.first_name,p.last_name)+'</div><div><h4>'+name+'</h4><p><span>'+(p.age_group||'Age TBC')+'</span><span>'+(p.team_name||'Team TBC')+'</span></p></div></div>'+
+            '<div class="phone-pipeline-head">'+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,38):'<div class="user-avatar">'+initials(p.first_name,p.last_name)+'</div>')+'<div><h4>'+name+'</h4><p><span>'+(p.age_group||'Age TBC')+'</span><span>'+(p.team_name||'Team TBC')+'</span></p></div></div>'+
             '<div class="phone-pipeline-grid">'+
               '<span><small>Position</small><b>'+((p.specific_position||p.primary_position||'--'))+'</b></span>'+
               '<span><small>Overall</small><b style="color:'+compatColor(ovP)+'">'+ov+'</b></span>'+
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded',function(){
           return;
         }
         html+='<tr>' +
-          '<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:32px;height:32px;font-size:11px">'+initials(p.first_name,p.last_name)+'</div><div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b><div style="font-size:11px;color:var(--text3)">'+(p.age_group||((p.age||'')+'yrs')||'--')+'</div></div></div></td>'+
+          '<td><div style="display:flex;align-items:center;gap:8px">'+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,32):'<div class="user-avatar" style="width:32px;height:32px;font-size:11px">'+initials(p.first_name,p.last_name)+'</div>')+'<div><b>'+(p.first_name||'')+' '+(p.last_name||'')+'</b><div style="font-size:11px;color:var(--text3)">'+(p.age_group||((p.age||'')+'yrs')||'--')+'</div></div></div></td>'+
           '<td>'+(p.specific_position||p.primary_position||'--')+'</td>'+
           '<td style="color:'+compatColor(ovP)+';font-weight:700">'+ov+'</td>'+
           '<td style="color:'+tvColor+';font-weight:'+(tv?'700':'400')+'">'+tvDisp+'</td>'+
