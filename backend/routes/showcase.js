@@ -4,6 +4,7 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const config = require('../config');
+const { createNotification, createNotifications } = require('../services/notifications');
 
 async function sendDirectEmail(to, subject, html) {
   if (!config.sendgrid.apiKey) return;
@@ -17,20 +18,36 @@ async function sendDirectEmail(to, subject, html) {
 }
 
 async function notify(recipientId, recipientType, title, body, data) {
-  try { await supabase.from('notifications').insert({ recipient_id: recipientId, recipient_type: recipientType, title, body, data: data||{}, is_read: false }); } catch(e) {}
+  try {
+    const d = data || {};
+    await createNotification({
+      recipient_id: recipientId,
+      recipient_type: recipientType,
+      notification_type: d.notification_type || d.notificationType || (d.event_id || d.eventId ? 'showcase_event' : 'system'),
+      title,
+      body,
+      data: {
+        ...d,
+        targetType: d.targetType || (d.event_id || d.eventId ? 'showcase_event' : 'system'),
+        targetId: d.targetId || d.event_id || d.eventId || null,
+        eventId: d.eventId || d.event_id || null,
+        source: d.source || d.type || 'showcase'
+      }
+    });
+  } catch(e) {}
 }
 
 async function notifyStratexAdmins(title, body, data) {
   try {
     const { data: admins } = await supabase.from('stratex').select('id,email').eq('is_active', true);
     if (!admins || !admins.length) return;
-    await supabase.from('notifications').insert(admins.map(a => ({
+    await createNotifications(admins.map(a => ({
       recipient_id: a.id,
       recipient_type: 'Stratex',
+      notification_type: 'system',
       title,
       body,
-      data: data || {},
-      is_read: false
+      data: data || {}
     })));
   } catch(e) { console.error('[Notify Stratex]', e.message); }
 }
@@ -126,7 +143,14 @@ router.post('/:id/players', requireAuth, requireRole('Stratex'), async (req, res
     // Notify all scouts
     const { data: scouts } = await supabase.from('scouts').select('id').eq('is_active', true);
     if (scouts && scouts.length) {
-      await supabase.from('notifications').insert(scouts.map(s => ({ recipient_id: s.id, recipient_type: 'Scout', title: 'Showcase Update', body: pName + ' has been added to the ' + ev.event_name + ' showcase. View their profile.', data: { event_id: req.params.id, player_id: playerId, type: 'showcase_player' }, is_read: false })));
+      await createNotifications(scouts.map(s => ({
+        recipient_id: s.id,
+        recipient_type: 'Scout',
+        notification_type: 'showcase_event',
+        title: 'Showcase update',
+        body: pName + ' has been added to the ' + ev.event_name + ' showcase.',
+        data: { targetType: 'showcase_event', targetId: req.params.id, eventId: req.params.id, playerId, playerName: pName, source: 'showcase_player' }
+      })));
     }
     res.status(201).json({ message: 'Player added to showcase', data: sp });
   } catch(e) { console.error('[Showcase AddPlayer]', e); res.status(500).json({ error: e.message }); }
@@ -195,7 +219,17 @@ router.post('/:id/cancel', requireAuth, requireRole('Stratex'), async (req, res)
         });
       }
     }
-    if (notifications.length) await supabase.from('notifications').insert(notifications);
+    if (notifications.length) await createNotifications(notifications.map(n => ({
+      ...n,
+      notification_type: 'showcase_event',
+      data: {
+        ...(n.data || {}),
+        targetType: 'showcase_event',
+        targetId: req.params.id,
+        eventId: req.params.id,
+        source: 'showcase_cancelled'
+      }
+    })));
     await notifyStratexAdmins('Showcase Event Cancelled', ev.event_name + ' has been cancelled and affected users were notified.', { event_id: req.params.id, type: 'showcase_cancelled' });
     if (emails.size) await sendDirectEmail(Array.from(emails), subject, html);
     res.json({ message: 'Event cancelled and notifications sent', event: ev, notifiedEmails: emails.size, notifications: notifications.length });

@@ -674,6 +674,175 @@ async function updateNotifBadge() {
   } catch {}
 }
 
+function notificationFilterMatches(n, filter) {
+  const f = String(filter || 'all').toLowerCase();
+  if (f === 'all') return true;
+  const group = String(n.filterGroup || n.filter_group || '').toLowerCase();
+  const type = String(n.notificationType || n.notification_type || n.type || '').toLowerCase();
+  if (group === f || type === f) return true;
+  if (f === 'messages') return ['chat_started', 'chat_message', 'admin_message'].includes(type);
+  if (f === 'fixtures_events') return ['fixture_attendance', 'showcase_event'].includes(type);
+  return false;
+}
+
+function notificationTypeLabel(n) {
+  return n.typeLabel || n.type_label || ({
+    chat_started: 'Chat started',
+    chat_message: 'Message',
+    admin_message: 'Message',
+    scout_interest: 'Scout interest',
+    match_fact: 'Match facts',
+    recruitment: 'Recruitment',
+    fixture_attendance: 'Fixture',
+    showcase_event: 'Event',
+    system: 'System'
+  })[n.notificationType || n.notification_type || n.type] || 'Notification';
+}
+
+function ensureNotificationModal() {
+  let modal = document.getElementById('notificationDetailModal');
+  if (modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'notificationDetailModal';
+  modal.className = 'notification-detail-modal';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML =
+    '<div class="notification-detail-backdrop" data-close-notification></div>' +
+    '<section class="notification-detail-card" role="dialog" aria-modal="true" aria-labelledby="notificationDetailTitle">' +
+      '<button class="notification-detail-close" type="button" aria-label="Close notification" data-close-notification>&times;</button>' +
+      '<span class="notification-detail-type" id="notificationDetailType"></span>' +
+      '<h2 id="notificationDetailTitle"></h2>' +
+      '<p id="notificationDetailBody"></p>' +
+      '<div class="notification-detail-meta" id="notificationDetailMeta"></div>' +
+      '<div class="notification-detail-actions" id="notificationDetailActions"></div>' +
+    '</section>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e) {
+    if (e.target.closest('[data-close-notification]')) closeNotificationDetail();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeNotificationDetail();
+  });
+  return modal;
+}
+
+function closeNotificationDetail() {
+  const modal = document.getElementById('notificationDetailModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function openNotificationDetail(n) {
+  const modal = ensureNotificationModal();
+  document.getElementById('notificationDetailType').textContent = notificationTypeLabel(n);
+  document.getElementById('notificationDetailTitle').textContent = n.title || 'ScoutLink notification';
+  document.getElementById('notificationDetailBody').textContent = n.body || n.message || 'No further details are available for this notification.';
+  document.getElementById('notificationDetailMeta').textContent = n.createdAt || n.created_at ? new Date(n.createdAt || n.created_at).toLocaleString('en-GB') : '';
+  const actions = document.getElementById('notificationDetailActions');
+  if (n.actionUrl) {
+    actions.innerHTML = '<a class="btn btn-primary" href="' + cleanRouteFor(n.actionUrl) + '">' + (n.actionLabel || 'Open') + '</a>';
+  } else {
+    actions.innerHTML = '<button type="button" class="btn btn-outline" data-close-notification>Close</button>';
+  }
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  const close = modal.querySelector('.notification-detail-close');
+  if (close) close.focus();
+}
+
+async function openNotification(id) {
+  if (!id || !Auth.isLoggedIn()) return;
+  let item = null;
+  try {
+    const readResult = await api('PATCH', '/api/notifications/' + encodeURIComponent(id) + '/read');
+    item = readResult.data || null;
+  } catch (_) {}
+  if (!item) {
+    try {
+      const detail = await api('GET', '/api/notifications/' + encodeURIComponent(id));
+      item = detail.data || null;
+    } catch (_) {}
+  }
+  if (window.allNotifs && Array.isArray(window.allNotifs)) {
+    const local = window.allNotifs.find(function(n) { return n.id === id; });
+    if (local) {
+      local.read = true;
+      local.is_read = true;
+      Object.assign(local, item || {});
+      item = item || local;
+    }
+  }
+  if (typeof window.applyFilter === 'function') {
+    try { window.applyFilter(); } catch (_) {}
+  }
+  updateNotifBadge();
+  if (!item) return openNotificationDetail({ title: 'Notification unavailable', body: 'This notification could not be opened. It may have been deleted or moved.' });
+  if (item.actionUrl) {
+    window.location.href = cleanRouteFor(item.actionUrl);
+    return;
+  }
+  openNotificationDetail(item);
+}
+
+function enhanceNotificationPage() {
+  if (!/notifications/i.test(window.location.pathname)) return;
+  function makeCardsInteractive() {
+    document.querySelectorAll('.notif-card[data-id], .notif-card[data-notif-id]').forEach(function(card) {
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', 'Open notification');
+    });
+  }
+  const bar = document.querySelector('.filter-bar');
+  if (bar) {
+    bar.innerHTML = [
+      ['all', 'All'],
+      ['messages', 'Messages'],
+      ['scout_interest', 'Scout interest'],
+      ['match_fact', 'Match facts'],
+      ['recruitment', 'Recruitment'],
+      ['fixtures_events', 'Fixtures / Events'],
+      ['system', 'System']
+    ].map(function(item, idx) {
+      return '<button class="filter-chip ' + (idx === 0 ? 'active' : '') + '" data-filter="' + item[0] + '" type="button">' + item[1] + '</button>';
+    }).join('');
+  }
+  if (typeof window.applyFilter === 'function') {
+    window.applyFilter = function() {
+      const filter = window.currentFilter || 'all';
+      const rows = filter === 'all'
+        ? (window.allNotifs || [])
+        : (window.allNotifs || []).filter(function(n) { return notificationFilterMatches(n, filter); });
+      if (typeof window.renderNotifs === 'function') window.renderNotifs(rows);
+      setTimeout(makeCardsInteractive, 0);
+    };
+  }
+  makeCardsInteractive();
+  const listRoot = document.getElementById('notifList') || document.querySelector('.notif-list') || document.querySelector('.notifications-list');
+  if (listRoot && window.MutationObserver) {
+    new MutationObserver(makeCardsInteractive).observe(listRoot, { childList: true, subtree: true });
+  }
+}
+
+document.addEventListener('click', function(e) {
+  if (!/notifications/i.test(window.location.pathname)) return;
+  const card = e.target.closest && e.target.closest('.notif-card[data-id], .notif-card[data-notif-id]');
+  if (!card) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  openNotification(card.dataset.id || card.dataset.notifId);
+}, true);
+
+document.addEventListener('keydown', function(e) {
+  if (!/notifications/i.test(window.location.pathname)) return;
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest && e.target.closest('.notif-card[data-id], .notif-card[data-notif-id]');
+  if (!card) return;
+  e.preventDefault();
+  openNotification(card.dataset.id || card.dataset.notifId);
+}, true);
+
 // Format helpers
 function formatValue(v) { return v >= 1000000 ? '\u00a3'+(v/1000000).toFixed(2)+'M' : v >= 1000 ? '\u00a3'+(v/1000).toFixed(0)+'K' : '\u00a3'+v; }
 function formatSalary(v) { return v >= 1000 ? '\u00a3'+(v/1000).toFixed(1)+'K/wk' : '\u00a3'+v+'/wk'; }
@@ -799,6 +968,8 @@ window.isValidEmailAddress = isValidEmailAddress; window.validateEmailInput = va
 window.updateNotifBadge = updateNotifBadge; window.initRangePicker = initRangePicker;
 window.applyTheme = applyTheme; window.cleanRouteFor = cleanRouteFor;
 window.navigateClean = navigateClean; window.logoutToLogin = logoutToLogin;
+window.openNotification = openNotification; window.openNotificationDetail = openNotificationDetail;
+window.notificationFilterMatches = notificationFilterMatches; window.enhanceNotificationPage = enhanceNotificationPage;
 window.isDemoMode = isDemoMode; window.openExperienceSelector = openExperienceSelector;
 window.isPublicDemoMode = isPublicDemoMode; window.startPublicDemo = startPublicDemo;
 window.exitPublicDemo = exitPublicDemo; window.demoBannerText = demoBannerText;
@@ -809,6 +980,7 @@ window.attachCityAutocomplete = attachCityAutocomplete; window.canonicalChoice =
 document.addEventListener('DOMContentLoaded', () => {
   maybeShowExperienceSwitcher();
   applyPublicDemoChrome();
+  enhanceNotificationPage();
   document.querySelectorAll('input[type="email"]').forEach(input => {
     input.addEventListener('input', () => validateEmailInput(input));
     input.addEventListener('blur', () => validateEmailInput(input));

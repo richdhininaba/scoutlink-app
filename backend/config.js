@@ -21,7 +21,9 @@ module.exports = {
     fromEmail: process.env.SENDGRID_FROM_EMAIL || 'info@scoutlink.app',
     fromName: process.env.SENDGRID_FROM_NAME || 'ScoutLink',
     templates: {
-      notification: process.env.SENDGRID_TEMPLATE_NOTIFICATION,
+      notification: process.env.SENDGRID_NOTIFICATION_TEMPLATE_ID
+        || process.env.SENDGRID_TEMPLATE_NOTIFICATION
+        || 'd-d0ca64cf65ce408db2cd240eec7ecc1c',
       resetPassword: process.env.SENDGRID_TEMPLATE_RESET_PASSWORD,
     },
   },

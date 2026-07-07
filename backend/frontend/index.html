@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <base href="/frontend/">
@@ -69,10 +69,10 @@
           <a href="/register/scout" class="btn btn-ghost btn-lg">Request Scout Access</a>
         </div>
       </div>
-      <div class="marketing-preview-card" aria-label="ScoutLink evidence preview">
+      <div class="marketing-preview-card sample-profile-card" aria-label="Fictional ScoutLink profile preview">
         <div class="preview-card-head">
-          <span>Player evidence profile</span>
-          <strong>Demo</strong>
+          <span>Sample player profile</span>
+          <strong>79%</strong>
         </div>
         <div class="preview-player-row">
           <div class="preview-avatar">EC</div>
@@ -80,15 +80,26 @@
             <b>Ethan Cole</b>
             <small>U16 - Centre Midfield - Manchester</small>
           </div>
-          <em>72%</em>
+          <em>86/100</em>
+        </div>
+        <div class="sample-score-grid">
+          <div><span>Readiness</span><b>90</b></div>
+          <div><span>Potential</span><b>83</b></div>
+          <div><span>Confidence</span><b>High</b></div>
         </div>
         <div class="preview-bar-list">
-          <span><i style="width:72%"></i><b>Profile strength</b></span>
-          <span><i style="width:78%"></i><b>Match evidence</b></span>
-          <span><i style="width:64%"></i><b>Coach ratings</b></span>
-          <span><i style="width:54%"></i><b>Video evidence</b></span>
+          <span><i style="width:88%"></i><b>Coach ratings</b></span>
+          <span><i style="width:84%"></i><b>Match evidence</b></span>
+          <span><i style="width:72%"></i><b>Video evidence</b></span>
+          <span><i style="width:79%"></i><b>Compatibility fit</b></span>
         </div>
-        <p>Structured evidence scouts can understand faster, built from coach-led information and demo data.</p>
+        <div class="sample-facts">
+          <span><b>11</b> apps</span>
+          <span><b>7</b> goals</span>
+          <span><b>4</b> assists</span>
+          <span><b>1</b> clean sheet</span>
+        </div>
+        <p>Structured evidence helps scouts understand player fit faster, with coach-led context and safer visibility.</p>
       </div>
     </div>
   </section>
@@ -102,52 +113,33 @@
     </div>
   </section>
 
-  <section class="marketing-section">
+  <section class="marketing-section who-helps-section">
     <div class="container">
       <div class="marketing-section-head">
-        <span class="marketing-label">For coaches</span>
-        <h2>Get players seen without creating more admin.</h2>
-        <p>Turn match facts, ratings and video into professional player profiles without keeping the same information across messages and spreadsheets.</p>
+        <span class="marketing-label">Who ScoutLink helps</span>
+        <h2>One evidence workflow for the people around a player.</h2>
+        <p>ScoutLink keeps the public story simple while giving each role the context they need.</p>
       </div>
-      <div class="marketing-card-grid five">
-        <article><h3>Build player profiles faster</h3><p>Keep U7 to U16 player evidence in one organised record.</p></article>
-        <article><h3>Add match facts and ratings</h3><p>Log results, events and coach-rated attributes without scattered spreadsheets.</p></article>
-        <article><h3>Upload video evidence</h3><p>Add clips when the correct permissions are in place.</p></article>
-        <article><h3>Track profile strength</h3><p>See where a player record needs more evidence before scouts rely on it.</p></article>
-        <article><h3>Share better player context</h3><p>Give verified scouts clearer evidence without open self-promotion.</p></article>
+      <div class="who-tabs" role="tablist" aria-label="Who ScoutLink helps">
+        <button class="who-tab active" type="button" data-role-tab="coaches">Coaches</button>
+        <button class="who-tab" type="button" data-role-tab="scouts">Scouts</button>
+        <button class="who-tab" type="button" data-role-tab="families">Parents & Players</button>
       </div>
-    </div>
-  </section>
-
-  <section class="marketing-section muted">
-    <div class="container two-column-value">
-      <div>
-        <span class="marketing-label">For scouts</span>
-        <h2>Spend less time chasing the wrong players.</h2>
-        <p>Search by role, position, age group, location, match evidence and profile strength before investing time in a player.</p>
-      </div>
-      <div class="value-list">
-        <span>Save time finding the right players</span>
-        <span>Reduce wasted scouting trips</span>
-        <span>Search by compatibility</span>
-        <span>Compare evidence quickly</span>
-        <span>Build a cleaner pipeline</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="marketing-section">
-    <div class="container two-column-value reverse">
-      <div class="value-list">
-        <span>Stronger player profile</span>
-        <span>Better chance of being seen</span>
-        <span>Match evidence in one place</span>
-        <span>Professional profile generated by the product</span>
-      </div>
-      <div>
-        <span class="marketing-label">For players and families</span>
-        <h2>Stronger player profiles, built around real evidence.</h2>
-        <p>Players are represented through coach-led information, match facts, ratings and video evidence, helping families understand what scouts see and why.</p>
+      <div class="who-panel" id="whoPanel" aria-live="polite">
+        <div>
+          <span class="marketing-label">For coaches</span>
+          <h3>Get players seen without creating more admin.</h3>
+          <p>Turn match facts, coach ratings and video into organised U7 to U16 profiles that scouts can understand quickly.</p>
+          <ul>
+            <li>Build player profiles from one place.</li>
+            <li>Track profile strength before scouts rely on it.</li>
+            <li>Share better player context without open self-promotion.</li>
+          </ul>
+        </div>
+        <aside>
+          <b>Coach evidence</b>
+          <span>Match facts, attributes, fixtures and video evidence stay connected to the player profile.</span>
+        </aside>
       </div>
     </div>
   </section>
@@ -215,11 +207,23 @@
         <span class="marketing-label">FAQ</span>
         <h2>Questions before you register</h2>
       </div>
-      <div class="marketing-card-grid">
-        <article><h3>Is ScoutLink for U7 to U16 players?</h3><p>Yes. Public ScoutLink messaging is focused on U7 to U16 grassroots football evidence and visibility.</p></article>
-        <article><h3>Who can access player profiles?</h3><p>Access is role-based and controlled. Verified scouts and authorised users only see information permitted by ScoutLink account rules.</p></article>
-        <article><h3>Can parents or players register directly?</h3><p>ScoutLink is coach-led. Families can review notices, raise privacy requests and report concerns through the public trust routes.</p></article>
-        <article><h3>How does compatibility scoring work?</h3><p>Scores compare available evidence against role and team-fit criteria. They support decisions; they do not guarantee selection or opportunities.</p></article>
+      <div class="faq-accordion" id="homepageFaq">
+        <details>
+          <summary>Is ScoutLink for U7 to U16 players?</summary>
+          <p>Yes. Public ScoutLink messaging is focused on U7 to U16 grassroots football evidence and visibility.</p>
+        </details>
+        <details>
+          <summary>Who can access player profiles?</summary>
+          <p>Access is role-based and controlled. Verified scouts and authorised users only see information permitted by ScoutLink account rules.</p>
+        </details>
+        <details>
+          <summary>Can parents or players register directly?</summary>
+          <p>ScoutLink is coach-led. Families can review notices, raise privacy requests and report concerns through the public trust routes.</p>
+        </details>
+        <details>
+          <summary>How does compatibility scoring work?</summary>
+          <p>Scores compare available evidence against role and team-fit criteria. They support decisions; they do not guarantee selection or opportunities.</p>
+        </details>
       </div>
     </div>
   </section>
@@ -266,6 +270,54 @@
 <script src="js/phone-pages.js"></script>
 <script>
 (function(){
+  var roleData = {
+    coaches: {
+      label: 'For coaches',
+      title: 'Get players seen without creating more admin.',
+      copy: 'Turn match facts, coach ratings and video into organised U7 to U16 profiles that scouts can understand quickly.',
+      points: ['Build player profiles from one place.', 'Track profile strength before scouts rely on it.', 'Share better player context without open self-promotion.'],
+      cardTitle: 'Coach evidence',
+      cardCopy: 'Match facts, attributes, fixtures and video evidence stay connected to the player profile.'
+    },
+    scouts: {
+      label: 'For scouts',
+      title: 'Spend less time chasing the wrong players.',
+      copy: 'Search by role, position, age group, location, match evidence and profile strength before investing time in a player.',
+      points: ['Filter by compatibility and evidence quality.', 'Compare player profiles with clearer context.', 'Build a cleaner recruitment pipeline.'],
+      cardTitle: 'Scout workflow',
+      cardCopy: 'Search, compare, register interest and revisit evidence from one controlled workspace.'
+    },
+    families: {
+      label: 'For parents and players',
+      title: 'Stronger player profiles, built around real evidence.',
+      copy: 'Players are represented through coach-led information, match facts, ratings and video evidence, helping families understand what scouts see and why.',
+      points: ['Profiles are based on structured evidence.', 'Visibility stays controlled through appropriate adults.', 'Privacy and concern routes remain public and clear.'],
+      cardTitle: 'Safer visibility',
+      cardCopy: 'ScoutLink avoids open self-promotion and keeps player visibility tied to permissioned, coach-led records.'
+    }
+  };
+  var whoPanel = document.getElementById('whoPanel');
+  function renderRole(key) {
+    var item = roleData[key] || roleData.coaches;
+    document.querySelectorAll('.who-tab').forEach(function(btn){
+      var active = btn.dataset.roleTab === key;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    if (!whoPanel) return;
+    whoPanel.innerHTML = '<div><span class="marketing-label">' + item.label + '</span><h3>' + item.title + '</h3><p>' + item.copy + '</p><ul>' + item.points.map(function(point){ return '<li>' + point + '</li>'; }).join('') + '</ul></div><aside><b>' + item.cardTitle + '</b><span>' + item.cardCopy + '</span></aside>';
+  }
+  document.querySelectorAll('.who-tab').forEach(function(btn){
+    btn.addEventListener('click', function(){ renderRole(btn.dataset.roleTab); });
+  });
+  document.querySelectorAll('#homepageFaq details').forEach(function(item){
+    item.addEventListener('toggle', function(){
+      if (!item.open) return;
+      document.querySelectorAll('#homepageFaq details').forEach(function(other){
+        if (other !== item) other.open = false;
+      });
+    });
+  });
   var data = {
     search: {
       title: 'Scout search',
@@ -305,5 +357,8 @@
   render('search');
 })();
 </script>
+<script src="/frontend/js/public-footer.js"></script>
 </body>
 </html>
+
+

@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
+const { createNotification, createNotifications } = require('../services/notifications');
 
 const THREAD_SELECT = '*,players(id,first_name,last_name,team_name,specific_position,primary_position),scouts(id,first_name,last_name,club_name,email),coaches(id,first_name,last_name,team_name,email)';
 
@@ -406,15 +407,22 @@ router.post('/threads', requireAuth, requireRole('Scout'), async (req, res) => {
     const meta = await validatePlayerShare(thread, req.user.id, playerId);
     await createShareMessage(thread, req.user, 'player', playerId, meta, true);
     try {
-      const { error: notifErr } = await supabase.from('notifications').insert({
+      await createNotification({
         recipient_id: coach.id,
         recipient_type: 'Coach',
         notification_type: 'chat_started',
         title: 'New scout chat',
         body: 'A scout opened a chat about ' + displayName(player) + '.',
-        data: { threadId: thread.id, playerId }
+        data: {
+          targetType: 'chat_thread',
+          targetId: thread.id,
+          threadId: thread.id,
+          playerId,
+          playerName: displayName(player),
+          teamName: player.team_name || coach.team_name || '',
+          source: 'chat_started'
+        }
       });
-      if (notifErr) console.warn('[Chat notification skipped]', notifErr.message);
     } catch(notifErr) {
       console.warn('[Chat notification skipped]', notifErr.message);
     }
@@ -479,15 +487,22 @@ router.post('/threads/:id/messages', requireAuth, requireRole('Scout','Coach'), 
     const recipientId = req.user.accountType === 'Scout' ? thread.coach_id : thread.scout_id;
     const recipientType = req.user.accountType === 'Scout' ? 'Coach' : 'Scout';
     try {
-      const { error: notifErr } = await supabase.from('notifications').insert({
+      await createNotification({
         recipient_id: recipientId,
         recipient_type: recipientType,
         notification_type: 'chat_message',
         title: 'New ScoutLink message',
         body: 'New message about ' + displayName(thread.players) + '.',
-        data: { threadId: thread.id, playerId: thread.player_id }
+        data: {
+          targetType: 'chat_thread',
+          targetId: thread.id,
+          threadId: thread.id,
+          playerId: thread.player_id,
+          playerName: displayName(thread.players),
+          teamName: thread.players?.team_name || thread.coaches?.team_name || thread.scouts?.club_name || '',
+          source: 'chat_message'
+        }
       });
-      if (notifErr) console.warn('[Chat message notification skipped]', notifErr.message);
     } catch(notifErr) {
       console.warn('[Chat message notification skipped]', notifErr.message);
     }
@@ -555,13 +570,13 @@ router.post('/admin/threads', requireAuth, requireRole('Stratex'), async (req, r
     }).select().single();
     if (msgErr) throw msgErr;
     await auditAdminMessage(thread.id, message.id, req.user, 'thread_created', { recipientType, recipientId });
-    await supabase.from('notifications').insert({
+    await createNotification({
       recipient_id: recipientId,
       recipient_type: recipientType,
       notification_type: 'admin_message',
       title: 'New ScoutLink message',
       body: 'You have a new operational message from ScoutLink.',
-      data: { threadId: thread.id }
+      data: { targetType: 'chat_thread', targetId: thread.id, threadId: thread.id, source: 'admin_message' }
     });
     res.status(201).json({ thread, message });
   } catch(err) {
@@ -599,13 +614,13 @@ router.post('/admin/threads/:id/messages', requireAuth, requireRole('Stratex','C
     if (error) throw error;
     await supabase.from('admin_message_threads').update({ last_message_at: message.created_at, updated_at: message.created_at }).eq('id', thread.id);
     const { data: others } = await supabase.from('admin_message_participants').select('participant_id,participant_type').eq('thread_id', thread.id).neq('participant_id', req.user.id);
-    await Promise.all((others || []).map(p => supabase.from('notifications').insert({
+    await createNotifications((others || []).map(p => ({
       recipient_id: p.participant_id,
       recipient_type: p.participant_type,
       notification_type: 'admin_message',
       title: 'New ScoutLink message',
       body: 'You have a new reply in ScoutLink messages.',
-      data: { threadId: thread.id }
+      data: { targetType: 'chat_thread', targetId: thread.id, threadId: thread.id, source: 'admin_message_reply' }
     })));
     await auditAdminMessage(thread.id, message.id, req.user, 'reply', {});
     res.status(201).json({ message });

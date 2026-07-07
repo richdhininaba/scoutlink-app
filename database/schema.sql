@@ -6,7 +6,7 @@
 -- ENUMS
 DO $$ BEGIN CREATE TYPE account_type AS ENUM ('Player','Coach','Scout','Stratex'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE reg_status AS ENUM ('pending','approved','declined'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE notif_type AS ENUM ('scout_interest','match_fact','recruitment','system'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE notif_type AS ENUM ('scout_interest','match_fact','recruitment','system','chat_started','chat_message','fixture_attendance','admin_message','showcase_event'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE position_group AS ENUM ('Goalkeeper','Defender','Midfielder','Forward'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE build_category AS ENUM ('very_slight','slight','lean','athletic','stocky','powerful','very_powerful'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE height_category AS ENUM ('very_short','short','average','tall','very_tall'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -191,6 +191,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   notification_type notif_type DEFAULT 'system',
   title TEXT NOT NULL, body TEXT NOT NULL, data JSONB,
   is_read BOOLEAN DEFAULT FALSE, email_sent BOOLEAN DEFAULT FALSE,
+  email_sent_at TIMESTAMPTZ, email_error_safe TEXT, sendgrid_template_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

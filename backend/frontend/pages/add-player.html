@@ -17,10 +17,10 @@
 .form-row.cols-3{grid-template-columns:repeat(3,1fr)}
 .rating-input{text-align:center}
 .range-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
-.range-option{background:#161b22;border:1.5px solid #30363d;border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s}
-.range-option:hover,.range-option.active{border-color:#1d9e75;background:rgba(29,158,117,.08)}
-.range-label{font-size:12px;font-weight:700;color:#ffffff;margin-bottom:2px}
-.range-value{font-size:10px;color:#8b949e}
+.range-option{background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 8px 20px rgba(15,23,42,.04)}
+.range-option:hover,.range-option.active{border-color:#1d9e75;background:#ecfdf5}
+.range-label{font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.range-value{font-size:10px;color:#64748b}
 .required{color:#f44336}
 .form-error{color:#f44336;font-size:13px;padding:10px 14px;background:rgba(244,67,54,.1);border-radius:8px;display:none;margin-bottom:14px}
 .form-error.show{display:block}
@@ -265,8 +265,7 @@ function submitPlayer(){
   btn.textContent='Adding...';btn.disabled=true;
   api('POST','/api/players',body).then(function(d){
     var p=d.player;
-    var loginCodeMsg = d.login_code ? ' - Login code: ' + d.login_code : (p.login_code ? ' - Login code: ' + p.login_code : '');
-    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0)+(loginCodeMsg ? '<br><span style=\'font-size:18px;font-weight:900;color:#1d9e75;letter-spacing:3px\'>' + (d.login_code || p.login_code) + '</span><br><small style=\'color:#aaa\'>Share this login code with the player/parent</small>' : '');
+    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0)+'<br><small style="color:#64748b">The player setup email has been sent where an email address was supplied.</small>';
     suc.className='form-success show';
     btn.textContent='Add Another Player';btn.disabled=false;
     document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date]').forEach(function(i){i.value='';});

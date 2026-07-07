@@ -7,6 +7,7 @@ const { getPosGroup, analysePlayer } = require('../engines/compatibility');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan } = require('../utils/scoutPlans');
+const { createNotification } = require('../services/notifications');
 
 function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
@@ -420,7 +421,14 @@ router.post('/showcase-cancel', requireAuth, requireRole('Scout'), async (req, r
     if (waitlist && waitlist.length) {
       await supabase.from('showcase_attendance').update({ status: 'confirmed', confirmed_at: new Date().toISOString() }).eq('id', waitlist[0].id);
       const { data: ev2 } = await supabase.from('showcase_events').select('event_name').eq('id', eventId).single();
-      await supabase.from('notifications').insert({ recipient_id: waitlist[0].scout_id, recipient_type: 'Scout', title: 'Showcase Space Available', body: 'A space is now available at ' + (ev2 ? ev2.event_name : 'the showcase') + '. You are confirmed!', data: { event_id: eventId }, is_read: false });
+      await createNotification({
+        recipient_id: waitlist[0].scout_id,
+        recipient_type: 'Scout',
+        notification_type: 'showcase_event',
+        title: 'Showcase space available',
+        body: 'A space is now available at ' + (ev2 ? ev2.event_name : 'the showcase') + '. You are confirmed.',
+        data: { targetType: 'showcase_event', targetId: eventId, eventId, source: 'showcase_promoted' }
+      });
     }
     res.json({ message: 'Attendance cancelled' });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -512,15 +520,22 @@ try {
     const { data: scout } = await supabase.from('scouts').select('first_name,last_name,club_name').eq('id', req.user.id).maybeSingle();
     const scoutName = [scout?.first_name, scout?.last_name].filter(Boolean).join(' ') || 'A scout';
     try {
-      const { error: notifErr } = await supabase.from('notifications').insert({
+      await createNotification({
         recipient_id: fixture.coach_id,
         recipient_type: 'Coach',
         notification_type: 'fixture_attendance',
         title: 'Scout fixture attendance updated',
         body: scoutName + ' marked ' + status.replace(/_/g, ' ') + ' for the fixture against ' + (fixture.opponent || 'your opponent') + '.',
-        data: { fixtureId: fixture.id, scoutId: req.user.id, status }
+        data: {
+          targetType: 'fixture',
+          targetId: fixture.id,
+          fixtureId: fixture.id,
+          scoutId: req.user.id,
+          status,
+          teamName: fixture.team_name || '',
+          source: 'fixture_attendance'
+        }
       });
-      if (notifErr) console.warn('[Fixture attendance notification skipped]', notifErr.message);
     } catch(notifErr) {
       console.warn('[Fixture attendance notification skipped]', notifErr.message);
     }

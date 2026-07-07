@@ -300,16 +300,30 @@ async function sendResetPassword(d) {
 
 async function sendNotification(d) {
   const templateId = config.sendgrid.templates.notification;
-  if (!templateId) return { success: false, error: 'SENDGRID_TEMPLATE_NOTIFICATION not configured' };
+  if (!templateId) return { success: false, error: 'SENDGRID_NOTIFICATION_TEMPLATE_ID not configured' };
   if (!config.sendgrid.apiKey) return { success: false, skipped: true, error: 'SENDGRID_API_KEY not configured' };
   const sgMail = getSgMail();
   if (!sgMail) return { success: false, error: 'SendGrid not available' };
+  const notificationTitle = d.notificationTitle || d.title || d.subject || 'ScoutLink notification';
+  const notificationBody = d.notificationBody || d.body || d.message || '';
+  const actionUrl = d.actionUrl || d.actionLink || d.action_link || '';
   const payload = withDefaults({
-    title: d.title || d.subject || 'ScoutLink notification',
-    subject: d.title || d.subject || 'ScoutLink notification',
-    body: d.body || d.message || '',
-    message: d.body || d.message || '',
-    actionLink: d.actionLink || d.action_link || brandBase(),
+    firstName: d.firstName || d.first_name || 'there',
+    notificationTitle,
+    notificationBody,
+    notificationTypeLabel: d.notificationTypeLabel || d.typeLabel || d.notification_type_label || 'Notification',
+    playerName: d.playerName || d.player_name || '',
+    teamName: d.teamName || d.team_name || '',
+    submittedAt: d.submittedAt || d.submitted_at || prettyDate(),
+    actionLabel: d.actionLabel || d.action_label || (actionUrl ? 'Open ScoutLink' : ''),
+    actionUrl,
+    notification_id: d.notification_id || d.notificationId || '',
+    notificationId: d.notificationId || d.notification_id || '',
+    title: notificationTitle,
+    subject: notificationTitle,
+    body: notificationBody,
+    message: notificationBody,
+    actionLink: actionUrl,
     ...(d || {})
   });
   try {

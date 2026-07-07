@@ -13,6 +13,7 @@ const {
   calculateValueAnalysis
 } = require('../engines/compatibility');
 const email = require('../services/email');
+const { createNotification, createNotifications } = require('../services/notifications');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { duplicateMessage, sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan, effectiveLimits, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
@@ -146,10 +147,6 @@ async function generateUniquePlayerLoginCode() {
     attempts++;
   }
   throw new Error('Could not generate unique login code');
-}
-
-function playerCodeLine(p) {
-  return (p.first_name || p.firstName || '') + ' ' + (p.last_name || p.lastName || '') + ': ' + (p.login_code || p.loginCode || 'No code');
 }
 
 async function getScoutAnalysisContext(req) {
@@ -435,41 +432,29 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       } catch(emailErr) { console.error('[PlayerCreate] Email error:', emailErr.message); }
     }
 
-    let coachEmailSent = false;
-    let coachEmailTemplate = null;
-    if (req.user.accountType === 'Coach' && req.user.email && !isDemoSession(req)) {
-      try {
-        const coachEmailResult = await email.sendNotification({
-          to: req.user.email,
-          title: 'Player added to ScoutLink',
-          body: b.firstName + ' ' + b.lastName + ' has been added to ScoutLink. Login code: ' + loginCode + '.',
-          firstName: req.user.firstName || '',
-          playerName: b.firstName + ' ' + b.lastName,
-          player_name: b.firstName + ' ' + b.lastName,
-          loginCode,
-          login_code: loginCode,
-          playerEmail: recipientEmail || '',
-          player_email: recipientEmail || ''
-        }).catch(e => ({ success: false, error: e.message }));
-        coachEmailSent = !!coachEmailResult?.success;
-        coachEmailTemplate = coachEmailResult?.template || 'notification';
-      } catch(coachEmailErr) { console.error('[PlayerCreate] Coach email error:', coachEmailErr.message); }
-    }
-    
-    // Notify coach
+    // Notify coach without storing or emailing login codes. The shared notification service handles Coach/Scout email delivery.
     if (req.user.accountType === 'Coach' && !isDemoSession(req)) {
       try {
-        await supabase.from('notifications').insert({
+        await createNotification({
           recipient_id: req.user.id, recipient_type: 'Coach',
+          notification_type: 'system',
           title: 'Player added successfully',
-          body: b.firstName + ' ' + b.lastName + ' has been added. Login code: ' + loginCode + (emailSent ? '. Player email sent.' : '. Player email was not sent.') + (coachEmailSent ? ' Coach summary email sent.' : ' Coach summary email was not sent.'),
-          data: { player_id: data.id, login_code: loginCode, email_sent: emailSent, email_template: emailTemplate, coach_email_sent: coachEmailSent, coach_email_template: coachEmailTemplate, type: 'player_added' },
-          is_read: false
+          body: b.firstName + ' ' + b.lastName + ' has been added. ' + (emailSent ? 'The player setup email was sent.' : 'The player setup email was not sent.'),
+          data: {
+            targetType: 'player',
+            targetId: data.id,
+            playerId: data.id,
+            playerName: b.firstName + ' ' + b.lastName,
+            teamName: resolvedTeamName || '',
+            email_sent: emailSent,
+            email_template: emailTemplate,
+            source: 'player_added'
+          }
         });
       } catch(notifErr) {}
     }
     
-    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross, login_code: loginCode }, loginCode, emailSent, emailTemplate, coachEmailSent, coachEmailTemplate, message: 'Player created. Login code: ' + loginCode });
+    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross }, emailSent, emailTemplate, message: 'Player created. The player setup email was sent where an email address was supplied.' });
   } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
@@ -544,51 +529,32 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           emailSent = !!emailResult?.success;
           created.emailTemplate = emailResult?.template || null;
         }
-        results.created.push({ ...created, login_code: loginCode, emailSent, emailTemplate: created.emailTemplate || null });
+        results.created.push({ ...created, emailSent, emailTemplate: created.emailTemplate || null });
       } catch(e) {
         results.errors.push({ player: p.firstName + ' ' + p.lastName, error: duplicateMessage(e) || e.message });
       }
     }
     if (req.user.accountType === 'Coach' && results.created.length && !isDemoSession(req)) {
       try {
-        const lines = results.created.map(playerCodeLine);
         const sentCount = results.created.filter(p => p.emailSent).length;
-        let coachEmailSent = false;
-        if (req.user.email) {
-          const coachEmailResult = await email.sendNotification({
-            to: req.user.email,
-            title: 'Bulk player import completed',
-            body: results.created.length + ' players were created. Login codes: ' + lines.join('; ') + '. Player emails sent: ' + sentCount + '/' + results.created.length + '.',
-            firstName: req.user.firstName || '',
-            playersCreated: results.created.length,
-            players_created: results.created.length,
-            playerCodes: lines.join('; '),
-            player_codes: lines.join('; '),
-            playerEmailsSent: sentCount,
-            player_emails_sent: sentCount,
-            playerEmailsTotal: results.created.length,
-            player_emails_total: results.created.length
-          }).catch(e => ({ success: false, error: e.message }));
-          coachEmailSent = !!coachEmailResult?.success;
-        }
-        await supabase.from('notifications').insert({
+        await createNotification({
           recipient_id: req.user.id,
           recipient_type: 'Coach',
+          notification_type: 'system',
           title: 'Bulk player import completed',
-          body: results.created.length + ' players were created. Login codes: ' + lines.join('; ') + '. Player emails sent: ' + sentCount + '/' + results.created.length + (coachEmailSent ? '. Coach summary email sent.' : '. Coach summary email was not sent.') + '.',
+          body: results.created.length + ' players were created. Player setup emails sent: ' + sentCount + '/' + results.created.length + '.',
           data: {
             type: 'bulk_players_added',
-            coach_email_sent: coachEmailSent,
+            targetType: 'player',
+            actionUrl: '/coach/my-players',
             players: results.created.map(p => ({
               id: p.id,
               player_id: p.player_id,
               name: (p.first_name || '') + ' ' + (p.last_name || ''),
-              login_code: p.login_code,
               email_sent: !!p.emailSent,
               email_template: p.emailTemplate || null
             }))
-          },
-          is_read: false
+          }
         });
       } catch(notifErr) { console.error('[PlayersBulk] Notification error:', notifErr.message); }
     }
@@ -720,13 +686,53 @@ await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('
 } else {
 await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('id', req.user.id);
 }
-// Notify (fire and forget)
-supabase.from('notifications').insert({
+// Notify the player in-app, and notify the player's coach through the shared Coach/Scout notification path.
+createNotification({
 recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
-title: 'A scout is interested in you!',
+title: 'A scout is interested in you',
 body: scout.first_name + ' ' + scout.last_name + ' from ' + (scout.club_name||'a club') + ' has expressed interest in your profile.',
-data: { scoutId: scout.id, scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name }
-});
+data: {
+targetType: 'player',
+targetId: req.params.id,
+playerId: req.params.id,
+playerName: player.first_name + ' ' + player.last_name,
+scoutId: scout.id,
+scoutName: scout.first_name + ' ' + scout.last_name,
+scoutClub: scout.club_name,
+source: 'scout_interest'
+}
+}, { sendEmail: false }).catch(function(e){ console.warn('[Scout interest player notification skipped]', e.message); });
+try {
+const coachTargets = [];
+if (player.assigned_coach_id) {
+const { data: coachRow } = await supabase.from('coaches').select('id,team_name').eq('id', player.assigned_coach_id).maybeSingle();
+if (coachRow) coachTargets.push(coachRow);
+} else if (player.team_id) {
+const { data: coaches } = await supabase.from('coaches').select('id,team_name').eq('team_id', player.team_id).eq('is_active', true);
+(coaches || []).forEach(c => coachTargets.push(c));
+}
+await createNotifications(coachTargets.map(c => ({
+recipient_id: c.id,
+recipient_type: 'Coach',
+notification_type: 'scout_interest',
+title: 'Scout interest registered',
+body: (scout.first_name + ' ' + scout.last_name).trim() + ' from ' + (scout.club_name || 'a club') + ' has added ' + player.first_name + ' ' + player.last_name + ' to their pipeline.',
+data: {
+targetType: 'player',
+targetId: req.params.id,
+playerId: req.params.id,
+playerName: player.first_name + ' ' + player.last_name,
+teamName: player.team_name || c.team_name || '',
+scoutId: scout.id,
+pipelineId: existing?.id || null,
+scoutName: scout.first_name + ' ' + scout.last_name,
+scoutClub: scout.club_name,
+source: 'scout_interest'
+}
+})));
+} catch(notifErr) {
+console.warn('[Scout interest coach notification skipped]', notifErr.message);
+}
 if (player.email) {
 email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
 playerName: player.first_name + ' ' + player.last_name,
