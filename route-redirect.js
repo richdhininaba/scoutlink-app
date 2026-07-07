@@ -26,8 +26,25 @@
     '/contact': '/frontend/pages/contact.html',
     '/accessibility': '/frontend/pages/accessibility.html',
     '/complete-registration': '/frontend/pages/complete-registration.html',
+    '/company': '/frontend/pages/stratex-site.html',
+    '/company/scoutlink': '/frontend/pages/stratex-site.html',
+    '/company/about': '/frontend/pages/stratex-site.html',
+    '/company/leadership': '/frontend/pages/stratex-site.html',
+    '/company/trust': '/frontend/pages/stratex-site.html',
+    '/company/scout-verification': '/frontend/pages/stratex-site.html',
+    '/company/parent-guardian-notice': '/frontend/pages/stratex-site.html',
+    '/company/careers': '/frontend/pages/stratex-site.html',
+    '/company/contact': '/frontend/pages/stratex-site.html',
+    '/company/report-a-concern': '/frontend/pages/stratex-site.html',
+    '/company/privacy-policy': '/frontend/pages/stratex-site.html',
+    '/company/terms-of-use': '/frontend/pages/stratex-site.html',
+    '/company/cookie-policy': '/frontend/pages/stratex-site.html',
+    '/company/security': '/frontend/pages/stratex-site.html',
+    '/company/accessibility': '/frontend/pages/stratex-site.html',
+    '/company/learning-centre': '/frontend/pages/stratex-site.html',
     '/404': '/frontend/pages/404.html',
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
+    '/stratex/company-site': '/frontend/pages/stratex-company-admin.html',
     '/stratex/registrations': '/frontend/pages/stratex-registrations.html',
     '/stratex/users': '/frontend/pages/stratex-users.html',
     '/stratex/org': '/frontend/pages/stratex-org.html',
@@ -93,6 +110,9 @@
       window.location.replace(target + '?' + params.toString() + window.location.hash);
       return;
     }
+  }
+  if (!target && (path.indexOf('/company/careers/') === 0 || path.indexOf('/company/learning-centre/') === 0)) {
+    target = '/frontend/pages/stratex-site.html';
   }
   if (target) window.location.replace(target + window.location.search + window.location.hash);
 })();

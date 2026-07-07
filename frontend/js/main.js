@@ -24,6 +24,7 @@ const CLEAN_ROUTES = {
   'contact.html':'/contact',
   'complete-registration.html':'/complete-registration',
   'stratex-dashboard.html':'/stratex/dashboard',
+  'stratex-company-admin.html':'/stratex/company-site',
   'stratex-registrations.html':'/stratex/registrations',
   'stratex-users.html':'/stratex/users',
   'stratex-org.html':'/stratex/org',

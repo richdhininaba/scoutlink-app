@@ -20,3 +20,4 @@ Disallow: /uploads/
 Disallow: /files/
 
 Sitemap: https://scoutlink.app/sitemap.xml
+Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml

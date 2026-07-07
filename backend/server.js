@@ -29,6 +29,7 @@ app.use(helmet({
 app.use(cors({
   origin: [
     'https://scoutlink.app', 'https://www.scoutlink.app',
+    'https://stratexanalytics.co.uk', 'https://www.stratexanalytics.co.uk',
     'https://richdhininaba.github.io',
     'http://localhost:5500', 'http://localhost:3000', 'http://localhost:8080'
   ],
@@ -91,6 +92,7 @@ app.use('/api/fixtures', require('./routes/fixtures'));
 app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/careers', publicFormLimiter, require('./routes/careers'));
 app.use('/api/trust', publicFormLimiter, require('./routes/trust'));
+app.use('/api/stratex-website', publicFormLimiter, require('./routes/stratexWebsite'));
 
 const frontendDir = [
   path.resolve(__dirname, 'frontend'),
@@ -125,7 +127,24 @@ const routeMap = {
   '/contact': 'pages/contact.html',
   '/accessibility': 'pages/accessibility.html',
   '/complete-registration': 'pages/complete-registration.html',
+  '/company': 'pages/stratex-site.html',
+  '/company/scoutlink': 'pages/stratex-site.html',
+  '/company/about': 'pages/stratex-site.html',
+  '/company/leadership': 'pages/stratex-site.html',
+  '/company/trust': 'pages/stratex-site.html',
+  '/company/scout-verification': 'pages/stratex-site.html',
+  '/company/parent-guardian-notice': 'pages/stratex-site.html',
+  '/company/careers': 'pages/stratex-site.html',
+  '/company/contact': 'pages/stratex-site.html',
+  '/company/report-a-concern': 'pages/stratex-site.html',
+  '/company/privacy-policy': 'pages/stratex-site.html',
+  '/company/terms-of-use': 'pages/stratex-site.html',
+  '/company/cookie-policy': 'pages/stratex-site.html',
+  '/company/security': 'pages/stratex-site.html',
+  '/company/accessibility': 'pages/stratex-site.html',
+  '/company/learning-centre': 'pages/stratex-site.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
+  '/stratex/company-site': 'pages/stratex-company-admin.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
   '/stratex/users': 'pages/stratex-users.html',
   '/stratex/org': 'pages/stratex-org.html',
@@ -186,14 +205,57 @@ function sendFrontendFile(req, res, relativePath) {
 }
 
 if (frontendDir) {
-  app.use(express.static(frontendDir, { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0 }));
-  app.use('/frontend', express.static(frontendDir, { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0 }));
+  const staticOptions = { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0, index: false };
+  app.use(express.static(frontendDir, staticOptions));
+  app.use('/frontend', express.static(frontendDir, staticOptions));
+
+  function isStratexHost(req) {
+    return /(^|\.)stratexanalytics\.co\.uk$/i.test(req.hostname || req.get('host') || '');
+  }
+
+  const STRATEX_PUBLIC_ROUTES = [
+    '/',
+    '/scoutlink',
+    '/about',
+    '/leadership',
+    '/trust',
+    '/scout-verification',
+    '/parent-guardian-notice',
+    '/careers',
+    '/contact',
+    '/report-a-concern',
+    '/privacy-policy',
+    '/terms-of-use',
+    '/cookie-policy',
+    '/security',
+    '/accessibility',
+    '/learning-centre'
+  ];
+
+  STRATEX_PUBLIC_ROUTES.forEach((route) => {
+    app.get(route, (req, res, next) => {
+      if (!isStratexHost(req)) return next();
+      return sendFrontendFile(req, res, 'pages/stratex-site.html');
+    });
+  });
+
+  app.get('/careers/:slug', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return sendFrontendFile(req, res, 'pages/stratex-site.html');
+  });
+
+  app.get('/learning-centre/:slug', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return sendFrontendFile(req, res, 'pages/stratex-site.html');
+  });
 
   Object.entries(routeMap).forEach(([route, file]) => {
     app.get(route, (req, res) => sendFrontendFile(req, res, file));
   });
 
   app.get('/careers/:slug', (req, res) => sendFrontendFile(req, res, 'pages/career-detail.html'));
+  app.get('/company/careers/:slug', (req, res) => sendFrontendFile(req, res, 'pages/stratex-site.html'));
+  app.get('/company/learning-centre/:slug', (req, res) => sendFrontendFile(req, res, 'pages/stratex-site.html'));
 }
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
