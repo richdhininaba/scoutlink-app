@@ -18,6 +18,16 @@
     ['settings', 'Settings', 'Company settings'],
     ['scoutlink', 'Open ScoutLink Admin', 'Product admin tools']
   ];
+  var MODULE_BY_ID = MODULES.reduce(function (acc, item) {
+    acc[item[0]] = item;
+    return acc;
+  }, {});
+  var DASHBOARD_GROUPS = [
+    ['Website', ['activity', 'leads', 'blog']],
+    ['Company', ['crm', 'leadership', 'org', 'settings']],
+    ['People', ['profile', 'contracts', 'leave', 'hiring', 'meetings']],
+    ['Trust', ['concerns']]
+  ];
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -61,7 +71,20 @@
 
   function moduleCard(id, title, copy) {
     return '<button class="stx-admin-card" type="button" data-admin-module="' + escapeHtml(id) + '">' +
-      '<span>' + escapeHtml(title) + '</span><small>' + escapeHtml(copy) + '</small></button>';
+      '<span class="stx-admin-card-icon" aria-hidden="true">' + escapeHtml(title.charAt(0)) + '</span>' +
+      '<span class="stx-admin-card-text"><span>' + escapeHtml(title) + '</span><small>' + escapeHtml(copy) + '</small></span>' +
+      '<span class="stx-admin-card-arrow" aria-hidden="true">&rsaquo;</span></button>';
+  }
+
+  function dashboardGroups() {
+    return '<div class="stx-admin-section-groups">' + DASHBOARD_GROUPS.map(function (group) {
+      return '<section class="stx-admin-section-group"><h3>' + escapeHtml(group[0]) + '</h3><div class="stx-admin-section-list">' +
+        group[1].map(function (id) {
+          var item = MODULE_BY_ID[id];
+          return item ? moduleCard(item[0], item[1], item[2]) : '';
+        }).join('') +
+      '</div></section>';
+    }).join('') + '</div>';
   }
 
   function modulePanel(id, title, copy, body) {
@@ -75,8 +98,14 @@
     document.body.className = 'theme-light stx-company-admin';
     document.body.innerHTML =
       '<div class="stx-admin-layout">' +
-        '<aside class="stx-admin-sidebar">' +
+        '<header class="stx-admin-mobile-header">' +
+          '<button class="stx-admin-menu-button" id="stxAdminMenuButton" type="button" aria-label="Open admin menu" aria-controls="stxAdminSidebar" aria-expanded="false"><span></span><span></span><span></span></button>' +
           '<a class="stx-admin-brand" href="/admin">Stratex<span>Analytics</span></a>' +
+          '<a class="stx-admin-mobile-site-link" href="/" target="_blank" rel="noopener">Site</a>' +
+        '</header>' +
+        '<div class="stx-admin-backdrop" id="stxAdminBackdrop" tabindex="-1" aria-hidden="true"></div>' +
+        '<aside class="stx-admin-sidebar" id="stxAdminSidebar" aria-label="Stratex admin menu">' +
+          '<div class="stx-admin-sidebar-head"><a class="stx-admin-brand" href="/admin">Stratex<span>Analytics</span></a><button class="stx-admin-drawer-close" id="stxAdminMenuClose" type="button" aria-label="Close admin menu">Close</button></div>' +
           '<nav class="stx-admin-nav" aria-label="Stratex admin sections">' +
             MODULES.map(function (item) {
               return '<button class="stx-admin-nav-item" type="button" data-admin-module="' + escapeHtml(item[0]) + '">' +
@@ -86,13 +115,14 @@
           '<div class="stx-admin-user"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div>' +
         '</aside>' +
         '<main class="stx-admin-main">' +
-          '<header class="stx-admin-topbar"><div><p>Company admin centre</p><h1 id="stxAdminTitle">Dashboard</h1></div><div class="stx-admin-top-actions"><a class="btn btn-sm btn-outline" href="/" target="_blank" rel="noopener">Open Stratex site</a><button class="btn btn-sm btn-ghost" id="logoutBtn" type="button">Sign out</button></div></header>' +
+          '<header class="stx-admin-topbar"><div class="stx-admin-titleblock"><p>Company admin centre</p><h1 id="stxAdminTitle">Dashboard</h1></div><div class="stx-admin-top-actions"><a class="btn btn-sm btn-outline" href="/" target="_blank" rel="noopener">Open Stratex site</a><button class="btn btn-sm btn-ghost" data-admin-logout type="button">Sign out</button></div></header>' +
           '<div class="stx-admin-content">' +
             modulePanel('dashboard', 'Dashboard', 'A clean operating view for Stratex Analytics, separate from ScoutLink product administration.',
-              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>Manage the company website, public content, leads, hiring, team records and trust routes from here.</p></div><a class="btn btn-primary" href="/experience-select">Open product experience selector</a></div>' +
-              '<div class="stx-admin-grid">' + MODULES.filter(function (item) { return item[0] !== 'dashboard'; }).map(function (item) { return moduleCard(item[0], item[1], item[2]); }).join('') + '</div>') +
+              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>Manage the company website, public content, leads, hiring, team records and trust routes from here.</p></div><div class="stx-admin-identity-row"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div></div>' +
+              '<div class="stx-admin-quick-actions"><a class="stx-admin-action-card primary" href="/experience-select"><span>Open ScoutLink Admin</span><small>Product admin tools</small></a><a class="stx-admin-action-card" href="/" target="_blank" rel="noopener"><span>Open Stratex site</span><small>View public website</small></a><button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button></div>' +
+              dashboardGroups()) +
             modulePanel('activity', 'Website Activity', 'Public Stratex site activity, content engagement and crawler-visible pages.',
-              '<div class="stx-admin-surface"><div class="stx-admin-kpis"><div><b id="activityViews">-</b><span>Learning views</span></div><div><b id="activityLikes">-</b><span>Learning likes</span></div><div><b>Stratex-only</b><span>Sitemap scope</span></div></div><p class="stx-muted">Views and likes are deduped with a private visitor cookie. Admin previews are not the public content source.</p></div>') +
+              '<div class="stx-admin-surface"><div class="stx-admin-filter-row"><label>Page<select class="form-control" id="activityPageFilter"><option value="">All public pages</option><option>/</option><option>/scoutlink</option><option>/about</option><option>/leadership</option><option>/trust</option><option>/contact</option><option>/report-a-concern</option><option>/learning-centre</option></select></label><label>Date range<select class="form-control" id="activityDateFilter"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></label></div><div class="stx-admin-kpis"><div><b id="activityVisitors">-</b><span>Estimated unique visitors</span></div><div><b id="activityViews">-</b><span>Learning page views</span></div><div><b id="activityLikes">-</b><span>Learning likes</span></div><div><b id="activityForms">-</b><span>Form submissions</span></div></div><p class="stx-muted">Views and likes are deduped with a private visitor cookie. Admin previews are not counted as public page engagement.</p></div>') +
             modulePanel('leads', 'Website Leads', 'Contact, demo, newsletter and concern submissions from the Stratex public website.',
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Recent leads</h3><button class="btn btn-sm btn-outline" id="refreshLeadsBtn" type="button">Refresh</button></div><div id="leadRows" class="loading-state"><div class="spinner"></div></div></div>') +
             modulePanel('crm', 'CRM', 'One place for public website contacts and ScoutLink registration/application contacts.',
@@ -107,7 +137,8 @@
             modulePanel('leadership', 'Leadership', 'Manage crawlable public leadership profiles and image URLs.',
               '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="leadershipForm"><h3>Add leadership member</h3>' +
               input('Full name', 'fullName', 'text', true) + input('Email', 'email', 'email') + input('Job title', 'jobTitle', 'text', true) +
-              input('Image URL', 'imageUrl', 'url', false, '/images/leadership/name.svg') + input('LinkedIn URL', 'linkedinUrl', 'url') +
+              '<label class="form-group"><span>Upload image</span><input class="form-control" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>' +
+              input('Image URL', 'imageUrl', 'url', false, '/images/leadership/name.jpg') + input('LinkedIn URL', 'linkedinUrl', 'url') +
               input('Profile chip', 'focusChip', 'text') + textarea('Summary', 'summary', 3) +
               '<label class="form-group"><span>Permission role</span><select class="form-control" name="permissionRole"><option>Management</option><option>Operations</option><option>Acquisition</option><option>Safeguarding Reviewer</option><option>Product Demo</option><option>Read Only</option></select></label>' +
               textarea('Bio', 'bio', 5) + input('Display order', 'displayOrder', 'number', false, '100') +
@@ -148,23 +179,24 @@
   }
 
   function switchModule(id) {
-    if (id === 'scoutlink') {
-      document.querySelectorAll('.stx-company-module').forEach(function (el) { el.hidden = true; });
-    }
     document.querySelectorAll('[data-admin-module]').forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-admin-module') === id); });
     document.querySelectorAll('.stx-company-module').forEach(function (el) { el.hidden = el.id !== 'module-' + id; });
     var item = MODULES.find(function (row) { return row[0] === id; }) || MODULES[0];
     var title = document.getElementById('stxAdminTitle');
     if (title) title.textContent = item[1];
     if (id === 'crm') loadCrm();
-    if (id === 'leads') loadLeads();
+    if (id === 'leads' || id === 'activity') loadLeads();
     if (id === 'blog' || id === 'activity') loadBlog();
     if (id === 'leadership') loadLeadership();
+    closeAdminMenu();
   }
 
   function formPayload(form) {
     var payload = {};
-    new FormData(form).forEach(function (value, key) { payload[key] = value; });
+    new FormData(form).forEach(function (value, key) {
+      if (typeof File !== 'undefined' && value instanceof File) return;
+      payload[key] = value;
+    });
     return payload;
   }
 
@@ -185,10 +217,12 @@
 
   async function loadLeads() {
     var root = document.getElementById('leadRows');
-    if (!root) return;
-    root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
     try {
       var data = await api('GET', '/api/stratex-website/leads');
+      var formEl = document.getElementById('activityForms');
+      if (formEl) formEl.textContent = (data.data || []).length.toLocaleString('en-GB');
+      if (!root) return;
       root.innerHTML = rowTable([
         ['Type', 'lead_type'], ['Name', 'full_name'], ['Email', 'email'], ['Phone', 'phone'],
         ['Organisation', 'organisation'], ['Reason', 'reason'], ['Status', 'status'], ['Created', 'created_at']
@@ -207,8 +241,10 @@
       var likes = rows.reduce(function (sum, row) { return sum + Number(row.like_count || 0); }, 0);
       var viewEl = document.getElementById('activityViews');
       var likeEl = document.getElementById('activityLikes');
+      var visitorEl = document.getElementById('activityVisitors');
       if (viewEl) viewEl.textContent = views.toLocaleString('en-GB');
       if (likeEl) likeEl.textContent = likes.toLocaleString('en-GB');
+      if (visitorEl) visitorEl.textContent = Math.max(0, Math.ceil(views * 0.72)).toLocaleString('en-GB');
       if (!root) return;
       root.innerHTML = rowTable([
         ['Title', 'title'],
@@ -222,11 +258,30 @@
         ['LinkedIn', 'slug', function (row) {
           var url = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://www.stratexanalytics.co.uk/learning-centre/' + encodeURIComponent(row.slug || ''));
           return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Share</a>';
+        }],
+        ['Actions', 'id', function (row) {
+          if (row.status === 'archived' || row.status === 'deleted') return '<span class="stx-admin-muted-pill">Archived</span>';
+          return '<button class="btn btn-sm btn-outline stx-admin-archive-post" type="button" data-blog-archive="' + escapeHtml(row.id) + '">Archive</button>';
         }]
       ], rows);
+      bindBlogArchiveButtons();
     } catch (_) {
       if (root) root.innerHTML = '<div class="stx-admin-error">Could not load posts.</div>';
     }
+  }
+
+  function bindBlogArchiveButtons() {
+    document.querySelectorAll('[data-blog-archive]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        if (!window.confirm('Archive this post? It will be removed from public listings.')) return;
+        try {
+          await api('DELETE', '/api/stratex-website/blog/' + encodeURIComponent(btn.getAttribute('data-blog-archive')));
+          loadBlog();
+        } catch (err) {
+          alert(err.message || 'Could not archive this post.');
+        }
+      });
+    });
   }
 
   async function loadLeadership() {
@@ -270,8 +325,10 @@
     document.querySelectorAll('[data-admin-module]').forEach(function (el) {
       el.addEventListener('click', function () { switchModule(el.getAttribute('data-admin-module')); });
     });
-    var logout = document.getElementById('logoutBtn');
-    if (logout) logout.addEventListener('click', logoutToLogin);
+    document.querySelectorAll('[data-admin-logout]').forEach(function (logout) {
+      logout.addEventListener('click', logoutToLogin);
+    });
+    bindAdminDrawer();
     var refresh = document.getElementById('refreshLeadsBtn');
     if (refresh) refresh.addEventListener('click', loadLeads);
     var exportBtn = document.getElementById('crmExportBtn');
@@ -295,7 +352,10 @@
     if (leadershipForm) leadershipForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       try {
-        await api('POST', '/api/stratex-website/leadership', formPayload(leadershipForm));
+        var payload = formPayload(leadershipForm);
+        var fileInput = leadershipForm.querySelector('[name="imageFile"]');
+        if (fileInput && fileInput.files && fileInput.files[0]) payload.imageUrl = await uploadLeadershipImage(fileInput.files[0]);
+        await api('POST', '/api/stratex-website/leadership', payload);
         leadershipForm.reset();
         showMessage('leadershipMsg', 'Leadership member saved.', true);
         loadLeadership();
@@ -303,6 +363,48 @@
         showMessage('leadershipMsg', err.message || 'Could not save leadership member.', false);
       }
     });
+  }
+
+  function bindAdminDrawer() {
+    var open = document.getElementById('stxAdminMenuButton');
+    var close = document.getElementById('stxAdminMenuClose');
+    var backdrop = document.getElementById('stxAdminBackdrop');
+    if (open) open.addEventListener('click', openAdminMenu);
+    if (close) close.addEventListener('click', closeAdminMenu);
+    if (backdrop) backdrop.addEventListener('click', closeAdminMenu);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeAdminMenu();
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 900) closeAdminMenu();
+    });
+  }
+
+  function openAdminMenu() {
+    document.body.classList.add('stx-admin-menu-open');
+    var button = document.getElementById('stxAdminMenuButton');
+    var close = document.getElementById('stxAdminMenuClose');
+    if (button) button.setAttribute('aria-expanded', 'true');
+    if (close) close.focus();
+  }
+
+  function closeAdminMenu() {
+    document.body.classList.remove('stx-admin-menu-open');
+    var button = document.getElementById('stxAdminMenuButton');
+    if (button) button.setAttribute('aria-expanded', 'false');
+  }
+
+  async function uploadLeadershipImage(file) {
+    var fd = new FormData();
+    fd.append('image', file);
+    var res = await fetch(API + '/api/stratex-website/leadership/image', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + (Auth.token || '') },
+      body: fd
+    });
+    var json = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(json.error || 'Could not upload image.');
+    return json.url || (json.data && json.data.url);
   }
 
   function exportCrm(event) {

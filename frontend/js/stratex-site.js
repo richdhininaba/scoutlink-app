@@ -19,7 +19,7 @@
       summary: 'Sets the vision, strategy and direction for Stratex Analytics and ScoutLink.',
       email: 'richdhin@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/richdhin-i-470a15109/',
-      image: '/images/leadership/richdhin-inaba.svg',
+      image: '/images/leadership/richdhin-inaba.jpg',
       alt: 'Richdhin Inaba, Founder and CEO of Stratex Analytics',
       bio: 'Richdhin sets the vision, strategy and direction for Stratex Analytics and ScoutLink. He leads the company executive decisions, product direction and long-term growth.',
       focus: ['Company vision', 'Executive decisions', 'Product direction', 'Long-term growth']
@@ -32,7 +32,7 @@
       summary: 'Leads day-to-day operations, outreach delivery and customer management.',
       email: 'lucy.ali@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/lucy-ali-654b79160/',
-      image: '/images/leadership/lucy-ali.svg',
+      image: '/images/leadership/lucy-ali.jpg',
       alt: 'Lucy Ali, Director of Operations and Customer Success at Stratex Analytics',
       bio: 'Lucy leads the day-to-day operations of ScoutLink, including internal processes, outreach delivery, coach and scout relationships, customer management and event operations. She ensures the business runs smoothly as ScoutLink grows.',
       focus: ['Internal processes', 'Outreach delivery', 'Customer management', 'Event operations']
@@ -45,7 +45,7 @@
       summary: 'Leads football strategy, growth initiatives and sporting direction.',
       email: 'alexandro.ilioaie@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/alexandro-ilioaie-a0347025a/',
-      image: '/images/leadership/alexandro-ilioaie.svg',
+      image: '/images/leadership/alexandro-ilioaie.jpg',
       alt: 'Alexandro Ilioaie, Director of Football Strategy and Growth at Stratex Analytics',
       bio: 'Alexandro leads ScoutLink football strategy, growth initiatives and sporting direction. He shapes showcase events, awards, partnerships and community ideas that help ScoutLink grow credibly within the football world.',
       focus: ['Football strategy', 'Showcase events', 'Awards', 'Partnerships']
@@ -160,7 +160,7 @@
     track('stratex_home_viewed');
     return '<section class="stx-hero"><div class="stx-container stx-hero-grid">' +
       '<div class="stx-hero-card"><span class="stx-kicker">Football intelligence for overlooked talent</span><h1>Building the intelligence layer for grassroots football.</h1><p class="stx-lede">Stratex Analytics creates data-led products that help coaches organise player evidence, help verified scouts make better decisions, and give overlooked grassroots players a safer route to visibility.</p><div class="stx-actions">' +
-      btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('About Stratex', sitePath('about'), '') + btn('Contact us', sitePath('contact'), '') +
+      btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('About Stratex', sitePath('about'), '') + btn('Contact Us', sitePath('contact'), '') +
       '</div></div><div class="stx-preview">' + profilePreview() + '</div></div></section>' +
       section('Products built around football intelligence.', 'ScoutLink is the first product in the Stratex ecosystem. Future products will build on the same structured football intelligence layer.',
         '<div class="stx-grid">' +
@@ -241,14 +241,15 @@
   }
 
   function personCard(person) {
+    var firstName = person.name.split(' ')[0];
     return '<article class="stx-card stx-person-card">' +
       '<img class="stx-person-image" src="' + esc(person.image) + '" alt="' + esc(person.alt) + '" loading="lazy" width="320" height="320">' +
-      '<span class="stx-tag green">' + esc(person.chip || 'Leadership') + '</span>' +
+      '<div class="stx-person-copy"><span class="stx-tag green">' + esc(person.chip || 'Leadership') + '</span>' +
       '<h3>' + esc(person.name) + '</h3>' +
       '<p class="stx-person-title">' + esc(person.title) + '</p>' +
-      '<p>' + esc(person.summary || '') + '</p>' +
-      '<p><a href="mailto:' + esc(person.email) + '">' + esc(person.email) + '</a></p>' +
-      '<button class="stx-btn stx-btn-soft" type="button" data-leader-profile="' + esc(person.key) + '">View profile</button>' +
+      '<p>' + esc(person.summary || '') + '</p></div>' +
+      '<div class="stx-person-actions"><a class="stx-btn stx-btn-soft stx-btn-small" href="mailto:' + esc(person.email) + '">Email ' + esc(firstName) + '</a>' +
+      '<button class="stx-btn stx-btn-soft stx-btn-small" type="button" data-leader-profile="' + esc(person.key) + '">View profile</button></div>' +
     '</article>';
   }
 
@@ -707,8 +708,10 @@
       var name = String(row.full_name || row.fullName || '').toLowerCase();
       byName[name] = row;
     });
-    return LEADERS.map(function (person) {
+    var knownNames = {};
+    var merged = LEADERS.map(function (person) {
       var row = byName[person.name.toLowerCase()];
+      knownNames[person.name.toLowerCase()] = true;
       if (!row) return person;
       return Object.assign({}, person, {
         title: row.job_title || row.jobTitle || person.title,
@@ -720,6 +723,25 @@
         alt: row.alt || person.alt
       });
     });
+    (rows || []).forEach(function (row) {
+      var name = String(row.full_name || row.fullName || '').trim();
+      if (!name || knownNames[name.toLowerCase()]) return;
+      merged.push({
+        key: row.id || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: name,
+        title: row.job_title || row.jobTitle || 'Leadership',
+        chip: row.focus_chip || row.permission_role || 'Leadership',
+        summary: row.summary || '',
+        email: row.email || '',
+        linkedin: row.linkedin_url || '',
+        image: row.image_url || row.imageUrl || '/images/leadership/richdhin-inaba.jpg',
+        alt: name + ', Stratex Analytics leadership',
+        bio: row.bio || row.summary || '',
+        focus: Array.isArray(row.focus_areas) ? row.focus_areas : []
+      });
+    });
+    LEADERS = merged;
+    return merged;
   }
 
   async function loadPosts() {

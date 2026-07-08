@@ -6,8 +6,24 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const XLSX = require('xlsx');
 const crypto = require('crypto');
+const multer = require('multer');
 
 const CONSENT_VERSION = '2026-07-stratex-site-v1';
+const LEADERSHIP_ASSET_BUCKET = 'stratex-public-assets';
+const LEADERSHIP_IMAGE_TYPES = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp'
+};
+
+const leadershipImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!LEADERSHIP_IMAGE_TYPES[file.mimetype]) return cb(new Error('Please upload a JPG, PNG or WEBP image under 4MB.'));
+    cb(null, true);
+  }
+});
 
 function text(value, max = 4000) {
   return String(value || '').trim().slice(0, max);
@@ -71,6 +87,43 @@ function consentPayload(req) {
 
 function source(req, fallback) {
   return text(req.body.sourcePage || req.body.source_page || req.get('referer') || fallback, 600) || fallback;
+}
+
+function normalizeAdminRole(role) {
+  const raw = String(role || '').trim().toLowerCase();
+  if (raw === 'productdemo') return 'product demo';
+  if (raw === 'readonly') return 'read only';
+  return raw;
+}
+
+function hasManagementPermission(admin, req) {
+  const role = normalizeAdminRole((admin && (admin.admin_role || admin.role)) || (req.user && req.user.role));
+  const perms = Array.isArray(admin && admin.permissions) ? admin.permissions.map(item => String(item || '').toLowerCase()) : [];
+  const emailAddress = String((admin && admin.email) || (req.user && req.user.email) || '').toLowerCase();
+  return emailAddress === 'richdhin@stratexanalytics.co.uk' ||
+    role === 'management' ||
+    role === 'super admin' ||
+    role === 'founder' ||
+    perms.includes('management') ||
+    perms.includes('permissions') ||
+    perms.includes('admin_users');
+}
+
+async function requireLeadershipManagement(req, res, next) {
+  try {
+    const { data, error } = await supabase
+      .from('stratex')
+      .select('id,email,admin_role,role,permissions,is_active')
+      .eq('id', req.user.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (data && data.is_active === false) return res.status(403).json({ error: 'This admin account is inactive.' });
+    if (!hasManagementPermission(data || {}, req)) return res.status(403).json({ error: 'Management permission is required for leadership changes.' });
+    next();
+  } catch (err) {
+    console.error('[Stratex leadership permission]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not verify admin permissions.' });
+  }
 }
 
 async function saveLead(req, type, extra) {
@@ -547,7 +600,51 @@ router.patch('/blog/:id', requireAuth, requireRole('Stratex'), async (req, res) 
   }
 });
 
-router.post('/leadership', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/blog/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('stratex_learning_posts')
+      .update({ status: 'archived', updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select('id,slug,title,status,updated_at')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Post not found.' });
+    res.json({ message: 'Post archived.', data });
+  } catch (err) {
+    console.error('[Stratex blog archive]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not archive this post.' });
+  }
+});
+
+router.post('/leadership/image', requireAuth, requireRole('Stratex'), requireLeadershipManagement, leadershipImageUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Please choose an image to upload.' });
+    try {
+      await supabase.storage.createBucket(LEADERSHIP_ASSET_BUCKET, {
+        public: true,
+        fileSizeLimit: 4 * 1024 * 1024,
+        allowedMimeTypes: Object.keys(LEADERSHIP_IMAGE_TYPES)
+      });
+    } catch (_) {}
+    const ext = LEADERSHIP_IMAGE_TYPES[req.file.mimetype] || '.jpg';
+    const cleanName = slugify(req.body.name || req.file.originalname.replace(/\.[^.]+$/, '')) || 'leadership-image';
+    const filePath = 'leadership/' + cleanName + '-' + Date.now() + '-' + crypto.randomUUID() + ext;
+    const { error } = await supabase.storage.from(LEADERSHIP_ASSET_BUCKET).upload(filePath, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+      metadata: { uploadedBy: req.user.id, source: 'stratex_leadership_admin' }
+    });
+    if (error) throw error;
+    const { data } = supabase.storage.from(LEADERSHIP_ASSET_BUCKET).getPublicUrl(filePath);
+    res.status(201).json({ url: data.publicUrl, bucket: LEADERSHIP_ASSET_BUCKET, path: filePath });
+  } catch (err) {
+    console.error('[Stratex leadership image upload]', { code: err.code, message: err.message });
+    res.status(err && err.message && err.message.includes('JPG') ? 400 : 500).json({ error: err.message || 'Could not upload this image.' });
+  }
+});
+
+router.post('/leadership', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
   try {
     const firstName = text(req.body.firstName || req.body.first_name, 120);
     const lastName = text(req.body.lastName || req.body.last_name, 120);
@@ -578,7 +675,7 @@ router.post('/leadership', requireAuth, requireRole('Stratex'), async (req, res)
   }
 });
 
-router.patch('/leadership/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/leadership/:id', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
     if (req.body.fullName !== undefined || req.body.full_name !== undefined) patch.full_name = text(req.body.fullName || req.body.full_name, 240);
