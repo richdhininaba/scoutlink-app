@@ -185,6 +185,16 @@ const pages = {
   }
 };
 
+const careerDetails = {
+  'outreach-associate': {
+    title: 'Outreach Associate | Stratex Analytics Careers',
+    description: 'Apply for the Outreach Associate role at Stratex Analytics, helping introduce ScoutLink to grassroots football coaches and scouts.',
+    kicker: 'Commercial - Live Role',
+    h1: 'Outreach Associate',
+    body: 'Commission-based pay, remote and flexible. This Stratex Analytics role helps introduce ScoutLink to grassroots football coaches and scouts, supports onboarding and builds trusted grassroots football relationships.'
+  }
+};
+
 function esc(value) {
   return String(value == null ? '' : value)
     .replace(/&/g, '&amp;')
@@ -199,14 +209,23 @@ function routeFromRequest(req) {
   if (requestPath.indexOf('/company') === 0) requestPath = requestPath.replace(/^\/company/, '') || '/';
   const parts = requestPath.split('/').filter(Boolean);
   if (!parts.length) return { key: 'home', canonicalPath: '/' };
-  if (parts[0] === 'careers' && parts[1]) return { key: 'career-detail', canonicalPath: '/careers/' + encodeURIComponent(parts.slice(1).join('/')) };
+  if (parts[0] === 'careers' && parts[1]) {
+    const slug = parts.slice(1).join('/');
+    return { key: 'career-detail', slug, canonicalPath: '/careers/' + encodeURIComponent(slug) };
+  }
   if (parts[0] === 'learning-centre' && parts[1]) return { key: 'blog-detail', canonicalPath: '/learning-centre/' + encodeURIComponent(parts.slice(1).join('/')) };
   return { key: parts[0], canonicalPath: '/' + parts[0] };
 }
 
 function pageConfig(req) {
   const route = routeFromRequest(req);
-  const page = pages[route.key] || pages.home;
+  let page = pages[route.key] || pages.home;
+  if (route.key === 'career-detail' && careerDetails[route.slug]) {
+    page = {
+      ...page,
+      ...careerDetails[route.slug]
+    };
+  }
   return {
     ...page,
     canonical: SITE + (route.canonicalPath === '/' ? '/' : route.canonicalPath)
