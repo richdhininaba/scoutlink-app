@@ -15,34 +15,40 @@
       key: 'richdhin',
       name: 'Richdhin Inaba',
       title: 'Founder & CEO',
-      chip: 'Founder / Product Strategy',
-      summary: 'Leads company vision, product direction and long-term strategy.',
+      chip: 'Founder / CEO',
+      summary: 'Sets the vision, strategy and direction for Stratex Analytics and ScoutLink.',
       email: 'richdhin@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/richdhin-i-470a15109/',
-      bio: 'Richdhin leads the vision, product direction and long-term strategy for Stratex Analytics. His focus is building a trusted football intelligence company that gives overlooked grassroots players a safer and more structured route to visibility and opportunity.',
-      focus: ['Company Vision', 'Product Direction', 'Long-Term Strategy', 'Football Intelligence Model']
+      image: '/images/leadership/richdhin-inaba.svg',
+      alt: 'Richdhin Inaba, Founder and CEO of Stratex Analytics',
+      bio: 'Richdhin sets the vision, strategy and direction for Stratex Analytics and ScoutLink. He leads the company executive decisions, product direction and long-term growth.',
+      focus: ['Company vision', 'Executive decisions', 'Product direction', 'Long-term growth']
     },
     {
       key: 'lucy',
       name: 'Lucy Ali',
-      title: 'Director of Customer Operations',
-      chip: 'Operations',
-      summary: 'Leads onboarding, customer operations and user success.',
+      title: 'Director of Operations & Customer Success',
+      chip: 'Operations / Customer Success',
+      summary: 'Leads day-to-day operations, outreach delivery and customer management.',
       email: 'lucy.ali@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/lucy-ali-654b79160/',
-      bio: 'Lucy leads customer operations, onboarding and user success across the Stratex ecosystem. Her focus is making sure coaches, scouts and partners are supported properly, with clear processes and a reliable experience from first contact through to active platform use.',
-      focus: ['Customer Operations', 'Onboarding', 'User Success', 'Operational Process']
+      image: '/images/leadership/lucy-ali.svg',
+      alt: 'Lucy Ali, Director of Operations and Customer Success at Stratex Analytics',
+      bio: 'Lucy leads the day-to-day operations of ScoutLink, including internal processes, outreach delivery, coach and scout relationships, customer management and event operations. She ensures the business runs smoothly as ScoutLink grows.',
+      focus: ['Internal processes', 'Outreach delivery', 'Customer management', 'Event operations']
     },
     {
       key: 'alexandro',
       name: 'Alexandro Ilioaie',
-      title: 'Director of Growth',
-      chip: 'Growth / Partnerships',
-      summary: 'Leads growth, partnerships and market visibility.',
+      title: 'Director of Football Strategy & Growth',
+      chip: 'Football Strategy / Growth',
+      summary: 'Leads football strategy, growth initiatives and sporting direction.',
       email: 'alexandro.ilioaie@stratexanalytics.co.uk',
       linkedin: 'https://www.linkedin.com/in/alexandro-ilioaie-a0347025a/',
-      bio: 'Alexandro leads growth across partnerships, acquisition and market visibility. His focus is helping Stratex reach the right coaches, scouts, clubs and football organisations while building a credible brand around grassroots football intelligence.',
-      focus: ['Growth Strategy', 'Partnerships', 'Coach/Scout Acquisition', 'Market Visibility']
+      image: '/images/leadership/alexandro-ilioaie.svg',
+      alt: 'Alexandro Ilioaie, Director of Football Strategy and Growth at Stratex Analytics',
+      bio: 'Alexandro leads ScoutLink football strategy, growth initiatives and sporting direction. He shapes showcase events, awards, partnerships and community ideas that help ScoutLink grow credibly within the football world.',
+      focus: ['Football strategy', 'Showcase events', 'Awards', 'Partnerships']
     }
   ];
 
@@ -235,13 +241,13 @@
   }
 
   function personCard(person) {
-    var initials = person.name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
     return '<article class="stx-card stx-person-card">' +
-      '<div class="stx-person-avatar">' + esc(initials) + '</div>' +
+      '<img class="stx-person-image" src="' + esc(person.image) + '" alt="' + esc(person.alt) + '" loading="lazy" width="320" height="320">' +
       '<span class="stx-tag green">' + esc(person.chip || 'Leadership') + '</span>' +
       '<h3>' + esc(person.name) + '</h3>' +
       '<p class="stx-person-title">' + esc(person.title) + '</p>' +
       '<p>' + esc(person.summary || '') + '</p>' +
+      '<p><a href="mailto:' + esc(person.email) + '">' + esc(person.email) + '</a></p>' +
       '<button class="stx-btn stx-btn-soft" type="button" data-leader-profile="' + esc(person.key) + '">View profile</button>' +
     '</article>';
   }
@@ -251,12 +257,11 @@
   }
 
   function renderLeadershipModal(person) {
-    var initials = person.name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
     return '<div class="stx-modal-backdrop" data-leader-close></div>' +
       '<section class="stx-modal" role="dialog" aria-modal="true" aria-labelledby="leaderModalTitle">' +
         '<div class="stx-sheet-handle" aria-hidden="true"></div>' +
         '<button class="stx-modal-close" type="button" data-leader-close aria-label="Close leadership profile">Close</button>' +
-        '<div class="stx-modal-head"><div class="stx-person-avatar large">' + esc(initials) + '</div><div><span class="stx-tag green">' + esc(person.chip) + '</span><h2 id="leaderModalTitle">' + esc(person.name) + '</h2><p>' + esc(person.title) + '</p></div></div>' +
+        '<div class="stx-modal-head"><img class="stx-person-image large" src="' + esc(person.image) + '" alt="' + esc(person.alt) + '" width="180" height="180"><div><span class="stx-tag green">' + esc(person.chip) + '</span><h2 id="leaderModalTitle">' + esc(person.name) + '</h2><p>' + esc(person.title) + '</p></div></div>' +
         '<p class="stx-modal-copy">' + esc(person.bio) + '</p>' +
         '<div class="stx-tags">' + person.focus.map(function (item) { return '<span class="stx-tag">' + esc(item) + '</span>'; }).join('') + '</div>' +
         '<div class="stx-actions">' +
@@ -710,7 +715,9 @@
         summary: row.summary || person.summary,
         bio: row.bio || person.bio,
         chip: row.focus_chip || row.permission_role || person.chip,
-        linkedin: row.linkedin_url || person.linkedin
+        linkedin: row.linkedin_url || person.linkedin,
+        image: row.image_url || row.imageUrl || person.image,
+        alt: row.alt || person.alt
       });
     });
   }

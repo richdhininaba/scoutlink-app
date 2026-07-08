@@ -9,23 +9,35 @@ const leaders = [
   {
     name: 'Richdhin Inaba',
     title: 'Founder & CEO',
-    chip: 'Founder / Product Strategy',
-    summary: 'Leads company vision, product direction and long-term strategy.',
-    linkedin: 'https://www.linkedin.com/in/richdhin-i-470a15109/'
+    chip: 'Founder / CEO',
+    summary: 'Sets the vision, strategy and direction for Stratex Analytics and ScoutLink.',
+    bio: 'Richdhin sets the vision, strategy and direction for Stratex Analytics and ScoutLink. He leads the company executive decisions, product direction and long-term growth.',
+    email: 'richdhin@stratexanalytics.co.uk',
+    linkedin: 'https://www.linkedin.com/in/richdhin-i-470a15109/',
+    image: SITE + '/images/leadership/richdhin-inaba.svg',
+    alt: 'Richdhin Inaba, Founder and CEO of Stratex Analytics'
   },
   {
     name: 'Lucy Ali',
-    title: 'Director of Customer Operations',
-    chip: 'Operations',
-    summary: 'Leads onboarding, customer operations and user success.',
-    linkedin: 'https://www.linkedin.com/in/lucy-ali-654b79160/'
+    title: 'Director of Operations & Customer Success',
+    chip: 'Operations / Customer Success',
+    summary: 'Leads day-to-day operations, outreach delivery and customer management.',
+    bio: 'Lucy leads the day-to-day operations of ScoutLink, including internal processes, outreach delivery, coach and scout relationships, customer management and event operations. She ensures the business runs smoothly as ScoutLink grows.',
+    email: 'lucy.ali@stratexanalytics.co.uk',
+    linkedin: 'https://www.linkedin.com/in/lucy-ali-654b79160/',
+    image: SITE + '/images/leadership/lucy-ali.svg',
+    alt: 'Lucy Ali, Director of Operations and Customer Success at Stratex Analytics'
   },
   {
     name: 'Alexandro Ilioaie',
-    title: 'Director of Growth',
-    chip: 'Growth / Partnerships',
-    summary: 'Leads growth, partnerships and market visibility.',
-    linkedin: 'https://www.linkedin.com/in/alexandro-ilioaie-a0347025a/'
+    title: 'Director of Football Strategy & Growth',
+    chip: 'Football Strategy / Growth',
+    summary: 'Leads football strategy, growth initiatives and sporting direction.',
+    bio: 'Alexandro leads ScoutLink football strategy, growth initiatives and sporting direction. He shapes showcase events, awards, partnerships and community ideas that help ScoutLink grow credibly within the football world.',
+    email: 'alexandro.ilioaie@stratexanalytics.co.uk',
+    linkedin: 'https://www.linkedin.com/in/alexandro-ilioaie-a0347025a/',
+    image: SITE + '/images/leadership/alexandro-ilioaie.svg',
+    alt: 'Alexandro Ilioaie, Director of Football Strategy and Growth at Stratex Analytics'
   }
 ];
 
@@ -268,6 +280,8 @@ function peopleSchema() {
     '@type': 'Person',
     name: person.name,
     jobTitle: person.title,
+    email: person.email,
+    image: person.image,
     worksFor: { '@type': 'Organization', name: 'Stratex Analytics', url: SITE },
     sameAs: [person.linkedin]
   }));
@@ -316,10 +330,13 @@ function fallbackContent(page) {
   const leadership = page.path === '/leadership'
     ? '<div class="stx-leadership-grid">' + leaders.map((person) => (
         '<article class="stx-card stx-person-card">' +
+          '<img class="stx-person-image" src="' + esc(person.image.replace(SITE, '')) + '" alt="' + esc(person.alt) + '" width="320" height="320">' +
           '<span class="stx-tag green">' + esc(person.chip) + '</span>' +
           '<h2>' + esc(person.name) + '</h2>' +
           '<p class="stx-person-title">' + esc(person.title) + '</p>' +
           '<p>' + esc(person.summary) + '</p>' +
+          '<p>' + esc(person.bio) + '</p>' +
+          '<p><a href="mailto:' + esc(person.email) + '">' + esc(person.email) + '</a></p>' +
           '<p><a class="stx-btn stx-btn-soft" href="' + esc(person.linkedin) + '">View ' + esc(person.name.split(' ')[0]) + ' on LinkedIn</a></p>' +
         '</article>'
       )).join('') + '</div>'

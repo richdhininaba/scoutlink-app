@@ -2,22 +2,19 @@ User-agent: *
 Allow: /
 
 Disallow: /api/
+Disallow: /admin
 Disallow: /admin/
+Disallow: /company/admin
 Disallow: /stratex/
 Disallow: /dashboard/
-Disallow: /coach-dashboard/
-Disallow: /scout-dashboard/
-Disallow: /player-dashboard/
 Disallow: /settings/
 Disallow: /messages/
 Disallow: /notifications/
 Disallow: /pipeline/
 Disallow: /applications/
-Disallow: /hiring-admin/
 Disallow: /job-applications/
 Disallow: /frontend/
 Disallow: /uploads/
 Disallow: /files/
 
 Sitemap: https://scoutlink.app/sitemap.xml
-Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml

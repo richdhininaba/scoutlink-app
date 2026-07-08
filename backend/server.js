@@ -218,14 +218,63 @@ function sendStratexPage(req, res) {
   }
 }
 
+function isStratexHost(req) {
+  return /(^|\.)stratexanalytics\.co\.uk$/i.test(req.hostname || req.get('host') || '');
+}
+
+const STRATEX_SITEMAP_ROUTES = [
+  '/',
+  '/scoutlink',
+  '/about',
+  '/leadership',
+  '/trust',
+  '/scout-verification',
+  '/parent-guardian-notice',
+  '/careers',
+  '/contact',
+  '/report-a-concern',
+  '/privacy-policy',
+  '/terms',
+  '/cookie-policy',
+  '/security',
+  '/accessibility',
+  '/learning-centre'
+];
+
+function renderSitemapXml(origin, routes) {
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    routes.map((route) => '  <url><loc>' + origin + route + '</loc></url>').join('\n') +
+    '\n</urlset>\n';
+}
+
+app.get('/sitemap.xml', (req, res, next) => {
+  if (!isStratexHost(req)) return next();
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.send(renderSitemapXml('https://www.stratexanalytics.co.uk', STRATEX_SITEMAP_ROUTES));
+});
+
+app.get('/robots.txt', (req, res, next) => {
+  if (!isStratexHost(req)) return next();
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  return res.send([
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin',
+    'Disallow: /company/admin',
+    'Disallow: /api/',
+    'Disallow: /stratex/',
+    '',
+    'Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml',
+    ''
+  ].join('\n'));
+});
+
 if (frontendDir) {
   const staticOptions = { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0, index: false };
   app.use(express.static(frontendDir, staticOptions));
   app.use('/frontend', express.static(frontendDir, staticOptions));
-
-  function isStratexHost(req) {
-    return /(^|\.)stratexanalytics\.co\.uk$/i.test(req.hostname || req.get('host') || '');
-  }
 
   const STRATEX_PUBLIC_ROUTES = [
     '/',

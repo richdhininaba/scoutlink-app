@@ -120,6 +120,12 @@ applyCleanUrl();
 
 // Auto-fill from URL params (email link from complete-registration)
 var params=new URLSearchParams(window.location.search);
+function safeReturnPath(path){
+  path=String(path||'').trim();
+  if(path==='/admin'||path==='/company/admin')return path;
+  return '';
+}
+var returnPath=safeReturnPath(params.get('return'));
 if(params.get('code')){
   switchTab('code');
   if(params.get('email'))document.getElementById('codeEmail').value=decodeURIComponent(params.get('email'));
@@ -128,7 +134,7 @@ if(params.get('code')){
 }
 
 // Redirect if already logged in
-try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){var m={Stratex:'experience-select.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(cleanRouteFor(m[typ]));}}catch(e){}
+try{var tok=localStorage.getItem('sl_token'),typ=localStorage.getItem('sl_type');if(tok&&typ){if(typ==='Stratex'&&returnPath){window.location.replace(returnPath);}else{var m={Stratex:'experience-select.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};if(m[typ])window.location.replace(cleanRouteFor(m[typ]));}}}catch(e){}
 
 function switchTab(t){
   document.getElementById('section-password').style.display=t==='password'?'block':'none';
@@ -211,6 +217,7 @@ function storeAndRedirect(d){
   localStorage.setItem('sl_user',JSON.stringify(d.user));
   localStorage.setItem('sl_user_id',d.user.id);
   localStorage.setItem('sl_user_email',d.user.email);
+  if(d.accountType==='Stratex'&&returnPath){window.location.href=returnPath;return;}
   var map={Stratex:'experience-select.html',Scout:(d.needsOnboarding||d.needsPreferences)?'scout-onboarding.html':'scout-dashboard.html',Coach:d.needsOnboarding?'coach-onboarding.html':'coach-dashboard.html',Player:'player-dashboard.html'};
   window.location.href=cleanRouteFor(map[d.accountType]||'login.html');
 }

@@ -5,6 +5,7 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const XLSX = require('xlsx');
+const crypto = require('crypto');
 
 const CONSENT_VERSION = '2026-07-stratex-site-v1';
 
@@ -23,6 +24,40 @@ function slugify(value) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 100) || 'post';
+}
+
+function parseCookies(header) {
+  return String(header || '').split(';').reduce((acc, part) => {
+    const index = part.indexOf('=');
+    if (index > 0) {
+      const key = part.slice(0, index).trim();
+      const value = part.slice(index + 1).trim();
+      if (key) {
+        try {
+          acc[key] = decodeURIComponent(value || '');
+        } catch (_) {
+          acc[key] = value || '';
+        }
+      }
+    }
+    return acc;
+  }, {});
+}
+
+function blogVisitor(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  let id = cookies.stx_blog_visitor;
+  if (!id || !/^[a-f0-9-]{20,80}$/i.test(id)) {
+    id = crypto.randomUUID();
+    res.cookie('stx_blog_visitor', id, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+  }
+  return crypto.createHash('sha256').update('stratex-blog:' + id).digest('hex');
 }
 
 function consentPayload(req) {
@@ -240,7 +275,7 @@ router.get('/leadership', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_leadership_members')
-      .select('id,full_name,first_name,last_name,email,job_title,permission_role,bio,linkedin_url,focus_chip,summary,focus_areas,display_order,is_active')
+      .select('id,full_name,first_name,last_name,email,job_title,permission_role,bio,linkedin_url,image_url,focus_chip,summary,focus_areas,display_order,is_active')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
       .order('full_name', { ascending: true });
@@ -280,15 +315,25 @@ router.get('/blog/:slug', async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: 'Post not found.' });
     const nextViewCount = Number(data.view_count || 0) + 1;
-    supabase
-      .from('stratex_learning_posts')
-      .update({ view_count: nextViewCount, last_viewed_at: new Date().toISOString() })
-      .eq('id', data.id)
-      .then(({ error: updateError }) => {
-        if (updateError) console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message });
-      })
-      .catch(updateError => console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message }));
-    res.json({ data: { ...data, view_count: nextViewCount } });
+    const visitorHash = blogVisitor(req, res);
+    const event = await supabase
+      .from('stratex_blog_engagement_events')
+      .insert({ post_id: data.id, event_type: 'view', visitor_hash: visitorHash });
+    if (!event.error) {
+      supabase
+        .from('stratex_learning_posts')
+        .update({ view_count: nextViewCount, last_viewed_at: new Date().toISOString() })
+        .eq('id', data.id)
+        .then(({ error: updateError }) => {
+          if (updateError) console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message });
+        })
+        .catch(updateError => console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message }));
+      return res.json({ data: { ...data, view_count: nextViewCount } });
+    }
+    if (event.error.code !== '23505') {
+      console.error('[Stratex blog view event]', { code: event.error.code, message: event.error.message });
+    }
+    res.json({ data });
   } catch (err) {
     console.error('[Stratex blog detail]', { code: err.code, message: err.message });
     res.status(500).json({ error: 'Could not load this post.' });
@@ -306,6 +351,14 @@ router.post('/blog/:slug/like', async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: 'Post not found.' });
     const nextLikeCount = Number(data.like_count || 0) + 1;
+    const visitorHash = blogVisitor(req, res);
+    const event = await supabase
+      .from('stratex_blog_engagement_events')
+      .insert({ post_id: data.id, event_type: 'like', visitor_hash: visitorHash });
+    if (event.error && event.error.code === '23505') {
+      return res.json({ message: 'Already liked.', alreadyLiked: true, likeCount: Number(data.like_count || 0) });
+    }
+    if (event.error) throw event.error;
     const { error: updateError } = await supabase
       .from('stratex_learning_posts')
       .update({ like_count: nextLikeCount, updated_at: new Date().toISOString() })
@@ -509,6 +562,7 @@ router.post('/leadership', requireAuth, requireRole('Stratex'), async (req, res)
       permission_role: text(req.body.permissionRole || req.body.permission_role, 120) || null,
       bio: text(req.body.bio, 3000) || null,
       linkedin_url: text(req.body.linkedinUrl || req.body.linkedin_url, 600) || null,
+      image_url: text(req.body.imageUrl || req.body.image_url, 600) || null,
       focus_chip: text(req.body.focusChip || req.body.focus_chip, 120) || null,
       summary: text(req.body.summary, 500) || null,
       focus_areas: Array.isArray(req.body.focusAreas || req.body.focus_areas) ? (req.body.focusAreas || req.body.focus_areas).map(item => text(item, 120)).filter(Boolean) : [],
@@ -535,6 +589,7 @@ router.patch('/leadership/:id', requireAuth, requireRole('Stratex'), async (req,
     if (req.body.permissionRole !== undefined || req.body.permission_role !== undefined) patch.permission_role = text(req.body.permissionRole || req.body.permission_role, 120) || null;
     if (req.body.bio !== undefined) patch.bio = text(req.body.bio, 3000) || null;
     if (req.body.linkedinUrl !== undefined || req.body.linkedin_url !== undefined) patch.linkedin_url = text(req.body.linkedinUrl || req.body.linkedin_url, 600) || null;
+    if (req.body.imageUrl !== undefined || req.body.image_url !== undefined) patch.image_url = text(req.body.imageUrl || req.body.image_url, 600) || null;
     if (req.body.focusChip !== undefined || req.body.focus_chip !== undefined) patch.focus_chip = text(req.body.focusChip || req.body.focus_chip, 120) || null;
     if (req.body.summary !== undefined) patch.summary = text(req.body.summary, 500) || null;
     if (req.body.focusAreas !== undefined || req.body.focus_areas !== undefined) patch.focus_areas = Array.isArray(req.body.focusAreas || req.body.focus_areas) ? (req.body.focusAreas || req.body.focus_areas).map(item => text(item, 120)).filter(Boolean) : [];
