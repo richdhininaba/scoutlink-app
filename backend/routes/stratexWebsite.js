@@ -46,7 +46,7 @@ async function saveLead(req, type, extra) {
     lead_type: type,
     first_name: firstName || null,
     last_name: lastName || null,
-    full_name: text(req.body.name || [firstName, lastName].filter(Boolean).join(' '), 260) || null,
+    full_name: text(req.body.name || req.body.contactName || req.body.contact_name || [firstName, lastName].filter(Boolean).join(' '), 260) || null,
     email: contactEmail,
     phone: text(req.body.phone || req.body.contactPhone || req.body.contact_phone, 80) || null,
     organisation: text(req.body.organisation || req.body.organization || req.body.team || req.body.club, 240) || null,
@@ -161,17 +161,28 @@ router.post('/concern', async (req, res) => {
     const concernType = text(req.body.concernType || req.body.concern_type, 140);
     const description = text(req.body.description || req.body.message, 7000);
     if (!concernType || !description) return res.status(400).json({ error: 'Concern type and details are required.' });
+    const relationship = text(req.body.relationshipToConcern || req.body.relationship_to_concern, 180);
+    const immediateRisk = text(req.body.immediateRisk || req.body.immediate_risk, 20);
+    const permissionToContact = !!req.body.consentContact || !!req.body.permissionToContact || !!req.body.permission_to_contact;
+    const playerOrTeam = text(req.body.playerOrTeam || req.body.player_or_team || req.body.personOrAccount || req.body.person_or_account, 500) || null;
+    const priority = /^yes$/i.test(immediateRisk) || /safeguard/i.test(concernType) ? 'urgent' : 'standard';
     const saved = await saveLead(req, 'concern', {
       concern_type: concernType,
-      urgency: text(req.body.urgency, 80) || 'standard',
-      person_or_account: text(req.body.personOrAccount || req.body.person_or_account, 500) || null
+      relationship_to_concern: relationship || null,
+      immediate_risk: immediateRisk || null,
+      permission_to_contact: permissionToContact,
+      player_or_team: playerOrTeam,
+      source_page: source(req, '/report-a-concern'),
+      utm_source: text(req.body.utm_source, 160) || null,
+      utm_medium: text(req.body.utm_medium, 160) || null,
+      utm_campaign: text(req.body.utm_campaign, 160) || null
     });
     const concernPayload = {
       concern_type: concernType,
-      person_or_account: text(req.body.personOrAccount || req.body.person_or_account, 500) || null,
-      player_or_team: text(req.body.playerOrTeam || req.body.player_or_team, 500) || null,
+      person_or_account: playerOrTeam,
+      player_or_team: playerOrTeam,
       description,
-      urgency: text(req.body.urgency, 80) || 'standard',
+      urgency: priority,
       contact_name: text(req.body.contactName || saved.payload.full_name, 180) || null,
       contact_email: saved.payload.email,
       contact_phone: text(req.body.contactPhone || saved.payload.phone, 80) || null,
@@ -179,6 +190,30 @@ router.post('/concern', async (req, res) => {
       status: 'new'
     };
     let concernId = null;
+    let trustSubmissionId = null;
+    const trust = await supabase
+      .from('trust_submissions')
+      .insert({
+        submission_type: 'safeguarding_concern',
+        priority,
+        concern_category: concernType,
+        name: concernPayload.contact_name,
+        email: concernPayload.contact_email,
+        phone: concernPayload.contact_phone,
+        role: relationship || null,
+        organisation: null,
+        player_or_team_mentioned: playerOrTeam,
+        message: description,
+        safeguarding_flag: priority === 'urgent',
+        source_page: source(req, '/report-a-concern'),
+        status: 'new'
+      })
+      .select('id, submitted_at')
+      .single();
+    if (!trust.error && trust.data) trustSubmissionId = trust.data.id;
+    if (trust.error) {
+      console.error('[Stratex concern trust save]', { code: trust.error.code, message: trust.error.message });
+    }
     const concern = await supabase
       .from('safeguarding_concerns')
       .insert(concernPayload)
@@ -189,9 +224,10 @@ router.post('/concern', async (req, res) => {
       console.error('[Stratex concern secondary save]', { code: concern.error.code, message: concern.error.message });
     }
     res.status(201).json({
-      message: 'Concern submitted. A restricted Stratex reviewer will assess it.',
+      message: 'Thanks - we have received your report. Our team will review it and contact you if follow-up is needed. If someone is in immediate danger, contact emergency services or the relevant safeguarding authority first.',
       leadId: saved.id,
       concernId,
+      trustSubmissionId,
       submittedAt: saved.created_at
     });
   } catch (err) {
@@ -204,7 +240,7 @@ router.get('/leadership', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_leadership_members')
-      .select('id,full_name,first_name,last_name,email,job_title,permission_role,bio,display_order,is_active')
+      .select('id,full_name,first_name,last_name,email,job_title,permission_role,bio,linkedin_url,focus_chip,summary,focus_areas,display_order,is_active')
       .eq('is_active', true)
       .order('display_order', { ascending: true })
       .order('full_name', { ascending: true });
@@ -290,10 +326,11 @@ router.patch('/leads/:id', requireAuth, requireRole('Stratex'), async (req, res)
 });
 
 async function loadCrmRows() {
-    const [leadResult, coachResult, scoutResult] = await Promise.allSettled([
+    const [leadResult, coachResult, scoutResult, applicationResult] = await Promise.allSettled([
       supabase.from('stratex_website_leads').select('id,lead_type,full_name,email,phone,organisation,role,reason,status,created_at').order('created_at', { ascending: false }).limit(500),
       supabase.from('coaches').select('id,first_name,last_name,email,phone,team_name,role_at_club,created_at,is_active').eq('is_demo', false).limit(500),
-      supabase.from('scouts').select('id,first_name,last_name,email,phone,club_name,role,created_at,is_active').eq('is_demo', false).limit(500)
+      supabase.from('scouts').select('id,first_name,last_name,email,phone,club_name,role,created_at,is_active').eq('is_demo', false).limit(500),
+      supabase.from('job_applications').select('id,application_ref,first_name,last_name,email,phone,status,submitted_at,job_posts(job_title,department)').order('submitted_at', { ascending: false }).limit(500)
     ]);
     const rows = [];
     if (leadResult.status === 'fulfilled' && !leadResult.value.error) {
@@ -333,6 +370,19 @@ async function loadCrmRows() {
         role: row.role || 'Scout',
         status: row.is_active === false ? 'inactive' : 'active',
         createdAt: row.created_at
+      }));
+    }
+    if (applicationResult.status === 'fulfilled' && !applicationResult.value.error) {
+      (applicationResult.value.data || []).forEach(row => rows.push({
+        source: 'Stratex careers',
+        type: 'job_application',
+        name: [row.first_name, row.last_name].filter(Boolean).join(' '),
+        email: row.email,
+        phone: row.phone,
+        organisation: row.job_posts && row.job_posts.department,
+        role: row.job_posts && row.job_posts.job_title,
+        status: row.status,
+        createdAt: row.submitted_at
       }));
     }
     rows.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -426,6 +476,10 @@ router.post('/leadership', requireAuth, requireRole('Stratex'), async (req, res)
       job_title: text(req.body.jobTitle || req.body.job_title, 180) || null,
       permission_role: text(req.body.permissionRole || req.body.permission_role, 120) || null,
       bio: text(req.body.bio, 3000) || null,
+      linkedin_url: text(req.body.linkedinUrl || req.body.linkedin_url, 600) || null,
+      focus_chip: text(req.body.focusChip || req.body.focus_chip, 120) || null,
+      summary: text(req.body.summary, 500) || null,
+      focus_areas: Array.isArray(req.body.focusAreas || req.body.focus_areas) ? (req.body.focusAreas || req.body.focus_areas).map(item => text(item, 120)).filter(Boolean) : [],
       display_order: Number(req.body.displayOrder || req.body.display_order) || 100,
       is_active: req.body.isActive !== false && req.body.is_active !== false
     };
@@ -448,6 +502,10 @@ router.patch('/leadership/:id', requireAuth, requireRole('Stratex'), async (req,
     if (req.body.jobTitle !== undefined || req.body.job_title !== undefined) patch.job_title = text(req.body.jobTitle || req.body.job_title, 180) || null;
     if (req.body.permissionRole !== undefined || req.body.permission_role !== undefined) patch.permission_role = text(req.body.permissionRole || req.body.permission_role, 120) || null;
     if (req.body.bio !== undefined) patch.bio = text(req.body.bio, 3000) || null;
+    if (req.body.linkedinUrl !== undefined || req.body.linkedin_url !== undefined) patch.linkedin_url = text(req.body.linkedinUrl || req.body.linkedin_url, 600) || null;
+    if (req.body.focusChip !== undefined || req.body.focus_chip !== undefined) patch.focus_chip = text(req.body.focusChip || req.body.focus_chip, 120) || null;
+    if (req.body.summary !== undefined) patch.summary = text(req.body.summary, 500) || null;
+    if (req.body.focusAreas !== undefined || req.body.focus_areas !== undefined) patch.focus_areas = Array.isArray(req.body.focusAreas || req.body.focus_areas) ? (req.body.focusAreas || req.body.focus_areas).map(item => text(item, 120)).filter(Boolean) : [];
     if (req.body.displayOrder !== undefined || req.body.display_order !== undefined) patch.display_order = Number(req.body.displayOrder || req.body.display_order) || 100;
     if (req.body.isActive !== undefined || req.body.is_active !== undefined) patch.is_active = req.body.isActive !== false && req.body.is_active !== false;
     const { data, error } = await supabase.from('stratex_leadership_members').update(patch).eq('id', req.params.id).select('*').maybeSingle();

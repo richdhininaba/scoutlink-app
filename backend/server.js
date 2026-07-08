@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const { supabase } = require('./db/supabase');
+const { renderStratexPage } = require('./utils/stratexPageRenderer');
 
 const app = express();
 app.set('trust proxy', 1); // Required for Vercel/Heroku: trust first proxy for rate limiting
@@ -143,6 +144,8 @@ const routeMap = {
   '/company/security': 'pages/stratex-site.html',
   '/company/accessibility': 'pages/stratex-site.html',
   '/company/learning-centre': 'pages/stratex-site.html',
+  '/company/admin': 'pages/stratex-site.html',
+  '/admin': 'pages/stratex-site.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
   '/stratex/company-site': 'pages/stratex-company-admin.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
@@ -204,6 +207,16 @@ function sendFrontendFile(req, res, relativePath) {
   return res.sendFile(path.join(frontendDir, relativePath));
 }
 
+function sendStratexPage(req, res) {
+  if (!frontendDir) return res.status(500).json({ error: 'Frontend bundle is missing from this deployment' });
+  try {
+    return renderStratexPage(req, res, frontendDir);
+  } catch (err) {
+    console.error('[Stratex page render]', { code: err && err.code, message: err && err.message });
+    return sendFrontendFile(req, res, 'pages/stratex-site.html');
+  }
+}
+
 if (frontendDir) {
   const staticOptions = { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0, index: false };
   app.use(express.static(frontendDir, staticOptions));
@@ -229,33 +242,59 @@ if (frontendDir) {
     '/cookie-policy',
     '/security',
     '/accessibility',
-    '/learning-centre'
+    '/learning-centre',
+    '/admin'
   ];
 
   STRATEX_PUBLIC_ROUTES.forEach((route) => {
     app.get(route, (req, res, next) => {
       if (!isStratexHost(req)) return next();
-      return sendFrontendFile(req, res, 'pages/stratex-site.html');
+      return sendStratexPage(req, res);
     });
   });
 
   app.get('/careers/:slug', (req, res, next) => {
     if (!isStratexHost(req)) return next();
-    return sendFrontendFile(req, res, 'pages/stratex-site.html');
+    return sendStratexPage(req, res);
   });
 
   app.get('/learning-centre/:slug', (req, res, next) => {
     if (!isStratexHost(req)) return next();
-    return sendFrontendFile(req, res, 'pages/stratex-site.html');
+    return sendStratexPage(req, res);
   });
+
+  [
+    '/company',
+    '/company/scoutlink',
+    '/company/about',
+    '/company/leadership',
+    '/company/trust',
+    '/company/scout-verification',
+    '/company/parent-guardian-notice',
+    '/company/careers',
+    '/company/contact',
+    '/company/report-a-concern',
+    '/company/privacy-policy',
+    '/company/terms-of-use',
+    '/company/cookie-policy',
+    '/company/security',
+    '/company/accessibility',
+    '/company/learning-centre',
+    '/company/admin'
+  ].forEach((route) => {
+    app.get(route, (req, res) => sendStratexPage(req, res));
+  });
+
+  app.get('/admin', (req, res) => sendStratexPage(req, res));
+
+  app.get('/company/careers/:slug', (req, res) => sendStratexPage(req, res));
+  app.get('/company/learning-centre/:slug', (req, res) => sendStratexPage(req, res));
 
   Object.entries(routeMap).forEach(([route, file]) => {
     app.get(route, (req, res) => sendFrontendFile(req, res, file));
   });
 
   app.get('/careers/:slug', (req, res) => sendFrontendFile(req, res, 'pages/career-detail.html'));
-  app.get('/company/careers/:slug', (req, res) => sendFrontendFile(req, res, 'pages/stratex-site.html'));
-  app.get('/company/learning-centre/:slug', (req, res) => sendFrontendFile(req, res, 'pages/stratex-site.html'));
 }
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));

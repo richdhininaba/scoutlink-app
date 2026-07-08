@@ -42,6 +42,8 @@
     '/company/security': '/frontend/pages/stratex-site.html',
     '/company/accessibility': '/frontend/pages/stratex-site.html',
     '/company/learning-centre': '/frontend/pages/stratex-site.html',
+    '/company/admin': '/frontend/pages/stratex-site.html',
+    '/admin': '/frontend/pages/stratex-site.html',
     '/404': '/frontend/pages/404.html',
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
     '/stratex/company-site': '/frontend/pages/stratex-company-admin.html',

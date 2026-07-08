@@ -10,6 +10,42 @@
     demo: 'https://www.scoutlink.app/demo'
   };
 
+  var LEADERS = [
+    {
+      key: 'richdhin',
+      name: 'Richdhin Inaba',
+      title: 'Founder & CEO',
+      chip: 'Founder / Product Strategy',
+      summary: 'Leads company vision, product direction and long-term strategy.',
+      email: 'richdhin@stratexanalytics.co.uk',
+      linkedin: 'https://www.linkedin.com/in/richdhin-i-470a15109/',
+      bio: 'Richdhin leads the vision, product direction and long-term strategy for Stratex Analytics. His focus is building a trusted football intelligence company that gives overlooked grassroots players a safer and more structured route to visibility and opportunity.',
+      focus: ['Company Vision', 'Product Direction', 'Long-Term Strategy', 'Football Intelligence Model']
+    },
+    {
+      key: 'lucy',
+      name: 'Lucy Ali',
+      title: 'Director of Customer Operations',
+      chip: 'Operations',
+      summary: 'Leads onboarding, customer operations and user success.',
+      email: 'lucy.ali@stratexanalytics.co.uk',
+      linkedin: 'https://www.linkedin.com/in/lucy-ali-654b79160/',
+      bio: 'Lucy leads customer operations, onboarding and user success across the Stratex ecosystem. Her focus is making sure coaches, scouts and partners are supported properly, with clear processes and a reliable experience from first contact through to active platform use.',
+      focus: ['Customer Operations', 'Onboarding', 'User Success', 'Operational Process']
+    },
+    {
+      key: 'alexandro',
+      name: 'Alexandro Ilioaie',
+      title: 'Director of Growth',
+      chip: 'Growth / Partnerships',
+      summary: 'Leads growth, partnerships and market visibility.',
+      email: 'alexandro.ilioaie@stratexanalytics.co.uk',
+      linkedin: 'https://www.linkedin.com/in/alexandro-ilioaie-a0347025a/',
+      bio: 'Alexandro leads growth across partnerships, acquisition and market visibility. His focus is helping Stratex reach the right coaches, scouts, clubs and football organisations while building a credible brand around grassroots football intelligence.',
+      focus: ['Growth Strategy', 'Partnerships', 'Coach/Scout Acquisition', 'Market Visibility']
+    }
+  ];
+
   var sitePages = [
     ['scoutlink', 'ScoutLink'],
     ['about', 'About Stratex'],
@@ -68,9 +104,13 @@
     if (meta) meta.setAttribute('content', description);
     var ogTitle = document.querySelector('meta[property="og:title"]');
     var ogDesc = document.querySelector('meta[property="og:description"]');
+    var twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    var twitterDesc = document.querySelector('meta[name="twitter:description"]');
     var canon = document.querySelector('link[rel="canonical"]');
     if (ogTitle) ogTitle.setAttribute('content', title);
     if (ogDesc) ogDesc.setAttribute('content', description);
+    if (twitterTitle) twitterTitle.setAttribute('content', title);
+    if (twitterDesc) twitterDesc.setAttribute('content', description);
     if (canon) canon.setAttribute('href', canonical || ('https://www.stratexanalytics.co.uk' + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page)));
   }
 
@@ -130,6 +170,7 @@
       '<section class="stx-section"><div class="stx-container stx-dark-section"><span class="stx-kicker dark">ScoutLink preview</span><h2>ScoutLink is the first product in the Stratex ecosystem.</h2><p>ScoutLink gives grassroots coaches a way to build professional player evidence and gives verified scouts a cleaner way to assess fit.</p><div class="stx-actions">' + btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + '</div></div></section>' +
       section('Built around trust, not open exposure.', 'ScoutLink is designed around verified access, controlled visibility, safer contact routes and explainable scoring. Stratex does not promise scouting outcomes or direct contact with minors.',
         '<div class="stx-grid three">' + card('Coach-led evidence', 'Player profiles start from coach-managed information and structured match facts.') + card('Verified scout access', 'Scout access is reviewed so youth player information is not treated like an open directory.') + card('Clear safeguarding routes', 'Concerns and privacy requests are routed through restricted Stratex workflows.') + '</div>') +
+      '<section class="stx-section"><div class="stx-container"><div class="stx-newsletter-card">' + newsletterForm() + '</div></div></section>' +
       finalCta('Ready to see the first Stratex product?', 'Explore ScoutLink or contact Stratex about clubs, schools, academies and partnerships.', btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('Contact Stratex', sitePath('contact'), ''));
   }
 
@@ -148,7 +189,8 @@
       section('Built for the people around grassroots talent.', 'ScoutLink separates the experience for coaches, verified scouts, clubs, schools, academies, players and families.',
         '<div class="stx-grid four">' + card('Coaches', 'Create player profiles, add match facts, upload evidence and make fixtures scout-visible.', null, SCOUTLINK.coach, 'Register as Coach') + card('Scouts', 'Search, compare, shortlist and run structured predictions once access is reviewed.', null, SCOUTLINK.scout, 'Request Scout Access') + card('Clubs, schools and academies', 'Give your players a more structured route to visibility without scattering evidence across messages.', null, sitePath('contact'), 'Contact Stratex') + card('Parents and players', 'Understand how youth data, visibility and safeguarding routes are handled.', null, sitePath('parent-guardian-notice'), 'Read notice') + '</div>') +
       '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-card"><h2>Player evidence with context.</h2><p>ScoutLink profiles combine coach-rated attributes, match facts, video reels, data confidence, compatibility scoring and estimated value. Scores are explainable and designed to support decisions, not replace live judgement.</p><div class="stx-actions">' + btn('Explore demo', SCOUTLINK.demo, 'stx-btn-primary', 'data-outbound="demo"') + btn('ScoutLink login', SCOUTLINK.login, '') + '</div></div>' + profilePreview() + '</div></section>' +
-      section('Compatibility scoring explained.', 'ScoutLink compatibility combines the scout setup, player position, attributes, physical profile, match output and evidence confidence into a fit signal. It is not a guarantee of selection or signing.', '<div class="stx-grid three">' + card('Need fit', 'Player strengths are compared to the scout setup and weaknesses a team is trying to solve.') + card('Evidence confidence', 'Recent match facts, coach ratings and profile completion affect how much confidence the platform places in a score.') + card('Explainable output', 'Breakdowns show why a player scored well or poorly rather than hiding the reasoning.') + '</div>');
+      section('Compatibility scoring explained.', 'ScoutLink compatibility combines the scout setup, player position, attributes, physical profile, match output and evidence confidence into a fit signal. It is not a guarantee of selection or signing.', '<div class="stx-grid three">' + card('Need fit', 'Player strengths are compared to the scout setup and weaknesses a team is trying to solve.') + card('Evidence confidence', 'Recent match facts, coach ratings and profile completion affect how much confidence the platform places in a score.') + card('Explainable output', 'Breakdowns show why a player scored well or poorly rather than hiding the reasoning.') + '</div>') +
+      '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-card"><h2>See ScoutLink in context.</h2><p>Request a short walkthrough for a club, school, academy or partner organisation. Demo requests are reviewed by the Stratex team.</p></div><div class="stx-form-card">' + demoRequestPanel() + '</div></div></section>';
   }
 
   function aboutPage() {
@@ -180,25 +222,95 @@
   function leadershipPage() {
     setMeta('Leadership | Stratex Analytics', 'Meet the leadership team behind Stratex Analytics and ScoutLink.', 'https://www.stratexanalytics.co.uk/leadership');
     track('leadership_page_viewed');
-    return pageHero('Leadership', 'The team building Stratex Analytics.', 'Stratex is led by a small operating team focused on product, trust, client success and commercial growth.') +
-      '<section class="stx-section"><div class="stx-container"><div class="stx-grid three" id="leadershipGrid">' + leadershipFallback() + '</div></div></section>';
+    return pageHero('Leadership', 'The team building Stratex Analytics.', 'Stratex is led by a small operating team focused on product quality, customer operations, growth and safer grassroots football visibility.') +
+      '<section class="stx-section"><div class="stx-container"><div class="stx-leadership-grid" id="leadershipGrid">' + leadershipFallback() + '</div></div></section>' +
+      section('How the team operates.', 'Stratex keeps leadership deliberately close to product quality, customer support and trust decisions.', '<div class="stx-grid three">' + card('Product clarity', 'We build practical football intelligence tools that explain how evidence is used.') + card('Customer closeness', 'Operational feedback from coaches, scouts and partners feeds directly into product decisions.') + card('Controlled visibility', 'Youth football visibility is treated as a trust workflow, not an open marketplace.') + '</div>') +
+      finalCta('Need to speak to Stratex?', 'Contact the team about partnerships, operations, ScoutLink or trust-related questions.', btn('Contact Stratex', sitePath('contact'), 'stx-btn-primary'));
   }
 
   function leadershipFallback() {
-    return personCard('Richdhin Inaba', 'Founder', 'richdhin@stratexanalytics.co.uk', 'Management') +
-      personCard('Lucy Ali', 'Head of Operations and Client Success', 'lucy.ali@stratexanalytics.co.uk', 'Operations') +
-      personCard('RJ Inaba', 'Head of Growth', 'rodhinjunior.inaba@stratexanalytics.co.uk', 'Acquisition');
+    return LEADERS.map(personCard).join('');
   }
 
-  function personCard(name, title, email, role) {
-    var initials = name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
-    return '<article class="stx-card stx-person"><div class="stx-person-avatar">' + esc(initials) + '</div><div><h3>' + esc(name) + '</h3><p style="margin:0">' + esc(title) + '</p><p style="margin:4px 0 10px;font-size:13px">' + esc(email || '') + '</p><span class="stx-tag green">' + esc(role || 'Leadership') + '</span></div></article>';
+  function personCard(person) {
+    var initials = person.name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    return '<article class="stx-card stx-person-card">' +
+      '<div class="stx-person-avatar">' + esc(initials) + '</div>' +
+      '<span class="stx-tag green">' + esc(person.chip || 'Leadership') + '</span>' +
+      '<h3>' + esc(person.name) + '</h3>' +
+      '<p class="stx-person-title">' + esc(person.title) + '</p>' +
+      '<p>' + esc(person.summary || '') + '</p>' +
+      '<button class="stx-btn stx-btn-soft" type="button" data-leader-profile="' + esc(person.key) + '">View profile</button>' +
+    '</article>';
+  }
+
+  function leaderByKey(key) {
+    return LEADERS.find(function (person) { return person.key === key; }) || null;
+  }
+
+  function renderLeadershipModal(person) {
+    var initials = person.name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
+    return '<div class="stx-modal-backdrop" data-leader-close></div>' +
+      '<section class="stx-modal" role="dialog" aria-modal="true" aria-labelledby="leaderModalTitle">' +
+        '<button class="stx-modal-close" type="button" data-leader-close aria-label="Close leadership profile">Close</button>' +
+        '<div class="stx-modal-head"><div class="stx-person-avatar large">' + esc(initials) + '</div><div><span class="stx-tag green">' + esc(person.chip) + '</span><h2 id="leaderModalTitle">' + esc(person.name) + '</h2><p>' + esc(person.title) + '</p></div></div>' +
+        '<p class="stx-modal-copy">' + esc(person.bio) + '</p>' +
+        '<div class="stx-tags">' + person.focus.map(function (item) { return '<span class="stx-tag">' + esc(item) + '</span>'; }).join('') + '</div>' +
+        '<div class="stx-actions">' +
+          '<a class="stx-btn stx-btn-primary" href="mailto:' + esc(person.email) + '">Email ' + esc(person.name.split(' ')[0]) + '</a>' +
+          '<a class="stx-btn stx-btn-soft" href="' + esc(person.linkedin) + '" target="_blank" rel="noopener">View ' + esc(person.name.split(' ')[0]) + ' on LinkedIn</a>' +
+        '</div>' +
+      '</section>';
+  }
+
+  function openLeadershipModal(key) {
+    var person = leaderByKey(key);
+    if (!person) return;
+    closeLeadershipModal();
+    var host = document.createElement('div');
+    host.className = 'stx-modal-host';
+    host.innerHTML = renderLeadershipModal(person);
+    document.body.appendChild(host);
+    document.body.classList.add('stx-modal-open');
+    var focusable = host.querySelectorAll('a[href], button:not([disabled])');
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (first) first.focus();
+    host.addEventListener('click', function (event) {
+      if (event.target.hasAttribute('data-leader-close')) closeLeadershipModal();
+    });
+    host.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeLeadershipModal();
+      if (event.key === 'Tab' && focusable.length) {
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+  }
+
+  function closeLeadershipModal() {
+    var existing = document.querySelector('.stx-modal-host');
+    if (existing) existing.remove();
+    document.body.classList.remove('stx-modal-open');
+  }
+
+  function bindLeadershipCards() {
+    document.querySelectorAll('[data-leader-profile]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        openLeadershipModal(button.getAttribute('data-leader-profile'));
+      });
+    });
   }
 
   function careersPage() {
     setMeta('Careers | Stratex Analytics', 'Explore careers at Stratex Analytics, the company behind ScoutLink.', 'https://www.stratexanalytics.co.uk/careers');
     track('careers_page_viewed');
-    return pageHero('Stratex Careers', 'Build the future of football intelligence.', 'Join the team behind ScoutLink, where product, data and football operations come together to help talent get seen with better evidence.') +
+    return pageHero('Stratex Careers', 'Build the future of football intelligence.', 'Join the team behind ScoutLink, where product-led football intelligence and grassroots football operations come together to help talent get seen with better evidence.') +
       '<section class="stx-section"><div class="stx-container"><div class="stx-section-head"><h2>Open roles</h2><p>Live and released roles appear here. Applications are saved securely and CVs are not made public.</p></div><div class="stx-job-list" id="careerJobs"><div class="stx-empty">Loading roles...</div></div></div></section>';
   }
 
@@ -209,7 +321,7 @@
       '<a class="stx-link-back" href="' + sitePath('careers') + '">Back to careers</a>' +
       '<div class="stx-page-grid stx-career-detail-grid">' +
         '<div id="careerDetailMain" class="stx-card stx-prose"><div class="stx-empty">Loading role...</div></div>' +
-        '<aside class="stx-form-card stx-application-card"><span class="stx-kicker">Application</span><h2>Start your application</h2><p>Send your details and CV. The Stratex team will confirm receipt by email.</p>' + careerApplyForm(slug) + '</aside>' +
+        '<aside class="stx-form-card stx-application-card"><span class="stx-kicker">Application</span><h2>Start your application</h2><p>Send your details and CV. The Stratex team will confirm receipt by email.</p><div class="stx-application-facts"><span><b>Review time</b>Around 2 weeks</span><span><b>CV format</b>PDF, DOC or DOCX</span></div>' + careerApplyForm(slug) + '</aside>' +
       '</div>' +
     '</div></section>';
   }
@@ -230,7 +342,7 @@
     setMeta('Contact Stratex Analytics', 'Contact Stratex Analytics about ScoutLink, clubs, schools, academies, partnerships or company enquiries.', 'https://www.stratexanalytics.co.uk/contact');
     track('contact_page_viewed');
     return pageHero('Contact', 'Tell us what you need help with.', 'Use this form for company, partnership, club, school, academy or ScoutLink product enquiries. We will review your message and respond where a reply is needed.') +
-      '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-form-card">' + contactForm() + '</div><aside class="stx-panel"><h3>Looking for ScoutLink access?</h3><p>Use the ScoutLink routes if you want to register as a coach, request scout access or log into the product.</p><div class="stx-actions">' + btn('Register as Coach', SCOUTLINK.coach, 'stx-btn-primary', 'data-outbound="coach"') + btn('Request Scout Access', SCOUTLINK.scout, '') + '</div></aside></div></section>';
+      '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-form-card">' + contactForm() + '</div><aside class="stx-panel"><h3>Looking for ScoutLink access?</h3><p>Use the ScoutLink routes if you want to register as a coach, request scout access or log into the product.</p><div class="stx-actions">' + btn('Register as Coach', SCOUTLINK.coach, 'stx-btn-primary', 'data-outbound="coach"') + btn('Request Scout Access', SCOUTLINK.scout, '') + '</div><div class="stx-mini-form">' + demoRequestPanel() + '</div></aside></div></section>';
   }
 
   function contactForm() {
@@ -245,7 +357,17 @@
   }
 
   function concernForm() {
-    return '<form class="stx-form" data-stx-form="concern"><label class="stx-label">Concern type<select class="stx-select" name="concernType" required><option value="">Select one</option><option>Safeguarding concern</option><option>Scout identity or access concern</option><option>Player data concern</option><option>Privacy concern</option><option>Other platform concern</option></select></label><div class="stx-form-row"><label class="stx-label">Contact name<input class="stx-input" name="contactName"></label><label class="stx-label">Contact email<input class="stx-input" type="email" name="contactEmail" required></label></div><label class="stx-label">Person, team or account involved<input class="stx-input" name="personOrAccount"></label><label class="stx-label">Details<textarea class="stx-textarea" name="description" required></textarea></label><label class="stx-label">Urgency<select class="stx-select" name="urgency"><option>standard</option><option>urgent</option></select></label><label class="stx-check"><input type="checkbox" name="consentContact" required><span>I understand Stratex may use these details to review the concern and contact me if needed.</span></label><div class="stx-message" role="status"></div><button class="stx-btn stx-btn-danger" type="submit">Submit concern</button></form>';
+    return '<form class="stx-form" data-stx-form="concern">' +
+      '<div class="stx-warning"><strong>Immediate danger?</strong><span>If someone is in immediate danger, contact emergency services or the relevant safeguarding authority first. This form is not an emergency service.</span></div>' +
+      '<div class="stx-form-row"><label class="stx-label">Name<input class="stx-input" name="contactName" required></label><label class="stx-label">Email<input class="stx-input" type="email" name="contactEmail" required></label></div>' +
+      '<label class="stx-label">Relationship to concern<input class="stx-input" name="relationshipToConcern" placeholder="Parent, coach, scout, player, club official..." required></label>' +
+      '<label class="stx-label">Player, team or organisation involved<input class="stx-input" name="playerOrTeam"></label>' +
+      '<label class="stx-label">Type of concern<select class="stx-select" name="concernType" required><option value="">Select one</option><option>Safeguarding</option><option>Scout conduct</option><option>Coach conduct</option><option>Player information</option><option>Data/privacy</option><option>Platform misuse</option><option>Other</option></select></label>' +
+      '<label class="stx-label">Description<textarea class="stx-textarea" name="description" required></textarea></label>' +
+      '<label class="stx-label">Is anyone at immediate risk?<select class="stx-select" name="immediateRisk" required><option value="">Select one</option><option>No</option><option>Yes</option></select></label>' +
+      '<label class="stx-check"><input type="checkbox" name="consentContact" required><span>I give Stratex permission to contact me if follow-up is needed.</span></label>' +
+      '<input type="hidden" name="sourcePage" value="/report-a-concern"><input type="hidden" name="utm_source"><input type="hidden" name="utm_medium"><input type="hidden" name="utm_campaign">' +
+      '<div class="stx-message" role="status"></div><button class="stx-btn stx-btn-danger" type="submit">Submit concern</button></form>';
   }
 
   function legalPage(page) {
@@ -279,6 +401,22 @@
     return '<form class="stx-form" data-stx-form="demo"><h3>Request a ScoutLink demo</h3><div class="stx-form-row"><label class="stx-label">First name<input class="stx-input" name="firstName" required></label><label class="stx-label">Last name<input class="stx-input" name="lastName" required></label></div><label class="stx-label">Email<input class="stx-input" type="email" name="email" required></label><label class="stx-label">Organisation<input class="stx-input" name="organisation"></label><label class="stx-check"><input type="checkbox" name="consentContact" required><span>I agree Stratex may contact me about this demo request.</span></label><div class="stx-message" role="status"></div><button class="stx-btn stx-btn-primary" type="submit">Request demo</button></form>';
   }
 
+  function newsletterForm() {
+    return '<form class="stx-form stx-newsletter-form" data-stx-form="newsletter"><div><h3>Get Stratex updates</h3><p>Occasional notes about ScoutLink, product updates and grassroots football intelligence.</p></div><div class="stx-form-row"><label class="stx-label">First name<input class="stx-input" name="firstName"></label><label class="stx-label">Email<input class="stx-input" type="email" name="email" required></label></div><label class="stx-check"><input type="checkbox" name="consentContact" required><span>I agree to receive Stratex and ScoutLink updates.</span></label><div class="stx-message" role="status"></div><button class="stx-btn stx-btn-primary" type="submit">Subscribe</button></form>';
+  }
+
+  function adminPage() {
+    setMeta('Stratex Admin Centre', 'Restricted Stratex Analytics company-level admin centre.', 'https://www.stratexanalytics.co.uk/admin');
+    return pageHero('Admin Centre', 'Stratex Admin Centre', 'A central space for Stratex team members to access company-level admin tools, operational workflows and internal resources.') +
+      '<section class="stx-section"><div class="stx-container"><div class="stx-admin-centre-card"><span class="stx-kicker">Restricted access</span><h2>Authorised Stratex team members only.</h2><p>The Stratex Admin Centre is for company-level workflows. ScoutLink-specific product administration remains inside the ScoutLink product environment.</p><div class="stx-grid three">' +
+        card('Company Operations', 'Manage general company workflows, internal processes and operational resources.') +
+        card('Customer Operations', 'Access onboarding, support and customer-success workflows across the Stratex ecosystem.') +
+        card('Growth & Partnerships', 'Track partnership activity, growth workflows and outreach resources.') +
+        card('Trust & Concerns', 'Access safeguarding, concern-handling and trust-related workflows.') +
+        card('ScoutLink Admin', 'Open ScoutLink-specific administration in the ScoutLink product environment.', null, 'https://www.scoutlink.app/login', 'Open ScoutLink Admin') +
+      '</div><div class="stx-actions">' + btn('Sign in', 'https://www.scoutlink.app/login', 'stx-btn-primary') + btn('Open ScoutLink Admin', 'https://www.scoutlink.app/login', '') + '</div></div></div></section>';
+  }
+
   function fallbackPage() {
     return pageHero('Page not found', 'This page is out of play.', 'The page you are looking for could not be found on the Stratex Analytics site.', btn('Go home', sitePath('home'), 'stx-btn-primary') + btn('Contact support', sitePath('contact'), ''));
   }
@@ -299,6 +437,7 @@
     else if (route.page === 'career-detail') html = careerDetailPage(route.slug);
     else if (route.page === 'contact') html = contactPage();
     else if (route.page === 'report-a-concern') html = concernPage();
+    else if (route.page === 'admin') html = adminPage();
     else if (['privacy-policy','terms-of-use','cookie-policy','security','accessibility'].indexOf(route.page) >= 0) html = legalPage(route.page);
     else if (route.page === 'learning-centre') html = learningPage();
     else if (route.page === 'blog-detail') html = blogDetailPage(route.slug);
@@ -307,6 +446,7 @@
     renderFooter();
     bindForms();
     bindCareerApply();
+    bindLeadershipCards();
     loadAsync(route);
   }
 
@@ -321,7 +461,7 @@
     var footer = document.getElementById('stratexFooter');
     if (!footer) return;
     footer.innerHTML = '<div class="stx-footer-grid"><div><a class="stx-brand" href="' + sitePath('home') + '"><span class="stx-mark">Stratex</span><span>Analytics</span></a><p>Stratex Analytics builds football intelligence products for overlooked grassroots talent.</p><p>&copy; 2026 Stratex Analytics Limited. All rights reserved.</p></div><div class="stx-footer-links">' +
-      footerColumn('Stratex', [['About', 'about'], ['Leadership', 'leadership'], ['Careers', 'careers'], ['Contact', 'contact']]) +
+      footerColumn('Stratex', [['About', 'about'], ['Leadership', 'leadership'], ['Careers', 'careers'], ['Contact', 'contact'], ['Admin Centre', 'admin']]) +
       footerColumn('Products', [['ScoutLink', 'scoutlink'], ['AgentLink planned', 'about'], ['CoachHub planned', 'about']]) +
       footerColumn('Trust', [['Trust & Safeguarding', 'trust'], ['Scout Verification', 'scout-verification'], ['Parent/Guardian Notice', 'parent-guardian-notice'], ['Report a Concern', 'report-a-concern'], ['Security', 'security']]) +
       footerColumn('Legal', [['Privacy Policy', 'privacy-policy'], ['Terms of Use', 'terms-of-use'], ['Cookie Policy', 'cookie-policy'], ['Accessibility', 'accessibility']]) +
@@ -356,7 +496,9 @@
           form.reset();
           if (message) {
             message.className = 'stx-message show ok';
-            message.textContent = json.message || 'Thanks. Your submission has been received.';
+            message.textContent = type === 'concern'
+              ? 'Thanks - we have received your report. Our team will review it and contact you if follow-up is needed. If someone is in immediate danger, contact emergency services or the relevant safeguarding authority first.'
+              : (json.message || 'Thanks. Your submission has been received.');
           }
           if (type === 'contact') track('contact_form_submitted');
           if (type === 'demo') track('demo_request_submitted');
@@ -480,9 +622,28 @@
     }).join('') + '</div>';
   }
 
+  function cleanMarkdown(value) {
+    return String(value || '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/\*(.*?)\*/g, '$1')
+      .replace(/\bAI-powered\b/gi, 'product-led')
+      .replace(/\bdata and AI\b/gi, 'data-led football intelligence')
+      .trim();
+  }
+
+  function formatLongText(value) {
+    var text = cleanMarkdown(value);
+    if (!text) return '';
+    var lines = text.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+    if (lines.length > 1 && lines.every(function (line) { return /^[-*]\s+/.test(line); })) {
+      return '<ul>' + lines.map(function (line) { return '<li>' + esc(line.replace(/^[-*]\s+/, '')) + '</li>'; }).join('') + '</ul>';
+    }
+    return '<p>' + esc(text).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+  }
+
   function contentBlock(title, body) {
     if (!body) return '';
-    return '<section class="stx-content-block"><h2>' + esc(title) + '</h2><p>' + esc(body).replace(/\n/g, '<br>') + '</p></section>';
+    return '<section class="stx-content-block"><h2>' + esc(title) + '</h2>' + formatLongText(body) + '</section>';
   }
 
   async function loadLeadership() {
@@ -492,8 +653,30 @@
       var res = await fetch(API + '/api/stratex-website/leadership');
       var json = await res.json();
       var rows = json.data || [];
-      if (rows.length) root.innerHTML = rows.map(function (p) { return personCard(p.full_name || p.fullName, p.job_title || p.jobTitle, p.email, p.permission_role || p.permissionRole); }).join('');
+      if (rows.length) {
+        root.innerHTML = mergeLeadership(rows).map(personCard).join('');
+        bindLeadershipCards();
+      }
     } catch (_) {}
+  }
+
+  function mergeLeadership(rows) {
+    var byName = {};
+    (rows || []).forEach(function (row) {
+      var name = String(row.full_name || row.fullName || '').toLowerCase();
+      byName[name] = row;
+    });
+    return LEADERS.map(function (person) {
+      var row = byName[person.name.toLowerCase()];
+      if (!row) return person;
+      return Object.assign({}, person, {
+        title: row.job_title || row.jobTitle || person.title,
+        summary: row.summary || person.summary,
+        bio: row.bio || person.bio,
+        chip: row.focus_chip || row.permission_role || person.chip,
+        linkedin: row.linkedin_url || person.linkedin
+      });
+    });
   }
 
   async function loadPosts() {
