@@ -144,18 +144,50 @@
               textarea('Bio', 'bio', 5) + input('Display order', 'displayOrder', 'number', false, '100') +
               '<div class="form-message" id="leadershipMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save leadership member</button></form>' +
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Leadership profiles</h3><a class="btn btn-sm btn-outline" href="/leadership" target="_blank" rel="noopener">Public Leadership</a></div><div id="leadershipRows" class="loading-state"><div class="spinner"></div></div></div></div>') +
-            linkPanel('org', 'Org Directory', 'Maintain company reporting lines in the Stratex org view.', '/stratex/org', 'Open org directory') +
-            modulePanel('profile', 'My Profile', 'Your admin identity and account details.', '<div class="stx-admin-surface"><h3>' + escapeHtml(userName()) + '</h3><p>' + escapeHtml((Auth.user && Auth.user.email) || localStorage.getItem('sl_user_email') || '') + '</p><p class="stx-muted">Use Settings for account and notification preferences.</p></div>') +
-            linkPanel('contracts', 'Contracts & Pay', 'Open restricted HR contract and pay records.', '/stratex/contracts-pay', 'Open contracts & pay') +
-            linkPanel('leave', 'Leave / Sick Leave', 'Book and review leave and sickness records.', '/stratex/leave', 'Open leave') +
-            linkPanel('hiring', 'Hiring', 'Create jobs, review applications and publish careers roles.', '/stratex/hiring', 'Open hiring') +
-            linkPanel('meetings', 'Meetings', 'Book and review Stratex meetings.', '/stratex/meetings', 'Open meetings') +
-            linkPanel('concerns', 'Trust & Concerns', 'Review restricted trust and safeguarding submissions.', '/stratex/concerns', 'Open concerns') +
-            linkPanel('settings', 'Settings', 'Open Stratex admin settings.', '/stratex/settings', 'Open settings') +
+            modulePanel('org', 'Org Directory', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
+            modulePanel('profile', 'My Profile', 'Your Stratex identity, reporting line and own company records.', profilePanel()) +
+            modulePanel('contracts', 'Contracts & Pay', 'Restricted HR records with private contract access and permissioned pay visibility.', contractsPanel()) +
+            modulePanel('leave', 'Leave / Sick Leave', 'Book and review absence records for yourself and your permissioned reporting tree.', leavePanel()) +
+            modulePanel('hiring', 'Hiring', 'Create roles, review applications and manage careers activity inside Stratex Admin.', hiringPanel()) +
+            modulePanel('meetings', 'Meetings', 'Book and review internal Stratex meetings.', meetingsPanel()) +
+            modulePanel('concerns', 'Trust & Concerns', 'Review safeguarding, privacy and platform concerns submitted through Stratex routes.', concernsPanel()) +
+            modulePanel('settings', 'Settings', 'Company, website, CRM, blog and admin dashboard settings scoped to Stratex Analytics.', settingsPanel()) +
             modulePanel('scoutlink', 'Open ScoutLink Admin', 'Launch the product admin experience selector. Product data is intentionally not the default Stratex dashboard.', '<div class="stx-admin-surface"><p class="stx-muted">Use this when you need to manage ScoutLink player, coach, scout, team, award or showcase workflows.</p><a class="btn btn-primary" href="/experience-select">Open ScoutLink product admin</a></div>') +
           '</div>' +
         '</main>' +
       '</div>';
+  }
+
+  function orgPanel() {
+    return '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Team structure</h3><button class="btn btn-sm btn-outline" id="refreshOrgBtn" type="button">Refresh</button></div><div class="stx-admin-kpis" id="orgKpis"><div><b>-</b><span>Team members</span></div><div><b>-</b><span>Active records</span></div><div><b>-</b><span>Managers</span></div></div><div id="orgRows" class="loading-state"><div class="spinner"></div></div></div>';
+  }
+
+  function profilePanel() {
+    return '<div class="stx-admin-two-col"><div class="stx-admin-surface"><h3>Your Stratex record</h3><div id="profileDetails" class="loading-state"><div class="spinner"></div></div></div><div class="stx-admin-surface"><h3>Reporting view</h3><div id="profileReports" class="stx-admin-empty">Open this page to load your manager, direct reports and upcoming leave.</div></div></div>';
+  }
+
+  function contractsPanel() {
+    return '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Contracts and pay</h3><button class="btn btn-sm btn-outline" id="refreshContractsBtn" type="button">Refresh</button></div><p class="stx-muted">Contract files stay private. Downloads are generated as short-lived secure links by the backend.</p><div id="contractRows" class="loading-state"><div class="spinner"></div></div></div>';
+  }
+
+  function leavePanel() {
+    return '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="leaveForm"><h3>Book leave / sick leave</h3><label class="form-group"><span>Person</span><select class="form-control" id="leavePerson" name="stratexId" required><option value="">Loading team...</option></select></label><label class="form-group"><span>Leave type</span><select class="form-control" name="leaveType" required><option>Annual leave</option><option>Sick leave</option><option>Compassionate leave</option><option>Unpaid leave</option></select></label><div class="form-row"><label class="form-group"><span>Start date</span><input class="form-control" name="startDate" type="date" required></label><label class="form-group"><span>End date</span><input class="form-control" name="endDate" type="date" required></label></div><label class="form-group"><span>Notes</span><textarea class="form-control" name="notes" rows="4"></textarea></label><div class="form-message" id="leaveMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save leave</button></form><div class="stx-admin-surface"><h3>Recent absence records</h3><div id="leaveRows" class="loading-state"><div class="spinner"></div></div></div></div>';
+  }
+
+  function hiringPanel() {
+    return '<div class="stx-admin-two-col"><div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Open roles</h3><a class="btn btn-sm btn-outline" href="/careers" target="_blank" rel="noopener">Public careers</a></div><div id="hiringRows" class="loading-state"><div class="spinner"></div></div></div><div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Applications</h3><button class="btn btn-sm btn-outline" id="refreshHiringBtn" type="button">Refresh</button></div><div id="applicationRows" class="stx-admin-empty">Applications will appear here when candidates apply.</div></div></div>';
+  }
+
+  function meetingsPanel() {
+    return '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="meetingForm"><h3>Book meeting</h3>' + input('Meeting title', 'title', 'text', true) + '<label class="form-group"><span>Date and time</span><input class="form-control" name="meetingDate" type="datetime-local" required></label>' + input('Location or video link', 'location', 'text') + '<label class="form-group"><span>Attendees</span><select class="form-control" id="meetingAttendees" multiple size="5"></select></label>' + textarea('Agenda / notes', 'notes', 5) + '<div class="form-message" id="meetingMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Book meeting</button></form><div class="stx-admin-surface"><h3>Upcoming meetings</h3><div id="meetingRows" class="loading-state"><div class="spinner"></div></div></div></div>';
+  }
+
+  function concernsPanel() {
+    return '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Concern queue</h3><button class="btn btn-sm btn-outline" id="refreshConcernsBtn" type="button">Refresh</button></div><p class="stx-muted">This queue is sourced from Stratex and ScoutLink concern routes. Sensitive detail remains in restricted backend records.</p><div id="concernRows" class="loading-state"><div class="spinner"></div></div></div>';
+  }
+
+  function settingsPanel() {
+    return '<div class="stx-admin-grid"><article class="stx-admin-surface"><h3>Company settings</h3><p class="stx-muted">Manage company profile, admin identity and public website defaults.</p></article><article class="stx-admin-surface"><h3>Website settings</h3><p class="stx-muted">Public pages, form routing, CRM and Learning Centre settings stay scoped to Stratex.</p></article><article class="stx-admin-surface"><h3>Notifications</h3><p class="stx-muted">Lead, concern, hiring and operational notification rules.</p></article><article class="stx-admin-surface"><h3>ScoutLink separation</h3><p class="stx-muted">ScoutLink product settings remain inside the separate ScoutLink admin experience.</p></article></div>';
   }
 
   function input(label, name, type, required, placeholder) {
@@ -178,7 +210,8 @@
     return modulePanel(id, title, copy, '<div class="stx-admin-surface"><p class="stx-muted">' + escapeHtml(copy) + '</p><a class="btn btn-primary" href="' + escapeHtml(href) + '">' + escapeHtml(label) + '</a></div>');
   }
 
-  function switchModule(id) {
+  function switchModule(id, skipHistory) {
+    if (!MODULE_BY_ID[id]) id = 'dashboard';
     document.querySelectorAll('[data-admin-module]').forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-admin-module') === id); });
     document.querySelectorAll('.stx-company-module').forEach(function (el) { el.hidden = el.id !== 'module-' + id; });
     var item = MODULES.find(function (row) { return row[0] === id; }) || MODULES[0];
@@ -188,6 +221,14 @@
     if (id === 'leads' || id === 'activity') loadLeads();
     if (id === 'blog' || id === 'activity') loadBlog();
     if (id === 'leadership') loadLeadership();
+    if (id === 'org' || id === 'profile' || id === 'leave' || id === 'meetings') loadOrg();
+    if (id === 'contracts') loadContracts();
+    if (id === 'hiring') loadHiring();
+    if (id === 'concerns') loadConcerns();
+    if (!skipHistory && window.history && window.history.pushState) {
+      var nextUrl = window.location.pathname + (id === 'dashboard' ? '' : '#' + encodeURIComponent(id));
+      window.history.pushState({ adminModule: id }, '', nextUrl);
+    }
     closeAdminMenu();
   }
 
@@ -198,6 +239,217 @@
       payload[key] = value;
     });
     return payload;
+  }
+
+  function formatDate(value) {
+    if (!value) return '';
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function adminName(row) {
+    return [row && row.first_name, row && row.last_name].filter(Boolean).join(' ') || (row && row.email) || 'Stratex user';
+  }
+
+  function adminRole(row) {
+    return (row && (row.job_title || row.admin_role || row.role)) || 'Stratex team';
+  }
+
+  function compactRecord(title, meta, body, action) {
+    return '<article class="stx-admin-record"><div><h4>' + escapeHtml(title) + '</h4><p>' + escapeHtml(meta || '') + '</p>' + (body ? '<div class="stx-admin-record-body">' + body + '</div>' : '') + '</div>' + (action || '') + '</article>';
+  }
+
+  function statusPill(text, tone) {
+    return '<span class="stx-admin-pill ' + escapeHtml(tone || '') + '">' + escapeHtml(text || 'Status') + '</span>';
+  }
+
+  function renderAdminRecords(rows, mapFn) {
+    if (!rows || !rows.length) return '<div class="stx-admin-empty">No records yet.</div>';
+    return '<div class="stx-admin-record-list">' + rows.map(mapFn).join('') + '</div>';
+  }
+
+  function populatePeopleControls(admins) {
+    var active = (admins || []).filter(function (row) { return row.is_active !== false; });
+    var peopleOptions = active.map(function (row) {
+      return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(adminName(row) + ' - ' + adminRole(row)) + '</option>';
+    }).join('');
+    var leavePerson = document.getElementById('leavePerson');
+    if (leavePerson) leavePerson.innerHTML = peopleOptions || '<option value="">No active team members</option>';
+    var attendees = document.getElementById('meetingAttendees');
+    if (attendees) attendees.innerHTML = peopleOptions;
+  }
+
+  function renderOrgData(data) {
+    data = data || {};
+    var admins = data.admins || [];
+    var byManager = {};
+    admins.forEach(function (row) {
+      var key = row.manager_id || 'root';
+      if (!byManager[key]) byManager[key] = [];
+      byManager[key].push(row);
+    });
+    var activeCount = admins.filter(function (row) { return row.is_active !== false; }).length;
+    var managerCount = admins.filter(function (row) { return (byManager[row.id] || []).length > 0; }).length;
+    var kpis = document.getElementById('orgKpis');
+    if (kpis) {
+      kpis.innerHTML = '<div><b>' + escapeHtml(admins.length) + '</b><span>Team members</span></div><div><b>' + escapeHtml(activeCount) + '</b><span>Active records</span></div><div><b>' + escapeHtml(managerCount) + '</b><span>Managers</span></div>';
+    }
+    var roots = admins.filter(function (row) { return !row.manager_id; });
+    var ordered = roots.concat(admins.filter(function (row) { return row.manager_id; }));
+    var orgRows = document.getElementById('orgRows');
+    if (orgRows) {
+      orgRows.innerHTML = renderAdminRecords(ordered, function (row) {
+        var reports = byManager[row.id] || [];
+        var meta = [adminRole(row), row.email].filter(Boolean).join(' - ');
+        var body = statusPill(row.admin_role || row.role || 'Read Only', 'info') + statusPill(reports.length + ' direct report' + (reports.length === 1 ? '' : 's'), '') + (row.is_active === false ? statusPill('Inactive', 'danger') : statusPill('Active', 'success'));
+        return compactRecord(adminName(row), meta, body, '');
+      });
+    }
+    renderProfileData(data);
+    renderLeaveData(data);
+    renderMeetingData(data);
+    populatePeopleControls(admins);
+  }
+
+  function renderProfileData(data) {
+    data = data || {};
+    var current = data.currentAdmin || {};
+    var admins = data.admins || [];
+    var self = admins.find(function (row) { return row.id === current.id; }) || current;
+    var manager = admins.find(function (row) { return row.id && row.id === self.manager_id; });
+    var reports = admins.filter(function (row) { return row.manager_id === self.id; });
+    var root = document.getElementById('profileDetails');
+    if (root) {
+      root.innerHTML = '<div class="stx-profile-detail"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><h3>' + escapeHtml(adminName(self)) + '</h3><p>' + escapeHtml(adminRole(self)) + '</p><p>' + escapeHtml(self.email || '') + '</p></div></div>' +
+        '<div class="stx-admin-record-body">' + statusPill(self.admin_role || self.role || 'Read Only', 'info') + statusPill(self.is_active === false ? 'Inactive' : 'Active', self.is_active === false ? 'danger' : 'success') + '</div>' +
+        '<p class="stx-muted">Reports to: ' + escapeHtml(manager ? adminName(manager) : 'Founder / no manager') + '</p>';
+    }
+    var reportsRoot = document.getElementById('profileReports');
+    if (reportsRoot) {
+      reportsRoot.innerHTML = reports.length
+        ? renderAdminRecords(reports, function (row) { return compactRecord(adminName(row), adminRole(row), statusPill(row.email || '', 'info'), ''); })
+        : '<div class="stx-admin-empty">No direct reports on your current Stratex record.</div>';
+    }
+  }
+
+  function renderLeaveData(data) {
+    var admins = data.admins || [];
+    var names = {};
+    admins.forEach(function (row) { names[row.id] = adminName(row); });
+    var root = document.getElementById('leaveRows');
+    if (!root) return;
+    root.innerHTML = renderAdminRecords(data.leave || [], function (row) {
+      var title = (names[row.stratex_id] || 'Stratex user') + ' - ' + (row.leave_type || 'Leave');
+      var meta = [formatDate(row.start_date), formatDate(row.end_date)].filter(Boolean).join(' to ');
+      var body = statusPill(row.status || 'Submitted', 'info') + (row.notes ? '<p>' + escapeHtml(row.notes) + '</p>' : '');
+      return compactRecord(title, meta, body, '');
+    });
+  }
+
+  function renderMeetingData(data) {
+    var root = document.getElementById('meetingRows');
+    if (!root) return;
+    root.innerHTML = renderAdminRecords(data.meetings || [], function (row) {
+      var attendees = Array.isArray(row.attendees) ? row.attendees.length + ' attendee' + (row.attendees.length === 1 ? '' : 's') : '';
+      var body = statusPill(row.status || 'Scheduled', 'success') + (row.notes ? '<p>' + escapeHtml(row.notes) + '</p>' : '');
+      return compactRecord(row.title || 'Meeting', [formatDate(row.meeting_date), row.location, attendees].filter(Boolean).join(' - '), body, '');
+    });
+  }
+
+  async function loadOrg() {
+    try {
+      var data = await api('GET', '/api/stratex/org');
+      renderOrgData(data);
+    } catch (_) {
+      ['orgRows', 'profileDetails', 'leaveRows', 'meetingRows'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = '<div class="stx-admin-error">Could not load Stratex org records.</div>';
+      });
+    }
+  }
+
+  async function loadContracts() {
+    var root = document.getElementById('contractRows');
+    if (!root) return;
+    root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    try {
+      var data = await api('GET', '/api/stratex/contracts-pay');
+      var rows = data.data || [];
+      root.innerHTML = renderAdminRecords(rows, function (row) {
+        var contract = row.contract_data && typeof row.contract_data === 'object' ? row.contract_data : {};
+        var body = statusPill(contract.contractPath ? 'Contract uploaded' : 'No contract uploaded', contract.contractPath ? 'success' : '') +
+          statusPill(contract.payAmount ? 'Pay set' : 'Pay not set', contract.payAmount ? 'info' : '') +
+          '<p>' + escapeHtml([contract.payAmount ? ('GBP ' + contract.payAmount) : '', contract.payFrequency || ''].filter(Boolean).join(' / ') || 'Private HR record') + '</p>';
+        var action = contract.contractPath ? '<button class="btn btn-sm btn-outline" type="button" data-contract-download="' + escapeHtml(row.id) + '">Secure download</button>' : '';
+        return compactRecord(adminName(row), [adminRole(row), row.email].filter(Boolean).join(' - '), body, action);
+      });
+      bindContractDownloads();
+    } catch (_) {
+      root.innerHTML = '<div class="stx-admin-error">Could not load contracts and pay.</div>';
+    }
+  }
+
+  function bindContractDownloads() {
+    document.querySelectorAll('[data-contract-download]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        try {
+          var data = await api('GET', '/api/stratex/contracts-pay/' + encodeURIComponent(btn.getAttribute('data-contract-download')) + '/contract-url');
+          if (data.url) window.open(data.url, '_blank', 'noopener');
+        } catch (err) {
+          alert(err.message || 'Could not create secure contract link.');
+        }
+      });
+    });
+  }
+
+  async function loadHiring() {
+    var jobsRoot = document.getElementById('hiringRows');
+    var appsRoot = document.getElementById('applicationRows');
+    try {
+      var jobs = await api('GET', '/api/stratex/jobs');
+      if (jobsRoot) {
+        jobsRoot.innerHTML = renderAdminRecords(jobs.data || [], function (job) {
+          var meta = [job.department, job.location, job.working_type, job.status].filter(Boolean).join(' - ');
+          var body = statusPill(job.status || 'Draft', job.status === 'live' ? 'success' : 'info') + statusPill((job.positions_available || 1) + ' position' + (Number(job.positions_available || 1) === 1 ? '' : 's'), '');
+          return compactRecord(job.job_title || 'Untitled role', meta, body, '');
+        });
+      }
+    } catch (_) {
+      if (jobsRoot) jobsRoot.innerHTML = '<div class="stx-admin-error">Could not load job posts.</div>';
+    }
+    try {
+      var apps = await api('GET', '/api/stratex/job-applications');
+      if (appsRoot) {
+        appsRoot.innerHTML = renderAdminRecords(apps.data || [], function (app) {
+          var job = app.job_posts || {};
+          var body = statusPill(app.status || 'Submitted', 'info') + (app.job_application_files && app.job_application_files.length ? statusPill('CV stored privately', 'success') : statusPill('No CV record', ''));
+          return compactRecord([app.first_name, app.last_name].filter(Boolean).join(' ') || app.email || 'Applicant', [job.job_title, app.email, formatDate(app.submitted_at)].filter(Boolean).join(' - '), body, '');
+        });
+      }
+    } catch (_) {
+      if (appsRoot) appsRoot.innerHTML = '<div class="stx-admin-empty">Applications are not available in this environment yet.</div>';
+    }
+  }
+
+  async function loadConcerns() {
+    var root = document.getElementById('concernRows');
+    if (!root) return;
+    root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    try {
+      var data = await api('GET', '/api/stratex-website/leads');
+      var rows = (data.data || []).filter(function (row) {
+        return String(row.lead_type || row.type || '').toLowerCase().indexOf('concern') >= 0 || row.concern_type;
+      });
+      root.innerHTML = renderAdminRecords(rows, function (row) {
+        var title = row.concern_type || row.reason || 'Concern report';
+        var meta = [row.full_name, row.email, formatDate(row.created_at)].filter(Boolean).join(' - ');
+        var body = statusPill(row.status || 'New', 'info') + statusPill(row.priority || 'Standard', row.priority === 'urgent' ? 'danger' : '');
+        return compactRecord(title, meta, body, '');
+      });
+    } catch (_) {
+      root.innerHTML = '<div class="stx-admin-error">Could not load concern submissions.</div>';
+    }
   }
 
   async function loadCrm() {
@@ -331,6 +583,14 @@
     bindAdminDrawer();
     var refresh = document.getElementById('refreshLeadsBtn');
     if (refresh) refresh.addEventListener('click', loadLeads);
+    var refreshOrg = document.getElementById('refreshOrgBtn');
+    if (refreshOrg) refreshOrg.addEventListener('click', loadOrg);
+    var refreshContracts = document.getElementById('refreshContractsBtn');
+    if (refreshContracts) refreshContracts.addEventListener('click', loadContracts);
+    var refreshHiring = document.getElementById('refreshHiringBtn');
+    if (refreshHiring) refreshHiring.addEventListener('click', loadHiring);
+    var refreshConcerns = document.getElementById('refreshConcernsBtn');
+    if (refreshConcerns) refreshConcerns.addEventListener('click', loadConcerns);
     var exportBtn = document.getElementById('crmExportBtn');
     if (exportBtn) exportBtn.addEventListener('click', exportCrm);
     document.querySelectorAll('[data-editor-cmd]').forEach(function (btn) {
@@ -361,6 +621,33 @@
         loadLeadership();
       } catch (err) {
         showMessage('leadershipMsg', err.message || 'Could not save leadership member.', false);
+      }
+    });
+    var leaveForm = document.getElementById('leaveForm');
+    if (leaveForm) leaveForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        await api('POST', '/api/stratex/org/leave', formPayload(leaveForm));
+        leaveForm.reset();
+        showMessage('leaveMsg', 'Leave record saved.', true);
+        loadOrg();
+      } catch (err) {
+        showMessage('leaveMsg', err.message || 'Could not save leave record.', false);
+      }
+    });
+    var meetingForm = document.getElementById('meetingForm');
+    if (meetingForm) meetingForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var payload = formPayload(meetingForm);
+        var attendees = document.getElementById('meetingAttendees');
+        payload.attendees = attendees ? Array.from(attendees.selectedOptions).map(function (option) { return option.value; }) : [];
+        await api('POST', '/api/stratex/org/meetings', payload);
+        meetingForm.reset();
+        showMessage('meetingMsg', 'Meeting booked.', true);
+        loadOrg();
+      } catch (err) {
+        showMessage('meetingMsg', err.message || 'Could not book meeting.', false);
       }
     });
   }
@@ -436,6 +723,10 @@
     if (typeof ensureStratexNotificationPanel === 'function') ensureStratexNotificationPanel();
     if (typeof updateNotifBadge === 'function') updateNotifBadge();
     bindHandlers();
-    switchModule('dashboard');
+    var initialModule = decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard';
+    switchModule(initialModule, true);
+    window.addEventListener('popstate', function () {
+      switchModule(decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard', true);
+    });
   });
 })();

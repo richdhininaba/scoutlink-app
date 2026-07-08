@@ -292,6 +292,34 @@ button, input, select, textarea { font: inherit; }
   background: #ecfdf5;
   color: var(--stx-green-dark);
 }
+.stx-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.stx-pricing-card {
+  position: relative;
+  min-height: 100%;
+}
+.stx-pricing-card.featured {
+  border-color: rgba(15, 163, 127, .42);
+  box-shadow: 0 24px 70px rgba(15, 163, 127, .16);
+}
+.stx-price {
+  margin: 2px 0 6px;
+  color: var(--stx-text) !important;
+  font-size: clamp(24px, 3vw, 34px) !important;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -.035em;
+}
+.stx-pricing-card ul {
+  margin: 6px 0 12px;
+  padding-left: 18px;
+}
+.stx-pricing-card li {
+  margin: 6px 0;
+}
 .stx-dark-section {
   margin: 44px 0;
   padding: clamp(28px, 5vw, 58px);
@@ -1118,6 +1146,79 @@ body.stx-company-admin {
   font-size: 12px;
   font-weight: 850;
 }
+.stx-admin-record-list {
+  display: grid;
+  gap: 12px;
+}
+.stx-admin-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+.stx-admin-record h4 {
+  margin: 0 0 4px;
+  color: #101828;
+  font-size: 15px;
+  letter-spacing: -.02em;
+}
+.stx-admin-record p {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.stx-admin-record-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+.stx-admin-pill {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #dce4ef;
+  background: #fff;
+  color: #475467;
+  font-size: 12px;
+  font-weight: 900;
+}
+.stx-admin-pill.success {
+  border-color: #b7ead9;
+  background: #ecfdf5;
+  color: #047857;
+}
+.stx-admin-pill.info {
+  border-color: #c7d7fe;
+  background: #eef4ff;
+  color: #175cd3;
+}
+.stx-admin-pill.danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.stx-profile-detail {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.stx-profile-detail h3 {
+  margin: 0 0 4px;
+}
+.stx-profile-detail p {
+  margin: 0;
+  color: #667085;
+  line-height: 1.4;
+}
 
 @media (max-width: 900px) {
   .stx-admin-layout {
@@ -1292,6 +1393,11 @@ body.stx-company-admin {
   .stx-admin-surface {
     padding: 16px;
     border-radius: 20px;
+  }
+  .stx-admin-record {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
   }
 }
 
@@ -1480,6 +1586,7 @@ body.stx-company-admin {
   .stx-grid,
   .stx-grid.two,
   .stx-grid.four,
+  .stx-pricing-grid,
   .stx-leadership-grid,
   .stx-newsletter-form,
   .stx-application-facts,

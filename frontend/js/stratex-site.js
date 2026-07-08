@@ -9,6 +9,11 @@
     scout: 'https://www.scoutlink.app/register/scout',
     demo: 'https://www.scoutlink.app/demo'
   };
+  var SCOUT_PLAN_LIMITS = [
+    ['Starter', 'GBP 199 / month', '1 scout seat', '25 player interests', '15 exports', '20 predictions'],
+    ['Pro', 'GBP 399 / month', '3 scout seats', '75 player interests', '50 exports', '75 predictions'],
+    ['Elite', 'Custom annual plan', 'Team seats', 'Custom interest cap', 'Custom exports', 'Custom predictions']
+  ];
 
   var LEADERS = [
     {
@@ -54,6 +59,12 @@
 
   var sitePages = [
     ['scoutlink', 'ScoutLink'],
+    ['scoutlink/compatibility-score', 'Compatibility Score'],
+    ['pricing', 'Pricing'],
+    ['scoutlink/pricing', 'ScoutLink Pricing'],
+    ['scoutlink/scouts', 'For Scouts'],
+    ['scoutlink/coaches', 'For Coaches'],
+    ['grassroots-football-scouting-tools', 'Grassroots Tools'],
     ['about', 'About Stratex'],
     ['leadership', 'Leadership'],
     ['trust', 'Trust & Safeguarding'],
@@ -86,6 +97,15 @@
     var parts = path.split('/').filter(Boolean);
     if (parts[0] === 'careers' && parts[1]) return { page: 'career-detail', slug: parts.slice(1).join('/') };
     if (parts[0] === 'learning-centre' && parts[1]) return { page: 'blog-detail', slug: parts.slice(1).join('/') };
+    if (parts[0] === 'compatibility-score') return { page: 'compatibility-score' };
+    if (parts[0] === 'pricing') return { page: 'pricing' };
+    if (parts[0] === 'scouts') return { page: 'scoutlink-scouts' };
+    if (parts[0] === 'coaches') return { page: 'scoutlink-coaches' };
+    if (parts[0] === 'grassroots-football-scouting-tools') return { page: 'grassroots-football-scouting-tools' };
+    if (parts[0] === 'scoutlink' && parts[1] === 'compatibility-score') return { page: 'compatibility-score' };
+    if (parts[0] === 'scoutlink' && parts[1] === 'pricing') return { page: 'scoutlink-pricing' };
+    if (parts[0] === 'scoutlink' && parts[1] === 'scouts') return { page: 'scoutlink-scouts' };
+    if (parts[0] === 'scoutlink' && parts[1] === 'coaches') return { page: 'scoutlink-coaches' };
     return { page: parts[0] || 'home' };
   }
 
@@ -179,7 +199,7 @@
       section('Built around trust, not open exposure.', 'ScoutLink is designed around verified access, controlled visibility, safer contact routes and explainable scoring. Stratex does not promise scouting outcomes or direct contact with minors.',
         '<div class="stx-grid three">' + card('Coach-led evidence', 'Player profiles start from coach-managed information and structured match facts.') + card('Verified scout access', 'Scout access is reviewed so youth player information is not treated like an open directory.') + card('Clear safeguarding routes', 'Concerns and privacy requests are routed through restricted Stratex workflows.') + '</div>') +
       '<section class="stx-section"><div class="stx-container"><div class="stx-newsletter-card">' + newsletterForm() + '</div></div></section>' +
-      finalCta('Ready to see the first Stratex product?', 'Explore ScoutLink or contact Stratex about clubs, schools, academies and partnerships.', btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('Contact Stratex', sitePath('contact'), ''));
+      finalCta('Ready to see the first Stratex product?', 'Explore ScoutLink or contact Stratex about clubs, schools, academies and partnerships.', btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '') + btn('Contact Stratex', sitePath('contact'), ''));
   }
 
   function section(title, copy, body) {
@@ -197,8 +217,65 @@
       section('Built for the people around grassroots talent.', 'ScoutLink separates the experience for coaches, verified scouts, clubs, schools, academies, players and families.',
         '<div class="stx-grid four">' + card('Coaches', 'Create player profiles, add match facts, upload evidence and make fixtures scout-visible.', null, SCOUTLINK.coach, 'Register as Coach') + card('Scouts', 'Search, compare, shortlist and run structured predictions once access is reviewed.', null, SCOUTLINK.scout, 'Request Scout Access') + card('Clubs, schools and academies', 'Give your players a more structured route to visibility without scattering evidence across messages.', null, sitePath('contact'), 'Contact Stratex') + card('Parents and players', 'Understand how youth data, visibility and safeguarding routes are handled.', null, sitePath('parent-guardian-notice'), 'Read notice') + '</div>') +
       '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-card"><h2>Player evidence with context.</h2><p>ScoutLink profiles combine coach-rated attributes, match facts, video reels, data confidence, compatibility scoring and estimated value. Scores are explainable and designed to support decisions, not replace live judgement.</p><div class="stx-actions">' + btn('Explore demo', SCOUTLINK.demo, 'stx-btn-primary', 'data-outbound="demo"') + btn('ScoutLink login', SCOUTLINK.login, '') + '</div></div>' + profilePreview() + '</div></section>' +
-      section('Compatibility scoring explained.', 'ScoutLink compatibility combines the scout setup, player position, attributes, physical profile, match output and evidence confidence into a fit signal. It is not a guarantee of selection or signing.', '<div class="stx-grid three">' + card('Need fit', 'Player strengths are compared to the scout setup and weaknesses a team is trying to solve.') + card('Evidence confidence', 'Recent match facts, coach ratings and profile completion affect how much confidence the platform places in a score.') + card('Explainable output', 'Breakdowns show why a player scored well or poorly rather than hiding the reasoning.') + '</div>') +
+      section('Compatibility scoring explained.', 'ScoutLink compatibility combines the scout setup, player position, attributes, physical profile, match output and evidence confidence into a fit signal. It is not a guarantee of selection or signing.', '<div class="stx-grid three">' + card('Need fit', 'Player strengths are compared to the scout setup and weaknesses a team is trying to solve.') + card('Evidence confidence', 'Recent match facts, coach ratings and profile completion affect how much confidence the platform places in a score.') + card('Explainable output', 'Breakdowns show why a player scored well or poorly rather than hiding the reasoning.', null, sitePath('scoutlink/compatibility-score'), 'How scoring works') + '</div>') +
       '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-card"><h2>See ScoutLink in context.</h2><p>Request a short walkthrough for a club, school, academy or partner organisation. Demo requests are reviewed by the Stratex team.</p></div><div class="stx-form-card">' + demoRequestPanel() + '</div></div></section>';
+  }
+
+  function faqBlock(items) {
+    if (!items || !items.length) return '';
+    return '<section class="stx-section"><div class="stx-container"><div class="stx-section-head"><h2>Frequently asked questions</h2><p>Short answers for coaches, verified scouts and families.</p></div><div class="stx-grid">' +
+      items.map(function (item) {
+        return '<article class="stx-card"><h3>' + esc(item[0]) + '</h3><p>' + esc(item[1]) + '</p></article>';
+      }).join('') + '</div></div></section>';
+  }
+
+  function compatibilityPage() {
+    setMeta('ScoutLink Compatibility Score | Football Player-Team Fit', 'How ScoutLink uses compatibility scoring to support football player-team fit review for verified scouts and coach-led player profiles.', 'https://www.stratexanalytics.co.uk/scoutlink/compatibility-score');
+    track('compatibility_score_page_viewed');
+    return pageHero('ScoutLink Compatibility Score', 'Player-team fit review, supported by structured evidence.', 'ScoutLink compatibility scoring helps verified scouts review how a player may fit a team need, role expectation or squad gap. It is decision support, not a guarantee of scouting, selection, trials or contracts.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('For coaches', sitePath('scoutlink/coaches'), '')) +
+      section('How the compatibility signal is built.', 'ScoutLink combines coach-led player evidence with scout-entered team context. The exact methodology is proprietary to Stratex Analytics.', '<div class="stx-grid three">' + card('Scout setup', 'Scouts set team weaknesses, role expectations, long-term goals and search preferences.') + card('Player evidence', 'Coach-rated attributes, match facts, physical profile, position and video evidence create structured context.') + card('Confidence level', 'Recent match evidence and profile completeness affect how strongly the score should be trusted.') + '</div>') +
+      section('What the score is for.', 'The score gives scouts a clearer starting point for review while keeping human judgement central.', '<div class="stx-grid three">' + card('Shortlist faster', 'Find players who appear closer to the team profile a scout has entered.') + card('Compare evidence', 'Review compatibility alongside ratings, match output and data confidence.') + card('Protect context', 'Interest remains coach-mediated. ScoutLink does not support direct scout-to-child contact.') + '</div>') +
+      faqBlock([
+        ['Does the score guarantee a trial?', 'No. ScoutLink compatibility scoring supports review and does not guarantee scouting, trials, contracts or selection.'],
+        ['Is the formula public?', 'No. The exact methodology is proprietary to Stratex Analytics, but the platform explains the main evidence areas that influence a result.'],
+        ['Can scouts contact children directly?', 'No. ScoutLink is designed around coach-mediated interest and reviewed scout access.']
+      ]);
+  }
+
+  function pricingCards() {
+    return '<div class="stx-pricing-grid">' + SCOUT_PLAN_LIMITS.map(function (plan, index) {
+      return '<article class="stx-card stx-pricing-card ' + (index === 1 ? 'featured' : '') + '"><span class="stx-card-status ' + (index === 1 ? 'live' : '') + '">' + (index === 2 ? 'Team plan' : 'Scout access') + '</span><h3>' + esc(plan[0]) + '</h3><p class="stx-price">' + esc(plan[1]) + '</p><ul>' + plan.slice(2).map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul><a class="stx-btn stx-btn-primary" href="' + SCOUTLINK.scout + '" data-outbound="scout">Request scout access</a></article>';
+    }).join('') + '</div>';
+  }
+
+  function pricingPage(canonicalPath) {
+    var canonical = canonicalPath || '/pricing';
+    setMeta('ScoutLink Pricing | Verified Scout Access', 'ScoutLink pricing for verified scout access, interests, exports and prediction usage. All scout access is reviewed before activation.', 'https://www.stratexanalytics.co.uk' + canonical);
+    track('pricing_page_viewed');
+    return pageHero('ScoutLink Pricing', 'Verified scout access with clear usage limits.', 'ScoutLink scout plans are designed for reviewed access, controlled player visibility and coach-mediated interest workflows. Pricing does not create instant platform access; every scout request is reviewed first.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '')) +
+      '<section class="stx-section"><div class="stx-container">' + pricingCards() + '</div></section>' +
+      section('Important access notes.', 'ScoutLink is built for responsible youth football visibility.', '<div class="stx-grid three">' + card('Reviewed access', 'Scout requests are reviewed before any product access is activated.') + card('No direct child contact', 'Interest is routed through coach-mediated workflows.') + card('Decision support', 'Compatibility and prediction tools support judgement; they do not guarantee outcomes.') + '</div>');
+  }
+
+  function scoutAudiencePage() {
+    setMeta('ScoutLink for Verified Football Scouts', 'How verified football scouts use ScoutLink to search, compare and shortlist U7-U16 player profiles with coach-led evidence.', 'https://www.stratexanalytics.co.uk/scoutlink/scouts');
+    return pageHero('For Verified Scouts', 'Search, compare and shortlist players with better context.', 'ScoutLink helps reviewed scouts find structured U7-U16 player profiles, compare player-team fit and manage a coach-mediated recruitment pipeline.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('Pricing', sitePath('scoutlink/pricing'), '')) +
+      section('Scout workflows.', 'ScoutLink brings evidence together before a scout decides who is worth watching live.', '<div class="stx-grid three">' + card('Player database', 'Search by position, age, location, rating, value and compatibility.') + card('Pipeline', 'Shortlist players, track stages and message the coach once interest is registered.') + card('Predictions and exports', 'Run structured analyses and export football evidence where your plan allows.') + '</div>') +
+      faqBlock([['Is scout access instant?', 'No. Scout requests are reviewed before access is activated.'], ['Can scouts message players?', 'No. ScoutLink keeps interest coach-mediated and does not support direct scout-to-child contact.']]);
+  }
+
+  function coachAudiencePage() {
+    setMeta('ScoutLink for Grassroots Football Coaches', 'How grassroots football coaches use ScoutLink to create structured player profiles, match facts, fixtures and scout-visible evidence.', 'https://www.stratexanalytics.co.uk/scoutlink/coaches');
+    return pageHero('For Coaches', 'Turn player evidence into structured football profiles.', 'ScoutLink helps coaches organise player ratings, match facts, fixtures and approved video evidence so verified scouts can review players with context.', btn('Register as Coach', SCOUTLINK.coach, 'stx-btn-primary', 'data-outbound="coach"') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '')) +
+      section('Coach workflows.', 'Coach-led evidence keeps youth football visibility structured and safer.', '<div class="stx-grid three">' + card('Player profiles', 'Create structured U7-U16 player records with ratings, position, physical profile and evidence.') + card('Match facts', 'Record game output, events and player performance to improve data confidence.') + card('Scout visibility', 'Make the right profile information visible to reviewed scouts without turning children into a public directory.') + '</div>') +
+      faqBlock([['Does ScoutLink guarantee players will be scouted?', 'No. ScoutLink improves evidence and visibility but does not guarantee scouting outcomes.'], ['Who controls player evidence?', 'Player profiles are coach-led and should only include information and media where appropriate permissions are in place.']]);
+  }
+
+  function grassrootsToolsPage() {
+    setMeta('Grassroots Football Scouting Tools | ScoutLink', 'ScoutLink provides grassroots football scouting tools for coach-led profiles, verified scout search, compatibility scoring and safer visibility.', 'https://www.stratexanalytics.co.uk/grassroots-football-scouting-tools');
+    return pageHero('Grassroots Football Scouting Tools', 'A more structured way to review youth football talent.', 'ScoutLink brings together player profiles, match evidence, compatibility scoring, scout setup, pipeline tracking and coach-mediated interest workflows.', btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + btn('Request scout access', SCOUTLINK.scout, '', 'data-outbound="scout"')) +
+      section('Tools in one workflow.', 'ScoutLink is designed for grassroots contexts where evidence is often fragmented.', '<div class="stx-grid four">' + card('Player profiles', 'Coach-led player data and evidence.') + card('Match facts', 'Structured game records and performance data.') + card('Compatibility scoring', 'Decision-support player-team fit review.') + card('Verified scout pipeline', 'Reviewed scout access and coach-mediated interest.') + '</div>') +
+      faqBlock([['What age groups does ScoutLink support?', 'ScoutLink public messaging is focused on U7-U16 grassroots football.'], ['Does ScoutLink replace scouts?', 'No. ScoutLink supports scouting decisions with better evidence and context.']]);
   }
 
   function aboutPage() {
@@ -217,6 +294,15 @@
 
   function scoutVerificationPage() {
     setMeta('Scout Verification | Stratex Analytics', 'ScoutLink access is reviewed to support safer youth football visibility and responsible scouting workflows.', 'https://www.stratexanalytics.co.uk/scout-verification');
+    var token = new URLSearchParams(window.location.search).get('token');
+    if (token) {
+      return pageHero('Scout Verification', 'Upload your verification documents.', 'ScoutLink access is reviewed before activation. Upload safeguarding or DBS evidence and proof of ID so the Stratex team can review your request.') +
+        '<section class="stx-section"><div class="stx-container stx-page-grid"><div class="stx-card stx-prose" id="scoutVerificationSummary"><div class="stx-empty">Checking verification link...</div></div><div class="stx-form-card">' +
+        '<form class="stx-form" data-scout-verification data-token="' + esc(token) + '"><span class="stx-kicker">Secure upload</span><h2>Submit documents</h2><p>Accepted files: PDF, JPG, PNG, DOC or DOCX. Maximum 5MB per file.</p>' +
+        '<label class="stx-label">Safeguarding or DBS evidence<input class="stx-input" type="file" name="safeguardingEvidence" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required></label>' +
+        '<label class="stx-label">Proof of ID<input class="stx-input" type="file" name="proofOfId" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required></label>' +
+        '<div class="stx-message" role="status"></div><button class="stx-btn stx-btn-primary" type="submit">Submit verification documents</button></form></div></div></section>';
+    }
     return pageHero('Scout Verification', 'ScoutLink is not open access.', 'Verified scout access helps keep youth player information away from open public browsing and gives coaches more confidence in who can view player evidence.') +
       section('What scouts confirm.', 'ScoutLink access can be declined or removed if the platform is misused.', '<div class="stx-prose stx-card"><ul><li>They are using ScoutLink in a legitimate scouting, recruitment or football evaluation capacity.</li><li>They will not misuse player information or attempt to contact minors directly outside approved safeguarding routes.</li><li>They understand player data must not be scraped, sold or shared outside their organisation without permission.</li></ul></div>');
   }
@@ -438,6 +524,12 @@
     var html = '';
     if (route.page === 'home') html = homePage();
     else if (route.page === 'scoutlink') html = scoutLinkPage();
+    else if (route.page === 'compatibility-score') html = compatibilityPage();
+    else if (route.page === 'pricing') html = pricingPage('/pricing');
+    else if (route.page === 'scoutlink-pricing') html = pricingPage('/scoutlink/pricing');
+    else if (route.page === 'scoutlink-scouts') html = scoutAudiencePage();
+    else if (route.page === 'scoutlink-coaches') html = coachAudiencePage();
+    else if (route.page === 'grassroots-football-scouting-tools') html = grassrootsToolsPage();
     else if (route.page === 'about') html = aboutPage();
     else if (route.page === 'leadership') html = leadershipPage();
     else if (route.page === 'trust') html = trustPage();
@@ -455,6 +547,7 @@
     app.innerHTML = html;
     renderFooter();
     bindForms();
+    bindScoutVerification();
     bindCareerApply();
     bindLeadershipCards();
     loadAsync(route);
@@ -482,7 +575,7 @@
   function footerGroups() {
     return [
       { title: 'Stratex', links: [['About', 'about'], ['Leadership', 'leadership'], ['Careers', 'careers'], ['Contact', 'contact']] },
-      { title: 'Products', links: [['ScoutLink', 'scoutlink'], ['AgentLink planned', 'about'], ['CoachHub planned', 'about']] },
+      { title: 'Products', links: [['ScoutLink', 'scoutlink'], ['Compatibility score', 'scoutlink/compatibility-score'], ['Pricing', 'pricing'], ['For scouts', 'scoutlink/scouts'], ['For coaches', 'scoutlink/coaches']] },
       { title: 'Trust', links: [['Trust & Safeguarding', 'trust'], ['Scout Verification', 'scout-verification'], ['Parent/Guardian Notice', 'parent-guardian-notice'], ['Report a Concern', 'report-a-concern'], ['Security', 'security']] },
       { title: 'Legal', links: [['Privacy Policy', 'privacy-policy'], ['Terms of Use', 'terms'], ['Cookie Policy', 'cookie-policy'], ['Accessibility', 'accessibility']] }
     ];
@@ -566,9 +659,59 @@
   async function loadAsync(route) {
     if (route.page === 'careers') loadJobs();
     if (route.page === 'career-detail') loadJobDetail(route.slug);
+    if (route.page === 'scout-verification') loadScoutVerification();
     if (route.page === 'leadership') loadLeadership();
     if (route.page === 'learning-centre') loadPosts();
     if (route.page === 'blog-detail') loadPostDetail(route.slug);
+  }
+
+  async function loadScoutVerification() {
+    var token = new URLSearchParams(window.location.search).get('token');
+    var root = document.getElementById('scoutVerificationSummary');
+    if (!token || !root) return;
+    try {
+      var res = await fetch(API + '/api/registrations/scout-verification/' + encodeURIComponent(token));
+      var json = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error(json.error || 'Verification link could not be loaded.');
+      root.innerHTML = '<span class="stx-card-status live">' + esc(json.verificationStatus || 'Awaiting documents') + '</span><h2>' + esc(json.firstName || 'Scout') + ', complete your verification</h2><p>Upload the requested documents for ' + esc(json.scoutClub || 'your scouting organisation') + '. The review usually takes less than 24 hours after documents are submitted.</p><p><strong>Documents uploaded:</strong> ' + esc(json.documentsUploaded || 0) + '</p>';
+    } catch (err) {
+      root.innerHTML = '<div class="stx-empty"><h2>Verification link unavailable</h2><p>' + esc(err.message || 'This link may have expired.') + '</p></div>';
+      var form = document.querySelector('[data-scout-verification]');
+      if (form) form.querySelectorAll('input,button').forEach(function (el) { el.disabled = true; });
+    }
+  }
+
+  function bindScoutVerification() {
+    var form = document.querySelector('[data-scout-verification]');
+    if (!form) return;
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var token = form.getAttribute('data-token');
+      var message = form.querySelector('.stx-message');
+      if (message) { message.className = 'stx-message'; message.textContent = ''; }
+      try {
+        var data = new FormData(form);
+        ['safeguardingEvidence', 'proofOfId'].forEach(function (name) {
+          var file = form.querySelector('[name="' + name + '"]').files[0];
+          if (!file) throw new Error('Both verification files are required.');
+          if (file.size > 5 * 1024 * 1024) throw new Error(file.name + ' must be 5MB or smaller.');
+        });
+        var res = await fetch(API + '/api/registrations/scout-verification/' + encodeURIComponent(token), { method: 'POST', body: data });
+        var json = await res.json().catch(function () { return {}; });
+        if (!res.ok) throw new Error(json.error || 'Could not upload verification documents.');
+        form.reset();
+        if (message) {
+          message.className = 'stx-message show ok';
+          message.textContent = json.message || 'Verification documents received.';
+        }
+        loadScoutVerification();
+      } catch (err) {
+        if (message) {
+          message.className = 'stx-message show err';
+          message.textContent = err.message || 'Could not upload verification documents.';
+        }
+      }
+    });
   }
 
   function bindCareerApply() {

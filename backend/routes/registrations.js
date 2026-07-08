@@ -1,11 +1,30 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
+const multer = require('multer');
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
 const email = require('../services/email');
 const config = require('../config');
 const { limitsForPlan } = require('../utils/scoutPlans');
+
+const VERIFICATION_BUCKET = 'scout-verification-documents';
+const verificationUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 2 },
+  fileFilter: (_, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (!allowed.includes(file.mimetype)) return cb(new Error('Upload PDF, JPG, PNG, DOC or DOCX files only.'));
+    cb(null, true);
+  }
+});
 
 const DECLINE_REASONS = [
   'Unable to verify football team','Unable to verify professional club affiliation',
@@ -84,6 +103,30 @@ function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
+function stratexBase() {
+  return String(process.env.STRATEX_URL || 'https://www.stratexanalytics.co.uk').replace(/\/+$/, '');
+}
+
+function hashToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function generateVerificationToken() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function verificationLink(token) {
+  return stratexBase() + '/scout-verification?token=' + encodeURIComponent(token);
+}
+
+function sanitizeFileName(value) {
+  return String(value || 'document').replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'document';
+}
+
+function uploadedDocuments(row) {
+  return Array.isArray(row && row.safeguarding_documents) ? row.safeguarding_documents : [];
+}
+
 function safeLog(label, err) {
   console.error(label, { code: err && err.code, message: err && err.message });
 }
@@ -120,12 +163,22 @@ async function sendRegistrationEmails({ accountType, request, alertPayload }) {
   }).catch(e => ({ success: false, error: e.message }));
   if (!applicant || !applicant.success) return { success: false, stage: 'applicant confirmation', result: applicant };
 
+  let verification = null;
+  if (accountType === 'Scout') {
+    verification = await email.sendScoutVerificationRequired({
+      to: request.email,
+      firstName: request.first_name,
+      verificationLink: request.verificationLink
+    }).catch(e => ({ success: false, error: e.message }));
+    if (!verification || !verification.success) return { success: false, stage: 'scout verification email', result: verification };
+  }
+
   const admin = accountType === 'Coach'
     ? await email.sendCoachRegAlert(alertPayload).catch(e => ({ success: false, error: e.message }))
     : await email.sendScoutRegAlert(alertPayload).catch(e => ({ success: false, error: e.message }));
   if (!admin || !admin.success) return { success: false, stage: 'Stratex admin alert', result: admin };
 
-  return { success: true, applicant, admin };
+  return { success: true, applicant, verification, admin };
 }
 
 // Public: coach registers
@@ -175,15 +228,22 @@ router.post('/scout', async (req, res) => {
     const dup = await checkDuplicates(emailAddr, phone);
     if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
     if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error: 'A registration request is already pending for this email.' });
+    const token = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const { data: req2, error } = await supabase.from('registration_requests').insert({
       account_type: 'Scout', first_name: firstName.trim(), last_name: lastName.trim(),
       email: emailAddr.toLowerCase().trim(), phone: phone||null, scout_club: scoutClub, scout_league: scoutLeague||null,
       data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending',
       declaration_version: req.body.declarationVersion || 'scout-verification-v1-2026-07',
       activity_notice_version: req.body.activityNoticeVersion || 'platform-activity-v1-2026-07',
-      declarations
+      declarations,
+      verification_status: 'awaiting_documents',
+      verification_token_hash: hashToken(token),
+      verification_token_expires_at: expiresAt,
+      verification_link_sent_at: new Date()
     }).select().single();
     if (error) throw error;
+    req2.verificationLink = verificationLink(token);
     const emailResult = await sendRegistrationEmails({
       accountType: 'Scout',
       request: req2,
@@ -193,8 +253,91 @@ router.post('/scout', async (req, res) => {
       await removeRegistrationRequest(req2.id);
       return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
     }
-    res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
+    res.status(201).json({ message: 'Registration submitted. We have emailed your verification link and will review your request after documents are uploaded. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
   } catch(err) { safeLog('[Registration scout]', err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+async function requestByVerificationToken(token) {
+  const tokenHash = hashToken(token);
+  const { data, error } = await supabase
+    .from('registration_requests')
+    .select('*')
+    .eq('account_type', 'Scout')
+    .eq('verification_token_hash', tokenHash)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return { error: 'Invalid verification link' };
+  if (data.status !== 'pending') return { error: 'This verification link is no longer active.' };
+  if (data.verification_token_expires_at && new Date(data.verification_token_expires_at).getTime() < Date.now()) return { error: 'This verification link has expired. Please contact info@scoutlink.app.' };
+  return { data };
+}
+
+router.get('/scout-verification/:token', async (req, res) => {
+  try {
+    const result = await requestByVerificationToken(req.params.token);
+    if (result.error) return res.status(404).json({ error: result.error });
+    const rq = result.data;
+    res.json({
+      firstName: rq.first_name,
+      lastName: rq.last_name,
+      scoutClub: rq.scout_club,
+      verificationStatus: rq.verification_status || 'awaiting_documents',
+      documentsUploaded: uploadedDocuments(rq).length,
+      expiresAt: rq.verification_token_expires_at
+    });
+  } catch (err) {
+    safeLog('[Scout verification lookup]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/scout-verification/:token', (req, res) => {
+  verificationUpload.fields([
+    { name: 'safeguardingEvidence', maxCount: 1 },
+    { name: 'proofOfId', maxCount: 1 }
+  ])(req, res, async (uploadErr) => {
+    if (uploadErr) return res.status(400).json({ error: uploadErr.message });
+    try {
+      const result = await requestByVerificationToken(req.params.token);
+      if (result.error) return res.status(404).json({ error: result.error });
+      const rq = result.data;
+      const files = {
+        safeguardingEvidence: req.files && req.files.safeguardingEvidence && req.files.safeguardingEvidence[0],
+        proofOfId: req.files && req.files.proofOfId && req.files.proofOfId[0]
+      };
+      if (!files.safeguardingEvidence || !files.proofOfId) return res.status(400).json({ error: 'Safeguarding evidence and proof of ID are required.' });
+      const docs = [];
+      for (const kind of Object.keys(files)) {
+        const file = files[kind];
+        const filePath = 'registration-requests/' + rq.id + '/' + kind + '-' + Date.now() + '-' + sanitizeFileName(file.originalname);
+        const { error: uploadError } = await supabase.storage.from(VERIFICATION_BUCKET).upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: false
+        });
+        if (uploadError) throw uploadError;
+        docs.push({
+          kind,
+          bucket: VERIFICATION_BUCKET,
+          filePath,
+          fileName: file.originalname,
+          contentType: file.mimetype,
+          size: file.size,
+          uploadedAt: new Date().toISOString()
+        });
+      }
+      const merged = uploadedDocuments(rq).concat(docs);
+      const { error: updateError } = await supabase.from('registration_requests').update({
+        safeguarding_documents: merged,
+        verification_uploaded_at: new Date(),
+        verification_status: 'documents_submitted'
+      }).eq('id', rq.id);
+      if (updateError) throw updateError;
+      res.json({ message: 'Verification documents received. Stratex will review them and email the next step.', documentsUploaded: merged.length });
+    } catch (err) {
+      safeLog('[Scout verification upload]', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 });
 
 // Stratex: list requests
@@ -212,10 +355,30 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
   } catch(err) { safeLog('[Registration list]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
+router.get('/:id/verification-documents', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const { data: rq, error } = await supabase.from('registration_requests').select('id,account_type,safeguarding_documents').eq('id', req.params.id).single();
+    if (error || !rq) return res.status(404).json({ error: 'Registration request not found' });
+    if (rq.account_type !== 'Scout') return res.status(400).json({ error: 'Verification documents are only used for scout requests.' });
+    const docs = uploadedDocuments(rq);
+    const signed = [];
+    for (const doc of docs) {
+      if (!doc.filePath) continue;
+      const { data, error: signedErr } = await supabase.storage.from(doc.bucket || VERIFICATION_BUCKET).createSignedUrl(doc.filePath, 60 * 10);
+      if (signedErr) throw signedErr;
+      signed.push({ ...doc, signedUrl: data && data.signedUrl });
+    }
+    res.json({ data: signed });
+  } catch (err) {
+    safeLog('[Scout verification documents]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Stratex: approve
 router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
-    const { subscriptionPlan, safeguardingReview } = req.body;
+    const { subscriptionPlan, safeguardingReview, paymentLink } = req.body;
     const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
     if (rqErr || !rq) return res.status(404).json({ error: 'Registration request not found' });
     if (rq.status !== 'pending') return res.status(400).json({ error: 'Registration is not pending' });
@@ -240,23 +403,52 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
     if (error) { safeLog('[Approve coach insert]', error); throw error; }
     newUser = data;
   } else if (rq.account_type === 'Scout') {
-    const reviewValidation = validateScoutSafeguardingReview(safeguardingReview);
+    const uploadedDocs = uploadedDocuments(rq);
+    if ((rq.verification_status || '') !== 'documents_submitted') {
+      return res.status(400).json({ error: 'Scout approval blocked. Verification documents must be uploaded before approval.' });
+    }
+    if (!paymentLink || !/^https?:\/\//i.test(String(paymentLink).trim())) {
+      return res.status(400).json({ error: 'A valid payment link is required before sending the payment email.' });
+    }
+    const review = { ...(safeguardingReview || {}), documents: uploadedDocs };
+    const reviewValidation = validateScoutSafeguardingReview(review);
     if (!reviewValidation.ok) return res.status(400).json({ error: reviewValidation.error });
     const plan = subscriptionPlan||'Core';
-    const limits = limitsForPlan(plan);
-    const { data, error } = await supabase.from('scouts').insert({
-      scout_id: generateId('SCT'), first_name: rq.first_name, last_name: rq.last_name,
-      email: rq.email, phone: rq.phone||null,
-      club_name: rq.scout_club||null, club_league: rq.scout_league||null,
-      login_code: loginCode, login_code_expires: expires, is_active: true,
-      preferences_set: false, is_super_user: false, registration_complete: false,
-      subscription_plan: plan, plan_start: new Date(),
-      plan_end: new Date(Date.now()+365*24*60*60*1000),
-      exports_remaining: limits.exports, predictions_remaining: limits.predictions,
-      interests_remaining: limits.interests
-    }).select().single();
-    if (error) { safeLog('[Approve scout insert]', error); throw error; }
-    newUser = data;
+    const paymentResult = await email.sendScoutPaymentRequired({
+      to: rq.email,
+      firstName: rq.first_name,
+      planName: plan,
+      paymentLink: String(paymentLink).trim()
+    }).catch(e => ({ success: false, error: e.message }));
+    if (!paymentResult || !paymentResult.success) {
+      return res.status(502).json({
+        error: 'SendGrid did not accept the scout payment email. Registration is still awaiting approval.',
+        details: paymentResult && (paymentResult.error || paymentResult.details) || 'Unknown email error'
+      });
+    }
+    await supabase.from('registration_requests').update({
+      verification_status: 'verified_awaiting_payment',
+      payment_plan: plan,
+      payment_link: String(paymentLink).trim(),
+      payment_email_sent_at: new Date(),
+      reviewed_by: req.user.email||'stratex',
+      reviewed_at: new Date(),
+      safeguarding_review: review,
+      safeguarding_documents: uploadedDocs
+    }).eq('id', req.params.id);
+    await supabase.from('scout_verification_reviews').insert({
+      registration_request_id: rq.id,
+      scout_id: null,
+      reviewed_by: req.user.id || null,
+      checklist: review.checklist || {},
+      documents: uploadedDocs,
+      dbs_certificate_number: review.dbsCertificateNumber || null,
+      dbs_issue_date: review.dbsIssueDate || null,
+      dbs_level: review.dbsLevel || null,
+      status: 'verified_awaiting_payment',
+      notes: review.notes || null
+    });
+    return res.json({ message: 'Scout verified. Payment email sent.', paymentEmailSent: true, emailTemplate: paymentResult.template || null });
   } else {
     return res.status(400).json({ error: 'Unsupported account type: ' + rq.account_type });
   }
@@ -303,6 +495,78 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
 
   res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
   } catch(err) { safeLog('[Approve]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
+});
+
+router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), async (req, res) => {
+  try {
+    const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
+    if (rqErr || !rq) return res.status(404).json({ error: 'Registration request not found' });
+    if (rq.account_type !== 'Scout') return res.status(400).json({ error: 'Payment activation is only used for scout registrations.' });
+    if (rq.status !== 'pending') return res.status(400).json({ error: 'Registration is not pending activation.' });
+    if ((rq.verification_status || '') !== 'verified_awaiting_payment') return res.status(400).json({ error: 'Scout must be verified and awaiting payment before activation.' });
+
+    const dup = await checkDuplicates(rq.email, rq.phone);
+    if (dup.duplicate) return res.status(409).json({ error: 'An account with this ' + dup.field + ' already exists.' });
+
+    const plan = rq.payment_plan || req.body.subscriptionPlan || 'Core';
+    const limits = limitsForPlan(plan);
+    const loginCode = await generateUniqueCode();
+    const expires = new Date(Date.now() + 7*24*60*60*1000);
+    const { data: newUser, error: insertError } = await supabase.from('scouts').insert({
+      scout_id: generateId('SCT'), first_name: rq.first_name, last_name: rq.last_name,
+      email: rq.email, phone: rq.phone||null,
+      club_name: rq.scout_club||null, club_league: rq.scout_league||null,
+      login_code: loginCode, login_code_expires: expires, is_active: true,
+      preferences_set: false, is_super_user: false, registration_complete: false,
+      subscription_plan: plan, plan_start: new Date(),
+      plan_end: new Date(Date.now()+365*24*60*60*1000),
+      exports_remaining: limits.exports, predictions_remaining: limits.predictions,
+      interests_remaining: limits.interests
+    }).select().single();
+    if (insertError) throw insertError;
+
+    const baseUrl = config.brandUrl || 'https://scoutlink.app';
+    const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=Scout';
+    const emailResult = await email.sendRegApproved({
+      to: rq.email, firstName: rq.first_name, loginCode,
+      accountType: 'Scout', completeLink, email: rq.email
+    }).catch(e => ({ success: false, error: e.message }));
+    if (!emailResult || !emailResult.success) {
+      await removeCreatedUser('Scout', newUser && newUser.id);
+      return res.status(502).json({
+        error: 'SendGrid did not accept the login code email. Scout account was not activated.',
+        details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
+      });
+    }
+
+    await supabase.from('registration_requests').update({
+      status: 'approved',
+      verification_status: 'activated',
+      login_code: loginCode,
+      payment_received_at: new Date(),
+      activated_at: new Date(),
+      reviewed_by: req.user.email||'stratex',
+      reviewed_at: new Date()
+    }).eq('id', rq.id);
+
+    await supabase.from('scout_verification_reviews').insert({
+      registration_request_id: rq.id,
+      scout_id: newUser.id,
+      reviewed_by: req.user.id || null,
+      checklist: (rq.safeguarding_review && rq.safeguarding_review.checklist) || {},
+      documents: uploadedDocuments(rq),
+      dbs_certificate_number: rq.safeguarding_review && rq.safeguarding_review.dbsCertificateNumber || null,
+      dbs_issue_date: rq.safeguarding_review && rq.safeguarding_review.dbsIssueDate || null,
+      dbs_level: rq.safeguarding_review && rq.safeguarding_review.dbsLevel || null,
+      status: 'approved',
+      notes: rq.safeguarding_review && rq.safeguarding_review.notes || null
+    });
+
+    res.json({ message: 'Payment confirmed. Scout login code sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
+  } catch (err) {
+    safeLog('[Scout payment received]', err);
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
 });
 
 // Stratex: decline

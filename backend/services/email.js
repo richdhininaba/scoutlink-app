@@ -157,6 +157,23 @@ function jobApplicationReceivedData(d) {
   };
 }
 
+function scoutVerificationRequiredData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    verificationLink: d.verificationLink || d.verification_link || ''
+  };
+}
+
+function scoutPaymentRequiredData(d) {
+  d = d || {};
+  return {
+    firstName: d.firstName || d.first_name || 'there',
+    planName: d.planName || d.plan_name || d.subscriptionPlan || d.subscription_plan || '',
+    paymentLink: d.paymentLink || d.payment_link || ''
+  };
+}
+
 function jobApplicationAlertData(d) {
   d = d || {};
   return {
@@ -349,6 +366,8 @@ module.exports = {
   },
   sendRegApproved: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'regApproved', data: inviteData(d) }),
   sendRegDeclined: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'regDeclined', data: declinedData(d) }),
+  sendScoutVerificationRequired: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'scoutVerificationRequired', data: scoutVerificationRequiredData(d) }),
+  sendScoutPaymentRequired: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'scoutPaymentRequired', data: scoutPaymentRequiredData(d) }),
   sendScoutInterest: (d) => sendTemplate({ to: d.to, templateKey: 'scoutInterest', data: scoutInterestData(d) }),
   sendCompleteSignup: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'completeSignup', data: inviteData(d) }),
   sendPlayerLoginCode: (d) => sendTemplate({ to: d.to || d.email, templateKey: 'completeSignup', data: inviteData({ ...(d || {}), accountType: 'Player', firstName: (d && (d.playerFirstName || d.firstName)) || 'Player' }) }),

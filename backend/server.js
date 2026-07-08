@@ -130,6 +130,12 @@ const routeMap = {
   '/complete-registration': 'pages/complete-registration.html',
   '/company': 'pages/stratex-site.html',
   '/company/scoutlink': 'pages/stratex-site.html',
+  '/company/scoutlink/compatibility-score': 'pages/stratex-site.html',
+  '/company/scoutlink/pricing': 'pages/stratex-site.html',
+  '/company/scoutlink/scouts': 'pages/stratex-site.html',
+  '/company/scoutlink/coaches': 'pages/stratex-site.html',
+  '/company/pricing': 'pages/stratex-site.html',
+  '/company/grassroots-football-scouting-tools': 'pages/stratex-site.html',
   '/company/about': 'pages/stratex-site.html',
   '/company/leadership': 'pages/stratex-site.html',
   '/company/trust': 'pages/stratex-site.html',
@@ -225,6 +231,12 @@ function isStratexHost(req) {
 const STRATEX_SITEMAP_ROUTES = [
   '/',
   '/scoutlink',
+  '/scoutlink/compatibility-score',
+  '/pricing',
+  '/scoutlink/pricing',
+  '/scoutlink/scouts',
+  '/scoutlink/coaches',
+  '/grassroots-football-scouting-tools',
   '/about',
   '/leadership',
   '/trust',
@@ -279,6 +291,14 @@ if (frontendDir) {
   const STRATEX_PUBLIC_ROUTES = [
     '/',
     '/scoutlink',
+    '/scoutlink/compatibility-score',
+    '/pricing',
+    '/scoutlink/pricing',
+    '/scoutlink/scouts',
+    '/scoutlink/coaches',
+    '/scouts',
+    '/coaches',
+    '/grassroots-football-scouting-tools',
     '/about',
     '/leadership',
     '/trust',
@@ -303,6 +323,11 @@ if (frontendDir) {
     });
   });
 
+  app.get('/compatibility-score', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/scoutlink/compatibility-score');
+  });
+
   app.get('/careers/:slug', (req, res, next) => {
     if (!isStratexHost(req)) return next();
     return sendStratexPage(req, res);
@@ -316,6 +341,12 @@ if (frontendDir) {
   [
     '/company',
     '/company/scoutlink',
+    '/company/scoutlink/compatibility-score',
+    '/company/scoutlink/pricing',
+    '/company/scoutlink/scouts',
+    '/company/scoutlink/coaches',
+    '/company/pricing',
+    '/company/grassroots-football-scouting-tools',
     '/company/about',
     '/company/leadership',
     '/company/trust',

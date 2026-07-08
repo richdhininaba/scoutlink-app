@@ -43,6 +43,18 @@ const TEMPLATES = {
     required: ['firstName', 'loginCode', 'accountType', 'completeLink', 'year'],
     optional: []
   },
+  scoutVerificationRequired: {
+    name: 'Scout Verification Required',
+    id: 'd-d59661e28d7345649cc5ebfd2885a992',
+    required: ['firstName', 'verificationLink', 'year'],
+    optional: []
+  },
+  scoutPaymentRequired: {
+    name: 'Verified / Payment Required',
+    id: 'd-a495b3e7b51d49c59efe87e54d75981d',
+    required: ['firstName', 'planName', 'paymentLink', 'year'],
+    optional: []
+  },
   jobApplicationReceived: {
     name: 'Job Application Received',
     id: 'd-a8e72760759d41338c9acc968e90fdd9',
