@@ -139,13 +139,14 @@ const routeMap = {
   '/company/contact': 'pages/stratex-site.html',
   '/company/report-a-concern': 'pages/stratex-site.html',
   '/company/privacy-policy': 'pages/stratex-site.html',
+  '/company/terms': 'pages/stratex-site.html',
   '/company/terms-of-use': 'pages/stratex-site.html',
   '/company/cookie-policy': 'pages/stratex-site.html',
   '/company/security': 'pages/stratex-site.html',
   '/company/accessibility': 'pages/stratex-site.html',
   '/company/learning-centre': 'pages/stratex-site.html',
-  '/company/admin': 'pages/stratex-site.html',
-  '/admin': 'pages/stratex-site.html',
+  '/company/admin': 'pages/stratex-company-admin.html',
+  '/admin': 'pages/stratex-company-admin.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
   '/stratex/company-site': 'pages/stratex-company-admin.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
@@ -238,12 +239,12 @@ if (frontendDir) {
     '/contact',
     '/report-a-concern',
     '/privacy-policy',
+    '/terms',
     '/terms-of-use',
     '/cookie-policy',
     '/security',
     '/accessibility',
-    '/learning-centre',
-    '/admin'
+    '/learning-centre'
   ];
 
   STRATEX_PUBLIC_ROUTES.forEach((route) => {
@@ -275,17 +276,18 @@ if (frontendDir) {
     '/company/contact',
     '/company/report-a-concern',
     '/company/privacy-policy',
+    '/company/terms',
     '/company/terms-of-use',
     '/company/cookie-policy',
     '/company/security',
     '/company/accessibility',
-    '/company/learning-centre',
-    '/company/admin'
+    '/company/learning-centre'
   ].forEach((route) => {
     app.get(route, (req, res) => sendStratexPage(req, res));
   });
 
-  app.get('/admin', (req, res) => sendStratexPage(req, res));
+  app.get('/admin', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
+  app.get('/company/admin', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
 
   app.get('/company/careers/:slug', (req, res) => sendStratexPage(req, res));
   app.get('/company/learning-centre/:slug', (req, res) => sendStratexPage(req, res));

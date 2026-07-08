@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Company site - Stratex Admin</title>
+  <title>Stratex Admin Centre</title>
+  <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/main.css">
@@ -59,7 +60,15 @@
               <label class="form-group"><span>Title</span><input class="form-control" name="title" required></label>
               <label class="form-group"><span>Category</span><input class="form-control" name="category" value="Football intelligence"></label>
               <label class="form-group"><span>Excerpt</span><textarea class="form-control" name="excerpt" rows="3"></textarea></label>
-              <label class="form-group"><span>Body</span><textarea class="form-control" name="body" rows="8" required></textarea></label>
+              <div class="stx-editor-toolbar" aria-label="Learning Centre editor toolbar">
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="bold">Bold</button>
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="italic">Italic</button>
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="heading">Heading</button>
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="bullet">Bullet list</button>
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="number">Numbered list</button>
+                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="link">Link</button>
+              </div>
+              <label class="form-group"><span>Body</span><textarea class="form-control" id="blogBody" name="body" rows="8" required></textarea></label>
               <label class="form-group"><span>Status</span><select class="form-control" name="status"><option value="draft">Draft</option><option value="published">Published</option></select></label>
               <div class="form-message" id="blogMsg" style="display:none"></div>
               <button class="btn btn-primary" type="submit">Save post</button>

@@ -126,8 +126,8 @@ const pages = {
     h1: 'Privacy Policy',
     body: 'Stratex Analytics handles website enquiries, demo requests, newsletter signups, concern reports and ScoutLink product account data through restricted workflows.'
   },
-  'terms-of-use': {
-    path: '/terms-of-use',
+  terms: {
+    path: '/terms',
     title: 'Terms of Use | Stratex Analytics',
     description: 'The rules for using Stratex Analytics public pages and ScoutLink routes.',
     kicker: 'Terms of Use',
@@ -214,6 +214,7 @@ function routeFromRequest(req) {
     return { key: 'career-detail', slug, canonicalPath: '/careers/' + encodeURIComponent(slug) };
   }
   if (parts[0] === 'learning-centre' && parts[1]) return { key: 'blog-detail', canonicalPath: '/learning-centre/' + encodeURIComponent(parts.slice(1).join('/')) };
+  if (parts[0] === 'terms-of-use') return { key: 'terms', canonicalPath: '/terms' };
   return { key: parts[0], canonicalPath: '/' + parts[0] };
 }
 
@@ -279,6 +280,38 @@ function schemaFor(page) {
   return schema.length === 1 ? schema[0] : schema;
 }
 
+function fallbackSections(page) {
+  if (page.path === '/') {
+    return '<section class="stx-section"><div class="stx-container"><div class="stx-grid three">' +
+      '<article class="stx-card"><h2>ScoutLink is the first flagship product.</h2><p>ScoutLink helps grassroots coaches build coach-led player profiles for U7-U16 players and gives verified scouts structured evidence to review.</p><p><a class="stx-btn stx-btn-soft" href="/scoutlink">Explore ScoutLink</a></p></article>' +
+      '<article class="stx-card"><h2>Why it matters.</h2><p>Grassroots football evidence is often scattered across messages, clips and local knowledge. Stratex builds tools that organise that evidence safely.</p></article>' +
+      '<article class="stx-card"><h2>Trust by design.</h2><p>ScoutLink uses reviewed scout access, controlled visibility and concern routes. Compatibility scoring supports decisions but does not guarantee trials, contracts or selection.</p></article>' +
+    '</div></div></section>';
+  }
+  if (page.path === '/scoutlink') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>ScoutLink by Stratex Analytics</h2><p>ScoutLink supports U7-U16 grassroots football players through coach-led player profiles, structured match evidence, video reels, verified scout access and compatibility scoring as decision support.</p><h2>Who ScoutLink helps</h2><ul><li>Coaches can structure player evidence and make fixture information scout-visible.</li><li>Verified scouts can search, compare and shortlist players with context.</li><li>Parents and guardians can understand how youth player data and visibility are handled.</li></ul><p><a class="stx-btn stx-btn-primary" href="https://www.scoutlink.app">Open ScoutLink</a></p></div></section>';
+  }
+  if (page.path === '/trust') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>Safeguarding-conscious visibility</h2><ul><li>Player visibility is coach-led and controlled.</li><li>Scout access is reviewed before platform use.</li><li>ScoutLink is not a public directory of children.</li><li>Concern reports are routed through restricted Stratex workflows.</li></ul><p><a class="stx-btn stx-btn-primary" href="/report-a-concern">Report a Concern</a></p></div></section>';
+  }
+  if (page.path === '/careers') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>Careers at Stratex</h2><p>Open roles are published when they are active and meaningful. Applications are stored securely and CV files are private.</p><p><a class="stx-btn stx-btn-soft" href="/contact">Contact Stratex</a></p></div></section>';
+  }
+  if (page.path === '/learning-centre') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>Learning Centre</h2><p>Read Stratex notes about grassroots football intelligence, structured player evidence, safer visibility and ScoutLink product thinking.</p></div></section>';
+  }
+  if (page.path === '/contact') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>Contact Stratex</h2><p>Use the Stratex contact form for partnerships, ScoutLink enquiries, club, school, academy and company questions.</p></div></section>';
+  }
+  if (page.path === '/report-a-concern') {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>Report a safeguarding or platform concern</h2><p>If someone is in immediate danger, contact emergency services or the relevant safeguarding authority first. Stratex is not an emergency service.</p></div></section>';
+  }
+  if (['/privacy-policy', '/terms', '/cookie-policy', '/security', '/accessibility', '/parent-guardian-notice', '/scout-verification'].includes(page.path)) {
+    return '<section class="stx-section"><div class="stx-container stx-prose"><h2>' + esc(page.h1) + '</h2><p>' + esc(page.body) + '</p></div></section>';
+  }
+  return '';
+}
+
 function fallbackContent(page) {
   const leadership = page.path === '/leadership'
     ? '<div class="stx-leadership-grid">' + leaders.map((person) => (
@@ -296,7 +329,19 @@ function fallbackContent(page) {
     '<h1>' + esc(page.h1) + '</h1>' +
     '<p class="stx-lede">' + esc(page.body) + '</p>' +
     leadership +
-  '</div></section>';
+  '</div></section>' + fallbackSections(page);
+}
+
+function staticFooter() {
+  const groups = [
+    ['Stratex', [['About', '/about'], ['Leadership', '/leadership'], ['Careers', '/careers'], ['Contact', '/contact']]],
+    ['Products', [['ScoutLink', '/scoutlink'], ['AgentLink planned', '/about'], ['CoachHub planned', '/about']]],
+    ['Trust', [['Trust & Safeguarding', '/trust'], ['Scout Verification', '/scout-verification'], ['Parent/Guardian Notice', '/parent-guardian-notice'], ['Report a Concern', '/report-a-concern'], ['Security', '/security']]],
+    ['Legal', [['Privacy Policy', '/privacy-policy'], ['Terms of Use', '/terms'], ['Cookie Policy', '/cookie-policy'], ['Accessibility', '/accessibility']]]
+  ];
+  return '<div class="stx-footer-grid"><div><a class="stx-brand" href="/"><span class="stx-mark">Stratex</span><span>Analytics</span></a><p>Stratex Analytics builds football intelligence products for overlooked grassroots talent.</p><p>&copy; 2026 Stratex Analytics Limited. All rights reserved.</p></div><div class="stx-footer-links">' +
+    groups.map((group) => '<div><strong>' + esc(group[0]) + '</strong>' + group[1].map((item) => '<a href="' + esc(item[1]) + '">' + esc(item[0]) + '</a>').join('') + '</div>').join('') +
+  '</div></div>';
 }
 
 function replaceTag(html, pattern, replacement) {
@@ -315,10 +360,12 @@ function renderStratexPage(req, res, frontendDir) {
   html = replaceTag(html, /<link rel="canonical" href="[^"]*">/i, '<link rel="canonical" href="' + esc(page.canonical) + '">');
   html = replaceTag(html, /<meta property="og:title" content="[^"]*">/i, '<meta property="og:title" content="' + esc(page.title) + '">');
   html = replaceTag(html, /<meta property="og:description" content="[^"]*">/i, '<meta property="og:description" content="' + esc(page.description) + '">');
+  html = replaceTag(html, /<meta property="og:url" content="[^"]*">/i, '<meta property="og:url" content="' + esc(page.canonical) + '">');
   html = replaceTag(html, /<meta name="twitter:title" content="[^"]*">/i, '<meta name="twitter:title" content="' + esc(page.title) + '">');
   html = replaceTag(html, /<meta name="twitter:description" content="[^"]*">/i, '<meta name="twitter:description" content="' + esc(page.description) + '">');
   html = replaceTag(html, /<script type="application\/ld\+json" id="stratexJsonLd">[\s\S]*?<\/script>/i, '<script type="application/ld+json" id="stratexJsonLd">' + schema + '</script>' + robotsTag);
   html = html.replace('<div id="stratexSiteApp" aria-live="polite"></div>', '<div id="stratexSiteApp" aria-live="polite">' + fallbackContent(page) + '</div>');
+  html = html.replace('<footer class="stx-footer" id="stratexFooter"></footer>', '<footer class="stx-footer" id="stratexFooter">' + staticFooter() + '</footer>');
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.send(html);

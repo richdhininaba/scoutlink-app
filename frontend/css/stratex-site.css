@@ -579,6 +579,9 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
   box-shadow: 0 40px 120px rgba(7, 17, 31, .35);
 }
+.stx-sheet-handle {
+  display: none;
+}
 .stx-modal-close {
   position: absolute;
   top: 18px;
@@ -728,6 +731,24 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
 }
 .stx-job-card h3 { font-size: 22px; }
+.stx-post-meta,
+.stx-post-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 0;
+  color: var(--stx-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.stx-post-actions {
+  margin: 18px 0 24px;
+  padding: 14px;
+  border: 1px solid var(--stx-border);
+  border-radius: 18px;
+  background: #f8fafc;
+}
 .stx-empty {
   padding: 28px;
   border: 1px dashed #cdd7e3;
@@ -757,6 +778,9 @@ button, input, select, textarea { font: inherit; }
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
 }
+.stx-footer-accordion {
+  display: none;
+}
 .stx-footer-links strong {
   display: block;
   margin-bottom: 10px;
@@ -769,6 +793,48 @@ button, input, select, textarea { font: inherit; }
   text-decoration: none;
   font-size: 14px;
   font-weight: 750;
+}
+.stx-footer-accordion-group {
+  border: 1px solid var(--stx-border);
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+.stx-footer-accordion-button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border: 0;
+  background: #fff;
+  color: var(--stx-text);
+  font-weight: 950;
+  cursor: pointer;
+}
+.stx-footer-accordion-button:focus-visible {
+  outline: 3px solid rgba(15, 163, 127, .28);
+  outline-offset: -3px;
+}
+.stx-footer-chevron {
+  color: var(--stx-green-dark);
+  font-size: 20px;
+  line-height: 1;
+}
+.stx-footer-accordion-panel {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+.stx-footer-accordion-panel a {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  color: #526174;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .stx-accordion {
@@ -835,6 +901,16 @@ button, input, select, textarea { font: inherit; }
   .stx-footer-links {
     grid-template-columns: 1fr;
   }
+  .stx-footer-grid {
+    gap: 18px;
+  }
+  .stx-footer-links {
+    display: none;
+  }
+  .stx-footer-accordion {
+    display: grid;
+    gap: 10px;
+  }
   .stx-hero h1,
   .stx-page-hero h1 {
     font-size: 39px;
@@ -872,9 +948,17 @@ button, input, select, textarea { font: inherit; }
   }
   .stx-modal {
     width: 100%;
-    max-height: calc(100vh - 28px);
+    max-height: 75vh;
     border-radius: 28px 28px 0 0;
     padding: 24px 18px 28px;
+  }
+  .stx-sheet-handle {
+    display: block;
+    width: 46px;
+    height: 5px;
+    margin: 0 auto 14px;
+    border-radius: 999px;
+    background: #cbd5e1;
   }
   .stx-modal-head {
     grid-template-columns: 58px 1fr;

@@ -89,7 +89,7 @@ function rowHtml(a){
     '<div class="contract-field"><span>Status</span>'+badge(a.is_active)+'</div>'+
     '<div class="contract-actions">'+
       '<button class="btn btn-sm btn-outline" onclick="downloadContract(\''+a.id+'\')" '+(!c.contractPath?'disabled':'')+'>Download</button>'+
-      '<label class="btn btn-sm btn-outline '+(!canEditContracts?'disabled':'')+'" '+(!canEditContracts?'aria-disabled="true"':'')+'>Upload<input class="contract-upload" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="uploadContract(\''+a.id+'\',this)" '+disabled+'></label>'+
+      '<label class="btn btn-sm btn-outline '+(!canEditContracts?'disabled':'')+'" '+(!canEditContracts?'aria-disabled="true"':'')+'>Upload PDF<input class="contract-upload" type="file" accept=".pdf,application/pdf" onchange="uploadContract(\''+a.id+'\',this)" '+disabled+'></label>'+
       '<button class="btn btn-sm btn-primary" onclick="toggleEdit(\''+a.id+'\')" '+disabled+'>Edit pay</button>'+
     '</div>'+
   '</article>'+

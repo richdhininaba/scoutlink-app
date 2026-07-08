@@ -1,7 +1,6 @@
 'use strict';
 const express = require('express');
 const crypto = require('crypto');
-const path = require('path');
 const multer = require('multer');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
@@ -17,12 +16,7 @@ const contractUpload = multer({
 storage: multer.memoryStorage(),
 limits: { fileSize: 10 * 1024 * 1024 },
 fileFilter: (req, file, cb) => {
-const allowed = new Set([
-'application/pdf',
-'application/msword',
-'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-]);
-if (!allowed.has(file.mimetype)) return cb(new Error('Contract must be a PDF, DOC or DOCX file.'));
+if (file.mimetype !== 'application/pdf') return cb(new Error('Contract must be a PDF file.'));
 cb(null, true);
 }
 });
@@ -110,6 +104,21 @@ if (body.payStatus !== undefined) next.payStatus = String(body.payStatus || '').
 if (body.contractType !== undefined) next.contractType = String(body.contractType || '').trim() || null;
 if (body.notes !== undefined) next.notes = String(body.notes || '').trim() || null;
 return next;
+}
+
+async function auditStratexAction(req, action, affectedTable, affectedRecordId, metadata) {
+try {
+await supabase.from('audit_logs').insert({
+actor_id: req.user && req.user.id ? req.user.id : null,
+actor_role: req.user && req.user.type ? req.user.type : 'Stratex',
+action,
+affected_table: affectedTable,
+affected_record_id: affectedRecordId || null,
+metadata: metadata || {}
+});
+} catch (err) {
+console.error('[Stratex audit]', { code: err.code, message: err.message });
+}
 }
 
 async function requireSensitiveAdmin(req, res) {
@@ -638,8 +647,11 @@ const { data, error } = await supabase
 .select('id,first_name,last_name,email,role,admin_role,job_title,manager_id,contract_data,is_active')
 .maybeSingle();
 if (error || !data) return res.status(404).json({ error: 'Admin not found' });
+await auditStratexAction(req, 'stratex_contract_pay_updated', 'stratex', data.id, {
+fields: Object.keys(contractPatchFromBody(req.body || {})).sort()
+});
 res.json({ message: 'Contract and pay details updated.', data });
-} catch(err) { console.error('[Stratex contracts update]', err); res.status(500).json({ error: 'Internal server error' }); }
+} catch(err) { console.error('[Stratex contracts update]', { code: err.code, message: err.message }); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 router.post('/contracts-pay/:id/contract', requireAuth, requireRole('Stratex'), contractUpload.single('contract'), async (req, res) => {
@@ -653,9 +665,9 @@ const ids = visibleAdminIdsForContracts(currentAdmin, admins || []);
 if (!ids.has(req.params.id)) return res.status(403).json({ error: 'You can only upload contracts for your reporting tree.' });
 const target = (admins || []).find(a => a.id === req.params.id);
 try {
-await supabase.storage.createBucket('stratex-contracts', { public: false, fileSizeLimit: 10 * 1024 * 1024, allowedMimeTypes: ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'] });
+await supabase.storage.createBucket('stratex-contracts', { public: false, fileSizeLimit: 10 * 1024 * 1024, allowedMimeTypes: ['application/pdf'] });
 } catch (_) {}
-const ext = path.extname(req.file.originalname || '').toLowerCase() || '.pdf';
+const ext = '.pdf';
 const filePath = req.params.id + '/' + Date.now() + '-' + crypto.randomUUID() + ext;
 const { error: uploadErr } = await supabase.storage.from('stratex-contracts').upload(filePath, req.file.buffer, {
 contentType: req.file.mimetype,
@@ -680,9 +692,14 @@ const { data, error } = await supabase
 .select('id,first_name,last_name,email,role,admin_role,job_title,manager_id,contract_data,is_active')
 .maybeSingle();
 if (error || !data) return res.status(404).json({ error: 'Admin not found' });
+await auditStratexAction(req, 'stratex_contract_uploaded', 'stratex', data.id, {
+bucket: 'stratex-contracts',
+fileSize: req.file.size,
+mimeType: req.file.mimetype
+});
 res.json({ message: 'Contract uploaded.', data });
 } catch(err) {
-console.error('[Stratex contract upload]', err);
+console.error('[Stratex contract upload]', { code: err.code, message: err.message });
 res.status(err && err.message && err.message.includes('Contract must') ? 400 : 500).json({ error: err.message || 'Could not upload contract' });
 }
 });
@@ -699,8 +716,12 @@ const contractData = target && target.contract_data && typeof target.contract_da
 if (!contractData.contractPath) return res.status(404).json({ error: 'No contract has been uploaded.' });
 const { data, error } = await supabase.storage.from(contractData.contractBucket || 'stratex-contracts').createSignedUrl(contractData.contractPath, 60 * 10);
 if (error) throw error;
+await auditStratexAction(req, 'stratex_contract_signed_url_created', 'stratex', req.params.id, {
+bucket: contractData.contractBucket || 'stratex-contracts',
+expiresIn: 600
+});
 res.json({ url: data.signedUrl, expiresIn: 600, fileName: contractData.contractFileName || 'contract' });
-} catch(err) { console.error('[Stratex contract URL]', err); res.status(500).json({ error: 'Could not create secure contract link' }); }
+} catch(err) { console.error('[Stratex contract URL]', { code: err.code, message: err.message }); res.status(500).json({ error: 'Could not create secure contract link' }); }
 });
 
 router.get('/org', requireAuth, requireRole('Stratex'), async (req, res) => {

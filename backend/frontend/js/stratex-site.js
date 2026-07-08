@@ -57,7 +57,7 @@
     ['contact', 'Contact'],
     ['report-a-concern', 'Report a Concern'],
     ['privacy-policy', 'Privacy Policy'],
-    ['terms-of-use', 'Terms of Use'],
+    ['terms', 'Terms of Use'],
     ['cookie-policy', 'Cookie Policy'],
     ['security', 'Security'],
     ['accessibility', 'Accessibility'],
@@ -104,11 +104,13 @@
     if (meta) meta.setAttribute('content', description);
     var ogTitle = document.querySelector('meta[property="og:title"]');
     var ogDesc = document.querySelector('meta[property="og:description"]');
+    var ogUrl = document.querySelector('meta[property="og:url"]');
     var twitterTitle = document.querySelector('meta[name="twitter:title"]');
     var twitterDesc = document.querySelector('meta[name="twitter:description"]');
     var canon = document.querySelector('link[rel="canonical"]');
     if (ogTitle) ogTitle.setAttribute('content', title);
     if (ogDesc) ogDesc.setAttribute('content', description);
+    if (ogUrl) ogUrl.setAttribute('content', canonical || ('https://www.stratexanalytics.co.uk' + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page)));
     if (twitterTitle) twitterTitle.setAttribute('content', title);
     if (twitterDesc) twitterDesc.setAttribute('content', description);
     if (canon) canon.setAttribute('href', canonical || ('https://www.stratexanalytics.co.uk' + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page)));
@@ -167,7 +169,7 @@
         card('Poor scouting structure', 'Scouts often need better context before deciding who is worth watching live.') +
         card('Safeguarding risk', 'Youth football needs controlled visibility, verified access and clear contact routes.') +
         '</div>') +
-      '<section class="stx-section"><div class="stx-container stx-dark-section"><span class="stx-kicker dark">ScoutLink preview</span><h2>ScoutLink is the first product in the Stratex ecosystem.</h2><p>ScoutLink gives grassroots coaches a way to build professional player evidence and gives verified scouts a cleaner way to assess fit.</p><div class="stx-actions">' + btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + '</div></div></section>' +
+      '<section class="stx-section"><div class="stx-container"><div class="stx-dark-section"><span class="stx-kicker dark">ScoutLink preview</span><h2>ScoutLink is the first product in the Stratex ecosystem.</h2><p>ScoutLink gives grassroots coaches a way to build professional player evidence and gives verified scouts a cleaner way to assess fit.</p><div class="stx-actions">' + btn('Explore ScoutLink', sitePath('scoutlink'), 'stx-btn-primary') + '</div></div></div></section>' +
       section('Built around trust, not open exposure.', 'ScoutLink is designed around verified access, controlled visibility, safer contact routes and explainable scoring. Stratex does not promise scouting outcomes or direct contact with minors.',
         '<div class="stx-grid three">' + card('Coach-led evidence', 'Player profiles start from coach-managed information and structured match facts.') + card('Verified scout access', 'Scout access is reviewed so youth player information is not treated like an open directory.') + card('Clear safeguarding routes', 'Concerns and privacy requests are routed through restricted Stratex workflows.') + '</div>') +
       '<section class="stx-section"><div class="stx-container"><div class="stx-newsletter-card">' + newsletterForm() + '</div></div></section>' +
@@ -252,6 +254,7 @@
     var initials = person.name.split(/\s+/).map(function (p) { return p.charAt(0); }).join('').slice(0, 2).toUpperCase();
     return '<div class="stx-modal-backdrop" data-leader-close></div>' +
       '<section class="stx-modal" role="dialog" aria-modal="true" aria-labelledby="leaderModalTitle">' +
+        '<div class="stx-sheet-handle" aria-hidden="true"></div>' +
         '<button class="stx-modal-close" type="button" data-leader-close aria-label="Close leadership profile">Close</button>' +
         '<div class="stx-modal-head"><div class="stx-person-avatar large">' + esc(initials) + '</div><div><span class="stx-tag green">' + esc(person.chip) + '</span><h2 id="leaderModalTitle">' + esc(person.name) + '</h2><p>' + esc(person.title) + '</p></div></div>' +
         '<p class="stx-modal-copy">' + esc(person.bio) + '</p>' +
@@ -373,13 +376,14 @@
   function legalPage(page) {
     var map = {
       'privacy-policy': ['Privacy Policy', 'How Stratex Analytics handles personal data across the Stratex website and ScoutLink routes.', ['We collect company website enquiries, demo requests, newsletter signups and concern reports through server-side forms.', 'ScoutLink product account data is kept separate from Stratex website lead data.', 'We use platform activity records to operate and secure the platform, support safeguarding, investigate misuse and maintain audit trails.', 'You can contact Stratex to request access, correction or deletion where applicable.']],
+      'terms': ['Terms of Use', 'The rules for using Stratex Analytics public pages and ScoutLink routes.', ['Do not misuse ScoutLink or Stratex pages, scrape information, impersonate another organisation or attempt to bypass access controls.', 'ScoutLink does not guarantee scouting, trials, contracts or selection.', 'Youth player information must be handled with appropriate permissions and safeguarding controls.']],
       'terms-of-use': ['Terms of Use', 'The rules for using Stratex Analytics public pages and ScoutLink routes.', ['Do not misuse ScoutLink or Stratex pages, scrape information, impersonate another organisation or attempt to bypass access controls.', 'ScoutLink does not guarantee scouting, trials, contracts or selection.', 'Youth player information must be handled with appropriate permissions and safeguarding controls.']],
       'cookie-policy': ['Cookie Policy', 'How Stratex Analytics uses cookies and analytics.', ['We use essential cookies for product operation and safe analytics events to understand page usage.', 'We do not send concern descriptions, message content, names, emails or phone numbers to Heap analytics.', 'You can manage browser cookies through your browser settings.']],
       'security': ['Security', 'How Stratex protects website submissions and ScoutLink platform data.', ['Public forms are submitted through backend routes.', 'Supabase service-role credentials are server-side only.', 'Form submissions are not publicly readable.', 'CV and private document storage should remain private and accessible only through restricted admin flows.']],
       'accessibility': ['Accessibility', 'Our commitment to accessible Stratex and ScoutLink experiences.', ['We aim to provide keyboard-accessible navigation, visible focus states, labelled forms and readable contrast.', 'If you find an accessibility issue, contact Stratex with the page and problem so it can be reviewed.']]
     };
     var data = map[page] || map['privacy-policy'];
-    setMeta(data[0] + ' | Stratex Analytics', data[1], 'https://www.stratexanalytics.co.uk/' + page);
+    setMeta(data[0] + ' | Stratex Analytics', data[1], 'https://www.stratexanalytics.co.uk/' + (page === 'terms-of-use' ? 'terms' : page));
     return pageHero(data[0], data[0], data[1]) + '<section class="stx-section"><div class="stx-container"><div class="stx-card stx-prose"><ul>' + data[2].map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></div></div></section>';
   }
 
@@ -438,7 +442,7 @@
     else if (route.page === 'contact') html = contactPage();
     else if (route.page === 'report-a-concern') html = concernPage();
     else if (route.page === 'admin') html = adminPage();
-    else if (['privacy-policy','terms-of-use','cookie-policy','security','accessibility'].indexOf(route.page) >= 0) html = legalPage(route.page);
+    else if (['privacy-policy','terms','terms-of-use','cookie-policy','security','accessibility'].indexOf(route.page) >= 0) html = legalPage(route.page);
     else if (route.page === 'learning-centre') html = learningPage();
     else if (route.page === 'blog-detail') html = blogDetailPage(route.slug);
     else html = fallbackPage();
@@ -460,16 +464,48 @@
   function renderFooter() {
     var footer = document.getElementById('stratexFooter');
     if (!footer) return;
+    var groups = footerGroups();
     footer.innerHTML = '<div class="stx-footer-grid"><div><a class="stx-brand" href="' + sitePath('home') + '"><span class="stx-mark">Stratex</span><span>Analytics</span></a><p>Stratex Analytics builds football intelligence products for overlooked grassroots talent.</p><p>&copy; 2026 Stratex Analytics Limited. All rights reserved.</p></div><div class="stx-footer-links">' +
-      footerColumn('Stratex', [['About', 'about'], ['Leadership', 'leadership'], ['Careers', 'careers'], ['Contact', 'contact'], ['Admin Centre', 'admin']]) +
-      footerColumn('Products', [['ScoutLink', 'scoutlink'], ['AgentLink planned', 'about'], ['CoachHub planned', 'about']]) +
-      footerColumn('Trust', [['Trust & Safeguarding', 'trust'], ['Scout Verification', 'scout-verification'], ['Parent/Guardian Notice', 'parent-guardian-notice'], ['Report a Concern', 'report-a-concern'], ['Security', 'security']]) +
-      footerColumn('Legal', [['Privacy Policy', 'privacy-policy'], ['Terms of Use', 'terms-of-use'], ['Cookie Policy', 'cookie-policy'], ['Accessibility', 'accessibility']]) +
+      groups.map(function (group) { return footerColumn(group.title, group.links); }).join('') +
+      '</div><div class="stx-footer-accordion">' +
+      groups.map(footerAccordionGroup).join('') +
       '</div></div>';
+    bindFooterAccordions();
+  }
+
+  function footerGroups() {
+    return [
+      { title: 'Stratex', links: [['About', 'about'], ['Leadership', 'leadership'], ['Careers', 'careers'], ['Contact', 'contact']] },
+      { title: 'Products', links: [['ScoutLink', 'scoutlink'], ['AgentLink planned', 'about'], ['CoachHub planned', 'about']] },
+      { title: 'Trust', links: [['Trust & Safeguarding', 'trust'], ['Scout Verification', 'scout-verification'], ['Parent/Guardian Notice', 'parent-guardian-notice'], ['Report a Concern', 'report-a-concern'], ['Security', 'security']] },
+      { title: 'Legal', links: [['Privacy Policy', 'privacy-policy'], ['Terms of Use', 'terms'], ['Cookie Policy', 'cookie-policy'], ['Accessibility', 'accessibility']] }
+    ];
   }
 
   function footerColumn(title, links) {
     return '<div><strong>' + esc(title) + '</strong>' + links.map(function (item) { return '<a href="' + sitePath(item[1]) + '">' + esc(item[0]) + '</a>'; }).join('') + '</div>';
+  }
+
+  function footerAccordionGroup(group) {
+    var id = 'footer-' + group.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return '<section class="stx-footer-accordion-group"><button class="stx-footer-accordion-button" type="button" aria-expanded="false" aria-controls="' + esc(id) + '">' +
+      '<span>' + esc(group.title) + '</span><span class="stx-footer-chevron" aria-hidden="true">+</span></button>' +
+      '<div class="stx-footer-accordion-panel" id="' + esc(id) + '" hidden>' +
+      group.links.map(function (item) { return '<a href="' + sitePath(item[1]) + '">' + esc(item[0]) + '</a>'; }).join('') +
+      '</div></section>';
+  }
+
+  function bindFooterAccordions() {
+    document.querySelectorAll('.stx-footer-accordion-button').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var panel = document.getElementById(button.getAttribute('aria-controls'));
+        var open = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', open ? 'false' : 'true');
+        var icon = button.querySelector('.stx-footer-chevron');
+        if (icon) icon.textContent = open ? '+' : '-';
+        if (panel) panel.hidden = open;
+      });
+    });
   }
 
   function bindForms() {
@@ -691,7 +727,7 @@
         return;
       }
       root.innerHTML = rows.map(function (post) {
-        return '<article class="stx-job-card"><span class="stx-card-status">' + esc(post.category || 'Learning') + '</span><h3>' + esc(post.title) + '</h3><p>' + esc(post.excerpt || '') + '</p><div class="stx-actions">' + btn('Read post', sitePath('learning-centre') + '/' + encodeURIComponent(post.slug), 'stx-btn-soft') + '</div></article>';
+        return '<article class="stx-job-card"><span class="stx-card-status">' + esc(post.category || 'Learning') + '</span><h3>' + esc(post.title) + '</h3><p>' + esc(post.excerpt || '') + '</p><div class="stx-post-meta"><span>' + esc(Number(post.view_count || 0).toLocaleString('en-GB')) + ' views</span><span>' + esc(Number(post.like_count || 0).toLocaleString('en-GB')) + ' likes</span></div><div class="stx-actions">' + btn('Read post', sitePath('learning-centre') + '/' + encodeURIComponent(post.slug), 'stx-btn-soft') + '</div></article>';
       }).join('');
     } catch (_) {
       root.innerHTML = '<div class="stx-empty">Could not load posts right now.</div>';
@@ -707,9 +743,45 @@
       if (!res.ok) throw new Error(json.error || 'Post not found');
       var post = json.data || {};
       setMeta((post.title || 'Learning Centre') + ' | Stratex Analytics', post.excerpt || 'Read Stratex Analytics learning content.', 'https://www.stratexanalytics.co.uk/learning-centre/' + encodeURIComponent(slug));
-      root.innerHTML = '<span class="stx-card-status">' + esc(post.category || 'Learning') + '</span><h1>' + esc(post.title || 'Learning Centre') + '</h1><p class="stx-lede">' + esc(post.excerpt || '') + '</p><div><p>' + esc(post.body || '').replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p></div>';
+      root.innerHTML = '<span class="stx-card-status">' + esc(post.category || 'Learning') + '</span><h1>' + esc(post.title || 'Learning Centre') + '</h1><p class="stx-lede">' + esc(post.excerpt || '') + '</p>' +
+        '<div class="stx-post-actions"><span id="postViewCount">' + esc(Number(post.view_count || 0).toLocaleString('en-GB')) + ' views</span><span id="postLikeCount">' + esc(Number(post.like_count || 0).toLocaleString('en-GB')) + ' likes</span><button class="stx-btn stx-btn-soft" type="button" data-blog-like="' + esc(slug) + '">Like</button><button class="stx-btn" type="button" data-blog-share>Share</button></div>' +
+        '<div><p>' + esc(post.body || '').replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p></div>';
+      bindBlogEngagement(slug, post.title || 'Learning Centre');
     } catch (_) {
       root.innerHTML = '<div class="stx-empty"><h2>Post not found</h2><p>This post may have moved.</p>' + btn('View learning centre', sitePath('learning-centre'), 'stx-btn-primary') + '</div>';
+    }
+  }
+
+  function bindBlogEngagement(slug, title) {
+    var likeButton = document.querySelector('[data-blog-like]');
+    var shareButton = document.querySelector('[data-blog-share]');
+    if (likeButton) {
+      likeButton.addEventListener('click', async function () {
+        likeButton.disabled = true;
+        try {
+          var res = await fetch(API + '/api/stratex-website/blog/' + encodeURIComponent(slug) + '/like', { method: 'POST' });
+          var json = await res.json().catch(function () { return {}; });
+          if (!res.ok) throw new Error(json.error || 'Could not save like');
+          var count = document.getElementById('postLikeCount');
+          if (count) count.textContent = Number(json.likeCount || 0).toLocaleString('en-GB') + ' likes';
+          likeButton.textContent = 'Liked';
+        } catch (_) {
+          likeButton.disabled = false;
+        }
+      });
+    }
+    if (shareButton) {
+      shareButton.addEventListener('click', async function () {
+        var url = window.location.href;
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: title, url: url });
+          } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(url);
+            shareButton.textContent = 'Link copied';
+          }
+        } catch (_) {}
+      });
     }
   }
 

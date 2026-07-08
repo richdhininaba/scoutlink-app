@@ -102,6 +102,26 @@
     return payload;
   }
 
+  function applyEditorCommand(cmd) {
+    var textarea = document.getElementById('blogBody');
+    if (!textarea) return;
+    var start = textarea.selectionStart || 0;
+    var end = textarea.selectionEnd || 0;
+    var selected = textarea.value.slice(start, end) || 'text';
+    var before = textarea.value.slice(0, start);
+    var after = textarea.value.slice(end);
+    var next = selected;
+    if (cmd === 'bold') next = '**' + selected + '**';
+    if (cmd === 'italic') next = '*' + selected + '*';
+    if (cmd === 'heading') next = '## ' + selected.replace(/^#+\s*/, '');
+    if (cmd === 'bullet') next = selected.split(/\r?\n/).map(function (line) { return line.trim() ? '- ' + line.replace(/^[-*]\s*/, '') : line; }).join('\n');
+    if (cmd === 'number') next = selected.split(/\r?\n/).map(function (line, index) { return line.trim() ? (index + 1) + '. ' + line.replace(/^\d+\.\s*/, '') : line; }).join('\n');
+    if (cmd === 'link') next = '[' + selected + '](https://)';
+    textarea.value = before + next + after;
+    textarea.focus();
+    textarea.setSelectionRange(before.length, before.length + next.length);
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     if (!initStratexPage()) return;
     var logout = document.getElementById('logoutBtn');
@@ -135,6 +155,9 @@
     });
 
     var blogForm = document.getElementById('blogForm');
+    document.querySelectorAll('[data-editor-cmd]').forEach(btn => {
+      btn.addEventListener('click', () => applyEditorCommand(btn.getAttribute('data-editor-cmd')));
+    });
     if (blogForm) blogForm.addEventListener('submit', async function (event) {
       event.preventDefault();
       try {

@@ -256,7 +256,7 @@ router.get('/blog', async (req, res) => {
   try {
     let q = supabase
       .from('stratex_learning_posts')
-      .select('id,slug,title,excerpt,category,status,published_at,created_at,updated_at')
+      .select('id,slug,title,excerpt,category,status,published_at,created_at,updated_at,view_count,like_count')
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(100);
     if (String(req.query.published || '').toLowerCase() === 'true') q = q.eq('status', 'published');
@@ -273,16 +273,48 @@ router.get('/blog/:slug', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_learning_posts')
-      .select('id,slug,title,excerpt,category,body,status,published_at,created_at,updated_at')
+      .select('id,slug,title,excerpt,category,body,status,published_at,created_at,updated_at,view_count,like_count')
       .eq('slug', req.params.slug)
       .eq('status', 'published')
       .maybeSingle();
     if (error) throw error;
     if (!data) return res.status(404).json({ error: 'Post not found.' });
-    res.json({ data });
+    const nextViewCount = Number(data.view_count || 0) + 1;
+    supabase
+      .from('stratex_learning_posts')
+      .update({ view_count: nextViewCount, last_viewed_at: new Date().toISOString() })
+      .eq('id', data.id)
+      .then(({ error: updateError }) => {
+        if (updateError) console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message });
+      })
+      .catch(updateError => console.error('[Stratex blog view count]', { code: updateError.code, message: updateError.message }));
+    res.json({ data: { ...data, view_count: nextViewCount } });
   } catch (err) {
     console.error('[Stratex blog detail]', { code: err.code, message: err.message });
     res.status(500).json({ error: 'Could not load this post.' });
+  }
+});
+
+router.post('/blog/:slug/like', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('stratex_learning_posts')
+      .select('id,like_count')
+      .eq('slug', req.params.slug)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return res.status(404).json({ error: 'Post not found.' });
+    const nextLikeCount = Number(data.like_count || 0) + 1;
+    const { error: updateError } = await supabase
+      .from('stratex_learning_posts')
+      .update({ like_count: nextLikeCount, updated_at: new Date().toISOString() })
+      .eq('id', data.id);
+    if (updateError) throw updateError;
+    res.json({ message: 'Thanks for the feedback.', likeCount: nextLikeCount });
+  } catch (err) {
+    console.error('[Stratex blog like]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not save this like.' });
   }
 });
 

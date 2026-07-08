@@ -47,6 +47,10 @@ function buildStratexNav(navElId, userObj) {
 
 function initStratexPage() {
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn() || Auth.type !== 'Stratex') {
+    if (window.location.pathname.replace(/\/$/, '') === '/admin') {
+      renderRestrictedStratexAdmin();
+      return false;
+    }
     if (typeof navigateClean === 'function') navigateClean('login.html');
     else window.location.href = '/login';
     return false;
@@ -55,6 +59,20 @@ function initStratexPage() {
   ensureStratexNotificationPanel();
   if (typeof updateNotifBadge === 'function') updateNotifBadge();
   return true;
+}
+
+function renderRestrictedStratexAdmin() {
+  document.body.className = 'theme-light';
+  document.body.innerHTML =
+    '<main style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#f3f6fa;color:#101828;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif">' +
+      '<section style="width:min(560px,100%);padding:34px;border:1px solid #dde5ee;border-radius:28px;background:#fff;box-shadow:0 22px 70px rgba(15,23,42,.1)">' +
+        '<a href="/" style="display:inline-flex;margin-bottom:22px;color:#101828;text-decoration:none;font-size:24px;font-weight:950;letter-spacing:-.04em">Stratex<span style="color:#087a61">Analytics</span></a>' +
+        '<p style="display:inline-flex;min-height:30px;align-items:center;padding:0 12px;border-radius:999px;background:#ecfdf5;color:#087a61;font-size:12px;font-weight:950;letter-spacing:.07em;text-transform:uppercase">Restricted access</p>' +
+        '<h1 style="margin:16px 0 10px;font-size:clamp(34px,6vw,52px);line-height:1.02;letter-spacing:-.05em">Stratex Admin Centre</h1>' +
+        '<p style="margin:0 0 24px;color:#526174;font-size:17px;line-height:1.55">The Stratex Admin Centre is for authorised Stratex team members only. Sign in with your shared ScoutLink/Stratex account to continue.</p>' +
+        '<a href="/login?return=/admin" style="min-height:46px;display:inline-flex;align-items:center;justify-content:center;padding:0 18px;border-radius:15px;background:#0fa37f;color:#fff;text-decoration:none;font-weight:900">Sign in</a>' +
+      '</section>' +
+    '</main>';
 }
 
 function ensureStratexNotificationPanel() {
