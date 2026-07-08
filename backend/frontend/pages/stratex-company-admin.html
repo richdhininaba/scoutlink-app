@@ -13,94 +13,10 @@
   <link rel="stylesheet" href="../css/phone-pages.css">
 </head>
 <body>
-  <div class="dashboard">
-    <nav class="sidebar" id="sidebar">
-      <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
-      <div class="sidebar-nav" id="sidebarNav"></div>
-      <div class="sidebar-user" id="sidebarUser"></div>
-    </nav>
-    <main class="dashboard-main">
-      <div class="topbar">
-        <span class="topbar-title" id="dashTitle">Company site</span>
-        <div class="topbar-right">
-          <a class="btn btn-sm btn-outline" href="/company" target="_blank" rel="noopener">Open Stratex site</a>
-          <button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
-        </div>
-      </div>
-      <div class="page-content">
-        <div class="table-card" style="padding:18px;margin-bottom:18px">
-          <h2 style="margin:0 0 6px">Stratex Analytics website admin</h2>
-          <p style="margin:0;color:#8b949e">Manage company website leads, CRM, Learning Centre content and leadership profiles. ScoutLink player data is intentionally excluded from this CRM.</p>
-        </div>
-
-        <div class="filter-bar" role="tablist" aria-label="Company site admin sections" style="margin-bottom:18px">
-          <button class="filter-chip active" data-tab="crm" type="button">CRM</button>
-          <button class="filter-chip" data-tab="leads" type="button">Website leads</button>
-          <button class="filter-chip" data-tab="blog" type="button">Learning Centre</button>
-          <button class="filter-chip" data-tab="leadership" type="button">Leadership</button>
-        </div>
-
-        <section class="table-card stx-admin-tab" id="tab-crm">
-          <div class="table-header">
-            <h3>CRM</h3>
-            <a class="btn btn-sm btn-primary" href="#" id="crmExportBtn">Export CSV</a>
-          </div>
-          <div id="crmRows" class="loading-state"><div class="spinner"></div></div>
-        </section>
-
-        <section class="table-card stx-admin-tab" id="tab-leads" style="display:none">
-          <div class="table-header"><h3>Website leads</h3><button class="btn btn-sm btn-outline" id="refreshLeadsBtn" type="button">Refresh</button></div>
-          <div id="leadRows" class="loading-state"><div class="spinner"></div></div>
-        </section>
-
-        <section class="stx-admin-tab" id="tab-blog" style="display:none">
-          <div style="display:grid;grid-template-columns:minmax(320px,.55fr) 1fr;gap:18px">
-            <form class="table-card" id="blogForm" style="padding:18px">
-              <h3>Create Learning Centre post</h3>
-              <label class="form-group"><span>Title</span><input class="form-control" name="title" required></label>
-              <label class="form-group"><span>Category</span><input class="form-control" name="category" value="Football intelligence"></label>
-              <label class="form-group"><span>Excerpt</span><textarea class="form-control" name="excerpt" rows="3"></textarea></label>
-              <div class="stx-editor-toolbar" aria-label="Learning Centre editor toolbar">
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="bold">Bold</button>
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="italic">Italic</button>
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="heading">Heading</button>
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="bullet">Bullet list</button>
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="number">Numbered list</button>
-                <button type="button" class="btn btn-sm btn-outline" data-editor-cmd="link">Link</button>
-              </div>
-              <label class="form-group"><span>Body</span><textarea class="form-control" id="blogBody" name="body" rows="8" required></textarea></label>
-              <label class="form-group"><span>Status</span><select class="form-control" name="status"><option value="draft">Draft</option><option value="published">Published</option></select></label>
-              <div class="form-message" id="blogMsg" style="display:none"></div>
-              <button class="btn btn-primary" type="submit">Save post</button>
-            </form>
-            <div class="table-card">
-              <div class="table-header"><h3>Posts</h3></div>
-              <div id="blogRows" class="loading-state"><div class="spinner"></div></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="stx-admin-tab" id="tab-leadership" style="display:none">
-          <div style="display:grid;grid-template-columns:minmax(320px,.45fr) 1fr;gap:18px">
-            <form class="table-card" id="leadershipForm" style="padding:18px">
-              <h3>Add leadership member</h3>
-              <label class="form-group"><span>Full name</span><input class="form-control" name="fullName" required></label>
-              <label class="form-group"><span>Email</span><input class="form-control" name="email" type="email"></label>
-              <label class="form-group"><span>Job title</span><input class="form-control" name="jobTitle" required></label>
-              <label class="form-group"><span>Permission role</span><select class="form-control" name="permissionRole"><option>Management</option><option>Operations</option><option>Acquisition</option><option>Safeguarding Reviewer</option><option>Product Demo</option><option>Read Only</option></select></label>
-              <label class="form-group"><span>Bio</span><textarea class="form-control" name="bio" rows="4"></textarea></label>
-              <label class="form-group"><span>Display order</span><input class="form-control" name="displayOrder" type="number" value="100"></label>
-              <div class="form-message" id="leadershipMsg" style="display:none"></div>
-              <button class="btn btn-primary" type="submit">Save leadership member</button>
-            </form>
-            <div class="table-card">
-              <div class="table-header"><h3>Leadership profiles</h3></div>
-              <div id="leadershipRows" class="loading-state"><div class="spinner"></div></div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+  <div id="stratexAdminMount" style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#f3f6fa;color:#101828">
+    <section style="width:min(520px,100%);padding:28px;border:1px solid #dde5ee;border-radius:24px;background:#fff;box-shadow:0 18px 54px rgba(15,23,42,.08)">
+      <p style="margin:0;color:#526174">Checking Stratex Admin Centre access...</p>
+    </section>
   </div>
   <script src="../js/stratex-nav.js"></script>
   <script src="../js/main.js"></script>
