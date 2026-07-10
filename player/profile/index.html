@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-  <base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+﻿<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Player Profile - ScoutLink</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -329,6 +328,32 @@ return '<div class="video-fallback"><p style="margin-bottom:12px">This video pro
 }
 function openProfileVideo(idx){var v=_profileVideos[idx];if(!v)return;var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoTitle').textContent=v.title||'Video reel';document.getElementById('profileVideoDesc').textContent=(v.category||'Highlight')+(v.description?' - '+v.description:'');document.getElementById('profileVideoFrame').innerHTML=embedHtml(v.video_url||v.url||'');modal.classList.add('open');}
 function closeProfileVideo(){var modal=document.getElementById('profileVideoModal');document.getElementById('profileVideoFrame').innerHTML='';modal.classList.remove('open');}
+function generateVideoUploadLink(playerId){
+var btn=document.getElementById('btnGenerateVideoUploadLink');
+var out=document.getElementById('videoUploadLinkResult');
+if(!btn||!out)return;
+btn.disabled=true;btn.textContent='Generating...';
+api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(r){
+var url=r.uploadUrl||'';
+out.style.display='block';
+out.innerHTML='<label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800;display:block;margin-bottom:6px">Share this link</label>'+
+'<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="generatedVideoUploadUrl" value="'+safe(url)+'" readonly style="flex:1;min-width:240px;background:#0d1117;border:1px solid var(--border,#30363d);border-radius:8px;color:var(--text,#e6edf3);padding:10px 12px">'+
+'<button class="btn btn-primary" type="button" onclick="copyGeneratedVideoUploadLink()">Copy link</button></div>'+
+'<div style="font-size:12px;color:#8b949e;margin-top:6px">Expires: '+safe(r.expiresAt)+'</div>';
+btn.textContent='Generate new link';btn.disabled=false;
+}).catch(function(e){
+out.style.display='block';
+out.innerHTML='<div style="color:#f44336;font-size:13px">Could not generate upload link: '+safe(e.message)+'</div>';
+btn.textContent='Generate upload link';btn.disabled=false;
+});
+}
+function copyGeneratedVideoUploadLink(){
+var el=document.getElementById('generatedVideoUploadUrl');
+if(!el)return;
+el.select();el.setSelectionRange(0,99999);
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(el.value).catch(function(){document.execCommand('copy');});}
+else document.execCommand('copy');
+}
 function openProfileActionModal(title,html){document.getElementById('profileActionTitle').textContent=title;document.getElementById('profileActionBody').innerHTML=html;document.getElementById('profileActionModal').classList.add('open');}
 function closeProfileActionModal(){document.getElementById('profileActionModal').classList.remove('open');document.getElementById('profileActionBody').innerHTML='';}
 function pitchHtml(label){
@@ -384,7 +409,7 @@ var btn=document.getElementById('btnInterest');
 if(!btn)return;
 if(_alreadyInPipeline){return;}
 if(_interestsRemaining<=0){
-alert('You have reached your interest cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.');
+alert('You have reached your coach-mediated interest requests cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.');
 return;
 }
 btn.disabled=true;btn.textContent='Adding...';
@@ -397,7 +422,7 @@ _alreadyInPipeline=true;
 _interestsRemaining=r.interestsRemaining||(_interestsRemaining-1);
 btn.textContent='Added to Pipeline';btn.style.background='#1d9e75';btn.style.color='#000';btn.disabled=true;
 var rem=document.getElementById('interestsRemainingCount');
-if(rem){rem.textContent=_interestsRemaining+' interests remaining';}
+if(rem){rem.textContent=_interestsRemaining+' coach-mediated interest requests remaining';}
 }
 }).catch(function(e){
 btn.disabled=false;btn.textContent='Register Interest';
@@ -598,16 +623,11 @@ _alreadyInPipeline=!!pipelineStatus;
 
 document.getElementById('profileTitle').textContent=Auth.type==='Player'?'My Profile':((p.first_name||'')+' '+(p.last_name||''));
 
-// Age out warning
+// Age group support warning
 var ageOutBanner='';
-if(p.date_of_birth){
-var dob=new Date(p.date_of_birth);var today=new Date();
-var next17=new Date(dob);next17.setFullYear(today.getFullYear());
-if(next17<today)next17.setFullYear(today.getFullYear()+1);
-var turnsAge=next17.getFullYear()-dob.getFullYear();
-if(turnsAge===17){var daysUntil=Math.ceil((next17-today)/(1000*60*60*24));
-if(daysUntil<=30)ageOutBanner='<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">&#9888;</span><div><div style="font-weight:700;color:#FF9800">Age Out Warning</div><div style="font-size:13px;color:#E2E8F0">This player turns 17 in <strong>'+daysUntil+' day'+(daysUntil===1?'':'s')+'</strong> and will age out of the platform.</div></div></div>';
-}}
+if(String(p.age_group||'').toUpperCase()==='U16'){
+ageOutBanner='<div style="background:rgba(255,152,0,.15);border:1px solid #FF9800;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">&#9888;</span><div><div style="font-weight:700;color:#FF9800">Final supported age group</div><div style="font-size:13px;color:#E2E8F0">U16 players are archived from active ScoutLink visibility at the 15 May seasonal rollover.</div></div></div>';
+}
 
 // Overall
 var ovNum=parseFloat(p.overall_rating||0);
@@ -657,7 +677,7 @@ actionBtns='<div class="profile-actions" style="display:flex;gap:10px;flex-wrap:
 '<button id="btnInterest" class="btn btn-primary action-btn" style="'+btnStyle+'" '+((_alreadyInPipeline)?'disabled':'')+'>'+btnLabel+'</button>'+
 '<div class="export-menu-wrap" id="exportMenuWrap"><button id="btnExport" class="btn btn-outline action-btn" type="button">Export</button><div class="export-menu" id="exportMenu"><button class="export-option" type="button" data-format="PDF"><span>PDF report<small>Designed profile summary</small></span></button><button class="export-option" type="button" data-format="EXCEL"><span>Excel workbook<small>Structured data sheet</small></span></button></div></div>'+
 '<button class="btn btn-outline action-btn" onclick="scrollToVideos()">&#9654; Watch Videos</button>'+
-'<span id="interestsRemainingCount" style="font-size:12px;color:#8b949e;margin-left:4px">'+interestsRem+' interests remaining</span>'+
+'<span id="interestsRemainingCount" style="font-size:12px;color:#8b949e;margin-left:4px">'+interestsRem+' coach-mediated interest requests remaining</span>'+
 '</div>';
 }
 
@@ -703,6 +723,14 @@ return '<div class="fixture-row">'+
 // Videos
 var videoHtml='';
 _profileVideos=videos;
+var videoUploadLinkHtml='';
+if(Auth.type==='Coach'||Auth.type==='Stratex'){
+videoUploadLinkHtml='<div class="coach-upload-link-panel" style="border:1px solid var(--border,#30363d);background:rgba(29,158,117,.06);border-radius:10px;padding:14px;margin-bottom:14px">'+
+'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
+'<div><div style="font-weight:800;color:var(--text,#e6edf3);margin-bottom:4px">Video upload link</div><div style="font-size:12px;color:#8b949e;line-height:1.5">Generate a private link for this player and send it to the player, parent or guardian. They do not need a ScoutLink account.</div></div>'+
+'<button class="btn btn-outline" id="btnGenerateVideoUploadLink" type="button">Generate upload link</button>'+
+'</div><div id="videoUploadLinkResult" style="display:none;margin-top:12px"></div></div>';
+}
 if(videos.length){
 videoHtml='<table class="video-table"><thead><tr><th>Title</th><th>Category</th><th>Description</th><th></th></tr></thead><tbody>'+videos.map(function(v,idx){
 var url=v.video_url||v.url||'#';
@@ -738,7 +766,7 @@ ageOutBanner+
 '<div class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:14px;padding:24px;margin-bottom:20px">'+
 '<div class="profile-hero-row" style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">'+
 '<div class="profile-identity" style="display:flex;align-items:flex-start;gap:20px;flex:1;min-width:220px">'+
-'<div class="user-avatar" style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>'+
+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,72):'<div class="user-avatar" style="width:72px;height:72px;border-radius:50%;background:#1d9e75;color:#000;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0">'+initials(p.first_name,p.last_name)+'</div>')+
 '<div class="profile-name-block" style="flex:1;min-width:180px">'+
 '<h2 style="font-size:22px;font-weight:800;margin:0 0 4px">'+safe(p.first_name)+' '+safe(p.last_name)+'</h2>'+
 '<div style="font-size:14px;color:#8b949e;margin-bottom:8px">'+positionName(p.specific_position||p.primary_position)+' &bull; '+safe(p.age_group)+' &bull; '+safe(p.team_name)+'</div>'+
@@ -746,7 +774,6 @@ teamLinksHtml+
 '<div class="profile-tag-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">Overall: '+ov100+'/100</span>'+
 '<span style="background:rgba(29,158,117,.12);color:#1d9e75;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700">'+safe(p.foot)+' foot</span>'+
-'<span style="background:rgba(29,158,117,.08);color:#8b949e;border-radius:20px;padding:3px 12px;font-size:12px">'+safe(p.nationality)+'</span>'+
 '</div>'+
 actionBtns+
 '</div></div>'+
@@ -794,8 +821,8 @@ statBadge('Appearances',apps)+statBadge('Goals',goals)+statBadge('Assists',assts
 '<div class="physical-metric"><span>Feet/inches</span><b>'+heightFeet+'</b></div>'+
 '<div class="physical-metric"><span>Build</span><b>'+buildLabel+'</b></div>'+
 '<div class="physical-metric"><span>Weight range</span><b>'+safe(p.weight_range_kg)+'</b></div>'+
-'<div class="physical-metric"><span>Nationality</span><b>'+safe(p.nationality)+'</b></div>'+
-'<div class="physical-metric"><span>Date of birth</span><b>'+safe(p.date_of_birth?p.date_of_birth.slice(0,10):null)+'</b></div>'+
+'<div class="physical-metric"><span>Age group</span><b>'+safe(p.age_group)+'</b></div>'+
+'<div class="physical-metric"><span>Profile owner</span><b>Coach managed</b></div>'+
 '</div>'+
 '</div></div>'+
 
@@ -815,6 +842,7 @@ fixtureHtml+
 // Video Reels
 '<div id="videoSection" class="profile-card" style="background:var(--card,#161b22);border:1px solid var(--border,#30363d);border-radius:12px;padding:16px;margin-bottom:20px">'+
 '<div style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;font-weight:700">Video Reels'+(videos.length?' ('+videos.length+')':'')+'</div>'+
+videoUploadLinkHtml+
 videoHtml+
 '</div>'+
 
@@ -855,6 +883,9 @@ if(wrap&&!wrap.contains(e.target))closeExportMenu();
 var btnShowCompat=document.getElementById('btnShowCompat');
 if(btnShowCompat)btnShowCompat.addEventListener('click',function(){showCompatBreakdown(playerId);});
 
+var btnGenerateVideoUploadLink=document.getElementById('btnGenerateVideoUploadLink');
+if(btnGenerateVideoUploadLink)btnGenerateVideoUploadLink.addEventListener('click',function(){generateVideoUploadLink(playerId);});
+
 var scenarioSelect=document.getElementById('scenarioSelect');
 if(scenarioSelect){
 var isGkProfile=String(p.position_group||p.primary_position||p.specific_position||'').toLowerCase().indexOf('goal')>=0 || String(p.specific_position||'').toUpperCase()==='GK';
@@ -884,6 +915,7 @@ console.error('[PlayerProfile]',e);
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 
 
 

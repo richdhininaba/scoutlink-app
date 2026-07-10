@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-  <base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+﻿<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Award nominations - ScoutLink</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -116,15 +115,6 @@ var selectedPlayerName = '';
 
 function safe(v,fb){return(v!==undefined&&v!==null&&v!=='')?String(v):(fb||'N/A');}
 function fmtVal(v){if(!v||isNaN(v))return 'Calculating...';return '\xA3'+Number(v).toLocaleString('en-GB',{maximumFractionDigits:0});}
-function calcAgeGroup(dob){
-  if(!dob) return 'N/A';
-  try{
-    var age=Math.floor((Date.now()-new Date(dob))/(365.25*24*3600*1000));
-    if(age<=6)return 'U6';if(age<=7)return 'U7';if(age<=8)return 'U8';if(age<=9)return 'U9';
-    if(age<=10)return 'U10';if(age<=11)return 'U11';if(age<=12)return 'U12';if(age<=13)return 'U13';
-    if(age<=14)return 'U14';if(age<=15)return 'U15';return 'U16+';
-  }catch(e){return 'N/A';}
-}
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 
 document.addEventListener('DOMContentLoaded',function(){
@@ -165,7 +155,7 @@ async function loadPlayers(){
       return;
     }
     tbody.innerHTML = players.map(function(p){
-      var ageGroup = safe(p.age_group, calcAgeGroup(p.date_of_birth));
+      var ageGroup = safe(p.age_group, 'N/A');
       var ov = p.overall_rating ? (parseFloat(p.overall_rating)>10?parseFloat(p.overall_rating):parseFloat(p.overall_rating)*10).toFixed(0) : 'N/A';
       var ovColor = ov>80?'#1d9e75':ov>65?'#FFC107':'#FF9800';
       return '<tr>'+
@@ -265,5 +255,6 @@ async function withdrawNomination(id){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 
 

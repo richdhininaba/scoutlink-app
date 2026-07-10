@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<html lang="en"><head>
-  <base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+﻿<!DOCTYPE html>
+<html lang="en"><head><base href="/frontend/pages/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>My players - ScoutLink</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -200,9 +199,9 @@ else if(p.position_group==='Defender') keyAttrs=[['Defending',p.defending],['Str
 else keyAttrs=[['Composure',p.composure],['Strength',p.strength],['Pace',p.pace]];
 html+='<div class="player-card2" onclick="location.href=\'player-profile.html?id=\'+p.id+\'\'">'+
 '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+
-'<div class="user-avatar" style="background:'+pCol+';color:#000;font-size:14px">'+initials(p.first_name,p.last_name)+'</div>'+
+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,44):'<div class="user-avatar" style="background:'+pCol+';color:#000;font-size:14px">'+initials(p.first_name,p.last_name)+'</div>')+
 '<div style="flex:1"><div style="font-weight:700">'+p.first_name+' '+p.last_name+'</div>'+
-'<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' &middot; '+(p.age||'--')+' yrs</div></div>'+
+'<div style="font-size:12px;color:#546E7A">'+(p.specific_position||p.primary_position||'--')+' &middot; '+(p.age_group||'Age group TBC')+'</div></div>'+
 '<div style="font-size:24px;font-weight:900;color:'+ovColor+'">'+ov+'</div>'+
 '</div>'+
 keyAttrs.map(function(a){var pct2=attrPct(a[1]);var col=attrColor(pct2);return'<div class="attr-mini-row"><span style="color:#546E7A;width:70px">'+a[0]+'</span><div class="attr-mini-bar2"><div class="attr-mini-fill2" style="width:'+pct2+'%;background:'+col+'"></div></div><span style="color:'+col+';font-weight:700;font-size:11px">'+attrPct(a[1])/10+'</span></div>';}).join('')+
@@ -226,9 +225,9 @@ players.forEach(function(p){
 var pct=ovPct(p.overall_rating);
 var pCol=posColor(p.position_group);
 html+='<tr>'+
-'<td><div style="display:flex;align-items:center;gap:8px"><div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div><b>'+p.first_name+' '+p.last_name+'</b></div></td>'+
+'<td><div style="display:flex;align-items:center;gap:8px">'+(window.playerAvatarMarkup?window.playerAvatarMarkup(p,30):'<div class="user-avatar" style="width:30px;height:30px;font-size:11px;background:'+pCol+'">'+initials(p.first_name,p.last_name)+'</div>')+'<b>'+p.first_name+' '+p.last_name+'</b></div></td>'+
 '<td><span style="color:'+pCol+';font-size:12px;font-weight:600">'+(p.specific_position||p.primary_position||'--')+'</span></td>'+
-'<td>'+(p.age||'--')+'</td>'+
+'<td>'+(p.age_group||'--')+'</td>'+
 '<td style="color:'+attrColor(pct)+';font-weight:700">'+dispOverall(p.overall_rating)+'</td>'+
 '<td>'+(p.appearances||0)+'</td>'+
 '<td style="color:#1d9e75">'+(p.goals||0)+'</td>'+
@@ -246,5 +245,6 @@ document.getElementById('playersContainer').innerHTML=html;
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 
 
