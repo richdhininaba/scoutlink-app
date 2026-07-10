@@ -10,11 +10,12 @@
     demo: 'https://www.scoutlink.app/demo'
   };
   var SCOUT_PLANS = [
-    { name: 'Core', badge: 'Founder access', monthly: 99, annual: 79, seats: '1 scout seat', interests: '30 coach-mediated interest requests', exports: '20 profile exports', predictions: '60 prediction runs', note: 'For one reviewed scout starting structured search.' },
-    { name: 'Plus', badge: 'Team starter', monthly: 249, annual: 199, seats: '5 scout seats', interests: '120 coach-mediated interest requests', exports: '100 profile exports', predictions: '300 prediction runs', note: 'For small recruitment teams managing regular shortlists.' },
-    { name: 'Elite', badge: 'Most complete', monthly: 599, annual: 499, seats: '10 scout seats', interests: '300 coach-mediated interest requests', exports: '300 profile exports', predictions: '900 prediction runs', note: 'For higher-volume teams using predictions and exports heavily.' },
-    { name: 'Enterprise', badge: 'Custom', monthly: null, annual: null, seats: 'Custom seats', interests: 'Custom interest limits', exports: 'Custom export limits', predictions: 'Custom prediction limits', note: 'For academies, clubs and networks that need onboarding and custom caps.' }
+    { name: 'Core', label: 'Starter scout access', annualPrice: '&pound;599/year', monthlyPrice: '&pound;69/month', annualAlt: 'Monthly option: &pound;69/month', monthlyAlt: 'Annual option: &pound;599/year', billingAnnual: 'One annual payment for reviewed scout access.', billingMonthly: 'Flexible monthly billing for a single reviewed scout.', seats: '1 scout seat', interests: '30 coach-mediated interest requests', exports: '20 profile exports', predictions: '60 prediction runs', note: 'Best for one reviewed scout starting structured grassroots search.' },
+    { name: 'Plus', label: 'Growing scout team', annualPrice: '&pound;1,999/year', monthlyPrice: '&pound;219/month', annualAlt: 'Monthly option: &pound;219/month', monthlyAlt: 'Annual option: &pound;1,999/year', billingAnnual: 'Annual team access with lower total cost than monthly.', billingMonthly: 'Monthly access for teams that need flexibility.', seats: '5 scout seats', interests: '120 coach-mediated interest requests', exports: '100 profile exports', predictions: '300 prediction runs', note: 'Best for small recruitment teams managing regular shortlists.' },
+    { name: 'Elite', label: 'Advanced scout team', annualPrice: '&pound;4,999/year', monthlyPrice: '&pound;549/month', annualAlt: 'Monthly option: &pound;549/month', monthlyAlt: 'Annual option: &pound;4,999/year', billingAnnual: 'Annual access for higher-volume scouting workflows.', billingMonthly: 'Monthly access for higher-volume teams.', seats: '10 scout seats', interests: '300 coach-mediated interest requests', exports: '300 profile exports', predictions: '900 prediction runs', note: 'Best for teams using predictions, exports and deeper search heavily.' },
+    { name: 'Enterprise', label: 'Custom organisation', annualPrice: 'From &pound;10,000/year', monthlyPrice: 'Custom', annualAlt: 'Monthly option: Custom', monthlyAlt: 'Annual option: From &pound;10,000/year', billingAnnual: 'Tailored annual access for larger organisations.', billingMonthly: 'Custom commercial terms for larger organisations.', seats: 'Custom scout seats', interests: 'Custom interest limits', exports: 'Custom export limits', predictions: 'Custom prediction limits', note: 'Best for academies, clubs and networks that need onboarding and custom caps.' }
   ];
+  var currentPricingMode = 'annual';
 
   var LEADERS = [
     {
@@ -172,7 +173,7 @@
     return '<article class="stx-card">' +
       (status ? '<span class="stx-card-status ' + (/live/i.test(status) ? 'live' : '') + '">' + esc(status) + '</span>' : '') +
       '<h3>' + esc(title) + '</h3><p>' + esc(copy) + '</p>' +
-      (href ? '<div><a class="stx-btn stx-btn-soft" href="' + esc(href) + '">' + esc(label || 'Learn more') + '</a></div>' : '') +
+      (href ? '<div class="stx-card-actions"><a class="stx-btn stx-btn-soft" href="' + esc(href) + '">' + esc(label || 'Learn more') + '</a></div>' : '') +
     '</article>';
   }
 
@@ -249,8 +250,20 @@
 
   function pricingCards() {
     return '<div class="stx-pricing-grid">' + SCOUT_PLANS.map(function (plan, index) {
-      var price = plan.annual == null ? 'Custom' : '&pound;<span class="stx-plan-price" data-monthly="' + esc(plan.monthly) + '" data-annual="' + esc(plan.annual) + '">' + esc(plan.annual) + '</span><small>/month billed annually</small>';
-      return '<article class="stx-card stx-pricing-card ' + (index === 2 ? 'featured' : '') + '"><span class="stx-card-status ' + (index === 2 ? 'live' : '') + '">' + esc(plan.badge) + '</span><h3>' + esc(plan.name) + '</h3><p class="stx-price">' + price + '</p><p>' + esc(plan.note) + '</p><ul><li>' + esc(plan.seats) + '</li><li>' + esc(plan.interests) + '</li><li>' + esc(plan.exports) + '</li><li>' + esc(plan.predictions) + '</li></ul><a class="stx-btn stx-btn-primary" href="' + SCOUTLINK.scout + '" data-outbound="scout">Request scout access</a></article>';
+      var mode = currentPricingMode || 'annual';
+      var price = mode === 'monthly' ? plan.monthlyPrice : plan.annualPrice;
+      var billing = mode === 'monthly' ? plan.billingMonthly : plan.billingAnnual;
+      var alternate = mode === 'monthly' ? plan.monthlyAlt : plan.annualAlt;
+      return '<article class="stx-card stx-pricing-card ' + (index === 1 ? 'featured' : '') + '">' +
+        '<span class="stx-card-status ' + (index === 1 ? 'live' : '') + '">' + esc(plan.label) + '</span>' +
+        '<h3>' + esc(plan.name) + '</h3>' +
+        '<p class="stx-price">' + price + '</p>' +
+        '<p class="stx-price-note">' + esc(billing) + '</p>' +
+        '<p class="stx-price-alt">' + alternate + '</p>' +
+        '<p>' + esc(plan.note) + '</p>' +
+        '<ul><li>' + esc(plan.seats) + '</li><li>' + esc(plan.interests) + '</li><li>' + esc(plan.exports) + '</li><li>' + esc(plan.predictions) + '</li></ul>' +
+        '<div class="stx-card-actions"><a class="stx-btn stx-btn-primary" href="' + SCOUTLINK.scout + '" data-outbound="scout">Request scout access</a></div>' +
+      '</article>';
     }).join('') + '</div>';
   }
 
@@ -258,8 +271,8 @@
     var canonical = canonicalPath || '/pricing';
     setMeta('ScoutLink Pricing | Reviewed Scout Access', 'ScoutLink pricing for reviewed scout access, interests, exports and prediction usage. All scout access is reviewed before activation.', 'https://www.stratexanalytics.co.uk' + canonical);
     track('pricing_page_viewed');
-    return pageHero('ScoutLink Pricing', 'Reviewed scout access with founder pricing available.', 'ScoutLink scout plans are designed for controlled player visibility, coach-mediated interest workflows and clear usage limits. Pricing does not create instant platform access; every scout request is reviewed first.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '')) +
-      '<section class="stx-section"><div class="stx-container"><div class="stx-founder-banner"><b>Founder access</b><span>Annual pricing is shown by default during the early rollout. Monthly pricing is available for teams that need flexibility.</span></div><div class="stx-price-toggle" aria-label="Pricing period"><button type="button" class="active" data-pricing-mode="annual">Annual</button><button type="button" data-pricing-mode="monthly">Monthly</button></div>' + pricingCards() + '</div></section>' +
+    return pageHero('ScoutLink Pricing', 'Reviewed scout access with annual and monthly options.', 'ScoutLink scout plans are designed for controlled player visibility, coach-mediated interest workflows and clear usage limits. Pricing does not create instant platform access; every scout request is reviewed first.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '')) +
+      '<section class="stx-section"><div class="stx-container"><div class="stx-section-head"><h2>Choose annual or monthly billing.</h2><p>Annual is selected by default and shows the yearly price. Monthly gives teams a flexible month-to-month option.</p></div><div class="stx-price-toggle" aria-label="Pricing period"><button type="button" class="active" data-pricing-mode="annual">Annual</button><button type="button" data-pricing-mode="monthly">Monthly</button></div>' + pricingCards() + '</div></section>' +
       section('Important access notes.', 'ScoutLink is built for responsible youth football visibility.', '<div class="stx-grid three">' + card('Reviewed access', 'Scout requests are reviewed before any product access is activated.') + card('No direct child contact', 'Interest is routed through coach-mediated workflows.') + card('Decision support', 'Compatibility and prediction tools support judgement; they do not guarantee outcomes.') + '</div>');
   }
 
@@ -336,7 +349,8 @@
     var firstName = person.name.split(' ')[0];
     return '<article class="stx-card stx-person-card">' +
       '<img class="stx-person-image" src="' + esc(person.image) + '" alt="' + esc(person.alt) + '" loading="lazy" width="320" height="320">' +
-      '<div class="stx-person-copy"><span class="stx-tag green">' + esc(person.chip || 'Leadership') + '</span>' +
+      '<span class="stx-tag green stx-person-chip">' + esc(person.chip || 'Leadership') + '</span>' +
+      '<div class="stx-person-copy">' +
       '<h3>' + esc(person.name) + '</h3>' +
       '<p class="stx-person-title">' + esc(person.title) + '</p>' +
       '<p>' + esc(person.summary || '') + '</p></div>' +
@@ -564,14 +578,14 @@
     var buttons = document.querySelectorAll('[data-pricing-mode]');
     if (!buttons.length) return;
     function apply(mode) {
+      currentPricingMode = mode === 'monthly' ? 'monthly' : 'annual';
       buttons.forEach(function (button) { button.classList.toggle('active', button.getAttribute('data-pricing-mode') === mode); });
-      document.querySelectorAll('.stx-plan-price').forEach(function (price) {
-        var value = price.getAttribute('data-' + mode);
-        if (value) price.textContent = value;
-      });
-      document.querySelectorAll('.stx-price small').forEach(function (small) {
-        small.textContent = mode === 'monthly' ? '/month billed monthly' : '/month billed annually';
-      });
+      var grid = document.querySelector('.stx-pricing-grid');
+      if (grid) {
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = pricingCards();
+        grid.replaceWith(wrapper.firstElementChild);
+      }
     }
     buttons.forEach(function (button) {
       button.addEventListener('click', function () { apply(button.getAttribute('data-pricing-mode') || 'annual'); });

@@ -8,42 +8,63 @@ const SITE = 'https://www.stratexanalytics.co.uk';
 const SCOUT_PLANS = [
   {
     name: 'Core',
-    monthly: 99,
-    annual: 79,
+    label: 'Starter scout access',
+    annualPrice: '&pound;599/year',
+    monthlyPrice: '&pound;69/month',
+    annualAlt: 'Monthly option: &pound;69/month',
+    monthlyAlt: 'Annual option: &pound;599/year',
+    billingAnnual: 'One annual payment for reviewed scout access.',
+    billingMonthly: 'Flexible monthly billing for a single reviewed scout.',
     seats: '1 scout seat',
     interests: '30 coach-mediated interest requests',
     exports: '20 profile exports',
     predictions: '60 prediction runs',
-    description: 'For a single scout building structured grassroots player search.'
+    description: 'Best for one reviewed scout starting structured grassroots search.'
   },
   {
     name: 'Plus',
-    monthly: 249,
-    annual: 199,
+    label: 'Growing scout team',
+    annualPrice: '&pound;1,999/year',
+    monthlyPrice: '&pound;219/month',
+    annualAlt: 'Monthly option: &pound;219/month',
+    monthlyAlt: 'Annual option: &pound;1,999/year',
+    billingAnnual: 'Annual team access with lower total cost than monthly.',
+    billingMonthly: 'Monthly access for teams that need flexibility.',
     seats: '5 scout seats',
     interests: '120 coach-mediated interest requests',
     exports: '100 profile exports',
     predictions: '300 prediction runs',
-    description: 'For a small scout team comparing players and managing a shared pipeline.'
+    description: 'Best for small recruitment teams managing regular shortlists.'
   },
   {
     name: 'Elite',
-    monthly: 599,
-    annual: 499,
+    label: 'Advanced scout team',
+    annualPrice: '&pound;4,999/year',
+    monthlyPrice: '&pound;549/month',
+    annualAlt: 'Monthly option: &pound;549/month',
+    monthlyAlt: 'Annual option: &pound;4,999/year',
+    billingAnnual: 'Annual access for higher-volume scouting workflows.',
+    billingMonthly: 'Monthly access for higher-volume teams.',
     seats: '10 scout seats',
     interests: '300 coach-mediated interest requests',
     exports: '300 profile exports',
     predictions: '900 prediction runs',
-    description: 'For higher-volume scout teams using predictions, exports and deeper search.'
+    description: 'Best for teams using predictions, exports and deeper search heavily.'
   },
   {
     name: 'Enterprise',
-    custom: true,
+    label: 'Custom organisation',
+    annualPrice: 'From &pound;10,000/year',
+    monthlyPrice: 'Custom',
+    annualAlt: 'Monthly option: Custom',
+    monthlyAlt: 'Annual option: From &pound;10,000/year',
+    billingAnnual: 'Tailored annual access for larger organisations.',
+    billingMonthly: 'Custom commercial terms for larger organisations.',
     seats: 'Custom scout seats',
-    interests: 'Custom interest volume',
-    exports: 'Custom exports',
-    predictions: 'Custom prediction capacity',
-    description: 'For clubs, academies and networks that need tailored onboarding and controls.'
+    interests: 'Custom interest limits',
+    exports: 'Custom export limits',
+    predictions: 'Custom prediction limits',
+    description: 'Best for academies, clubs and networks that need onboarding and custom caps.'
   }
 ];
 
@@ -111,7 +132,7 @@ const pages = {
   pricing: {
     path: '/pricing',
     title: 'ScoutLink Pricing | Stratex Analytics',
-    description: 'ScoutLink pricing for reviewed scout teams, including founder access, plan limits and coach-mediated interest requests.',
+    description: 'ScoutLink pricing for reviewed scout teams, including annual and monthly plans, usage limits and coach-mediated interest requests.',
     kicker: 'ScoutLink pricing',
     h1: 'Scout access with clear annual limits.',
     body: 'ScoutLink pricing is designed for controlled scout access. All plans require scout verification before access is activated, and all interest workflows remain coach-mediated.'
@@ -119,7 +140,7 @@ const pages = {
   'scoutlink-pricing': {
     path: '/scoutlink/pricing',
     title: 'ScoutLink Pricing | Stratex Analytics',
-    description: 'ScoutLink pricing for reviewed scout teams, including founder access, plan limits and coach-mediated interest requests.',
+    description: 'ScoutLink pricing for reviewed scout teams, including annual and monthly plans, usage limits and coach-mediated interest requests.',
     kicker: 'ScoutLink pricing',
     h1: 'Scout access with clear annual limits.',
     body: 'ScoutLink pricing is designed for controlled scout access. All plans require scout verification before access is activated, and all interest workflows remain coach-mediated.'
@@ -456,15 +477,17 @@ function schemaFor(page) {
 }
 
 function pricingCards() {
-  return '<div class="stx-founder-banner"><div><span class="stx-kicker">Founder access</span><h2>Annual pricing is shown by default for early ScoutLink rollout.</h2><p>All plans require scout access review before activation. Interest workflows remain coach-mediated.</p></div><div class="stx-price-toggle" aria-label="Billing period"><button type="button" class="active">Annual</button><button type="button">Monthly</button></div></div>' +
+  return '<div class="stx-section-head"><h2>Choose annual or monthly billing.</h2><p>Annual is selected by default and shows the yearly price. Monthly gives teams a flexible month-to-month option.</p></div><div class="stx-price-toggle" aria-label="Billing period"><button type="button" class="active" data-pricing-mode="annual">Annual</button><button type="button" data-pricing-mode="monthly">Monthly</button></div>' +
     '<div class="stx-grid four stx-pricing-grid">' + SCOUT_PLANS.map(plan => (
       '<article class="stx-card stx-pricing-card' + (plan.name === 'Plus' ? ' featured' : '') + '">' +
-        '<span class="stx-card-status live">' + esc(plan.name) + '</span>' +
-        '<h2>' + esc(plan.name) + '</h2>' +
+        '<span class="stx-card-status live">' + esc(plan.label) + '</span>' +
+        '<h3>' + esc(plan.name) + '</h3>' +
+        '<p class="stx-price">' + plan.annualPrice + '</p>' +
+        '<p class="stx-price-note">' + esc(plan.billingAnnual) + '</p>' +
+        '<p class="stx-price-alt">' + plan.annualAlt + '</p>' +
         '<p>' + esc(plan.description) + '</p>' +
-        '<p class="stx-price">' + (plan.custom ? 'Custom' : '&pound;' + esc(plan.annual) + '<small>per month, billed annually</small>') + '</p>' +
         '<ul><li>' + esc(plan.seats) + '</li><li>' + esc(plan.interests) + '</li><li>' + esc(plan.exports) + '</li><li>' + esc(plan.predictions) + '</li></ul>' +
-        '<p><a class="stx-btn stx-btn-primary" href="https://www.scoutlink.app/register/scout">Request scout access</a></p>' +
+        '<div class="stx-card-actions"><a class="stx-btn stx-btn-primary" href="https://www.scoutlink.app/register/scout">Request scout access</a></div>' +
       '</article>'
     )).join('') + '</div>';
 }
@@ -490,7 +513,7 @@ function fallbackSections(page) {
     return '<section class="stx-section"><div class="stx-container stx-prose"><h2>What the score is designed to do</h2><p>ScoutLink compatibility scoring supports player-team fit review by comparing coach-led player evidence with each scout setup. Scouts can record team needs, squad gaps, playing style, role expectations and long-term goals. ScoutLink then turns that context into an explainable fit signal.</p><div class="stx-compat-example"><div class="stx-compat-score"><strong>78%</strong></div><div><h3>Example fit signal</h3><div class="stx-compat-component"><span>Need fit</span><i style="--score:82%"></i><b>82</b></div><div class="stx-compat-component"><span>Role fit</span><i style="--score:74%"></i><b>74</b></div><div class="stx-compat-component"><span>Evidence confidence</span><i style="--score:68%"></i><b>68</b></div></div></div><h2>What the score considers at a high level</h2><ul><li>Player position, role and age-band context.</li><li>Coach-rated attributes and match performance evidence.</li><li>Recent match facts, fixtures, videos and data confidence.</li><li>Physical profile, development trajectory and availability signals.</li><li>Scout-entered team needs, weaknesses and long-term goals.</li></ul><p>The exact methodology, weightings, thresholds and ranking logic are proprietary to Stratex Analytics. The score does not replace human scouts and does not guarantee trials, contracts or selection.</p><p><a class="stx-btn stx-btn-primary" href="https://www.scoutlink.app/register/scout">Request scout access</a> <a class="stx-btn stx-btn-soft" href="/scoutlink/coaches">For coaches</a></p></div></section>' + faqBlock(page);
   }
   if (page.path === '/pricing' || page.path === '/scoutlink/pricing') {
-    return '<section class="stx-section"><div class="stx-container"><div class="stx-section-head"><h2>Annual plans for reviewed scout teams.</h2><p>Founder access is available during early rollout. All plans require access review before activation, and all interest workflows are coach-mediated.</p></div>' + pricingCards() + '</div></section>' + faqBlock(page);
+    return '<section class="stx-section"><div class="stx-container">' + pricingCards() + '</div></section>' + faqBlock(page);
   }
   if (page.path === '/scoutlink/scouts') {
     return '<section class="stx-section"><div class="stx-container stx-prose"><h2>For football scouts</h2><p>ScoutLink helps scouts search structured player profiles, compare players, run predictions, export football evidence and build a coach-mediated recruitment pipeline.</p><h2>Access is reviewed before use</h2><p>ScoutLink is not open access. Requests are reviewed before platform access is activated so youth player profiles are viewed in a more controlled environment.</p><p><a class="stx-btn stx-btn-primary" href="https://www.scoutlink.app/register/scout">Request scout access</a> <a class="stx-btn stx-btn-soft" href="/scoutlink/compatibility-score">Compatibility score</a></p></div></section>' + faqBlock(page);
@@ -527,11 +550,12 @@ function fallbackContent(page) {
     ? '<div class="stx-leadership-grid">' + leaders.map((person) => (
         '<article class="stx-card stx-person-card">' +
           '<img class="stx-person-image" src="' + esc(person.image.replace(SITE, '')) + '" alt="' + esc(person.alt) + '" width="320" height="320">' +
-          '<div class="stx-person-copy"><span class="stx-tag green">' + esc(person.chip) + '</span>' +
+          '<span class="stx-tag green stx-person-chip">' + esc(person.chip) + '</span>' +
+          '<div class="stx-person-copy">' +
           '<h2>' + esc(person.name) + '</h2>' +
           '<p class="stx-person-title">' + esc(person.title) + '</p>' +
           '<p>' + esc(person.summary) + '</p>' +
-          '<p>' + esc(person.bio) + '</p></div>' +
+          '</div>' +
           '<div class="stx-person-actions"><a class="stx-btn stx-btn-soft stx-btn-small" href="mailto:' + esc(person.email) + '">Email ' + esc(person.name.split(' ')[0]) + '</a>' +
           '<a class="stx-btn stx-btn-soft stx-btn-small" href="' + esc(person.linkedin) + '">View profile</a></div>' +
         '</article>'
