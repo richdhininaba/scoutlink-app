@@ -2898,7 +2898,7 @@ body:not(.theme-dark) .range-option .range-value{
 
 @media (max-width:767px) {
   .marketing-home {
-    background:#f6f8fa !important;
+    background:#fff !important;
   }
 
   .marketing-home,
@@ -2920,7 +2920,7 @@ body:not(.theme-dark) .range-option .range-value{
 
   .marketing-hero {
     padding:30px 0 28px;
-    background:linear-gradient(180deg,#f8fafc 0%,#f6f8fa 100%);
+    background:#fff !important;
   }
 
   .marketing-hero-grid,
@@ -2971,7 +2971,14 @@ body:not(.theme-dark) .range-option .range-value{
     max-width:100%;
     gap:12px;
     padding:16px;
-    box-shadow:0 22px 56px rgba(2,8,23,.18);
+    color:#111827;
+    background:#fff !important;
+    border-color:#e5e7eb !important;
+    box-shadow:0 18px 42px rgba(15,23,42,.08);
+  }
+
+  .sample-profile-card::before {
+    display:none;
   }
 
   .sample-profile-card .preview-card-head {
@@ -2980,11 +2987,14 @@ body:not(.theme-dark) .range-option .range-value{
 
   .sample-profile-card .preview-card-head strong {
     font-size:30px;
+    color:#0f172a;
   }
 
   .sample-profile-card .preview-player-row {
     grid-template-columns:42px minmax(0,1fr) auto;
     padding:10px;
+    background:#f8fafc;
+    border-color:#e5e7eb;
   }
 
   .sample-profile-card .preview-avatar {
@@ -2994,10 +3004,22 @@ body:not(.theme-dark) .range-option .range-value{
 
   .sample-profile-card .preview-player-row em {
     font-size:20px;
+    color:#0f172a;
+  }
+
+  .sample-profile-card .preview-card-head span,
+  .sample-profile-card .preview-player-row small,
+  .sample-profile-card p {
+    color:#64748b;
+  }
+
+  .sample-profile-card .preview-player-row b {
+    color:#0f172a;
   }
 
   .sample-profile-card .preview-bar-list,
-  .sample-profile-card .sample-facts {
+  .sample-profile-card .sample-facts,
+  .sample-profile-card .home-compatibility-card {
     display:none;
   }
 
