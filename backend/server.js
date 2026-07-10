@@ -232,7 +232,6 @@ const STRATEX_SITEMAP_ROUTES = [
   '/',
   '/scoutlink',
   '/scoutlink/compatibility-score',
-  '/pricing',
   '/scoutlink/pricing',
   '/scoutlink/scouts',
   '/scoutlink/coaches',
@@ -292,7 +291,6 @@ if (frontendDir) {
     '/',
     '/scoutlink',
     '/scoutlink/compatibility-score',
-    '/pricing',
     '/scoutlink/pricing',
     '/scoutlink/scouts',
     '/scoutlink/coaches',
@@ -326,6 +324,11 @@ if (frontendDir) {
   app.get('/compatibility-score', (req, res, next) => {
     if (!isStratexHost(req)) return next();
     return res.redirect(301, '/scoutlink/compatibility-score');
+  });
+
+  app.get('/pricing', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/scoutlink/pricing/');
   });
 
   app.get('/careers/:slug', (req, res, next) => {

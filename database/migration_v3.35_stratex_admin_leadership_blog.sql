@@ -85,9 +85,9 @@ set
   first_name = 'Lucy',
   last_name = 'Ali',
   email = 'lucy.ali@stratexanalytics.co.uk',
-  job_title = 'Director of Operations & Customer Success',
-  permission_role = 'Operations / Customer Success',
-  focus_chip = 'Operations / Customer Success',
+  job_title = 'Director of Operations',
+  permission_role = 'Operations',
+  focus_chip = 'Operations',
   summary = 'Leads day-to-day operations, outreach delivery and customer management.',
   bio = 'Lucy leads the day-to-day operations of ScoutLink, including internal processes, outreach delivery, coach and scout relationships, customer management and event operations. She ensures the business runs smoothly as ScoutLink grows.',
   focus_areas = array['Internal processes','Outreach delivery','Customer management','Event operations'],
@@ -105,7 +105,7 @@ insert into public.stratex_leadership_members (
 )
 select
   'Lucy Ali', 'Lucy', 'Ali', 'lucy.ali@stratexanalytics.co.uk',
-  'Director of Operations & Customer Success', 'Operations / Customer Success',
+  'Director of Operations', 'Operations',
   'Lucy leads the day-to-day operations of ScoutLink, including internal processes, outreach delivery, coach and scout relationships, customer management and event operations. She ensures the business runs smoothly as ScoutLink grows.',
   'https://www.linkedin.com/in/lucy-ali-654b79160/', '/images/leadership/lucy-ali.svg',
   'Operations / Customer Success', 'Leads day-to-day operations, outreach delivery and customer management.',

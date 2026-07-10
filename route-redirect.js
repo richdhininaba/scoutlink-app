@@ -29,6 +29,12 @@
     '/video-upload': '/frontend/pages/video-upload.html',
     '/company': '/frontend/pages/stratex-site.html',
     '/company/scoutlink': '/frontend/pages/stratex-site.html',
+    '/scoutlink': '/frontend/pages/stratex-site.html',
+    '/scoutlink/compatibility-score': '/frontend/pages/stratex-site.html',
+    '/scoutlink/pricing': '/frontend/pages/stratex-site.html',
+    '/scoutlink/scouts': '/frontend/pages/stratex-site.html',
+    '/scoutlink/coaches': '/frontend/pages/stratex-site.html',
+    '/grassroots-football-scouting-tools': '/frontend/pages/stratex-site.html',
     '/company/about': '/frontend/pages/stratex-site.html',
     '/company/leadership': '/frontend/pages/stratex-site.html',
     '/company/trust': '/frontend/pages/stratex-site.html',
@@ -104,6 +110,10 @@
     '/careers/interview-availability': '/frontend/pages/interview-availability.html'
   };
   var path = window.location.pathname.replace(/\/$/, '') || '/';
+  if (path === '/pricing') {
+    window.location.replace('/scoutlink/pricing/' + window.location.search + window.location.hash);
+    return;
+  }
   if (path === '/company' || path.indexOf('/company/') === 0) {
     var cleanPath = path.replace(/^\/company/, '') || '/';
     window.location.replace(cleanPath + window.location.search + window.location.hash);

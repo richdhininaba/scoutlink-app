@@ -2267,18 +2267,68 @@ body:not(.theme-dark) .range-option .range-value{
 .sample-profile-card {
   position:relative;
   overflow:hidden;
+  border-color:rgba(59,130,246,.24);
+  background:
+    radial-gradient(circle at 86% 8%, rgba(16,185,129,.25), transparent 34%),
+    radial-gradient(circle at 4% 0%, rgba(59,130,246,.22), transparent 38%),
+    linear-gradient(145deg,#061527,#0b2544 60%,#0f3b55);
+  box-shadow:0 30px 90px rgba(2,8,23,.22);
+  color:#fff;
 }
 
 .sample-profile-card::before {
   content:"";
   position:absolute;
   inset:0;
-  background:radial-gradient(circle at 85% 10%, rgba(15,159,117,.14), transparent 34%);
+  background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 38%);
   pointer-events:none;
 }
 
 .sample-profile-card > * {
   position:relative;
+}
+
+.sample-profile-card .preview-card-head span,
+.sample-profile-card .preview-player-row small,
+.sample-profile-card .preview-bar-list b,
+.sample-profile-card p {
+  color:#cbd5e1;
+}
+
+.sample-profile-card .preview-card-head strong,
+.sample-profile-card .preview-player-row b,
+.sample-profile-card .preview-player-row em {
+  color:#fff;
+}
+
+.sample-profile-card .preview-avatar {
+  background:linear-gradient(135deg,#16a979,#38bdf8);
+  color:#061527;
+}
+
+.sample-profile-card .preview-player-row,
+.sample-profile-card .sample-score-grid div,
+.sample-profile-card .sample-facts span {
+  border-color:rgba(125,211,252,.16);
+  background:rgba(255,255,255,.08);
+}
+
+.sample-profile-card .sample-score-grid span,
+.sample-profile-card .sample-facts span {
+  color:#b7c8de;
+}
+
+.sample-profile-card .sample-score-grid b,
+.sample-profile-card .sample-facts b {
+  color:#fff;
+}
+
+.sample-profile-card .preview-bar-list span {
+  background:linear-gradient(rgba(148,163,184,.26),rgba(148,163,184,.26)) left 0 top 0/100% 8px no-repeat;
+}
+
+.sample-profile-card .preview-bar-list i {
+  background:linear-gradient(90deg,#38bdf8,#16a979);
 }
 
 .sample-score-grid,
@@ -2320,6 +2370,101 @@ body:not(.theme-dark) .range-option .range-value{
 
 .sample-facts b {
   color:#0f9f75;
+}
+
+.home-compatibility-card {
+  display:grid;
+  gap:14px;
+  padding:16px;
+  border:1px solid rgba(125,211,252,.2);
+  border-radius:22px;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(16,185,129,.24), transparent 34%),
+    linear-gradient(145deg,#07111f,#0b2544 62%,#103b5f);
+  color:#fff;
+  box-shadow:0 18px 46px rgba(2,8,23,.24);
+}
+
+.home-compatibility-card.product-preview {
+  box-shadow:none;
+  min-height:100%;
+}
+
+.home-compat-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.home-compat-head span {
+  display:block;
+  color:#7dd3fc;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.home-compat-head b {
+  display:block;
+  margin-top:4px;
+  color:#fff;
+  font-size:17px;
+}
+
+.home-compat-head strong {
+  flex:0 0 auto;
+  display:grid;
+  place-items:center;
+  width:74px;
+  height:74px;
+  border-radius:999px;
+  background:conic-gradient(#16a979 0 84%, rgba(148,163,184,.28) 84% 100%);
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+  box-shadow:inset 0 0 0 9px #07111f;
+}
+
+.home-fit-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.home-fit-grid span {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px 10px;
+  align-items:center;
+  padding:10px;
+  border:1px solid rgba(125,211,252,.14);
+  border-radius:14px;
+  background:rgba(255,255,255,.07);
+}
+
+.home-fit-grid i {
+  grid-column:1 / -1;
+  display:block;
+  height:7px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#38bdf8,#16a979);
+  box-shadow:0 0 0 1px rgba(255,255,255,.05) inset;
+}
+
+.home-fit-grid b {
+  min-width:0;
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:900;
+}
+
+.home-fit-grid em {
+  color:#7dd3fc;
+  font-size:12px;
+  font-style:normal;
+  font-weight:900;
 }
 
 .marketing-ribbon {
@@ -2835,6 +2980,26 @@ body:not(.theme-dark) .range-option .range-value{
   .sample-score-grid b,
   .sample-facts b {
     font-size:18px;
+  }
+
+  .home-compatibility-card {
+    padding:14px;
+    border-radius:18px;
+  }
+
+  .home-compat-head {
+    align-items:flex-start;
+  }
+
+  .home-compat-head strong {
+    width:62px;
+    height:62px;
+    font-size:18px;
+    box-shadow:inset 0 0 0 8px #07111f;
+  }
+
+  .home-fit-grid {
+    grid-template-columns:1fr;
   }
 
   .who-tabs {
