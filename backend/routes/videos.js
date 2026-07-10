@@ -6,6 +6,7 @@ const { requireAuth, requireRole } = require('../utils/auth');
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const config = require('../config');
 
 const MAX_VIDEO_UPLOAD_BYTES = 4 * 1024 * 1024;
 const VIDEO_TOO_LARGE_MESSAGE = 'This video is too large to upload. Please choose a smaller file.';
@@ -41,6 +42,54 @@ function storageRef(filePath) {
   return filePath ? 'storage://player-videos/' + filePath : null;
 }
 
+function tokenHash(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+async function loadPlayerForUploadLink(playerId) {
+  const { data, error } = await supabase
+    .from('players')
+    .select('id,first_name,last_name,team_id,team_name,assigned_coach_id,is_active')
+    .eq('id', playerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function assertCanManagePlayerVideo(req, playerId) {
+  const player = await loadPlayerForUploadLink(playerId);
+  if (!player || player.is_active === false) {
+    const e = new Error('Player not found');
+    e.status = 404;
+    throw e;
+  }
+  if (req.user.accountType === 'Stratex') return { player, coach: null };
+  const coach = await getCoachTeam(req.user.id);
+  const sameTeam = coach && (
+    player.assigned_coach_id === req.user.id ||
+    (coach.is_super_user && coach.team_id && player.team_id === coach.team_id)
+  );
+  if (!sameTeam) {
+    const e = new Error('You can only generate upload links for players you manage.');
+    e.status = 403;
+    throw e;
+  }
+  return { player, coach };
+}
+
+async function getActiveUploadLink(rawToken) {
+  const hash = tokenHash(rawToken);
+  const { data, error } = await supabase
+    .from('player_video_upload_links')
+    .select('*, players(id,first_name,last_name,team_name,is_active)')
+    .eq('token_hash', hash)
+    .eq('is_active', true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data || (data.expires_at && new Date(data.expires_at) < new Date()) || data.players?.is_active === false) return null;
+  return data;
+}
+
 async function ensurePrivateVideoBucket() {
   const options = {
     public: false,
@@ -70,6 +119,117 @@ async function attachSignedVideoUrls(rows) {
   }));
   return list;
 }
+
+router.post('/upload-link', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
+  try {
+    const { playerId } = req.body;
+    if (!playerId) return res.status(400).json({ error: 'playerId required' });
+    const { player, coach } = await assertCanManagePlayerVideo(req, playerId);
+    const rawToken = crypto.randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const createdByType = req.user.accountType === 'Stratex' ? 'Stratex' : 'Coach';
+    const { data, error } = await supabase
+      .from('player_video_upload_links')
+      .insert({
+        player_id: player.id,
+        coach_id: req.user.accountType === 'Coach' ? req.user.id : null,
+        team_id: player.team_id || coach?.team_id || null,
+        token_hash: tokenHash(rawToken),
+        expires_at: expiresAt,
+        created_by: req.user.id,
+        created_by_type: createdByType,
+        is_active: true
+      })
+      .select('id,expires_at')
+      .single();
+    if (error) throw error;
+    const base = (config.brandUrl || 'https://www.scoutlink.app').replace(/\/$/, '');
+    res.status(201).json({
+      uploadLinkId: data.id,
+      uploadUrl: base + '/video-upload?token=' + encodeURIComponent(rawToken),
+      expiresAt: data.expires_at,
+      player: { id: player.id, firstName: player.first_name, lastName: player.last_name, teamName: player.team_name }
+    });
+  } catch(err) {
+    console.error('[Videos upload-link]', { code: err.code, message: err.message });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not generate video upload link' });
+  }
+});
+
+router.get('/upload-link/:token', async (req, res) => {
+  try {
+    const link = await getActiveUploadLink(req.params.token);
+    if (!link) return res.status(404).json({ error: 'This upload link is invalid or has expired.' });
+    res.json({
+      player: {
+        id: link.players.id,
+        firstName: link.players.first_name,
+        lastName: link.players.last_name,
+        teamName: link.players.team_name
+      },
+      expiresAt: link.expires_at
+    });
+  } catch(err) {
+    console.error('[Videos upload-link GET]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not load upload link' });
+  }
+});
+
+router.post('/public-upload', uploadSingleVideo, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'file required' });
+    const { token, title, category, description } = req.body;
+    if (!token) return res.status(400).json({ error: 'upload token required' });
+    if (!title) return res.status(400).json({ error: 'title required' });
+    const link = await getActiveUploadLink(token);
+    if (!link) return res.status(404).json({ error: 'This upload link is invalid or has expired.' });
+    const ext = (path.extname(req.file.originalname || '').toLowerCase() || '.mp4').replace(/[^a-z0-9.]/g, '');
+    const filePath = [
+      'upload-links',
+      link.player_id,
+      Date.now() + '-' + crypto.randomUUID() + ext
+    ].join('/');
+    await ensurePrivateVideoBucket();
+    const { error: uploadErr } = await supabase.storage
+      .from('player-videos')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype || 'video/mp4',
+        upsert: false
+      });
+    if (uploadErr) throw uploadErr;
+    const uploaderId = link.coach_id || link.created_by || null;
+    const uploaderType = link.coach_id ? 'Coach' : (link.created_by_type || 'Stratex');
+    const { data, error } = await supabase
+      .from('player_videos')
+      .insert({
+        player_id: link.player_id,
+        coach_id: link.coach_id || null,
+        team_id: link.team_id || null,
+        title,
+        url: storageRef(filePath),
+        video_url: storageRef(filePath),
+        file_path: filePath,
+        category: category || 'Highlight',
+        description: description || null,
+        video_type: category || 'Highlight',
+        uploaded_by: uploaderId,
+        uploaded_by_type: uploaderType
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    const { error: linkUseErr } = await supabase
+      .from('player_video_upload_links')
+      .update({ used_at: new Date().toISOString() })
+      .eq('id', link.id);
+    if (linkUseErr) console.warn('[Videos public-upload] upload link usage update skipped:', linkUseErr.message);
+    const [video] = await attachSignedVideoUrls([data]);
+    res.status(201).json({ message: 'Video uploaded', video });
+  } catch(err) {
+    console.error('[Videos public-upload]', { code: err.code, message: err.message });
+    res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 500).json({ error: err.code === 'LIMIT_FILE_SIZE' ? VIDEO_TOO_LARGE_MESSAGE : (err.message || 'Video upload failed') });
+  }
+});
 
 // Get videos for a player or coach
 router.get('/', requireAuth, requireRole('Player','Coach','Scout','Stratex'), async (req, res) => {

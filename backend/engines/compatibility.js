@@ -152,14 +152,12 @@ function getPosGroup(pos) {
   return 'Midfielder';
 }
 
-function calcAge(dob) {
-  if (!dob) return null;
-  const d = new Date(dob);
-  if (Number.isNaN(d.getTime())) return null;
-  const n = new Date();
-  let a = n.getFullYear() - d.getFullYear();
-  if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--;
-  return a;
+function ageFromPlayer(player = {}) {
+  const groupMatch = String(player.age_group || player.ageGroup || '').trim().toUpperCase().match(/^U(\d+)$/);
+  if (groupMatch) return Number(groupMatch[1]);
+  const storedAge = Number(player.age);
+  if (Number.isFinite(storedAge) && storedAge >= 7 && storedAge <= 16) return storedAge;
+  return null;
 }
 
 function rangeMidpoint(rangeStr, fallback = 50) {
@@ -219,7 +217,7 @@ function formatCurrency(value) {
 
 function ageBand(age) {
   if (age === null || age === undefined) return { key: 'UNKNOWN', label: 'Unknown age band', rating: 58, valueLabel: 'Recruitment Value Estimate', runway: 0.82 };
-  if (age <= 8) return { key: 'U6_U8_FOUNDATION', label: 'U6-U8 Foundation', rating: 72, valueLabel: 'Development Value Index', runway: 1.26 };
+  if (age <= 8) return { key: 'U7_U8_FOUNDATION', label: 'U7-U8 Foundation', rating: 72, valueLabel: 'Development Value Index', runway: 1.26 };
   if (age <= 11) return { key: 'U9_U11_DEVELOPMENT', label: 'U9-U11 Development', rating: 78, valueLabel: 'Training Value Estimate', runway: 1.18 };
   if (age <= 14) return { key: 'U12_U14_PRE_ACADEMY', label: 'U12-U14 Pre-Academy', rating: 85, valueLabel: 'Recruitment Value Estimate', runway: 1.08 };
   if (age <= 16) return { key: 'U15_U16_RECRUITMENT_READINESS', label: 'U15-U16 Recruitment Readiness', rating: 92, valueLabel: 'Transfer Value Estimate', runway: 0.98 };
@@ -331,7 +329,7 @@ function generatedAttributeScores(player = {}) {
 }
 
 function calculateOverallBreakdown(player = {}, matchHistory = []) {
-  const age = calcAge(player.date_of_birth);
+  const age = ageFromPlayer(player);
   const band = ageBand(age);
   const primaryPosition = getPrimaryPosition(player);
   const group = getPosGroup(player.positions || player.primary_position || player.specific_position || player.position_group);
@@ -374,7 +372,7 @@ function calculateOverallBreakdown(player = {}, matchHistory = []) {
 
   const warnings = [];
   if (confidence.score < 60) warnings.push('Low match evidence: add more match facts before relying heavily on this score.');
-  if (age !== null && age > 16) warnings.push('This player is outside the normal ScoutLink U6-U16 age band.');
+  if (age !== null && age > 16) warnings.push('This player is outside the normal ScoutLink U7-U16 age band.');
   if (discScore < 65) warnings.push('Discipline is materially reducing the player rating.');
 
   return {
@@ -532,7 +530,7 @@ function calculateValueAnalysis(player = {}, matchHistory = [], context = {}) {
   const group = POSITION_GROUP[primary] || breakdown.positionGroup || 'Midfielder';
   const band = ageBand(breakdown.age);
   const baseByBand = {
-    U6_U8_FOUNDATION: 12000,
+    U7_U8_FOUNDATION: 12000,
     U9_U11_DEVELOPMENT: 26000,
     U12_U14_PRE_ACADEMY: 56000,
     U15_U16_RECRUITMENT_READINESS: 92000,
@@ -695,7 +693,7 @@ function transferValue(player, team, compatibility = 50, matchHistory = []) {
   return {
     value: va.value,
     valueFormatted: va.valueFormatted,
-    breakdown: { ...va.multipliers, overall: calculateOverallBreakdown(player, matchHistory).finalScore, age: calcAge(player.date_of_birth), group: va.positionGroup, tier: Number(team?.tier) || 5, label: va.label, riskLabel: va.riskLabel }
+    breakdown: { ...va.multipliers, overall: calculateOverallBreakdown(player, matchHistory).finalScore, age: ageFromPlayer(player), group: va.positionGroup, tier: Number(team?.tier) || 5, label: va.label, riskLabel: va.riskLabel }
   };
 }
 
@@ -761,7 +759,7 @@ module.exports = {
   computeOverall,
   grassrootsTransferValue,
   getPosGroup,
-  calcAge,
+  ageFromPlayer,
   getHeightMid,
   getBuildMid,
   parseWeaknesses,

@@ -383,7 +383,7 @@ res.json({ totalPlayers, totalCoaches, totalScouts, pendingReqs, recentPendingRe
 router.get('/rankings', requireAuth, requireRole('Scout','Stratex'), async (req, res) => {
 try {
 const { posGroup, minAge, maxAge, page=1, limit=50 } = req.query;
-let q = supabase.from('players').select('id,first_name,last_name,age,position_group,specific_position,team_name,overall_rating,transfer_value,predicted_salary_weekly,nationality_code,height_category,build_category',{count:'exact'}).eq('is_active',true).eq('is_demo', false).not('overall_rating','is',null);
+let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category',{count:'exact'}).eq('is_active',true).eq('is_demo', false).not('overall_rating','is',null);
 if (posGroup) q = q.eq('position_group', posGroup);
 if (minAge) q = q.gte('age', Number(minAge));
 if (maxAge) q = q.lte('age', Number(maxAge));

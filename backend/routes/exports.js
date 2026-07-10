@@ -374,7 +374,6 @@ function profileSections(player, matches, analysis, prediction, fixtures = [], v
     ['Position', position],
     ['Age group', player.age_group || ''],
     ['Foot', player.foot || ''],
-    ['Nationality', player.nationality || ''],
     ['Overall rating', player.overall_rating || ''],
     [valueLabel, money(player.transfer_value)],
     ['Compatibility score', analysis ? analysis.compatibilityScore + '/100' : '']

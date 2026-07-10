@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
-const { requireAuth, requireRole, generateId, generateLoginCode } = require('../utils/auth');
+const { requireAuth, requireRole, generateId } = require('../utils/auth');
 const {
   analysePlayer,
   predictedSalary,
@@ -12,11 +12,11 @@ const {
   calculatePositionRatings,
   calculateValueAnalysis
 } = require('../engines/compatibility');
-const email = require('../services/email');
 const { createNotification, createNotifications } = require('../services/notifications');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { duplicateMessage, sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan, effectiveLimits, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
+const { maybeRunSeasonalAgeGroupRollover } = require('../services/playerAgeGroups');
 
 // Height/weight range maps
 const HEIGHT_RANGES = {
@@ -36,25 +36,26 @@ const BUILD_RANGES = {
   very_powerful:{ label:'Very Powerful', range:'96+ kg', min:96, max:120 },
 };
 
-// Calculate age and age group from date_of_birth
-function calcAgeGroup(dob) {
-  if (!dob) return null;
-  const d = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - d.getFullYear();
-  if (today.getMonth() < d.getMonth() || (today.getMonth() === d.getMonth() && today.getDate() < d.getDate())) age--;
-  if (age <= 6) return { age, group: 'U6' };
-  if (age <= 7) return { age, group: 'U7' };
-  if (age <= 8) return { age, group: 'U8' };
-  if (age <= 9) return { age, group: 'U9' };
-  if (age <= 10) return { age, group: 'U10' };
-  if (age <= 11) return { age, group: 'U11' };
-  if (age <= 12) return { age, group: 'U12' };
-  if (age <= 13) return { age, group: 'U13' };
-  if (age <= 14) return { age, group: 'U14' };
-  if (age <= 15) return { age, group: 'U15' };
-  if (age <= 16) return { age, group: 'U16' };
-  return { age, group: null };
+const AGE_GROUPS = ['U7','U8','U9','U10','U11','U12','U13','U14','U15','U16'];
+
+function normaliseAgeGroup(value) {
+  const group = String(value || '').trim().toUpperCase();
+  return AGE_GROUPS.includes(group) ? group : null;
+}
+
+function ageFromGroup(group) {
+  const m = String(group || '').match(/^U(\d+)$/);
+  return m ? Number(m[1]) : null;
+}
+
+function requiredAgeGroupPayload(value) {
+  const group = normaliseAgeGroup(value);
+  if (!group) {
+    const e = new Error('Age Group is required and must be U7 to U16.');
+    e.status = 400;
+    throw e;
+  }
+  return { age: ageFromGroup(group), age_group: group };
 }
 
 // Calculate transfer value from Task 9 spec
@@ -136,19 +137,6 @@ async function resolveTeamName(teamId, fallback) {
   return data?.team_name || fallback || null;
 }
 
-async function generateUniquePlayerLoginCode() {
-  let attempts = 0;
-  while (attempts < 20) {
-    const code = generateLoginCode();
-    const checks = await Promise.all(['players','coaches','scouts','stratex'].map(t =>
-      supabase.from(t).select('id').eq('login_code', code).maybeSingle()
-    ));
-    if (!checks.some(r => r.data)) return code;
-    attempts++;
-  }
-  throw new Error('Could not generate unique login code');
-}
-
 async function getScoutAnalysisContext(req) {
   if (req.user.accountType !== 'Scout') return { team: { tier: 5 }, prefs: {} };
   const { data: scout } = await supabase
@@ -225,9 +213,10 @@ router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async 
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
+    await maybeRunSeasonalAgeGroupRollover();
     const { search, posGroup, specificPos, teamId, minAge, maxAge, minOverall, ageGroup, city, page=1, limit=20 } = req.query;
     let q = supabase.from('players').select(
-      'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_id,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,nationality,nationality_code,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot,date_of_birth',
+      'id,player_id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,team_id,team_name,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,height_range_cm,weight_range_kg,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,foot',
       { count: 'exact' }
     ).eq('is_active', true);
     q = applyRealDataFilter(q, req);
@@ -369,15 +358,15 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     const posArr = Array.isArray(b.positions) ? b.positions.map(p=>p.toUpperCase()) : [];
     const hRange = HEIGHT_RANGES[b.heightCategory];
     const bRange = BUILD_RANGES[b.buildCategory];
-    const ageInfo = calcAgeGroup(b.dateOfBirth);
+    const ageInfo = requiredAgeGroupPayload(b.ageGroup || b.age_group);
     const playerData = {
       player_id: generateId('PLY'),
       first_name: b.firstName.trim(), last_name: b.lastName.trim(),
-      email: b.email||null, phone: b.phone||null, parent_email: b.parentEmail||null,
-      date_of_birth: b.dateOfBirth||null,
-      age: ageInfo ? ageInfo.age : null,
-      age_group: ageInfo ? ageInfo.group : null,
-      nationality: b.nationality||'England', nationality_code: b.nationalityCode||'gb-eng',
+      email: null, phone: b.phone||null, parent_email: null,
+      date_of_birth: null,
+      age: ageInfo.age,
+      age_group: ageInfo.age_group,
+      nationality: null, nationality_code: null,
       position_group: b.positionGroup||null, specific_position: b.specificPosition||null,
       positions: posArr, primary_position: posArr[0]||b.specificPosition||null,
       foot: b.foot||'Right',
@@ -410,51 +399,27 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
     const salary = predictedSalary(data, { tier: 5 });
     await supabase.from('players').update({ predicted_salary_weekly: salary.weeklyGross }).eq('id', data.id);
     
-    // Generate login code for the player
-    const loginCode = await generateUniquePlayerLoginCode();
-    const loginCodeExpires = new Date(Date.now() + 365*24*60*60*1000);
-    await supabase.from('players').update({ login_code: loginCode, login_code_expires: loginCodeExpires }).eq('id', data.id);
-    
-    // Send email to parent or player
-    const recipientEmail = b.parentEmail || b.email || null;
-    let emailSent = false;
-    let emailTemplate = null;
-    if (recipientEmail && !isDemoSession(req)) {
-      try {
-        const emailResult = await email.sendPlayerLoginCode({
-          to: recipientEmail,
-          email: recipientEmail,
-          playerFirstName: b.firstName,
-          loginCode
-        });
-        emailSent = !!emailResult?.success;
-        emailTemplate = emailResult?.template || null;
-      } catch(emailErr) { console.error('[PlayerCreate] Email error:', emailErr.message); }
-    }
-
-    // Notify coach without storing or emailing login codes. The shared notification service handles Coach/Scout email delivery.
+    // Notify the coach. Player accounts and player setup emails are no longer part of this flow.
     if (req.user.accountType === 'Coach' && !isDemoSession(req)) {
       try {
         await createNotification({
           recipient_id: req.user.id, recipient_type: 'Coach',
           notification_type: 'system',
           title: 'Player added successfully',
-          body: b.firstName + ' ' + b.lastName + ' has been added. ' + (emailSent ? 'The player setup email was sent.' : 'The player setup email was not sent.'),
+          body: b.firstName + ' ' + b.lastName + ' has been added to ' + (ageInfo.age_group || 'the selected age group') + '. You can share video upload links from the player profile.',
           data: {
             targetType: 'player',
             targetId: data.id,
             playerId: data.id,
             playerName: b.firstName + ' ' + b.lastName,
             teamName: resolvedTeamName || '',
-            email_sent: emailSent,
-            email_template: emailTemplate,
             source: 'player_added'
           }
         });
       } catch(notifErr) {}
     }
     
-    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross }, emailSent, emailTemplate, message: 'Player created. The player setup email was sent where an email address was supplied.' });
+    res.status(201).json({ player: { ...data, predicted_salary_weekly: salary.weeklyGross }, message: 'Player created.' });
   } catch(err) { console.error(err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
@@ -473,15 +438,16 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
         const posArr = Array.isArray(p.positions) ? p.positions.map(x=>x.toUpperCase()) : [];
         const hRange = HEIGHT_RANGES[p.heightCategory];
         const bRange = BUILD_RANGES[p.buildCategory];
-        const ageInfo = calcAgeGroup(p.dateOfBirth);
+        if (!p.firstName || !p.lastName) throw new Error('First Name, Last Name and Age Group are required.');
+        const ageInfo = requiredAgeGroupPayload(p.ageGroup || p.age_group);
         const playerData = {
           player_id: generateId('PLY'),
           first_name: (p.firstName||'').trim(), last_name: (p.lastName||'').trim(),
-          email: p.email||null, parent_email: p.parentEmail||null,
-          date_of_birth: p.dateOfBirth||null,
-          age: ageInfo ? ageInfo.age : null,
-          age_group: ageInfo ? ageInfo.group : null,
-          nationality: p.nationality||'England', nationality_code: p.nationalityCode||'gb-eng',
+          email: null, parent_email: null,
+          date_of_birth: null,
+          age: ageInfo.age,
+          age_group: ageInfo.age_group,
+          nationality: null, nationality_code: null,
           position_group: p.positionGroup||null, specific_position: p.specificPosition||null,
           positions: posArr, primary_position: posArr[0]||null,
           foot: p.foot||'Right',
@@ -507,42 +473,25 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
           ...demoWriteFields(req),
         };
         Object.assign(playerData, scoringPayload(playerData));
-        const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,team_id,team_name,assigned_coach_id').single();
+        const { data: created, error } = await supabase.from('players').insert(playerData).select('id,player_id,first_name,last_name,age_group,team_id,team_name,assigned_coach_id').single();
         if (error) throw error;
         const salary = predictedSalary(playerData, { tier: 5 });
-        const loginCode = await generateUniquePlayerLoginCode();
-        const loginCodeExpires = new Date(Date.now() + 365*24*60*60*1000);
         await supabase.from('players').update({
-          predicted_salary_weekly: salary.weeklyGross,
-          login_code: loginCode,
-          login_code_expires: loginCodeExpires
+          predicted_salary_weekly: salary.weeklyGross
         }).eq('id', created.id);
-        let emailSent = false;
-        const recipientEmail = p.parentEmail || p.email || null;
-        if (recipientEmail && !isDemoSession(req)) {
-          const emailResult = await email.sendPlayerLoginCode({
-            to: recipientEmail,
-            email: recipientEmail,
-            playerFirstName: p.firstName,
-            loginCode
-          }).catch(e => ({ success: false, error: e.message }));
-          emailSent = !!emailResult?.success;
-          created.emailTemplate = emailResult?.template || null;
-        }
-        results.created.push({ ...created, emailSent, emailTemplate: created.emailTemplate || null });
+        results.created.push({ ...created, ageGroup: ageInfo.age_group });
       } catch(e) {
         results.errors.push({ player: p.firstName + ' ' + p.lastName, error: duplicateMessage(e) || e.message });
       }
     }
     if (req.user.accountType === 'Coach' && results.created.length && !isDemoSession(req)) {
       try {
-        const sentCount = results.created.filter(p => p.emailSent).length;
         await createNotification({
           recipient_id: req.user.id,
           recipient_type: 'Coach',
           notification_type: 'system',
           title: 'Bulk player import completed',
-          body: results.created.length + ' players were created. Player setup emails sent: ' + sentCount + '/' + results.created.length + '.',
+          body: results.created.length + ' players were created. Player profiles are coach-managed; share video upload links from each profile when needed.',
           data: {
             type: 'bulk_players_added',
             targetType: 'player',
@@ -551,8 +500,7 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
               id: p.id,
               player_id: p.player_id,
               name: (p.first_name || '') + ' ' + (p.last_name || ''),
-              email_sent: !!p.emailSent,
-              email_template: p.emailTemplate || null
+              age_group: p.age_group || p.ageGroup || null
             }))
           }
         });
@@ -565,7 +513,15 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
 // Update player
 router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = { ...req.body };
+    delete updates.email;
+    delete updates.parent_email;
+    delete updates.parentEmail;
+    delete updates.date_of_birth;
+    delete updates.dateOfBirth;
+    delete updates.nationality;
+    delete updates.nationality_code;
+    delete updates.nationalityCode;
     if (updates.positions) updates.positions = updates.positions.map(p=>p.toUpperCase());
     if (updates.positions?.length) updates.primary_position = updates.positions[0];
     if (updates.heightCategory && HEIGHT_RANGES[updates.heightCategory]) {
@@ -576,9 +532,11 @@ router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res)
       const b = BUILD_RANGES[updates.buildCategory];
       updates.weight_range_kg = b.range; updates.weight_min_kg = b.min; updates.weight_max_kg = b.max;
     }
-    if (updates.dateOfBirth) {
-      const ageInfo = calcAgeGroup(updates.dateOfBirth);
-      if (ageInfo) { updates.age = ageInfo.age; updates.age_group = ageInfo.group; }
+    if (updates.ageGroup || updates.age_group) {
+      const ageInfo = requiredAgeGroupPayload(updates.ageGroup || updates.age_group);
+      updates.age = ageInfo.age;
+      updates.age_group = ageInfo.age_group;
+      delete updates.ageGroup;
     }
     const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
     if (error) throw error;
@@ -642,7 +600,7 @@ router.post('/:id/analyse', requireAuth, requireRole('Scout','Stratex','Coach'),
 router.post('/:id/scout-interest', requireAuth, requireRole('Scout'), async (req, res) => {
 try {
 const { notes, interestLevel = 7 } = req.body;
-const { data: player } = await supabase.from('players').select('id,first_name,last_name,email,team_name').eq('id', req.params.id).single();
+const { data: player } = await supabase.from('players').select('id,first_name,last_name,team_name,assigned_coach_id,team_id').eq('id', req.params.id).single();
 const { data: scout } = await supabase.from('scouts').select('id,first_name,last_name,club_name,scout_team_id,subscription_plan,interests_remaining').eq('id', req.user.id).single();
 if (!player||!scout) return res.status(404).json({ error: 'Not found' });
 let plan = scout.subscription_plan || 'Core';
@@ -686,22 +644,6 @@ await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('
 } else {
 await supabase.from('scouts').update({ interests_remaining: newRemaining }).eq('id', req.user.id);
 }
-// Notify the player in-app, and notify the player's coach through the shared Coach/Scout notification path.
-createNotification({
-recipient_id: req.params.id, recipient_type: 'Player', notification_type: 'scout_interest',
-title: 'A scout is interested in you',
-body: scout.first_name + ' ' + scout.last_name + ' from ' + (scout.club_name||'a club') + ' has expressed interest in your profile.',
-data: {
-targetType: 'player',
-targetId: req.params.id,
-playerId: req.params.id,
-playerName: player.first_name + ' ' + player.last_name,
-scoutId: scout.id,
-scoutName: scout.first_name + ' ' + scout.last_name,
-scoutClub: scout.club_name,
-source: 'scout_interest'
-}
-}, { sendEmail: false }).catch(function(e){ console.warn('[Scout interest player notification skipped]', e.message); });
 try {
 const coachTargets = [];
 if (player.assigned_coach_id) {
@@ -732,11 +674,6 @@ source: 'scout_interest'
 })));
 } catch(notifErr) {
 console.warn('[Scout interest coach notification skipped]', notifErr.message);
-}
-if (player.email) {
-email.sendScoutInterest({ to: player.email, playerFirstName: player.first_name,
-playerName: player.first_name + ' ' + player.last_name,
-scoutName: scout.first_name + ' ' + scout.last_name, scoutClub: scout.club_name||'' }).catch(()=>{});
 }
 res.json({ message: 'Interest recorded. Player added to pipeline.', alreadyInPipeline: false, interestsRemaining: newRemaining });
 } catch(err) { console.error('[scout-interest]', err); res.status(500).json({ error: 'Internal server error' }); }

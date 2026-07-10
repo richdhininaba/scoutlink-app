@@ -97,6 +97,7 @@
     { "source": "/contact", "destination": "/frontend/pages/contact.html" },
     { "source": "/accessibility", "destination": "/frontend/pages/accessibility.html" },
     { "source": "/complete-registration", "destination": "/frontend/pages/complete-registration.html" },
+    { "source": "/video-upload", "destination": "/frontend/pages/video-upload.html" },
     { "source": "/company", "destination": "/frontend/pages/stratex-site.html" },
     { "source": "/company/scoutlink", "destination": "/frontend/pages/stratex-site.html" },
     { "source": "/company/scoutlink/compatibility-score", "destination": "/frontend/pages/stratex-site.html" },

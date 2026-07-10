@@ -133,8 +133,7 @@ body:not(.super-user) .coach-col{display:none;}
     <table class="bulk-table" id="bulkTable">
       <thead><tr>
         <th>#</th>
-        <th>First Name *</th><th>Last Name *</th><th>Email</th>
-        <th>Date of Birth</th><th>Nationality</th>
+        <th>First Name *</th><th>Last Name *</th><th>Age Group *</th>
         <th>Position Group *</th><th>Specific Position</th>
         <th class="coach-col">Assigned Coach</th>
         <th>Foot</th><th>Height</th><th>Build</th>
@@ -220,7 +219,6 @@ function initNav(){
 </script>
 <script>
 var POS_BY_GROUP={Goalkeeper:["GK"],Defender:["CB","LCB","RCB","LB","RB","LWB","RWB","SW"],Midfielder:["CDM","CM","LCM","RCM","CAM","LM","RM","B2B"],Forward:["ST","LS","RS","LW","RW","CF","SS"]};
-var NATIONALITIES=['England','Scotland','Wales','Northern Ireland','Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Ivory Coast','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','Other'];
 var HEIGHT_OPTS=["very_short","short","average","tall","very_tall"];
 var HEIGHT_LABELS={very_short:"Very Short (155-163cm)",short:"Short (163-170cm)",average:"Average (170-178cm)",tall:"Tall (178-185cm)",very_tall:"Very Tall (185cm+)"};
 var BUILD_OPTS=["very_slight","slight","lean","athletic","stocky","powerful","very_powerful"];
@@ -231,11 +229,12 @@ var _coachProfile=null,_teamCoaches=[],_isSuperUser=false;
 function posOpts(g){
   return(POS_BY_GROUP[g]||[]).map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
 }
-function nationalityOpts(){
-  return NATIONALITIES.map(function(n){return'<option value="'+n+'"'+(n==="England"?" selected":"")+'>'+n+'</option>';}).join("");
-}
 function coachOpts(selected){
   return _teamCoaches.map(function(c){return'<option value="'+c.id+'"'+(selected===c.id?' selected':'')+'>'+(c.first_name||'')+' '+(c.last_name||'')+(c.is_super_user?' (Super user)':'')+'</option>';}).join("");
+}
+function ageGroupOpts(selected){
+  var groups=["U7","U8","U9","U10","U11","U12","U13","U14","U15","U16"];
+  return '<option value="">Select</option>'+groups.map(function(g){return'<option value="'+g+'"'+(selected===g?' selected':'')+'>'+g+'</option>';}).join("");
 }
 
 function addRow(){
@@ -251,9 +250,7 @@ function addRow(){
   tr.innerHTML='<td class="bulk-row-num">'+n+'</td>'+
     '<td><input placeholder="First" data-f="firstName"></td>'+
     '<td><input placeholder="Last" data-f="lastName"></td>'+
-    '<td><input placeholder="Email" data-f="email" style="min-width:140px"></td>'+
-    '<td><input type="date" data-f="dateOfBirth"></td>'+
-    '<td><select data-f="nationality">'+nationalityOpts()+'</select></td>'+
+    '<td><select data-f="ageGroup">'+ageGroupOpts()+'</select></td>'+
     '<td><select data-f="positionGroup" data-row="'+n+'"><option value="">Select</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></td>'+
     '<td><select data-f="specificPosition" id="specPos-'+n+'"><option value="">--</option></select></td>'+
     '<td class="coach-col"><select data-f="assignedCoachId" class="row-coach-select">'+coachOpts(selectedCoach)+'</select></td>'+
@@ -313,6 +310,9 @@ function submitAll(){
   if(!rows.length){err.textContent="Add at least one player.";err.classList.add("show");return;}
   var players=rows.map(getRowData).filter(function(p){return p.firstName&&p.lastName;});
   if(!players.length){err.textContent="Fill in First Name and Last Name.";err.classList.add("show");return;}
+  players.forEach(function(p){p.ageGroup=String(p.ageGroup||"").toUpperCase();});
+  var invalidAge=players.find(function(p){return !/^U(7|8|9|10|11|12|13|14|15|16)$/.test(p.ageGroup);});
+  if(invalidAge){err.textContent="Every player must have an Age Group from U7 to U16.";err.classList.add("show");return;}
   if(_isSuperUser){
     var defaultCoach=document.getElementById("defaultCoachSelect").value;
     players=players.map(function(p){if(!p.assignedCoachId&&defaultCoach)p.assignedCoachId=defaultCoach;return p;});

@@ -26,6 +26,7 @@
     '/contact': '/frontend/pages/contact.html',
     '/accessibility': '/frontend/pages/accessibility.html',
     '/complete-registration': '/frontend/pages/complete-registration.html',
+    '/video-upload': '/frontend/pages/video-upload.html',
     '/company': '/frontend/pages/stratex-site.html',
     '/company/scoutlink': '/frontend/pages/stratex-site.html',
     '/company/about': '/frontend/pages/stratex-site.html',

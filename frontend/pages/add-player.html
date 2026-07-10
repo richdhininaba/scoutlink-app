@@ -54,12 +54,12 @@
 <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="firstName" placeholder="First name"></div>
 <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="lastName" placeholder="Last name"></div>
 </div>
-<div class="form-row">
-<div class="form-group"><label>Email (or Parent Email if U16)</label><input type="email" id="email" placeholder="player@email.com"></div>
-<div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div>
-</div>
-<div class="form-group"><label>Nationality</label>
-<select id="nationality"></select>
+<div class="form-group"><label>Age Group <span class="required">*</span></label>
+<select id="ageGroup">
+<option value="">Select age group</option>
+<option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option>
+<option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option>
+</select>
 </div>
 </div>
 
@@ -167,7 +167,6 @@ var POS_BY_GROUP={
   Midfielder:['CDM','CM','LCM','RCM','LDM','RDM','LM','RM','CAM','LAM','RAM','B2B'],
   Forward:['ST','LS','RS','LW','RW','CF','SS']
 };
-var NATIONALITIES=['England','Scotland','Wales','Northern Ireland','Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo','Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Ivory Coast','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kosovo','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino','Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe','Other'];
 var coachContext={coach:null,teamCoaches:[]};
 
 function initNav(){
@@ -180,11 +179,6 @@ function initNav(){
   updateNotifBadge();
 }
 function logout(){Auth.clear();navigateClean('login.html?logout=1');}
-
-function populateNationalities(){
-  var sel=document.getElementById('nationality');
-  sel.innerHTML=NATIONALITIES.map(function(n){return '<option value="'+n+'"'+(n==='England'?' selected':'')+'>'+n+'</option>';}).join('');
-}
 
 async function loadCoachContext(){
   if(Auth.type!=='Coach')return;
@@ -234,13 +228,13 @@ function submitPlayer(){
   var suc=document.getElementById('formSuccess');
   err.className='form-error';suc.className='form-success';
   if(!gv('firstName')||!gv('lastName')){err.textContent='First Name and Last Name required.';err.className='form-error show';return;}
+  if(!gv('ageGroup')){err.textContent='Please select an Age Group from U7 to U16.';err.className='form-error show';return;}
   if(!gv('positionGroup')){err.textContent='Please select a position group.';err.className='form-error show';return;}
   var pg=gv('positionGroup');
   var sp=gv('specificPosition')||null;
   var body={
     firstName:gv('firstName').trim(),lastName:gv('lastName').trim(),
-    email:gv('email')||null,dateOfBirth:gv('dob')||null,
-    nationality:gv('nationality'),
+    ageGroup:gv('ageGroup'),
     positionGroup:pg,specificPosition:sp,
     positions:sp?[sp]:[],foot:gv('foot'),
     heightCategory:gv('heightCategory'),buildCategory:gv('buildCategory'),
@@ -265,10 +259,11 @@ function submitPlayer(){
   btn.textContent='Adding...';btn.disabled=true;
   api('POST','/api/players',body).then(function(d){
     var p=d.player;
-    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0)+'<br><small style="color:#64748b">The player setup email has been sent where an email address was supplied.</small>';
+    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Age group: '+(p.age_group||gv('ageGroup'))+'<br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0);
     suc.className='form-success show';
     btn.textContent='Add Another Player';btn.disabled=false;
-    document.querySelectorAll('input[type=text],input[type=email],input[type=number],input[type=date]').forEach(function(i){i.value='';});
+    document.querySelectorAll('input[type=text],input[type=number]').forEach(function(i){i.value='';});
+    document.getElementById('ageGroup').value='';
   }).catch(function(e){
     err.textContent=e.message;err.className='form-error show';
     btn.textContent='Add Player & Calculate Rating';btn.disabled=false;
@@ -277,7 +272,6 @@ function submitPlayer(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initNav();
-  populateNationalities();
   loadCoachContext();
 
   // Range option click handlers

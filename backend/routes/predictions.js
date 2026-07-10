@@ -6,7 +6,6 @@ const { requireAuth, requireRole } = require('../utils/auth');
 const {
   computeOverall,
   grassrootsTransferValue,
-  calcAge,
   getPosGroup,
   calculatePositionRatings,
   calculateOverallBreakdown,
@@ -167,7 +166,8 @@ function dataConfidence(player, facts) {
 }
 
 function ageMultiplier(player) {
-  const age = calcAge(player.date_of_birth) || Number(player.age) || 13;
+  const ageMatch = String(player.age_group || '').match(/^U(\d+)$/);
+  const age = ageMatch ? Number(ageMatch[1]) : (Number(player.age) || 13);
   if (age <= 10) return 1.22;
   if (age <= 12) return 1.12;
   if (age <= 14) return 1.0;

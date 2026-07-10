@@ -8,6 +8,7 @@ const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../util
 const { sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan } = require('../utils/scoutPlans');
 const { createNotification } = require('../services/notifications');
+const { maybeRunSeasonalAgeGroupRollover } = require('../services/playerAgeGroups');
 
 function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
@@ -128,8 +129,8 @@ function calcFormationFit(player, formation) {
 
 function calcGoalsFit(player, goals) {
   if (!goals || !goals.length) return 50;
-  const dob = player.date_of_birth; let age = 15;
-  if (dob) { const d = new Date(dob), n = new Date(); age = n.getFullYear()-d.getFullYear(); if (n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate())) age--; }
+  const ageMatch = String(player.age_group || '').match(/^U(\d+)$/);
+  let age = ageMatch ? Number(ageMatch[1]) : (Number(player.age) || 15);
   const G = {
     'Physical Growth Potential': (age<=15?90:age<=17?75:age<=19?55:35)*0.60+ga(player,'strength')*0.20+ga(player,'stamina')*0.20,
     'Tactical Role Maturity': ga(player,'positioning')*0.40+ga(player,'composure')*0.35+ga(player,'vision')*0.25,
@@ -229,6 +230,7 @@ router.patch('/settings', requireAuth, requireRole('Scout'), async (req, res) =>
 
 router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req, res) => {
   try {
+    await maybeRunSeasonalAgeGroupRollover();
     const requestedLimit = Math.max(1, Math.min(25, Number(req.query.limit || 5) || 5));
     const { data: scout } = await supabase.from('scouts').select('id,scout_team_id,scout_preferences,preferences_set').eq('id', req.user.id).single();
     if (!scout || !scout.preferences_set) return res.json({ setupRequired: true, data: [], total: 0 });
@@ -240,7 +242,7 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
     if (prefs.longTermGoals?.length) scoutTeam.long_term_goals = prefs.longTermGoals;
     if (prefs.formation) scoutTeam.formation = prefs.formation;
     if (prefs.playingStyle) scoutTeam.playing_style = prefs.playingStyle;
-    let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,overall_rating,transfer_value,predicted_salary_weekly,team_id,team_name,height_category,build_category,nationality,date_of_birth,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,foot,gk_diving,gk_handling,gk_kicking,gk_reflexes,gk_positioning,gk_distribution,gk_communication,gk_sweeping').eq('is_active', true);
+    let q = supabase.from('players').select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,positions,overall_rating,transfer_value,predicted_salary_weekly,team_id,team_name,height_category,build_category,pace,agility,strength,stamina,jumping,composure,shooting,passing,dribbling,defending,crossing,vision,positioning,heading,tackling,appearances,goals,assists,clean_sheets,yellow_cards,red_cards,foot,gk_diving,gk_handling,gk_kicking,gk_reflexes,gk_positioning,gk_distribution,gk_communication,gk_sweeping').eq('is_active', true);
     q = applyRealDataFilter(q, req);
     if (prefs.minAppearances && Number(prefs.minAppearances) > 0) q = q.gte('appearances', Number(prefs.minAppearances));
     q = q.order('overall_rating', { ascending: false }).limit(100);
@@ -286,6 +288,7 @@ router.get('/recommended-players', requireAuth, requireRole('Scout'), async (req
 
 router.get('/players-count', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
+    await maybeRunSeasonalAgeGroupRollover();
     let q = supabase.from('players').select('id', { count: 'exact', head: true }).eq('is_active', true);
     q = applyRealDataFilter(q, req);
     const { count, error } = await q;

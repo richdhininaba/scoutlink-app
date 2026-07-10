@@ -76,7 +76,6 @@ function logout(){Auth.clear();navigateClean('login.html?logout=1');}
 function toggleNotifPanel(){var p=document.getElementById('notifPanel');if(p)p.classList.toggle('open');}
 
 function safe(v,fallback){return(v!==null&&v!==undefined&&v!=='')?v:(fallback||'N/A');}
-function fmtDob(str){if(!str)return'N/A';var d=new Date(str);return d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();}
 function fmtVal(v){var n=Number(v)||0;if(!n)return'N/A';if(n>=1000000)return'\u00a3'+(n/1000000).toFixed(2)+'m';if(n>=1000)return'\u00a3'+(n/1000).toFixed(0)+'k';return'\u00a3'+n;}
 function getOvBand(ov100){
   if(ov100>=90)return{label:'Elite grassroots',color:'#7ee8a2'};
@@ -110,9 +109,7 @@ document.addEventListener('DOMContentLoaded',function(){
         '<h3>Personal information</h3>'+
         '<div class="field-grid">'+
           '<div class="field-item"><span class="field-label">Full name</span><span class="field-value">'+safe(p.first_name)+' '+safe(p.last_name,'')+'</span></div>'+
-          '<div class="field-item"><span class="field-label">Date of birth</span><span class="field-value">'+fmtDob(p.date_of_birth)+'</span></div>'+
           '<div class="field-item"><span class="field-label">Age group</span><span class="field-value">'+safe(p.age_group)+'</span></div>'+
-          '<div class="field-item"><span class="field-label">Nationality</span><span class="field-value">'+safe(p.nationality)+'</span></div>'+
           '<div class="field-item"><span class="field-label">Preferred foot</span><span class="field-value">'+safe(p.foot)+'</span></div>'+
           '<div class="field-item"><span class="field-label">Height</span><span class="field-value">'+(p.height_cm?p.height_cm+' cm':safe(null))+'</span></div>'+
           '<div class="field-item"><span class="field-label">Weight</span><span class="field-value">'+(p.weight_kg?p.weight_kg+' kg':safe(null))+'</span></div>'+

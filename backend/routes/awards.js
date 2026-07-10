@@ -75,7 +75,7 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
 router.get('/players', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     const { data, error } = await supabase.from('players')
-      .select('id,first_name,last_name,age,age_group,date_of_birth,team_name,team_id,overall_rating,position_group,specific_position,primary_position,positions,appearances,transfer_value,parent_email,email')
+      .select('id,first_name,last_name,age,age_group,team_name,team_id,overall_rating,position_group,specific_position,primary_position,positions,appearances,transfer_value')
       .eq('is_active', true).order('overall_rating', { ascending: false });
     if (error) throw error;
     res.json({ data: data||[] });
@@ -89,7 +89,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
     if (!playerId || !awardName) return res.status(400).json({ error: 'playerId and awardName required' });
 
     const { data: player, error: playerErr } = await supabase.from('players')
-      .select('id,first_name,last_name,email,parent_email,team_id,team_name')
+      .select('id,first_name,last_name,team_id,team_name')
       .eq('id', playerId).single();
     if (playerErr || !player) return res.status(404).json({ error: 'Player not found' });
 
@@ -124,16 +124,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       coach = c;
     }
 
-    // 2. Email to player (parent_email or email)
-    const playerEmail = player.parent_email || player.email;
-    if (playerEmail) {
-      await sendEmail(playerEmail,
-        'You have been nominated for a ScoutLink award',
-        playerNomEmail(player.first_name, awardName, year)
-      );
-    }
-
-    // 3. Email to coach
+    // 2. Email to coach
     if (coach && coach.email) {
       await sendEmail(coach.email,
         'One of your players has been nominated for a ScoutLink award',
@@ -141,14 +132,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       );
     }
 
-    // 4. In-app notification for player
-    await notify(player.id, 'Player',
-      'You have been nominated',
-      player.first_name + ' you have been nominated for ' + awardName + ' at the Stratex Football Honours ' + year + '.',
-      { award_name: awardName, nomination_id: nom.id, type: 'award_nomination' }
-    );
-
-    // 5. In-app notification for coach
+    // 3. In-app notification for coach
     if (coach && coach.id) {
       await notify(coach.id, 'Coach',
         'Player award nomination',
@@ -157,7 +141,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       );
     }
 
-    // 6. In-app notifications for all active scouts
+    // 4. In-app notifications for all active scouts
     const { data: scouts } = await supabase.from('scouts').select('id').eq('is_active', true);
     if (scouts && scouts.length) {
       const scoutNotifs = scouts.map(s => ({
@@ -172,10 +156,10 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
       await supabase.from('notifications').insert(scoutNotifs);
     }
 
-    // 7. Update notification_sent to true
+    // 5. Update notification_sent to true
     await supabase.from('award_nominations').update({ notification_sent: true }).eq('id', nom.id);
 
-    res.status(201).json({ message: 'Player nominated successfully. Emails and notifications sent.', nomination: nom });
+    res.status(201).json({ message: 'Player nominated successfully. Coach and scout notifications sent.', nomination: nom });
   } catch(e) { console.error('[Awards Nominate]', e); res.status(500).json({ error: e.message }); }
 });
 

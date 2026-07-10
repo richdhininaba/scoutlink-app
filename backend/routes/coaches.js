@@ -7,6 +7,7 @@ const email = require('../services/email');
 const config = require('../config');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
+const { maybeRunSeasonalAgeGroupRollover } = require('../services/playerAgeGroups');
 
 const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
 
@@ -19,11 +20,12 @@ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 // Super user coaches see ALL players on their team
 router.get('/my-players', requireAuth, requireRole('Coach'), async (req, res) => {
 try {
+await maybeRunSeasonalAgeGroupRollover();
 const { data: coach } = await supabase.from('coaches').select('id,team_name,team_id,is_super_user').eq('id', req.user.id).single();
 if (!coach) return res.status(404).json({ error: 'Coach not found' });
 
 let q = supabase.from('players')
-.select('id,first_name,last_name,age,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config,appearances,goals,assists,clean_sheets,yellow_cards,red_cards')
+.select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config,appearances,goals,assists,clean_sheets,yellow_cards,red_cards')
 .eq('is_active', true)
 .order('last_name');
 q = applyRealDataFilter(q, req);
