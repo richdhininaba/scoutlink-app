@@ -496,9 +496,8 @@ function compatibilityProductCard() {
 function pricingCards() {
   return '<div class="stx-section-head"><span class="stx-kicker dark">ScoutLink scout plans</span><h2>Choose annual or monthly billing.</h2><p>Annual is selected by default and shows the yearly price. Monthly gives teams a flexible month-to-month option.</p></div><div class="stx-price-toggle" aria-label="Billing period"><button type="button" class="active" data-pricing-mode="annual">Annual</button><button type="button" data-pricing-mode="monthly">Monthly</button></div>' +
     '<div class="stx-grid four stx-pricing-grid">' + SCOUT_PLANS.map(plan => {
-      const featured = plan.name === 'Plus';
-      return '<article class="stx-card stx-pricing-card' + (featured ? ' featured' : '') + '">' +
-        '<div class="stx-plan-top"><span class="stx-card-status ' + (featured ? 'live' : '') + '">' + esc(plan.label) + '</span>' + (featured ? '<span class="stx-plan-badge">Recommended</span>' : '') + '</div>' +
+      return '<article class="stx-card stx-pricing-card">' +
+        '<div class="stx-plan-top"><span class="stx-card-status">' + esc(plan.label) + '</span></div>' +
         '<h3>' + esc(plan.name) + '</h3>' +
         '<div class="stx-price-panel"><p class="stx-price">' + plan.annualPrice + '</p><p class="stx-price-note">' + esc(plan.billingAnnual) + '</p></div>' +
         '<p class="stx-plan-note">' + esc(plan.description) + '</p>' +
