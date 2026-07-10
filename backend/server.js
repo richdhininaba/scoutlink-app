@@ -338,6 +338,12 @@ if (frontendDir) {
     return sendStratexPage(req, res);
   });
 
+  function redirectCleanCompanyRoute(req, res, next) {
+    if (!isStratexHost(req)) return next();
+    const cleanPath = (req.path || '/').replace(/^\/company/, '') || '/';
+    return res.redirect(301, cleanPath);
+  }
+
   [
     '/company',
     '/company/scoutlink',
@@ -363,14 +369,18 @@ if (frontendDir) {
     '/company/accessibility',
     '/company/learning-centre'
   ].forEach((route) => {
-    app.get(route, (req, res) => sendStratexPage(req, res));
+    app.get(route, redirectCleanCompanyRoute);
   });
 
   app.get('/admin', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
-  app.get('/company/admin', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
+  app.get('/admin/:module', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
+  app.get('/company/admin', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/admin');
+  });
 
-  app.get('/company/careers/:slug', (req, res) => sendStratexPage(req, res));
-  app.get('/company/learning-centre/:slug', (req, res) => sendStratexPage(req, res));
+  app.get('/company/careers/:slug', redirectCleanCompanyRoute);
+  app.get('/company/learning-centre/:slug', redirectCleanCompanyRoute);
 
   Object.entries(routeMap).forEach(([route, file]) => {
     app.get(route, (req, res) => sendFrontendFile(req, res, file));

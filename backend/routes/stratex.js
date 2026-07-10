@@ -30,6 +30,7 @@ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
 const ADMIN_ROLE_PERMISSIONS = {
+  'Super Admin': ['super_admin','management','admin_users','delete_users','permissions','acquisition','safeguarding','registrations','operations','product_demo','read_only'],
 Management: ['management','admin_users','delete_users','permissions','acquisition','safeguarding','registrations','operations','product_demo','read_only'],
 Operations: ['operations','registrations','support','showcase','product_demo','read_only'],
 Acquisition: ['acquisition','registrations','product_demo','read_only'],
@@ -45,6 +46,8 @@ ProductDemo: ['product_demo','read_only']
 function normalizeAdminRole(role) {
 const raw = String(role || '').trim();
 const aliases = {
+SuperAdmin: 'Super Admin',
+'Super Admin': 'Super Admin',
 Safeguarding: 'Safeguarding Reviewer',
 ProductDemo: 'Product Demo',
 'Product Demo': 'Product Demo',
@@ -69,14 +72,15 @@ return data || null;
 function canManageSensitiveAdmin(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
-return normalizeAdminRole(admin.admin_role || admin.role) === 'Management' || perms.includes('management') || perms.includes('permissions');
+const role = normalizeAdminRole(admin.admin_role || admin.role);
+return role === 'Super Admin' || role === 'Management' || perms.includes('super_admin') || perms.includes('management') || perms.includes('permissions');
 }
 
 function canManageContracts(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
 const role = normalizeAdminRole(admin.admin_role || admin.role);
-return role === 'Management' || role === 'Operations' || perms.includes('management') || perms.includes('operations');
+return role === 'Super Admin' || role === 'Management' || role === 'Operations' || perms.includes('super_admin') || perms.includes('management') || perms.includes('operations');
 }
 
 function visibleAdminIdsForContracts(current, admins) {

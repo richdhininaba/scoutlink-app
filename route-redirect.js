@@ -103,7 +103,15 @@
     '/careers/interview-availability': '/frontend/pages/interview-availability.html'
   };
   var path = window.location.pathname.replace(/\/$/, '') || '/';
+  if (path === '/company' || path.indexOf('/company/') === 0) {
+    var cleanPath = path.replace(/^\/company/, '') || '/';
+    window.location.replace(cleanPath + window.location.search + window.location.hash);
+    return;
+  }
   var target = routes[path];
+  if (!target && path.indexOf('/admin/') === 0) {
+    target = '/frontend/pages/stratex-company-admin.html';
+  }
   if (!target && path.indexOf('/careers/') === 0) {
     var slug = path.split('/').filter(Boolean).slice(1).join('/');
     if (slug) {

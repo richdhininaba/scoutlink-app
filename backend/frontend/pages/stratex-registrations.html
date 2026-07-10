@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Registrations - ScoutLink Stratex</title>
+<title>Registrations - Stratex Analytics</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -18,7 +18,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div>
+  <div class="sidebar-logo"><a href="/admin/registrations" style="font-size:20px;font-weight:900">Stratex<span style="color:#0f9f75">Analytics</span></a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -170,11 +170,11 @@ async function loadReqs(status) {
         action = '<span class="badge ' + bc + '">' + r.status + '</span>' +
           (r.decline_reason ? '<div style="font-size:11px;color:#546E7A;margin-top:4px">' + r.decline_reason + '</div>' : '');
       }
-      return '<tr><td><b>' + r.first_name + ' ' + r.last_name + '</b></td><td>' + r.email + '</td>' +
+      return '<tr><td><b>' + r.first_name + ' ' + r.last_name + '</b></td><td>ScoutLink</td><td>' + r.email + '</td>' +
         '<td><span class="badge ' + tc + '">' + r.account_type + '</span></td>' +
         '<td>' + team + '</td><td>' + role + '</td><td>' + date + '</td><td>' + action + '</td></tr>';
     });
-    document.getElementById('reqsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Team / Club</th><th>Role</th><th>Submitted</th>' +
+    document.getElementById('reqsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Product</th><th>Email</th><th>Type</th><th>Team / Club</th><th>Role</th><th>Submitted</th>' +
       (status === 'pending' ? '<th>Actions</th>' : '<th>Decision</th>') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table>';
   } catch(e) {
     document.getElementById('reqsTable').innerHTML = '<div style="padding:24px;color:#ff6666">Error loading registrations: ' + e.message + '</div>';

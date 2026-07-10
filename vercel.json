@@ -4,7 +4,11 @@
   "redirects": [
     { "source": "/compatibility-score", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/scoutlink/compatibility-score", "permanent": true },
     { "source": "/compatibility-score", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/scoutlink/compatibility-score", "permanent": true },
-    { "source": "/company/compatibility-score", "destination": "/company/scoutlink/compatibility-score", "permanent": true }
+    { "source": "/company/compatibility-score", "destination": "/scoutlink/compatibility-score", "permanent": true },
+    { "source": "/company", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/", "permanent": true },
+    { "source": "/company", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/", "permanent": true },
+    { "source": "/company/:path*", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/:path*", "permanent": true },
+    { "source": "/company/:path*", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/:path*", "permanent": true }
   ],
   "rewrites": [
     { "source": "/", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-site.html" },
@@ -63,6 +67,8 @@
     { "source": "/learning-centre/:slug", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-site.html" },
     { "source": "/admin", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-company-admin.html" },
     { "source": "/admin", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-company-admin.html" },
+    { "source": "/admin/:module", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-company-admin.html" },
+    { "source": "/admin/:module", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/frontend/pages/stratex-company-admin.html" },
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/login", "destination": "/frontend/pages/login.html" },
     { "source": "/forgot-password", "destination": "/frontend/pages/forgot-password.html" },
@@ -118,6 +124,7 @@
     { "source": "/company/learning-centre/:slug", "destination": "/frontend/pages/stratex-site.html" },
     { "source": "/company/admin", "destination": "/frontend/pages/stratex-company-admin.html" },
     { "source": "/admin", "destination": "/frontend/pages/stratex-company-admin.html" },
+    { "source": "/admin/:module", "destination": "/frontend/pages/stratex-company-admin.html" },
     { "source": "/stratex/dashboard", "destination": "/frontend/pages/stratex-dashboard.html" },
     { "source": "/stratex/company-site", "destination": "/frontend/pages/stratex-company-admin.html" },
     { "source": "/stratex/registrations", "destination": "/frontend/pages/stratex-registrations.html" },
