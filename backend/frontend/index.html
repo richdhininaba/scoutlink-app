@@ -1,379 +1,346 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <base href="/frontend/">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>ScoutLink | Grassroots Football Scouting & Player Profiles</title>
-<meta name="description" content="ScoutLink helps grassroots coaches build U7-U16 player profiles and gives verified scouts better evidence to search, compare and shortlist players.">
-<link rel="canonical" href="https://scoutlink.app/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="ScoutLink | Grassroots Football Scouting & Player Profiles">
-<meta property="og:description" content="Coach-led U7-U16 player profiles, verified scout access and compatibility-based decision support.">
-<meta property="og:url" content="https://scoutlink.app/">
-<meta property="og:image" content="https://scoutlink.app/social_share_image.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ScoutLink | Grassroots Football Scouting & Player Profiles">
-<meta name="twitter:description" content="Coach-led grassroots football evidence for verified scout review.">
-<meta name="twitter:image" content="https://scoutlink.app/social_share_image.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://scoutlink.app/#organization","name":"Stratex Analytics","url":"https://scoutlink.app/about","email":"info@scoutlink.app","brand":{"@type":"Brand","name":"ScoutLink"}},{"@type":"WebSite","@id":"https://scoutlink.app/#website","url":"https://scoutlink.app/","name":"ScoutLink","publisher":{"@id":"https://scoutlink.app/#organization"},"description":"ScoutLink is a coach-led, verified-scout, safeguarding-conscious grassroots football intelligence platform for U7-U16 player profiles, structured evidence and compatibility-based decision support."},{"@type":"FAQPage","@id":"https://scoutlink.app/#faq","mainEntity":[{"@type":"Question","name":"Is ScoutLink for U7 to U16 players?","acceptedAnswer":{"@type":"Answer","text":"Yes. Public ScoutLink messaging is focused on U7 to U16 grassroots football evidence and visibility."}},{"@type":"Question","name":"Who can access player profiles?","acceptedAnswer":{"@type":"Answer","text":"Access is role-based and controlled. Verified scouts and authorised users only see information permitted by ScoutLink account rules."}},{"@type":"Question","name":"How does compatibility scoring work?","acceptedAnswer":{"@type":"Answer","text":"Scores compare available evidence against role and team-fit criteria. They support decisions and do not guarantee selection, trials or signing opportunities."}}]}]}</script>
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="css/main.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/phone-base.css">
-<link rel="stylesheet" href="css/phone-shell.css">
-<link rel="stylesheet" href="css/phone-pages.css">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>ScoutLink | Football Intelligence for Grassroots Talent</title>
+  <meta name="description" content="ScoutLink helps coaches build structured U7 to U16 player profiles from ratings, match facts, fixtures and video evidence, so reviewed scouts can search, compare and shortlist with more context.">
+  <link rel="canonical" href="https://www.scoutlink.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ScoutLink | Football Intelligence for Grassroots Talent">
+  <meta property="og:description" content="Coach-led grassroots player evidence, reviewed scout access and explainable compatibility scoring for U7 to U16 football.">
+  <meta property="og:url" content="https://www.scoutlink.app/">
+  <meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+  <meta property="og:image:alt" content="ScoutLink - coach-led, scout reviewed youth football intelligence">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ScoutLink | Football Intelligence for Grassroots Talent">
+  <meta name="twitter:description" content="Structured player evidence for coaches and reviewed scouts working around U7 to U16 grassroots football.">
+  <meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
+  <meta name="twitter:image:alt" content="ScoutLink - coach-led, scout reviewed youth football intelligence">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.scoutlink.app/#organization",
+        "name": "ScoutLink",
+        "url": "https://www.scoutlink.app/",
+        "email": "info@scoutlink.app",
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "Stratex Analytics",
+          "url": "https://www.stratexanalytics.co.uk/"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.scoutlink.app/#website",
+        "url": "https://www.scoutlink.app/",
+        "name": "ScoutLink",
+        "publisher": { "@id": "https://www.scoutlink.app/#organization" },
+        "description": "ScoutLink is a coach-led grassroots football intelligence platform for structured U7 to U16 player evidence, reviewed scout access and explainable compatibility scoring."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://www.scoutlink.app/#software",
+        "name": "ScoutLink",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Web",
+        "url": "https://www.scoutlink.app/",
+        "description": "ScoutLink helps coaches build player profiles from ratings, match facts, fixtures and video evidence while giving reviewed scouts structured search, comparison and compatibility tools.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.scoutlink.app/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Who is ScoutLink for?",
+            "acceptedAnswer": { "@type": "Answer", "text": "ScoutLink is for grassroots coaches, reviewed scouts, clubs, schools, academies, parents and players working around U7 to U16 football evidence." }
+          },
+          {
+            "@type": "Question",
+            "name": "How does ScoutLink handle scout interest?",
+            "acceptedAnswer": { "@type": "Answer", "text": "ScoutLink is designed around controlled visibility and appropriate adult-led contact routes. It does not support open scout-to-child contact." }
+          },
+          {
+            "@type": "Question",
+            "name": "What does compatibility scoring do?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Compatibility scoring brings together team needs, role expectations, tactical style, match evidence and evidence confidence to support decisions. It does not guarantee selection, trials or signing opportunities." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/phone-base.css">
+  <link rel="stylesheet" href="css/phone-shell.css">
+  <link rel="stylesheet" href="css/phone-pages.css">
+  <link rel="stylesheet" href="css/scoutlink-home.css">
+  <script type="text/javascript">
+    window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+    heap.load("3441720574");
+  </script>
 </head>
-<body class="landing-page marketing-home">
-<nav class="navbar scoutlink-public-nav" id="navbar">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-logo" aria-label="ScoutLink home">
-      <span class="logo-text">Scout<span class="logo-accent">Link</span></span>
-    </a>
-    <div class="nav-links" id="navLinks">
+<body class="landing-page scoutlink-home-v2">
+  <a class="sl-skip-link" href="#main">Skip to content</a>
+  <header class="sl-public-header">
+    <a class="sl-brand" href="/" aria-label="ScoutLink home">Scout<span>Link</span></a>
+    <button class="sl-menu-button" type="button" aria-label="Open menu" aria-controls="slPublicNav" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="sl-public-nav" id="slPublicNav" aria-label="ScoutLink public navigation">
       <a href="/coaches">Coaches</a>
       <a href="/scouts">Scouts</a>
       <a href="/parents-players">Parents & Players</a>
       <a href="#product">Product</a>
       <a href="/safeguarding">Safeguarding</a>
       <a href="/demo">Demo</a>
-    </div>
-    <div class="nav-cta">
-      <a href="/login" class="btn btn-ghost">Sign in</a>
-      <a href="/register/coach" class="btn btn-primary">Register as Coach</a>
-    </div>
-    <button class="nav-hamburger" id="hamburger" aria-label="Open menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
+      <a class="sl-nav-signin" href="/login">Sign in</a>
+      <a class="sl-nav-primary" href="/register/coach">Register as Coach</a>
+    </nav>
+  </header>
 
-<main>
-  <section class="marketing-hero">
-    <div class="container marketing-hero-grid">
-      <div class="marketing-copy">
-        <span class="marketing-label">Grassroots football intelligence</span>
-        <h1>Football intelligence for grassroots talent</h1>
-        <p>ScoutLink helps coaches build professional player profiles from match facts, ratings and video, so verified scouts can search, compare and shortlist better-fit U7 to U16 players with more context.</p>
-        <div class="marketing-actions">
-          <a href="/register/coach" class="btn btn-primary btn-lg">Register as Coach</a>
-          <a href="/demo" class="btn btn-outline btn-lg">Explore Demo</a>
-          <a href="/register/scout" class="btn btn-ghost btn-lg">Request Scout Access</a>
-        </div>
-      </div>
-      <div class="marketing-preview-card sample-profile-card" aria-label="Fictional ScoutLink profile preview">
-        <div class="preview-card-head">
-          <span>Sample player profile</span>
-          <strong>79%</strong>
-        </div>
-        <div class="preview-player-row">
-          <div class="preview-avatar">EC</div>
-          <div>
-            <b>Ethan Cole</b>
-            <small>U16 - Centre Midfield - Manchester</small>
+  <main id="main">
+    <section class="sl-hero" aria-labelledby="slHeroTitle">
+      <div class="sl-shell sl-hero-grid">
+        <div class="sl-hero-copy">
+          <p class="sl-eyebrow">Grassroots football intelligence</p>
+          <h1 id="slHeroTitle">Football intelligence for grassroots talent</h1>
+          <p class="sl-hero-text">ScoutLink helps coaches build structured player profiles from ratings, match facts, fixtures and video evidence, so reviewed scouts can search, compare and shortlist better-fit U7 to U16 players with more context.</p>
+          <div class="sl-hero-actions" aria-label="ScoutLink primary actions">
+            <a class="sl-button sl-button-primary" href="/register/coach">Register as Coach</a>
+            <a class="sl-button sl-button-secondary" href="/demo">Explore Demo</a>
+            <a class="sl-text-link" href="/register/scout">Request Scout Access</a>
           </div>
-          <em>86/100</em>
         </div>
-        <div class="sample-score-grid">
-          <div><span>Readiness</span><b>90</b></div>
-          <div><span>Potential</span><b>83</b></div>
-          <div><span>Confidence</span><b>High</b></div>
-        </div>
-        <div class="home-compatibility-card" aria-label="ScoutLink compatibility preview">
-          <div class="home-compat-head">
+
+        <aside class="sl-product-card" aria-label="Sample ScoutLink player profile preview">
+          <div class="sl-product-card-top">
+            <span>Sample player profile</span>
+            <strong>84%</strong>
+          </div>
+          <div class="sl-player-line">
+            <span class="sl-avatar">EC</span>
+            <div>
+              <h2>Ethan Cole</h2>
+              <p>U16 - Centre Midfield - Northgate United</p>
+            </div>
+            <b>86/100</b>
+          </div>
+          <div class="sl-mini-metrics" aria-label="Player evidence metrics">
+            <div><span>Readiness</span><strong>90</strong></div>
+            <div><span>Potential</span><strong>83</strong></div>
+            <div><span>Evidence confidence</span><strong>High</strong></div>
+          </div>
+          <div class="sl-fit-card">
             <div>
               <span>Compatibility score</span>
-              <b>Strong high-press fit</b>
+              <h3>Strong high-press fit</h3>
+              <p>High match output, quick transitions and clear coach evidence support this role fit.</p>
             </div>
             <strong>84%</strong>
           </div>
-          <div class="home-fit-grid">
-            <span><i style="width:88%"></i><b>Need fit</b><em>88</em></span>
-            <span><i style="width:80%"></i><b>Role fit</b><em>80</em></span>
-            <span><i style="width:76%"></i><b>Formation fit</b><em>76</em></span>
-            <span><i style="width:91%"></i><b>Evidence</b><em>91</em></span>
+          <div class="sl-evidence-bars" aria-label="Evidence quality preview">
+            <span><b>Match evidence</b><i style="--value:84%"></i><em>84</em></span>
+            <span><b>Coach evidence</b><i style="--value:88%"></i><em>88</em></span>
+            <span><b>Video evidence</b><i style="--value:72%"></i><em>72</em></span>
           </div>
-        </div>
-        <div class="preview-bar-list">
-          <span><i style="width:88%"></i><b>Coach ratings</b></span>
-          <span><i style="width:84%"></i><b>Match evidence</b></span>
-          <span><i style="width:72%"></i><b>Video evidence</b></span>
-          <span><i style="width:79%"></i><b>Compatibility fit</b></span>
-        </div>
-        <div class="sample-facts">
-          <span><b>11</b> apps</span>
-          <span><b>7</b> goals</span>
-          <span><b>4</b> assists</span>
-          <span><b>1</b> clean sheet</span>
-        </div>
-        <p>Structured evidence helps scouts understand player fit faster, with coach-led context and safer visibility.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="marketing-ribbon trust-strip" aria-label="ScoutLink trust commitments">
-    <div class="container marketing-ribbon-grid">
-      <div><span>Coach-led evidence</span><strong>Player context</strong></div>
-      <div><span>Verified scout access</span><strong>Controlled visibility</strong></div>
-      <div><span>Safeguarding routes</span><strong>Report concerns</strong></div>
-      <div><span>Decision support</span><strong>Explainable scores</strong></div>
-    </div>
-  </section>
-
-  <section class="marketing-section who-helps-section">
-    <div class="container">
-      <div class="marketing-section-head">
-        <span class="marketing-label">Who ScoutLink helps</span>
-        <h2>One evidence workflow for the people around a player.</h2>
-        <p>ScoutLink keeps the public story simple while giving each role the context they need.</p>
-      </div>
-      <div class="who-tabs" role="tablist" aria-label="Who ScoutLink helps">
-        <button class="who-tab active" type="button" data-role-tab="coaches">Coaches</button>
-        <button class="who-tab" type="button" data-role-tab="scouts">Scouts</button>
-        <button class="who-tab" type="button" data-role-tab="families">Parents & Players</button>
-      </div>
-      <div class="who-panel" id="whoPanel" aria-live="polite">
-        <div>
-          <span class="marketing-label">For coaches</span>
-          <h3>Get players seen without creating more admin.</h3>
-          <p>Turn match facts, coach ratings and video into organised U7 to U16 profiles that scouts can understand quickly.</p>
-          <ul>
-            <li>Build player profiles from one place.</li>
-            <li>Track profile strength before scouts rely on it.</li>
-            <li>Share better player context without open self-promotion.</li>
-          </ul>
-        </div>
-        <aside>
-          <b>Coach evidence</b>
-          <span>Match facts, attributes, fixtures and video evidence stay connected to the player profile.</span>
+          <p class="sl-card-note">Structured evidence helps scouts understand player fit faster, with coach-led context and safer visibility.</p>
         </aside>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="marketing-section muted">
-    <div class="container two-column-value">
-      <div>
-        <span class="marketing-label">Trust and safeguarding</span>
-        <h2>Built for grassroots football, with safeguarding in mind.</h2>
-        <p>ScoutLink is built to organise grassroots player information safely, clearly and professionally. Player visibility is coach-led, scout access is controlled, and concern routes are visible.</p>
-      </div>
-      <div class="value-list">
-        <span>U7 to U16 player visibility</span>
-        <span>Coach-led player profiles</span>
-        <span>Verified scout access</span>
-        <span>Structured evidence instead of open self-promotion</span>
-        <span><a href="/safeguarding">Read safeguarding guidance</a></span>
-      </div>
-    </div>
-  </section>
-
-  <section class="marketing-section product-preview-section" id="product">
-    <div class="container">
-      <div class="marketing-section-head">
-        <span class="marketing-label">Product preview</span>
-        <h2>Evidence-led workflows, built around real scouting decisions.</h2>
-        <p>Preview the key ScoutLink workflows across scout search, compatibility, player profiles, coach evidence and match facts.</p>
-      </div>
-      <div class="product-lab marketing-product-lab">
-        <div class="preview-menu" role="tablist" aria-label="ScoutLink preview tabs">
-          <button class="preview-tab active" data-preview="search" type="button">Scout search</button>
-          <button class="preview-tab" data-preview="compatibility" type="button">Compatibility</button>
-          <button class="preview-tab" data-preview="profile" type="button">Player profile</button>
-          <button class="preview-tab" data-preview="coach" type="button">Coach evidence</button>
-          <button class="preview-tab" data-preview="facts" type="button">Match facts</button>
+    <section class="sl-principles" aria-labelledby="principlesTitle">
+      <div class="sl-shell">
+        <h2 id="principlesTitle" class="sl-visually-hidden">ScoutLink product principles</h2>
+        <div class="sl-principles-grid">
+          <article><span aria-hidden="true">01</span><h3>Coach-led evidence</h3><p>Player records start with people who know the player and their match context.</p></article>
+          <article><span aria-hidden="true">02</span><h3>Reviewed scout access</h3><p>Scout access is controlled rather than open to anyone with a browser.</p></article>
+          <article><span aria-hidden="true">03</span><h3>Controlled visibility</h3><p>Player visibility is handled through safer club, team and adult-led routes.</p></article>
+          <article><span aria-hidden="true">04</span><h3>Explainable scores</h3><p>Compatibility signals show the evidence behind the score.</p></article>
         </div>
-        <div class="preview-stage" id="previewStage" aria-live="polite"></div>
-        <aside class="preview-aside" id="previewAside"></aside>
       </div>
-      <div class="mobile-preview-cards" aria-label="ScoutLink mobile previews">
-        <article><span>Scout search</span><b>Find players by fit, role and evidence.</b></article>
-        <article><span>Compatibility</span><b>See why a player suits a recruitment need.</b></article>
-        <article><span>Coach evidence</span><b>Turn match facts and videos into useful profiles.</b></article>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="marketing-section muted">
-    <div class="container">
-      <div class="marketing-section-head">
-        <span class="marketing-label">How it works</span>
-        <h2>Simple for teams, structured for scouts.</h2>
+    <section class="sl-section sl-how" aria-labelledby="howTitle">
+      <div class="sl-shell">
+        <div class="sl-section-head">
+          <p class="sl-eyebrow">How ScoutLink works</p>
+          <h2 id="howTitle">Three steps from evidence to better context.</h2>
+        </div>
+        <div class="sl-step-grid">
+          <article><span>01</span><h3>Coaches build evidence</h3><p>Profiles, ratings, match facts, fixtures and video evidence sit in one structured player record.</p></article>
+          <article><span>02</span><h3>Reviewed scouts search by fit</h3><p>Scouts use structured filters and compatibility signals to find better-fit players.</p></article>
+          <article><span>03</span><h3>Interest is handled safely</h3><p>Player visibility and scout interest are handled through appropriate adults, coaches, clubs and team contacts.</p></article>
+        </div>
       </div>
-      <div class="marketing-steps">
-        <article><b>01</b><h3>Coaches build evidence</h3><p>Profiles, match facts, ratings and video sit in one organised player record.</p></article>
-        <article><b>02</b><h3>Verified scouts search by fit</h3><p>Scouts use structured filters and compatibility signals to find better-fit players faster.</p></article>
-        <article><b>03</b><h3>Interest is handled safely</h3><p>Player visibility is controlled through appropriate adults, clubs or team contacts.</p></article>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="marketing-section">
-    <div class="container">
-      <div class="marketing-section-head">
-        <span class="marketing-label">FAQ</span>
-        <h2>Questions before you register</h2>
+    <section class="sl-section sl-product-intelligence" id="product" aria-labelledby="productTitle">
+      <div class="sl-shell sl-product-grid">
+        <div class="sl-section-head">
+          <p class="sl-eyebrow">Product intelligence</p>
+          <h2 id="productTitle">The workflows scouts and coaches actually use.</h2>
+          <p>ScoutLink brings player profiles, compatibility scoring, scout search, coach evidence, match facts and recruitment pipeline decisions into one evidence-led product.</p>
+          <a class="sl-button sl-button-secondary" href="/demo">Explore the demo</a>
+        </div>
+        <div class="sl-stage">
+          <article class="sl-stage-feature sl-stage-feature-main">
+            <span>Player profile</span>
+            <h3>One structured record for the player.</h3>
+            <p>Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so context is easier to review.</p>
+          </article>
+          <article><span>Compatibility score</span><h3>Fit, not hype.</h3><p>Scouts see why a player may fit a role, system or team need.</p></article>
+          <article><span>Scout search</span><h3>Search by evidence.</h3><p>Filter by role, position, location, age group, confidence and compatibility.</p></article>
+          <article><span>Coach evidence</span><h3>Built from match reality.</h3><p>Coaches capture the player context scouts usually have to chase.</p></article>
+          <article><span>Match facts</span><h3>Every game improves the record.</h3><p>Goals, assists, cards, positions, ratings and fixtures strengthen the profile.</p></article>
+          <article><span>Recruitment pipeline</span><h3>Keep interest organised.</h3><p>Reviewed scouts can shortlist and manage interest without losing the reasoning.</p></article>
+        </div>
       </div>
-      <div class="faq-accordion" id="homepageFaq">
-        <details>
-          <summary>Is ScoutLink for U7 to U16 players?</summary>
-          <p>Yes. Public ScoutLink messaging is focused on U7 to U16 grassroots football evidence and visibility.</p>
-        </details>
-        <details>
-          <summary>Who can access player profiles?</summary>
-          <p>Access is role-based and controlled. Verified scouts and authorised users only see information permitted by ScoutLink account rules.</p>
-        </details>
-        <details>
-          <summary>Can parents or players register directly?</summary>
-          <p>ScoutLink is coach-led. Families can review notices, raise privacy requests and report concerns through the public trust routes.</p>
-        </details>
-        <details>
-          <summary>How does compatibility scoring work?</summary>
-          <p>Scores compare available evidence against role and team-fit criteria. They support decisions; they do not guarantee selection or opportunities.</p>
-        </details>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="marketing-final">
-    <div class="container final-cta-card">
+    <section class="sl-section sl-compatibility" aria-labelledby="compatibilityTitle">
+      <div class="sl-shell sl-compat-grid">
+        <div>
+          <p class="sl-eyebrow">Compatibility scoring</p>
+          <h2 id="compatibilityTitle">Evidence-led fit, explained clearly.</h2>
+          <p>ScoutLink brings together team needs, role expectations, tactical style, formation, development pathway, match evidence, financial fit and evidence confidence to help scouts review fit with more context.</p>
+          <a class="sl-button sl-button-primary" href="https://www.stratexanalytics.co.uk/scoutlink/compatibility-score">Read the compatibility guide</a>
+        </div>
+        <div class="sl-compat-panel">
+          <div class="sl-compat-score"><span>Compatibility preview</span><strong>82%</strong></div>
+          <div class="sl-compat-breakdown">
+            <span><b>Team needs</b><i style="--value:86%"></i></span>
+            <span><b>Role expectations</b><i style="--value:78%"></i></span>
+            <span><b>Match evidence</b><i style="--value:84%"></i></span>
+            <span><b>Evidence confidence</b><i style="--value:72%"></i></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sl-section sl-audiences" aria-labelledby="audienceTitle">
+      <div class="sl-shell">
+        <div class="sl-section-head">
+          <p class="sl-eyebrow">Built around the player network</p>
+          <h2 id="audienceTitle">Different roles, one shared evidence standard.</h2>
+        </div>
+        <div class="sl-audience-grid">
+          <article><span>CO</span><h3>Coaches</h3><p>Create player profiles, add match facts, upload evidence and make fixtures scout-visible.</p><a href="/coaches">Coach overview</a></article>
+          <article><span>SC</span><h3>Scouts</h3><p>Search, compare, shortlist and run structured predictions once access is reviewed.</p><a href="/scouts">Scout access</a></article>
+          <article><span>CL</span><h3>Clubs, schools and academies</h3><p>Give players a more structured route to visibility without scattering evidence across messages.</p><a href="/contact">Contact Stratex</a></article>
+          <article><span>FA</span><h3>Parents and players</h3><p>Understand how youth data, visibility and safeguarding routes are handled.</p><a href="/parent-guardian-notice">Read notice</a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sl-section sl-trust" aria-labelledby="trustTitle">
+      <div class="sl-shell sl-trust-grid">
+        <div>
+          <p class="sl-eyebrow">Trust and safeguarding</p>
+          <h2 id="trustTitle">Player visibility should never feel uncontrolled.</h2>
+          <p>Scout access is reviewed, player visibility is controlled, scout interest is coach-mediated, and ScoutLink does not support open scout-to-child contact. Families and teams can understand data use and raise concerns through public routes.</p>
+        </div>
+        <div class="sl-trust-links">
+          <a href="/safeguarding">Safeguarding</a>
+          <a href="/parent-guardian-notice">Parent/Guardian Notice</a>
+          <a href="/report-a-concern">Report a Concern</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sl-final" aria-labelledby="finalTitle">
+      <div class="sl-shell sl-final-card">
+        <div>
+          <p class="sl-eyebrow">Ready when your squad is</p>
+          <h2 id="finalTitle">Build better player evidence.</h2>
+          <p>Create a free coach account and begin building structured, scout-ready player profiles.</p>
+        </div>
+        <div class="sl-final-actions">
+          <a class="sl-button sl-button-primary" href="/register/coach">Register as Coach</a>
+          <a class="sl-button sl-button-secondary" href="/demo">Explore Demo</a>
+          <a class="sl-text-link" href="/register/scout">Request Scout Access</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sl-section sl-faq" aria-labelledby="faqTitle">
+      <div class="sl-shell">
+        <div class="sl-section-head">
+          <p class="sl-eyebrow">Common questions</p>
+          <h2 id="faqTitle">Before you start.</h2>
+        </div>
+        <div class="sl-faq-list">
+          <details><summary>Who is ScoutLink for?</summary><p>ScoutLink supports grassroots coaches, reviewed scouts, clubs, schools, academies, parents and players working around U7 to U16 evidence.</p></details>
+          <details><summary>Can anyone browse players?</summary><p>No. ScoutLink is designed around reviewed access, controlled visibility and safer adult-led contact routes.</p></details>
+          <details><summary>Does compatibility scoring replace scout judgement?</summary><p>No. Compatibility scoring supports decisions by making evidence easier to compare and explain.</p></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sl-footer">
+    <div class="sl-shell sl-footer-grid">
       <div>
-        <span class="marketing-label">Ready when your squad is</span>
-        <h2>Start building player visibility with proper evidence.</h2>
-        <p>Register as a coach, explore the demo, or request verified scout access.</p>
+        <a class="sl-brand sl-footer-brand" href="/">Scout<span>Link</span></a>
+        <p>Coach-led, scout reviewed youth football intelligence by Stratex Analytics.</p>
       </div>
-      <div class="final-cta-actions">
-      <a href="/register/coach" class="btn btn-primary btn-lg">Register as Coach</a>
-      <a href="/demo" class="btn btn-outline btn-lg">Explore Demo</a>
-      <a href="/register/scout" class="btn btn-ghost btn-lg">Request Scout Access</a>
-      </div>
+      <details class="sl-footer-group">
+        <summary>Product</summary>
+        <div><a href="/coaches">Coaches</a><a href="/scouts">Scouts</a><a href="/demo">Demo</a><a href="/register/coach">Register as Coach</a><a href="/register/scout">Request Scout Access</a></div>
+      </details>
+      <details class="sl-footer-group">
+        <summary>Trust</summary>
+        <div><a href="/safeguarding">Safeguarding</a><a href="/report-a-concern">Report a Concern</a><a href="/parent-guardian-notice">Parent/Guardian Notice</a></div>
+      </details>
+      <details class="sl-footer-group">
+        <summary>Company</summary>
+        <div><a href="/about">About</a><a href="/contact">Contact</a><a href="/careers">Careers</a></div>
+      </details>
+      <details class="sl-footer-group">
+        <summary>Legal</summary>
+        <div><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms of Use</a><a href="/cookie-policy">Cookie Policy</a><a href="/accessibility">Accessibility</a></div>
+      </details>
     </div>
-  </section>
-</main>
+    <div class="sl-shell sl-footer-bottom">
+      <p>&copy; 2026 ScoutLink. Powered by Stratex Analytics.</p>
+      <a href="mailto:info@scoutlink.app">info@scoutlink.app</a>
+    </div>
+  </footer>
 
-<footer class="footer home-footer">
-  <div class="container footer-top">
-    <div class="footer-brand">
-      <span class="logo-text">Scout<span class="logo-accent">Link</span></span>
-      <p>ScoutLink by Stratex Analytics</p>
-    </div>
-    <div class="footer-links">
-      <div class="link-col"><h4>Product</h4><a href="#product">Preview</a><a href="/demo">Demo</a><a href="/login">Sign in</a></div>
-      <div class="link-col"><h4>Roles</h4><a href="/register/scout">Request Scout Access</a><a href="/register/coach">Register as Coach</a><a href="/parents-players">Parents and players</a></div>
-      <div class="link-col"><h4>Trust</h4><a href="/safeguarding">Safeguarding</a><a href="/report-a-concern">Report a Concern</a><a href="/parent-guardian-notice">Parent/Guardian Notice</a></div>
-      <div class="link-col"><h4>Company</h4><a href="/about">About</a><a href="/contact">Contact</a><a href="/cookie-policy">Cookie Policy</a><a href="/accessibility">Accessibility</a></div>
-    </div>
-  </div>
-  <div class="container footer-bottom">
-    <p>&copy; 2026 ScoutLink. Powered by Stratex Analytics.</p>
-    <p><a href="/privacy-policy">Privacy Policy</a> - <a href="/terms">Terms of Use</a> - <a href="/cookie-policy">Cookie Policy</a></p>
-  </div>
-</footer>
-
-<script src="js/main.js"></script>
-<script src="js/heap-analytics.js"></script>
-<script src="js/phone-routes.js"></script>
-<script src="js/phone-shell.js"></script>
-<script src="js/phone-pages.js"></script>
-<script>
-(function(){
-  var roleData = {
-    coaches: {
-      label: 'For coaches',
-      title: 'Get players seen without creating more admin.',
-      copy: 'Turn match facts, coach ratings and video into organised U7 to U16 profiles that scouts can understand quickly.',
-      points: ['Build player profiles from one place.', 'Track profile strength before scouts rely on it.', 'Share better player context without open self-promotion.'],
-      cardTitle: 'Coach evidence',
-      cardCopy: 'Match facts, attributes, fixtures and video evidence stay connected to the player profile.'
-    },
-    scouts: {
-      label: 'For scouts',
-      title: 'Spend less time chasing the wrong players.',
-      copy: 'Search by role, position, age group, location, match evidence and profile strength before investing time in a player.',
-      points: ['Filter by compatibility and evidence quality.', 'Compare player profiles with clearer context.', 'Build a cleaner recruitment pipeline.'],
-      cardTitle: 'Scout workflow',
-      cardCopy: 'Search, compare, register interest and revisit evidence from one controlled workspace.'
-    },
-    families: {
-      label: 'For parents and players',
-      title: 'Stronger player profiles, built around real evidence.',
-      copy: 'Players are represented through coach-led information, match facts, ratings and video evidence, helping families understand what scouts see and why.',
-      points: ['Profiles are based on structured evidence.', 'Visibility stays controlled through appropriate adults.', 'Privacy and concern routes remain public and clear.'],
-      cardTitle: 'Safer visibility',
-      cardCopy: 'ScoutLink avoids open self-promotion and keeps player visibility tied to permissioned, coach-led records.'
-    }
-  };
-  var whoPanel = document.getElementById('whoPanel');
-  function renderRole(key) {
-    var item = roleData[key] || roleData.coaches;
-    document.querySelectorAll('.who-tab').forEach(function(btn){
-      var active = btn.dataset.roleTab === key;
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    if (!whoPanel) return;
-    whoPanel.innerHTML = '<div><span class="marketing-label">' + item.label + '</span><h3>' + item.title + '</h3><p>' + item.copy + '</p><ul>' + item.points.map(function(point){ return '<li>' + point + '</li>'; }).join('') + '</ul></div><aside><b>' + item.cardTitle + '</b><span>' + item.cardCopy + '</span></aside>';
-  }
-  document.querySelectorAll('.who-tab').forEach(function(btn){
-    btn.addEventListener('click', function(){ renderRole(btn.dataset.roleTab); });
-  });
-  document.querySelectorAll('#homepageFaq details').forEach(function(item){
-    item.addEventListener('toggle', function(){
-      if (!item.open) return;
-      document.querySelectorAll('#homepageFaq details').forEach(function(other){
-        if (other !== item) other.open = false;
-      });
-    });
-  });
-  var data = {
-    search: {
-      title: 'Scout search',
-      insight: 'Scouts can search by position, age group, location, compatibility, evidence strength and profile quality before travelling.',
-      html: '<div class="preview-search"><input value="Forward in London" aria-label="Preview search"><button class="btn btn-primary" type="button">Search</button></div><div class="preview-list"><article><b>Carter Hill</b><small>ST - London - Compatibility 78%</small></article><article><b>Micah Powell</b><small>RW - Manchester - Compatibility 76%</small></article><article><b>Noah Reed</b><small>CAM - Birmingham - Compatibility 72%</small></article></div>'
-    },
-    compatibility: {
-      title: 'Compatibility',
-      insight: 'Compatibility scores are decision-support indicators. They help scouts compare available evidence against role and team-fit criteria; they do not decide trials, signings or opportunities.',
-      html: '<div class="home-compatibility-card product-preview"><div class="home-compat-head"><div><span>Compatibility score</span><b>Strong high-press fit</b></div><strong>84%</strong></div><div class="home-fit-grid"><span><i style="width:88%"></i><b>Team need</b><em>88</em></span><span><i style="width:80%"></i><b>Role fit</b><em>80</em></span><span><i style="width:76%"></i><b>Formation fit</b><em>76</em></span><span><i style="width:91%"></i><b>Evidence</b><em>91</em></span></div></div>'
-    },
-    profile: {
-      title: 'Player profile',
-      insight: 'Profiles combine attributes, match facts, video and development context.',
-      html: '<div class="preview-player"><div class="preview-avatar">EC</div><div><b>Ethan Cole</b><small>ST - U16 - Northgate United</small></div><strong>79</strong></div><div class="home-mini-bars"><span><i style="width:86%"></i><b>Pace 8.6</b></span><span><i style="width:81%"></i><b>Stamina 8.1</b></span><span><i style="width:74%"></i><b>Passing 7.4</b></span></div><div class="video-placeholder">Video evidence and match context</div>'
-    },
-    coach: {
-      title: 'Coach evidence',
-      insight: 'Coaches can organise player data once and reuse it across scout conversations.',
-      html: '<div class="preview-kpis"><span><b>24</b>Players</span><span><b>82%</b>Profiles complete</span><span><b>18</b>Videos</span></div><div class="preview-list"><article><b>Add match facts</b><small>Goals, assists, cards and ratings</small></article><article><b>Upload video evidence</b><small>Attach clips to the player profile</small></article></div>'
-    },
-    facts: {
-      title: 'Match facts',
-      insight: 'Every match fact improves the evidence base behind a player.',
-      html: '<div class="fixture-preview"><b>Northgate United vs Brookfield Athletic</b><small>U16 - 11-a-side - 11 July 2026</small></div><div class="preview-kpis"><span><b>3-1</b>Score</span><span><b>2</b>Goals</span><span><b>8.4</b>Avg rating</span></div><p class="preview-note">Match evidence updates goals, assists, cards, player ratings and scout confidence.</p>'
-    }
-  };
-  var stage = document.getElementById('previewStage');
-  var aside = document.getElementById('previewAside');
-  function render(key) {
-    var item = data[key] || data.search;
-    document.querySelectorAll('.preview-tab').forEach(function(btn){ btn.classList.toggle('active', btn.dataset.preview === key); });
-    if (stage) stage.innerHTML = '<div class="preview-title-row"><span>ScoutLink module</span><h3>' + item.title + '</h3></div>' + item.html;
-    if (aside) aside.innerHTML = '<span>Product insight</span><p>' + item.insight + '</p><a href="/demo" class="btn btn-outline">Open demo</a>';
-  }
-  document.querySelectorAll('.preview-tab').forEach(function(btn){ btn.addEventListener('click', function(){ render(btn.dataset.preview); }); });
-  render('search');
-})();
-</script>
-<script src="/frontend/js/public-footer.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/heap-analytics.js"></script>
+  <script src="js/phone-routes.js"></script>
+  <script src="js/phone-shell.js"></script>
+  <script src="js/phone-pages.js"></script>
+  <script src="/frontend/js/public-footer.js"></script>
+  <script>
+    (function(){
+      var button = document.querySelector('.sl-menu-button');
+      var nav = document.getElementById('slPublicNav');
+      if (!button || !nav) return;
+      function setOpen(open) {
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        nav.classList.toggle('is-open', open);
+        document.body.classList.toggle('sl-menu-open', open);
+      }
+      button.addEventListener('click', function(){ setOpen(button.getAttribute('aria-expanded') !== 'true'); });
+      nav.querySelectorAll('a').forEach(function(link){ link.addEventListener('click', function(){ setOpen(false); }); });
+      document.addEventListener('keydown', function(event){ if (event.key === 'Escape') setOpen(false); });
+      window.addEventListener('resize', function(){ if (window.innerWidth >= 768) setOpen(false); });
+    })();
+  </script>
 </body>
 </html>
-
-
