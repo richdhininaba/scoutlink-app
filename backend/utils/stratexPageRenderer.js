@@ -4,6 +4,10 @@ const fs = require('fs');
 const path = require('path');
 
 const SITE = 'https://www.stratexanalytics.co.uk';
+const STRATEX_OG_IMAGE = SITE + '/images/og/stratex-og.png';
+const STRATEX_OG_IMAGE_WIDTH = '1731';
+const STRATEX_OG_IMAGE_HEIGHT = '909';
+const STRATEX_OG_IMAGE_ALT = 'Stratex Analytics and ScoutLink football intelligence platform preview';
 
 const SCOUT_PLANS = [
   {
@@ -372,6 +376,8 @@ function organizationSchema() {
     name: 'Stratex Analytics',
     legalName: 'Stratex Analytics Limited',
     url: SITE,
+    image: STRATEX_OG_IMAGE,
+    logo: SITE + '/favicon-512x512.png',
     description: 'Stratex Analytics builds football intelligence products for overlooked grassroots talent. ScoutLink is the first flagship product in the Stratex ecosystem.',
     sameAs: ['https://www.scoutlink.app'],
     brand: {
@@ -614,8 +620,16 @@ function renderStratexPage(req, res, frontendDir) {
   html = replaceTag(html, /<meta property="og:title" content="[^"]*">/i, '<meta property="og:title" content="' + esc(page.title) + '">');
   html = replaceTag(html, /<meta property="og:description" content="[^"]*">/i, '<meta property="og:description" content="' + esc(page.description) + '">');
   html = replaceTag(html, /<meta property="og:url" content="[^"]*">/i, '<meta property="og:url" content="' + esc(page.canonical) + '">');
+  html = replaceTag(html, /<meta property="og:image" content="[^"]*">/i, '<meta property="og:image" content="' + esc(STRATEX_OG_IMAGE) + '">');
+  if (!/<meta property="og:image:secure_url"/i.test(html)) {
+    html = html.replace('<meta name="twitter:card" content="summary_large_image">', '<meta property="og:image:secure_url" content="' + esc(STRATEX_OG_IMAGE) + '">\n  <meta property="og:image:type" content="image/png">\n  <meta property="og:image:width" content="' + STRATEX_OG_IMAGE_WIDTH + '">\n  <meta property="og:image:height" content="' + STRATEX_OG_IMAGE_HEIGHT + '">\n  <meta property="og:image:alt" content="' + esc(STRATEX_OG_IMAGE_ALT) + '">\n  <meta name="twitter:card" content="summary_large_image">');
+  }
   html = replaceTag(html, /<meta name="twitter:title" content="[^"]*">/i, '<meta name="twitter:title" content="' + esc(page.title) + '">');
   html = replaceTag(html, /<meta name="twitter:description" content="[^"]*">/i, '<meta name="twitter:description" content="' + esc(page.description) + '">');
+  html = replaceTag(html, /<meta name="twitter:image" content="[^"]*">/i, '<meta name="twitter:image" content="' + esc(STRATEX_OG_IMAGE) + '">');
+  if (!/<meta name="twitter:image:alt"/i.test(html)) {
+    html = html.replace('<meta name="twitter:image" content="' + esc(STRATEX_OG_IMAGE) + '">', '<meta name="twitter:image" content="' + esc(STRATEX_OG_IMAGE) + '">\n  <meta name="twitter:image:alt" content="' + esc(STRATEX_OG_IMAGE_ALT) + '">');
+  }
   html = replaceTag(html, /<script type="application\/ld\+json" id="stratexJsonLd">[\s\S]*?<\/script>/i, '<script type="application/ld+json" id="stratexJsonLd">' + schema + '</script>');
   html = html.replace('<div id="stratexSiteApp" aria-live="polite"></div>', '<div id="stratexSiteApp" aria-live="polite">' + fallbackContent(page) + '</div>');
   html = html.replace('<footer class="stx-footer" id="stratexFooter"></footer>', '<footer class="stx-footer" id="stratexFooter">' + staticFooter() + '</footer>');

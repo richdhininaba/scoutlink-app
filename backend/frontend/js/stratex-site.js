@@ -3,6 +3,8 @@
 
   var API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
   var STRATEX_BASE = 'https://www.stratexanalytics.co.uk';
+  var STRATEX_OG_IMAGE = STRATEX_BASE + '/images/og/stratex-og.png';
+  var STRATEX_OG_IMAGE_ALT = 'Stratex Analytics and ScoutLink football intelligence platform preview';
   var SCOUTLINK = {
     base: 'https://www.scoutlink.app',
     login: 'https://www.scoutlink.app/login',
@@ -134,14 +136,22 @@
     var ogTitle = document.querySelector('meta[property="og:title"]');
     var ogDesc = document.querySelector('meta[property="og:description"]');
     var ogUrl = document.querySelector('meta[property="og:url"]');
+    var ogImage = document.querySelector('meta[property="og:image"]');
+    var ogImageAlt = document.querySelector('meta[property="og:image:alt"]');
     var twitterTitle = document.querySelector('meta[name="twitter:title"]');
     var twitterDesc = document.querySelector('meta[name="twitter:description"]');
+    var twitterImage = document.querySelector('meta[name="twitter:image"]');
+    var twitterImageAlt = document.querySelector('meta[name="twitter:image:alt"]');
     var canon = document.querySelector('link[rel="canonical"]');
     if (ogTitle) ogTitle.setAttribute('content', title);
     if (ogDesc) ogDesc.setAttribute('content', description);
     if (ogUrl) ogUrl.setAttribute('content', canonical);
+    if (ogImage) ogImage.setAttribute('content', STRATEX_OG_IMAGE);
+    if (ogImageAlt) ogImageAlt.setAttribute('content', STRATEX_OG_IMAGE_ALT);
     if (twitterTitle) twitterTitle.setAttribute('content', title);
     if (twitterDesc) twitterDesc.setAttribute('content', description);
+    if (twitterImage) twitterImage.setAttribute('content', STRATEX_OG_IMAGE);
+    if (twitterImageAlt) twitterImageAlt.setAttribute('content', STRATEX_OG_IMAGE_ALT);
     if (canon) canon.setAttribute('href', canonical);
     setJsonLd(title, description, canonical);
   }
@@ -157,6 +167,7 @@
           '@id': STRATEX_BASE + '/#organization',
           name: 'Stratex Analytics',
           url: STRATEX_BASE + '/',
+          image: STRATEX_OG_IMAGE,
           sameAs: ['https://www.scoutlink.app'],
           description: 'Stratex Analytics builds football intelligence products for overlooked grassroots talent.'
         },
