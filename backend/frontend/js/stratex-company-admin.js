@@ -3,21 +3,20 @@
 
   var MODULES = [
     ['dashboard', 'Dashboard', 'Company overview'],
-    ['activity', 'Website Activity', 'Traffic and engagement'],
-    ['leads', 'Website Leads', 'Form enquiries'],
     ['registrations', 'Registrations', 'ScoutLink access requests'],
+    ['contactForms', 'Contact Forms', 'Website submissions'],
     ['crm', 'CRM', 'Website and product contacts'],
+    ['activity', 'Website Activity', 'Traffic and engagement'],
     ['blog', 'Blog / Learning Centre', 'Articles, views and live posts'],
     ['leadership', 'Leadership', 'Public leadership profiles'],
-    ['org', 'Org Directory', 'Team structure'],
+    ['org', 'Org Charts', 'Reporting hierarchy'],
     ['profile', 'My Profile', 'Your Stratex record'],
     ['contracts', 'Contracts & Pay', 'HR documents'],
-    ['leave', 'Leave / Sick Leave', 'Absence records'],
     ['hiring', 'Hiring', 'Jobs and applicants'],
-    ['meetings', 'Meetings', 'Internal meetings'],
     ['concerns', 'Trust & Concerns', 'Safeguarding and reports'],
     ['settings', 'Settings', 'Company settings'],
-    ['scoutlink', 'Product Access', 'Linked product experiences']
+    ['showcase', 'Showcase Event', 'ScoutLink event operations'],
+    ['awards', 'Award Ceremonies', 'ScoutLink awards operations']
   ];
   var MODULE_BY_ID = MODULES.reduce(function (acc, item) {
     acc[item[0]] = item;
@@ -25,30 +24,33 @@
   }, {});
   var MODULE_PATHS = {
     dashboard: '/admin',
-    activity: '/admin/website-activity',
-    leads: '/admin/website-leads',
     registrations: '/admin/registrations',
+    contactForms: '/admin/contact-forms',
     crm: '/admin/crm',
+    activity: '/admin/website-activity',
     blog: '/admin/blog',
     leadership: '/admin/leadership',
-    org: '/admin/org-directory',
+    org: '/admin/org-charts',
     profile: '/admin/my-profile',
     contracts: '/admin/contracts-pay',
-    leave: '/admin/leave',
     hiring: '/admin/hiring',
-    meetings: '/admin/meetings',
     concerns: '/admin/trust-concerns',
     settings: '/admin/settings',
-    scoutlink: '/experience-select'
+    showcase: '/admin/showcase-event',
+    awards: '/admin/award-ceremonies'
   };
   var PATH_TO_MODULE = Object.keys(MODULE_PATHS).reduce(function (acc, id) {
     acc[MODULE_PATHS[id]] = id;
     return acc;
   }, {});
+  PATH_TO_MODULE['/admin/website-leads'] = 'contactForms';
+  PATH_TO_MODULE['/admin/org-directory'] = 'org';
+  PATH_TO_MODULE['/admin/showcase-events'] = 'showcase';
+  PATH_TO_MODULE['/admin/award-nominations'] = 'awards';
   var MODULE_ICONS = {
     dashboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 15h6v4h-6z"/></svg>',
     activity: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 15l4-4 3 3 5-7"/><path d="M18 7h2v2"/></svg>',
-    leads: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>',
+    contactForms: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>',
     registrations: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
     crm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a6 6 0 0 1 12 0"/><path d="M17 10h4M19 8v4M16 16h5"/></svg>',
     blog: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
@@ -56,21 +58,21 @@
     org: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v6M6 14v6M18 14v6M6 14h12M12 10h6"/><circle cx="12" cy="4" r="2"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="20" r="2"/></svg>',
     profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     contracts: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
-    leave: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 3v4M16 3v4M5 10h14"/><path d="M9 15h3"/></svg>',
     hiring: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M4 7h16v13H4z"/><path d="M9 13h6"/></svg>',
-    meetings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v11H5z"/><path d="M8 21h8M12 17v4M8 10h8"/></svg>',
     concerns: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 21h18z"/><path d="M12 9v5M12 17h.01"/></svg>',
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.8-1L12.5 3h-4l-.4 3.1a7 7 0 0 0-1.8 1l-2.4-1-2 3.4L4 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.8 1l.4 3.1h4l.4-3.1a7 7 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5c.1-.3.1-.6.1-1z"/></svg>',
-    scoutlink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+    showcase: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 3v4M16 3v4M5 10h14"/><path d="M9 15h6"/></svg>',
+    awards: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l3 6 6 .9-4.5 4.3 1.1 6.1L12 17l-5.6 3.3 1.1-6.1L3 9.9 9 9z"/></svg>'
   };
   var DASHBOARD_GROUPS = [
-    ['Website', ['activity', 'leads', 'blog']],
-    ['Access', ['registrations', 'crm']],
-    ['Company', ['leadership', 'org', 'settings']],
-    ['People', ['profile', 'contracts', 'leave', 'hiring', 'meetings']],
-    ['Trust', ['concerns']],
-    ['Access', ['scoutlink']]
+    ['Operations', ['registrations', 'contactForms', 'crm', 'activity']],
+    ['Content', ['blog', 'leadership', 'org']],
+    ['People', ['profile', 'contracts', 'hiring']],
+    ['Trust and Events', ['concerns', 'showcase', 'awards']],
+    ['Platform', ['settings']]
   ];
+  var DETAIL_ROWS = {};
+  var DETAIL_META = {};
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -98,18 +100,78 @@
     el.textContent = text;
   }
 
-  function rowTable(headers, rows) {
+  function rowTable(headers, rows, detail) {
     if (!rows.length) return '<div class="stx-admin-empty">No records yet.</div>';
+    var key = detail && detail.key;
+    if (key) {
+      DETAIL_ROWS[key] = rows;
+      DETAIL_META[key] = detail;
+    }
     return '<div class="stx-admin-table-wrap"><table class="sl-table stx-admin-table"><thead><tr>' +
       headers.map(function (h) { return '<th>' + escapeHtml(h[0]) + '</th>'; }).join('') +
       '</tr></thead><tbody>' +
-      rows.map(function (row) {
-        return '<tr>' + headers.map(function (h) {
+      rows.map(function (row, index) {
+        var attrs = key ? ' tabindex="0" role="button" data-detail-key="' + escapeHtml(key) + '" data-detail-index="' + escapeHtml(index) + '"' : '';
+        return '<tr' + attrs + '>' + headers.map(function (h) {
           var value = typeof h[2] === 'function' ? h[2](row) : escapeHtml(row[h[1]] || '');
           return '<td data-label="' + escapeHtml(h[0]) + '">' + value + '</td>';
         }).join('') + '</tr>';
       }).join('') +
       '</tbody></table></div>';
+  }
+
+  function detailFieldsFromRow(row) {
+    return Object.keys(row || {}).filter(function (key) {
+      return row[key] == null || ['string', 'number', 'boolean'].indexOf(typeof row[key]) >= 0;
+    }).map(function (key) {
+      return { label: key.replace(/_/g, ' '), value: row[key] };
+    });
+  }
+
+  function renderDetailFields(fields) {
+    return '<dl class="stx-admin-detail-grid">' + fields.map(function (field) {
+      var value = typeof field.value === 'function' ? field.value() : field.value;
+      return '<div><dt>' + escapeHtml(field.label) + '</dt><dd>' + (field.html ? String(value || '') : escapeHtml(value || '-')) + '</dd></div>';
+    }).join('') + '</dl>';
+  }
+
+  function openDetailPanel(title, subtitle, fields, actions, extraHtml) {
+    var panel = document.getElementById('stxAdminDetailPanel');
+    var content = document.getElementById('stxAdminDetailContent');
+    var backdrop = document.getElementById('stxAdminDetailBackdrop');
+    if (!panel || !content) return;
+    content.innerHTML =
+      '<p class="stx-eyebrow">Record detail</p>' +
+      '<h2>' + escapeHtml(title || 'Record') + '</h2>' +
+      (subtitle ? '<p class="stx-muted">' + escapeHtml(subtitle) + '</p>' : '') +
+      renderDetailFields(fields || []) +
+      (extraHtml || '') +
+      (actions ? '<div class="stx-admin-inline-actions stx-admin-detail-actions">' + actions + '</div>' : '');
+    panel.hidden = false;
+    if (backdrop) backdrop.hidden = false;
+    document.body.classList.add('stx-admin-detail-open');
+    var close = document.getElementById('stxAdminDetailClose');
+    if (close) close.focus();
+  }
+
+  function closeDetailPanel() {
+    var panel = document.getElementById('stxAdminDetailPanel');
+    var backdrop = document.getElementById('stxAdminDetailBackdrop');
+    document.body.classList.remove('stx-admin-detail-open');
+    if (panel) panel.hidden = true;
+    if (backdrop) backdrop.hidden = true;
+  }
+
+  function openRowDetail(key, index) {
+    var rows = DETAIL_ROWS[key] || [];
+    var row = rows[Number(index)];
+    var meta = DETAIL_META[key] || {};
+    if (!row) return;
+    var fields = typeof meta.fields === 'function' ? meta.fields(row) : (meta.fields || detailFieldsFromRow(row));
+    var actions = typeof meta.actions === 'function' ? meta.actions(row) : '';
+    var title = typeof meta.title === 'function' ? meta.title(row) : (meta.title || row.name || row.title || row.email || 'Record');
+    var subtitle = typeof meta.subtitle === 'function' ? meta.subtitle(row) : (meta.subtitle || row.email || row.status || '');
+    openDetailPanel(title, subtitle, fields, actions, typeof meta.extra === 'function' ? meta.extra(row) : '');
   }
 
   function moduleCard(id, title, copy) {
@@ -166,13 +228,13 @@
           '<header class="stx-admin-topbar"><div class="stx-admin-titleblock"><p>Company admin centre</p><h1 id="stxAdminTitle">Dashboard</h1></div><div class="stx-admin-top-actions"><a class="btn btn-sm btn-outline" href="/" target="_blank" rel="noopener">Open Stratex site</a><button class="btn btn-sm btn-ghost" data-admin-logout type="button">Sign out</button></div></header>' +
           '<div class="stx-admin-content">' +
             modulePanel('dashboard', 'Dashboard', 'A clean operating view for Stratex Analytics, separate from ScoutLink product administration.',
-              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>Manage the company website, public content, leads, hiring, team records and trust routes from here.</p></div><div class="stx-admin-identity-row"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div></div>' +
-              '<div class="stx-admin-quick-actions"><a class="stx-admin-action-card primary" href="/experience-select"><span>Open product selector</span><small>Move between linked experiences</small></a><a class="stx-admin-action-card" href="/" target="_blank" rel="noopener"><span>Open Stratex site</span><small>View public website</small></a><button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button></div>' +
+              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>Manage the company website, public content, contact forms, hiring, team records and trust routes from here.</p></div><div class="stx-admin-identity-row"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div></div>' +
+              '<div class="stx-admin-quick-actions"><button class="stx-admin-action-card primary" data-admin-module="contactForms" type="button"><span>Review contact forms</span><small>Open website submissions</small></button><button class="stx-admin-action-card" data-admin-module="hiring" type="button"><span>Manage hiring</span><small>Roles and applicants</small></button><button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button></div>' +
               dashboardGroups()) +
             modulePanel('activity', 'Website Activity', 'Public Stratex site traffic, page performance and visitor sessions.',
               '<div class="stx-admin-surface"><div class="stx-admin-table-toolbar"><div><h3>Traffic overview</h3><p>Headline analytics stay focused on traffic, not CRM, blog likes or product records.</p></div><button class="btn btn-sm btn-outline" id="refreshActivityBtn" type="button">Refresh</button></div><div class="stx-admin-filter-row"><label>Page<select class="form-control" id="activityPageFilter"><option value="">All public pages</option><option>/</option><option>/scoutlink</option><option>/scoutlink/compatibility-score</option><option>/pricing</option><option>/leadership</option><option>/careers</option><option>/learning-centre</option></select></label><label>Date range<select class="form-control" id="activityDateFilter"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></label></div><div class="stx-admin-kpis"><div><b id="activityPageViews">-</b><span>Total page views</span></div><div><b id="activitySessions">-</b><span>Sessions</span></div><div><b id="activityVisitors">-</b><span>Unique visitors</span></div></div><div id="activityBreakdownRows" class="loading-state"><div class="spinner"></div></div></div>') +
-            modulePanel('leads', 'Website Leads', 'Contact, demo, newsletter and concern submissions from the Stratex public website.',
-              '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Recent leads</h3><button class="btn btn-sm btn-outline" id="refreshLeadsBtn" type="button">Refresh</button></div><div id="leadRows" class="loading-state"><div class="spinner"></div></div></div>') +
+            modulePanel('contactForms', 'Contact Forms', 'Contact, demo, newsletter and concern submissions from the Stratex public website.',
+              '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Recent website submissions</h3><button class="btn btn-sm btn-outline" id="refreshContactFormsBtn" type="button">Refresh</button></div><div id="contactFormRows" class="loading-state"><div class="spinner"></div></div></div>') +
             modulePanel('registrations', 'Registrations', 'ScoutLink registration and access records with product context.',
               '<div class="stx-admin-surface"><div class="stx-admin-table-toolbar"><div><h3>Registration records</h3><p>Review ScoutLink coach and scout registration records from the Stratex admin centre.</p></div><div class="stx-admin-filter-row compact"><label>Product<select class="form-control" id="registrationProductFilter"><option value="">All products</option><option value="ScoutLink">ScoutLink</option></select></label><label>Status<select class="form-control" id="registrationStatusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option></select></label><button class="btn btn-sm btn-outline" id="refreshRegistrationsBtn" type="button">Refresh</button></div></div><div id="registrationRows" class="loading-state"><div class="spinner"></div></div></div>') +
             modulePanel('crm', 'CRM', 'One place for public website contacts and ScoutLink registration/application contacts.',
@@ -194,17 +256,18 @@
               textarea('Bio', 'bio', 5) + input('Display order', 'displayOrder', 'number', false, '100') +
               '<div class="form-message" id="leadershipMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save leadership member</button></form>' +
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Leadership profiles</h3><a class="btn btn-sm btn-outline" href="/leadership" target="_blank" rel="noopener">Public Leadership</a></div><div id="leadershipRows" class="loading-state"><div class="spinner"></div></div></div></div>') +
-            modulePanel('org', 'Org Directory', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
+            modulePanel('org', 'Org Charts', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
             modulePanel('profile', 'My Profile', 'Your Stratex identity, reporting line and own company records.', profilePanel()) +
             modulePanel('contracts', 'Contracts & Pay', 'Restricted HR records with private contract access and permissioned pay visibility.', contractsPanel()) +
-            modulePanel('leave', 'Leave / Sick Leave', 'Book and review absence records for yourself and your permissioned reporting tree.', leavePanel()) +
             modulePanel('hiring', 'Hiring', 'Create roles, review applications and manage careers activity inside Stratex Admin.', hiringPanel()) +
-            modulePanel('meetings', 'Meetings', 'Book and review internal Stratex meetings.', meetingsPanel()) +
             modulePanel('concerns', 'Trust & Concerns', 'Review safeguarding, privacy and platform concerns submitted through Stratex routes.', concernsPanel()) +
             modulePanel('settings', 'Settings', 'Company, website, CRM, blog and admin dashboard settings scoped to Stratex Analytics.', settingsPanel()) +
-            modulePanel('scoutlink', 'Product Access', 'Launch the linked experience selector. Product data is intentionally separate from the default Stratex dashboard.', '<div class="stx-admin-surface"><p class="stx-muted">Use this when you need to move into a linked product experience without mixing company administration with platform operations.</p><a class="btn btn-primary" href="/experience-select">Open product selector</a></div>') +
+            modulePanel('showcase', 'Showcase Event', 'Manage ScoutLink showcase events from the Stratex operating centre while preserving event notifications.', toolPanel('Showcase Event workspace', 'The existing ScoutLink showcase event workflow remains connected to the same data, invite responses and notification routes.', '/stratex/showcase-events', 'Open showcase events')) +
+            modulePanel('awards', 'Award Ceremonies', 'Manage award nominations and ceremonies from the Stratex operating centre while preserving nomination actions.', toolPanel('Award Ceremonies workspace', 'The existing award nomination workflow remains connected to the same nomination data and confirmation routes.', '/stratex/award-nominations', 'Open awards workspace')) +
           '</div>' +
         '</main>' +
+        '<div class="stx-admin-detail-backdrop" id="stxAdminDetailBackdrop" hidden></div>' +
+        '<aside class="stx-admin-detail-panel" id="stxAdminDetailPanel" aria-label="Admin record detail" hidden><button class="stx-admin-detail-close" id="stxAdminDetailClose" type="button">Close</button><div id="stxAdminDetailContent"></div></aside>' +
       '</div>';
   }
 
@@ -260,6 +323,10 @@
     return modulePanel(id, title, copy, '<div class="stx-admin-surface"><p class="stx-muted">' + escapeHtml(copy) + '</p><a class="btn btn-primary" href="' + escapeHtml(href) + '">' + escapeHtml(label) + '</a></div>');
   }
 
+  function toolPanel(title, copy, href, label) {
+    return '<div class="stx-admin-surface stx-admin-tool-panel"><div><p class="stx-eyebrow">Connected workflow</p><h3>' + escapeHtml(title) + '</h3><p class="stx-muted">' + escapeHtml(copy) + '</p></div><a class="btn btn-primary" href="' + escapeHtml(href) + '">' + escapeHtml(label) + '</a></div>';
+  }
+
   function switchModule(id, skipHistory) {
     if (!MODULE_BY_ID[id]) id = 'dashboard';
     document.querySelectorAll('[data-admin-module]').forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-admin-module') === id); });
@@ -269,11 +336,11 @@
     if (title) title.textContent = item[1];
     if (id === 'crm') loadCrm();
     if (id === 'activity') loadActivity();
-    if (id === 'leads') loadLeads();
+    if (id === 'contactForms') loadContactForms();
     if (id === 'registrations') loadRegistrations();
     if (id === 'blog') loadBlog();
     if (id === 'leadership') loadLeadership();
-    if (id === 'org' || id === 'profile' || id === 'leave' || id === 'meetings') loadOrg();
+    if (id === 'org' || id === 'profile') loadOrg();
     if (id === 'contracts') loadContracts();
     if (id === 'hiring') loadHiring();
     if (id === 'concerns') loadConcerns();
@@ -281,6 +348,7 @@
       var nextUrl = MODULE_PATHS[id] || (window.location.pathname + (id === 'dashboard' ? '' : '#' + encodeURIComponent(id)));
       window.history.pushState({ adminModule: id }, '', nextUrl);
     }
+    closeDetailPanel();
     closeAdminMenu();
   }
 
@@ -461,13 +529,17 @@
   async function loadHiring() {
     var jobsRoot = document.getElementById('hiringRows');
     var appsRoot = document.getElementById('applicationRows');
+    var jobRows = [];
+    var appRows = [];
     try {
       var jobs = await api('GET', '/api/stratex/jobs');
+      jobRows = jobs.data || [];
       if (jobsRoot) {
-        jobsRoot.innerHTML = renderAdminRecords(jobs.data || [], function (job) {
+        jobsRoot.innerHTML = renderAdminRecords(jobRows, function (job) {
           var meta = [job.department, job.location, job.working_type, job.status].filter(Boolean).join(' - ');
           var body = statusPill(job.status || 'Draft', job.status === 'live' ? 'success' : 'info') + statusPill((job.positions_available || 1) + ' position' + (Number(job.positions_available || 1) === 1 ? '' : 's'), '');
-          return compactRecord(job.job_title || 'Untitled role', meta, body, '');
+          var action = '<button class="btn btn-sm btn-outline" type="button" data-job-detail="' + escapeHtml(job.id || job.slug || job.job_title || '') + '">View applicants</button>';
+          return compactRecord(job.job_title || 'Untitled role', meta, body, action);
         });
       }
     } catch (_) {
@@ -475,16 +547,60 @@
     }
     try {
       var apps = await api('GET', '/api/stratex/job-applications');
+      appRows = apps.data || [];
       if (appsRoot) {
-        appsRoot.innerHTML = renderAdminRecords(apps.data || [], function (app) {
+        appsRoot.innerHTML = renderAdminRecords(appRows, function (app) {
           var job = app.job_posts || {};
           var body = statusPill(app.status || 'Submitted', 'info') + (app.job_application_files && app.job_application_files.length ? statusPill('CV stored privately', 'success') : statusPill('No CV record', ''));
-          return compactRecord([app.first_name, app.last_name].filter(Boolean).join(' ') || app.email || 'Applicant', [job.job_title, app.email, formatDate(app.submitted_at)].filter(Boolean).join(' - '), body, '');
+          var action = '<button class="btn btn-sm btn-outline" type="button" data-applicant-detail="' + escapeHtml(app.id || app.email || '') + '">Open applicant</button>';
+          return compactRecord([app.first_name, app.last_name].filter(Boolean).join(' ') || app.email || 'Applicant', [job.job_title, app.email, formatDate(app.submitted_at)].filter(Boolean).join(' - '), body, action);
         });
       }
     } catch (_) {
       if (appsRoot) appsRoot.innerHTML = '<div class="stx-admin-empty">Applications are not available in this environment yet.</div>';
     }
+    bindHiringDetailButtons(jobRows, appRows);
+  }
+
+  function bindHiringDetailButtons(jobs, applications) {
+    document.querySelectorAll('[data-job-detail]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-job-detail');
+        var job = (jobs || []).find(function (row) { return String(row.id || row.slug || row.job_title || '') === String(id); }) || {};
+        var apps = (applications || []).filter(function (app) {
+          var linked = app.job_posts || {};
+          return String(app.job_id || linked.id || linked.slug || linked.job_title || '') === String(job.id || job.slug || job.job_title || '');
+        });
+        var applicants = apps.length ? '<div class="stx-admin-detail-list"><h3>Applicants</h3>' + apps.map(function (app) {
+          return compactRecord([app.first_name, app.last_name].filter(Boolean).join(' ') || app.email || 'Applicant', [app.email, formatDate(app.submitted_at)].filter(Boolean).join(' - '), statusPill(app.status || 'Submitted', 'info'), '');
+        }).join('') + '</div>' : '<div class="stx-admin-empty">No applicants for this role yet.</div>';
+        openDetailPanel(job.job_title || 'Role', [job.department, job.location, job.status].filter(Boolean).join(' - '), [
+          { label: 'Department', value: job.department },
+          { label: 'Location', value: job.location },
+          { label: 'Working type', value: job.working_type },
+          { label: 'Employment type', value: job.employment_type },
+          { label: 'Contract type', value: job.contract_type },
+          { label: 'Status', value: job.status },
+          { label: 'Positions available', value: job.positions_available || 1 },
+          { label: 'Closing date', value: formatDate(job.closing_at) }
+        ], '<a class="btn btn-sm btn-primary" href="/admin/hiring">Manage role</a>', applicants);
+      });
+    });
+    document.querySelectorAll('[data-applicant-detail]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-applicant-detail');
+        var app = (applications || []).find(function (row) { return String(row.id || row.email || '') === String(id); }) || {};
+        var job = app.job_posts || {};
+        openDetailPanel([app.first_name, app.last_name].filter(Boolean).join(' ') || app.email || 'Applicant', job.job_title || 'Job application', [
+          { label: 'Email', value: app.email },
+          { label: 'Phone', value: app.phone },
+          { label: 'Role', value: job.job_title },
+          { label: 'Status', value: app.status || 'Submitted' },
+          { label: 'Submitted', value: formatDate(app.submitted_at) },
+          { label: 'CV', value: app.job_application_files && app.job_application_files.length ? 'Stored privately' : 'No CV record' }
+        ], app.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(app.email) + '">Email applicant</a>' : '');
+      });
+    });
   }
 
   async function loadConcerns() {
@@ -500,11 +616,32 @@
         var title = row.concern_type || row.reason || 'Concern report';
         var meta = [row.full_name, row.email, formatDate(row.created_at)].filter(Boolean).join(' - ');
         var body = statusPill(row.status || 'New', 'info') + statusPill(row.priority || 'Standard', row.priority === 'urgent' ? 'danger' : '');
-        return compactRecord(title, meta, body, '');
+        var action = '<button class="btn btn-sm btn-outline" type="button" data-concern-detail="' + escapeHtml(row.id || row.email || row.created_at || '') + '">Open detail</button>';
+        return compactRecord(title, meta, body, action);
       });
+      bindConcernDetailButtons(rows);
     } catch (_) {
       root.innerHTML = '<div class="stx-admin-error">Could not load concern submissions.</div>';
     }
+  }
+
+  function bindConcernDetailButtons(rows) {
+    document.querySelectorAll('[data-concern-detail]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-concern-detail');
+        var row = (rows || []).find(function (item) { return String(item.id || item.email || item.created_at || '') === String(id); }) || {};
+        openDetailPanel(row.concern_type || row.reason || 'Concern report', [row.full_name, row.email, formatDate(row.created_at)].filter(Boolean).join(' - '), [
+          { label: 'Name', value: row.full_name },
+          { label: 'Email', value: row.email },
+          { label: 'Phone', value: row.phone },
+          { label: 'Concern type', value: row.concern_type || row.reason },
+          { label: 'Priority', value: row.priority || 'Standard' },
+          { label: 'Status', value: row.status || 'New' },
+          { label: 'Submitted', value: formatDate(row.created_at) },
+          { label: 'Message', value: row.message || row.notes || row.reason }
+        ], row.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(row.email) + '">Email reporter</a>' : '');
+      });
+    });
   }
 
   async function loadCrm() {
@@ -516,7 +653,26 @@
       root.innerHTML = rowTable([
         ['Source', 'source'], ['Type', 'type'], ['Name', 'name'], ['Email', 'email'],
         ['Organisation', 'organisation'], ['Role', 'role'], ['Status', 'status'], ['Created', 'createdAt']
-      ], data.data || []);
+      ], data.data || [], {
+        key: 'crm',
+        title: function (row) { return row.name || row.email || 'CRM record'; },
+        subtitle: function (row) { return [row.source, row.type].filter(Boolean).join(' - '); },
+        fields: function (row) {
+          return [
+            { label: 'Source', value: row.source },
+            { label: 'Type', value: row.type },
+            { label: 'Name', value: row.name },
+            { label: 'Email', value: row.email },
+            { label: 'Organisation', value: row.organisation },
+            { label: 'Role', value: row.role },
+            { label: 'Status', value: row.status },
+            { label: 'Created', value: formatDate(row.createdAt) }
+          ];
+        },
+        actions: function (row) {
+          return row.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(row.email) + '">Email contact</a>' : '';
+        }
+      });
     } catch (_) {
       root.innerHTML = '<div class="stx-admin-error">Could not load CRM.</div>';
     }
@@ -533,7 +689,8 @@
       organisation: row.team_name || row.scout_club || row.organisation || row.club_name || '',
       role: row.role_at_club || row.role || row.scout_league || '',
       status: row.status || row.decision || '',
-      createdAt: row.created_at || row.submitted_at || row.updated_at || ''
+      createdAt: row.created_at || row.submitted_at || row.updated_at || '',
+      raw: row
     };
   }
 
@@ -558,8 +715,29 @@
         ['Organisation', 'organisation'],
         ['Role', 'role'],
         ['Status', 'status', function (row) { return statusPill(row.status || 'pending', row.status === 'approved' ? 'success' : row.status === 'declined' ? 'danger' : 'info'); }],
-        ['Created', 'createdAt', function (row) { return escapeHtml(formatDate(row.createdAt)); }]
-      ], rows);
+        ['Created', 'createdAt', function (row) { return escapeHtml(formatDate(row.createdAt)); }],
+        ['Actions', 'email', function () { return '<button class="btn btn-sm btn-outline" type="button" data-detail-open>Open</button>'; }]
+      ], rows, {
+        key: 'registrations',
+        title: function (row) { return row.name || row.email || 'Registration'; },
+        subtitle: function (row) { return [row.product, row.type, row.status].filter(Boolean).join(' - '); },
+        fields: function (row) {
+          return [
+            { label: 'Product', value: row.product || 'ScoutLink' },
+            { label: 'Source', value: row.source },
+            { label: 'Type', value: row.type },
+            { label: 'Name', value: row.name },
+            { label: 'Email', value: row.email },
+            { label: 'Organisation', value: row.organisation },
+            { label: 'Role', value: row.role },
+            { label: 'Status', value: row.status || 'pending' },
+            { label: 'Created', value: formatDate(row.createdAt) }
+          ];
+        },
+        actions: function (row) {
+          return '<a class="btn btn-sm btn-outline" href="/stratex/registrations">Open registration workflow</a>' + (row.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(row.email) + '">Email applicant</a>' : '');
+        }
+      });
     } catch (_) {
       root.innerHTML = '<div class="stx-admin-error">Could not load registration records.</div>';
     }
@@ -604,7 +782,19 @@
           ['Sessions', 'sessions', function (row) { return escapeHtml(Number(row.sessions || 0).toLocaleString('en-GB')); }],
           ['Unique visitors', 'visitors', function (row) { return escapeHtml(Number(row.visitors || 0).toLocaleString('en-GB')); }],
           ['Last updated', 'updatedAt', function (row) { return escapeHtml(formatDate(row.updatedAt)); }]
-        ], rows);
+        ], rows, {
+          key: 'activity',
+          title: function (row) { return row.pageTitle || row.page || 'Page activity'; },
+          subtitle: function (row) { return row.page || ''; },
+          fields: function (row) {
+            return [
+              { label: 'Page views', value: Number(row.views || 0).toLocaleString('en-GB') },
+              { label: 'Sessions', value: Number(row.sessions || 0).toLocaleString('en-GB') },
+              { label: 'Unique visitors', value: Number(row.visitors || 0).toLocaleString('en-GB') },
+              { label: 'Last updated', value: formatDate(row.updatedAt) }
+            ];
+          }
+        });
       }
     } catch (_) {
       if (root) root.innerHTML = '<div class="stx-admin-error">Could not load website activity.</div>';
@@ -615,18 +805,39 @@
     }
   }
 
-  async function loadLeads() {
-    var root = document.getElementById('leadRows');
+  async function loadContactForms() {
+    var root = document.getElementById('contactFormRows');
     if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
     try {
       var data = await api('GET', '/api/stratex-website/leads');
       if (!root) return;
       root.innerHTML = rowTable([
-        ['Type', 'lead_type'], ['Name', 'full_name'], ['Email', 'email'], ['Phone', 'phone'],
-        ['Organisation', 'organisation'], ['Reason', 'reason'], ['Status', 'status'], ['Created', 'created_at']
-      ], data.data || []);
+        ['Form type', 'lead_type'], ['Name', 'full_name'], ['Email', 'email'], ['Organisation', 'organisation'],
+        ['Message', 'reason'], ['Status', 'status'], ['Submitted', 'created_at', function (row) { return escapeHtml(formatDate(row.created_at)); }],
+        ['Actions', 'email', function (row) { return row.email ? '<a class="btn btn-sm btn-outline" href="mailto:' + escapeHtml(row.email) + '">Email</a>' : '<button class="btn btn-sm btn-outline" type="button" data-detail-open>Open</button>'; }]
+      ], data.data || [], {
+        key: 'contactForms',
+        title: function (row) { return row.full_name || row.email || row.lead_type || 'Website submission'; },
+        subtitle: function (row) { return [row.lead_type, row.status].filter(Boolean).join(' - '); },
+        fields: function (row) {
+          return [
+            { label: 'Form type', value: row.lead_type || row.type },
+            { label: 'Name', value: row.full_name },
+            { label: 'Email', value: row.email },
+            { label: 'Phone', value: row.phone },
+            { label: 'Organisation', value: row.organisation },
+            { label: 'Reason', value: row.reason },
+            { label: 'Message', value: row.message || row.notes },
+            { label: 'Status', value: row.status || 'New' },
+            { label: 'Submitted', value: formatDate(row.created_at) }
+          ];
+        },
+        actions: function (row) {
+          return row.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(row.email) + '">Email contact</a>' : '';
+        }
+      });
     } catch (_) {
-      root.innerHTML = '<div class="stx-admin-error">Could not load website leads.</div>';
+      root.innerHTML = '<div class="stx-admin-error">Could not load website submissions.</div>';
     }
   }
 
@@ -654,7 +865,27 @@
           if (row.status === 'archived' || row.status === 'deleted') return '<span class="stx-admin-muted-pill">Archived</span>';
           return '<div class="stx-admin-inline-actions"><button class="btn btn-sm btn-outline" type="button" data-blog-detail="' + escapeHtml(row.id) + '">Details</button><button class="btn btn-sm btn-outline stx-admin-archive-post" type="button" data-blog-archive="' + escapeHtml(row.id) + '">Remove from site</button></div>';
         }]
-      ], rows);
+      ], rows, {
+        key: 'blog',
+        title: function (row) { return row.title || 'Learning Centre post'; },
+        subtitle: function (row) { return [row.category, row.status].filter(Boolean).join(' - '); },
+        fields: function (row) {
+          return [
+            { label: 'Title', value: row.title },
+            { label: 'Status', value: row.status || 'draft' },
+            { label: 'Category', value: row.category || 'Learning' },
+            { label: 'Views', value: Number(row.view_count || 0).toLocaleString('en-GB') },
+            { label: 'Likes', value: Number(row.like_count || 0).toLocaleString('en-GB') },
+            { label: 'Slug', value: row.slug },
+            { label: 'Excerpt', value: row.excerpt }
+          ];
+        },
+        actions: function (row) {
+          var publicUrl = '/learning-centre/' + encodeURIComponent(row.slug || '');
+          return '<a class="btn btn-sm btn-primary" href="' + escapeHtml(publicUrl) + '" target="_blank" rel="noopener">View live post</a>' +
+            '<button class="btn btn-sm btn-outline stx-admin-archive-post" type="button" data-blog-archive="' + escapeHtml(row.id) + '">Delete / archive</button>';
+        }
+      });
       bindBlogDetailButtons(rows);
       bindBlogArchiveButtons();
     } catch (_) {
@@ -673,7 +904,8 @@
         panel.hidden = false;
         panel.innerHTML = '<div><p class="stx-eyebrow">Post details</p><h3>' + escapeHtml(row.title || 'Untitled post') + '</h3><p>' + escapeHtml(row.excerpt || 'No excerpt added.') + '</p></div>' +
           '<div class="stx-admin-record-body">' + statusPill(row.status || 'draft', row.status === 'published' ? 'success' : 'info') + statusPill(row.category || 'Learning', '') + statusPill(Number(row.view_count || 0).toLocaleString('en-GB') + ' views', 'info') + statusPill(Number(row.like_count || 0).toLocaleString('en-GB') + ' likes', '') + '</div>' +
-          '<div class="stx-admin-inline-actions"><a class="btn btn-sm btn-primary" href="' + escapeHtml(publicUrl) + '" target="_blank" rel="noopener">View live</a><a class="btn btn-sm btn-outline" href="https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://www.stratexanalytics.co.uk' + publicUrl) + '" target="_blank" rel="noopener">Share on LinkedIn</a></div>';
+          '<div class="stx-admin-inline-actions"><a class="btn btn-sm btn-primary" href="' + escapeHtml(publicUrl) + '" target="_blank" rel="noopener">View live post</a><button class="btn btn-sm btn-outline stx-admin-archive-post" type="button" data-blog-archive="' + escapeHtml(row.id) + '">Delete / archive</button><a class="btn btn-sm btn-outline" href="https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent('https://www.stratexanalytics.co.uk' + publicUrl) + '" target="_blank" rel="noopener">Share on LinkedIn</a></div>';
+        bindBlogArchiveButtons();
       });
     });
   }
@@ -703,7 +935,25 @@
           return row.image_url ? '<img alt="" src="' + escapeHtml(row.image_url) + '" style="width:44px;height:44px;border-radius:12px;object-fit:cover">' : '';
         }],
         ['Name', 'full_name'], ['Job title', 'job_title'], ['Email', 'email'], ['Role', 'permission_role']
-      ], data.data || []);
+      ], data.data || [], {
+        key: 'leadership',
+        title: function (row) { return row.full_name || 'Leadership profile'; },
+        subtitle: function (row) { return row.job_title || row.permission_role || ''; },
+        fields: function (row) {
+          return [
+            { label: 'Name', value: row.full_name },
+            { label: 'Job title', value: row.job_title },
+            { label: 'Email', value: row.email },
+            { label: 'Permission role', value: row.permission_role },
+            { label: 'Focus chip', value: row.focus_chip },
+            { label: 'Image URL', value: row.image_url },
+            { label: 'Summary', value: row.summary }
+          ];
+        },
+        actions: function () {
+          return '<a class="btn btn-sm btn-outline" href="/leadership" target="_blank" rel="noopener">View public leadership</a>';
+        }
+      });
     } catch (_) {
       root.innerHTML = '<div class="stx-admin-error">Could not load leadership profiles.</div>';
     }
@@ -737,14 +987,15 @@
       logout.addEventListener('click', logoutToLogin);
     });
     bindAdminDrawer();
+    bindDetailPanel();
     var refreshActivity = document.getElementById('refreshActivityBtn');
     if (refreshActivity) refreshActivity.addEventListener('click', loadActivity);
     ['activityPageFilter', 'activityDateFilter'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.addEventListener('change', loadActivity);
     });
-    var refresh = document.getElementById('refreshLeadsBtn');
-    if (refresh) refresh.addEventListener('click', loadLeads);
+    var refresh = document.getElementById('refreshContactFormsBtn');
+    if (refresh) refresh.addEventListener('click', loadContactForms);
     var refreshRegistrations = document.getElementById('refreshRegistrationsBtn');
     if (refreshRegistrations) refreshRegistrations.addEventListener('click', loadRegistrations);
     ['registrationProductFilter', 'registrationStatusFilter'].forEach(function (id) {
@@ -816,6 +1067,27 @@
         loadOrg();
       } catch (err) {
         showMessage('meetingMsg', err.message || 'Could not book meeting.', false);
+      }
+    });
+  }
+
+  function bindDetailPanel() {
+    var close = document.getElementById('stxAdminDetailClose');
+    var backdrop = document.getElementById('stxAdminDetailBackdrop');
+    if (close) close.addEventListener('click', closeDetailPanel);
+    if (backdrop) backdrop.addEventListener('click', closeDetailPanel);
+    document.addEventListener('click', function (event) {
+      var row = event.target.closest('[data-detail-key]');
+      if (!row) return;
+      var interactive = event.target.closest('a,button,input,select,textarea,label');
+      if (interactive && !interactive.hasAttribute('data-detail-open')) return;
+      openRowDetail(row.getAttribute('data-detail-key'), row.getAttribute('data-detail-index'));
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeDetailPanel();
+      if ((event.key === 'Enter' || event.key === ' ') && event.target && event.target.matches('[data-detail-key]')) {
+        event.preventDefault();
+        openRowDetail(event.target.getAttribute('data-detail-key'), event.target.getAttribute('data-detail-index'));
       }
     });
   }

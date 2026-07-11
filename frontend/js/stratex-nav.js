@@ -1,25 +1,21 @@
-/* Stratex Analytics company admin shared navigation builder */
+/* ScoutLink product-admin shared navigation builder */
 'use strict';
 
 var STRATEX_ADMIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" width="18" height="18" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>';
 
 var STRATEX_NAV_ITEMS = [
-  {label:'Dashboard', copy:'Company overview', href:'/admin', icon:STRATEX_ADMIN_ICON},
-  {label:'Website Activity', copy:'Traffic and engagement', href:'/admin/website-activity', icon:STRATEX_ADMIN_ICON},
-  {label:'Website Leads', copy:'Form enquiries', href:'/admin/website-leads', icon:STRATEX_ADMIN_ICON},
-  {label:'Registrations', copy:'Access requests', href:'/admin/registrations', icon:STRATEX_ADMIN_ICON},
-  {label:'CRM', copy:'Website and product contacts', href:'/admin/crm', icon:STRATEX_ADMIN_ICON},
-  {label:'Blog / Learning Centre', copy:'Articles, views and live posts', href:'/admin/blog', icon:STRATEX_ADMIN_ICON},
-  {label:'Leadership', copy:'Public leadership profiles', href:'/admin/leadership', icon:STRATEX_ADMIN_ICON},
-  {label:'Org Directory', copy:'Team structure', href:'/admin/org-directory', icon:STRATEX_ADMIN_ICON},
-  {label:'My Profile', copy:'Your Stratex record', href:'/admin/my-profile', icon:STRATEX_ADMIN_ICON},
-  {label:'Contracts & Pay', copy:'HR documents', href:'/admin/contracts-pay', icon:STRATEX_ADMIN_ICON},
-  {label:'Leave / Sick Leave', copy:'Absence records', href:'/admin/leave', icon:STRATEX_ADMIN_ICON},
-  {label:'Hiring', copy:'Jobs and applicants', href:'/admin/hiring', icon:STRATEX_ADMIN_ICON},
-  {label:'Meetings', copy:'Internal meetings', href:'/admin/meetings', icon:STRATEX_ADMIN_ICON},
-  {label:'Trust & Concerns', copy:'Safeguarding and reports', href:'/admin/trust-concerns', icon:STRATEX_ADMIN_ICON},
-  {label:'Settings', copy:'Company settings', href:'/admin/settings', icon:STRATEX_ADMIN_ICON},
-  {label:'Product Access', copy:'Linked experiences', href:'/experience-select', icon:STRATEX_ADMIN_ICON}
+  {label:'Dashboard', copy:'ScoutLink overview', href:'/stratex/dashboard', icon:STRATEX_ADMIN_ICON},
+  {label:'Scout and Coach Registrations', copy:'Access requests', href:'/stratex/registrations', icon:STRATEX_ADMIN_ICON},
+  {label:'Coaches', copy:'Coach accounts', href:'/stratex/coaches', icon:STRATEX_ADMIN_ICON},
+  {label:'Players', copy:'Player records', href:'/stratex/players', icon:STRATEX_ADMIN_ICON},
+  {label:'Scouts', copy:'Scout accounts', href:'/stratex/scouts', icon:STRATEX_ADMIN_ICON},
+  {label:'Users', copy:'Admin and account access', href:'/stratex/users', icon:STRATEX_ADMIN_ICON},
+  {label:'Chat', copy:'Coach and scout messages', href:'/stratex/messages', icon:STRATEX_ADMIN_ICON},
+  {label:'Notifications', copy:'Product notifications', href:'/stratex/notifications', icon:STRATEX_ADMIN_ICON},
+  {label:'Settings', copy:'ScoutLink settings', href:'/stratex/settings', icon:STRATEX_ADMIN_ICON},
+  {label:'Product Demo', copy:'Demo mode', href:'/experience-select', icon:STRATEX_ADMIN_ICON},
+  {label:'Scout Teams', copy:'Scout organisations', href:'/stratex/scout-teams', icon:STRATEX_ADMIN_ICON},
+  {label:'Non Pro Academies', copy:'Coach teams', href:'/stratex/non-pro-academies', icon:STRATEX_ADMIN_ICON}
 ];
 
 function buildStratexNav(navElId, userObj) {
@@ -37,7 +33,7 @@ function buildStratexNav(navElId, userObj) {
     uel.innerHTML = '<div class="user-info">' +
       '<div class="user-avatar" style="background:#FF5722;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">' + ini + '</div>' +
       '<div><div class="user-name">' + (userObj.firstName||'') + ' ' + (userObj.lastName||'') + '</div>' +
-      '<div class="user-role" style="color:var(--text-secondary,#8b949e);font-size:12px">Stratex admin</div></div></div>';
+      '<div class="user-role" style="color:var(--text-secondary,#8b949e);font-size:12px">ScoutLink product admin</div></div></div>';
   }
 }
 

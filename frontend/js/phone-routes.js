@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 (function () {
   function item(label, href, icon) {
@@ -44,25 +44,18 @@
   ];
 
   var stratex = [
-    item('Dashboard', 'stratex-dashboard.html', 'grid'),
-    item('Product demo', 'experience-select.html', 'box'),
-    item('Registrations', 'stratex-registrations.html', 'file'),
-    item('Users', 'stratex-users.html', 'users'),
-    item('Org view', 'stratex-org.html', 'org'),
-    item('Hiring', '/stratex/hiring', 'briefcase'),
-    item('Leave / Sick Leave', 'stratex-leave.html', 'calendar'),
-    item('Meetings', 'stratex-meetings.html', 'users'),
-    item('Contracts & Pay', 'stratex-contracts-pay.html', 'file'),
-    item('Players', 'stratex-players.html', 'ball'),
-    item('Scouts', 'stratex-scouts.html', 'search'),
-    item('Coaches', 'stratex-coaches.html', 'coach'),
-    item('Scout teams', 'stratex-scout-teams.html', 'star'),
-    item('Non Pro academies', 'stratex-school-teams.html', 'home'),
-    item('Award nominations', 'stratex-award-nominations.html', 'award'),
-    item('Showcase events', 'stratex-showcase-events.html', 'calendar'),
-    item('Notifications', 'stratex-notifications.html', 'bell'),
-    item('Report a Concern', '/report-a-concern', 'flag'),
-    item('Settings', 'stratex-settings.html', 'settings')
+    item('Dashboard', '/stratex/dashboard', 'grid'),
+    item('Scout and Coach Registrations', '/stratex/registrations', 'file'),
+    item('Coaches', '/stratex/coaches', 'coach'),
+    item('Players', '/stratex/players', 'ball'),
+    item('Scouts', '/stratex/scouts', 'search'),
+    item('Users', '/stratex/users', 'users'),
+    item('Chat', '/stratex/messages', 'message'),
+    item('Notifications', '/stratex/notifications', 'bell'),
+    item('Settings', '/stratex/settings', 'settings'),
+    item('Product demo', '/experience-select', 'box'),
+    item('Scout teams', '/stratex/scout-teams', 'star'),
+    item('Non Pro academies', '/stratex/non-pro-academies', 'home')
   ];
 
   window.PhoneRoutes = {
