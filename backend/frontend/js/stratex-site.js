@@ -2,6 +2,7 @@
   'use strict';
 
   var API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
+  var STRATEX_BASE = 'https://www.stratexanalytics.co.uk';
   var SCOUTLINK = {
     base: 'https://www.scoutlink.app',
     login: 'https://www.scoutlink.app/login',
@@ -127,6 +128,7 @@
 
   function setMeta(title, description, canonical) {
     document.title = title;
+    canonical = canonical || (STRATEX_BASE + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page));
     var meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute('content', description);
     var ogTitle = document.querySelector('meta[property="og:title"]');
@@ -137,10 +139,38 @@
     var canon = document.querySelector('link[rel="canonical"]');
     if (ogTitle) ogTitle.setAttribute('content', title);
     if (ogDesc) ogDesc.setAttribute('content', description);
-    if (ogUrl) ogUrl.setAttribute('content', canonical || ('https://www.stratexanalytics.co.uk' + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page)));
+    if (ogUrl) ogUrl.setAttribute('content', canonical);
     if (twitterTitle) twitterTitle.setAttribute('content', title);
     if (twitterDesc) twitterDesc.setAttribute('content', description);
-    if (canon) canon.setAttribute('href', canonical || ('https://www.stratexanalytics.co.uk' + (normalizePath().page === 'home' ? '/' : '/' + normalizePath().page)));
+    if (canon) canon.setAttribute('href', canonical);
+    setJsonLd(title, description, canonical);
+  }
+
+  function setJsonLd(title, description, canonical) {
+    var ld = document.getElementById('stratexJsonLd');
+    if (!ld) return;
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': STRATEX_BASE + '/#organization',
+          name: 'Stratex Analytics',
+          url: STRATEX_BASE + '/',
+          sameAs: ['https://www.scoutlink.app'],
+          description: 'Stratex Analytics builds football intelligence products for overlooked grassroots talent.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': canonical + '#webpage',
+          url: canonical,
+          name: title,
+          description: description,
+          isPartOf: { '@type': 'WebSite', '@id': STRATEX_BASE + '/#website', name: 'Stratex Analytics', url: STRATEX_BASE + '/' },
+          publisher: { '@id': STRATEX_BASE + '/#organization' }
+        }
+      ]
+    });
   }
 
   function btn(label, href, cls, attrs) {
@@ -282,7 +312,7 @@
   }
 
   function pricingPage(canonicalPath) {
-    var canonical = canonicalPath || '/scoutlink/pricing/';
+    var canonical = canonicalPath || '/scoutlink/pricing';
     setMeta('ScoutLink Pricing | Reviewed Scout Access', 'ScoutLink pricing for reviewed scout access, interests, exports and prediction usage. All scout access is reviewed before activation.', 'https://www.stratexanalytics.co.uk' + canonical);
     track('pricing_page_viewed');
     return pageHero('ScoutLink Pricing', 'Reviewed scout access with annual and monthly options.', 'ScoutLink scout plans are designed for controlled player visibility, coach-mediated interest workflows and clear usage limits. Pricing does not create instant platform access; every scout request is reviewed first.', btn('Request scout access', SCOUTLINK.scout, 'stx-btn-primary', 'data-outbound="scout"') + btn('Compatibility score', sitePath('scoutlink/compatibility-score'), '')) +

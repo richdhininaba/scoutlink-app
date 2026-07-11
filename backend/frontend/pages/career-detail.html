@@ -1,6 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Career - Stratex Analytics</title>
+<meta name="description" content="View and apply for a Stratex Analytics or ScoutLink role securely with CV upload and applicant privacy notice.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="https://www.scoutlink.app/careers">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Career role | Stratex Analytics">
+<meta property="og:description" content="View and apply for a Stratex Analytics or ScoutLink role securely with CV upload and applicant privacy notice.">
+<meta property="og:url" content="https://www.scoutlink.app/careers">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta property="og:image:alt" content="ScoutLink by Stratex Analytics">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Career role | Stratex Analytics">
+<meta name="twitter:description" content="View and apply for a Stratex Analytics or ScoutLink role securely with CV upload and applicant privacy notice.">
+<meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","name":"Career role | Stratex Analytics","url":"https://www.scoutlink.app/careers","description":"View and apply for a Stratex Analytics or ScoutLink role securely with CV upload and applicant privacy notice.","publisher":{"@type":"Organization","name":"Stratex Analytics","url":"https://www.stratexanalytics.co.uk"}}</script>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -66,8 +80,36 @@ function summaryText(j){return String(j.roleOverview||j.responsibilities||'').re
 function snapshot(j){return [j.department,j.location,j.workingType,j.employmentType,salary(j),positionsText(j,true)].map(stripMarkdown).filter(Boolean).map(function(x){return '<span>'+esc(x)+'</span>';}).join('');}
 function scrollToApply(){var el=document.getElementById('applySection');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
 function viewAllRoles(){window.location.href='/careers';}
-function render(j){
+function setHead(selector,attr,value){var el=document.querySelector(selector);if(el)el.setAttribute(attr,value);}
+function updateHead(j){
+  var canonical='https://www.scoutlink.app/careers/'+encodeURIComponent(j.slug||getSlug());
+  var description=summaryText(j);
   document.title=j.jobTitle+' - Stratex Careers';
+  setHead('meta[name="description"]','content',description);
+  setHead('link[rel="canonical"]','href',canonical);
+  setHead('meta[property="og:title"]','content',j.jobTitle+' | Stratex Careers');
+  setHead('meta[property="og:description"]','content',description);
+  setHead('meta[property="og:url"]','content',canonical);
+  setHead('meta[name="twitter:title"]','content',j.jobTitle+' | Stratex Careers');
+  setHead('meta[name="twitter:description"]','content',description);
+  var ld=document.querySelector('script[type="application/ld+json"]');
+  if(ld){
+    ld.textContent=JSON.stringify({
+      '@context':'https://schema.org',
+      '@type':'JobPosting',
+      title:j.jobTitle,
+      description:stripMarkdown(j.roleOverview||j.responsibilities||description),
+      hiringOrganization:{'@type':'Organization',name:'Stratex Analytics',sameAs:'https://www.stratexanalytics.co.uk'},
+      employmentType:j.employmentType||j.employment_type||undefined,
+      jobLocation:j.location?{'@type':'Place',address:{'@type':'PostalAddress',addressLocality:j.location}}:undefined,
+      datePosted:j.releaseAt||j.release_at||undefined,
+      validThrough:j.closingAt||j.closing_at||undefined,
+      url:canonical
+    });
+  }
+}
+function render(j){
+  updateHead(j);
   var metaHtml=meta('Department',j.department)+meta('Location',j.location)+meta('Working type',j.workingType)+meta('Employment', [j.employmentType,j.contractType].filter(Boolean).join(' - '))+meta('Pay type',salary(j)||compensationLabel(j))+meta('Positions available',positionsText(j,false));
   document.getElementById('jobRoot').innerHTML=
     '<div class="job-layout"><div><section class="hero-card"><span class="eyebrow">'+esc([j.department||'Commercial','Live role'].join(' - '))+'</span><h1>'+esc(j.jobTitle)+'</h1><p class="summary">'+esc(summaryText(j))+'</p><div class="hero-actions"><button class="btn btn-primary" type="button" onclick="scrollToApply()">Apply now</button><button class="btn btn-outline" type="button" onclick="viewAllRoles()">View all roles</button></div></section>'+

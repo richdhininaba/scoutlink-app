@@ -1,11 +1,15 @@
 User-agent: *
 Allow: /
 
+# Private platform, account, API and file routes.
 Disallow: /api/
 Disallow: /admin
 Disallow: /admin/
 Disallow: /company/admin
 Disallow: /stratex/
+Disallow: /coach/
+Disallow: /scout/
+Disallow: /player/
 Disallow: /dashboard/
 Disallow: /settings/
 Disallow: /messages/
@@ -17,4 +21,4 @@ Disallow: /frontend/
 Disallow: /uploads/
 Disallow: /files/
 
-Sitemap: https://scoutlink.app/sitemap.xml
+Sitemap: https://www.scoutlink.app/sitemap.xml

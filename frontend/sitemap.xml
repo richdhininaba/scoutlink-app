@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://scoutlink.app/</loc></url>
-  <url><loc>https://scoutlink.app/coaches</loc></url>
-  <url><loc>https://scoutlink.app/scouts</loc></url>
-  <url><loc>https://scoutlink.app/parents-players</loc></url>
-  <url><loc>https://scoutlink.app/about</loc></url>
-  <url><loc>https://scoutlink.app/safeguarding</loc></url>
-  <url><loc>https://scoutlink.app/report-a-concern</loc></url>
-  <url><loc>https://scoutlink.app/parent-guardian-notice</loc></url>
-  <url><loc>https://scoutlink.app/privacy-policy</loc></url>
-  <url><loc>https://scoutlink.app/terms</loc></url>
-  <url><loc>https://scoutlink.app/accessibility</loc></url>
-  <url><loc>https://scoutlink.app/contact</loc></url>
-  <url><loc>https://scoutlink.app/demo</loc></url>
+  <url><loc>https://www.scoutlink.app/</loc><lastmod>2026-07-11</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.scoutlink.app/coaches</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.scoutlink.app/scouts</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.scoutlink.app/parents-players</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.scoutlink.app/about</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/demo</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/safeguarding</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.scoutlink.app/report-a-concern</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/parent-guardian-notice</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/contact</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.scoutlink.app/accessibility</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/data-policy</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/privacy-policy</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/terms</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/cookie-policy</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/applicant-privacy-notice</loc><lastmod>2026-07-11</lastmod><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://www.scoutlink.app/careers</loc><lastmod>2026-07-11</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
 </urlset>

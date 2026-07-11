@@ -1,0 +1,21 @@
+# ScoutLink
+
+ScoutLink is a coach-led, scout-reviewed grassroots football intelligence platform for U7 to U16 player evidence.
+
+## Public pages
+- Homepage: https://www.scoutlink.app/
+- Coaches: https://www.scoutlink.app/coaches
+- Scouts: https://www.scoutlink.app/scouts
+- Parents and players: https://www.scoutlink.app/parents-players
+- Safeguarding: https://www.scoutlink.app/safeguarding
+- Report a concern: https://www.scoutlink.app/report-a-concern
+- Parent and guardian notice: https://www.scoutlink.app/parent-guardian-notice
+- Privacy policy: https://www.scoutlink.app/privacy-policy
+- Terms: https://www.scoutlink.app/terms
+- Cookie policy: https://www.scoutlink.app/cookie-policy
+
+## Private routes
+Do not index or summarize logged-in application routes under /coach, /scout, /player, /stratex, /admin, /api, uploads or files.
+
+## Product positioning
+ScoutLink helps coaches build structured player profiles using match facts, coach ratings, video evidence and fixtures. Reviewed scouts can search, compare and shortlist players using explainable compatibility scoring. ScoutLink does not promise selection, signing or direct contact with minors.
