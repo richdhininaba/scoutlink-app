@@ -10,12 +10,15 @@
     ['blog', 'Blog / Learning Centre', 'Articles, views and live posts'],
     ['leadership', 'Leadership', 'Public leadership profiles'],
     ['org', 'Org Charts', 'Reporting hierarchy'],
+    ['adminUsers', 'Admin Users', 'Management and employee access'],
     ['profile', 'My Profile', 'Your Stratex record'],
     ['contracts', 'Contracts & Pay', 'HR documents'],
+    ['leave', 'Leave / Sick Leave', 'Absence records'],
     ['hiring', 'Hiring', 'Jobs and applicants'],
+    ['meetings', 'Meetings', 'Internal meetings'],
     ['concerns', 'Trust & Concerns', 'Safeguarding and reports'],
     ['settings', 'Settings', 'Company settings'],
-    ['showcase', 'Showcase Event', 'ScoutLink event operations'],
+    ['showcase', 'Showcase Events', 'ScoutLink event operations'],
     ['awards', 'Award Ceremonies', 'ScoutLink awards operations']
   ];
   var MODULE_BY_ID = MODULES.reduce(function (acc, item) {
@@ -31,9 +34,12 @@
     blog: '/admin/blog',
     leadership: '/admin/leadership',
     org: '/admin/org-charts',
+    adminUsers: '/admin/admin-users',
     profile: '/admin/my-profile',
     contracts: '/admin/contracts-pay',
+    leave: '/admin/leave-sick-leave',
     hiring: '/admin/hiring',
+    meetings: '/admin/meetings',
     concerns: '/admin/trust-concerns',
     settings: '/admin/settings',
     showcase: '/admin/showcase-event',
@@ -45,6 +51,8 @@
   }, {});
   PATH_TO_MODULE['/admin/website-leads'] = 'contactForms';
   PATH_TO_MODULE['/admin/org-directory'] = 'org';
+  PATH_TO_MODULE['/admin/users'] = 'adminUsers';
+  PATH_TO_MODULE['/admin/leave'] = 'leave';
   PATH_TO_MODULE['/admin/showcase-events'] = 'showcase';
   PATH_TO_MODULE['/admin/award-nominations'] = 'awards';
   var MODULE_ICONS = {
@@ -56,9 +64,12 @@
     blog: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
     leadership: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 4v5c0 4-3 7-7 9-4-2-7-5-7-9V7z"/><path d="M9 12l2 2 4-5"/></svg>',
     org: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v6M6 14v6M18 14v6M6 14h12M12 10h6"/><circle cx="12" cy="4" r="2"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="20" r="2"/></svg>',
+    adminUsers: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg>',
     profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
     contracts: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
+    leave: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v4M17 3v4M4 8h16M5 5h14v16H5z"/><path d="M9 14h6"/></svg>',
     hiring: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M4 7h16v13H4z"/><path d="M9 13h6"/></svg>',
+    meetings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14v10H8l-3 3z"/><path d="M8 10h8M8 13h5"/></svg>',
     concerns: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 21h18z"/><path d="M12 9v5M12 17h.01"/></svg>',
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.8-1L12.5 3h-4l-.4 3.1a7 7 0 0 0-1.8 1l-2.4-1-2 3.4L4 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.8 1l.4 3.1h4l.4-3.1a7 7 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5c.1-.3.1-.6.1-1z"/></svg>',
     showcase: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 3v4M16 3v4M5 10h14"/><path d="M9 15h6"/></svg>',
@@ -66,8 +77,8 @@
   };
   var DASHBOARD_GROUPS = [
     ['Operations', ['registrations', 'contactForms', 'crm', 'activity']],
-    ['Content', ['blog', 'leadership', 'org']],
-    ['People', ['profile', 'contracts', 'hiring']],
+    ['Content', ['blog', 'leadership']],
+    ['People', ['org', 'adminUsers', 'profile', 'contracts', 'leave', 'hiring', 'meetings']],
     ['Trust and Events', ['concerns', 'showcase', 'awards']],
     ['Platform', ['settings']]
   ];
@@ -91,6 +102,69 @@
 
   function initials() {
     return userName().split(/\s+/).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase() || 'SA';
+  }
+
+  var EMPLOYEE_MODULES = {
+    dashboard: true,
+    contactForms: true,
+    crm: true,
+    activity: true,
+    profile: true,
+    settings: true
+  };
+  var MANAGEMENT_ROLES = {
+    management: true,
+    'super admin': true,
+    founder: true,
+    operations: true,
+    acquisition: true,
+    'safeguarding reviewer': true,
+    'product demo': true
+  };
+
+  function adminSessionUser() {
+    return Auth && Auth.user ? Auth.user : {};
+  }
+
+  function rawAdminRole() {
+    var user = adminSessionUser();
+    return String(user.adminRole || user.admin_role || user.permissionRole || user.permission_role || user.role || user.userType || user.user_type || '').trim();
+  }
+
+  function currentAdminRole() {
+    var user = adminSessionUser();
+    var email = String(user.email || '').toLowerCase();
+    var raw = rawAdminRole().toLowerCase();
+    if (email === 'richdhin@stratexanalytics.co.uk') return 'Management';
+    if (raw === 'employee' || raw === 'read only' || raw === 'readonly') return 'Employee';
+    if (MANAGEMENT_ROLES[raw]) return 'Management';
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Employee';
+  }
+
+  function isManagement() {
+    return currentAdminRole() === 'Management';
+  }
+
+  function isAllowedModule(id) {
+    return isManagement() || !!EMPLOYEE_MODULES[id];
+  }
+
+  function visibleModules() {
+    return MODULES.filter(function (item) { return isAllowedModule(item[0]); });
+  }
+
+  function dashboardQuickActions() {
+    if (!isManagement()) {
+      return '<button class="stx-admin-action-card primary" data-admin-module="contactForms" type="button"><span>Review contact forms</span><small>Open website submissions</small></button>' +
+        '<button class="stx-admin-action-card" data-admin-module="crm" type="button"><span>Open CRM</span><small>Manage contacts</small></button>' +
+        '<button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button>';
+    }
+    return '<button class="stx-admin-action-card primary" data-admin-module="registrations" type="button"><span>Review registrations</span><small>ScoutLink access requests</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="contactForms" type="button"><span>Review contact forms</span><small>Open website submissions</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="hiring" type="button"><span>Create job role</span><small>Roles and applicants</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="blog" type="button"><span>Add Learning Centre post</span><small>Public content</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="leadership" type="button"><span>Add leadership member</span><small>Public profiles</small></button>' +
+      '<button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button>';
   }
 
   function showMessage(id, text, ok) {
@@ -307,8 +381,10 @@
 
   function dashboardGroups() {
     return '<div class="stx-admin-section-groups">' + DASHBOARD_GROUPS.map(function (group) {
+      var ids = group[1].filter(isAllowedModule);
+      if (!ids.length) return '';
       return '<section class="stx-admin-section-group"><h3>' + escapeHtml(group[0]) + '</h3><div class="stx-admin-section-list">' +
-        group[1].map(function (id) {
+        ids.map(function (id) {
           var item = MODULE_BY_ID[id];
           return item ? moduleCard(item[0], item[1], item[2]) : '';
         }).join('') +
@@ -324,6 +400,8 @@
   }
 
   function renderAdminShell() {
+    var modules = visibleModules();
+    var roleLabel = currentAdminRole();
     document.body.className = 'theme-light stx-company-admin';
     document.body.innerHTML =
       '<div class="stx-admin-layout">' +
@@ -336,19 +414,19 @@
         '<aside class="stx-admin-sidebar" id="stxAdminSidebar" aria-label="Stratex admin menu">' +
           '<div class="stx-admin-sidebar-head"><a class="stx-admin-brand" href="/admin">Stratex<span>Analytics</span></a><button class="stx-admin-drawer-close" id="stxAdminMenuClose" type="button" aria-label="Close admin menu">Close</button></div>' +
           '<nav class="stx-admin-nav" aria-label="Stratex admin sections">' +
-            MODULES.map(function (item) {
+            modules.map(function (item) {
               return '<button class="stx-admin-nav-item" type="button" data-admin-module="' + escapeHtml(item[0]) + '">' +
                 '<i class="stx-admin-nav-icon" aria-hidden="true">' + (MODULE_ICONS[item[0]] || '') + '</i><span><b>' + escapeHtml(item[1]) + '</b><small>' + escapeHtml(item[2]) + '</small></span></button>';
             }).join('') +
           '</nav>' +
-          '<div class="stx-admin-user"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div>' +
+          '<div class="stx-admin-user"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>' + escapeHtml(roleLabel) + '</span></div></div>' +
         '</aside>' +
         '<main class="stx-admin-main">' +
-          '<header class="stx-admin-topbar"><div class="stx-admin-titleblock"><p>Company admin centre</p><h1 id="stxAdminTitle">Dashboard</h1></div><div class="stx-admin-top-actions"><a class="btn btn-sm btn-outline" href="/" target="_blank" rel="noopener">Open Stratex site</a><button class="btn btn-sm btn-ghost" data-admin-logout type="button">Sign out</button></div></header>' +
+          '<header class="stx-admin-topbar"><div class="stx-admin-titleblock"><p>Company admin centre - ' + escapeHtml(roleLabel) + '</p><h1 id="stxAdminTitle">Dashboard</h1></div><div class="stx-admin-top-actions"><a class="btn btn-sm btn-outline" href="/" target="_blank" rel="noopener">Open Stratex site</a><button class="btn btn-sm btn-ghost" data-admin-logout type="button">Sign out</button></div></header>' +
           '<div class="stx-admin-content">' +
             modulePanel('dashboard', 'Dashboard', 'A clean operating view for Stratex Analytics, separate from ScoutLink product administration.',
-              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>Manage the company website, public content, contact forms, hiring, team records and trust routes from here.</p></div><div class="stx-admin-identity-row"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>Stratex admin</span></div></div></div>' +
-              '<div class="stx-admin-quick-actions"><button class="stx-admin-action-card primary" data-admin-module="contactForms" type="button"><span>Review contact forms</span><small>Open website submissions</small></button><button class="stx-admin-action-card" data-admin-module="hiring" type="button"><span>Manage hiring</span><small>Roles and applicants</small></button><button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button></div>' +
+              '<div class="stx-admin-hero"><div><p class="stx-eyebrow">Welcome</p><h2>' + escapeHtml(userName()) + '</h2><p>' + (isManagement() ? 'Manage the company website, public content, contact forms, hiring, team records and trust routes from here.' : 'Review assigned company activity, CRM records, website traffic, your own profile and account settings from here.') + '</p></div><div class="stx-admin-identity-row"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>' + escapeHtml(roleLabel) + '</span></div></div></div>' +
+              '<div class="stx-admin-quick-actions">' + dashboardQuickActions() + '</div>' +
               dashboardGroups()) +
             modulePanel('activity', 'Website Activity', 'Public Stratex site traffic, page performance and visitor sessions.',
               '<div class="stx-admin-surface"><div class="stx-admin-table-toolbar"><div><h3>Traffic overview</h3><p>Headline analytics stay focused on traffic, not CRM, blog likes or product records.</p></div><button class="btn btn-sm btn-outline" id="refreshActivityBtn" type="button">Refresh</button></div><div class="stx-admin-filter-row"><label>Page<select class="form-control" id="activityPageFilter"><option value="">All public pages</option><option>/</option><option>/scoutlink</option><option>/scoutlink/compatibility-score</option><option>/pricing</option><option>/leadership</option><option>/careers</option><option>/learning-centre</option></select></label><label>Date range<select class="form-control" id="activityDateFilter"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></label></div><div class="stx-admin-kpis"><div><b id="activityPageViews">-</b><span>Total page views</span></div><div><b id="activitySessions">-</b><span>Sessions</span></div><div><b id="activityVisitors">-</b><span>Unique visitors</span></div></div><div id="activityBreakdownRows" class="loading-state"><div class="spinner"></div></div></div>') +
@@ -359,30 +437,34 @@
             modulePanel('crm', 'CRM', 'One place for public website contacts and ScoutLink registration/application contacts.',
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>CRM records</h3><a class="btn btn-sm btn-primary" href="#" id="crmExportBtn">Export CSV</a></div><div id="crmRows" class="loading-state"><div class="spinner"></div></div></div>') +
             modulePanel('blog', 'Blog / Learning Centre', 'Create public learning posts and monitor live engagement.',
-              '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="blogForm"><h3>Create Learning Centre post</h3>' +
+              '<div class="stx-admin-stack"><form class="stx-admin-surface" id="blogForm"><h3>Create Learning Centre post</h3>' +
               input('Title', 'title', 'text', true) + input('Category', 'category', 'text', false, 'Football intelligence') +
               textarea('Excerpt', 'excerpt', 3) + editorToolbar() + textarea('Body', 'body', 10, true) +
               '<label class="form-group"><span>Status</span><select class="form-control" name="status"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>' +
               '<div class="form-message" id="blogMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save post</button></form>' +
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Posts</h3><a class="btn btn-sm btn-outline" href="/learning-centre" target="_blank" rel="noopener">Public Learning Centre</a></div><div id="blogDetailPanel" class="stx-admin-blog-detail" hidden></div><div id="blogRows" class="loading-state"><div class="spinner"></div></div></div></div>') +
             modulePanel('leadership', 'Leadership', 'Manage crawlable public leadership profiles and image URLs.',
-              '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="leadershipForm"><h3>Add leadership member</h3>' +
+              '<div class="stx-admin-stack"><form class="stx-admin-surface" id="leadershipForm"><h3>Add leadership member</h3>' +
               input('Full name', 'fullName', 'text', true) + input('Email', 'email', 'email') + input('Job title', 'jobTitle', 'text', true) +
               '<label class="form-group"><span>Upload image</span><input class="form-control" name="imageFile" type="file" accept="image/jpeg,image/png,image/webp"></label>' +
               input('Image URL', 'imageUrl', 'url', false, '/images/leadership/name.jpg') + input('LinkedIn URL', 'linkedinUrl', 'url') +
               input('Profile chip', 'focusChip', 'text') + textarea('Summary', 'summary', 3) +
-              '<label class="form-group"><span>Permission role</span><select class="form-control" name="permissionRole"><option>Management</option><option>Operations</option><option>Acquisition</option><option>Safeguarding Reviewer</option><option>Product Demo</option><option>Read Only</option></select></label>' +
+              '<label class="form-group"><span>User type</span><select class="form-control" name="permissionRole"><option>Management</option><option>Employee</option></select></label>' +
               textarea('Bio', 'bio', 5) + input('Display order', 'displayOrder', 'number', false, '100') +
               '<div class="form-message" id="leadershipMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save leadership member</button></form>' +
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Leadership profiles</h3><a class="btn btn-sm btn-outline" href="/leadership" target="_blank" rel="noopener">Public Leadership</a></div><div id="leadershipRows" class="loading-state"><div class="spinner"></div></div></div></div>') +
             modulePanel('org', 'Org Charts', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
+            modulePanel('adminUsers', 'Admin Users', 'Invite, review and manage Management and Employee access for Stratex Analytics.', adminUsersPanel()) +
             modulePanel('profile', 'My Profile', 'Your Stratex identity, reporting line and own company records.', profilePanel()) +
             modulePanel('contracts', 'Contracts & Pay', 'Restricted HR records with private contract access and permissioned pay visibility.', contractsPanel()) +
+            modulePanel('leave', 'Leave / Sick Leave', 'Record and review absence without crowding the org chart.', leavePanel()) +
             modulePanel('hiring', 'Hiring', 'Create roles, review applications and manage careers activity inside Stratex Admin.', hiringPanel()) +
+            modulePanel('meetings', 'Meetings', 'Book and review internal Stratex meetings.', meetingsPanel()) +
             modulePanel('concerns', 'Trust & Concerns', 'Review safeguarding, privacy and platform concerns submitted through Stratex routes.', concernsPanel()) +
             modulePanel('settings', 'Settings', 'Company, website, CRM, blog and admin dashboard settings scoped to Stratex Analytics.', settingsPanel()) +
             modulePanel('showcase', 'Showcase Event', 'Manage ScoutLink showcase events from the Stratex operating centre while preserving event notifications.', toolPanel('Showcase Event workspace', 'The existing ScoutLink showcase event workflow remains connected to the same data, invite responses and notification routes.', '/stratex/showcase-events', 'Open showcase events')) +
             modulePanel('awards', 'Award Ceremonies', 'Manage award nominations and ceremonies from the Stratex operating centre while preserving nomination actions.', toolPanel('Award Ceremonies workspace', 'The existing award nomination workflow remains connected to the same nomination data and confirmation routes.', '/stratex/award-nominations', 'Open awards workspace')) +
+            '<section class="stx-company-module" id="module-accessDenied" hidden><div class="stx-admin-surface"><p class="stx-eyebrow">Access denied</p><h2>Management access required</h2><p class="stx-muted">This section is restricted to Stratex Management users. Your menu only shows the areas available to your account.</p><div class="stx-admin-inline-actions"><button class="btn btn-primary" data-admin-module="dashboard" type="button">Back to dashboard</button><button class="btn btn-outline" data-admin-module="contactForms" type="button">Open contact forms</button></div></div></section>' +
           '</div>' +
         '</main>' +
         '<div class="stx-admin-detail-backdrop" id="stxAdminDetailBackdrop" hidden></div>' +
@@ -392,6 +474,18 @@
 
   function orgPanel() {
     return '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Team structure</h3><button class="btn btn-sm btn-outline" id="refreshOrgBtn" type="button">Refresh</button></div><div class="stx-admin-kpis" id="orgKpis"><div><b>-</b><span>Team members</span></div><div><b>-</b><span>Active records</span></div><div><b>-</b><span>Managers</span></div></div><div id="orgRows" class="loading-state"><div class="spinner"></div></div></div>';
+  }
+
+  function adminUsersPanel() {
+    return '<div class="stx-admin-two-col"><form class="stx-admin-surface" id="adminUserForm"><h3>Invite admin user</h3>' +
+      '<div class="form-row">' + input('First name', 'firstName', 'text', true) + input('Last name', 'lastName', 'text', true) + '</div>' +
+      input('Email', 'emailAddr', 'email', true, 'name@stratexanalytics.co.uk') +
+      input('Job title', 'jobTitle', 'text', false, 'e.g. Operations Executive') +
+      '<label class="form-group"><span>Manager</span><select class="form-control" id="adminUserManager" name="managerId"><option value="">No manager</option></select></label>' +
+      '<label class="form-group"><span>User type</span><select class="form-control" name="adminRole"><option>Employee</option><option>Management</option></select></label>' +
+      '<p class="stx-muted">Only Management users can invite or update Stratex admin users. Invites use the same complete-signup email flow as other ScoutLink accounts.</p>' +
+      '<div class="form-message" id="adminUserMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Send invite</button></form>' +
+      '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Admin users</h3><button class="btn btn-sm btn-outline" id="refreshAdminUsersBtn" type="button">Refresh</button></div><div id="adminUserRows" class="loading-state"><div class="spinner"></div></div></div></div>';
   }
 
   function profilePanel() {
@@ -419,7 +513,32 @@
   }
 
   function settingsPanel() {
-    return '<div class="stx-admin-grid"><article class="stx-admin-surface"><h3>Company settings</h3><p class="stx-muted">Manage company profile, admin identity and public website defaults.</p></article><article class="stx-admin-surface"><h3>Website settings</h3><p class="stx-muted">Public pages, form routing, CRM and Learning Centre settings stay scoped to Stratex.</p></article><article class="stx-admin-surface"><h3>Notifications</h3><p class="stx-muted">Lead, concern, hiring and operational notification rules.</p></article><article class="stx-admin-surface"><h3>Product separation</h3><p class="stx-muted">Linked platform operations stay outside the core Stratex company administration centre.</p></article></div>';
+    var management = isManagement();
+    return '<div class="stx-admin-two-col settings-layout">' +
+      '<form class="stx-admin-surface" id="stratexPasswordForm"><h3>Account & security</h3>' +
+        '<label class="form-group"><span>Current password</span><input class="form-control" name="currentPassword" type="password" autocomplete="current-password"></label>' +
+        '<label class="form-group"><span>New password</span><input class="form-control" name="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Minimum 8 characters"></label>' +
+        '<label class="form-group"><span>Confirm new password</span><input class="form-control" name="confirmPassword" type="password" autocomplete="new-password"></label>' +
+        '<p class="stx-muted">Use a strong password. Changes apply to your Stratex admin login.</p><div class="form-message" id="stratexPasswordMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save password</button>' +
+      '</form>' +
+      '<form class="stx-admin-surface" id="stratexPreferencesForm"><h3>Personal preferences</h3>' +
+        '<label class="form-group"><span>Timezone</span><select class="form-control" name="timezone"><option>Europe/London</option><option>UTC</option></select></label>' +
+        '<label class="form-group"><span>Date format</span><select class="form-control" name="dateFormat"><option>10 Jul 2026</option><option>2026-07-10</option></select></label>' +
+        '<label class="form-group"><span>Notifications</span><select class="form-control" name="notifications"><option>Important admin updates</option><option>All assigned updates</option><option>Email only</option></select></label>' +
+        '<div class="form-message" id="stratexPreferencesMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save preferences</button>' +
+      '</form>' +
+      (management ? '<form class="stx-admin-surface" id="stratexCompanySettingsForm"><h3>Company settings</h3>' +
+        '<label class="form-group"><span>Company name</span><input class="form-control" name="companyName" value="Stratex Analytics"></label>' +
+        '<label class="form-group"><span>Support email</span><input class="form-control" name="supportEmail" type="email" value="info@scoutlink.app"></label>' +
+        '<label class="form-group"><span>Public contact routing</span><select class="form-control" name="routing"><option>Send to CRM and contact forms</option><option>Send to CRM only</option></select></label>' +
+        '<div class="form-message" id="stratexCompanySettingsMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save company settings</button>' +
+      '</form><form class="stx-admin-surface" id="stratexNotificationSettingsForm"><h3>Management notifications</h3>' +
+        '<label class="form-group"><span>Registration alerts</span><select class="form-control" name="registrationAlerts"><option>Enabled</option><option>Disabled</option></select></label>' +
+        '<label class="form-group"><span>Hiring alerts</span><select class="form-control" name="hiringAlerts"><option>Enabled</option><option>Disabled</option></select></label>' +
+        '<label class="form-group"><span>Trust concern alerts</span><select class="form-control" name="trustAlerts"><option>Immediate</option><option>Daily summary</option></select></label>' +
+        '<div class="form-message" id="stratexNotificationSettingsMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save notification rules</button>' +
+      '</form>' : '') +
+    '</div>';
   }
 
   function input(label, name, type, required, placeholder) {
@@ -448,9 +567,11 @@
 
   function switchModule(id, skipHistory) {
     if (!MODULE_BY_ID[id]) id = 'dashboard';
+    var denied = !isAllowedModule(id);
+    if (denied) id = 'accessDenied';
     document.querySelectorAll('[data-admin-module]').forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-admin-module') === id); });
     document.querySelectorAll('.stx-company-module').forEach(function (el) { el.hidden = el.id !== 'module-' + id; });
-    var item = MODULES.find(function (row) { return row[0] === id; }) || MODULES[0];
+    var item = denied ? ['accessDenied', 'Access denied', ''] : (MODULES.find(function (row) { return row[0] === id; }) || MODULES[0]);
     var title = document.getElementById('stxAdminTitle');
     if (title) title.textContent = item[1];
     if (id === 'crm') loadCrm();
@@ -459,11 +580,11 @@
     if (id === 'registrations') loadRegistrations();
     if (id === 'blog') loadBlog();
     if (id === 'leadership') loadLeadership();
-    if (id === 'org' || id === 'profile') loadOrg();
+    if (id === 'org' || id === 'adminUsers' || id === 'profile' || id === 'leave' || id === 'meetings') loadOrg();
     if (id === 'contracts') loadContracts();
     if (id === 'hiring') loadHiring();
     if (id === 'concerns') loadConcerns();
-    if (!skipHistory && window.history && window.history.pushState) {
+    if (!skipHistory && !denied && window.history && window.history.pushState) {
       var nextUrl = MODULE_PATHS[id] || (window.location.pathname + (id === 'dashboard' ? '' : '#' + encodeURIComponent(id)));
       window.history.pushState({ adminModule: id }, '', nextUrl);
     }
@@ -517,6 +638,8 @@
     if (leavePerson) leavePerson.innerHTML = peopleOptions || '<option value="">No active team members</option>';
     var attendees = document.getElementById('meetingAttendees');
     if (attendees) attendees.innerHTML = peopleOptions;
+    var adminManager = document.getElementById('adminUserManager');
+    if (adminManager) adminManager.innerHTML = '<option value="">No manager</option>' + peopleOptions;
   }
 
   function renderOrgData(data) {
@@ -540,6 +663,7 @@
       orgRows.innerHTML = roots.length ? '<div class="stx-org-tree">' + roots.map(function (row) { return renderOrgNode(row, byManager, 0); }).join('') + '</div>' : '<div class="stx-admin-empty">No active organisation records yet.</div>';
     }
     renderProfileData(data);
+    renderAdminUsers(data);
     renderLeaveData(data);
     renderMeetingData(data);
     populatePeopleControls(admins);
@@ -548,7 +672,7 @@
   function renderOrgNode(row, byManager, depth) {
     var reports = byManager[row.id] || [];
     var meta = [adminRole(row), row.email].filter(Boolean).join(' - ');
-    var body = statusPill(row.admin_role || row.role || 'Read Only', 'info') + statusPill(reports.length + ' direct report' + (reports.length === 1 ? '' : 's'), '') + (row.is_active === false ? statusPill('Inactive', 'danger') : statusPill('Active', 'success'));
+    var body = statusPill(normalizeUserType(row.admin_role || row.role), 'info') + statusPill(reports.length + ' direct report' + (reports.length === 1 ? '' : 's'), '') + (row.is_active === false ? statusPill('Inactive', 'danger') : statusPill('Active', 'success'));
     return '<div class="stx-org-node" style="--depth:' + Number(depth || 0) + '">' + compactRecord(adminName(row), meta, body, '') +
       (reports.length ? '<div class="stx-org-children">' + reports.map(function (child) { return renderOrgNode(child, byManager, depth + 1); }).join('') + '</div>' : '') +
     '</div>';
@@ -564,7 +688,7 @@
     var root = document.getElementById('profileDetails');
     if (root) {
       root.innerHTML = '<div class="stx-profile-detail"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><h3>' + escapeHtml(adminName(self)) + '</h3><p>' + escapeHtml(adminRole(self)) + '</p><p>' + escapeHtml(self.email || '') + '</p></div></div>' +
-        '<div class="stx-admin-record-body">' + statusPill(self.admin_role || self.role || 'Read Only', 'info') + statusPill(self.is_active === false ? 'Inactive' : 'Active', self.is_active === false ? 'danger' : 'success') + '</div>' +
+        '<div class="stx-admin-record-body">' + statusPill(normalizeUserType(self.admin_role || self.role), 'info') + statusPill(self.is_active === false ? 'Inactive' : 'Active', self.is_active === false ? 'danger' : 'success') + '</div>' +
         '<p class="stx-muted">Reports to: ' + escapeHtml(manager ? adminName(manager) : 'No manager assigned') + '</p>';
     }
     var reportsRoot = document.getElementById('profileReports');
@@ -573,6 +697,40 @@
         ? renderAdminRecords(reports, function (row) { return compactRecord(adminName(row), adminRole(row), statusPill(row.email || '', 'info'), ''); })
         : '<div class="stx-admin-empty">No direct reports on your current Stratex record.</div>';
     }
+  }
+
+  function renderAdminUsers(data) {
+    var root = document.getElementById('adminUserRows');
+    if (!root) return;
+    var admins = (data && data.admins) || [];
+    root.innerHTML = rowTable([
+      ['Name', 'name'],
+      ['Email', 'email'],
+      ['Job title', 'jobTitle'],
+      ['Manager', 'manager'],
+      ['User type', 'userType'],
+      ['Status', 'status']
+    ], admins.map(function (row) {
+      var manager = admins.find(function (item) { return item.id && item.id === row.manager_id; });
+      return {
+        name: adminName(row),
+        email: row.email || '',
+        jobTitle: adminRole(row),
+        manager: manager ? adminName(manager) : 'No manager',
+        userType: statusPill(normalizeUserType(row.admin_role || row.role), normalizeUserType(row.admin_role || row.role) === 'Management' ? 'info' : ''),
+        status: statusPill(row.is_active === false ? 'Inactive' : 'Active', row.is_active === false ? 'danger' : 'success')
+      };
+    }), {
+      key: 'adminUsers',
+      title: function (row) { return row.name; },
+      subtitle: function (row) { return [row.jobTitle, row.email].filter(Boolean).join(' - '); }
+    });
+  }
+
+  function normalizeUserType(value) {
+    var raw = String(value || '').trim().toLowerCase();
+    if (raw === 'employee' || raw === 'read only' || raw === 'readonly') return 'Employee';
+    return 'Management';
   }
 
   function renderLeaveData(data) {
@@ -608,6 +766,8 @@
         var el = document.getElementById(id);
         if (el) el.innerHTML = '<div class="stx-admin-error">Could not load Stratex org records.</div>';
       });
+      var users = document.getElementById('adminUserRows');
+      if (users) users.innerHTML = '<div class="stx-admin-error">Could not load Stratex admin users.</div>';
     }
   }
 
@@ -1053,7 +1213,7 @@
         ['Image', 'image_url', function (row) {
           return row.image_url ? '<img alt="" src="' + escapeHtml(row.image_url) + '" style="width:44px;height:44px;border-radius:12px;object-fit:cover">' : '';
         }],
-        ['Name', 'full_name'], ['Job title', 'job_title'], ['Email', 'email'], ['Role', 'permission_role']
+        ['Name', 'full_name'], ['Job title', 'job_title'], ['Email', 'email'], ['User type', 'permission_role', function (row) { return statusPill(normalizeUserType(row.permission_role), 'info'); }]
       ], data.data || [], {
         key: 'leadership',
         title: function (row) { return row.full_name || 'Leadership profile'; },
@@ -1063,7 +1223,7 @@
             { label: 'Name', value: row.full_name },
             { label: 'Job title', value: row.job_title },
             { label: 'Email', value: row.email },
-            { label: 'Permission role', value: row.permission_role },
+            { label: 'User type', value: normalizeUserType(row.permission_role) },
             { label: 'Focus chip', value: row.focus_chip },
             { label: 'Image URL', value: row.image_url },
             { label: 'Summary', value: row.summary }
@@ -1123,6 +1283,8 @@
     });
     var refreshOrg = document.getElementById('refreshOrgBtn');
     if (refreshOrg) refreshOrg.addEventListener('click', loadOrg);
+    var refreshAdminUsers = document.getElementById('refreshAdminUsersBtn');
+    if (refreshAdminUsers) refreshAdminUsers.addEventListener('click', loadOrg);
     var refreshContracts = document.getElementById('refreshContractsBtn');
     if (refreshContracts) refreshContracts.addEventListener('click', loadContracts);
     var refreshHiring = document.getElementById('refreshHiringBtn');
@@ -1161,6 +1323,19 @@
         showMessage('leadershipMsg', err.message || 'Could not save leadership member.', false);
       }
     });
+    var adminUserForm = document.getElementById('adminUserForm');
+    if (adminUserForm) adminUserForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var payload = formPayload(adminUserForm);
+        await api('POST', '/api/stratex/admins', payload);
+        adminUserForm.reset();
+        showMessage('adminUserMsg', 'Admin invite sent.', true);
+        loadOrg();
+      } catch (err) {
+        showMessage('adminUserMsg', err.message || 'Could not invite this admin user.', false);
+      }
+    });
     var leaveForm = document.getElementById('leaveForm');
     if (leaveForm) leaveForm.addEventListener('submit', async function (event) {
       event.preventDefault();
@@ -1187,6 +1362,51 @@
       } catch (err) {
         showMessage('meetingMsg', err.message || 'Could not book meeting.', false);
       }
+    });
+    bindSettingsForms();
+  }
+
+  function bindSettingsForms() {
+    var passwordForm = document.getElementById('stratexPasswordForm');
+    if (passwordForm) passwordForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var payload = formPayload(passwordForm);
+      if (!payload.currentPassword || !payload.newPassword || !payload.confirmPassword) {
+        showMessage('stratexPasswordMsg', 'Complete all password fields before saving.', false);
+        return;
+      }
+      if (String(payload.newPassword).length < 8) {
+        showMessage('stratexPasswordMsg', 'New password must be at least 8 characters.', false);
+        return;
+      }
+      if (payload.newPassword !== payload.confirmPassword) {
+        showMessage('stratexPasswordMsg', 'The new passwords do not match.', false);
+        return;
+      }
+      try {
+        await api('POST', '/api/auth/change-password', { password: payload.newPassword });
+        passwordForm.reset();
+        showMessage('stratexPasswordMsg', 'Password updated.', true);
+      } catch (err) {
+        showMessage('stratexPasswordMsg', err.message || 'Could not update password.', false);
+      }
+    });
+    [
+      ['stratexPreferencesForm', 'stratexPreferencesMsg', 'Preferences saved for this browser.'],
+      ['stratexCompanySettingsForm', 'stratexCompanySettingsMsg', 'Company settings saved.'],
+      ['stratexNotificationSettingsForm', 'stratexNotificationSettingsMsg', 'Notification rules saved.']
+    ].forEach(function (item) {
+      var form = document.getElementById(item[0]);
+      if (!form) return;
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        try {
+          localStorage.setItem(item[0], JSON.stringify(formPayload(form)));
+          showMessage(item[1], item[2], true);
+        } catch (_) {
+          showMessage(item[1], 'Could not save these settings in this browser.', false);
+        }
+      });
     });
   }
 

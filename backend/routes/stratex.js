@@ -30,38 +30,33 @@ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
 const ADMIN_ROLE_PERMISSIONS = {
-  'Super Admin': ['super_admin','management','admin_users','delete_users','permissions','acquisition','safeguarding','registrations','operations','product_demo','read_only'],
-Management: ['management','admin_users','delete_users','permissions','acquisition','safeguarding','registrations','operations','product_demo','read_only'],
-Operations: ['operations','registrations','support','showcase','product_demo','read_only'],
-Acquisition: ['acquisition','registrations','product_demo','read_only'],
-'Safeguarding Reviewer': ['safeguarding','registrations','read_only'],
-'Product Demo': ['product_demo','read_only'],
-'Read Only': ['read_only'],
-Safeguarding: ['safeguarding','registrations','read_only'],
-Nominations: ['operations','showcase','read_only'],
-Support: ['support','read_only'],
-ProductDemo: ['product_demo','read_only']
+Management: ['management','admin_users','delete_users','permissions','registrations','operations','showcase','awards','trust','content','hiring','contracts'],
+Employee: ['employee','contact_forms','crm','website_activity','profile','settings']
 };
 
 function normalizeAdminRole(role) {
 const raw = String(role || '').trim();
 const aliases = {
-SuperAdmin: 'Super Admin',
-'Super Admin': 'Super Admin',
-Safeguarding: 'Safeguarding Reviewer',
-ProductDemo: 'Product Demo',
-'Product Demo': 'Product Demo',
-Support: 'Read Only',
-Nominations: 'Operations',
-'ReadOnly': 'Read Only',
-'Read Only': 'Read Only'
+SuperAdmin: 'Management',
+'Super Admin': 'Management',
+Founder: 'Management',
+Operations: 'Management',
+Acquisition: 'Management',
+Safeguarding: 'Management',
+'Safeguarding Reviewer': 'Management',
+ProductDemo: 'Management',
+'Product Demo': 'Management',
+Nominations: 'Management',
+Support: 'Employee',
+'ReadOnly': 'Employee',
+'Read Only': 'Employee'
 };
-return aliases[raw] || (ADMIN_ROLE_PERMISSIONS[raw] ? raw : 'Read Only');
+return aliases[raw] || (ADMIN_ROLE_PERMISSIONS[raw] ? raw : 'Employee');
 }
 
 function adminPermissions(role) {
 const normalized = normalizeAdminRole(role);
-return ADMIN_ROLE_PERMISSIONS[normalized] || ADMIN_ROLE_PERMISSIONS['Read Only'];
+return ADMIN_ROLE_PERMISSIONS[normalized] || ADMIN_ROLE_PERMISSIONS.Employee;
 }
 
 async function loadCurrentAdmin(req) {
@@ -73,19 +68,20 @@ function canManageSensitiveAdmin(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
 const role = normalizeAdminRole(admin.admin_role || admin.role);
-return role === 'Super Admin' || role === 'Management' || perms.includes('super_admin') || perms.includes('management') || perms.includes('permissions');
+return role === 'Management' || perms.includes('super_admin') || perms.includes('management') || perms.includes('permissions');
 }
 
 function canManageContracts(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
 const role = normalizeAdminRole(admin.admin_role || admin.role);
-return role === 'Super Admin' || role === 'Management' || role === 'Operations' || perms.includes('super_admin') || perms.includes('management') || perms.includes('operations');
+return role === 'Management' || perms.includes('super_admin') || perms.includes('management') || perms.includes('operations');
 }
 
 function visibleAdminIdsForContracts(current, admins) {
 if (!current) return new Set();
 if (canManageSensitiveAdmin(current)) return new Set((admins || []).map(a => a.id));
+if (!canManageContracts(current)) return new Set([current.id]);
 const visible = new Set([current.id]);
 let changed = true;
 while (changed) {
@@ -582,7 +578,7 @@ const dupA = await checkDuplicates(emailAddr, null);
 if (dupA.duplicate) return res.status(409).json({ error: duplicatePrecheckMessage(dupA) });
 const loginCode = await generateUniqueCode();
 const expires = new Date(Date.now() + 7*24*60*60*1000);
-const nextAdminRole = normalizeAdminRole(adminRole || role || 'Read Only');
+const nextAdminRole = normalizeAdminRole(adminRole || role || 'Employee');
 const { data, error } = await supabase.from('stratex').insert({
 stratex_id: generateId('STX'), first_name: firstName.trim(), last_name: lastName.trim(),
 email: emailAddr.toLowerCase().trim(), role: nextAdminRole, admin_role: nextAdminRole,
@@ -732,12 +728,22 @@ router.get('/org', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
 const currentAdmin = await loadCurrentAdmin(req);
 const [{ data: admins, error: adminErr }, { data: leave }, { data: meetings }] = await Promise.all([
-supabase.from('stratex').select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,annual_leave_days,contract_data,is_active,created_at,last_login,registration_complete').order('first_name'),
+supabase.from('stratex').select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,annual_leave_days,is_active,created_at,last_login,registration_complete').order('first_name'),
 supabase.from('stratex_time_off').select('*').order('created_at', { ascending: false }).limit(100),
 supabase.from('stratex_meetings').select('*').order('meeting_date', { ascending: true }).limit(100)
 ]);
 if (adminErr) throw adminErr;
-res.json({ admins: admins || [], leave: leave || [], meetings: meetings || [], rolePermissions: ADMIN_ROLE_PERMISSIONS, canManageSensitive: canManageSensitiveAdmin(currentAdmin), currentAdmin });
+const management = canManageSensitiveAdmin(currentAdmin);
+let visibleAdmins = admins || [];
+let visibleLeave = leave || [];
+let visibleMeetings = meetings || [];
+if (!management) {
+const allowedIds = new Set([currentAdmin && currentAdmin.id, currentAdmin && currentAdmin.manager_id].filter(Boolean));
+visibleAdmins = visibleAdmins.filter(row => allowedIds.has(row.id));
+visibleLeave = visibleLeave.filter(row => row.stratex_id === currentAdmin.id);
+visibleMeetings = [];
+}
+res.json({ admins: visibleAdmins, leave: visibleLeave, meetings: visibleMeetings, rolePermissions: ADMIN_ROLE_PERMISSIONS, canManageSensitive: management, currentAdmin });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -773,6 +779,8 @@ res.json({ message: 'Admin deactivated' });
 
 router.post('/org/leave', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await requireSensitiveAdmin(req, res);
+if (!currentAdmin) return;
 const { stratexId, leaveType, startDate, endDate, notes } = req.body;
 if (!stratexId || !leaveType || !startDate || !endDate) return res.status(400).json({ error: 'Admin, leave type, start date and end date are required.' });
 const { data, error } = await supabase.from('stratex_time_off').insert({ stratex_id: stratexId, leave_type: leaveType, start_date: startDate, end_date: endDate, notes: notes || null }).select().single();
@@ -783,6 +791,8 @@ res.status(201).json({ message: 'Leave recorded', data });
 
 router.post('/org/meetings', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
+const currentAdmin = await requireSensitiveAdmin(req, res);
+if (!currentAdmin) return;
 const { title, meetingDate, location, attendees, notes } = req.body;
 if (!title || !meetingDate) return res.status(400).json({ error: 'Meeting title and date are required.' });
 const { data, error } = await supabase.from('stratex_meetings').insert({ created_by: req.user.id, title, meeting_date: meetingDate, location: location || null, attendees: attendees || [], notes: notes || null }).select().single();

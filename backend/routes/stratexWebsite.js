@@ -104,6 +104,10 @@ function hasManagementPermission(admin, req) {
     role === 'management' ||
     role === 'super admin' ||
     role === 'founder' ||
+    role === 'operations' ||
+    role === 'acquisition' ||
+    role === 'safeguarding reviewer' ||
+    role === 'product demo' ||
     perms.includes('management') ||
     perms.includes('permissions') ||
     perms.includes('admin_users');
@@ -118,7 +122,7 @@ async function requireLeadershipManagement(req, res, next) {
       .maybeSingle();
     if (error) throw error;
     if (data && data.is_active === false) return res.status(403).json({ error: 'This admin account is inactive.' });
-    if (!hasManagementPermission(data || {}, req)) return res.status(403).json({ error: 'Management permission is required for leadership changes.' });
+    if (!hasManagementPermission(data || {}, req)) return res.status(403).json({ error: 'Management permission is required for this Stratex admin action.' });
     next();
   } catch (err) {
     console.error('[Stratex leadership permission]', { code: err.code, message: err.message });
@@ -558,7 +562,7 @@ router.get('/crm/export', requireAuth, requireRole('Stratex'), async (req, res) 
   }
 });
 
-router.post('/blog', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/blog', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
   try {
     const title = text(req.body.title, 180);
     if (!title) return res.status(400).json({ error: 'Title is required.' });
@@ -582,7 +586,7 @@ router.post('/blog', requireAuth, requireRole('Stratex'), async (req, res) => {
   }
 });
 
-router.patch('/blog/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/blog/:id', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
     ['title', 'excerpt', 'body', 'category', 'status'].forEach(field => {
@@ -600,7 +604,7 @@ router.patch('/blog/:id', requireAuth, requireRole('Stratex'), async (req, res) 
   }
 });
 
-router.delete('/blog/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/blog/:id', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_learning_posts')

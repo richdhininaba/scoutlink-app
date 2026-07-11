@@ -167,44 +167,13 @@ body:not(.super-user) .coach-col{display:none;}
 function toggleNotifPanel(){document.getElementById("notifPanel").classList.toggle("open");}
 function logout(){logoutToLogin();}
 
-var COACH_NAV_ITEMS=[
-  {label:"Dashboard",href:"coach-dashboard.html"},
-  {label:"My Players",href:"coach-my-players.html"},
-  {label:"Add Player",href:"add-player.html"},
-  {label:"Bulk Add Players",href:"bulk-add-players.html"},
-  {label:"Match Facts",href:"match-facts.html"},
-  {label:"Fixtures",href:"coach-fixtures.html"},
-  {label:"Video Reels",href:"coach-video-reels.html"},
-  {label:"Notifications",href:"#"},
-  {label:"Settings",href:"coach-settings.html"}
-];
-var STRATEX_NAV_ITEMS=[
-  {label:"Dashboard",href:"stratex-dashboard.html"},
-  {label:"Registrations",href:"stratex-registrations.html"},
-  {label:"Users",href:"stratex-users.html"},
-  {label:"Players",href:"stratex-players.html"},
-  {label:"Scouts",href:"stratex-scouts.html"},
-  {label:"Coaches",href:"stratex-coaches.html"},
-  {label:"Scout Teams",href:"stratex-scout-teams.html"},
-  {label:"School Teams",href:"stratex-school-teams.html"},
-  {label:"Award Nominations",href:"stratex-award-nominations.html"},
-  {label:"Showcase Events",href:"stratex-showcase-events.html"},
-  {label:"Notifications",href:"#"},
-  {label:"Settings",href:"stratex-settings.html"}
-];
-
 function initNav(){
   if(typeof Auth==="undefined"||!Auth.isLoggedIn()){navigateClean("login.html");return;}
   var t=Auth.type;
-  if(t!=="Coach"&&t!=="Stratex"){navigateClean("login.html");return;}
-  var items=t==="Stratex"?STRATEX_NAV_ITEMS:COACH_NAV_ITEMS;
+  if(t!=="Coach"){navigateClean("login.html");return;}
   var nav=document.getElementById("sidebarNav");
-  var cur=window.location.pathname.split("/").pop();
-  if(nav){
-    nav.innerHTML=items.map(function(i){
-      var isNotif=i.label==="Notifications";
-      return '<a class="nav-item'+(cur===i.href?' active':'')+'" href="'+(isNotif?"#":i.href)+'" '+(isNotif?'id="navNotifBtn"':'')+'>'+i.label+'</a>';
-    }).join("");
+  if(nav&&typeof buildScoutNav==="function"){
+    buildScoutNav("sidebarNav","Coach");
     var nb=document.getElementById("navNotifBtn");
     if(nb)nb.addEventListener("click",function(e){e.preventDefault();toggleNotifPanel();});
   }
@@ -212,7 +181,7 @@ function initNav(){
   var uel=document.getElementById("sidebarUser");
   if(uel&&u){
     var ini=(u.firstName||"?")[0]+(u.lastName||"?")[0];
-    uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">'+ini.toUpperCase()+'</div><div><div class="user-name">'+u.firstName+" "+u.lastName+'</div><div class="user-role" style="color:var(--text-secondary);font-size:12px">'+t+'</div></div></div>';
+    uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">'+ini.toUpperCase()+'</div><div><div class="user-name">'+u.firstName+" "+u.lastName+'</div><div class="user-role" style="color:var(--text-secondary);font-size:12px">Coach</div></div></div>';
   }
   if(typeof updateNotifBadge==="function")updateNotifBadge();
 }
