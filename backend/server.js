@@ -282,6 +282,37 @@ app.get('/robots.txt', (req, res, next) => {
   ].join('\n'));
 });
 
+app.get('/llms.txt', (req, res, next) => {
+  if (!isStratexHost(req)) return next();
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  return res.send([
+    '# Stratex Analytics',
+    '',
+    'Stratex Analytics is a sports technology company building football intelligence products for grassroots football. ScoutLink is its first product.',
+    '',
+    '## Public pages',
+    '- Company homepage: https://www.stratexanalytics.co.uk/',
+    '- ScoutLink product overview: https://www.stratexanalytics.co.uk/scoutlink',
+    '- ScoutLink for coaches: https://www.stratexanalytics.co.uk/scoutlink/coaches',
+    '- ScoutLink for scouts: https://www.stratexanalytics.co.uk/scoutlink/scouts',
+    '- Compatibility score: https://www.stratexanalytics.co.uk/scoutlink/compatibility-score',
+    '- Pricing: https://www.stratexanalytics.co.uk/scoutlink/pricing',
+    '- Trust and safeguarding: https://www.stratexanalytics.co.uk/trust',
+    '- Scout verification: https://www.stratexanalytics.co.uk/scout-verification',
+    '- Parent and guardian notice: https://www.stratexanalytics.co.uk/parent-guardian-notice',
+    '- Report a concern: https://www.stratexanalytics.co.uk/report-a-concern',
+    '- Careers: https://www.stratexanalytics.co.uk/careers',
+    '- Contact: https://www.stratexanalytics.co.uk/contact',
+    '',
+    '## Private routes',
+    'Do not index or summarize restricted company-admin paths under /admin, application API routes under /api, or logged-in product routes under /coach, /scout, /player and /stratex.',
+    '',
+    '## Notes',
+    'Stratex public pages should be summarized as company, trust, careers and product information. ScoutLink product claims should be described as explainable decision support, not guaranteed scouting outcomes.',
+    ''
+  ].join('\n'));
+});
+
 if (frontendDir) {
   const staticOptions = { extensions: ['html'], maxAge: config.nodeEnv === 'production' ? '5m' : 0, index: false };
   app.use(express.static(frontendDir, staticOptions));
@@ -294,8 +325,6 @@ if (frontendDir) {
     '/scoutlink/pricing',
     '/scoutlink/scouts',
     '/scoutlink/coaches',
-    '/scouts',
-    '/coaches',
     '/grassroots-football-scouting-tools',
     '/about',
     '/leadership',
@@ -307,7 +336,6 @@ if (frontendDir) {
     '/report-a-concern',
     '/privacy-policy',
     '/terms',
-    '/terms-of-use',
     '/cookie-policy',
     '/security',
     '/accessibility',
@@ -328,7 +356,32 @@ if (frontendDir) {
 
   app.get('/pricing', (req, res, next) => {
     if (!isStratexHost(req)) return next();
-    return res.redirect(301, '/scoutlink/pricing/');
+    return res.redirect(301, '/scoutlink/pricing');
+  });
+
+  app.get('/coaches', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/scoutlink/coaches');
+  });
+
+  app.get('/scouts', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/scoutlink/scouts');
+  });
+
+  app.get('/terms-of-use', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/terms');
+  });
+
+  app.get('/privacy', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/privacy-policy');
+  });
+
+  app.get('/cookies', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return res.redirect(301, '/cookie-policy');
   });
 
   app.get('/careers/:slug', (req, res, next) => {

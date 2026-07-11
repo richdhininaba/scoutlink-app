@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contact ScoutLink | Stratex Analytics</title>
+<meta name="description" content="Contact ScoutLink for platform support, safeguarding, privacy, accessibility, careers or general Stratex Analytics enquiries.">
+<link rel="canonical" href="https://www.scoutlink.app/contact">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Contact ScoutLink | Stratex Analytics">
+<meta property="og:description" content="Send ScoutLink a platform, privacy, safeguarding, accessibility or general enquiry.">
+<meta property="og:url" content="https://www.scoutlink.app/contact">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contact ScoutLink | Stratex Analytics">
+<meta name="twitter:description" content="Contact ScoutLink and Stratex Analytics.">
+<meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/frontend/css/public-seo.css">
+<script>if(location.pathname==='/frontend/pages/contact.html')location.replace('/contact'+location.search+location.hash);</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.scoutlink.app/"},{"@type":"ListItem","position":2,"name":"Contact","item":"https://www.scoutlink.app/contact"}]}</script>
+</head>
+<body><div class="seo-shell">
+<nav class="seo-nav"><div class="seo-nav-inner"><a class="seo-brand" href="/">Scout<span>Link</span></a><div class="seo-links"><a href="/coaches">Coaches</a><a href="/scouts">Scouts</a><a href="/safeguarding">Safeguarding</a><a href="/report-a-concern">Report a Concern</a></div></div></nav>
+<main class="seo-main">
+<section class="seo-hero"><div class="seo-container seo-hero-grid">
+  <div class="seo-card"><span class="seo-kicker">Contact</span><h1>Talk to ScoutLink</h1><p class="seo-lede">Use this form for platform support, safeguarding routes, privacy, accessibility, careers or general Stratex Analytics enquiries. Urgent safety concerns should use Report a Concern.</p><div class="seo-actions"><a class="seo-btn" href="/report-a-concern">Report a Concern</a><a class="seo-btn" href="/privacy-request">Privacy Request</a><a class="seo-btn" href="/careers">Careers</a></div></div>
+  <aside class="seo-panel"><h2>Useful routes</h2><ul class="seo-list"><li><a href="/safeguarding">Safeguarding at ScoutLink</a></li><li><a href="/parent-guardian-notice">Parent & Guardian Notice</a></li><li><a href="/accessibility">Accessibility support</a></li></ul></aside>
+</div></section>
+<section class="seo-section"><div class="seo-container"><div class="seo-form-card">
+  <span class="seo-kicker">Contact form</span><h2>Send a message</h2><p>Your message is stored securely and an internal alert is sent to Stratex reviewers when email alert settings are configured.</p>
+  <div class="seo-message ok" id="ok"></div><div class="seo-message err" id="err"></div>
+  <form class="seo-form" id="contactForm" novalidate>
+    <div class="seo-form-row">
+      <label class="seo-label">Reason<select class="seo-select" name="category" required><option value="">Select reason</option><option>Platform support</option><option>Safeguarding route</option><option>Privacy or data request</option><option>Accessibility</option><option>Careers</option><option>General enquiry</option></select></label>
+      <label class="seo-label">Your role<select class="seo-select" name="role"><option>Coach</option><option>Scout</option><option>Parent or guardian</option><option>Player</option><option>Stratex partner</option><option>Other</option></select></label>
+    </div>
+    <div class="seo-form-row"><label class="seo-label">Name<input class="seo-input" name="name" autocomplete="name" required></label><label class="seo-label">Email<input class="seo-input" name="email" type="email" autocomplete="email" required></label></div>
+    <div class="seo-form-row"><label class="seo-label">Phone<input class="seo-input" name="phone" autocomplete="tel"></label><label class="seo-label">Organisation/team<input class="seo-input" name="organisation" autocomplete="organization"></label></div>
+    <label class="seo-label">Message<textarea class="seo-textarea" name="message" required placeholder="Tell us what you need help with."></textarea></label>
+    <button class="seo-btn primary" id="submitBtn" type="submit">Send message</button>
+  </form>
+</div></div></section>
+</main>
+<footer class="seo-footer"><div class="seo-container seo-footer-grid"><div><a class="seo-brand" href="/">Scout<span>Link</span></a><p class="seo-note">ScoutLink by Stratex Analytics.</p></div><div class="seo-footer-links"><div><strong>Product</strong><a href="/coaches">Coaches</a><a href="/scouts">Scouts</a><a href="/demo">Demo</a></div><div><strong>Trust</strong><a href="/safeguarding">Safeguarding</a><a href="/report-a-concern">Report a Concern</a><a href="/parent-guardian-notice">Parent Notice</a></div><div><strong>Company</strong><a href="/about">About</a><a href="/contact">Contact</a></div><div><strong>Legal</strong><a href="/privacy-policy">Privacy</a><a href="/terms">Terms</a><a href="/accessibility">Accessibility</a></div></div></div></footer>
+</div>
+<script>
+const API = localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
+function show(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');}
+function clearMsgs(){['ok','err'].forEach(function(id){document.getElementById(id).classList.remove('show');});}
+document.getElementById('contactForm').addEventListener('submit',function(e){
+  e.preventDefault(); clearMsgs();
+  var fd=new FormData(e.target), body={sourcePage:'/contact'}; fd.forEach(function(v,k){body[k]=String(v||'').trim();});
+  if(!body.category || !body.message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email||'')){show('err','Please choose a reason, enter a valid email and add your message.');return;}
+  var btn=document.getElementById('submitBtn'); btn.setAttribute('aria-busy','true'); btn.textContent='Sending...'; btn.style.pointerEvents='none';
+  fetch(API+'/api/trust/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not send message');return d;});})
+    .then(function(d){show('ok',d.message||'Message sent.'); e.target.reset();})
+    .catch(function(err){show('err',err.message||'Could not send message.');})
+    .finally(function(){btn.removeAttribute('aria-busy');btn.textContent='Send message';btn.style.pointerEvents='';});
+});
+</script>
+<script src="/frontend/js/public-footer.js"></script>
+</body></html>
+
+
+
+

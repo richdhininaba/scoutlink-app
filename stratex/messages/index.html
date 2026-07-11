@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Messages - ScoutLink Stratex</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/frontend/css/variables.css">
+<link rel="stylesheet" href="/frontend/css/main.css">
+<style>
+.admin-msg-grid{display:grid;grid-template-columns:360px 1fr;gap:16px;max-width:1420px;margin:0 auto}
+.admin-msg-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 14px 42px rgba(15,23,42,.06)}
+.admin-msg-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;border-bottom:1px solid #e5e7eb;color:#111827}
+.admin-msg-body{padding:16px;display:grid;gap:12px}
+.admin-msg-card input,.admin-msg-card select,.admin-msg-card textarea{background:#fff!important;color:#111827!important;border-color:#dbe3ea!important}
+.admin-msg-card input::placeholder,.admin-msg-card textarea::placeholder{color:#94a3b8!important}
+.thread-row{display:grid;gap:4px;padding:12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;cursor:pointer}
+.thread-row.active,.thread-row:hover{border-color:#1d9e75;background:#ecfdf5}
+.thread-title{display:flex;justify-content:space-between;gap:8px;color:#111827;font-weight:800;font-size:13px}
+.thread-preview{color:#64748b;font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-stream{min-height:460px;max-height:60vh;overflow:auto;background:#f6f8fa;padding:16px;display:grid;gap:10px;align-content:start}
+.bubble{max-width:72%;padding:10px 12px;border-radius:14px;background:#fff;color:#111827;border:1px solid #e5e7eb;font-size:13px;line-height:1.45;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.bubble.mine{justify-self:end;background:#0f9f75;color:#fff}
+.msg-compose{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px;border-top:1px solid #e5e7eb;background:#fff}
+.muted{color:#64748b}
+@media(max-width:767px){.admin-msg-grid{grid-template-columns:1fr}.msg-stream{min-height:420px}.bubble{max-width:90%}.bubble.mine{background:#0f9f75;color:#fff;border-color:#0f9f75}.msg-compose{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="/frontend/css/phone-base.css">
+<link rel="stylesheet" href="/frontend/css/phone-shell.css">
+<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Messages</span><div class="topbar-right"><button class="btn btn-sm btn-outline" onclick="loadThreads()">Refresh</button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
+<div class="page-content">
+<div class="form-error" id="err" style="margin-bottom:12px"></div><div class="form-success" id="ok" style="margin-bottom:12px"></div>
+<section class="admin-msg-grid">
+  <div class="admin-msg-card">
+    <div class="admin-msg-head"><h3>Start message</h3></div>
+    <div class="admin-msg-body">
+      <select id="recipientType" class="form-input" aria-label="Recipient type"><option value="Coach">Coach</option><option value="Scout">Scout</option><option value="Stratex">Stratex admin</option></select>
+      <select id="recipientId" class="form-input" aria-label="Recipient"></select>
+      <input id="subject" class="form-input" placeholder="Subject">
+      <textarea id="body" class="form-input" rows="4" placeholder="Write a controlled internal message"></textarea>
+      <button class="btn btn-primary" onclick="createThread()">Send message</button>
+    </div>
+    <div class="admin-msg-head"><h3>Threads</h3></div>
+    <div class="admin-msg-body" id="threadList"><div class="muted">Loading threads...</div></div>
+  </div>
+  <div class="admin-msg-card">
+    <div class="admin-msg-head"><h3 id="activeTitle">Select a conversation</h3><span class="muted" id="activeMeta"></span></div>
+    <div class="msg-stream" id="messages"><div class="muted" style="margin:auto">Choose a thread to view messages.</div></div>
+    <div class="msg-compose">
+      <input id="replyBody" class="form-input" placeholder="Reply to this conversation">
+      <button class="btn btn-primary" onclick="sendReply()">Send</button>
+    </div>
+  </div>
+</section>
+</div></div></div>
+<script src="/frontend/js/stratex-nav.js"></script>
+<script src="/frontend/js/main.js"></script>
+<script>
+var threads=[],activeThread=null;
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function show(id,msg){var el=document.getElementById(id);el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},3500);}
+function participantName(t){
+  var parts=t.participants||[];
+  var other=parts.find(function(p){return !(p.participant_id===Auth.user.id&&p.participant_type===Auth.type);})||parts[0]||{};
+  return (other.display_name||other.participant_type||'Conversation');
+}
+async function loadRecipients(){
+  var type=document.getElementById('recipientType').value;
+  var d=await api('GET','/api/chat/admin/users?type='+encodeURIComponent(type));
+  var users=d.data||[];
+  document.getElementById('recipientId').innerHTML=users.map(function(u){return '<option value="'+esc(u.id)+'">'+esc(u.name||u.email||u.type)+' - '+esc(u.email||u.type)+'</option>';}).join('')||'<option value="">No recipients available</option>';
+}
+async function loadThreads(){
+  var d=await api('GET','/api/chat/admin/threads');
+  threads=d.data||[];
+  document.getElementById('threadList').innerHTML=threads.length?threads.map(function(t){return '<div class="thread-row '+(activeThread&&activeThread.id===t.id?'active':'')+'" onclick="openThread(\''+esc(t.id)+'\')"><div class="thread-title"><span>'+esc(participantName(t))+'</span>'+(t.unreadCount?'<span class="badge badge-green">'+t.unreadCount+'</span>':'')+'</div><div class="thread-preview">'+esc(t.subject||'Internal message')+'</div><div class="thread-preview">'+esc(t.lastMessagePreview||'No messages yet')+'</div></div>';}).join(''):'<div class="muted">No internal message threads yet.</div>';
+}
+async function createThread(){
+  try{
+    var recipientId=document.getElementById('recipientId').value;
+    if(!recipientId)throw new Error('Choose a recipient.');
+    var body=document.getElementById('body').value.trim();
+    if(!body)throw new Error('Message cannot be blank.');
+    await api('POST','/api/chat/admin/threads',{recipientType:document.getElementById('recipientType').value,recipientId:recipientId,subject:document.getElementById('subject').value.trim(),body:body});
+    document.getElementById('body').value='';document.getElementById('subject').value='';
+    show('ok','Message sent.');await loadThreads();
+  }catch(e){show('err',e.message||'Could not send message.');}
+}
+async function openThread(id){
+  activeThread=threads.find(function(t){return t.id===id;});
+  document.getElementById('activeTitle').textContent=activeThread?participantName(activeThread):'Conversation';
+  document.getElementById('activeMeta').textContent=activeThread?(activeThread.subject||'Internal message'):'';
+  var d=await api('GET','/api/chat/admin/threads/'+encodeURIComponent(id)+'/messages');
+  var rows=d.data||[];
+  document.getElementById('messages').innerHTML=rows.length?rows.map(function(m){var mine=m.sender_id===Auth.user.id;return '<div class="bubble '+(mine?'mine':'')+'"><div>'+esc(m.body||'')+'</div><div style="font-size:10px;opacity:.72;margin-top:5px">'+esc(new Date(m.created_at).toLocaleString('en-GB'))+'</div></div>';}).join(''):'<div class="muted" style="margin:auto">No messages yet.</div>';
+  document.getElementById('messages').scrollTop=document.getElementById('messages').scrollHeight;
+  loadThreads();
+}
+async function sendReply(){
+  if(!activeThread)return show('err','Choose a conversation first.');
+  var body=document.getElementById('replyBody').value.trim();
+  if(!body)return show('err','Reply cannot be blank.');
+  await api('POST','/api/chat/admin/threads/'+encodeURIComponent(activeThread.id)+'/messages',{body:body});
+  document.getElementById('replyBody').value='';
+  await openThread(activeThread.id);
+}
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadRecipients().catch(function(e){show('err',e.message);});loadThreads().catch(function(e){show('err',e.message);});document.getElementById('recipientType').addEventListener('change',loadRecipients);});
+</script>
+<script src="/frontend/js/phone-routes.js"></script>
+<script src="/frontend/js/phone-shell.js"></script>
+<script src="/frontend/js/phone-pages.js"></script>
+</body></html>
+

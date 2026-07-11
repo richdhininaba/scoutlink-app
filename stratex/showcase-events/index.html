@@ -1,0 +1,398 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Showcase events - ScoutLink</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/frontend/css/variables.css">
+<link rel="stylesheet" href="/frontend/css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.event-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:16px;}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+.badge-draft{background:rgba(139,148,158,.15);color:#8b949e;}
+.badge-published{background:rgba(29,158,117,.15);color:#1d9e75;}
+.badge-confirmed{background:rgba(66,165,245,.15);color:#42A5F5;}
+.badge-cancelled{background:rgba(248,81,73,.15);color:#f85149;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px;}
+.form-input{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;outline:none;}
+.form-input:focus{border-color:#1d9e75;}
+.detail-panel{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:20px;margin-top:20px;}
+.player-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1e2a3a;}
+.player-row:last-child{border-bottom:none;}
+</style>
+<link rel="stylesheet" href="/frontend/css/phone-base.css">
+<link rel="stylesheet" href="/frontend/css/phone-shell.css">
+<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Showcase events</span>
+<div class="topbar-right">
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+<h2 style="font-size:20px;font-weight:800">Showcase events</h2>
+<button class="btn btn-primary" id="createEventBtn">+ Create event</button>
+</div>
+<div id="eventsList"><div class="loading-state"><div class="spinner"></div></div></div>
+<div id="eventDetail" style="display:none"></div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="createModal" style="display:none">
+<div class="modal-box">
+<h3 style="margin-bottom:20px">Create showcase event</h3>
+<div class="form-group"><label class="form-label">Event name *</label><input class="form-input" id="evName" placeholder="e.g. Spring Showcase 2026"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+<div class="form-group"><label class="form-label">Event date *</label><input class="form-input" id="evDate" type="date"></div>
+<div class="form-group"><label class="form-label">Event time</label><input class="form-input" id="evTime" type="time"></div>
+</div>
+<div class="form-group"><label class="form-label">Venue name *</label><input class="form-input" id="evVenue" placeholder="e.g. Northgate Sports Centre"></div>
+<div class="form-group"><label class="form-label">Venue address</label><input class="form-input" id="evAddress" placeholder="e.g. 10 High Street, Manchester"></div>
+<div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="evDesc" rows="3" placeholder="Describe the event..."></textarea></div>
+<div class="form-group"><label class="form-label">Max scout attendees *</label><input class="form-input" id="evMaxScouts" type="number" min="1" value="10"></div>
+<div class="form-group"><label class="form-label">Status</label>
+<div style="display:flex;gap:16px;margin-top:4px">
+<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="evStatus" value="draft" checked> <span style="font-size:13px">Draft</span></label>
+<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="evStatus" value="published"> <span style="font-size:13px">Published</span></label>
+</div></div>
+<div id="createError" style="display:none;color:#f44336;font-size:13px;margin-bottom:12px"></div>
+<div style="display:flex;gap:10px;margin-top:4px">
+<button class="btn btn-primary" id="confirmCreateBtn">Create event</button>
+<button class="btn btn-ghost" id="cancelCreateBtn">Cancel</button>
+</div>
+</div>
+</div>
+
+<script src="/frontend/js/stratex-nav.js"></script>
+<script>
+
+async function loadScoutAttendees(eventId){
+  try{
+    var resp = await api('GET','/api/showcase/'+eventId+'/attendees');
+    var container = document.getElementById('scoutAttendanceList');
+    if(!container) return;
+    var confirmed = resp.confirmed||[];
+    var waitlisted = resp.waitlisted||[];
+    var cancelled = resp.cancelled||[];
+    var notResponded = resp.notResponded||[];
+    var all = resp.scouts || confirmed.concat(waitlisted, cancelled, notResponded);
+    if(all.length===0){
+      container.innerHTML = '<div style="color:#8b949e;font-size:13px;padding:12px 0">No scouts found on the system.</div>';
+      return;
+    }
+    var ev=allEvents.find(function(e){return e.id===eventId;});
+    var maxScouts=ev?ev.max_scouts:20;
+    var acceptedCount=confirmed.length+waitlisted.length;
+    var summary='<div style="font-size:13px;color:#8b949e;margin-bottom:10px"><strong style="color:#e6edf3">'+confirmed.length+'</strong> confirmed of '+maxScouts+' maximum &bull; <strong style="color:#e6edf3">'+acceptedCount+'</strong> accepted/waitlisted &bull; <strong style="color:#e6edf3">'+notResponded.length+'</strong> not responded</div>';
+    var rows=all.map(function(a){
+      var s=a.scouts||{};
+      var name=(s.first_name||'')+' '+(s.last_name||'');
+      var email=s.email||'--';
+      var raw=a.raw_status||a.status||'not_responded';
+      var status=a.display_status||((raw==='confirmed'||raw==='waitlisted')?'accepted':raw==='cancelled'?'declined':'not_responded');
+      var confirmedAt=a.confirmed_at?new Date(a.confirmed_at).toLocaleDateString('en-GB'):'--';
+      var bc=status==='accepted'?'#1d9e75':status==='declined'?'#f85149':'#8b949e';
+      var label=status==='not_responded'?'Not responded':status.charAt(0).toUpperCase()+status.slice(1);
+      return '<tr><td style="padding:8px 10px">'+name+'</td><td style="padding:8px 10px;color:#8b949e;font-size:12px">'+email+'</td><td style="padding:8px 10px;color:#8b949e;font-size:12px">'+(s.club_name||'--')+'</td><td style="padding:8px 10px"><span style="background:'+bc+'22;color:'+bc+';border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700">'+label+'</span><div style="font-size:10px;color:#546E7A;margin-top:2px">'+raw+'</div></td><td style="padding:8px 10px;color:#8b949e;font-size:12px">'+confirmedAt+'</td></tr>';
+    }).join('');
+    container.innerHTML=summary+'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Scout Name</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Email</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Club</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Status</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#8b949e;border-bottom:1px solid #30363d">Responded</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }catch(e){
+    var container=document.getElementById('scoutAttendanceList');
+    if(container) container.innerHTML='<div style="color:#f44336;font-size:13px">Could not load attendance: '+e.message+'</div>';
+  }
+}
+</script>
+<script src="/frontend/js/main.js"></script>
+<script src="/frontend/js/heap-analytics.js"></script>
+<script>
+'use strict';
+var allEvents = [];
+
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+function fmtDate(d){if(!d)return 'N/A';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return String(d||'N/A');}}
+function safe(v,fb){return(v!==undefined&&v!==null&&v!=='')?String(v):(fb||'N/A');}
+
+document.addEventListener('DOMContentLoaded',function(){
+  if(!initStratexPage()) return;
+  document.getElementById('logoutBtn').addEventListener('click',logout);
+  document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
+  document.getElementById('createEventBtn').addEventListener('click',function(){var _cm=document.getElementById('createModal');_cm.style.display='flex';_cm.classList.add('open');});
+  document.getElementById('cancelCreateBtn').addEventListener('click',function(){var _cm2=document.getElementById('createModal');_cm2.style.display='none';_cm2.classList.remove('open');});
+  document.getElementById('confirmCreateBtn').addEventListener('click',createEvent);
+  loadEvents();
+});
+
+async function loadEvents(){
+  var el=document.getElementById('eventsList');
+  el.innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var d=await api('GET','/api/showcase');
+    allEvents=Array.isArray(d.data)?d.data:[];
+    renderEventsList();
+  }catch(e){
+    el.innerHTML='<div style="padding:20px;color:#f44336">Could not load events: '+safe(e.message)+'</div>';
+  }
+}
+
+function renderEventsList(){
+  var el=document.getElementById('eventsList');
+  if(!allEvents.length){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:#8b949e">No showcase events yet. Click Create event to get started.</div>';
+    return;
+  }
+  el.innerHTML=allEvents.map(function(ev){
+    var sc=ev.status==='cancelled'?'badge-cancelled':ev.status==='published'?'badge-published':ev.status==='confirmed'?'badge-confirmed':'badge-draft';
+    var playerCount=ev.player_count||ev.showcase_players_count||0;
+    var evId=safe(ev.id,'');
+    return '<div class="event-card">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'+
+    '<div>'+
+    '<div style="font-size:17px;font-weight:800;margin-bottom:4px">'+safe(ev.event_name,'Untitled event')+'</div>'+
+    '<div style="font-size:13px;color:#8b949e">'+fmtDate(ev.event_date)+(ev.event_time?' at '+safe(ev.event_time):'')+' &bull; '+safe(ev.venue_name,'No venue')+'</div>'+
+    (ev.venue_address?'<div style="font-size:12px;color:#546E7A;margin-top:2px">'+safe(ev.venue_address,'')+'</div>':'')+
+    '</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+    '<span class="status-badge '+sc+'">'+safe(ev.status,'draft')+'</span>'+
+    (ev.confirmed?'<span class="status-badge badge-confirmed">Confirmed</span>':'')+
+    '</div></div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">'+
+    '<span style="font-size:12px;color:#8b949e">'+playerCount+' players &bull; Max '+safe(ev.max_scouts,'10')+' scouts</span>'+
+    (evId?'<button class="btn btn-sm btn-primary" data-id="'+evId+'" data-action="manage">View &amp; manage</button>':'')+
+    '</div></div>';
+  }).join('');
+  el.removeEventListener('click', _evListClick);
+  el.addEventListener('click', _evListClick);
+}
+
+function _evListClick(e){
+  var btn=e.target.closest('[data-action]');
+  if(!btn) return;
+  var id=btn.getAttribute('data-id');
+  var action=btn.getAttribute('data-action');
+  if(action==='manage') openEventDetail(id);
+}
+
+async function createEvent(){
+  var name=document.getElementById('evName').value.trim();
+  var date=document.getElementById('evDate').value;
+  var venue=document.getElementById('evVenue').value.trim();
+  var maxScouts=parseInt(document.getElementById('evMaxScouts').value)||10;
+  var errEl=document.getElementById('createError');
+  if(!name||!date||!venue){errEl.style.display='block';errEl.textContent='Please fill in event name, date and venue.';return;}
+  errEl.style.display='none';
+  var statusVal=document.querySelector('input[name="evStatus"]:checked').value;
+  var btn=document.getElementById('confirmCreateBtn');
+  btn.disabled=true;btn.textContent='Creating...';
+  try{
+    var d=await api('POST','/api/showcase',{
+      eventName:name, eventDate:date,
+      eventTime:document.getElementById('evTime').value||null,
+      venueName:venue, venueAddress:document.getElementById('evAddress').value.trim()||null,
+      description:document.getElementById('evDesc').value.trim()||null,
+      maxScouts:maxScouts, status:statusVal
+    });
+    // Backend returns { data, message }
+    var created = d.data || d.event || null;
+    if(created && created.id){
+      allEvents.unshift(created);
+      renderEventsList();
+      document.getElementById('createModal').style.display='none';
+      ['evName','evDate','evTime','evVenue','evAddress','evDesc'].forEach(function(id){document.getElementById(id).value='';});
+      document.getElementById('evMaxScouts').value='10';
+    }else{
+      errEl.style.display='block';
+      errEl.textContent='Event created but could not retrieve its ID. Please refresh the page.';
+    }
+  }catch(e){
+    errEl.style.display='block';
+    errEl.textContent='Error: '+safe(e.message,'Could not create event.');
+  }finally{
+    btn.disabled=false;btn.textContent='Create event';
+  }
+}
+
+var _currentDetailEventId = null;
+var _allAvailablePlayers = [];
+
+async function openEventDetail(id){
+  if(!id){alert('Event ID missing. Please refresh.');return;}
+  _currentDetailEventId = id;
+  var ev=allEvents.find(function(e){return e.id===id;});
+  if(!ev){alert('Event not found. Please refresh.');return;}
+  var panel=document.getElementById('eventDetail');
+  panel.style.display='block';
+  panel.innerHTML='<div class="detail-panel">'+
+  '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">'+
+  '<h3 style="margin:0">'+safe(ev.event_name,'Event')+'</h3>'+
+  '<button class="btn btn-ghost btn-sm" id="closeDetailBtn">Close</button>'+
+  '</div>'+
+  '<div style="font-size:13px;color:#8b949e;margin-bottom:16px">'+fmtDate(ev.event_date)+(ev.event_time?' at '+safe(ev.event_time):'')+' &bull; '+safe(ev.venue_name,'')+(ev.venue_address?' &bull; '+safe(ev.venue_address,''):'')+'</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">'+
+  '<div>'+
+  '<div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Add players</div>'+
+  '<input class="form-input" id="playerSearch" placeholder="Search by name..." style="margin-bottom:10px">'+
+  '<div id="availablePlayers"><div class="loading-state"><div class="spinner"></div></div></div>'+
+  '</div>'+
+  '<div>'+
+  '<div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Players in showcase</div>'+
+  '<div id="showcasePlayers"><div class="loading-state"><div class="spinner"></div></div></div>'+
+  '</div>'+
+  '</div>'+
+  '<div style="margin-top:16px">'+
+  (ev.status==='cancelled'?
+  '<div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:12px;font-size:13px;color:#f85149">This event has been cancelled. Scouts and linked users have been notified.</div>':
+  ev.confirmed?
+  '<div style="background:rgba(29,158,117,.1);border:1px solid rgba(29,158,117,.3);border-radius:8px;padding:12px;font-size:13px;color:#1d9e75">This event is confirmed. Emails have been sent to scouts.</div>':
+  '<button class="btn btn-primary" id="confirmEventBtn">Confirm event &amp; notify scouts</button>')+
+  (ev.status!=='cancelled'?'<button class="btn btn-ghost" id="cancelEventBtn" style="margin-left:10px;color:#f85149;border:1px solid rgba(248,81,73,.35)">Cancel event</button>':'')+
+  '<div style="margin-top:24px" id="scoutAttendanceSection">'+
+  '<div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Scout Attendance</div>'+
+  '<div id="scoutAttendanceList"><div class="loading-state"><div class="spinner"></div></div></div>'+
+  '</div>'+
+  '</div>';
+  
+  document.getElementById('closeDetailBtn').addEventListener('click',function(){panel.style.display='none';});
+  if(!ev.confirmed && ev.status!=='cancelled'){
+    document.getElementById('confirmEventBtn').addEventListener('click',function(){confirmEvent(id);});
+  }
+  if(ev.status!=='cancelled'){
+    document.getElementById('cancelEventBtn').addEventListener('click',function(){cancelEvent(id);});
+  }
+  document.getElementById('playerSearch').addEventListener('input',function(){
+    var q=this.value.toLowerCase();
+    var filtered=q?_allAvailablePlayers.filter(function(p){
+      return ((p.first_name||'')+' '+(p.last_name||'')).toLowerCase().indexOf(q)>=0;
+    }):_allAvailablePlayers;
+    renderAvailable(filtered,[],id);
+  });
+  
+  loadDetailPlayers(id);
+  loadScoutAttendees(id);
+}
+
+async function loadDetailPlayers(eventId){
+  try{
+    var [pd, sp] = await Promise.all([
+      api('GET','/api/players?limit=500&is_active=true'),
+      api('GET','/api/showcase/'+eventId)
+    ]);
+    _allAvailablePlayers = pd.data||[];
+    var showcasePls = sp.players||[];
+    var addedIds = showcasePls.map(function(p){return p.player_id;});
+    renderAvailable(_allAvailablePlayers, addedIds, eventId);
+    renderShowcasePlayers(showcasePls, eventId);
+  }catch(e){
+    var ap=document.getElementById('availablePlayers');
+    if(ap) ap.innerHTML='<div style="color:#f44336;font-size:13px">Could not load players: '+safe(e.message)+'</div>';
+    var sp=document.getElementById('showcasePlayers');
+    if(sp) sp.innerHTML='<div style="color:#f44336;font-size:13px">Could not load.</div>';
+  }
+}
+
+function renderAvailable(players, addedIds, eventId){
+  var el=document.getElementById('availablePlayers');
+  if(!el) return;
+  if(!players.length){el.innerHTML='<div style="color:#8b949e;font-size:13px;padding:8px 0">No players found.</div>';return;}
+  el.innerHTML='<div style="max-height:300px;overflow-y:auto">'+
+  players.slice(0,50).map(function(p){
+    var isAdded=addedIds&&addedIds.indexOf(p.id)>=0;
+    return '<div class="player-row">'+
+    '<div style="flex:1"><div style="font-weight:600;font-size:13px">'+safe(p.first_name,'')+' '+safe(p.last_name,'')+'</div>'+
+    '<div style="font-size:11px;color:#546E7A">'+(p.age_group||'--')+' &bull; '+(p.specific_position||p.primary_position||'--')+' &bull; '+(p.team_name||'--')+'</div></div>'+
+    (isAdded?'<span style="font-size:11px;color:#1d9e75;font-weight:700">Added</span>':
+    '<button class="btn btn-sm btn-outline" data-pid="'+p.id+'" data-eid="'+eventId+'" data-action="add-player" style="font-size:11px;padding:4px 8px">Add</button>')+
+    '</div>';
+  }).join('')+'</div>';
+  el.querySelectorAll('[data-action="add-player"]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      addPlayerToShowcase(btn.getAttribute('data-eid'), btn.getAttribute('data-pid'));
+    });
+  });
+}
+
+function renderShowcasePlayers(players, eventId){
+  var el=document.getElementById('showcasePlayers');
+  if(!el) return;
+  if(!players||!players.length){el.innerHTML='<div style="color:#8b949e;font-size:13px;padding:8px 0">No players added yet.</div>';return;}
+  el.innerHTML='<div style="max-height:300px;overflow-y:auto">'+
+  players.map(function(p){
+    var pName = p.players?(safe(p.players.first_name,'')+' '+safe(p.players.last_name,'')).trim():safe(p.player_id,'Unknown player');
+    return '<div class="player-row">'+
+    '<div style="flex:1"><div style="font-weight:600;font-size:13px">'+pName+'</div>'+
+    '<div style="font-size:11px;color:#546E7A">Status: '+safe(p.status,'invited')+'</div></div>'+
+    '<button class="btn btn-sm btn-danger" style="font-size:11px;padding:4px 8px" data-pid="'+p.player_id+'" data-eid="'+eventId+'" data-action="remove-player">Remove</button>'+
+    '</div>';
+  }).join('')+'</div>';
+  el.querySelectorAll('[data-action="remove-player"]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      removePlayerFromShowcase(btn.getAttribute('data-eid'), btn.getAttribute('data-pid'));
+    });
+  });
+}
+
+async function addPlayerToShowcase(eventId, playerId){
+  if(!eventId||!playerId){alert('Missing event or player ID.');return;}
+  try{
+    await api('POST','/api/showcase/'+eventId+'/players',{playerId:playerId});
+    loadDetailPlayers(eventId);
+  }catch(e){alert('Could not add player: '+safe(e.message));}
+}
+
+async function removePlayerFromShowcase(eventId, showcasePlayerId){
+  if(!eventId||!showcasePlayerId) return;
+  try{
+    await api('DELETE','/api/showcase/'+eventId+'/players/'+showcasePlayerId);
+    loadDetailPlayers(eventId);
+  }catch(e){alert('Could not remove player: '+safe(e.message));}
+}
+
+async function confirmEvent(id){
+  if(!confirm('Confirm this event and notify all active scouts?')) return;
+  try{
+    await api('POST','/api/showcase/'+id+'/confirm',{});
+    var ev=allEvents.find(function(e){return e.id===id;});
+    if(ev){ev.confirmed=true;ev.status='confirmed';}
+    renderEventsList();
+    openEventDetail(id);
+  }catch(e){alert('Could not confirm event: '+safe(e.message));}
+}
+
+async function cancelEvent(id){
+  if(!confirm('Cancel this event and notify scouts, coaches, players and parents?')) return;
+  try{
+    await api('POST','/api/showcase/'+id+'/cancel',{});
+    var ev=allEvents.find(function(e){return e.id===id;});
+    if(ev){ev.confirmed=false;ev.status='cancelled';}
+    renderEventsList();
+    openEventDetail(id);
+  }catch(e){alert('Could not cancel event: '+safe(e.message));}
+}
+</script>
+<script src="/frontend/js/phone-routes.js"></script>
+<script src="/frontend/js/phone-shell.js"></script>
+<script src="/frontend/js/phone-pages.js"></script>
+</body></html>
+
+
+

@@ -333,12 +333,12 @@ function routeFromRequest(req) {
   const parts = requestPath.split('/').filter(Boolean);
   if (!parts.length) return { key: 'home', canonicalPath: '/' };
   if (parts[0] === 'compatibility-score') return { key: 'compatibility-score', canonicalPath: '/scoutlink/compatibility-score' };
-  if (parts[0] === 'pricing') return { key: 'scoutlink-pricing', canonicalPath: '/scoutlink/pricing/' };
+  if (parts[0] === 'pricing') return { key: 'scoutlink-pricing', canonicalPath: '/scoutlink/pricing' };
   if (parts[0] === 'scouts') return { key: 'scoutlink-scouts', canonicalPath: '/scoutlink/scouts' };
   if (parts[0] === 'coaches') return { key: 'scoutlink-coaches', canonicalPath: '/scoutlink/coaches' };
   if (parts[0] === 'grassroots-football-scouting-tools') return { key: 'grassroots-football-scouting-tools', canonicalPath: '/grassroots-football-scouting-tools' };
   if (parts[0] === 'scoutlink' && parts[1] === 'compatibility-score') return { key: 'compatibility-score', canonicalPath: '/scoutlink/compatibility-score' };
-  if (parts[0] === 'scoutlink' && parts[1] === 'pricing') return { key: 'scoutlink-pricing', canonicalPath: '/scoutlink/pricing/' };
+  if (parts[0] === 'scoutlink' && parts[1] === 'pricing') return { key: 'scoutlink-pricing', canonicalPath: '/scoutlink/pricing' };
   if (parts[0] === 'scoutlink' && parts[1] === 'scouts') return { key: 'scoutlink-scouts', canonicalPath: '/scoutlink/scouts' };
   if (parts[0] === 'scoutlink' && parts[1] === 'coaches') return { key: 'scoutlink-coaches', canonicalPath: '/scoutlink/coaches' };
   if (parts[0] === 'careers' && parts[1]) {

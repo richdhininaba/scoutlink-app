@@ -1,0 +1,173 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Register | ScoutLink</title>
+<meta name="robots" content="noindex,follow">
+<meta name="description" content="Register for ScoutLink as a coach or request verified scout access.">
+<link rel="canonical" href="https://www.scoutlink.app/register">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/frontend/css/variables.css">
+<link rel="stylesheet" href="/frontend/css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.toggle-row{display:flex;gap:0;border:2px solid #1e2a3a;border-radius:12px;overflow:hidden;margin-bottom:28px;}
+.toggle-btn{flex:1;padding:12px 0;background:transparent;border:none;color:#94a3b8;font-weight:700;font-size:15px;cursor:pointer;transition:all 0.2s;}
+.toggle-btn.active{background:#00E676;color:#000;}
+.section{display:none;}.section.active{display:block;}
+.declaration-list{display:grid;gap:10px;margin:14px 0 18px}.declaration-list label{display:flex;align-items:flex-start;gap:10px;color:#334155;font-size:13px;line-height:1.5;text-transform:none;letter-spacing:0;font-weight:650}.declaration-list input{width:auto;min-width:18px;margin-top:2px}.notice-copy{font-size:13px;color:#475569;line-height:1.6;margin:0 0 12px}
+</style>
+<link rel="stylesheet" href="/frontend/css/phone-base.css">
+<link rel="stylesheet" href="/frontend/css/phone-shell.css">
+<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head>
+<body class="form-page">
+<div class="form-page-inner"><div class="form-container">
+<div class="form-logo"><a href="/" style="font-size:28px;font-weight:900;color:#0f172a;text-decoration:none">Scout<span style="color:#0F9F75">Link</span></a></div>
+<h1 class="form-title" id="regTitle">Register as Scout</h1>
+<p class="form-subtitle" id="regSubtitle">Submit your details for Stratex review. You'll hear back within 24 hours.</p>
+
+<div class="toggle-row">
+  <button class="toggle-btn active" id="btnScout" onclick="switchTab('scout')">I'm a Scout</button>
+  <button class="toggle-btn" id="btnCoach" onclick="switchTab('coach')">I'm a Coach</button>
+</div>
+
+<div class="form-error" id="formError"></div>
+<div class="form-success" id="formSuccess"></div>
+
+<!-- SCOUT SECTION -->
+<div class="section active" id="scoutSection">
+<div class="form-row">
+  <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="s_firstName" placeholder="John"></div>
+  <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="s_lastName" placeholder="Smith"></div>
+</div>
+<div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="s_email" placeholder="scout@club.co.uk"></div>
+<div class="form-group"><label>Phone Number</label><input type="tel" id="s_phone" placeholder="+44 7700 000000"></div>
+<div class="form-divider"></div>
+<div class="form-group"><label>Professional Club / Organisation <span class="required">*</span></label><input type="text" id="s_club" placeholder="e.g. Arsenal FC Academy"></div>
+<div class="form-group"><label>League / Division</label><input type="text" id="s_league" placeholder="e.g. Premier League 2"></div>
+<div class="form-divider"></div>
+<div class="policy-check">
+  <input type="checkbox" id="s_policy">
+  <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+</div>
+<div class="declaration-list" aria-label="Scout verification declaration">
+  <label><input type="checkbox" id="s_decl_capacity"> I confirm that I am using ScoutLink in a legitimate scouting, recruitment or football evaluation capacity. I will not misuse player information, attempt to contact minors directly outside approved safeguarding routes, scrape data, or share player information outside my organisation without permission.</label>
+</div>
+<button class="btn btn-primary btn-full" onclick="submitScout()">Submit Scout Registration</button>
+</div>
+
+<!-- COACH SECTION -->
+<div class="section" id="coachSection">
+<div class="form-row">
+  <div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="c_firstName" placeholder="John"></div>
+  <div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="c_lastName" placeholder="Smith"></div>
+</div>
+<div class="form-group"><label>Email Address <span class="required">*</span></label><input type="email" id="c_email" placeholder="john@yourclub.co.uk"></div>
+<div class="form-group"><label>Phone Number</label><input type="tel" id="c_phone" placeholder="+44 7700 000000"></div>
+<div class="form-divider"></div>
+<h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Club / Team Details</h3>
+<div class="form-group"><label>Team / Club Name <span class="required">*</span></label><input type="text" id="c_team" placeholder="e.g. Manchester City Academy U18"></div>
+<div class="form-row">
+  <div class="form-group"><label>County</label><input type="text" id="c_county" placeholder="Greater Manchester"></div>
+  <div class="form-group"><label>League</label><input type="text" id="c_league" placeholder="e.g. FAYTH North West"></div>
+</div>
+<div class="form-group"><label>Your Role at Club</label>
+  <select id="c_role"><option>Head Coach</option><option>Assistant Coach</option><option>Academy Manager</option><option>Director of Football</option><option>Goalkeeping Coach</option><option>Other</option></select>
+</div>
+<div class="form-divider"></div>
+<div class="policy-check">
+  <input type="checkbox" id="c_policy">
+  <p>By registering for ScoutLink, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a> and <a href="/terms" target="_blank">Terms of Use</a>. ScoutLink may record account and platform activity to operate and secure the platform, improve the product, support safeguarding, investigate misuse and maintain audit trails.</p>
+</div>
+<div class="declaration-list" aria-label="Coach declarations">
+  <label><input type="checkbox" id="c_decl_authorised"> I confirm I am authorised to create or manage player profiles for this team, club, school or academy.</label>
+  <label><input type="checkbox" id="c_decl_under18"> I confirm that where a player is under 18, the necessary parent/guardian permissions or club/school notices are in place before I upload their information.</label>
+  <label><input type="checkbox" id="c_decl_dispute"> I understand that ScoutLink may remove player data if permission is disputed or cannot be evidenced.</label>
+  <label><input type="checkbox" id="c_decl_media"> I agree not to upload player photos or videos unless I have the correct permission.</label>
+</div>
+<button class="btn btn-primary btn-full" onclick="submitCoach()">Submit Coach Registration</button>
+</div>
+
+<div class="form-divider"></div>
+<div class="form-link">Already registered? <a href="/login">Sign In</a></div>
+</div></div>
+
+<script src="/frontend/js/main.js"></script>
+<script src="/frontend/js/heap-analytics.js"></script>
+<script>
+// Read ?type= param from URL to default the tab
+const urlType = new URLSearchParams(window.location.search).get('type');
+if (urlType === 'coach') switchTab('coach');
+
+function switchTab(tab) {
+  const isScout = tab === 'scout';
+  document.getElementById('btnScout').classList.toggle('active', isScout);
+  document.getElementById('btnCoach').classList.toggle('active', !isScout);
+  document.getElementById('scoutSection').classList.toggle('active', isScout);
+  document.getElementById('coachSection').classList.toggle('active', !isScout);
+  document.getElementById('regTitle').textContent = isScout ? 'Register as Scout' : 'Register as Coach';
+  document.getElementById('regSubtitle').textContent = isScout
+    ? 'Submit your details for Stratex review. You\'ll hear back within 24 hours.'
+    : 'Submit your club details for review. You\'ll receive an email within 24 hours.';
+  const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  err.classList.remove('show'); suc.classList.remove('show');
+}
+
+async function submitScout() {
+  const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  err.classList.remove('show'); suc.classList.remove('show');
+  if (!document.getElementById('s_policy').checked || !document.getElementById('s_decl_capacity').checked) { err.textContent = 'Please accept the privacy, terms and scout verification declaration.'; err.classList.add('show'); return; }
+  const firstName = document.getElementById('s_firstName').value.trim();
+  const lastName = document.getElementById('s_lastName').value.trim();
+  const emailAddr = document.getElementById('s_email').value.trim();
+  const scoutClub = document.getElementById('s_club').value.trim();
+  if (!firstName || !lastName || !emailAddr || !scoutClub) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+  if (!validateEmailInput(document.getElementById('s_email'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
+  const btn = document.querySelector('#scoutSection .btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  try {
+    const d = await api('POST', '/api/registrations/scout', { firstName, lastName, emailAddr, phone: document.getElementById('s_phone').value, scoutClub, scoutLeague: document.getElementById('s_league').value, dataPolicyAgreed: true, declarationVersion: 'scout-verification-v1-2026-07', activityNoticeVersion: 'platform-activity-v1-2026-07', declarations: { legitimateCapacity: true } });
+    suc.textContent = d.message || 'Registration submitted! You will be emailed once reviewed.';
+    suc.classList.add('show'); btn.disabled = true;
+  } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Scout Registration'; }
+}
+
+async function submitCoach() {
+  const err = document.getElementById('formError'), suc = document.getElementById('formSuccess');
+  err.classList.remove('show'); suc.classList.remove('show');
+  const coachDeclarationIds = ['c_decl_authorised','c_decl_under18','c_decl_dispute','c_decl_media'];
+  if (!document.getElementById('c_policy').checked || coachDeclarationIds.some(function(id){ return !document.getElementById(id).checked; })) { err.textContent = 'Please accept the privacy, terms and coach declarations.'; err.classList.add('show'); return; }
+  const firstName = document.getElementById('c_firstName').value.trim();
+  const lastName = document.getElementById('c_lastName').value.trim();
+  const emailAddr = document.getElementById('c_email').value.trim();
+  const teamName = document.getElementById('c_team').value.trim();
+  if (!firstName || !lastName || !emailAddr || !teamName) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+  if (!validateEmailInput(document.getElementById('c_email'))) { err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return; }
+  const btn = document.querySelector('#coachSection .btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  try {
+    const d = await api('POST', '/api/registrations/coach', { firstName, lastName, emailAddr, phone: document.getElementById('c_phone').value, teamName, county: document.getElementById('c_county').value, league: document.getElementById('c_league').value, roleAtClub: document.getElementById('c_role').value, dataPolicyAgreed: true, declarationVersion: 'coach-declarations-v1-2026-07', activityNoticeVersion: 'platform-activity-v1-2026-07', declarations: { authorised: true, under18Permissions: true, disputeRemoval: true, mediaPermission: true } });
+    suc.textContent = d.message || 'Registration submitted! You will be emailed once reviewed.';
+    suc.classList.add('show'); btn.disabled = true;
+  } catch(e) { err.textContent = e.message; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Submit Coach Registration'; }
+}
+</script>
+<script src="/frontend/js/phone-routes.js"></script>
+<script src="/frontend/js/phone-shell.js"></script>
+<script src="/frontend/js/phone-pages.js"></script>
+<script src="/frontend/js/public-footer.js"></script>
+</body>
+</html>
+
+
+
+
