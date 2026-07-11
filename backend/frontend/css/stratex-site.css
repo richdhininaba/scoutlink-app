@@ -1089,6 +1089,98 @@ button, input, select, textarea { font: inherit; }
   box-shadow: var(--stx-shadow);
 }
 
+.stx-admin-login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f3f6fa;
+  color: #101828;
+}
+.stx-admin-login-card {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 22px;
+  padding: clamp(24px, 5vw, 38px);
+  border: 1px solid var(--stx-border);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: var(--stx-shadow);
+}
+.stx-admin-login-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: #101828;
+  text-decoration: none;
+  font-size: 26px;
+  font-weight: 950;
+  letter-spacing: -.05em;
+}
+.stx-admin-login-brand span { color: #087a61; }
+.stx-admin-login-copy {
+  display: grid;
+  gap: 8px;
+}
+.stx-admin-login-copy h1 {
+  margin: 0;
+  color: #101828;
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.05;
+  letter-spacing: -.05em;
+}
+.stx-admin-login-copy p {
+  margin: 0;
+  color: #667085;
+}
+.stx-admin-login-form {
+  display: grid;
+  gap: 14px;
+}
+.stx-admin-login-form label {
+  display: grid;
+  gap: 7px;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.stx-admin-login-form input {
+  min-height: 46px;
+  width: 100%;
+  border: 1px solid var(--stx-border);
+  border-radius: 14px;
+  background: #fff;
+  color: #101828;
+  padding: 0 14px;
+  outline: none;
+}
+.stx-admin-login-form input:focus {
+  border-color: rgba(15, 159, 117, .55);
+  box-shadow: 0 0 0 4px rgba(15, 159, 117, .12);
+}
+.stx-admin-login-error {
+  display: none;
+  padding: 11px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 800;
+}
+.stx-admin-login-error.show { display: block; }
+.stx-admin-login-foot {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+}
+.stx-admin-login-foot a {
+  color: #087a61;
+  font-weight: 900;
+}
+
 body.stx-company-admin {
   min-height: 100vh;
   background: #f3f6fa !important;

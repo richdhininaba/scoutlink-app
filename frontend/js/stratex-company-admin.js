@@ -73,6 +73,7 @@
   ];
   var DETAIL_ROWS = {};
   var DETAIL_META = {};
+  var popstateBound = false;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -98,6 +99,124 @@
     el.style.display = 'block';
     el.className = 'stx-admin-message ' + (ok ? 'ok' : 'err');
     el.textContent = text;
+  }
+
+  function apiBase() {
+    return typeof API !== 'undefined' ? API : 'https://scoutlink-api.vercel.app';
+  }
+
+  function storeStratexSession(data) {
+    var token = data && data.token;
+    var user = data && data.user;
+    var type = data && data.accountType ? data.accountType : 'Stratex';
+    if (!token || !user) throw new Error('The sign-in response was incomplete.');
+    if (type !== 'Stratex') throw new Error('Please use a Stratex admin account for this area.');
+    if (typeof Auth !== 'undefined' && Auth && typeof Auth.set === 'function') {
+      Auth.set(token, user, type);
+    } else {
+      localStorage.setItem('sl_token', token);
+      localStorage.setItem('sl_user', JSON.stringify(user));
+      localStorage.setItem('sl_type', type);
+    }
+    if (user.id) localStorage.setItem('sl_user_id', user.id);
+    if (user.email) localStorage.setItem('sl_user_email', user.email);
+  }
+
+  function logoutToLogin(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    if (typeof Auth !== 'undefined' && Auth && typeof Auth.clear === 'function') {
+      Auth.clear();
+    } else {
+      localStorage.removeItem('sl_token');
+      localStorage.removeItem('sl_user');
+      localStorage.removeItem('sl_type');
+      localStorage.removeItem('sl_user_id');
+      localStorage.removeItem('sl_user_email');
+    }
+    window.location.href = '/admin';
+  }
+
+  function startAdminShell() {
+    renderAdminShell();
+    if (typeof ensureStratexNotificationPanel === 'function') ensureStratexNotificationPanel();
+    if (typeof updateNotifBadge === 'function') updateNotifBadge();
+    bindHandlers();
+    var initialModule = moduleFromPath() || decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard';
+    switchModule(initialModule, true);
+    if (!popstateBound) {
+      popstateBound = true;
+      window.addEventListener('popstate', function () {
+        switchModule(moduleFromPath() || decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard', true);
+      });
+    }
+  }
+
+  function showStratexLoginError(text) {
+    var error = document.getElementById('stxAdminLoginError');
+    if (!error) return;
+    error.textContent = text || 'Could not sign in.';
+    error.classList.add('show');
+  }
+
+  function renderStratexAdminLogin(message) {
+    document.body.className = 'theme-light stx-company-admin stx-admin-login-body';
+    document.body.innerHTML =
+      '<main class="stx-admin-login-screen">' +
+        '<section class="stx-admin-login-card" aria-labelledby="stxAdminLoginTitle">' +
+          '<a class="stx-admin-login-brand" href="/">Stratex<span>Analytics</span></a>' +
+          '<div class="stx-admin-login-copy">' +
+            '<p class="stx-eyebrow">Admin centre</p>' +
+            '<h1 id="stxAdminLoginTitle">Sign in to Stratex Admin</h1>' +
+            '<p>' + escapeHtml(message || 'Use your Stratex admin email and password to manage company operations.') + '</p>' +
+          '</div>' +
+          '<form class="stx-admin-login-form" id="stxAdminLoginForm" novalidate>' +
+            '<label>Email address<input id="stxAdminEmail" name="email" type="email" autocomplete="email" placeholder="richdhin@stratexanalytics.co.uk" required></label>' +
+            '<label>Password<input id="stxAdminPassword" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>' +
+            '<div class="stx-admin-login-error" id="stxAdminLoginError" role="alert"></div>' +
+            '<button class="stx-btn stx-btn-primary" id="stxAdminLoginButton" type="submit">Sign in</button>' +
+          '</form>' +
+          '<p class="stx-admin-login-foot">Need the general ScoutLink login? <a href="/login">Open ScoutLink login</a>.</p>' +
+        '</section>' +
+      '</main>';
+    var form = document.getElementById('stxAdminLoginForm');
+    if (!form) return;
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var email = document.getElementById('stxAdminEmail').value.trim();
+      var password = document.getElementById('stxAdminPassword').value;
+      var button = document.getElementById('stxAdminLoginButton');
+      var error = document.getElementById('stxAdminLoginError');
+      if (error) {
+        error.textContent = '';
+        error.classList.remove('show');
+      }
+      if (!email || email.indexOf('@') < 1 || email.indexOf('.', email.indexOf('@') + 2) < 0 || !password) {
+        showStratexLoginError('Enter a valid email address and password.');
+        return;
+      }
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Signing in...';
+      }
+      try {
+        var response = await fetch(apiBase() + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password, accountType: 'Stratex' })
+        });
+        var data = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error(data.error || 'Invalid Stratex admin credentials.');
+        storeStratexSession(data);
+        startAdminShell();
+      } catch (err) {
+        showStratexLoginError(err.message || 'Could not sign in.');
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Sign in';
+        }
+      }
+    });
   }
 
   function rowTable(headers, rows, detail) {
@@ -1156,17 +1275,10 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     if (typeof Auth === 'undefined' || !Auth.isLoggedIn() || Auth.type !== 'Stratex') {
-      if (typeof renderRestrictedStratexAdmin === 'function') renderRestrictedStratexAdmin();
+      var hasOtherSession = typeof Auth !== 'undefined' && Auth && Auth.isLoggedIn && Auth.isLoggedIn();
+      renderStratexAdminLogin(hasOtherSession ? 'This area is for Stratex admin accounts. Sign in with your Stratex admin email to continue.' : '');
       return;
     }
-    renderAdminShell();
-    if (typeof ensureStratexNotificationPanel === 'function') ensureStratexNotificationPanel();
-    if (typeof updateNotifBadge === 'function') updateNotifBadge();
-    bindHandlers();
-    var initialModule = moduleFromPath() || decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard';
-    switchModule(initialModule, true);
-    window.addEventListener('popstate', function () {
-      switchModule(moduleFromPath() || decodeURIComponent((window.location.hash || '').replace(/^#/, '')) || 'dashboard', true);
-    });
+    startAdminShell();
   });
 })();
