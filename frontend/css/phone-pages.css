@@ -2394,7 +2394,27 @@ body.phone-active [data-phone-hide-theme="true"] {
 
   body.marketing-home {
     overflow-x: hidden !important;
-    background: #f6f8fa !important;
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+
+  body.marketing-home main,
+  body.marketing-home .marketing-hero,
+  body.marketing-home .marketing-section,
+  body.marketing-home .marketing-final {
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+
+  body.marketing-home .marketing-hero::before,
+  body.marketing-home .marketing-hero::after,
+  body.marketing-home .marketing-section::before,
+  body.marketing-home .marketing-section::after,
+  body.marketing-home .marketing-final::before,
+  body.marketing-home .marketing-final::after {
+    display: none !important;
+    content: none !important;
+    background: none !important;
   }
 
   body.marketing-home .container {
@@ -2496,9 +2516,8 @@ body.phone-active [data-phone-hide-theme="true"] {
   }
 
   body.marketing-home .marketing-hero {
-    background:
-      radial-gradient(circle at 88% 6%, rgba(15,159,117,.16), transparent 34%),
-      linear-gradient(180deg, #f8fafc 0%, #eef6f3 100%) !important;
+    background: #ffffff !important;
+    background-image: none !important;
   }
 
   body.marketing-home .marketing-label {
@@ -2522,8 +2541,57 @@ body.phone-active [data-phone-hide-theme="true"] {
 
   body.marketing-home .marketing-preview-card {
     margin-top: 18px !important;
-    border-color: #dbe5e9 !important;
-    box-shadow: 0 18px 44px rgba(15, 23, 42, .10) !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    border-color: #e5e7eb !important;
+    color: #111827 !important;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, .08) !important;
+  }
+
+  body.marketing-home .sample-profile-card {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #111827 !important;
+  }
+
+  body.marketing-home .sample-profile-card::before,
+  body.marketing-home .sample-profile-card::after {
+    display: none !important;
+    content: none !important;
+    background: none !important;
+  }
+
+  body.marketing-home .sample-profile-card .home-compatibility-card,
+  body.marketing-home .sample-profile-card .preview-bar-list,
+  body.marketing-home .sample-profile-card .sample-facts {
+    display: none !important;
+  }
+
+  body.marketing-home .sample-profile-card .preview-player-row,
+  body.marketing-home .sample-profile-card .sample-score-grid div {
+    background: #ffffff !important;
+    border-color: #e5e7eb !important;
+    color: #111827 !important;
+  }
+
+  body.marketing-home .sample-profile-card .preview-card-head strong,
+  body.marketing-home .sample-profile-card .preview-player-row b,
+  body.marketing-home .sample-profile-card .preview-player-row em,
+  body.marketing-home .sample-profile-card .sample-score-grid b {
+    color: #111827 !important;
+  }
+
+  body.marketing-home .sample-profile-card .preview-card-head span,
+  body.marketing-home .sample-profile-card .preview-player-row small,
+  body.marketing-home .sample-profile-card p,
+  body.marketing-home .sample-profile-card .sample-score-grid span {
+    color: #64748b !important;
+  }
+
+  body.marketing-home .sample-profile-card .preview-avatar {
+    background: #f8fafc !important;
+    border: 1px solid #e5e7eb !important;
+    color: #0f172a !important;
   }
 
   body.marketing-home .preview-player-row,
@@ -2554,12 +2622,14 @@ body.phone-active [data-phone-hide-theme="true"] {
     gap: 16px !important;
     padding: 18px !important;
     border-radius: 20px !important;
-    background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%) !important;
+    background: #ffffff !important;
+    background-image: none !important;
   }
 
   body.marketing-home .home-footer {
-    background: #eef3f5 !important;
-    border-top: 1px solid #dbe5e9 !important;
+    background: #ffffff !important;
+    background-image: none !important;
+    border-top: 1px solid #e5e7eb !important;
     padding: 28px 0 18px !important;
   }
 
