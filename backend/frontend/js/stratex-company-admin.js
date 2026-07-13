@@ -4,22 +4,22 @@
   var MODULES = [
     ['dashboard', 'Dashboard', 'Company overview'],
     ['registrations', 'Registrations', 'ScoutLink access requests'],
-    ['contactForms', 'Contact Forms', 'Website submissions'],
+    ['contactForms', 'Website Leads', 'Form enquiries'],
     ['crm', 'CRM', 'Website and product contacts'],
     ['activity', 'Website Activity', 'Traffic and engagement'],
     ['blog', 'Blog / Learning Centre', 'Articles, views and live posts'],
     ['leadership', 'Leadership', 'Public leadership profiles'],
-    ['org', 'Org Charts', 'Reporting hierarchy'],
-    ['adminUsers', 'Admin Users', 'Management and employee access'],
+    ['org', 'Org Directory', 'Reporting hierarchy'],
+    ['adminUsers', 'Users', 'Management and employee access'],
     ['profile', 'My Profile', 'Your Stratex record'],
     ['contracts', 'Contracts & Pay', 'HR documents'],
     ['leave', 'Leave / Sick Leave', 'Absence records'],
     ['hiring', 'Hiring', 'Jobs and applicants'],
     ['meetings', 'Meetings', 'Internal meetings'],
     ['concerns', 'Trust & Concerns', 'Safeguarding and reports'],
-    ['settings', 'Settings', 'Company settings'],
-    ['showcase', 'Showcase Events', 'ScoutLink event operations'],
-    ['awards', 'Award Ceremonies', 'ScoutLink awards operations']
+    ['showcase', 'Showcase Event', 'ScoutLink event operations'],
+    ['awards', 'Award Ceremonies', 'ScoutLink awards operations'],
+    ['settings', 'Settings', 'Company settings']
   ];
   var MODULE_BY_ID = MODULES.reduce(function (acc, item) {
     acc[item[0]] = item;
@@ -135,14 +135,17 @@
     var user = adminSessionUser();
     var email = String(user.email || '').toLowerCase();
     var raw = rawAdminRole().toLowerCase();
-    if (email === 'richdhin@stratexanalytics.co.uk') return 'Management';
+    if (email === 'richdhin@stratexanalytics.co.uk') return 'Super Admin';
+    if (email === 'lucy.ali@stratexanalytics.co.uk') return 'Management';
     if (raw === 'employee' || raw === 'read only' || raw === 'readonly') return 'Employee';
+    if (raw === 'super admin' || raw === 'superadmin' || raw === 'founder') return 'Super Admin';
     if (MANAGEMENT_ROLES[raw]) return 'Management';
     return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Employee';
   }
 
   function isManagement() {
-    return currentAdminRole() === 'Management';
+    var role = currentAdminRole();
+    return role === 'Management' || role === 'Super Admin';
   }
 
   function isAllowedModule(id) {
@@ -164,6 +167,8 @@
       '<button class="stx-admin-action-card" data-admin-module="hiring" type="button"><span>Create job role</span><small>Roles and applicants</small></button>' +
       '<button class="stx-admin-action-card" data-admin-module="blog" type="button"><span>Add Learning Centre post</span><small>Public content</small></button>' +
       '<button class="stx-admin-action-card" data-admin-module="leadership" type="button"><span>Add leadership member</span><small>Public profiles</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="showcase" type="button"><span>Manage showcase</span><small>Events and scout responses</small></button>' +
+      '<button class="stx-admin-action-card" data-admin-module="awards" type="button"><span>Manage awards</span><small>Nominations and ceremonies</small></button>' +
       '<button class="stx-admin-action-card danger" data-admin-logout type="button"><span>Sign out</span><small>Leave admin centre</small></button>';
   }
 
@@ -419,6 +424,7 @@
                 '<i class="stx-admin-nav-icon" aria-hidden="true">' + (MODULE_ICONS[item[0]] || '') + '</i><span><b>' + escapeHtml(item[1]) + '</b><small>' + escapeHtml(item[2]) + '</small></span></button>';
             }).join('') +
           '</nav>' +
+          '<div class="stx-admin-sidebar-actions"><a class="stx-admin-external-link" href="/stratex/dashboard"><span>Open ScoutLink Admin</span><small>Product admin tools</small></a></div>' +
           '<div class="stx-admin-user"><div class="stx-admin-avatar">' + escapeHtml(initials()) + '</div><div><b>' + escapeHtml(userName()) + '</b><span>' + escapeHtml(roleLabel) + '</span></div></div>' +
         '</aside>' +
         '<main class="stx-admin-main">' +
@@ -430,7 +436,7 @@
               dashboardGroups()) +
             modulePanel('activity', 'Website Activity', 'Public Stratex site traffic, page performance and visitor sessions.',
               '<div class="stx-admin-surface"><div class="stx-admin-table-toolbar"><div><h3>Traffic overview</h3><p>Headline analytics stay focused on traffic, not CRM, blog likes or product records.</p></div><button class="btn btn-sm btn-outline" id="refreshActivityBtn" type="button">Refresh</button></div><div class="stx-admin-filter-row"><label>Page<select class="form-control" id="activityPageFilter"><option value="">All public pages</option><option>/</option><option>/scoutlink</option><option>/scoutlink/compatibility-score</option><option>/pricing</option><option>/leadership</option><option>/careers</option><option>/learning-centre</option></select></label><label>Date range<select class="form-control" id="activityDateFilter"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></label></div><div class="stx-admin-kpis"><div><b id="activityPageViews">-</b><span>Total page views</span></div><div><b id="activitySessions">-</b><span>Sessions</span></div><div><b id="activityVisitors">-</b><span>Unique visitors</span></div></div><div id="activityBreakdownRows" class="loading-state"><div class="spinner"></div></div></div>') +
-            modulePanel('contactForms', 'Contact Forms', 'Contact, demo, newsletter and concern submissions from the Stratex public website.',
+            modulePanel('contactForms', 'Website Leads', 'Contact, demo, newsletter and concern submissions from the Stratex public website.',
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Recent website submissions</h3><button class="btn btn-sm btn-outline" id="refreshContactFormsBtn" type="button">Refresh</button></div><div id="contactFormRows" class="loading-state"><div class="spinner"></div></div></div>') +
             modulePanel('registrations', 'Registrations', 'ScoutLink registration and access records with product context.',
               '<div class="stx-admin-surface"><div class="stx-admin-table-toolbar"><div><h3>Registration records</h3><p>Review ScoutLink coach and scout registration records from the Stratex admin centre.</p></div><div class="stx-admin-filter-row compact"><label>Product<select class="form-control" id="registrationProductFilter"><option value="">All products</option><option value="ScoutLink">ScoutLink</option></select></label><label>Status<select class="form-control" id="registrationStatusFilter"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option></select></label><button class="btn btn-sm btn-outline" id="refreshRegistrationsBtn" type="button">Refresh</button></div></div><div id="registrationRows" class="loading-state"><div class="spinner"></div></div></div>') +
@@ -453,8 +459,8 @@
               textarea('Bio', 'bio', 5) + input('Display order', 'displayOrder', 'number', false, '100') +
               '<div class="form-message" id="leadershipMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save leadership member</button></form>' +
               '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Leadership profiles</h3><a class="btn btn-sm btn-outline" href="/leadership" target="_blank" rel="noopener">Public Leadership</a></div><div id="leadershipRows" class="loading-state"><div class="spinner"></div></div></div></div>') +
-            modulePanel('org', 'Org Charts', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
-            modulePanel('adminUsers', 'Admin Users', 'Invite, review and manage Management and Employee access for Stratex Analytics.', adminUsersPanel()) +
+            modulePanel('org', 'Org Directory', 'Maintain Stratex reporting lines, roles, permissions and direct reports without leaving the company admin centre.', orgPanel()) +
+            modulePanel('adminUsers', 'Users', 'Invite, review and manage Management and Employee access for Stratex Analytics.', adminUsersPanel()) +
             modulePanel('profile', 'My Profile', 'Your Stratex identity, reporting line and own company records.', profilePanel()) +
             modulePanel('contracts', 'Contracts & Pay', 'Restricted HR records with private contract access and permissioned pay visibility.', contractsPanel()) +
             modulePanel('leave', 'Leave / Sick Leave', 'Record and review absence without crowding the org chart.', leavePanel()) +
@@ -462,9 +468,9 @@
             modulePanel('meetings', 'Meetings', 'Book and review internal Stratex meetings.', meetingsPanel()) +
             modulePanel('concerns', 'Trust & Concerns', 'Review safeguarding, privacy and platform concerns submitted through Stratex routes.', concernsPanel()) +
             modulePanel('settings', 'Settings', 'Company, website, CRM, blog and admin dashboard settings scoped to Stratex Analytics.', settingsPanel()) +
-            modulePanel('showcase', 'Showcase Event', 'Manage ScoutLink showcase events from the Stratex operating centre while preserving event notifications.', toolPanel('Showcase Event workspace', 'The existing ScoutLink showcase event workflow remains connected to the same data, invite responses and notification routes.', '/stratex/showcase-events', 'Open showcase events')) +
-            modulePanel('awards', 'Award Ceremonies', 'Manage award nominations and ceremonies from the Stratex operating centre while preserving nomination actions.', toolPanel('Award Ceremonies workspace', 'The existing award nomination workflow remains connected to the same nomination data and confirmation routes.', '/stratex/award-nominations', 'Open awards workspace')) +
-            '<section class="stx-company-module" id="module-accessDenied" hidden><div class="stx-admin-surface"><p class="stx-eyebrow">Access denied</p><h2>Management access required</h2><p class="stx-muted">This section is restricted to Stratex Management users. Your menu only shows the areas available to your account.</p><div class="stx-admin-inline-actions"><button class="btn btn-primary" data-admin-module="dashboard" type="button">Back to dashboard</button><button class="btn btn-outline" data-admin-module="contactForms" type="button">Open contact forms</button></div></div></section>' +
+            modulePanel('showcase', 'Showcase Event', 'Manage ScoutLink showcase events from the Stratex operating centre while preserving event notifications.', showcasePanel()) +
+            modulePanel('awards', 'Award Ceremonies', 'Manage award nominations and ceremonies from the Stratex operating centre while preserving nomination actions.', awardsPanel()) +
+            '<section class="stx-company-module" id="module-accessDenied" hidden><div class="stx-admin-surface"><p class="stx-eyebrow">Access denied</p><h2>Super Admin or Management access required</h2><p class="stx-muted">This section is restricted to authorised Stratex admin users. Your menu only shows the areas available to your account.</p><div class="stx-admin-inline-actions"><button class="btn btn-primary" data-admin-module="dashboard" type="button">Back to dashboard</button><button class="btn btn-outline" data-admin-module="contactForms" type="button">Open contact forms</button></div></div></section>' +
           '</div>' +
         '</main>' +
         '<div class="stx-admin-detail-backdrop" id="stxAdminDetailBackdrop" hidden></div>' +
@@ -541,6 +547,34 @@
     '</div>';
   }
 
+  function showcasePanel() {
+    return '<div class="stx-admin-stack">' +
+      '<form class="stx-admin-surface" id="showcaseForm"><div class="stx-admin-row-head"><h3>Create showcase event</h3><button class="btn btn-sm btn-outline" id="refreshShowcaseBtn" type="button">Refresh events</button></div>' +
+        input('Event name', 'eventName', 'text', true, 'e.g. Northgate Talent Showcase') +
+        '<div class="form-row">' + input('Event date and time', 'eventDate', 'datetime-local', false) + input('Max scouts', 'maxScouts', 'number', false, '20') + '</div>' +
+        '<div class="form-row">' + input('Venue name', 'venueName', 'text', false, 'e.g. Northgate Training Ground') + input('Venue address', 'venueAddress', 'text', false, 'Full venue address') + '</div>' +
+        '<label class="form-group"><span>Status</span><select class="form-control" name="status"><option value="draft">Draft</option><option value="published">Published</option><option value="confirmed">Confirmed</option></select></label>' +
+        textarea('Description', 'description', 4) +
+        '<div class="form-message" id="showcaseMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Save showcase event</button>' +
+      '</form>' +
+      '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Showcase events</h3><a class="btn btn-sm btn-outline" href="/stratex/showcase-events">Open legacy view</a></div><div id="showcaseRows" class="loading-state"><div class="spinner"></div></div></div>' +
+      '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Scout responses</h3><p class="stx-muted">Select an event to review accepted, declined and no-response scouts.</p></div><div id="showcaseAttendeeRows" class="stx-admin-empty">Select an event above.</div></div>' +
+    '</div>';
+  }
+
+  function awardsPanel() {
+    var currentYear = new Date().getFullYear();
+    return '<div class="stx-admin-stack">' +
+      '<form class="stx-admin-surface" id="awardNominationForm"><div class="stx-admin-row-head"><h3>Confirm nomination</h3><button class="btn btn-sm btn-outline" id="refreshAwardsBtn" type="button">Refresh nominations</button></div>' +
+        '<label class="form-group"><span>Player *</span><select class="form-control" id="awardPlayerSelect" name="playerId" required><option value="">Loading players...</option></select></label>' +
+        input('Award name', 'awardName', 'text', true, 'e.g. Player of the Year') +
+        input('Awards year', 'year', 'number', false, String(currentYear)) +
+        '<div class="form-message" id="awardMsg" style="display:none"></div><button class="btn btn-primary" type="submit">Confirm nomination</button>' +
+      '</form>' +
+      '<div class="stx-admin-surface"><div class="stx-admin-row-head"><h3>Nominations</h3><div class="stx-admin-filter-row compact"><label>Year<select class="form-control" id="awardYearFilter"><option value="' + currentYear + '">' + currentYear + '</option><option value="' + (currentYear + 1) + '">' + (currentYear + 1) + '</option><option value="">All years</option></select></label><a class="btn btn-sm btn-outline" href="/stratex/award-nominations">Open legacy view</a></div></div><div id="awardRows" class="loading-state"><div class="spinner"></div></div></div>' +
+    '</div>';
+  }
+
   function input(label, name, type, required, placeholder) {
     return '<label class="form-group"><span>' + escapeHtml(label) + (required ? ' *' : '') + '</span><input class="form-control" name="' + escapeHtml(name) + '" type="' + escapeHtml(type || 'text') + '"' + (required ? ' required' : '') + (placeholder ? ' placeholder="' + escapeHtml(placeholder) + '"' : '') + '></label>';
   }
@@ -584,6 +618,8 @@
     if (id === 'contracts') loadContracts();
     if (id === 'hiring') loadHiring();
     if (id === 'concerns') loadConcerns();
+    if (id === 'showcase') loadShowcaseAdmin();
+    if (id === 'awards') loadAwardsAdmin();
     if (!skipHistory && !denied && window.history && window.history.pushState) {
       var nextUrl = MODULE_PATHS[id] || (window.location.pathname + (id === 'dashboard' ? '' : '#' + encodeURIComponent(id)));
       window.history.pushState({ adminModule: id }, '', nextUrl);
@@ -1026,27 +1062,17 @@
     var root = document.getElementById('activityBreakdownRows');
     if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
     try {
-      var data = await api('GET', '/api/stratex-website/blog');
-      var posts = data.data || [];
       var pageFilter = document.getElementById('activityPageFilter');
       var selected = pageFilter && pageFilter.value ? pageFilter.value : '';
-      var rows = posts.map(function (post) {
-        var views = Number(post.view_count || 0);
-        var path = '/learning-centre/' + (post.slug || '');
-        return {
-          page: path,
-          pageTitle: post.title || path,
-          views: views,
-          sessions: Math.ceil(views * 0.82),
-          visitors: Math.ceil(views * 0.64),
-          updatedAt: post.updated_at || post.published_at || post.created_at
-        };
-      }).filter(function (row) {
-        return !selected || row.page.indexOf(selected) === 0 || selected === '/learning-centre';
-      });
-      var totalViews = rows.reduce(function (sum, row) { return sum + Number(row.views || 0); }, 0);
-      var sessions = rows.reduce(function (sum, row) { return sum + Number(row.sessions || 0); }, 0);
-      var visitors = rows.reduce(function (sum, row) { return sum + Number(row.visitors || 0); }, 0);
+      var dateFilter = document.getElementById('activityDateFilter');
+      var range = dateFilter && dateFilter.value ? dateFilter.value : '30';
+      var qs = '?range=' + encodeURIComponent(range) + (selected ? '&page=' + encodeURIComponent(selected) : '');
+      var data = await api('GET', '/api/stratex-website/activity' + qs);
+      var rows = data.pages || [];
+      var summary = data.summary || {};
+      var totalViews = Number(summary.pageViews || 0);
+      var sessions = Number(summary.sessions || 0);
+      var visitors = Number(summary.visitors || 0);
       var viewEl = document.getElementById('activityPageViews');
       var sessionEl = document.getElementById('activitySessions');
       var visitorEl = document.getElementById('activityVisitors');
@@ -1060,7 +1086,7 @@
           ['Page views', 'views', function (row) { return escapeHtml(Number(row.views || 0).toLocaleString('en-GB')); }],
           ['Sessions', 'sessions', function (row) { return escapeHtml(Number(row.sessions || 0).toLocaleString('en-GB')); }],
           ['Unique visitors', 'visitors', function (row) { return escapeHtml(Number(row.visitors || 0).toLocaleString('en-GB')); }],
-          ['Last updated', 'updatedAt', function (row) { return escapeHtml(formatDate(row.updatedAt)); }]
+          ['Last seen', 'lastSeen', function (row) { return escapeHtml(formatDate(row.lastSeen)); }]
         ], rows, {
           key: 'activity',
           title: function (row) { return row.pageTitle || row.page || 'Page activity'; },
@@ -1070,7 +1096,8 @@
               { label: 'Page views', value: Number(row.views || 0).toLocaleString('en-GB') },
               { label: 'Sessions', value: Number(row.sessions || 0).toLocaleString('en-GB') },
               { label: 'Unique visitors', value: Number(row.visitors || 0).toLocaleString('en-GB') },
-              { label: 'Last updated', value: formatDate(row.updatedAt) }
+              { label: 'Last seen', value: formatDate(row.lastSeen) },
+              { label: 'Top referrer', value: row.topReferrer || 'Direct / unknown' }
             ];
           }
         });
@@ -1082,6 +1109,202 @@
         if (el) el.textContent = '-';
       });
     }
+  }
+
+  async function loadShowcaseAdmin() {
+    var root = document.getElementById('showcaseRows');
+    if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    try {
+      var data = await api('GET', '/api/showcase');
+      var rows = data.data || [];
+      if (root) {
+        root.innerHTML = rowTable([
+          ['Event', 'event_name'],
+          ['Date', 'event_date', function (row) { return escapeHtml(formatDate(row.event_date)); }],
+          ['Venue', 'venue_name'],
+          ['Status', 'status', function (row) {
+            var status = row.status || (row.confirmed ? 'confirmed' : 'draft');
+            return statusPill(status, status === 'confirmed' ? 'success' : status === 'cancelled' ? 'danger' : 'info');
+          }],
+          ['Scout responses', 'confirmedCount', function (row) {
+            return escapeHtml(Number(row.confirmedCount || 0)) + ' accepted / ' + escapeHtml(Number(row.waitlistedCount || 0)) + ' waitlisted';
+          }],
+          ['Actions', 'id', function (row) {
+            var id = escapeHtml(row.id);
+            return '<div class="stx-admin-inline-actions"><button class="btn btn-sm btn-outline" type="button" data-showcase-attendees="' + id + '">View responses</button>' +
+              '<button class="btn btn-sm btn-primary" type="button" data-showcase-confirm="' + id + '">Confirm</button>' +
+              '<button class="btn btn-sm btn-outline" type="button" data-showcase-cancel="' + id + '">Cancel</button></div>';
+          }]
+        ], rows, {
+          key: 'showcase',
+          title: function (row) { return row.event_name || 'Showcase event'; },
+          subtitle: function (row) { return [formatDate(row.event_date), row.venue_name, row.status].filter(Boolean).join(' - '); },
+          fields: function (row) {
+            return [
+              { label: 'Event name', value: row.event_name },
+              { label: 'Date', value: formatDate(row.event_date) },
+              { label: 'Venue', value: row.venue_name },
+              { label: 'Address', value: row.venue_address },
+              { label: 'Status', value: row.status || (row.confirmed ? 'confirmed' : 'draft') },
+              { label: 'Max scouts', value: row.max_scouts || 20 },
+              { label: 'Accepted scouts', value: Number(row.confirmedCount || 0) },
+              { label: 'Waitlisted scouts', value: Number(row.waitlistedCount || 0) },
+              { label: 'Description', value: row.description }
+            ];
+          },
+          actions: function (row) {
+            var id = escapeHtml(row.id);
+            return '<button class="btn btn-sm btn-outline" type="button" data-showcase-attendees="' + id + '">View responses</button>' +
+              '<button class="btn btn-sm btn-primary" type="button" data-showcase-confirm="' + id + '">Confirm event</button>' +
+              '<button class="btn btn-sm btn-outline" type="button" data-showcase-cancel="' + id + '">Cancel event</button>';
+          }
+        });
+      }
+      bindShowcaseAdminButtons();
+    } catch (err) {
+      if (root) root.innerHTML = '<div class="stx-admin-error">Could not load showcase events.</div>';
+    }
+  }
+
+  function bindShowcaseAdminButtons() {
+    document.querySelectorAll('[data-showcase-attendees]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var id = btn.getAttribute('data-showcase-attendees');
+        var root = document.getElementById('showcaseAttendeeRows');
+        if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+        try {
+          var data = await api('GET', '/api/showcase/' + encodeURIComponent(id) + '/attendees');
+          var rows = data.scouts || [];
+          if (!root) return;
+          var summary = '<div class="stx-admin-kpis"><div><b>' + escapeHtml(data.total || rows.length || 0) + '</b><span>Scouts invited</span></div><div><b>' + escapeHtml((data.confirmed || []).length) + '</b><span>Accepted</span></div><div><b>' + escapeHtml((data.notResponded || []).length) + '</b><span>No response</span></div></div>';
+          root.innerHTML = summary + rowTable([
+            ['Scout', 'scouts', function (row) {
+              var scout = row.scouts || {};
+              return escapeHtml([scout.first_name, scout.last_name].filter(Boolean).join(' ') || scout.email || 'Scout');
+            }],
+            ['Email', 'scouts', function (row) { return escapeHtml((row.scouts && row.scouts.email) || ''); }],
+            ['Club / team', 'scouts', function (row) { return escapeHtml((row.scouts && (row.scouts.club_name || row.scouts.scout_team_id)) || ''); }],
+            ['Response', 'display_status', function (row) {
+              var status = row.display_status || row.status || 'not_responded';
+              return statusPill(status.replace(/_/g, ' '), status === 'accepted' ? 'success' : status === 'declined' ? 'danger' : 'info');
+            }],
+            ['Responded', 'confirmed_at', function (row) { return escapeHtml(formatDate(row.confirmed_at)); }]
+          ], rows, {
+            key: 'showcaseAttendees',
+            title: function (row) {
+              var scout = row.scouts || {};
+              return [scout.first_name, scout.last_name].filter(Boolean).join(' ') || scout.email || 'Scout response';
+            },
+            subtitle: function (row) { return row.display_status || row.status || 'not responded'; }
+          });
+        } catch (err) {
+          if (root) root.innerHTML = '<div class="stx-admin-error">Could not load scout responses.</div>';
+        }
+      });
+    });
+    document.querySelectorAll('[data-showcase-confirm]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        if (!window.confirm('Confirm this showcase event and notify active scouts?')) return;
+        try {
+          await api('POST', '/api/showcase/' + encodeURIComponent(btn.getAttribute('data-showcase-confirm')) + '/confirm', {});
+          loadShowcaseAdmin();
+        } catch (err) {
+          alert(err.message || 'Could not confirm this showcase event.');
+        }
+      });
+    });
+    document.querySelectorAll('[data-showcase-cancel]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var reason = window.prompt('Reason for cancellation (optional)');
+        if (reason === null) return;
+        try {
+          await api('POST', '/api/showcase/' + encodeURIComponent(btn.getAttribute('data-showcase-cancel')) + '/cancel', { reason: reason });
+          loadShowcaseAdmin();
+        } catch (err) {
+          alert(err.message || 'Could not cancel this showcase event.');
+        }
+      });
+    });
+  }
+
+  async function loadAwardsAdmin() {
+    var root = document.getElementById('awardRows');
+    if (root) root.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    try {
+      var yearFilter = document.getElementById('awardYearFilter');
+      var year = yearFilter && yearFilter.value ? yearFilter.value : '';
+      var nominations = await api('GET', '/api/awards' + (year ? '?year=' + encodeURIComponent(year) : ''));
+      var players = await api('GET', '/api/awards/players');
+      populateAwardPlayers(players.data || []);
+      var rows = nominations.data || [];
+      if (root) {
+        root.innerHTML = rowTable([
+          ['Player', 'players', function (row) {
+            var player = row.players || {};
+            return escapeHtml([player.first_name, player.last_name].filter(Boolean).join(' ') || row.player_id || 'Player');
+          }],
+          ['Award', 'award_name'],
+          ['Year', 'year', function (row) { return escapeHtml(row.year || (row.nominated_at ? new Date(row.nominated_at).getFullYear() : '')); }],
+          ['Status', 'status', function (row) { return statusPill(row.status || 'pending', row.status === 'withdrawn' ? 'danger' : 'success'); }],
+          ['Nominated', 'nominated_at', function (row) { return escapeHtml(formatDate(row.nominated_at)); }],
+          ['Actions', 'id', function (row) {
+            if (row.status === 'withdrawn') return '<span class="stx-admin-muted-pill">Withdrawn</span>';
+            return '<button class="btn btn-sm btn-outline" type="button" data-award-withdraw="' + escapeHtml(row.id) + '">Withdraw</button>';
+          }]
+        ], rows, {
+          key: 'awards',
+          title: function (row) {
+            var player = row.players || {};
+            return [player.first_name, player.last_name].filter(Boolean).join(' ') || row.award_name || 'Award nomination';
+          },
+          subtitle: function (row) { return [row.award_name, row.status].filter(Boolean).join(' - '); },
+          fields: function (row) {
+            var player = row.players || {};
+            return [
+              { label: 'Player', value: [player.first_name, player.last_name].filter(Boolean).join(' ') },
+              { label: 'Team', value: player.team_name },
+              { label: 'Age group', value: player.age_group },
+              { label: 'Award', value: row.award_name },
+              { label: 'Year', value: row.year || (row.nominated_at ? new Date(row.nominated_at).getFullYear() : '') },
+              { label: 'Status', value: row.status || 'pending' },
+              { label: 'Nominated by', value: row.nominated_by },
+              { label: 'Nominated', value: formatDate(row.nominated_at) }
+            ];
+          },
+          actions: function (row) {
+            if (row.status === 'withdrawn') return '';
+            return '<button class="btn btn-sm btn-outline" type="button" data-award-withdraw="' + escapeHtml(row.id) + '">Withdraw nomination</button>';
+          }
+        });
+      }
+      bindAwardsAdminButtons();
+    } catch (err) {
+      if (root) root.innerHTML = '<div class="stx-admin-error">Could not load award nominations.</div>';
+    }
+  }
+
+  function populateAwardPlayers(players) {
+    var select = document.getElementById('awardPlayerSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Select player</option>' + (players || []).map(function (player) {
+      var name = [player.first_name, player.last_name].filter(Boolean).join(' ') || player.id;
+      var meta = [player.team_name, player.age_group, player.specific_position || player.primary_position || player.position_group].filter(Boolean).join(' - ');
+      return '<option value="' + escapeHtml(player.id) + '">' + escapeHtml(name + (meta ? ' - ' + meta : '')) + '</option>';
+    }).join('');
+  }
+
+  function bindAwardsAdminButtons() {
+    document.querySelectorAll('[data-award-withdraw]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        if (!window.confirm('Withdraw this award nomination?')) return;
+        try {
+          await api('PATCH', '/api/awards/' + encodeURIComponent(btn.getAttribute('data-award-withdraw')) + '/withdraw', {});
+          loadAwardsAdmin();
+        } catch (err) {
+          alert(err.message || 'Could not withdraw this nomination.');
+        }
+      });
+    });
   }
 
   async function loadContactForms() {
@@ -1291,6 +1514,12 @@
     if (refreshHiring) refreshHiring.addEventListener('click', loadHiring);
     var refreshConcerns = document.getElementById('refreshConcernsBtn');
     if (refreshConcerns) refreshConcerns.addEventListener('click', loadConcerns);
+    var refreshShowcase = document.getElementById('refreshShowcaseBtn');
+    if (refreshShowcase) refreshShowcase.addEventListener('click', loadShowcaseAdmin);
+    var refreshAwards = document.getElementById('refreshAwardsBtn');
+    if (refreshAwards) refreshAwards.addEventListener('click', loadAwardsAdmin);
+    var awardYearFilter = document.getElementById('awardYearFilter');
+    if (awardYearFilter) awardYearFilter.addEventListener('change', loadAwardsAdmin);
     var exportBtn = document.getElementById('crmExportBtn');
     if (exportBtn) exportBtn.addEventListener('click', exportCrm);
     document.querySelectorAll('[data-editor-cmd]').forEach(function (btn) {
@@ -1306,6 +1535,34 @@
         loadBlog();
       } catch (err) {
         showMessage('blogMsg', err.message || 'Could not save post.', false);
+      }
+    });
+    var showcaseForm = document.getElementById('showcaseForm');
+    if (showcaseForm) showcaseForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var payload = formPayload(showcaseForm);
+        payload.maxScouts = payload.maxScouts ? Number(payload.maxScouts) : undefined;
+        await api('POST', '/api/showcase', payload);
+        showcaseForm.reset();
+        showMessage('showcaseMsg', 'Showcase event saved.', true);
+        loadShowcaseAdmin();
+      } catch (err) {
+        showMessage('showcaseMsg', err.message || 'Could not save showcase event.', false);
+      }
+    });
+    var awardNominationForm = document.getElementById('awardNominationForm');
+    if (awardNominationForm) awardNominationForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var payload = formPayload(awardNominationForm);
+        payload.year = payload.year ? Number(payload.year) : undefined;
+        await api('POST', '/api/awards/nominate', payload);
+        awardNominationForm.reset();
+        showMessage('awardMsg', 'Award nomination saved and notifications queued.', true);
+        loadAwardsAdmin();
+      } catch (err) {
+        showMessage('awardMsg', err.message || 'Could not save award nomination.', false);
       }
     });
     var leadershipForm = document.getElementById('leadershipForm');
