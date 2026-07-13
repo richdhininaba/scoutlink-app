@@ -5,11 +5,13 @@ const crypto = require('crypto');
 const multer = require('multer');
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
 const email = require('../services/email');
 const config = require('../config');
 const { limitsForPlan } = require('../utils/scoutPlans');
 
 const VERIFICATION_BUCKET = 'scout-verification-documents';
+const requireRegistrationsAdmin = requireStratexAdminPermission('registrations', 'Registration review is restricted to authorised Stratex admins.');
 const verificationUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 2 },
@@ -341,7 +343,7 @@ router.post('/scout-verification/:token', (req, res) => {
 });
 
 // Stratex: list requests
-router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
     const { status = 'pending', accountType, page = 1, limit = 50 } = req.query;
     let q = supabase.from('registration_requests').select('*', { count: 'exact' });
@@ -355,7 +357,7 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
   } catch(err) { safeLog('[Registration list]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
-router.get('/:id/verification-documents', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/:id/verification-documents', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
     const { data: rq, error } = await supabase.from('registration_requests').select('id,account_type,safeguarding_documents').eq('id', req.params.id).single();
     if (error || !rq) return res.status(404).json({ error: 'Registration request not found' });
@@ -376,7 +378,7 @@ router.get('/:id/verification-documents', requireAuth, requireRole('Stratex'), a
 });
 
 // Stratex: approve
-router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/approve', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
     const { subscriptionPlan, safeguardingReview, paymentLink } = req.body;
     const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
@@ -497,7 +499,7 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), async (req, res
   } catch(err) { safeLog('[Approve]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
-router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
     const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
     if (rqErr || !rq) return res.status(404).json({ error: 'Registration request not found' });
@@ -570,7 +572,7 @@ router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), async 
 });
 
 // Stratex: decline
-router.post('/:id/decline', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/decline', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
     const { declineReason, customReason } = req.body;
     if (!declineReason) return res.status(400).json({ error: 'declineReason required', validReasons: DECLINE_REASONS });

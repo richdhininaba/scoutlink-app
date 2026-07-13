@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
 const email = require('../services/email');
+
+const requireTrustAdmin = requireStratexAdminPermission('trust', 'Trust and concern access is restricted to authorised Stratex admins.');
 
 function cleanText(value, max = 4000) {
   return String(value || '').trim().slice(0, max);
@@ -277,7 +280,7 @@ const TRUST_STATUSES = [
   'closed'
 ];
 
-router.get('/submissions', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/submissions', requireAuth, requireRole('Stratex'), requireTrustAdmin, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit || '100', 10) || 100, 1), 300);
     let q = supabase
@@ -299,7 +302,7 @@ router.get('/submissions', requireAuth, requireRole('Stratex'), async (req, res)
   }
 });
 
-router.patch('/submissions/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/submissions/:id', requireAuth, requireRole('Stratex'), requireTrustAdmin, async (req, res) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
     if (req.body.status !== undefined) {

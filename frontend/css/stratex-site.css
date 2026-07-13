@@ -1940,6 +1940,61 @@ body.stx-company-admin {
   display: grid;
   gap: 10px;
 }
+.stx-admin-subform {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+.stx-admin-subform h3 {
+  margin: 0 0 12px;
+  color: #101828;
+  font-size: 15px;
+}
+.stx-admin-subform form {
+  display: grid;
+  gap: 12px;
+}
+.stx-admin-subform label {
+  display: grid;
+  gap: 6px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.stx-admin-subform input,
+.stx-admin-subform select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dce4ef;
+  border-radius: 12px;
+  background: #fff;
+  color: #101828;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.stx-admin-subform input[type="file"] {
+  min-height: 0;
+  padding: 11px;
+}
+.stx-admin-inline-message {
+  min-height: 18px;
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 800;
+}
+.stx-admin-inline-message.ok {
+  color: #047857;
+}
+.stx-admin-inline-message.err {
+  color: #dc2626;
+}
 
 @media (max-width: 900px) {
   .stx-admin-layout {

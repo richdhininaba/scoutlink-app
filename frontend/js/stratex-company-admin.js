@@ -84,6 +84,8 @@
   ];
   var DETAIL_ROWS = {};
   var DETAIL_META = {};
+  var CONTRACT_ROWS = [];
+  var CONTRACT_CAN_EDIT = false;
   var popstateBound = false;
 
   function escapeHtml(value) {
@@ -182,6 +184,22 @@
 
   function apiBase() {
     return typeof API !== 'undefined' ? API : 'https://scoutlink-api.vercel.app';
+  }
+
+  function authToken() {
+    if (typeof Auth !== 'undefined' && Auth && Auth.token) return Auth.token;
+    return localStorage.getItem('sl_token') || '';
+  }
+
+  async function apiForm(method, path, formData) {
+    var res = await fetch(apiBase() + path, {
+      method: method,
+      headers: { Authorization: 'Bearer ' + authToken() },
+      body: formData
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || data.message || 'Request failed');
+    return data;
   }
 
   function storeStratexSession(data) {
@@ -370,6 +388,7 @@
     var title = typeof meta.title === 'function' ? meta.title(row) : (meta.title || row.name || row.title || row.email || 'Record');
     var subtitle = typeof meta.subtitle === 'function' ? meta.subtitle(row) : (meta.subtitle || row.email || row.status || '');
     openDetailPanel(title, subtitle, fields, actions, typeof meta.extra === 'function' ? meta.extra(row) : '');
+    if (typeof meta.afterOpen === 'function') meta.afterOpen(row);
   }
 
   function moduleCard(id, title, copy) {
@@ -814,21 +833,71 @@
     try {
       var data = await api('GET', '/api/stratex/contracts-pay');
       var rows = data.data || [];
-      root.innerHTML = renderAdminRecords(rows, function (row) {
-        var contract = row.contract_data && typeof row.contract_data === 'object' ? row.contract_data : {};
-        var body = statusPill(contract.contractPath ? 'Contract uploaded' : 'No contract uploaded', contract.contractPath ? 'success' : '') +
-          statusPill(contract.payAmount ? 'Pay set' : 'Pay not set', contract.payAmount ? 'info' : '') +
-          '<p>' + escapeHtml([contract.payAmount ? ('GBP ' + contract.payAmount) : '', contract.payFrequency || ''].filter(Boolean).join(' / ') || 'Private HR record') + '</p>';
-        var action = contract.contractPath ? '<button class="btn btn-sm btn-outline" type="button" data-contract-download="' + escapeHtml(row.id) + '">Secure download</button>' : '';
-        return compactRecord(adminName(row), [adminRole(row), row.email].filter(Boolean).join(' - '), body, action);
+      CONTRACT_ROWS = rows;
+      CONTRACT_CAN_EDIT = !!data.canEdit;
+      root.innerHTML = rowTable([
+        ['Name', 'name', function (row) { return '<strong>' + escapeHtml(adminName(row)) + '</strong>'; }],
+        ['Role', 'role', function (row) { return escapeHtml(adminRole(row)); }],
+        ['Email', 'email', function (row) { return escapeHtml(row.email || '-'); }],
+        ['Contract', 'contract', function (row) {
+          var contract = contractData(row);
+          return statusPill(contract.contractPath ? 'Uploaded' : 'Not uploaded', contract.contractPath ? 'success' : '');
+        }],
+        ['Pay', 'pay', function (row) { return escapeHtml(contractPayLabel(contractData(row))); }],
+        ['Status', 'status', function (row) { return statusPill(contractStatusLabel(contractData(row)), 'info'); }],
+        ['Actions', 'actions', function (row) {
+          return '<div class="stx-admin-inline-actions">' +
+            (contractData(row).contractPath ? '<button class="btn btn-sm btn-outline" type="button" data-contract-download="' + escapeHtml(row.id) + '">Download</button>' : '') +
+            '<button class="btn btn-sm btn-primary" type="button" data-contract-detail="' + escapeHtml(row.id) + '">' + (CONTRACT_CAN_EDIT ? 'Manage' : 'View') + '</button>' +
+            '</div>';
+        }]
+      ], rows, {
+        key: 'contracts',
+        title: adminName,
+        subtitle: function (row) { return [adminRole(row), row.email].filter(Boolean).join(' - '); },
+        fields: function (row) {
+          var contract = contractData(row);
+          return [
+            { label: 'Name', value: adminName(row) },
+            { label: 'Role', value: adminRole(row) },
+            { label: 'Email', value: row.email },
+            { label: 'Contract', value: contract.contractPath ? 'Uploaded privately' : 'Not uploaded' },
+            { label: 'Pay amount', value: contract.payAmount ? ('GBP ' + contract.payAmount) : 'Not set' },
+            { label: 'Pay frequency', value: contract.payFrequency || 'Not set' },
+            { label: 'Status', value: contractStatusLabel(contract) }
+          ];
+        },
+        actions: function (row) {
+          return '<button class="btn btn-sm btn-primary" type="button" data-contract-detail="' + escapeHtml(row.id) + '">' + (CONTRACT_CAN_EDIT ? 'Manage HR record' : 'View HR record') + '</button>';
+        },
+        extra: function (row) {
+          return CONTRACT_CAN_EDIT ? contractEditorHtml(row, contractData(row)) : '';
+        },
+        afterOpen: function (row) {
+          bindContractActions();
+          bindContractEditor(row.id);
+        }
       });
-      bindContractDownloads();
+      bindContractActions();
     } catch (_) {
       root.innerHTML = '<div class="stx-admin-error">Could not load contracts and pay.</div>';
     }
   }
 
-  function bindContractDownloads() {
+  function contractData(row) {
+    return row && row.contract_data && typeof row.contract_data === 'object' ? row.contract_data : {};
+  }
+
+  function contractPayLabel(contract) {
+    if (!contract || !contract.payAmount) return 'Not set';
+    return ['GBP ' + contract.payAmount, contract.payFrequency].filter(Boolean).join(' / ');
+  }
+
+  function contractStatusLabel(contract) {
+    return contract && (contract.payStatus || contract.status) || 'Active';
+  }
+
+  function bindContractActions() {
     document.querySelectorAll('[data-contract-download]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         try {
@@ -838,6 +907,81 @@
           alert(err.message || 'Could not create secure contract link.');
         }
       });
+    });
+    document.querySelectorAll('[data-contract-detail]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-contract-detail');
+        var row = CONTRACT_ROWS.find(function (item) { return String(item.id) === String(id); }) || {};
+        openContractDetail(row);
+      });
+    });
+  }
+
+  function openContractDetail(row) {
+    var contract = contractData(row);
+    var actions = contract.contractPath ? '<button class="btn btn-sm btn-primary" type="button" data-contract-download="' + escapeHtml(row.id) + '">Secure download</button>' : '';
+    openDetailPanel(adminName(row), [adminRole(row), row.email].filter(Boolean).join(' - '), [
+      { label: 'Contract', value: contract.contractPath ? 'Uploaded privately' : 'Not uploaded' },
+      { label: 'Contract file', value: contract.contractFileName || contract.fileName || '-' },
+      { label: 'Contract uploaded', value: formatDate(contract.contractUploadedAt || contract.uploadedAt) || '-' },
+      { label: 'Pay amount', value: contract.payAmount ? ('GBP ' + contract.payAmount) : 'Not set' },
+      { label: 'Pay frequency', value: contract.payFrequency || 'Not set' },
+      { label: 'Status', value: contractStatusLabel(contract) }
+    ], actions, CONTRACT_CAN_EDIT ? contractEditorHtml(row, contract) : '');
+    bindContractActions();
+    bindContractEditor(row.id);
+  }
+
+  function contractEditorHtml(row, contract) {
+    return '<div class="stx-admin-detail-list">' +
+      '<section class="stx-admin-subform"><h3>Update pay details</h3><form id="contractPayForm" data-contract-id="' + escapeHtml(row.id) + '">' +
+      '<div class="stx-form-row"><label>Pay amount<input name="payAmount" type="number" min="0" step="0.01" value="' + escapeHtml(contract.payAmount || '') + '" placeholder="e.g. 35000"></label>' +
+      '<label>Pay frequency<select name="payFrequency"><option value="">Select frequency</option>' +
+      ['Hourly', 'Daily', 'Weekly', 'Monthly', 'Annually'].map(function (freq) {
+        return '<option value="' + escapeHtml(freq) + '"' + (String(contract.payFrequency || '') === freq ? ' selected' : '') + '>' + escapeHtml(freq) + '</option>';
+      }).join('') + '</select></label></div>' +
+      '<label>Status<select name="status">' + ['Active', 'Draft', 'Pending review', 'Archived'].map(function (status) {
+        return '<option value="' + escapeHtml(status) + '"' + (String(contractStatusLabel(contract)) === status ? ' selected' : '') + '>' + escapeHtml(status) + '</option>';
+      }).join('') + '</select></label>' +
+      '<button class="btn btn-primary" type="submit">Save pay details</button><p id="contractPayMsg" class="stx-admin-inline-message" aria-live="polite"></p></form></section>' +
+      '<section class="stx-admin-subform"><h3>Upload contract</h3><form id="contractUploadForm" data-contract-id="' + escapeHtml(row.id) + '">' +
+      '<label>Contract file<input name="contract" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>' +
+      '<button class="btn btn-primary" type="submit">Upload secure contract</button><p id="contractUploadMsg" class="stx-admin-inline-message" aria-live="polite"></p></form></section>' +
+      '</div>';
+  }
+
+  function inlineMessage(id, text, ok) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'stx-admin-inline-message ' + (ok ? 'ok' : 'err');
+  }
+
+  function bindContractEditor(id) {
+    var payForm = document.getElementById('contractPayForm');
+    if (payForm) payForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        await api('PATCH', '/api/stratex/contracts-pay/' + encodeURIComponent(id) + '/pay', formPayload(payForm));
+        inlineMessage('contractPayMsg', 'Pay details saved.', true);
+        await loadContracts();
+      } catch (err) {
+        inlineMessage('contractPayMsg', err.message || 'Could not save pay details.', false);
+      }
+    });
+    var uploadForm = document.getElementById('contractUploadForm');
+    if (uploadForm) uploadForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var fd = new FormData(uploadForm);
+        var file = fd.get('contract');
+        if (!file || !file.name) throw new Error('Choose a PDF, DOC or DOCX contract first.');
+        await apiForm('POST', '/api/stratex/contracts-pay/' + encodeURIComponent(id) + '/contract', fd);
+        inlineMessage('contractUploadMsg', 'Contract uploaded securely.', true);
+        await loadContracts();
+      } catch (err) {
+        inlineMessage('contractUploadMsg', err.message || 'Could not upload contract.', false);
+      }
     });
   }
 
@@ -913,7 +1057,22 @@
           { label: 'Status', value: app.status || 'Submitted' },
           { label: 'Submitted', value: formatDate(app.submitted_at) },
           { label: 'CV', value: app.job_application_files && app.job_application_files.length ? 'Stored privately' : 'No CV record' }
-        ], app.email ? '<a class="btn btn-sm btn-primary" href="mailto:' + escapeHtml(app.email) + '">Email applicant</a>' : '');
+        ], (app.job_application_files && app.job_application_files.length ? '<button class="btn btn-sm btn-primary" type="button" data-applicant-cv="' + escapeHtml(app.id) + '">Download CV</button>' : '') +
+          (app.email ? '<a class="btn btn-sm btn-outline" href="mailto:' + escapeHtml(app.email) + '">Email applicant</a>' : ''));
+        bindApplicantCvButtons();
+      });
+    });
+  }
+
+  function bindApplicantCvButtons() {
+    document.querySelectorAll('[data-applicant-cv]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        try {
+          var data = await api('GET', '/api/stratex/job-applications/' + encodeURIComponent(btn.getAttribute('data-applicant-cv')) + '/cv-url');
+          if (data.url) window.open(data.url, '_blank', 'noopener');
+        } catch (err) {
+          alert(err.message || 'Could not create a secure CV link.');
+        }
       });
     });
   }
