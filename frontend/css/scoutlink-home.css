@@ -1147,6 +1147,7 @@ body.scoutlink-home-v2 .stx-card-status.live {
   }
 
   body.scoutlink-home-v2 .stx-preview-top {
+    align-items: center;
     padding: 18px;
     gap: 12px;
   }
@@ -1159,12 +1160,36 @@ body.scoutlink-home-v2 .stx-card-status.live {
     font-size: 12px;
   }
 
+  body.scoutlink-home-v2 .stx-score {
+    flex: 0 0 64px;
+  }
+
   body.scoutlink-home-v2 .stx-score strong {
-    font-size: 32px;
+    color: #facc15;
+    font-size: 30px;
+  }
+
+  body.scoutlink-home-v2 .stx-score span {
+    display: block;
+    color: #dbeafe;
+    font-size: 10px;
+    line-height: 1.15;
+    max-width: 64px;
+    overflow-wrap: normal;
   }
 
   body.scoutlink-home-v2 .stx-preview-body {
     padding: 16px;
+  }
+
+  body.scoutlink-home-v2 .stx-metric-row {
+    grid-template-columns: 92px minmax(0, 1fr) 28px;
+    gap: 8px;
+    color: #f8fafc;
+  }
+
+  body.scoutlink-home-v2 .stx-metric-row b {
+    color: #f8fafc;
   }
 
   body.scoutlink-home-v2 .stx-preview-cards {
@@ -1177,9 +1202,15 @@ body.scoutlink-home-v2 .stx-card-status.live {
     min-width: 0;
   }
 
-  body.scoutlink-home-v2 .stx-preview-cards strong {
+  body.scoutlink-home-v2 .stx-preview-cards b {
+    color: #fff;
     font-size: clamp(18px, 5vw, 24px);
     line-height: 1.05;
+  }
+
+  body.scoutlink-home-v2 .stx-preview-cards span {
+    color: #dbeafe;
+    font-size: 10px;
   }
 
   .sl-hero-text,
