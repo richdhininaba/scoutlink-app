@@ -1189,7 +1189,7 @@ body.scoutlink-home-v2 .stx-card-status.live {
   }
 
   body.scoutlink-home-v2 .stx-metric-row b {
-    color: #f8fafc;
+    color: #f8fafc !important;
   }
 
   body.scoutlink-home-v2 .stx-preview-cards {
@@ -1203,13 +1203,13 @@ body.scoutlink-home-v2 .stx-card-status.live {
   }
 
   body.scoutlink-home-v2 .stx-preview-cards b {
-    color: #fff;
+    color: #fff !important;
     font-size: clamp(18px, 5vw, 24px);
     line-height: 1.05;
   }
 
   body.scoutlink-home-v2 .stx-preview-cards span {
-    color: #dbeafe;
+    color: #dbeafe !important;
     font-size: 10px;
   }
 
