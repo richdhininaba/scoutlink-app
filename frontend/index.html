@@ -87,6 +87,7 @@
   <link rel="stylesheet" href="css/phone-base.css">
   <link rel="stylesheet" href="css/phone-shell.css">
   <link rel="stylesheet" href="css/phone-pages.css">
+  <link rel="stylesheet" href="css/stratex-site.css">
   <link rel="stylesheet" href="css/scoutlink-home.css">
   <script type="text/javascript">
     window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
@@ -126,38 +127,28 @@
           </div>
         </div>
 
-        <aside class="sl-product-card" aria-label="Sample ScoutLink player profile preview">
-          <div class="sl-product-card-top">
-            <span>Sample player profile</span>
-            <strong>84%</strong>
-          </div>
-          <div class="sl-player-line">
-            <span class="sl-avatar">EC</span>
-            <div>
-              <h2>Ethan Cole</h2>
-              <p>U16 - Centre Midfield - Northgate United</p>
+        <aside class="stx-profile-preview sl-approved-preview" aria-label="ScoutLink player profile preview including rating, compatibility and player evidence">
+          <div class="stx-preview-top">
+            <div class="sl-approved-player">
+              <div class="stx-avatar">EC</div>
+              <div>
+                <div class="stx-preview-name">Ethan Cole</div>
+                <div class="stx-preview-meta">ST - U16 - Northgate United</div>
+              </div>
             </div>
-            <b>86/100</b>
+            <div class="stx-score"><strong>82</strong><span>Compatibility</span></div>
           </div>
-          <div class="sl-mini-metrics" aria-label="Player evidence metrics">
-            <div><span>Readiness</span><strong>90</strong></div>
-            <div><span>Potential</span><strong>83</strong></div>
-            <div><span>Evidence confidence</span><strong>High</strong></div>
+          <div class="stx-preview-body">
+            <div class="stx-metric-row"><span>Overall rating</span><div class="stx-bar"><span style="width:78%"></span></div><b>78</b></div>
+            <div class="stx-metric-row"><span>Match evidence</span><div class="stx-bar"><span style="width:84%"></span></div><b>84</b></div>
+            <div class="stx-metric-row"><span>Data confidence</span><div class="stx-bar"><span style="width:72%"></span></div><b>72</b></div>
+            <div class="stx-metric-row"><span>Development upside</span><div class="stx-bar"><span style="width:88%"></span></div><b>88</b></div>
           </div>
-          <div class="sl-fit-card">
-            <div>
-              <span>Compatibility score</span>
-              <h3>Strong high-press fit</h3>
-              <p>High match output, quick transitions and clear coach evidence support this role fit.</p>
-            </div>
-            <strong>84%</strong>
+          <div class="stx-preview-cards">
+            <div><b>5</b><span>Match facts</span></div>
+            <div><b>&pound;126k</b><span>Value estimate</span></div>
+            <div><b>High</b><span>Coach evidence</span></div>
           </div>
-          <div class="sl-evidence-bars" aria-label="Evidence quality preview">
-            <span><b>Match evidence</b><i style="--value:84%"></i><em>84</em></span>
-            <span><b>Coach evidence</b><i style="--value:88%"></i><em>88</em></span>
-            <span><b>Video evidence</b><i style="--value:72%"></i><em>72</em></span>
-          </div>
-          <p class="sl-card-note">Structured evidence helps scouts understand player fit faster, with coach-led context and safer visibility.</p>
         </aside>
       </div>
     </section>
@@ -196,17 +187,26 @@
           <p>ScoutLink brings player profiles, compatibility scoring, scout search, coach evidence, match facts and recruitment pipeline decisions into one evidence-led product.</p>
           <a class="sl-button sl-button-secondary" href="/demo">Explore the demo</a>
         </div>
-        <div class="sl-stage">
-          <article class="sl-stage-feature sl-stage-feature-main">
-            <span>Player profile</span>
+        <div class="sl-workflow-showcase">
+          <div class="sl-workflow-tabs" aria-label="ScoutLink workflows">
+            <span class="active">Player profile</span>
+            <span>Compatibility</span>
+            <span>Scout search</span>
+            <span>Coach evidence</span>
+            <span>Match facts</span>
+            <span>Pipeline</span>
+          </div>
+          <article class="sl-workflow-preview">
+            <span>Selected workflow</span>
             <h3>One structured record for the player.</h3>
-            <p>Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so context is easier to review.</p>
+            <p>Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so coaches and reviewed scouts can see context without chasing scattered files.</p>
+            <div class="sl-workflow-mini-grid">
+              <div><b>Ratings</b><small>Coach-led attributes</small></div>
+              <div><b>Match facts</b><small>Game-by-game evidence</small></div>
+              <div><b>Video</b><small>Approved clips</small></div>
+              <div><b>Confidence</b><small>Evidence quality</small></div>
+            </div>
           </article>
-          <article><span>Compatibility score</span><h3>Fit, not hype.</h3><p>Scouts see why a player may fit a role, system or team need.</p></article>
-          <article><span>Scout search</span><h3>Search by evidence.</h3><p>Filter by role, position, location, age group, confidence and compatibility.</p></article>
-          <article><span>Coach evidence</span><h3>Built from match reality.</h3><p>Coaches capture the player context scouts usually have to chase.</p></article>
-          <article><span>Match facts</span><h3>Every game improves the record.</h3><p>Goals, assists, cards, positions, ratings and fixtures strengthen the profile.</p></article>
-          <article><span>Recruitment pipeline</span><h3>Keep interest organised.</h3><p>Reviewed scouts can shortlist and manage interest without losing the reasoning.</p></article>
         </div>
       </div>
     </section>
@@ -219,14 +219,22 @@
           <p>ScoutLink brings together team needs, role expectations, tactical style, formation, development pathway, match evidence, financial fit and evidence confidence to help scouts review fit with more context.</p>
           <a class="sl-button sl-button-primary" href="https://www.stratexanalytics.co.uk/scoutlink/compatibility-score">Read the compatibility guide</a>
         </div>
-        <div class="sl-compat-panel">
-          <div class="sl-compat-score"><span>Compatibility preview</span><strong>82%</strong></div>
-          <div class="sl-compat-breakdown">
-            <span><b>Team needs</b><i style="--value:86%"></i></span>
-            <span><b>Role expectations</b><i style="--value:78%"></i></span>
-            <span><b>Match evidence</b><i style="--value:84%"></i></span>
-            <span><b>Evidence confidence</b><i style="--value:72%"></i></span>
+        <div class="stx-compat-product-card sl-approved-compat" aria-label="Example ScoutLink compatibility score card">
+          <div class="stx-compat-product-head">
+            <div>
+              <span class="stx-card-status live">Compatibility preview</span>
+              <h3>Carter Hill</h3>
+              <p>ST - U16 - Northgate United</p>
+            </div>
+            <div class="stx-compat-ring"><strong>82%</strong><span>score</span></div>
           </div>
+          <div class="stx-fit-pill-row"><span>High-press forward</span><span>Very high confidence</span></div>
+          <div class="stx-compat-breakdown">
+            <div class="stx-compat-row"><div><span>Need fit</span><small>Solves pace and finishing gap</small></div><i style="--score:86%"></i><b>86</b></div>
+            <div class="stx-compat-row"><div><span>Role fit</span><small>Fits striker role expectations</small></div><i style="--score:78%"></i><b>78</b></div>
+            <div class="stx-compat-row"><div><span>Evidence confidence</span><small>Supported by match facts</small></div><i style="--score:72%"></i><b>72</b></div>
+          </div>
+          <p class="stx-compat-insight">Strong role fit for a high-pressing U16 side that needs pace, finishing and transitional attacking output.</p>
         </div>
       </div>
     </section>
