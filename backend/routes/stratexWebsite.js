@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
 const XLSX = require('xlsx');
 const crypto = require('crypto');
 const multer = require('multer');
@@ -24,6 +25,11 @@ const leadershipImageUpload = multer({
     cb(null, true);
   }
 });
+
+const requireWebsiteActivityAccess = requireStratexAdminPermission('website_activity', 'Website activity access is restricted to authorised Stratex admin users.');
+const requireContactFormAccess = requireStratexAdminPermission('contact_forms', 'Contact form access is restricted to authorised Stratex admin users.');
+const requireCrmAccess = requireStratexAdminPermission('crm', 'CRM access is restricted to authorised Stratex admin users.');
+const requireContentAccess = requireStratexAdminPermission('content', 'Content management access is restricted to authorised Stratex admin users.');
 
 function text(value, max = 4000) {
   return String(value || '').trim().slice(0, max);
@@ -76,6 +82,30 @@ function blogVisitor(req, res) {
   return crypto.createHash('sha256').update('stratex-blog:' + id).digest('hex');
 }
 
+function siteVisitor(req, res) {
+  const cookies = parseCookies(req.headers.cookie);
+  let visitor = cookies.stx_site_visitor;
+  let session = cookies.stx_site_session;
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/'
+  };
+  if (!visitor || !/^[a-f0-9-]{20,80}$/i.test(visitor)) {
+    visitor = crypto.randomUUID();
+    res.cookie('stx_site_visitor', visitor, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
+  }
+  if (!session || !/^[a-f0-9-]{20,80}$/i.test(session)) {
+    session = crypto.randomUUID();
+    res.cookie('stx_site_session', session, { ...cookieOptions, maxAge: 30 * 60 * 1000 });
+  }
+  return {
+    visitorHash: crypto.createHash('sha256').update('stratex-site-visitor:' + visitor).digest('hex'),
+    sessionHash: crypto.createHash('sha256').update('stratex-site-session:' + session).digest('hex')
+  };
+}
+
 function consentPayload(req) {
   return {
     consent_contact: !!req.body.consentContact || !!req.body.consent_contact,
@@ -87,6 +117,16 @@ function consentPayload(req) {
 
 function source(req, fallback) {
   return text(req.body.sourcePage || req.body.source_page || req.get('referer') || fallback, 600) || fallback;
+}
+
+function publicPath(value) {
+  const raw = text(value || '/', 300);
+  try {
+    const parsed = new URL(raw, 'https://www.stratexanalytics.co.uk');
+    return parsed.pathname.replace(/\/+$/, '') || '/';
+  } catch (_) {
+    return raw.charAt(0) === '/' ? raw.replace(/\/+$/, '') || '/' : '/' + raw.replace(/\/+$/, '');
+  }
 }
 
 function normalizeAdminRole(role) {
@@ -104,11 +144,8 @@ function hasManagementPermission(admin, req) {
     role === 'management' ||
     role === 'super admin' ||
     role === 'founder' ||
-    role === 'operations' ||
-    role === 'acquisition' ||
-    role === 'safeguarding reviewer' ||
-    role === 'product demo' ||
     perms.includes('management') ||
+    perms.includes('super_admin') ||
     perms.includes('permissions') ||
     perms.includes('admin_users');
 }
@@ -245,6 +282,91 @@ router.post('/newsletter', async (req, res) => {
   } catch (err) {
     console.error('[Stratex newsletter]', { code: err.code, message: err.message });
     res.status(500).json({ error: 'Could not save this newsletter signup right now.' });
+  }
+});
+
+router.post('/activity', async (req, res) => {
+  try {
+    const ids = siteVisitor(req, res);
+    const payload = {
+      event_type: 'page_view',
+      page_path: publicPath(req.body.pagePath || req.body.page_path || req.body.path || '/'),
+      page_title: text(req.body.pageTitle || req.body.page_title || req.body.title, 240) || null,
+      canonical_url: text(req.body.canonicalUrl || req.body.canonical_url || req.body.url, 600) || null,
+      referrer: text(req.body.referrer || req.get('referer'), 600) || null,
+      visitor_hash: ids.visitorHash,
+      session_hash: ids.sessionHash,
+      user_agent_hash: crypto.createHash('sha256').update('stratex-site-agent:' + String(req.get('user-agent') || '')).digest('hex')
+    };
+    const { error } = await supabase.from('stratex_website_activity_events').insert(payload);
+    if (error) throw error;
+    res.status(202).json({ tracked: true });
+  } catch (err) {
+    console.error('[Stratex website activity]', { code: err.code, message: err.message });
+    res.status(202).json({ tracked: false });
+  }
+});
+
+router.get('/activity', requireAuth, requireRole('Stratex'), requireWebsiteActivityAccess, async (req, res) => {
+  try {
+    const rangeRaw = String(req.query.range || req.query.days || '30');
+    const rangeDays = rangeRaw === 'all' ? null : Math.min(Math.max(parseInt(rangeRaw, 10) || 30, 1), 365);
+    const page = req.query.page ? publicPath(req.query.page) : '';
+    let q = supabase
+      .from('stratex_website_activity_events')
+      .select('page_path,page_title,visitor_hash,session_hash,created_at,referrer')
+      .eq('event_type', 'page_view')
+      .order('created_at', { ascending: false })
+      .limit(10000);
+    if (rangeDays) {
+      q = q.gte('created_at', new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString());
+    }
+    if (page) q = q.eq('page_path', page);
+    const { data, error } = await q;
+    if (error) throw error;
+    const rows = data || [];
+    const byPage = new Map();
+    rows.forEach(row => {
+      const key = row.page_path || '/';
+      if (!byPage.has(key)) {
+        byPage.set(key, {
+          page: key,
+          pageTitle: row.page_title || key,
+          views: 0,
+          sessionsSet: new Set(),
+          visitorsSet: new Set(),
+          lastSeen: row.created_at,
+          topReferrer: row.referrer || ''
+        });
+      }
+      const item = byPage.get(key);
+      item.views += 1;
+      if (row.session_hash) item.sessionsSet.add(row.session_hash);
+      if (row.visitor_hash) item.visitorsSet.add(row.visitor_hash);
+      if (row.created_at && (!item.lastSeen || new Date(row.created_at) > new Date(item.lastSeen))) item.lastSeen = row.created_at;
+      if (!item.topReferrer && row.referrer) item.topReferrer = row.referrer;
+    });
+    const pages = Array.from(byPage.values()).map(item => ({
+      page: item.page,
+      pageTitle: item.pageTitle,
+      views: item.views,
+      sessions: item.sessionsSet.size,
+      visitors: item.visitorsSet.size,
+      lastSeen: item.lastSeen,
+      topReferrer: item.topReferrer
+    })).sort((a, b) => b.views - a.views || String(a.page).localeCompare(String(b.page)));
+    res.json({
+      summary: {
+        pageViews: rows.length,
+        sessions: new Set(rows.map(row => row.session_hash).filter(Boolean)).size,
+        visitors: new Set(rows.map(row => row.visitor_hash).filter(Boolean)).size
+      },
+      pages,
+      rangeDays: rangeDays || 'all'
+    });
+  } catch (err) {
+    console.error('[Stratex website activity admin]', { code: err.code, message: err.message });
+    res.status(500).json({ error: 'Could not load website activity.' });
   }
 });
 
@@ -428,7 +550,7 @@ router.post('/blog/:slug/like', async (req, res) => {
   }
 });
 
-router.get('/leads', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/leads', requireAuth, requireRole('Stratex'), requireContactFormAccess, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit || '200', 10) || 200, 1), 500);
     let q = supabase
@@ -447,7 +569,7 @@ router.get('/leads', requireAuth, requireRole('Stratex'), async (req, res) => {
   }
 });
 
-router.patch('/leads/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/leads/:id', requireAuth, requireRole('Stratex'), requireContactFormAccess, async (req, res) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
     if (req.body.status !== undefined) patch.status = text(req.body.status, 80) || 'new';
@@ -531,7 +653,7 @@ async function loadCrmRows() {
     return rows;
 }
 
-router.get('/crm', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/crm', requireAuth, requireRole('Stratex'), requireCrmAccess, async (req, res) => {
   try {
     const rows = await loadCrmRows();
     res.json({ data: rows });
@@ -541,7 +663,7 @@ router.get('/crm', requireAuth, requireRole('Stratex'), async (req, res) => {
   }
 });
 
-router.get('/crm/export', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/crm/export', requireAuth, requireRole('Stratex'), requireCrmAccess, async (req, res) => {
   try {
     const rows = await loadCrmRows();
     const headers = ['Source', 'Type', 'Name', 'Email', 'Phone', 'Organisation', 'Role', 'Status', 'Created At'];
@@ -562,7 +684,7 @@ router.get('/crm/export', requireAuth, requireRole('Stratex'), async (req, res) 
   }
 });
 
-router.post('/blog', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
+router.post('/blog', requireAuth, requireRole('Stratex'), requireContentAccess, async (req, res) => {
   try {
     const title = text(req.body.title, 180);
     if (!title) return res.status(400).json({ error: 'Title is required.' });
@@ -586,7 +708,7 @@ router.post('/blog', requireAuth, requireRole('Stratex'), requireLeadershipManag
   }
 });
 
-router.patch('/blog/:id', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
+router.patch('/blog/:id', requireAuth, requireRole('Stratex'), requireContentAccess, async (req, res) => {
   try {
     const patch = { updated_at: new Date().toISOString() };
     ['title', 'excerpt', 'body', 'category', 'status'].forEach(field => {
@@ -604,7 +726,7 @@ router.patch('/blog/:id', requireAuth, requireRole('Stratex'), requireLeadership
   }
 });
 
-router.delete('/blog/:id', requireAuth, requireRole('Stratex'), requireLeadershipManagement, async (req, res) => {
+router.delete('/blog/:id', requireAuth, requireRole('Stratex'), requireContentAccess, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_learning_posts')
