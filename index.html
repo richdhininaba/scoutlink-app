@@ -188,23 +188,28 @@
           <a class="sl-button sl-button-secondary" href="/demo">Explore the demo</a>
         </div>
         <div class="sl-workflow-showcase">
-          <div class="sl-workflow-tabs" aria-label="ScoutLink workflows">
-            <span class="active">Player profile</span>
-            <span>Compatibility</span>
-            <span>Scout search</span>
-            <span>Coach evidence</span>
-            <span>Match facts</span>
-            <span>Pipeline</span>
+          <div class="sl-workflow-tabs" role="tablist" aria-label="ScoutLink workflows">
+            <button id="workflow-tab-profile" class="active" type="button" role="tab" aria-selected="true" aria-controls="workflow-panel" data-workflow="profile">Player profile</button>
+            <button id="workflow-tab-compatibility" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel" data-workflow="compatibility" tabindex="-1">Compatibility</button>
+            <button id="workflow-tab-search" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel" data-workflow="search" tabindex="-1">Scout search</button>
+            <button id="workflow-tab-evidence" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel" data-workflow="evidence" tabindex="-1">Coach evidence</button>
+            <button id="workflow-tab-match" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel" data-workflow="match" tabindex="-1">Match facts</button>
+            <button id="workflow-tab-pipeline" type="button" role="tab" aria-selected="false" aria-controls="workflow-panel" data-workflow="pipeline" tabindex="-1">Pipeline</button>
           </div>
-          <article class="sl-workflow-preview">
-            <span>Selected workflow</span>
-            <h3>One structured record for the player.</h3>
-            <p>Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so coaches and reviewed scouts can see context without chasing scattered files.</p>
-            <div class="sl-workflow-mini-grid">
+          <article class="sl-workflow-preview" id="workflow-panel" role="tabpanel" aria-labelledby="workflow-tab-profile">
+            <span id="workflowLabel">Player profile</span>
+            <h3 id="workflowTitle">One structured record for the player.</h3>
+            <p id="workflowDescription">Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so coaches and reviewed scouts can see context without chasing scattered files.</p>
+            <div class="sl-workflow-mini-grid" id="workflowItems">
               <div><b>Ratings</b><small>Coach-led attributes</small></div>
               <div><b>Match facts</b><small>Game-by-game evidence</small></div>
               <div><b>Video</b><small>Approved clips</small></div>
               <div><b>Confidence</b><small>Evidence quality</small></div>
+            </div>
+            <div class="sl-workflow-visual" id="workflowVisual" aria-hidden="true">
+              <span>Structured profile</span>
+              <strong>Evidence record</strong>
+              <i style="--value:82%"></i>
             </div>
           </article>
         </div>
@@ -305,19 +310,19 @@
         <a class="sl-brand sl-footer-brand" href="/">Scout<span>Link</span></a>
         <p>Coach-led, scout reviewed youth football intelligence by Stratex Analytics.</p>
       </div>
-      <details class="sl-footer-group">
+      <details class="sl-footer-group" open>
         <summary>Product</summary>
         <div><a href="/coaches">Coaches</a><a href="/scouts">Scouts</a><a href="/demo">Demo</a><a href="/register/coach">Register as Coach</a><a href="/register/scout">Request Scout Access</a></div>
       </details>
-      <details class="sl-footer-group">
+      <details class="sl-footer-group" open>
         <summary>Trust</summary>
         <div><a href="/safeguarding">Safeguarding</a><a href="/report-a-concern">Report a Concern</a><a href="/parent-guardian-notice">Parent/Guardian Notice</a></div>
       </details>
-      <details class="sl-footer-group">
+      <details class="sl-footer-group" open>
         <summary>Company</summary>
         <div><a href="/about">About</a><a href="/contact">Contact</a><a href="/careers">Careers</a></div>
       </details>
-      <details class="sl-footer-group">
+      <details class="sl-footer-group" open>
         <summary>Legal</summary>
         <div><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms of Use</a><a href="/cookie-policy">Cookie Policy</a><a href="/accessibility">Accessibility</a></div>
       </details>
@@ -333,8 +338,116 @@
   <script src="js/phone-routes.js"></script>
   <script src="js/phone-shell.js"></script>
   <script src="js/phone-pages.js"></script>
-  <script src="/frontend/js/public-footer.js"></script>
   <script>
+    (function(){
+      var workflows = {
+        profile: {
+          label: 'Player profile',
+          title: 'One structured record for the player.',
+          description: 'Ratings, match facts, fixtures, video evidence, physical profile and data confidence sit together so coaches and reviewed scouts can see context without chasing scattered files.',
+          items: [['Ratings','Coach-led attributes'], ['Match facts','Game-by-game evidence'], ['Video','Approved clips'], ['Confidence','Evidence quality']],
+          visual: ['Structured profile', 'Evidence record', '82%']
+        },
+        compatibility: {
+          label: 'Compatibility',
+          title: 'Understand how the player fits the team need.',
+          description: 'Compatibility brings role, tactical, physical and evidence signals together so scouts can understand why a player may or may not solve a specific team need.',
+          items: [['Need fit','Team weakness alignment'], ['Role fit','Position and role suitability'], ['Tactical fit','Style and formation context'], ['Confidence','Strength of evidence']],
+          visual: ['Compatibility score', 'Team need fit', '86%']
+        },
+        search: {
+          label: 'Scout search',
+          title: 'Search by evidence, not only by name.',
+          description: 'Reviewed scouts can move beyond basic name searches and use structured player evidence, shortlists and comparison signals to find stronger matches.',
+          items: [['Filters','Structured player criteria'], ['Shortlists','Save relevant players'], ['Comparisons','Review players together'], ['Fit signals','Prioritise stronger matches']],
+          visual: ['Scout database', 'Filtered matches', '51']
+        },
+        evidence: {
+          label: 'Coach evidence',
+          title: 'Build the player record from match reality.',
+          description: 'Coaches can keep player evidence current with structured attributes, observations, fixtures and changes over time.',
+          items: [['Coach ratings','Structured attributes'], ['Observations','Development context'], ['Fixtures','Upcoming opportunities'], ['Updates','Evidence over time']],
+          visual: ['Coach evidence', 'Profile completion', '91%']
+        },
+        match: {
+          label: 'Match facts',
+          title: 'Every match strengthens the evidence base.',
+          description: 'Match facts turn each appearance into useful context: output, participation, discipline, opponent, position and notes.',
+          items: [['Output','Goals, assists and clean sheets'], ['Participation','Appearances and minutes'], ['Discipline','Cards and availability'], ['Context','Position, opponent and notes']],
+          visual: ['Match record', 'Evidence confidence', '84%']
+        },
+        pipeline: {
+          label: 'Pipeline',
+          title: 'Keep scouting interest organised.',
+          description: 'Pipeline stages help scout teams manage early monitoring, active interest, shortlists and follow-up without losing coach context.',
+          items: [['Watching','Early monitoring'], ['Interested','Active consideration'], ['Shortlisted','Priority candidates'], ['Progress','Follow-up and next steps']],
+          visual: ['Recruitment pipeline', 'Active stages', '3']
+        }
+      };
+
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.sl-workflow-tabs [role="tab"]'));
+      var panel = document.getElementById('workflow-panel');
+      var label = document.getElementById('workflowLabel');
+      var title = document.getElementById('workflowTitle');
+      var description = document.getElementById('workflowDescription');
+      var items = document.getElementById('workflowItems');
+      var visual = document.getElementById('workflowVisual');
+      if (!tabs.length || !panel || !label || !title || !description || !items || !visual) return;
+
+      function renderWorkflow(tab) {
+        var key = tab.getAttribute('data-workflow');
+        var data = workflows[key] || workflows.profile;
+        tabs.forEach(function(item) {
+          var selected = item === tab;
+          item.classList.toggle('active', selected);
+          item.setAttribute('aria-selected', selected ? 'true' : 'false');
+          item.tabIndex = selected ? 0 : -1;
+        });
+        panel.setAttribute('aria-labelledby', tab.id);
+        label.textContent = data.label;
+        title.textContent = data.title;
+        description.textContent = data.description;
+        items.innerHTML = data.items.map(function(item) {
+          return '<div><b>' + item[0] + '</b><small>' + item[1] + '</small></div>';
+        }).join('');
+        visual.innerHTML = '<span>' + data.visual[0] + '</span><strong>' + data.visual[1] + '</strong><i style="--value:' + (data.visual[2].indexOf('%') > -1 ? data.visual[2] : '68%') + '"></i><b>' + data.visual[2] + '</b>';
+        tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+      }
+
+      tabs.forEach(function(tab, index) {
+        tab.addEventListener('click', function() { renderWorkflow(tab); });
+        tab.addEventListener('keydown', function(event) {
+          var nextIndex = index;
+          if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+          else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+          else if (event.key === 'Home') nextIndex = 0;
+          else if (event.key === 'End') nextIndex = tabs.length - 1;
+          else if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            renderWorkflow(tab);
+            return;
+          } else return;
+          event.preventDefault();
+          tabs[nextIndex].focus();
+          renderWorkflow(tabs[nextIndex]);
+        });
+      });
+    })();
+
+    (function(){
+      var footerGroups = Array.prototype.slice.call(document.querySelectorAll('.sl-footer-group'));
+      if (!footerGroups.length) return;
+      function syncFooter() {
+        var mobile = window.innerWidth <= 767;
+        footerGroups.forEach(function(group) {
+          if (mobile) group.removeAttribute('open');
+          else group.setAttribute('open', '');
+        });
+      }
+      syncFooter();
+      window.addEventListener('resize', syncFooter);
+    })();
+
     (function(){
       var button = document.querySelector('.sl-menu-button');
       var nav = document.getElementById('slPublicNav');

@@ -121,8 +121,8 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-hero {
-  padding: 84px 0 62px;
-  background: linear-gradient(180deg, #fff 0%, #f7f9fc 100%);
+  padding: 80px 0 58px;
+  background: #fff;
 }
 
 .sl-hero-grid {
@@ -137,7 +137,7 @@ body.scoutlink-home-v2 :focus-visible {
   align-items: center;
   width: fit-content;
   min-height: 34px;
-  margin: 0 0 22px;
+  margin: 0 0 16px;
   padding: 0 14px;
   border: 1px solid rgba(15, 159, 117, 0.34);
   border-radius: 999px;
@@ -146,6 +146,11 @@ body.scoutlink-home-v2 :focus-visible {
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.02em;
+}
+
+body.scoutlink-home-v2 .stx-card-status.live {
+  background: var(--sl-green);
+  color: #fff;
 }
 
 .sl-hero h1,
@@ -175,7 +180,7 @@ body.scoutlink-home-v2 :focus-visible {
 
 .sl-hero-text {
   max-width: 760px;
-  margin: 26px 0 0;
+  margin: 22px 0 0;
 }
 
 .sl-hero-actions,
@@ -404,7 +409,7 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-principles {
-  padding: 0 0 78px;
+  padding: 0 0 68px;
   background: #f5f7fb;
 }
 
@@ -428,8 +433,8 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-principles-grid article {
-  min-height: 154px;
-  padding: 22px;
+  min-height: 142px;
+  padding: 20px;
   border-right: 1px solid var(--sl-border);
 }
 
@@ -470,7 +475,7 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-section {
-  padding: 88px 0;
+  padding: 76px 0;
   background: #fff;
 }
 
@@ -480,7 +485,7 @@ body.scoutlink-home-v2 :focus-visible {
 
 .sl-section-head {
   max-width: 780px;
-  margin-bottom: 34px;
+  margin-bottom: 30px;
 }
 
 .sl-section h2,
@@ -490,7 +495,7 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-section-head p {
-  margin: 16px 0 0;
+  margin: 14px 0 0;
 }
 
 .sl-step-grid {
@@ -511,8 +516,8 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-step-grid article {
-  min-height: 250px;
-  padding: 26px;
+  min-height: 214px;
+  padding: 24px;
 }
 
 .sl-step-grid span {
@@ -563,20 +568,30 @@ body.scoutlink-home-v2 :focus-visible {
   gap: 8px;
 }
 
-.sl-workflow-tabs span {
-  min-height: 34px;
+.sl-workflow-tabs button {
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
-  padding: 0 12px;
+  justify-content: center;
+  padding: 0 15px;
   border: 1px solid #dbeafe;
   border-radius: 999px;
   background: #fff;
   color: #1f3b63;
   font-size: 12px;
   font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
 }
 
-.sl-workflow-tabs span.active {
+.sl-workflow-tabs button:hover {
+  border-color: rgba(15, 159, 117, .45);
+  transform: translateY(-1px);
+}
+
+.sl-workflow-tabs button.active,
+.sl-workflow-tabs button[aria-selected="true"] {
   border-color: var(--sl-green);
   background: var(--sl-green);
   color: #fff;
@@ -584,8 +599,8 @@ body.scoutlink-home-v2 :focus-visible {
 
 .sl-workflow-preview {
   display: grid;
-  gap: 18px;
-  padding: 26px;
+  gap: 16px;
+  padding: 24px;
   border-radius: 24px;
   color: #fff;
   background:
@@ -619,6 +634,43 @@ body.scoutlink-home-v2 :focus-visible {
   max-width: 680px;
   color: #dbeafe;
   line-height: 1.6;
+}
+
+.sl-workflow-visual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 180px) 54px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sl-workflow-visual span {
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.sl-workflow-visual strong {
+  color: #fff;
+  font-size: 16px;
+}
+
+.sl-workflow-visual i {
+  height: 9px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, #38bdf8, var(--sl-green)) left / var(--value, 82%) 100% no-repeat,
+    rgba(148, 163, 184, 0.28);
+}
+
+.sl-workflow-visual b {
+  color: #fff;
+  text-align: right;
 }
 
 .sl-workflow-mini-grid {
@@ -751,7 +803,7 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-audience-grid article {
-  min-height: 312px;
+  min-height: 268px;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -798,6 +850,7 @@ body.scoutlink-home-v2 :focus-visible {
 .sl-trust-links a {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   min-height: 70px;
   padding: 0 22px;
   border-radius: 18px;
@@ -807,13 +860,19 @@ body.scoutlink-home-v2 :focus-visible {
   font-weight: 900;
 }
 
+.sl-trust-links a::after {
+  content: ">";
+  color: #7dd3fc;
+  font-weight: 900;
+}
+
 .sl-final {
-  padding: 88px 0;
+  padding: 76px 0;
   background: #f5f7fb;
 }
 
 .sl-final-card {
-  padding: 42px;
+  padding: 38px;
 }
 
 .sl-final-actions {
@@ -836,7 +895,7 @@ body.scoutlink-home-v2 :focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 68px;
+  min-height: 64px;
   padding: 0 22px;
   color: var(--sl-ink);
   font-weight: 900;
@@ -870,7 +929,7 @@ body.scoutlink-home-v2 :focus-visible {
 }
 
 .sl-footer {
-  padding: 62px 0 28px;
+  padding: 56px 0 28px;
   background: #fff;
   border-top: 1px solid var(--sl-border);
 }
@@ -1037,7 +1096,7 @@ body.scoutlink-home-v2 :focus-visible {
   }
 
   .sl-hero {
-    padding: 34px 0 36px;
+    padding: 34px 0 34px;
   }
 
   .sl-hero-grid {
@@ -1048,7 +1107,7 @@ body.scoutlink-home-v2 :focus-visible {
 
   .sl-eyebrow {
     min-height: 32px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     background: #fff;
     font-size: 12px;
   }
@@ -1256,7 +1315,7 @@ body.scoutlink-home-v2 :focus-visible {
 
   .sl-section,
   .sl-final {
-    padding: 52px 0;
+    padding: 50px 0;
   }
 
   .sl-section h2,
@@ -1315,9 +1374,10 @@ body.scoutlink-home-v2 :focus-visible {
     scroll-snap-type: x mandatory;
   }
 
-  .sl-workflow-tabs span {
+  .sl-workflow-tabs button {
     flex: 0 0 auto;
     scroll-snap-align: start;
+    min-height: 44px;
   }
 
   .sl-workflow-preview {
@@ -1331,6 +1391,15 @@ body.scoutlink-home-v2 :focus-visible {
 
   .sl-workflow-mini-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sl-workflow-visual {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .sl-workflow-visual b {
+    text-align: left;
   }
 
   .sl-compat-grid,
@@ -1360,7 +1429,7 @@ body.scoutlink-home-v2 :focus-visible {
   }
 
   .sl-audience-grid article {
-    min-height: 230px;
+    min-height: auto;
   }
 
   .sl-trust {
@@ -1381,6 +1450,10 @@ body.scoutlink-home-v2 :focus-visible {
     border-color: var(--sl-border);
     color: var(--sl-ink);
     min-height: 58px;
+  }
+
+  .sl-trust-links a::after {
+    color: var(--sl-green-dark);
   }
 
   .sl-final-card {
