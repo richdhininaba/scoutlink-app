@@ -59,6 +59,14 @@ var COACH_NAV_ITEMS = [
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'coach-settings.html' },
 ];
 
+var COACH_NAV_GROUPS = [
+  { label: 'Overview', items: ['Dashboard'] },
+  { label: 'Players', items: ['My players', 'Add player', 'Bulk import'] },
+  { label: 'Matchday', items: ['Match facts', 'Fixtures', 'Video reels'] },
+  { label: 'Communication', items: ['Chat', 'Notifications', 'Report a Concern'] },
+  { label: 'Account', items: ['Settings'] },
+];
+
 var PLAYER_NAV_ITEMS = [
   { icon: 'layout-dashboard', label: 'Dashboard', href: 'player-dashboard.html' },
   { icon: 'user', label: 'My profile', href: 'player-profile-edit.html' },
@@ -82,6 +90,41 @@ function buildScoutNav(containerId, role) {
     });
   }
   var cur = window.location.pathname.split('/').pop();
+  if (role === 'Coach') {
+    var cleanPath = window.location.pathname.toLowerCase().replace(/\/$/, '');
+    function coachActive(item) {
+      if (cur === item.href) return true;
+      var cleanMap = {
+        'coach-dashboard.html': '/coach/dashboard',
+        'coach-my-players.html': '/coach/my-players',
+        'add-player.html': '/coach/add-player',
+        'bulk-add-players.html': '/coach/bulk-add-players',
+        'match-facts.html': '/coach/match-facts',
+        'coach-fixtures.html': '/coach/fixtures',
+        'coach-video-reels.html': '/coach/video-reels',
+        'coach-chat.html': '/coach/chat',
+        'coach-notifications.html': '/coach/notifications',
+        'coach-settings.html': '/coach/settings'
+      };
+      return cleanMap[item.href] === cleanPath;
+    }
+    var byLabel = {};
+    navItems.forEach(function(item) { byLabel[item.label] = item; });
+    container.innerHTML = COACH_NAV_GROUPS.map(function(group) {
+      var links = group.items.map(function(label) {
+        var item = byLabel[label];
+        if (!item) return '';
+        var isActive = coachActive(item);
+        return '<a class="nav-item' + (isActive ? ' active' : '') + '" href="' + item.href + '">' +
+          '<span class="nav-ico">' + tablerIcon(item.icon, 18) + '</span>' +
+          '<span>' + item.label + '</span>' +
+          '</a>';
+      }).join('');
+      if (!links) return '';
+      return '<div class="coach-nav-group"><div class="coach-nav-label">' + group.label + '</div>' + links + '</div>';
+    }).join('');
+    return;
+  }
   container.innerHTML = navItems.map(function(item) {
     var isActive = (cur === item.href);
     return '<a class="nav-item' + (isActive ? ' active' : '') + '" href="' + item.href + '" style="display:flex;align-items:center;gap:10px">' +
@@ -95,5 +138,6 @@ window.TABLER = TABLER;
 window.tablerIcon = tablerIcon;
 window.SCOUT_NAV_ITEMS = SCOUT_NAV_ITEMS;
 window.COACH_NAV_ITEMS = COACH_NAV_ITEMS;
+window.COACH_NAV_GROUPS = COACH_NAV_GROUPS;
 window.PLAYER_NAV_ITEMS = PLAYER_NAV_ITEMS;
 window.buildScoutNav = buildScoutNav;

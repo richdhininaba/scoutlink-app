@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Settings - ScoutLink</title>
@@ -38,6 +38,7 @@ input:checked+.tgl-slider:before{transform:translateX(20px);background:#001b12}
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
+<link rel="stylesheet" href="../css/coach-v2.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -109,6 +110,7 @@ input:checked+.tgl-slider:before{transform:translateX(20px);background:#001b12}
 <script src="../js/scout-nav.js"></script>
 <script src="../js/main.js"></script>
 <script src="../js/heap-analytics.js"></script>
+<script src="../js/coach-v2.js"></script>
 <script>
 function initNav(){
   if(!Auth.isLoggedIn()||Auth.type!=='Coach'){navigateClean('login.html');return;}
@@ -195,5 +197,6 @@ document.addEventListener('DOMContentLoaded',function(){
 <script src="../js/phone-shell.js"></script>
 <script src="../js/phone-pages.js"></script>
 </body></html>
+
 
 
