@@ -234,21 +234,133 @@
     var content = document.querySelector('.page-content');
     if (!content || content.querySelector('.coach-v2-action-grid')) return;
     var grid = document.createElement('section');
-    grid.className = 'coach-v2-action-grid grid';
-    grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(180px,1fr))';
-    grid.style.marginBottom = '14px';
+    grid.className = 'coach-v2-action-grid';
     grid.innerHTML = [
-      ['My players', 'Squad profiles', 'coach-my-players.html'],
-      ['Add player', 'Create profile', 'add-player.html'],
-      ['Match facts', 'Log a game', 'match-facts.html'],
-      ['Fixtures', 'Upcoming games', 'coach-fixtures.html'],
-      ['Chat', 'Scout messages', 'coach-chat.html'],
-      ['Video reels', 'Evidence clips', 'coach-video-reels.html']
+      ['My players', 'Squad profiles', 'coach-my-players.html', 'MP'],
+      ['Add player', 'Create profile', 'add-player.html', 'AP'],
+      ['Match facts', 'Log a game', 'match-facts.html', 'MF'],
+      ['Fixtures', 'Upcoming games', 'coach-fixtures.html', 'FX'],
+      ['Chat', 'Scout messages', 'coach-chat.html', 'CH'],
+      ['Video reels', 'Evidence clips', 'coach-video-reels.html', 'VR']
     ].map(function (a) {
-      return '<a class="table-card" href="' + a[2] + '" style="padding:16px;text-decoration:none"><h3 style="margin:0 0 8px">' + a[0] + '</h3><p style="margin:0;color:var(--coach-muted);font-size:12px;font-weight:700">' + a[1] + '</p></a>';
+      return '<a class="coach-v2-action-card" href="' + esc(a[2]) + '"><span>' + esc(a[3]) + '</span><div><h3>' + esc(a[0]) + '</h3><p>' + esc(a[1]) + '</p></div></a>';
     }).join('');
     var hero = content.querySelector('.coach-v2-hero');
     content.insertBefore(grid, hero ? hero.nextSibling : content.firstChild);
+  }
+
+  function setupAddPlayerWizard() {
+    if (pageKey() !== 'add-player') return;
+    var host = document.querySelector('.page-content > div') || document.querySelector('.page-content');
+    if (!host || host.querySelector('.coach-v2-stepper')) return;
+    var cards = Array.prototype.slice.call(host.children).filter(function (node) {
+      return node.classList && node.classList.contains('table-card');
+    });
+    if (cards.length < 4) return;
+
+    var submit = document.getElementById('submitBtn');
+    var error = document.getElementById('formError');
+    var success = document.getElementById('formSuccess');
+    var reviewCard = document.createElement('section');
+    reviewCard.className = 'table-card coach-v2-review-card';
+    reviewCard.style.padding = '24px';
+    reviewCard.style.marginBottom = '20px';
+    reviewCard.innerHTML =
+      '<h3 style="font-size:16px;font-weight:900;margin-bottom:8px">Review and save</h3>' +
+      '<p style="color:var(--coach-muted);font-size:13px;margin-bottom:16px">Check the profile summary before creating the player.</p>' +
+      '<dl>' +
+      '<div><dt>Name</dt><dd data-review="name">--</dd></div>' +
+      '<div><dt>Age group</dt><dd data-review="age">--</dd></div>' +
+      '<div><dt>Position</dt><dd data-review="position">--</dd></div>' +
+      '<div><dt>Profile</dt><dd data-review="profile">Average / Athletic</dd></div>' +
+      '</dl>';
+    host.insertBefore(reviewCard, error || success || submit || null);
+
+    var assignment = document.getElementById('coachAssignmentCard');
+    var steps = [
+      { label: 'Basic', helper: 'Player identity and age group.', nodes: [cards[0]] },
+      { label: 'Position', helper: 'Role, preferred foot and coach assignment.', nodes: [cards[1], assignment].filter(Boolean) },
+      { label: 'Physical', helper: 'Height and build ranges.', nodes: [cards[3] || cards[2]] },
+      { label: 'Attributes', helper: 'Coach ratings out of 10.', nodes: [cards[4] || cards[cards.length - 1]] },
+      { label: 'Review', helper: 'Save the player once the details look right.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
+    ];
+    var owned = [];
+    steps.forEach(function (step) {
+      step.nodes.forEach(function (node) {
+        if (node && owned.indexOf(node) === -1) owned.push(node);
+      });
+    });
+    cards.forEach(function (card) {
+      if (owned.indexOf(card) === -1) steps[4].nodes.unshift(card);
+    });
+
+    var tracker = document.createElement('div');
+    tracker.className = 'coach-v2-stepper';
+    tracker.setAttribute('role', 'tablist');
+    tracker.innerHTML = steps.map(function (step, i) {
+      return '<button type="button" class="coach-v2-step" data-step="' + i + '" role="tab">Step ' + (i + 1) + ' ' + esc(step.label) + '</button>';
+    }).join('');
+    var caption = document.createElement('p');
+    caption.className = 'coach-v2-wizard-caption';
+    var nav = document.createElement('div');
+    nav.className = 'coach-v2-wizard-nav';
+    nav.innerHTML = '<button type="button" class="btn btn-outline" data-wizard-prev>Back</button><span class="coach-v2-wizard-progress"></span><button type="button" class="btn btn-primary" data-wizard-next>Next</button>';
+    host.insertBefore(tracker, cards[0]);
+    host.insertBefore(caption, cards[0]);
+    host.appendChild(nav);
+
+    var current = 0;
+    var stepButtons = Array.prototype.slice.call(tracker.querySelectorAll('[data-step]'));
+    var prev = nav.querySelector('[data-wizard-prev]');
+    var next = nav.querySelector('[data-wizard-next]');
+    var progress = nav.querySelector('.coach-v2-wizard-progress');
+
+    function val(id) {
+      var el = document.getElementById(id);
+      return el ? (el.value || '').trim() : '';
+    }
+
+    function updateReview() {
+      var first = val('firstName');
+      var last = val('lastName');
+      var position = val('specificPosition') || val('positionGroup') || '--';
+      var height = val('heightCategory') || 'average';
+      var build = val('buildCategory') || 'athletic';
+      var set = function (key, value) {
+        var el = reviewCard.querySelector('[data-review="' + key + '"]');
+        if (el) el.textContent = value || '--';
+      };
+      set('name', ((first + ' ' + last).trim() || '--'));
+      set('age', val('ageGroup') || '--');
+      set('position', position);
+      set('profile', height.replace(/_/g, ' ') + ' / ' + build.replace(/_/g, ' '));
+    }
+
+    function showStep(index) {
+      current = Math.max(0, Math.min(steps.length - 1, index));
+      updateReview();
+      owned.forEach(function (node) { node.classList.add('coach-v2-step-hidden'); });
+      steps[current].nodes.forEach(function (node) { node.classList.remove('coach-v2-step-hidden'); });
+      stepButtons.forEach(function (btn, i) {
+        btn.classList.toggle('is-active', i === current);
+        btn.setAttribute('aria-selected', i === current ? 'true' : 'false');
+      });
+      caption.textContent = steps[current].helper;
+      prev.style.visibility = current === 0 ? 'hidden' : 'visible';
+      next.style.display = current === steps.length - 1 ? 'none' : '';
+      if (progress) progress.textContent = 'Section ' + (current + 1) + ' of ' + steps.length;
+      if (next && current < steps.length - 1) next.textContent = 'Next: ' + steps[current + 1].label;
+    }
+
+    stepButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () { showStep(Number(btn.getAttribute('data-step')) || 0); });
+    });
+    if (prev) prev.addEventListener('click', function () { showStep(current - 1); tracker.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    if (next) next.addEventListener('click', function () { showStep(current + 1); tracker.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    host.addEventListener('input', updateReview);
+    host.addEventListener('change', updateReview);
+    if (submit) submit.classList.add('coach-v2-save-player');
+    showStep(0);
   }
 
   function patchChatRefreshHero() {
@@ -291,6 +403,7 @@
     tidyTopbar();
     addHero();
     dashboardActions();
+    setupAddPlayerWizard();
     addBottomNav();
     patchChatRefreshHero();
     bindHeroActions();

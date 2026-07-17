@@ -379,7 +379,7 @@ body.coach-v2 .coach-v2-hero {
 
 body.coach-v2 .coach-v2-hero h1,
 body.coach-v2 .coach-v2-hero h2 {
-  margin: 0 0 8px;
+  margin: 6px 0 8px;
   color: #fff;
   font-size: 24px;
   font-weight: 950;
@@ -401,6 +401,11 @@ body.coach-v2 .coach-v2-actions {
   justify-content: flex-end;
 }
 
+body.coach-v2 .coach-v2-actions .btn {
+  min-width: 120px;
+  white-space: nowrap;
+}
+
 body.coach-v2 .coach-v2-actions .btn-outline {
   color: #0b2039;
   background: #fff;
@@ -411,14 +416,159 @@ body.coach-v2 .coach-v2-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
   background: #dcf8ee;
   color: #087a61;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: .02em;
+  line-height: 1;
+  width: fit-content;
+  margin-bottom: 4px;
+}
+
+body.coach-v2 .coach-v2-action-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+body.coach-v2 .coach-v2-action-card {
+  min-width: 0;
+  min-height: 112px;
+  padding: 16px;
+  border: 1px solid var(--coach-line);
+  border-radius: 18px;
+  background: var(--coach-surface);
+  color: var(--coach-text);
+  box-shadow: var(--coach-shadow-sm);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+body.coach-v2 .coach-v2-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 163, 127, .35);
+  box-shadow: var(--coach-shadow);
+}
+
+body.coach-v2 .coach-v2-action-card h3 {
+  margin: 0;
+  color: var(--coach-text);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+body.coach-v2 .coach-v2-action-card p {
+  margin: 8px 0 0;
+  color: var(--coach-muted);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+body.coach-v2 .coach-v2-action-card span {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #e8fff6;
+  color: var(--coach-green);
+  font-size: 12px;
+  font-weight: 950;
+  margin-bottom: 12px;
+}
+
+body.coach-v2 .coach-v2-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+body.coach-v2 .coach-v2-step {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--coach-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--coach-muted);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+body.coach-v2 .coach-v2-step.is-active {
+  border-color: rgba(15, 163, 127, .65);
+  background: #e9fff7;
+  color: var(--coach-green-dark);
+}
+
+body.coach-v2 .coach-v2-wizard-caption {
+  margin: 0 0 16px;
+  color: var(--coach-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.coach-v2 .coach-v2-step-hidden {
+  display: none !important;
+}
+
+body.coach-v2 .coach-v2-wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0 0;
+}
+
+body.coach-v2 .coach-v2-wizard-progress {
+  color: var(--coach-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+body.coach-v2 .coach-v2-review-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+body.coach-v2 .coach-v2-review-card div {
+  padding: 12px;
+  border: 1px solid var(--coach-line);
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+body.coach-v2 .coach-v2-review-card dt {
+  margin: 0 0 4px;
+  color: var(--coach-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+body.coach-v2 .coach-v2-review-card dd {
+  margin: 0;
+  color: var(--coach-text);
+  font-size: 14px;
+  font-weight: 900;
 }
 
 body.coach-v2 .coach-v2-player-grid,
@@ -707,6 +857,10 @@ body.coach-v2 .video-card {
     min-height: 100dvh;
   }
 
+  body.coach-v2 .coach-v2-action-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
   body.coach-v2.coach-page-dashboard .table-card:first-of-type,
   body.coach-v2.coach-page-my-players #playersContainer {
     margin-top: 14px;
@@ -765,6 +919,74 @@ body.coach-v2 .video-card {
 
   body.coach-v2 .coach-v2-actions .btn {
     flex: 1 1 140px;
+  }
+
+  body.coach-v2 .coach-v2-chip {
+    min-height: 20px;
+    padding: 0 7px;
+    font-size: 8.5px;
+    margin-bottom: 6px;
+  }
+
+  body.coach-v2 .coach-v2-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  body.coach-v2 .coach-v2-action-card {
+    min-height: 96px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  body.coach-v2 .coach-v2-action-card span {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 10px;
+  }
+
+  body.coach-v2 .coach-v2-action-card h3 {
+    font-size: 14px;
+  }
+
+  body.coach-v2 .coach-v2-action-card p {
+    font-size: 11px;
+  }
+
+  body.coach-v2 .coach-v2-stepper {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  body.coach-v2 .coach-v2-stepper::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.coach-v2 .coach-v2-step {
+    flex: 0 0 auto;
+    min-width: 112px;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+
+  body.coach-v2 .coach-v2-wizard-nav {
+    position: sticky;
+    bottom: 78px;
+    z-index: 5;
+    padding: 10px;
+    border: 1px solid var(--coach-line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .94);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .1);
+  }
+
+  body.coach-v2 .coach-v2-review-card dl {
+    grid-template-columns: 1fr;
   }
 
   body.coach-v2 .kpi-grid {
@@ -956,5 +1178,13 @@ body.coach-v2 .video-card {
   body.coach-v2 .phone-player-top {
     grid-template-columns: 40px minmax(0, 1fr) auto;
     gap: 10px;
+  }
+
+  body.coach-v2 .coach-v2-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.coach-v2 .coach-v2-wizard-progress {
+    display: none;
   }
 }
