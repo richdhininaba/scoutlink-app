@@ -1,121 +1,156 @@
-﻿<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Complete Registration - ScoutLink</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Complete Registration | ScoutLink</title>
+<meta name="description" content="Complete an approved ScoutLink registration or invitation with a login code and secure password creation.">
+<link rel="canonical" href="https://www.scoutlink.app/complete-registration">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Complete Registration | ScoutLink">
+<meta property="og:description" content="Finish an approved ScoutLink registration or invitation and enter the correct workspace.">
+<meta property="og:url" content="https://www.scoutlink.app/complete-registration">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Complete Registration | ScoutLink">
+<meta name="twitter:description" content="Complete your ScoutLink setup with a verified code and secure password.">
+<meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="theme-color" content="#0fa37f">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="../css/variables.css">
-<link rel="stylesheet" href="../css/main.css">
+<link rel="stylesheet" href="/frontend/css/public-v2.css">
 <style>
-:root{--sl-green:#00c853;--sl-dark:#0a0f1e;--sl-card:#111827;--sl-border:#1e2a3a;--sl-text:#e2e8f0;--sl-muted:#94a3b8;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--sl-dark);color:var(--sl-text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
-.wrap{width:100%;max-width:460px;}
-.brand{text-align:center;margin-bottom:2rem;}
-.brand h1{font-size:2rem;font-weight:900;color:var(--sl-green);}
-.brand h1 span{color:var(--sl-text);}
-.brand p{color:var(--sl-muted);margin-top:.5rem;font-size:.95rem;}
-.card{background:var(--sl-card);border:1px solid var(--sl-border);border-radius:16px;padding:2rem;}
-.step{display:none;}
-.step.active{display:block;}
-.step-header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--sl-border);}
-.step-label{font-size:11px;font-weight:700;color:var(--sl-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-.step-title{font-size:1.3rem;font-weight:800;color:var(--sl-text);}
-.form-group{margin-bottom:1.25rem;}
-label{display:block;font-size:.875rem;font-weight:600;color:var(--sl-muted);margin-bottom:.5rem;}
-input,select,textarea{width:100%;padding:.75rem 1rem;background:#0a0f1e;border:1px solid var(--sl-border);border-radius:8px;color:var(--sl-text);font-size:.95rem;}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sl-green);}
-.btn{width:100%;padding:.875rem;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:1rem;}
-.btn-primary{background:var(--sl-green);color:#000;}
-.btn-primary:hover{opacity:.9;}
-.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
-.error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:8px;padding:.75rem 1rem;font-size:.875rem;margin-bottom:1rem;display:none;}
-.error.show{display:block;}
-.success{background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);color:#6ee7b7;border-radius:8px;padding:.75rem 1rem;font-size:.875rem;margin-bottom:1rem;}
-.progress{display:flex;gap:6px;margin-bottom:1.5rem;}
-.progress-step{flex:1;height:4px;border-radius:2px;background:var(--sl-border);}
-.progress-step.done{background:var(--sl-green);}
-.progress-step.active{background:var(--sl-green);opacity:.5;}
-.weakness-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-.weakness-chip{padding:8px 12px;border:1.5px solid var(--sl-border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--sl-muted);transition:all .2s;text-align:center;}
-.weakness-chip.selected{border-color:var(--sl-green);background:rgba(0,200,83,.1);color:var(--sl-green);}
-.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
-.avatar-opt{padding:12px 8px;border:2px solid var(--sl-border);border-radius:10px;cursor:pointer;text-align:center;transition:all .2s;}
-.avatar-opt.selected{border-color:var(--sl-green);background:rgba(0,200,83,.08);}
-.avatar-opt .emoji{font-size:24px;}
-.avatar-opt .label{font-size:11px;color:var(--sl-muted);margin-top:4px;}
-</style><link rel="stylesheet" href="../css/phone-base.css">
-<link rel="stylesheet" href="../css/phone-shell.css">
-<link rel="stylesheet" href="../css/phone-pages.css">
+.sl-public-v2 .step{display:none}
+.sl-public-v2 .step.active{display:grid;gap:14px}
+.sl-public-v2 .weakness-grid,.sl-public-v2 .avatar-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sl-public-v2 .weakness-chip,.sl-public-v2 .avatar-opt{border:1px solid var(--pub-line);border-radius:14px;background:#f8fafc;color:#334155;padding:12px;text-align:center;font-weight:850;cursor:pointer}
+.sl-public-v2 .weakness-chip.selected,.sl-public-v2 .avatar-opt.selected{border-color:var(--pub-green);background:#ecfdf5;color:var(--pub-green-dark)}
+.sl-public-v2 .avatar-opt .label{font-size:12px;color:var(--pub-muted)}
+.sl-public-v2 .pub-progress-step.done{border-color:rgba(15,163,127,.44);background:rgba(15,163,127,.12);color:#fff}
+.sl-public-v2 .pub-progress-step.done span{background:var(--pub-green);color:#fff}
+@media(max-width:520px){.sl-public-v2 .weakness-grid,.sl-public-v2 .avatar-grid{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Complete ScoutLink registration","url":"https://www.scoutlink.app/complete-registration","description":"Complete an approved ScoutLink registration or invitation using a login code and secure password creation.","publisher":{"@type":"Organization","name":"Stratex Analytics","url":"https://www.stratexanalytics.co.uk"}}</script>
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body>
-<div class="wrap">
-<div class="brand"><h1>Scout<span>Link</span></h1><p id="welcomeMsg">Welcome! Let's get you set up.</p></div>
-<div class="card">
-<div id="progress" class="progress"></div>
-<div id="errorDiv" class="error"></div>
+</head>
+<body class="sl-public-v2">
+<a class="pub-skip-link" href="#main">Skip to complete registration</a>
+<div class="pub-page">
+  <header class="pub-header">
+    <div class="pub-header-inner">
+      <a class="pub-brand" href="/">Scout<span>Link</span></a>
+      <nav class="pub-nav" aria-label="Public navigation">
+        <a href="/login">Sign in</a>
+        <a href="/register">Register</a>
+        <a href="/demo">Demo</a>
+        <a href="/safeguarding">Safeguarding</a>
+        <a class="pub-nav-primary" href="/contact">Support</a>
+      </nav>
+      <button class="pub-menu-btn" type="button" data-public-menu-open aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="pub-mobile-panel" aria-label="ScoutLink mobile menu">
+    <div class="pub-mobile-drawer">
+      <div class="pub-mobile-drawer-head">
+        <a class="pub-brand" href="/">Scout<span>Link</span></a>
+        <button class="pub-mobile-close" type="button" data-public-menu-close aria-label="Close menu">&times;</button>
+      </div>
+      <nav class="pub-mobile-links" aria-label="Mobile navigation">
+        <a href="/login">Sign in</a>
+        <a href="/register">Register</a>
+        <a href="/demo">Demo</a>
+        <a href="/safeguarding">Safeguarding</a>
+        <a class="primary" href="/contact">Support</a>
+      </nav>
+    </div>
+  </div>
+  <main id="main" class="pub-main">
+    <div class="pub-shell pub-complete-grid">
+      <section class="pub-form-card" aria-label="Complete registration">
+        <div class="pub-form-heading">
+          <span class="pub-pill">Approved registration</span>
+          <h1>Finish setting up your ScoutLink account.</h1>
+          <p id="welcomeMsg">Complete an approved registration or invitation with your login code, then create a secure password.</p>
+        </div>
+        <div id="progress" class="pub-progress-list"></div>
+        <div id="errorDiv" class="error"></div>
 
-<!-- STEP 1: Enter login code & verify -->
-<div class="step active" id="step1">
-<div class="step-header"><div class="step-label">Step 1</div><div class="step-title">Verify Your Identity</div></div>
-<div class="form-group"><label>Email Address</label><input type="email" id="s1Email" placeholder="your@email.com"></div>
-<div class="form-group"><label>Login Code</label><input type="text" id="s1Code" placeholder="6-character code from your email" style="text-transform:uppercase;letter-spacing:3px;font-size:1.1rem;text-align:center" maxlength="6" oninput="this.value=this.value.toUpperCase()"></div>
-<div class="form-group"><label>Account Type</label><select id="s1Type"><option value="Scout">Scout</option><option value="Coach">Coach</option><option value="Player">Player</option><option value="Stratex">Stratex Admin</option></select></div>
-<button class="btn btn-primary" onclick="verifyCode()">Continue</button>
-</div>
+        <div class="step active" id="step1">
+          <h2>Verify your identity.</h2>
+          <p class="pub-note">Use the email and login code from your ScoutLink approval or invitation email.</p>
+          <div class="pub-form-grid">
+            <div class="pub-field"><label for="s1Email">Email address</label><input type="email" id="s1Email" placeholder="your@email.com" autocomplete="email"></div>
+            <div class="pub-field"><label for="s1Code">Login code</label><input class="pub-code-input" type="text" id="s1Code" placeholder="S8CA3G" maxlength="6" oninput="this.value=this.value.toUpperCase()"></div>
+            <div class="pub-field"><label for="s1Type">Account type</label><select id="s1Type"><option value="Scout">Scout</option><option value="Coach">Coach</option><option value="Player">Player</option><option value="Stratex">Stratex Admin</option></select></div>
+            <button class="pub-btn pub-primary" type="button" onclick="verifyCode()">Continue</button>
+          </div>
+        </div>
 
-<!-- STEP 2: Set password -->
-<div class="step" id="step2">
-<div class="step-header"><div class="step-label">Step 2</div><div class="step-title">Create Your Password</div></div>
-<div class="success">Identity verified. Now create a secure password for future logins.</div>
-<div class="form-group"><label>Password (min 8 characters)</label><input type="password" id="s2Password" placeholder="Create a strong password"></div>
-<div class="form-group"><label>Confirm Password</label><input type="password" id="s2Confirm" placeholder="Repeat your password"></div>
-<button class="btn btn-primary" onclick="setPassword()">Set password</button>
-</div>
+        <div class="step" id="step2">
+          <h2>Create your password.</h2>
+          <div class="form-success show">Identity verified. Create a secure password for future sign-ins.</div>
+          <div class="pub-form-grid">
+            <div class="pub-field"><label for="s2Password">Password (minimum 8 characters)</label><input type="password" id="s2Password" placeholder="Create a strong password" autocomplete="new-password"></div>
+            <div class="pub-field"><label for="s2Confirm">Confirm password</label><input type="password" id="s2Confirm" placeholder="Repeat your password" autocomplete="new-password"></div>
+            <button class="pub-btn pub-primary" type="button" onclick="setPassword()">Set password</button>
+          </div>
+        </div>
 
-<!-- STEP 3a: Scout - enter team weaknesses -->
-<div class="step" id="step3scout">
-<div class="step-header"><div class="step-label">Step 3 - Scout setup</div><div class="step-title">Your team's weaknesses</div></div>
-<p style="color:var(--sl-muted);font-size:13px;margin-bottom:12px">Select the weaknesses of the team you're scouting for. This powers the compatibility engine.</p>
-<div class="weakness-grid" id="weaknessGrid"></div>
-<button class="btn btn-primary" style="margin-top:16px" onclick="saveWeaknesses()">Save and go to dashboard</button>
-</div>
+        <div class="step" id="step3scout">
+          <h2>Set your scout preferences.</h2>
+          <p class="pub-note">Select weaknesses in the team you are scouting for. This helps ScoutLink's compatibility engine show more useful matches.</p>
+          <div class="weakness-grid" id="weaknessGrid"></div>
+          <button class="pub-btn pub-primary" type="button" onclick="saveWeaknesses()">Save and go to dashboard</button>
+        </div>
 
-<!-- STEP 3b: Player - create avatar -->
-<div class="step" id="step3player">
-<div class="step-header"><div class="step-label">Step 3 - Player setup</div><div class="step-title">Create your avatar</div></div>
-<p style="color:var(--sl-muted);font-size:13px;margin-bottom:4px">Choose a skin tone:</p>
-<div class="avatar-grid" id="skinGrid"></div>
-<p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a hair style:</p>
-<div class="avatar-grid" id="hairGrid"></div>
-<p style="color:var(--sl-muted);font-size:13px;margin:12px 0 4px">Choose a kit colour:</p>
-<div class="avatar-grid" id="kitGrid"></div>
-<button class="btn btn-primary" style="margin-top:16px" onclick="saveAvatar()">Save avatar and go to dashboard</button>
-</div>
+        <div class="step" id="step3player">
+          <h2>Create your player avatar.</h2>
+          <p class="pub-note">Choose simple avatar details for your player profile.</p>
+          <div class="pub-field"><label>Skin tone</label><div class="avatar-grid" id="skinGrid"></div></div>
+          <div class="pub-field"><label>Hair style</label><div class="avatar-grid" id="hairGrid"></div></div>
+          <div class="pub-field"><label>Kit colour</label><div class="avatar-grid" id="kitGrid"></div></div>
+          <button class="pub-btn pub-primary" type="button" onclick="saveAvatar()">Save avatar and go to dashboard</button>
+        </div>
 
-<!-- STEP 3c: Coach - add first player prompt -->
-<div class="step" id="step3coach">
-<div class="step-header"><div class="step-label">Step 3 - Coach setup</div><div class="step-title">Add your players</div></div>
-<p style="color:var(--sl-muted);font-size:13px;margin-bottom:16px">You don't have any players assigned yet. Would you like to add your first player now?</p>
-<button class="btn btn-primary" onclick="goAddPlayer()" style="margin-bottom:10px">Add players now</button>
-<button class="btn" style="background:var(--sl-border);color:var(--sl-text)" onclick="skipToCoachDash()">Skip for now</button>
-</div>
+        <div class="step" id="step3coach">
+          <h2>Add your players.</h2>
+          <p class="pub-note">You do not have any players assigned yet. Add your first player now, or skip and start from the coach dashboard.</p>
+          <div class="pub-actions">
+            <button class="pub-btn pub-primary" type="button" onclick="goAddPlayer()">Add players now</button>
+            <button class="pub-btn" type="button" onclick="skipToCoachDash()">Skip for now</button>
+          </div>
+        </div>
 
-<!-- STEP 4: Done -->
-<div class="step" id="stepDone">
-<div style="text-align:center;padding:2rem 0">
-<div style="font-size:18px;font-weight:900;margin-bottom:16px;color:var(--sl-green)">Complete</div>
-<h2 style="color:var(--sl-green);margin-bottom:8px">You're all set!</h2>
-<p style="color:var(--sl-muted);margin-bottom:24px">Your account is ready. Redirecting to your dashboard...</p>
-</div>
-</div>
-</div></div>
+        <div class="step" id="stepDone">
+          <div class="pub-success-mark">OK</div>
+          <h2>You are all set.</h2>
+          <p class="pub-note">Your account is ready. Redirecting to your ScoutLink workspace...</p>
+        </div>
+      </section>
 
+      <aside class="pub-panel">
+        <span class="pub-kicker">What happens here</span>
+        <h2>Secure account activation.</h2>
+        <p>This page is for approved registrations and invitations only. A valid login code or link may be required, and access is based on the approved account type.</p>
+        <div class="pub-divider"></div>
+        <div class="pub-step-summary">
+          <div class="pub-summary-row"><span>Verification</span><strong>Email and code</strong></div>
+          <div class="pub-summary-row"><span>Password</span><strong>Created securely</strong></div>
+          <div class="pub-summary-row"><span>Workspace</span><strong>Coach, scout, player or internal</strong></div>
+        </div>
+        <div class="pub-divider"></div>
+        <p class="pub-note">Need help with an expired code or invalid link? <a href="/contact">Contact ScoutLink support</a>.</p>
+      </aside>
+    </div>
+  </main>
+</div>
+<script src="/frontend/js/public-v2.js"></script>
 <script>
 const API = 'https://scoutlink-api.vercel.app';
 var token = null, accountType = null, userId = null;
@@ -140,10 +175,8 @@ function applyCleanUrl(){
 }
 applyCleanUrl();
 
-// Pre-fill from URL params (email link)
 var params = new URLSearchParams(window.location.search);
 if(params.get('token')){
-  // Came from login with code - already verified
   token = params.get('token');
   accountType = params.get('type') || localStorage.getItem('sl_type');
   var u = JSON.parse(localStorage.getItem('sl_user')||'{}');
@@ -159,7 +192,12 @@ if(params.get('token')){
 function buildProgress(current, total){
   var p=document.getElementById('progress');
   p.innerHTML='';
-  for(var i=0;i<total;i++){var d=document.createElement('div');d.className='progress-step'+(i<current?' done':i===current?' active':'');p.appendChild(d);}
+  for(var i=0;i<total;i++){
+    var d=document.createElement('div');
+    d.className='pub-progress-step'+(i<current?' done':i===current?' active':'');
+    d.innerHTML='<span>'+(i+1)+'</span><div><strong>Step '+(i+1)+'</strong><p>'+(['Verify identity','Set password','Finish setup'][i]||'Complete')+'</p></div>';
+    p.appendChild(d);
+  }
 }
 
 function showStep(id){
@@ -187,7 +225,7 @@ async function verifyCode(){
     localStorage.setItem('sl_token',token);localStorage.setItem('sl_type',accountType);
     localStorage.setItem('sl_user',JSON.stringify(d.user));localStorage.setItem('sl_user_id',d.user.id);localStorage.setItem('sl_user_email',d.user.email);
     userId=d.user.id;
-    document.getElementById('welcomeMsg').textContent='Welcome, '+d.user.firstName+'!';
+    document.getElementById('welcomeMsg').textContent='Welcome, '+d.user.firstName+'. Finish your ScoutLink account setup.';
     showStep('step2');
   }catch(e){showError(e.message);}
 }
@@ -203,7 +241,6 @@ async function setPassword(){
     var r=await fetch(API+'/api/auth/complete-registration',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({newPassword:p,accountType:accountType})});
     var d=await r.json();
     if(!r.ok)throw new Error(d.error||'Failed to set password');
-    // Go to role-specific step
     if(accountType==='Scout'){buildWeaknessGrid();showStep('step3scout');}
     else if(accountType==='Player'){buildAvatarGrids();showStep('step3player');}
     else if(accountType==='Coach'){checkCoachPlayers();}
@@ -211,7 +248,6 @@ async function setPassword(){
   }catch(e){showError(e.message);}
 }
 
-// SCOUT: weakness selection
 var WEAKNESSES = ['poor_set_pieces','weak_left_flank','weak_right_flank','high_defensive_line','pace_exploitable','poor_second_ball','poor_aerial','weak_pressing','slow_build_up','poor_transitions','direct_play_only','poor_wide_play'];
 var selectedWeaknesses = [];
 function buildWeaknessGrid(){
@@ -226,13 +262,11 @@ function toggleWeakness(el){
 async function saveWeaknesses(){
   hideError();
   try{
-    // Save as scout preferences
     await fetch(API+'/api/scouts/preferences',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({teamWeaknesses:selectedWeaknesses})});
     showStep('stepDone');setTimeout(function(){window.location.href=cleanRouteFor('scout-dashboard.html');},2000);
   }catch(e){showError(e.message);}
 }
 
-// PLAYER: avatar
 var skinOptions=[{emoji:'',label:'Light',val:'light'},{emoji:'',label:'Medium',val:'medium'},{emoji:'',label:'Dark',val:'dark'},{emoji:'',label:'Tan',val:'tan'}];
 var hairOptions=[{emoji:'',label:'Short',val:'short'},{emoji:'',label:'Curly',val:'curly'},{emoji:'',label:'Cap',val:'cap'},{emoji:'',label:'Bald',val:'bald'}];
 var kitOptions=[{emoji:'',label:'Blue',val:'blue'},{emoji:'',label:'Red',val:'red'},{emoji:'',label:'Black',val:'black'},{emoji:'',label:'Green',val:'green'}];
@@ -241,7 +275,7 @@ var avatarConfig={skin:'light',hair:'short',kit:'blue'};
 function buildAvatarGrids(){
   function makeGrid(id,opts,key){
     var g=document.getElementById(id);
-    g.innerHTML=opts.map(function(o){return '<div class="avatar-opt'+(avatarConfig[key]===o.val?' selected':'')+'" data-val="'+o.val+'" onclick="selectAvatar(\''+id+'\',\''+key+'\',this)"><div class="emoji">'+o.emoji+'</div><div class="label">'+o.label+'</div></div>';}).join('');
+    g.innerHTML=opts.map(function(o){return '<div class="avatar-opt'+(avatarConfig[key]===o.val?' selected':'')+'" data-val="'+o.val+'" onclick="selectAvatar(\''+id+'\',\''+key+'\',this)"><div class="label">'+o.label+'</div></div>';}).join('');
   }
   makeGrid('skinGrid',skinOptions,'skin');makeGrid('hairGrid',hairOptions,'hair');makeGrid('kitGrid',kitOptions,'kit');
 }
@@ -257,7 +291,6 @@ async function saveAvatar(){
   }catch(e){showError(e.message);}
 }
 
-// COACH: check if has players
 async function checkCoachPlayers(){
   try{
     var r=await fetch(API+'/api/players?limit=1',{headers:{'Authorization':'Bearer '+token}});
@@ -276,10 +309,6 @@ function goToDash(){
   },1500);
 }
 </script>
-<script src="../js/phone-routes.js"></script>
-<script src="../js/phone-shell.js"></script>
-<script src="../js/phone-pages.js"></script>
-<script src="../js/heap-analytics.js"></script>
-</body></html>
-
-
+<script src="/frontend/js/heap-analytics.js"></script>
+</body>
+</html>

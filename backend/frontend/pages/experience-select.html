@@ -1,68 +1,85 @@
-﻿<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Experience selector - ScoutLink</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Choose Your ScoutLink Workspace | Coach, Scout and Internal Access</title>
+<meta name="description" content="Choose the approved ScoutLink workspace for your account, including coach, scout, player, Stratex internal and isolated demo experiences.">
+<link rel="canonical" href="https://www.scoutlink.app/experience-select">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Choose Your ScoutLink Workspace">
+<meta property="og:description" content="Open coach, scout, player, internal or demo workspaces based on approved ScoutLink access.">
+<meta property="og:url" content="https://www.scoutlink.app/experience-select">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0fa37f">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="../css/variables.css">
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-body{background:#f6f8fb;color:#111827;font-family:Inter,sans-serif;min-height:100vh;}
-.selector-shell{min-height:100vh;padding:32px clamp(18px,4vw,56px);display:flex;flex-direction:column;gap:24px;}
-.selector-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
-.selector-brand{font-size:24px;font-weight:950;color:#111827;text-decoration:none;letter-spacing:-.02em;}
-.selector-brand span{color:#0f9f75;}
-.selector-title{max-width:760px;}
-.selector-title h1{font-size:clamp(28px,4vw,46px);line-height:1.05;margin:18px 0 10px;letter-spacing:0;color:#111827;}
-.selector-title p{color:#64748b;font-size:15px;line-height:1.55;margin:0;}
-.experience-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:stretch;}
-.experience-card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px;min-height:245px;box-shadow:0 18px 44px rgba(15,23,42,.08);}
-.experience-card.admin{border-color:rgba(15,159,117,.35);box-shadow:0 18px 44px rgba(15,159,117,.08);}
-.experience-badge{align-self:flex-start;border:1px solid rgba(15,159,117,.28);background:#ecfdf5;color:#047857;border-radius:999px;padding:5px 10px;font-size:10px;text-transform:uppercase;font-weight:950;letter-spacing:.05em;}
-.experience-card.admin .experience-badge{border-color:rgba(15,159,117,.35);color:#047857;}
-.experience-card h2{font-size:20px;margin:0;color:#111827;letter-spacing:-.01em;}
-.experience-card p{color:#64748b;font-size:13px;line-height:1.5;margin:0;flex:1;}
-.demo-user-list{display:grid;gap:8px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:8px;}
-.demo-user-option{width:100%;min-height:44px;text-align:left;border:1px solid #e5e7eb;background:#fff;color:#111827;border-radius:12px;padding:9px 11px;cursor:pointer;}
-.demo-user-option strong{display:block;font-size:13px;color:#111827;}
-.demo-user-option span{display:block;font-size:11px;color:#64748b;margin-top:2px;}
-.demo-user-option.active{border-color:#0f9f75;background:#ecfdf5;box-shadow:0 0 0 1px rgba(15,159,117,.16) inset;}
-.selector-msg{min-height:20px;color:#64748b;font-size:13px;}
-@media(max-width:767px){
-  .selector-shell{padding:18px 14px 92px;}
-  .selector-top{align-items:flex-start;}
-  .selector-title h1{font-size:30px;}
-  .experience-grid{grid-template-columns:1fr;}
-  .experience-card{min-height:0;border-radius:12px;}
-  .experience-card .btn{width:100%;justify-content:center;}
-}
-</style>
-<link rel="stylesheet" href="../css/phone-base.css">
-<link rel="stylesheet" href="../css/phone-shell.css">
-<link rel="stylesheet" href="../css/phone-pages.css">
+<link rel="stylesheet" href="/frontend/css/public-v2.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Choose your ScoutLink workspace","url":"https://www.scoutlink.app/experience-select","description":"ScoutLink presents approved role-based workspaces for coach, scout, player, demo and internal product access."}</script>
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body>
-<main class="selector-shell">
-  <div class="selector-top">
-    <a class="selector-brand" href="/">Scout<span>Link</span></a>
-    <button class="btn btn-sm btn-ghost" id="logoutBtn" type="button">Sign out</button>
+</head>
+<body class="sl-public-v2">
+<a class="pub-skip-link" href="#main">Skip to workspaces</a>
+<div class="pub-page">
+  <header class="pub-header">
+    <div class="pub-header-inner">
+      <a class="pub-brand" href="/">Scout<span>Link</span></a>
+      <nav class="pub-nav" aria-label="Workspace navigation">
+        <a href="/demo">Public demo</a>
+        <a href="/register/coach">Register Coach</a>
+        <a href="/register/scout">Request Scout Access</a>
+        <button class="pub-btn pub-ghost" id="logoutBtn" type="button">Sign out</button>
+      </nav>
+      <button class="pub-menu-btn" type="button" data-public-menu-open aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+  <div class="pub-mobile-panel" aria-label="ScoutLink mobile menu">
+    <div class="pub-mobile-drawer">
+      <div class="pub-mobile-drawer-head">
+        <a class="pub-brand" href="/">Scout<span>Link</span></a>
+        <button class="pub-mobile-close" type="button" data-public-menu-close aria-label="Close menu">&times;</button>
+      </div>
+      <nav class="pub-mobile-links">
+        <a href="/demo">Public demo</a>
+        <a href="/register/coach">Register Coach</a>
+        <a href="/register/scout">Request Scout Access</a>
+        <a class="primary" href="/login?logout=1" id="logoutMobile">Sign out</a>
+      </nav>
+    </div>
   </div>
-  <section class="selector-title">
-    <div class="experience-badge">Product access</div>
-    <h1>Choose your ScoutLink experience</h1>
-    <p>Open the admin view, move between linked real roles, or launch a guided demo without logging out. Demo sessions are isolated from real platform records.</p>
-  </section>
-  <div id="selectorMsg" class="selector-msg">Loading experiences...</div>
-  <section class="experience-grid" id="experienceGrid"></section>
-</main>
-<script src="../js/main.js"></script>
-<script src="../js/heap-analytics.js"></script>
+  <main id="main" class="pub-main">
+    <section class="pub-hero">
+      <div class="pub-shell">
+        <div class="pub-card">
+          <span class="pub-kicker">Product access</span>
+          <h1 class="pub-title">Choose your ScoutLink experience.</h1>
+          <p class="pub-lede">ScoutLink provides different workspaces based on approved access. Coaches manage squads, fixtures and match facts. Reviewed scouts search, compare and shortlist players. Internal workspaces support ScoutLink operations and product demos.</p>
+          <div id="selectorMsg" class="pub-note" style="margin-top:18px">Loading experiences...</div>
+        </div>
+      </div>
+    </section>
+    <section class="pub-section">
+      <div class="pub-shell">
+        <div class="pub-experience-grid" id="experienceGrid" aria-live="polite"></div>
+      </div>
+    </section>
+    <section class="pub-section">
+      <div class="pub-shell pub-grid three">
+        <article class="pub-panel"><h3>Coach workspace</h3><p>Player profiles, match facts, fixtures, video evidence and controlled scout interest for grassroots teams.</p></article>
+        <article class="pub-panel"><h3>Scout workspace</h3><p>Reviewed player search, compatibility scoring, comparison tools, exports, predictions and recruitment pipeline workflows.</p></article>
+        <article class="pub-panel"><h3>Demo and internal access</h3><p>Demo sessions use isolated fictional data, while Stratex internal access supports platform operations and administration.</p></article>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="/frontend/js/main.js"></script>
+<script src="/frontend/js/public-v2.js"></script>
 <script>
 var experiences=[];
 var selectedDemoUsers={};
@@ -86,7 +103,7 @@ function render(){
       '<h2>'+esc(x.label||x.accountType)+'</h2>'+
       '<p>'+esc(x.description||'Open this ScoutLink experience.')+'</p>'+
       userChoices+
-      '<button class="btn btn-primary" type="button" data-enter="'+i+'">Enter as '+esc(x.accountType)+'</button>'+
+      '<button class="pub-btn pub-primary" type="button" data-enter="'+i+'">Enter as '+esc(x.accountType)+'</button>'+
     '</article>';
   }).join('');
   grid.querySelectorAll('[data-demo-user]').forEach(function(btn){btn.addEventListener('click',function(){
@@ -127,7 +144,7 @@ async function enterExperience(idx){
     navigateClean(roleHome(d.accountType));
   }catch(e){
     msg.textContent=e.message||'Could not open that experience.';
-    msg.style.color='#ffb4b4';
+    msg.style.color='#dc2626';
   }
 }
 async function load(){
@@ -139,15 +156,14 @@ async function load(){
     render();
   }catch(e){
     document.getElementById('selectorMsg').textContent=e.message||'Could not load experiences.';
-    document.getElementById('selectorMsg').style.color='#ffb4b4';
+    document.getElementById('selectorMsg').style.color='#dc2626';
   }
 }
 document.getElementById('logoutBtn').addEventListener('click',function(){Auth.clear();navigateClean('login.html?logout=1');});
+var mobileLogout=document.getElementById('logoutMobile');
+if(mobileLogout)mobileLogout.addEventListener('click',function(e){e.preventDefault();Auth.clear();navigateClean('login.html?logout=1');});
 document.addEventListener('DOMContentLoaded',load);
 </script>
-<script src="../js/phone-routes.js"></script>
-<script src="../js/phone-shell.js"></script>
-<script src="../js/phone-pages.js"></script>
-</body></html>
-
-
+<script src="/frontend/js/heap-analytics.js"></script>
+</body>
+</html>

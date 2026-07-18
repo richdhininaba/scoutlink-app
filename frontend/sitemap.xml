@@ -2,10 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.scoutlink.app/</loc><lastmod>2026-07-11</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>https://www.scoutlink.app/coaches</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://www.scoutlink.app/scouts</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.scoutlink.app/scouts</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.scoutlink.app/parents-players</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.scoutlink.app/about</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.scoutlink.app/demo</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/demo</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/login</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.scoutlink.app/experience-select</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.scoutlink.app/register</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.scoutlink.app/register/coach</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.scoutlink.app/register/scout</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.scoutlink.app/complete-registration</loc><lastmod>2026-07-18</lastmod><changefreq>monthly</changefreq><priority>0.4</priority></url>
   <url><loc>https://www.scoutlink.app/safeguarding</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.scoutlink.app/report-a-concern</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.scoutlink.app/parent-guardian-notice</loc><lastmod>2026-07-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
