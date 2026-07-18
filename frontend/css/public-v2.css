@@ -25,6 +25,12 @@ html {
   scroll-behavior: smooth;
 }
 
+.sl-public-v2 *,
+.sl-public-v2 *::before,
+.sl-public-v2 *::after {
+  min-width: 0;
+}
+
 body.sl-public-v2 {
   margin: 0;
   min-height: 100vh;
@@ -37,6 +43,16 @@ body.sl-public-v2 {
 
 .sl-public-v2 a { color: var(--pub-green-dark); }
 .sl-public-v2 a:hover { color: var(--pub-green); }
+
+.sl-public-v2 h1,
+.sl-public-v2 h2,
+.sl-public-v2 h3,
+.sl-public-v2 p,
+.sl-public-v2 li,
+.sl-public-v2 a,
+.sl-public-v2 button {
+  overflow-wrap: break-word;
+}
 
 .pub-page {
   min-height: 100vh;
