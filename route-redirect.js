@@ -7,6 +7,7 @@
     '/coaches': '/frontend/pages/coaches.html',
     '/scouts': '/frontend/pages/scouts.html',
     '/parents-players': '/frontend/pages/parents-players.html',
+    '/parents-and-players': '/frontend/pages/parents-players.html',
     '/about': '/frontend/pages/about.html',
     '/register': '/frontend/pages/register.html',
     '/register/scout': '/frontend/pages/register-scout.html',

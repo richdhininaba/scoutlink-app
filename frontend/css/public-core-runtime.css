@@ -1,0 +1,270 @@
+﻿/* ScoutLink public design board production layer */
+body.public-site {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+body.public-site .public-root {
+  min-height: 100vh;
+}
+body.public-site .page {
+  min-height: 100vh;
+}
+body.public-site .site-header,
+body.public-site .footer,
+body.public-site .main,
+body.public-site .hero {
+  max-width: 1260px;
+  margin-left: auto;
+  margin-right: auto;
+}
+body.public-site .site-header {
+  border-radius: 0;
+}
+body.public-site .footer-col a,
+body.public-site .footer-intro a,
+body.public-site .footer-bottom a {
+  display: block;
+  font-size: 8px;
+  color: #43566e;
+  margin: 6px 0;
+}
+body.public-site .footer-intro a.logo {
+  font-size: 22px;
+  color: var(--ink);
+  margin: 0;
+}
+body.public-site .footer-bottom a {
+  display: inline;
+  margin: 0;
+  color: #62748a;
+}
+body.public-site .nav a.active,
+body.public-site .nav a:hover,
+body.public-site .footer-col a:hover {
+  color: var(--green2);
+}
+body.public-site .btn {
+  text-decoration: none;
+  cursor: pointer;
+}
+body.public-site .logo {
+  text-decoration: none;
+}
+body.public-site button.btn {
+  cursor: pointer;
+}
+body.public-site .public-route-card {
+  color: inherit;
+  text-decoration: none;
+}
+.public-role-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.public-skip {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  transform: translateY(-140%);
+  background: #07111f;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+.public-skip:focus {
+  transform: translateY(0);
+}
+.public-menu-panel {
+  display: none;
+}
+.public-form-control,
+body.public-site .input.public-form-control {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid #d4e0ea;
+  border-radius: 11px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 10px;
+  outline: none;
+}
+textarea.public-form-control,
+body.public-site .input.textarea.public-form-control {
+  height: 94px;
+  padding-top: 11px;
+  resize: vertical;
+  align-items: flex-start;
+}
+.public-form-control:focus {
+  border-color: rgba(15,163,127,.8);
+  box-shadow: 0 0 0 4px rgba(15,163,127,.12);
+}
+.public-message {
+  display: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 12px 0;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+.public-message.show { display: block; }
+.public-message.error { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+.public-message.success { background: #ecfdf5; color: #047857; border: 1px solid #bbf7d0; }
+.public-hidden { display: none !important; }
+.public-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.55);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: public-spin .8s linear infinite;
+}
+@keyframes public-spin { to { transform: rotate(360deg); } }
+.shield:after { content: "\2713"; }
+body.public-site .hero-actions a.btn,
+body.public-site .cta-actions a.btn,
+body.public-site .mobile-sticky a.btn {
+  text-decoration: none;
+}
+body.public-site .role-list.dynamic .role {
+  grid-template-columns: 1.4fr .7fr .75fr auto;
+}
+body.public-site .role-list.dynamic .empty-role {
+  padding: 18px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+body.public-mobile {
+  background: var(--bg);
+}
+body.public-mobile .site-header,
+body.public-mobile .footer,
+body.public-mobile .main,
+body.public-mobile .hero {
+  max-width: none;
+  width: 100%;
+}
+body.public-mobile .page {
+  overflow-x: hidden;
+}
+body.public-mobile .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+body.public-mobile .menu {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  line-height: 1;
+}
+body.public-mobile .menu span {
+  display: block;
+  width: 17px;
+  height: 2px;
+  margin: 2px 0;
+  border-radius: 999px;
+  background: currentColor;
+}
+body.public-mobile .public-menu-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+  background: rgba(7,17,31,.34);
+}
+body.public-menu-open .public-menu-panel {
+  display: block;
+}
+.public-menu-drawer {
+  width: min(330px, calc(100vw - 34px));
+  height: 100%;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(7,17,31,.28);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.public-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.public-menu-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 900;
+}
+.public-menu-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.public-menu-links a {
+  min-height: 43px;
+  border-radius: 13px;
+  background: #f6f9fc;
+  border: 1px solid #e4edf5;
+  display: flex;
+  align-items: center;
+  padding: 0 13px;
+  color: #22364d;
+  font-size: 12px;
+  font-weight: 900;
+}
+.public-menu-links a.active {
+  background: #dff7ef;
+  border-color: rgba(15,163,127,.24);
+  color: var(--green2);
+}
+.public-menu-links a.primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.public-menu-foot {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+body.public-mobile .hero-actions .btn,
+body.public-mobile .cta-actions .btn,
+body.public-mobile .mobile-sticky .btn {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+body.public-mobile .role-list.dynamic .role {
+  grid-template-columns: 1fr auto;
+}
+body.public-mobile .role-list.dynamic .role .role-hide-mobile {
+  display: none;
+}
+body.public-mobile .footer-col a,
+body.public-mobile .footer-col span {
+  font-size: 8px;
+}
+@media (min-width: 768px) {
+  body.public-site .menu,
+  body.public-site .public-menu-panel { display: none !important; }
+}

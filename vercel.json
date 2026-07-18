@@ -12,6 +12,7 @@
     { "source": "/coaches", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/scoutlink/coaches", "permanent": true },
     { "source": "/scouts", "has": [{ "type": "host", "value": "www.stratexanalytics.co.uk" }], "destination": "/scoutlink/scouts", "permanent": true },
     { "source": "/scouts", "has": [{ "type": "host", "value": "stratexanalytics.co.uk" }], "destination": "/scoutlink/scouts", "permanent": true },
+    { "source": "/parents-and-players", "destination": "/parents-players", "permanent": true },
     { "source": "/terms-of-use", "destination": "/terms", "permanent": true },
     { "source": "/company/terms-of-use", "destination": "/terms", "permanent": true },
     { "source": "/privacy", "destination": "/privacy-policy", "permanent": true },
