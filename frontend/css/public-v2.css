@@ -1463,6 +1463,30 @@ a.pub-btn {
     overflow-wrap: anywhere;
   }
 
+  .pub-auth-brand p,
+  .pub-auth-brand li,
+  .pub-card p,
+  .pub-panel p,
+  .pub-feature-card p,
+  .pub-step-card p {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .pub-auth-points li {
+    position: relative;
+    display: block;
+    padding-left: 20px;
+  }
+
+  .pub-auth-points li:before {
+    position: absolute;
+    left: 1px;
+    top: .55em;
+  }
+
   .pub-section h2,
   .pub-panel h2,
   .pub-form-card h2 {
