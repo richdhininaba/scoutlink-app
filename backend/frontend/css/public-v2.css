@@ -1088,6 +1088,10 @@ a.pub-btn {
   gap: 14px;
 }
 
+.pub-step h3:focus {
+  outline: none;
+}
+
 .pub-step-actions {
   display: flex;
   justify-content: space-between;
