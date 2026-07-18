@@ -1402,8 +1402,31 @@ a.pub-btn {
     background: #f7fafc;
   }
 
+  html,
+  body.sl-public-v2 {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .pub-header-inner,
   .pub-shell { width: calc(100% - 28px); }
+
+  .pub-page,
+  .pub-main,
+  .pub-auth-page,
+  .pub-hero-grid,
+  .pub-registration-grid,
+  .pub-card,
+  .pub-panel,
+  .pub-auth-brand,
+  .pub-auth-form,
+  .pub-form-card,
+  .pub-feature-card,
+  .pub-step-card {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
 
   .pub-card,
   .pub-panel,
@@ -1431,8 +1454,13 @@ a.pub-btn {
   .pub-card h1,
   .pub-copy h1,
   .pub-auth-brand h1 {
+    width: 100%;
+    max-width: 100%;
     font-size: 34px;
     letter-spacing: -.05em;
+    text-wrap: auto;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
 
   .pub-section h2,
