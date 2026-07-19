@@ -139,20 +139,23 @@
     var age = p.age_group || (p.age ? p.age + ' yrs' : 'Age TBC');
     var url = opts.url || profileHref(p.id || '');
     var coachControl = opts.coachControl || '';
-    return '<article class="coach-v2-player-card">' +
-      '<div class="coach-v2-player-top">' +
-      '<div class="coach-v2-avatar">' + esc(initialsOf(p)) + '</div>' +
+    return '<article class="player-card coach-v2-player-card">' +
+      '<div class="player-top coach-v2-player-top">' +
+      '<div class="player-id">' +
+      '<div class="player-avatar coach-v2-avatar">' + esc(initialsOf(p)) + '</div>' +
       '<div class="coach-v2-player-main"><h4>' + esc(nameOf(p)) + '</h4><p>' + esc(age) + ' - ' + esc(position) + '</p></div>' +
-      '<div class="coach-v2-rating">' + esc(overall(p.overall_rating)) + '</div>' +
       '</div>' +
-      '<div class="coach-v2-player-facts">' +
-      '<span><b>' + esc(money(p.transfer_value || 0)) + '</b><small>Value</small></span>' +
-      '<span><b>' + esc(p.appearances || 0) + '</b><small>Apps</small></span>' +
-      '<span><b>' + esc(p.goals || 0) + '</b><small>Goals</small></span>' +
+      '<div class="rating coach-v2-rating">' + esc(overall(p.overall_rating)) + '</div>' +
       '</div>' +
-      '<div class="coach-v2-progress"><div><span>Profile completion</span><b>' + comp + '%</b></div><i style="width:' + comp + '%"></i></div>' +
+      '<div class="evidence-row coach-v2-player-facts">' +
+      '<span class="evidence-box"><b>' + esc(money(p.transfer_value || 0)) + '</b><small>Value</small></span>' +
+      '<span class="evidence-box"><b>' + esc(p.appearances || 0) + '</b><small>Apps</small></span>' +
+      '<span class="evidence-box"><b>' + esc(p.goals || 0) + '</b><small>Goals</small></span>' +
+      '</div>' +
+      '<div class="progress-lab"><span>Profile completion</span><b>' + comp + '%</b></div>' +
+      '<div class="progress coach-v2-progress"><span style="width:' + comp + '%"></span><i style="width:' + comp + '%"></i></div>' +
       coachControl +
-      '<a class="btn btn-outline" href="' + esc(url) + '" style="width:100%;text-decoration:none">View / edit profile</a>' +
+      '<div class="card-actions"><a class="btn btn-outline" href="' + esc(url) + '" style="width:100%;text-decoration:none">View / edit profile</a></div>' +
       '</article>';
   }
 
@@ -162,6 +165,17 @@
     document.body.classList.add('coach-v2', 'coach-page-' + key);
     document.body.classList.remove('theme-dark');
     document.body.classList.add('theme-light');
+  }
+
+  function applyShellClasses() {
+    var dashboard = document.querySelector('.dashboard');
+    if (dashboard) dashboard.classList.add('coach-page');
+    var main = document.querySelector('.dashboard-main');
+    if (main) main.classList.add('workspace');
+    var topbar = document.querySelector('.topbar');
+    if (topbar) topbar.classList.add('workspace-top');
+    var content = document.querySelector('.page-content');
+    if (content) content.classList.add('content');
   }
 
   function firstName() {
@@ -251,17 +265,17 @@
     var active = navKey();
     sidebar.classList.add('coach-v3-sidebar');
     sidebar.innerHTML =
-      '<div class="sidebar-logo"><a href="' + esc(hrefFor('coach-dashboard.html')) + '">Scout<span>Link</span></a></div>' +
-      '<nav class="sidebar-nav" aria-label="Coach navigation">' +
+      '<div class="side-logo sidebar-logo"><a class="logo" href="' + esc(hrefFor('coach-dashboard.html')) + '">Scout<span>Link</span></a></div>' +
+      '<nav class="side-nav sidebar-nav" aria-label="Coach navigation">' +
       COACH_NAV_GROUPS.map(function (group) {
-        return '<div class="coach-nav-group"><div class="coach-nav-label">' + esc(group[0]) + '</div>' +
+        return '<div class="coach-nav-group"><div class="nav-label coach-nav-label">' + esc(group[0]) + '</div>' +
           group[1].map(function (item) {
-            return '<a class="nav-item ' + (active === item[0] ? 'active' : '') + '" href="' + esc(hrefFor(item[3])) + '">' +
-              '<span class="nav-ico">' + esc(item[2]) + '</span><span>' + esc(item[1]) + '</span></a>';
+            return '<a class="side-link nav-item ' + (active === item[0] ? 'active' : '') + '" href="' + esc(hrefFor(item[3])) + '">' +
+              '<span class="side-icon nav-ico">' + esc(item[2]) + '</span><span>' + esc(item[1]) + '</span></a>';
           }).join('') + '</div>';
       }).join('') +
       '</nav>' +
-      '<div class="sidebar-user"><div class="user-avatar">' + esc(initialsFromName(name)) + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-role">Coach - ' + esc(currentTeamName()) + '</div></div></div>';
+      '<div class="side-user sidebar-user"><div class="user-avatar">' + esc(initialsFromName(name)) + '</div><div><b class="user-name">' + esc(name) + '</b><span class="user-role">Coach - ' + esc(currentTeamName()) + '</span></div></div>';
   }
 
   function closeMobileMenu() {
@@ -277,11 +291,11 @@
     var top = document.querySelector('.coach-v2-mobile-top');
     if (!top) {
       top = document.createElement('header');
-      top.className = 'coach-v2-mobile-top';
+      top.className = 'mobile-top coach-v2-mobile-top';
       top.innerHTML =
-        '<button type="button" class="coach-v2-menu-button" aria-label="Open menu"><span></span><span></span><span></span></button>' +
+        '<button type="button" class="coach-v2-menu-button menu" aria-label="Open menu"><span></span><span></span><span></span></button>' +
         '<strong class="coach-v2-mobile-title"></strong>' +
-        '<button type="button" class="coach-v2-bell" aria-label="Notifications">NT</button>';
+        '<button type="button" class="coach-v2-bell" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z"></path><path d="M10 21h4"></path></svg></button>';
       document.body.insertBefore(top, document.body.firstChild);
     }
     var title = top.querySelector('.coach-v2-mobile-title');
@@ -309,7 +323,7 @@
       backdrop.addEventListener('click', closeMobileMenu);
       document.body.appendChild(backdrop);
     }
-    document.querySelectorAll('.sidebar .nav-item').forEach(function (link) {
+    document.querySelectorAll('.sidebar .nav-item, .sidebar .side-link').forEach(function (link) {
       if (!link.dataset.coachV2MobileBound) {
         link.dataset.coachV2MobileBound = '1';
         link.addEventListener('click', closeMobileMenu);
@@ -330,7 +344,7 @@
 
   function addHero() {
     var content = document.querySelector('.page-content');
-    if (!content || content.querySelector('.coach-v2-hero')) return;
+    if (!content || content.querySelector('.coach-v2-hero, .page-hero')) return;
     var key = pageKey();
     if (key === 'profile') return;
     var copy = {
@@ -369,9 +383,9 @@
         return '<a class="btn ' + a[2] + '" href="' + esc(hrefFor(a[1])) + '">' + esc(a[0]) + '</a>';
     }).join('');
     var hero = document.createElement('section');
-    hero.className = 'coach-v2-hero';
-    hero.innerHTML = '<div><span class="coach-v2-chip">Coach workspace</span><h1>' + esc(copy[0]) + '</h1><p>' + esc(copy[1]) + '</p></div>' +
-      (actionHtml ? '<div class="coach-v2-actions">' + actionHtml + '</div>' : '');
+    hero.className = 'page-hero coach-v2-hero';
+    hero.innerHTML = '<div><span class="pill green coach-v2-chip">Coach workspace</span><h2>' + esc(copy[0]) + '</h2><p>' + esc(copy[1]) + '</p></div>' +
+      (actionHtml ? '<div class="page-actions coach-v2-actions">' + actionHtml + '</div>' : '');
     content.insertBefore(hero, content.firstChild);
   }
 
@@ -386,11 +400,11 @@
     ];
     var key = pageKey();
     var nav = document.createElement('nav');
-    nav.className = 'coach-v2-bottom-nav';
+    nav.className = 'mobile-bottom coach-v2-bottom-nav';
     nav.setAttribute('aria-label', 'Coach quick navigation');
     nav.innerHTML = items.map(function (item) {
       var active = key === item[3] || (item[3] === 'settings' && ['video-reels', 'chat', 'notifications', 'settings', 'match-facts', 'bulk-add-players'].indexOf(key) >= 0);
-      return '<a class="' + (active ? 'active ' : '') + (item[3] === 'add-player' ? 'add' : '') + '" href="' + esc(hrefFor(item[1])) + '"><span>' + esc(item[2]) + '</span>' + esc(item[0]) + '</a>';
+      return '<a class="bottom-link ' + (active ? 'active ' : '') + (item[3] === 'add-player' ? 'add' : '') + '" href="' + esc(hrefFor(item[1])) + '"><i>' + esc(item[2]) + '</i>' + esc(item[0]) + '</a>';
     }).join('');
     document.body.appendChild(nav);
   }
@@ -415,9 +429,9 @@
     var key = pageKey();
     if (key !== 'dashboard') return;
     var content = document.querySelector('.page-content');
-    if (!content || content.querySelector('.coach-v2-action-grid')) return;
+    if (!content || content.querySelector('.coach-v2-action-grid, .quick-grid')) return;
     var grid = document.createElement('section');
-    grid.className = 'coach-v2-action-grid';
+    grid.className = 'quick-grid coach-v2-action-grid';
     grid.innerHTML = [
       ['My players', 'Squad profiles', 'coach-my-players.html', 'MP'],
       ['Add player', 'Create profile', 'add-player.html', 'AP'],
@@ -426,7 +440,7 @@
       ['Chat', 'Scout messages', 'coach-chat.html', 'CH'],
       ['Video reels', 'Evidence clips', 'coach-video-reels.html', 'VR']
     ].map(function (a) {
-      return '<a class="coach-v2-action-card" href="' + esc(hrefFor(a[2])) + '"><span class="coach-v2-action-icon">' + esc(a[3]) + '</span><div><h3>' + esc(a[0]) + '</h3><p>' + esc(a[1]) + '</p></div></a>';
+      return '<a class="quick coach-v2-action-card" href="' + esc(hrefFor(a[2])) + '"><span class="mini-icon coach-v2-action-icon">' + esc(a[3]) + '</span><div><h4>' + esc(a[0]) + '</h4><p>' + esc(a[1]) + '</p></div></a>';
     }).join('');
     var hero = content.querySelector('.coach-v2-hero');
     content.insertBefore(grid, hero ? hero.nextSibling : content.firstChild);
@@ -436,7 +450,7 @@
     if (pageKey() !== 'dashboard') return;
     var content = document.querySelector('.page-content');
     if (!content) return;
-    var grids = Array.prototype.slice.call(content.querySelectorAll('.coach-v2-action-grid'));
+    var grids = Array.prototype.slice.call(content.querySelectorAll('.coach-v2-action-grid, .quick-grid'));
     grids.slice(1).forEach(function (grid) { grid.remove(); });
     var grid = grids[0];
     var hero = content.querySelector('.coach-v2-hero');
@@ -460,18 +474,16 @@
     var error = document.getElementById('formError');
     var success = document.getElementById('formSuccess');
     var reviewCard = document.createElement('section');
-    reviewCard.className = 'table-card coach-v2-review-card';
-    reviewCard.style.padding = '24px';
-    reviewCard.style.marginBottom = '20px';
+    reviewCard.className = 'workflow-section table-card coach-v2-review-card';
     reviewCard.innerHTML =
-      '<h3 style="font-size:16px;font-weight:900;margin-bottom:8px">Review and save</h3>' +
-      '<p style="color:var(--coach-muted);font-size:13px;margin-bottom:16px">Check the profile summary before creating the player.</p>' +
+      '<div class="workflow-title"><h3>Review and save</h3><span>Check before creating</span></div>' +
+      '<div class="workflow-body"><p style="color:var(--coach-muted);font-size:11px;margin:0 0 12px">Check the profile summary before creating the player.</p>' +
       '<dl>' +
       '<div><dt>Name</dt><dd data-review="name">--</dd></div>' +
       '<div><dt>Age group</dt><dd data-review="age">--</dd></div>' +
       '<div><dt>Position</dt><dd data-review="position">--</dd></div>' +
       '<div><dt>Profile</dt><dd data-review="profile">Average / Athletic</dd></div>' +
-      '</dl>';
+      '</dl></div>';
     host.insertBefore(reviewCard, error || success || submit || null);
 
     function cardByHeading(text) {
@@ -505,10 +517,10 @@
     });
 
     var tracker = document.createElement('div');
-    tracker.className = 'coach-v2-stepper';
+    tracker.className = 'stepper coach-v2-stepper';
     tracker.setAttribute('role', 'tablist');
     tracker.innerHTML = steps.map(function (step, i) {
-      return '<button type="button" class="coach-v2-step" data-step="' + i + '" role="tab">' + (i + 1) + ' ' + esc(step.label) + '</button>';
+      return '<button type="button" class="step-pill coach-v2-step" data-step="' + i + '" role="tab">' + (i + 1) + ' ' + esc(step.label) + '</button>';
     }).join('');
     var caption = document.createElement('p');
     caption.className = 'coach-v2-wizard-caption';
@@ -553,6 +565,8 @@
       steps[current].nodes.forEach(function (node) { node.classList.remove('coach-v2-step-hidden'); });
       stepButtons.forEach(function (btn, i) {
         btn.classList.toggle('is-active', i === current);
+        btn.classList.toggle('active', i === current);
+        btn.classList.toggle('done', i < current);
         btn.setAttribute('aria-selected', i === current ? 'true' : 'false');
       });
       caption.textContent = steps[current].helper;
@@ -685,6 +699,7 @@
     enable();
     if (!document.body || !document.body.classList.contains('coach-v2')) return;
     installRenderers();
+    applyShellClasses();
     installCoachNavigation();
     installCoachMobileChrome();
     installMobileMenuEvents();
