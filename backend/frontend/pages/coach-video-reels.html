@@ -85,6 +85,19 @@
 </div>
 </div>
 
+<!-- Player Upload Link -->
+<div class="table-card coach-v2-upload-link-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Player Upload Link</h3></div>
+<div style="padding:20px">
+<p style="color:#8b949e;margin:0 0 14px;font-size:13px">Generate a private upload link for a player and share it through an approved team communication channel.</p>
+<div class="coach-v2-upload-link-grid">
+<select id="uploadLinkPlayer" class="form-input"><option value="">Select player...</option></select>
+<button class="btn btn-outline" id="generateUploadLinkBtn" type="button">Generate Link</button>
+</div>
+<div id="uploadLinkResult" class="coach-v2-upload-link-result" aria-live="polite"></div>
+</div>
+</div>
+
 <!-- Video List -->
 <div class="table-card">
 <div class="table-header"><h3>All Videos</h3><button class="btn btn-sm btn-outline" id="refreshBtn">Refresh</button></div>
@@ -198,13 +211,52 @@ function renderVideoList(){
 function loadPlayers(){
   api('GET','/api/coaches/my-players').then(function(d){
     var sel=document.getElementById('playerAssign');
+    var linkSel=document.getElementById('uploadLinkPlayer');
     (d.players||d.data||[]).forEach(function(p){
       var opt=document.createElement('option');
       opt.value=p.id;
       opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' ('+(p.specific_position||p.position_group||'--')+')';
       sel.appendChild(opt);
+      if(linkSel){
+        var linkOpt=opt.cloneNode(true);
+        linkSel.appendChild(linkOpt);
+      }
     });
   }).catch(function(){});
+}
+
+function generatePlayerUploadLink(){
+  var select=document.getElementById('uploadLinkPlayer');
+  var result=document.getElementById('uploadLinkResult');
+  var btn=document.getElementById('generateUploadLinkBtn');
+  if(!select||!result||!btn)return;
+  var playerId=select.value;
+  if(!playerId){result.innerHTML='<div class="alert alert-error">Choose a player first.</div>';return;}
+  btn.disabled=true;
+  btn.textContent='Generating...';
+  result.innerHTML='';
+  api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(d){
+    var url=d.uploadUrl||d.url||'';
+    if(!url)throw new Error('Upload link was not returned.');
+    result.innerHTML='<div class="coach-v2-copy-row"><input class="form-input" id="generatedUploadLink" readonly value="'+url.replace(/"/g,'&quot;')+'"><button class="btn btn-primary" type="button" id="copyUploadLinkBtn">Copy Link</button></div><p>Expires '+(d.expiresAt?new Date(d.expiresAt).toLocaleDateString():'in 14 days')+'.</p>';
+    var copy=document.getElementById('copyUploadLinkBtn');
+    if(copy){
+      copy.addEventListener('click',function(){
+        var input=document.getElementById('generatedUploadLink');
+        if(input){
+          input.select();
+          navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(input.value) : document.execCommand('copy');
+          copy.textContent='Copied';
+          setTimeout(function(){copy.textContent='Copy Link';},1500);
+        }
+      });
+    }
+  }).catch(function(e){
+    result.innerHTML='<div class="alert alert-error">Could not generate link: '+e.message+'</div>';
+  }).finally(function(){
+    btn.disabled=false;
+    btn.textContent='Generate Link';
+  });
 }
 
 function doUpload(){
@@ -296,6 +348,8 @@ document.addEventListener('DOMContentLoaded',function(){
 
   document.getElementById('uploadBtn').addEventListener('click',doUpload);
   document.getElementById('refreshBtn').addEventListener('click',loadVideos);
+  var linkBtn=document.getElementById('generateUploadLinkBtn');
+  if(linkBtn)linkBtn.addEventListener('click',generatePlayerUploadLink);
 });
 </script>
 <script src="../js/phone-routes.js"></script>

@@ -424,17 +424,23 @@
       '<div class="coach-v2-bulk-actions">' +
       '<button type="button" class="btn btn-primary is-active" data-bulk-mode="add">Add new players</button>' +
       '<a class="btn btn-outline" href="coach-my-players.html">Edit existing players</a>' +
-      '<button type="button" class="btn btn-outline" data-download-template>Download CSV template</button>' +
+      '<button type="button" class="btn btn-outline" data-download-template>Download template</button>' +
       '</div>';
     content.insertBefore(toolbar, firstCard || content.firstChild);
     var download = toolbar.querySelector('[data-download-template]');
     if (download) {
       download.addEventListener('click', function () {
+        var pageTemplateButton = document.getElementById('downloadTemplateBtn');
+        if (pageTemplateButton && pageTemplateButton !== download) {
+          pageTemplateButton.click();
+          return;
+        }
         var headers = [
-          'firstName', 'lastName', 'email', 'guardianEmail', 'dateOfBirth', 'ageGroup',
+          'firstName', 'lastName', 'ageGroup', 'positionGroup', 'specificPosition',
+          'assignedCoachId', 'foot', 'heightCategory', 'buildCategory',
           'pace', 'agility', 'strength', 'stamina', 'jumping', 'composure',
           'shooting', 'passing', 'dribbling', 'defending', 'crossing', 'vision',
-          'positioning', 'heading', 'tackling', 'notes'
+          'positioning', 'heading', 'tackling'
         ];
         var blob = new Blob([headers.join(',') + '\r\n'], { type: 'text/csv;charset=utf-8' });
         var url = URL.createObjectURL(blob);

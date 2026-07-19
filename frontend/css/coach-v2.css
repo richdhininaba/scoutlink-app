@@ -908,6 +908,95 @@ body.coach-v2 .video-card {
   color: var(--coach-text) !important;
 }
 
+body.coach-v2 .coach-v2-upload-link-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+body.coach-v2 .coach-v2-upload-link-result {
+  margin-top: 14px;
+}
+
+body.coach-v2 .coach-v2-copy-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+body.coach-v2 .coach-v2-upload-link-result p {
+  margin: 8px 0 0;
+  color: var(--coach-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+body.coach-v2.coach-page-match-facts .step-indicator {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+body.coach-v2.coach-page-match-facts .step {
+  border: 1px solid var(--coach-line);
+  background: var(--coach-surface);
+  color: var(--coach-muted);
+  border-radius: 999px;
+  padding: 10px 15px;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: var(--coach-shadow-sm);
+}
+
+body.coach-v2.coach-page-match-facts .step.active {
+  background: #dcf8ee;
+  border-color: rgba(15, 163, 127, .45);
+  color: #047857;
+}
+
+body.coach-v2.coach-page-match-facts #stepContent > .card,
+body.coach-v2.coach-page-match-facts #stepContent > .table-card,
+body.coach-v2.coach-page-match-facts .match-card,
+body.coach-v2.coach-page-match-facts .mode-card,
+body.coach-v2.coach-page-match-facts .player-rating-card,
+body.coach-v2.coach-page-match-facts .event-section,
+body.coach-v2.coach-page-match-facts .sub-panel {
+  border: 1px solid var(--coach-line) !important;
+  border-radius: 18px !important;
+  background: var(--coach-surface) !important;
+  color: var(--coach-text) !important;
+  box-shadow: var(--coach-shadow-sm);
+}
+
+body.coach-v2.coach-page-match-facts .mode-card.sel,
+body.coach-v2.coach-page-match-facts .mode-card.active {
+  border-color: rgba(15, 163, 127, .6) !important;
+  background: #eefcf7 !important;
+}
+
+body.coach-v2.coach-page-match-facts .pitch,
+body.coach-v2.coach-page-match-facts .pitch-wrap,
+body.coach-v2.coach-page-match-facts .formation-pitch {
+  border-radius: 22px !important;
+  overflow: hidden;
+}
+
+body.coach-v2.coach-page-match-facts .event-row,
+body.coach-v2.coach-page-match-facts .rating-row {
+  gap: 12px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-match-facts .score-box,
+body.coach-v2.coach-page-match-facts .score-card {
+  border: 1px solid var(--coach-line) !important;
+  background: var(--coach-surface-2) !important;
+  border-radius: 16px !important;
+}
+
 @media (min-width: 951px) {
   body.coach-v2 .dashboard-main {
     min-height: 100dvh;
@@ -1232,6 +1321,17 @@ body.coach-v2 .video-card {
   body.coach-v2 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  body.coach-v2 .coach-v2-upload-link-grid,
+  body.coach-v2 .coach-v2-copy-row {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-match-facts .step {
+    min-height: 38px;
+    padding: 8px 12px;
+    font-size: 11px;
   }
 }
 

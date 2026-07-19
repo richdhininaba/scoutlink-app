@@ -161,11 +161,12 @@
 <link rel="stylesheet" href="../css/phone-base.css">
 <link rel="stylesheet" href="../css/phone-shell.css">
 <link rel="stylesheet" href="../css/phone-pages.css">
+<link rel="stylesheet" href="../css/coach-v2.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body>
+</head><body class="coach-v2">
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
 <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
@@ -726,7 +727,7 @@ var videoUploadLinkHtml='';
 if(Auth.type==='Coach'||Auth.type==='Stratex'){
 videoUploadLinkHtml='<div class="coach-upload-link-panel" style="border:1px solid var(--border,#30363d);background:rgba(29,158,117,.06);border-radius:10px;padding:14px;margin-bottom:14px">'+
 '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">'+
-'<div><div style="font-weight:800;color:var(--text,#e6edf3);margin-bottom:4px">Video upload link</div><div style="font-size:12px;color:#8b949e;line-height:1.5">Generate a private link for this player and send it to the player, parent or guardian. They do not need a ScoutLink account.</div></div>'+
+'<div><div style="font-weight:800;color:var(--text,#e6edf3);margin-bottom:4px">Video upload link</div><div style="font-size:12px;color:#8b949e;line-height:1.5">Generate a private upload link for this player. Copy it into an approved team communication channel; no ScoutLink account is needed to upload.</div></div>'+
 '<button class="btn btn-outline" id="btnGenerateVideoUploadLink" type="button">Generate upload link</button>'+
 '</div><div id="videoUploadLinkResult" style="display:none;margin-top:12px"></div></div>';
 }

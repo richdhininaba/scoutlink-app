@@ -65,9 +65,11 @@ async function assertCanManagePlayerVideo(req, playerId) {
   }
   if (req.user.accountType === 'Stratex') return { player, coach: null };
   const coach = await getCoachTeam(req.user.id);
+  const sameTeamId = coach && coach.team_id && player.team_id === coach.team_id;
   const sameTeam = coach && (
     player.assigned_coach_id === req.user.id ||
-    (coach.is_super_user && coach.team_id && player.team_id === coach.team_id)
+    (!player.assigned_coach_id && sameTeamId) ||
+    (coach.is_super_user && sameTeamId)
   );
   if (!sameTeam) {
     const e = new Error('You can only generate upload links for players you manage.');

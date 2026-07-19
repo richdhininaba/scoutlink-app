@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
@@ -28,7 +28,7 @@ body{background:var(--bg);color:var(--text);}
 .bulk-table-wrap::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
 .bulk-table-wrap::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
 .bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
-.bulk-table{border-collapse:collapse;white-space:nowrap;min-width:2520px;width:max-content;}
+.bulk-table{border-collapse:collapse;white-space:nowrap;min-width:2720px;width:max-content;}
 .bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
 .bulk-table th{background:#f8fafc;color:#475569;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
 .bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:#fff;border:1px solid #dbe3ea;color:#111827;border-radius:4px;font-size:12px;}
@@ -36,6 +36,12 @@ body{background:var(--bg);color:var(--text);}
 .bulk-table input[type=date]{min-width:120px;}
 .bulk-row-num{color:var(--text-secondary);text-align:center;font-weight:600;}
 .bulk-remove{background:none;border:none;color:#f85149;cursor:pointer;font-size:16px;padding:2px 6px;}
+.bulk-file-input{display:none;}
+.bulk-row-status{min-width:180px;max-width:240px;white-space:normal;font-size:11px;line-height:1.35;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-weight:700;}
+.bulk-row-status.is-ok{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
+.bulk-row-status.is-error{color:#b91c1c;background:#fef2f2;border-color:#fecaca;}
+.bulk-row-status.is-warn{color:#92400e;background:#fffbeb;border-color:#fde68a;}
+.bulk-import-note{color:var(--text-secondary);font-size:13px;line-height:1.55;margin-top:6px;max-width:760px;}
 .bulk-table th:last-child,.bulk-table td:last-child{position:sticky;right:0;background:#fff;z-index:2;box-shadow:-8px 0 12px rgba(15,23,42,.10);}
 .bulk-table th:last-child{background:#f8fafc;z-index:3;}
 body:not(.super-user) .coach-col{display:none;}
@@ -63,7 +69,7 @@ body:not(.super-user) .coach-col{display:none;}
 .form-success.show{display:block;}
 @media(max-width:767px){
   .bulk-table th,.bulk-table td{display:table-cell!important;}
-  .bulk-table{min-width:2520px;}
+  .bulk-table{min-width:2720px;}
   .bulk-import-card{max-width:calc(100vw - 24px);}
   .bulk-action-group{width:100%;}
   .bulk-action-group .btn{flex:1;justify-content:center;}
@@ -74,6 +80,7 @@ body:not(.super-user) .coach-col{display:none;}
 <link rel="stylesheet" href="/frontend/css/phone-shell.css">
 <link rel="stylesheet" href="/frontend/css/phone-pages.css">
 <link rel="stylesheet" href="/frontend/css/coach-v2.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -100,7 +107,7 @@ body:not(.super-user) .coach-col{display:none;}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
   <div>
     <h2 style="font-size:22px;font-weight:700">Bulk Player Import</h2>
-    <p style="color:var(--text-secondary);font-size:14px;margin-top:4px">Add up to 50 players. All ratings are 1-10. Scroll right for all columns.</p>
+    <p class="bulk-import-note">Import a workbook, review and edit rows in the table, then submit. The template only contains the football profile fields shown below.</p>
   </div>
 </div>
 <div class="assignment-toolbar" id="assignmentToolbar">
@@ -114,6 +121,9 @@ body:not(.super-user) .coach-col{display:none;}
     <select id="defaultCoachSelect"><option value="">Loading coaches...</option></select>
   </div>
   <div class="bulk-action-group">
+    <input class="bulk-file-input" id="bulkFileInput" type="file" accept=".xlsx,.xls,.csv">
+    <button class="btn btn-outline btn-sm" id="downloadTemplateBtn" type="button">Download Template</button>
+    <button class="btn btn-outline btn-sm" id="importFileBtn" type="button">Import Excel/CSV</button>
     <button class="btn btn-outline btn-sm" id="addRowBtn">+ Add Row</button>
     <button class="btn btn-primary" id="submitAllBtn">Submit All Players</button>
   </div>
@@ -142,6 +152,7 @@ body:not(.super-user) .coach-col{display:none;}
         <th>Shooting (1-10)</th><th>Passing (1-10)</th><th>Dribbling (1-10)</th>
         <th>Defending (1-10)</th><th>Crossing (1-10)</th><th>Vision (1-10)</th>
         <th>Positioning (1-10)</th><th>Heading (1-10)</th><th>Tackling (1-10)</th>
+        <th>Row Status</th>
         <th></th>
       </tr></thead>
       <tbody id="bulkBody"></tbody>
@@ -207,7 +218,8 @@ function ageGroupOpts(selected){
   return '<option value="">Select</option>'+groups.map(function(g){return'<option value="'+g+'"'+(selected===g?' selected':'')+'>'+g+'</option>';}).join("");
 }
 
-function addRow(){
+function addRow(prefill){
+  prefill=prefill||null;
   rowCount++;
   var n=rowCount;
   var tr=document.createElement("tr");
@@ -242,8 +254,11 @@ function addRow(){
     '<td><input type="number" data-f="positioning" min="1" max="10" step="0.5" placeholder="--"></td>'+
     '<td><input type="number" data-f="heading" min="1" max="10" step="0.5" placeholder="--"></td>'+
     '<td><input type="number" data-f="tackling" min="1" max="10" step="0.5" placeholder="--"></td>'+
+    '<td><div class="bulk-row-status" data-row-status>Ready to edit</div></td>'+
     '<td><button class="bulk-remove" data-remove="'+n+'">X</button></td>';
   document.getElementById("bulkBody").appendChild(tr);
+  if(prefill)setRowData(tr,prefill);
+  validateRow(tr);
   syncBulkScroll();
 }
 
@@ -254,6 +269,182 @@ function syncBulkScroll(){
   var table=document.getElementById("bulkTable");
   if(!wrap||!top||!inner||!table)return;
   inner.style.width=table.scrollWidth+"px";
+}
+
+function setStatus(tr,message,type){
+  var el=tr&&tr.querySelector("[data-row-status]");
+  if(!el)return;
+  el.textContent=message||"Ready to edit";
+  el.className="bulk-row-status"+(type?" is-"+type:"");
+}
+
+function setRowData(tr,data){
+  if(!tr||!data)return;
+  Object.keys(data).forEach(function(key){
+    var el=tr.querySelector('[data-f="'+key+'"]');
+    if(!el||data[key]===undefined||data[key]===null)return;
+    el.value=String(data[key]);
+    if(key==="positionGroup"){
+      var rowId=tr.dataset.rowId;
+      var sp=document.getElementById("specPos-"+rowId);
+      if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(data[key]);
+    }
+  });
+  if(data.specificPosition){
+    var pos=tr.querySelector('[data-f="specificPosition"]');
+    if(pos)pos.value=String(data.specificPosition).toUpperCase();
+  }
+}
+
+function normaliseHeader(value){
+  return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();
+}
+
+var BULK_FIELDS=[
+  "firstName","lastName","ageGroup","positionGroup","specificPosition","assignedCoachId","foot","heightCategory","buildCategory",
+  "pace","agility","strength","stamina","jumping","composure","shooting","passing","dribbling","defending","crossing","vision","positioning","heading","tackling"
+];
+var IMPORT_HEADER_MAP={
+  firstname:"firstName",first:"firstName",forename:"firstName",
+  lastname:"lastName",last:"lastName",surname:"lastName",
+  agegroup:"ageGroup",squadage:"ageGroup",
+  positiongroup:"positionGroup",group:"positionGroup",
+  specificposition:"specificPosition",position:"specificPosition",
+  assignedcoach:"assignedCoachId",coach:"assignedCoachId",assignedcoachid:"assignedCoachId",
+  foot:"foot",preferredfoot:"foot",
+  height:"heightCategory",heightcategory:"heightCategory",
+  build:"buildCategory",buildcategory:"buildCategory",
+  pace:"pace",agility:"agility",strength:"strength",stamina:"stamina",jumping:"jumping",composure:"composure",
+  shooting:"shooting",passing:"passing",dribbling:"dribbling",defending:"defending",crossing:"crossing",vision:"vision",positioning:"positioning",heading:"heading",tackling:"tackling"
+};
+
+function normaliseImportValue(key,value){
+  var v=String(value==null?"":value).trim();
+  if(!v)return "";
+  if(key==="ageGroup"){
+    v=v.toUpperCase().replace(/\s+/g,"");
+    if(/^\d+$/.test(v))v="U"+v;
+  }
+  if(key==="positionGroup")v=v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
+  if(key==="specificPosition")v=v.toUpperCase();
+  if(key==="foot")v=v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
+  if(key==="heightCategory"){
+    var hv=v.toLowerCase();
+    var hm=HEIGHT_OPTS.find(function(opt){return hv.indexOf(opt.replace(/_/g," "))>=0||hv.indexOf(opt)>=0;});
+    return hm||hv.replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  }
+  if(key==="buildCategory"){
+    var bv=v.toLowerCase();
+    var bm=BUILD_OPTS.find(function(opt){return bv.indexOf(opt.replace(/_/g," "))>=0||bv.indexOf(opt)>=0;});
+    return bm||bv.replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  }
+  if(["pace","agility","strength","stamina","jumping","composure","shooting","passing","dribbling","defending","crossing","vision","positioning","heading","tackling"].indexOf(key)>=0){
+    var n=Number(v);
+    return isNaN(n)?"":Math.max(1,Math.min(10,n));
+  }
+  return v;
+}
+
+function cleanImportRecord(raw){
+  var cleaned={};
+  Object.keys(raw||{}).forEach(function(header){
+    var key=IMPORT_HEADER_MAP[normaliseHeader(header)];
+    if(!key||BULK_FIELDS.indexOf(key)<0)return;
+    var val=normaliseImportValue(key,raw[header]);
+    if(val!==""&&val!==null&&val!==undefined)cleaned[key]=val;
+  });
+  return cleaned;
+}
+
+function parseCsv(text){
+  var rows=String(text||"").split(/\r?\n/).filter(function(line){return line.trim();}).map(function(line){
+    var out=[],cur="",quoted=false;
+    for(var i=0;i<line.length;i++){
+      var ch=line[i];
+      if(ch==='"'&&line[i+1]==='"'){cur+='"';i++;continue;}
+      if(ch==='"'){quoted=!quoted;continue;}
+      if(ch===","&&!quoted){out.push(cur);cur="";continue;}
+      cur+=ch;
+    }
+    out.push(cur);
+    return out;
+  });
+  if(rows.length<2)return [];
+  var headers=rows.shift();
+  return rows.map(function(row){
+    var obj={};
+    headers.forEach(function(h,i){obj[h]=row[i]||"";});
+    return cleanImportRecord(obj);
+  }).filter(function(r){return Object.keys(r).length;});
+}
+
+function parseWorkbookRows(buffer,fileName){
+  if(/\.csv$/i.test(fileName||""))return parseCsv(buffer);
+  if(!window.XLSX)throw new Error("Excel parser is still loading. Please try again in a moment.");
+  var wb=window.XLSX.read(buffer,{type:"array"});
+  var sheet=wb.Sheets[wb.SheetNames[0]];
+  var rows=window.XLSX.utils.sheet_to_json(sheet,{defval:""});
+  return rows.map(cleanImportRecord).filter(function(r){return Object.keys(r).length;});
+}
+
+function downloadTemplate(){
+  var headers=["First Name","Last Name","Age Group","Position Group","Specific Position","Foot","Height","Build","Pace","Agility","Strength","Stamina","Jumping","Composure","Shooting","Passing","Dribbling","Defending","Crossing","Vision","Positioning","Heading","Tackling"];
+  var sample=["Ethan","Cole","U16","Forward","ST","Right","average","athletic",8,8,7,8,7,8,8,7,8,5,6,7,8,7,5];
+  var csv=headers.join(",")+"\n"+sample.join(",")+"\n";
+  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="scoutlink-bulk-player-template.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importRowsFromFile(file){
+  var err=document.getElementById("formError"),suc=document.getElementById("formSuccess");
+  err.classList.remove("show");suc.classList.remove("show");
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var rows=/\.csv$/i.test(file.name)?parseWorkbookRows(String(reader.result||""),file.name):parseWorkbookRows(reader.result,file.name);
+      if(!rows.length){throw new Error("No usable player rows were found. Use the template columns and try again.");}
+      document.getElementById("bulkBody").innerHTML="";
+      rowCount=0;
+      rows.slice(0,50).forEach(function(row){addRow(row);});
+      suc.textContent=rows.length+" row"+(rows.length===1?"":"s")+" imported. Review the row status column, edit anything highlighted, then submit.";
+      suc.classList.add("show");
+      syncBulkScroll();
+    }catch(e){
+      err.textContent=e.message||"Could not import that file.";
+      err.classList.add("show");
+    }
+  };
+  reader.onerror=function(){
+    err.textContent="Could not read that file.";
+    err.classList.add("show");
+  };
+  if(/\.csv$/i.test(file.name))reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function validateRow(tr){
+  var data=getRowData(tr);
+  var missing=[];
+  if(!data.firstName)missing.push("first name");
+  if(!data.lastName)missing.push("last name");
+  if(!data.ageGroup)missing.push("age group");
+  if(!data.positionGroup)missing.push("position group");
+  if(data.ageGroup&&!/^U(7|8|9|10|11|12|13|14|15|16)$/i.test(data.ageGroup))missing.push("valid U7-U16 age group");
+  if(data.positionGroup&&["Goalkeeper","Defender","Midfielder","Forward"].indexOf(data.positionGroup)<0)missing.push("valid position group");
+  if(missing.length){
+    setStatus(tr,"Check: "+missing.join(", "),"error");
+    return false;
+  }
+  setStatus(tr,"Ready to submit","ok");
+  return true;
 }
 </script>
 <script>
@@ -278,8 +469,10 @@ function submitAll(){
   err.classList.remove("show");suc.classList.remove("show");
   var rows=Array.from(document.getElementById("bulkBody").querySelectorAll("tr"));
   if(!rows.length){err.textContent="Add at least one player.";err.classList.add("show");return;}
-  var players=rows.map(getRowData).filter(function(p){return p.firstName&&p.lastName;});
-  if(!players.length){err.textContent="Fill in First Name and Last Name.";err.classList.add("show");return;}
+  var invalidRows=rows.filter(function(row){return !validateRow(row);});
+  if(invalidRows.length){err.textContent="Fix the highlighted row status issues before submitting.";err.classList.add("show");return;}
+  var players=rows.map(getRowData);
+  if(!players.length){err.textContent="Fill in at least one player row.";err.classList.add("show");return;}
   players.forEach(function(p){p.ageGroup=String(p.ageGroup||"").toUpperCase();});
   var invalidAge=players.find(function(p){return !/^U(7|8|9|10|11|12|13|14|15|16)$/.test(p.ageGroup);});
   if(invalidAge){err.textContent="Every player must have an Age Group from U7 to U16.";err.classList.add("show");return;}
@@ -292,6 +485,7 @@ function submitAll(){
   if(typeof api==="function"){
     api("POST","/api/players/bulk",{players:players,assignedCoachId:_isSuperUser?document.getElementById("defaultCoachSelect").value:null}).then(function(res){
       suc.textContent=res.message||"Import complete.";suc.classList.add("show");
+      rows.forEach(function(row){setStatus(row,"Submitted","ok");});
       var rb=document.getElementById("resultsBox");rb.style.display="block";
       rb.innerHTML='<div class="table-card"><div style="padding:20px">'+
         '<p style="color:var(--accent);margin-bottom:12px;font-weight:600">'+(res.created?res.created.length:0)+' players added successfully.</p>'+
@@ -351,9 +545,12 @@ function loadCoachContext(){
 document.addEventListener("DOMContentLoaded",function(){
   initNav();
   loadCoachContext().finally(function(){addRow();addRow();addRow();});
-  document.getElementById("addRowBtn").addEventListener("click",addRow);
-  document.getElementById("addRowBtn2").addEventListener("click",addRow);
+  document.getElementById("addRowBtn").addEventListener("click",function(){addRow();});
+  document.getElementById("addRowBtn2").addEventListener("click",function(){addRow();});
   document.getElementById("submitAllBtn").addEventListener("click",submitAll);
+  document.getElementById("downloadTemplateBtn").addEventListener("click",downloadTemplate);
+  document.getElementById("importFileBtn").addEventListener("click",function(){document.getElementById("bulkFileInput").click();});
+  document.getElementById("bulkFileInput").addEventListener("change",function(e){importRowsFromFile(e.target.files&&e.target.files[0]);e.target.value="";});
   var wrap=document.querySelector(".bulk-table-wrap");
   var top=document.getElementById("bulkTopScroll");
   if(wrap&&top){
@@ -373,6 +570,7 @@ document.addEventListener("DOMContentLoaded",function(){
       var rowId=row?row.dataset.rowId:null;
       if(rowId){var sp=document.getElementById("specPos-"+rowId);if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(e.target.value);}
     }
+    if(e.target.closest("tr"))validateRow(e.target.closest("tr"));
   });
   document.getElementById("bulkBody").addEventListener("click",function(e){
     if(e.target.dataset.remove){var row=document.getElementById("row-"+e.target.dataset.remove);if(row)row.remove();}
@@ -383,7 +581,6 @@ document.addEventListener("DOMContentLoaded",function(){
 <script src="/frontend/js/phone-shell.js"></script>
 <script src="/frontend/js/phone-pages.js"></script>
 </body></html>
-
 
 
 
