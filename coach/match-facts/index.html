@@ -73,7 +73,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -342,7 +342,7 @@ function renderStep1(){
     '<span style="font-size:13px;font-weight:600">'+(p.first_name||'')+' '+(p.last_name||'')+'</span>'+
     '<span style="font-size:11px;color:#8b949e;margin-left:4px">'+(p.specific_position||p.primary_position||'')+'</span>'+
     '</label>';
-  }).join(''):'<p style="color:#8b949e">No players found. <a href="add-player.html" style="color:#1d9e75">Add players first</a>.</p>';
+  }).join(''):'<p style="color:#8b949e">No players found. <a href="/coach/add-player" style="color:#1d9e75">Add players first</a>.</p>';
   var fixtureOptions='<option value="">Enter match facts manually</option>'+(state.fixtures||[]).map(function(fx){
     return '<option value="'+fx.id+'"'+(state.fixtureId===fx.id?' selected':'')+'>'+fixtureLabel(fx)+'</option>';
   }).join('');

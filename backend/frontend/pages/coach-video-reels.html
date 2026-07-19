@@ -212,11 +212,18 @@ function loadPlayers(){
   api('GET','/api/coaches/my-players').then(function(d){
     var sel=document.getElementById('playerAssign');
     var linkSel=document.getElementById('uploadLinkPlayer');
-    (d.players||d.data||[]).forEach(function(p){
+    var players=[];
+    if(Array.isArray(d.players))players=d.players;
+    else if(Array.isArray(d.data))players=d.data;
+    else if(d.data&&Array.isArray(d.data.players))players=d.data.players;
+    else if(d.data&&d.data.data&&Array.isArray(d.data.data.players))players=d.data.data.players;
+    if(sel)sel.innerHTML='<option value="">Select player...</option>';
+    if(linkSel)linkSel.innerHTML='<option value="">Select player...</option>';
+    players.forEach(function(p){
       var opt=document.createElement('option');
       opt.value=p.id;
       opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' ('+(p.specific_position||p.position_group||'--')+')';
-      sel.appendChild(opt);
+      if(sel)sel.appendChild(opt);
       if(linkSel){
         var linkOpt=opt.cloneNode(true);
         linkSel.appendChild(linkOpt);
@@ -236,9 +243,10 @@ function generatePlayerUploadLink(){
   btn.textContent='Generating...';
   result.innerHTML='';
   api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(d){
-    var url=d.uploadUrl||d.url||'';
+    var payload=(d&&d.data)?d.data:d;
+    var url=payload.uploadUrl||payload.url||'';
     if(!url)throw new Error('Upload link was not returned.');
-    result.innerHTML='<div class="coach-v2-copy-row"><input class="form-input" id="generatedUploadLink" readonly value="'+url.replace(/"/g,'&quot;')+'"><button class="btn btn-primary" type="button" id="copyUploadLinkBtn">Copy Link</button></div><p>Expires '+(d.expiresAt?new Date(d.expiresAt).toLocaleDateString():'in 14 days')+'.</p>';
+    result.innerHTML='<div class="coach-v2-copy-row"><input class="form-input" id="generatedUploadLink" readonly value="'+url.replace(/"/g,'&quot;')+'"><button class="btn btn-primary" type="button" id="copyUploadLinkBtn">Copy Link</button></div><p>Expires '+(payload.expiresAt?new Date(payload.expiresAt).toLocaleDateString():'in 14 days')+'.</p>';
     var copy=document.getElementById('copyUploadLinkBtn');
     if(copy){
       copy.addEventListener('click',function(){

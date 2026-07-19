@@ -162,14 +162,15 @@
 <link rel="stylesheet" href="/frontend/css/phone-shell.css">
 <link rel="stylesheet" href="/frontend/css/phone-pages.css">
 <link rel="stylesheet" href="/frontend/css/coach-v2.css">
+<link rel="stylesheet" href="/frontend/css/scout-v1.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
 </script>
-</head><body class="coach-v2">
+</head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -334,12 +335,14 @@ var out=document.getElementById('videoUploadLinkResult');
 if(!btn||!out)return;
 btn.disabled=true;btn.textContent='Generating...';
 api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(r){
-var url=r.uploadUrl||'';
+var payload=(r&&r.data)?r.data:r;
+var url=payload.uploadUrl||payload.url||'';
+if(!url)throw new Error('Upload link was not returned.');
 out.style.display='block';
 out.innerHTML='<label style="font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;font-weight:800;display:block;margin-bottom:6px">Share this link</label>'+
 '<div style="display:flex;gap:8px;flex-wrap:wrap"><input id="generatedVideoUploadUrl" value="'+safe(url)+'" readonly style="flex:1;min-width:240px;background:#0d1117;border:1px solid var(--border,#30363d);border-radius:8px;color:var(--text,#e6edf3);padding:10px 12px">'+
 '<button class="btn btn-primary" type="button" onclick="copyGeneratedVideoUploadLink()">Copy link</button></div>'+
-'<div style="font-size:12px;color:#8b949e;margin-top:6px">Expires: '+safe(r.expiresAt)+'</div>';
+'<div style="font-size:12px;color:#8b949e;margin-top:6px">Expires: '+safe(payload.expiresAt||payload.expires_at||'14 days')+'</div>';
 btn.textContent='Generate new link';btn.disabled=false;
 }).catch(function(e){
 out.style.display='block';
@@ -638,10 +641,10 @@ var ovDesc=(descs.find(function(d2){return ov100>=d2[0];})||descs[descs.length-1
 var conf=confidenceInfo(matches.length);
 var coachEvidencePrompts='';
 if(Auth.type==='Coach'&&matches.length<5){
-coachEvidencePrompts+='<div class="confidence-note"><strong>Low data confidence:</strong> this rating is based on fewer than 5 games. Arrange fixtures and add more match facts so scouts can trust the trend. <a href="match-facts.html" style="color:#1d9e75;font-weight:800">Add match facts</a></div>';
+coachEvidencePrompts+='<div class="confidence-note"><strong>Low data confidence:</strong> this rating is based on fewer than 5 games. Arrange fixtures and add more match facts so scouts can trust the trend. <a href="/coach/match-facts" style="color:#1d9e75;font-weight:800">Add match facts</a></div>';
 }
 if(Auth.type==='Coach'&&!fixtures.length){
-coachEvidencePrompts+='<div class="confidence-note"><strong>No upcoming fixtures:</strong> add fixtures so scouts can see where and when this player can be watched. <a href="coach-fixtures.html" style="color:#1d9e75;font-weight:800">Add fixtures</a></div>';
+coachEvidencePrompts+='<div class="confidence-note"><strong>No upcoming fixtures:</strong> add fixtures so scouts can see where and when this player can be watched. <a href="/coach/fixtures" style="color:#1d9e75;font-weight:800">Add fixtures</a></div>';
 }
 
 // Stats
@@ -911,6 +914,8 @@ console.error('[PlayerProfile]',e);
 });
 });
 </script>
+<script src="/frontend/js/coach-v2.js"></script>
+<script src="/frontend/js/scout-v1.js"></script>
 <script src="/frontend/js/phone-routes.js"></script>
 <script src="/frontend/js/phone-shell.js"></script>
 <script src="/frontend/js/phone-pages.js"></script>

@@ -12,6 +12,7 @@
     'coach-notifications.html': 'notifications',
     'coach-settings.html': 'settings',
     'match-facts.html': 'match-facts',
+    'player-profile.html': 'profile',
     'coach-report-concern.html': 'report-a-concern',
     'report-concern.html': 'report-a-concern'
   };
@@ -24,15 +25,23 @@
     return path().split('/').pop() || '';
   }
 
-  function isCoachRoute() {
-    var p = path();
-    if (p.indexOf('/coach/') === 0) return true;
-    if (COACH_PAGE_FILES[fileName()]) return true;
+  function isCoachUser() {
     try {
-      return (window.Auth && window.Auth.type === 'Coach') || localStorage.getItem('sl_type') === 'Coach';
+      return (window.Auth && window.Auth.type === 'Coach') ||
+        localStorage.getItem('sl_type') === 'Coach' ||
+        sessionStorage.getItem('demoRole') === 'coach';
     } catch (e) {
       return false;
     }
+  }
+
+  function isCoachRoute() {
+    var p = path();
+    if (p.indexOf('/coach/') === 0) return true;
+    if (p.indexOf('/player/profile') === 0) return isCoachUser();
+    if (fileName() === 'player-profile.html') return isCoachUser();
+    if (COACH_PAGE_FILES[fileName()]) return true;
+    return isCoachUser();
   }
 
   function pageKey() {
@@ -48,6 +57,8 @@
     if (p.indexOf('/coach/report-a-concern') === 0) return 'report-a-concern';
     if (p.indexOf('/coach/settings') === 0) return 'settings';
     if (p.indexOf('/coach/match-facts') === 0) return 'match-facts';
+    if (p.indexOf('/player/profile') === 0 && isCoachUser()) return 'profile';
+    if (fileName() === 'player-profile.html' && isCoachUser()) return 'profile';
     return COACH_PAGE_FILES[fileName()] || 'coach';
   }
 
@@ -55,6 +66,34 @@
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+
+  function hrefFor(target) {
+    target = String(target || '');
+    if (!target || target.charAt(0) === '#' || target.charAt(0) === '/' || /^https?:/i.test(target)) return target;
+    var parts = target.split('?');
+    var base = parts[0];
+    var query = parts.length > 1 ? '?' + parts.slice(1).join('?') : '';
+    var map = {
+      'coach-dashboard.html': '/coach/dashboard',
+      'coach-my-players.html': '/coach/my-players',
+      'add-player.html': '/coach/add-player',
+      'bulk-add-players.html': '/coach/bulk-add-players',
+      'match-facts.html': '/coach/match-facts',
+      'coach-fixtures.html': '/coach/fixtures',
+      'coach-video-reels.html': '/coach/video-reels',
+      'coach-chat.html': '/coach/chat',
+      'coach-notifications.html': '/coach/notifications',
+      'coach-settings.html': '/coach/settings',
+      'coach-report-concern.html': '/coach/report-a-concern',
+      'report-concern.html': '/coach/report-a-concern',
+      'player-profile.html': '/player/profile'
+    };
+    return (map[base] || target) + (map[base] ? query : '');
+  }
+
+  function profileHref(id) {
+    return hrefFor('player-profile.html?id=' + encodeURIComponent(id || ''));
   }
 
   function money(value) {
@@ -98,7 +137,7 @@
     var comp = completion(p);
     var position = p.specific_position || p.primary_position || p.position_group || 'Position TBC';
     var age = p.age_group || (p.age ? p.age + ' yrs' : 'Age TBC');
-    var url = opts.url || ('player-profile.html?id=' + encodeURIComponent(p.id || ''));
+    var url = opts.url || profileHref(p.id || '');
     var coachControl = opts.coachControl || '';
     return '<article class="coach-v2-player-card">' +
       '<div class="coach-v2-player-top">' +
@@ -146,7 +185,8 @@
       notifications: 'Notifications',
       'report-a-concern': 'Report a concern',
       settings: 'Settings',
-      'match-facts': 'Match facts'
+      'match-facts': 'Match facts',
+      profile: 'Player profile'
     };
     return map[key] || 'Coach';
   }
@@ -155,6 +195,7 @@
     var content = document.querySelector('.page-content');
     if (!content || content.querySelector('.coach-v2-hero')) return;
     var key = pageKey();
+    if (key === 'profile') return;
     var copy = {
       dashboard: ['Welcome' + (firstName() ? ', ' + firstName() : ''), 'Manage your squad, fixtures, match facts and messages from one calm coach workspace.'],
       'my-players': ['Your squad, clearly organised.', 'Search, review and update player profiles without fighting tables or clutter.'],
@@ -188,7 +229,7 @@
       ]
     }[key] || [];
     var actionHtml = actions.map(function (a) {
-      return '<a class="btn ' + a[2] + '" href="' + esc(a[1]) + '">' + esc(a[0]) + '</a>';
+        return '<a class="btn ' + a[2] + '" href="' + esc(hrefFor(a[1])) + '">' + esc(a[0]) + '</a>';
     }).join('');
     var hero = document.createElement('section');
     hero.className = 'coach-v2-hero';
@@ -216,7 +257,7 @@
     nav.setAttribute('aria-label', 'Coach quick navigation');
     nav.innerHTML = items.map(function (item) {
       var active = key === item[3] || (item[3] === 'settings' && ['video-reels', 'chat', 'notifications', 'settings', 'match-facts', 'bulk-add-players'].indexOf(key) >= 0);
-      return '<a class="' + (active ? 'active ' : '') + (item[3] === 'add-player' ? 'add' : '') + '" href="' + item[1] + '"><span>' + esc(item[2]) + '</span>' + esc(item[0]) + '</a>';
+      return '<a class="' + (active ? 'active ' : '') + (item[3] === 'add-player' ? 'add' : '') + '" href="' + esc(hrefFor(item[1])) + '"><span>' + esc(item[2]) + '</span>' + esc(item[0]) + '</a>';
     }).join('');
     document.body.appendChild(nav);
   }
@@ -248,7 +289,7 @@
       ['Chat', 'Scout messages', 'coach-chat.html', 'CH'],
       ['Video reels', 'Evidence clips', 'coach-video-reels.html', 'VR']
     ].map(function (a) {
-      return '<a class="coach-v2-action-card" href="' + esc(a[2]) + '"><span>' + esc(a[3]) + '</span><div><h3>' + esc(a[0]) + '</h3><p>' + esc(a[1]) + '</p></div></a>';
+      return '<a class="coach-v2-action-card" href="' + esc(hrefFor(a[2])) + '"><span class="coach-v2-action-icon">' + esc(a[3]) + '</span><div><h3>' + esc(a[0]) + '</h3><p>' + esc(a[1]) + '</p></div></a>';
     }).join('');
     var hero = content.querySelector('.coach-v2-hero');
     content.insertBefore(grid, hero ? hero.nextSibling : content.firstChild);
@@ -295,10 +336,11 @@
     var physicalCard = cardByHeading('physical') || cards[3] || cards[2];
     var attributesCard = cardByHeading('attribute') || cards[cards.length - 1];
     var steps = [
-      { label: 'Personal details', helper: 'Player identity, contact details and age group.', nodes: [personalCard] },
-      { label: 'Football profile', helper: 'Position, preferred foot and coach assignment.', nodes: [positionCard, assignment].filter(Boolean) },
-      { label: 'Physical profile and attributes', helper: 'Height, build and coach ratings out of 10.', nodes: [physicalCard, attributesCard].filter(Boolean) },
-      { label: 'Review and create', helper: 'Check the profile summary before creating the player.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
+      { label: 'Identity', helper: 'Player name and age group.', nodes: [personalCard] },
+      { label: 'Position', helper: 'Position, preferred foot and coach assignment.', nodes: [positionCard, assignment].filter(Boolean) },
+      { label: 'Physical profile', helper: 'Height and build profile.', nodes: [physicalCard].filter(Boolean) },
+      { label: 'Attributes', helper: 'Coach ratings out of 10.', nodes: [attributesCard].filter(Boolean) },
+      { label: 'Review and save', helper: 'Check the football profile summary before creating the player.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
     ];
     var owned = [];
     steps.forEach(function (step) {
@@ -307,14 +349,14 @@
       });
     });
     cards.forEach(function (card) {
-      if (owned.indexOf(card) === -1) steps[2].nodes.push(card);
+        if (owned.indexOf(card) === -1) steps[3].nodes.push(card);
     });
 
     var tracker = document.createElement('div');
     tracker.className = 'coach-v2-stepper';
     tracker.setAttribute('role', 'tablist');
     tracker.innerHTML = steps.map(function (step, i) {
-      return '<button type="button" class="coach-v2-step" data-step="' + i + '" role="tab">Step ' + (i + 1) + ' ' + esc(step.label) + '</button>';
+      return '<button type="button" class="coach-v2-step" data-step="' + i + '" role="tab">' + (i + 1) + ' ' + esc(step.label) + '</button>';
     }).join('');
     var caption = document.createElement('p');
     caption.className = 'coach-v2-wizard-caption';
@@ -423,7 +465,7 @@
       '<div><span class="coach-v2-chip">Bulk player management</span><h2>Add or update players in one controlled workspace.</h2><p>Use the add mode for new players. Existing player edits stay tied to their player ID and should be made through the current profile edit flow until the transactional bulk-edit endpoint is available.</p></div>' +
       '<div class="coach-v2-bulk-actions">' +
       '<button type="button" class="btn btn-primary is-active" data-bulk-mode="add">Add new players</button>' +
-      '<a class="btn btn-outline" href="coach-my-players.html">Edit existing players</a>' +
+      '<a class="btn btn-outline" href="' + esc(hrefFor('coach-my-players.html')) + '">Edit existing players</a>' +
       '<button type="button" class="btn btn-outline" data-download-template>Download template</button>' +
       '</div>';
     content.insertBefore(toolbar, firstCard || content.firstChild);
@@ -466,6 +508,24 @@
     });
   }
 
+  function stripSensitiveDisplay() {
+    if (!document.body || !document.body.classList.contains('coach-v2')) return;
+    var banned = /\b(email|e-mail|date of birth|dob|guardian|parent)\b/i;
+    document.querySelectorAll('th,td,label,dt,span,small,p,div').forEach(function (el) {
+      if (!el || el.closest('script,style')) return;
+      if (el.children && el.children.length > 1 && !/^(TH|TD|LABEL|DT)$/i.test(el.tagName || '')) return;
+      var text = (el.textContent || '').trim();
+      if (!text || text.length > 80 || !banned.test(text)) return;
+      var keep = el.closest('.privacy-copy, .legal-copy, .registration-copy');
+      if (keep) return;
+      var row = el.closest('tr,.form-group,.physical-metric,.profile-row,.detail-row,.value-factor-row,.coach-v2-review-card div');
+      if (row && !row.dataset.coachV2SensitiveHidden) {
+        row.dataset.coachV2SensitiveHidden = '1';
+        row.classList.add('coach-v2-sensitive-hidden');
+      }
+    });
+  }
+
   function refresh() {
     enable();
     if (!document.body || !document.body.classList.contains('coach-v2')) return;
@@ -476,6 +536,7 @@
     setupAddPlayerWizard();
     enhanceBulkImport();
     removeLiveModePresentation();
+    stripSensitiveDisplay();
     addBottomNav();
     patchChatRefreshHero();
     bindHeroActions();
@@ -489,12 +550,12 @@
 
   function installRenderers() {
     window.renderCoachMobilePlayerCard = function (p) {
-      return renderPlayerCard(p, { url: 'player-profile.html?id=' + encodeURIComponent(p.id || '') });
+      return renderPlayerCard(p, { url: profileHref(p.id || '') });
     };
     window.renderCoachMyPlayerCard = function (p, opts) {
       opts = opts || {};
       return renderPlayerCard(p, {
-        url: opts.url || ('player-profile.html?id=' + encodeURIComponent(p.id || '')),
+        url: opts.url || profileHref(p.id || ''),
         coachControl: opts.coachControl
       });
     };

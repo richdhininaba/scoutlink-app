@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
@@ -25,7 +25,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:#1d9e75">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -48,8 +48,8 @@
 <div class="table-header">
 <div><h3>My squad</h3></div>
 <div class="coach-dashboard-actions" style="display:flex;gap:8px;flex-wrap:wrap">
-<a href="bulk-add-players.html" class="btn btn-sm btn-outline">Bulk import</a>
-<a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
+<a href="/coach/bulk-add-players" class="btn btn-sm btn-outline">Bulk import</a>
+<a href="/coach/add-player" class="btn btn-sm btn-primary">+ Add player</a>
 </div>
 </div>
 <div id="myPlayers"><div class="loading-state"><div class="spinner"></div></div></div>
@@ -110,7 +110,7 @@ return '<article class="mobile-list-card">'+
 '<div class="mobile-list-head"><div><h4>'+escHtml(name)+'</h4><p>'+escHtml(p.age_group||'Age group TBC')+' - '+escHtml(p.specific_position||p.primary_position||'Position TBC')+'</p></div><strong style="color:'+ratingCol(ovPct)+'">'+displayOverall100(p.overall_rating)+'</strong></div>'+
 '<div class="mobile-fact-grid"><span><b>'+escHtml(val)+'</b><small>Value</small></span><span><b>'+escHtml(p.appearances||0)+'</b><small>Apps</small></span><span><b>'+escHtml(p.goals||0)+'</b><small>Goals</small></span></div>'+
 '<div class="mobile-progress"><div><span>Profile completion</span><b>'+comp+'%</b></div><i style="width:'+comp+'%"></i></div>'+
-'<a class="btn btn-sm btn-outline" href="player-profile.html?id='+p.id+'">View / edit profile</a>'+
+'<a class="btn btn-sm btn-outline" href="/player/profile?id='+p.id+'">View / edit profile</a>'+
 '</article>';
 }
 var seasonInfo={currentSeason:'',nextSeason:''};
@@ -220,7 +220,7 @@ async function loadCoachData(){
     var listEl=document.getElementById('myPlayers');
     if(!listEl) return;
     if(!players.length){
-      listEl.innerHTML='<div style="text-align:center;padding:32px;color:#546E7A"><p style="margin-bottom:16px">No players in your squad yet.</p><a href="add-player.html" class="btn btn-primary">Add your first player</a></div>';
+      listEl.innerHTML='<div style="text-align:center;padding:32px;color:#546E7A"><p style="margin-bottom:16px">No players in your squad yet.</p><a href="/coach/add-player" class="btn btn-primary">Add your first player</a></div>';
       return;
     }
     var desktopTable='<div class="coach-squad-desktop" style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Age group</th><th>Position</th><th>Overall</th><th>Value</th><th>Apps</th><th>Goals</th><th>Assists</th></tr></thead><tbody>'+
@@ -317,7 +317,6 @@ document.getElementById('seasonSummaryModal').style.display='flex';
 <script src="/frontend/js/phone-shell.js"></script>
 <script src="/frontend/js/phone-pages.js"></script>
 </body></html>
-
 
 
 

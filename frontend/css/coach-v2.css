@@ -1359,3 +1359,441 @@ body.coach-v2.coach-page-match-facts .score-card {
     display: none;
   }
 }
+
+/* V3 design-board alignment overrides. Keep at the end so legacy page styles yield. */
+body.coach-v2 {
+  --coach-sidebar-w: 165px;
+  font-size: 12px;
+}
+
+body.coach-v2 .sidebar {
+  width: var(--coach-sidebar-w) !important;
+  padding: 0 !important;
+  background: #ffffff !important;
+}
+
+body.coach-v2 .dashboard-main {
+  margin-left: var(--coach-sidebar-w) !important;
+}
+
+body.coach-v2 .sidebar-logo {
+  height: 64px !important;
+  padding: 0 18px !important;
+  border-bottom: 1px solid var(--coach-line) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+body.coach-v2 .sidebar-logo a {
+  font-size: 15px !important;
+  letter-spacing: -.04em !important;
+}
+
+body.coach-v2 .sidebar-nav {
+  padding: 14px 12px !important;
+}
+
+body.coach-v2 .coach-nav-group {
+  margin: 0 0 13px !important;
+}
+
+body.coach-v2 .coach-nav-label {
+  margin: 0 8px 7px !important;
+  font-size: 7px !important;
+  letter-spacing: .12em !important;
+}
+
+body.coach-v2 .nav-item {
+  min-height: 36px !important;
+  height: 36px !important;
+  gap: 9px !important;
+  padding: 0 10px !important;
+  border-radius: 10px !important;
+  font-size: 8.5px !important;
+  font-weight: 850 !important;
+}
+
+body.coach-v2 .nav-ico,
+body.coach-v2 .nav-item > span:first-child {
+  width: 22px !important;
+  height: 22px !important;
+  flex-basis: 22px !important;
+  border-radius: 7px !important;
+}
+
+body.coach-v2 .nav-ico svg,
+body.coach-v2 .nav-item > span:first-child svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+body.coach-v2 .sidebar-user {
+  margin: auto 0 0 !important;
+  padding: 12px !important;
+}
+
+body.coach-v2 .user-avatar {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 999px !important;
+  font-size: 9px !important;
+}
+
+body.coach-v2 .user-name {
+  font-size: 9.5px !important;
+}
+
+body.coach-v2 .user-role {
+  font-size: 8px !important;
+}
+
+body.coach-v2 .topbar {
+  height: 64px !important;
+  min-height: 64px !important;
+  padding: 0 20px !important;
+}
+
+body.coach-v2 .topbar-title,
+body.coach-v2 .topbar h1,
+body.coach-v2 .topbar h2,
+body.coach-v2 .topbar h3 {
+  font-size: 14px !important;
+}
+
+body.coach-v2 .page-content {
+  padding: 18px 20px 30px !important;
+}
+
+body.coach-v2 .coach-v2-hero {
+  margin-bottom: 12px !important;
+  padding: 20px !important;
+  border-radius: 18px !important;
+  align-items: flex-end !important;
+  background:
+    radial-gradient(circle at 95% 0, rgba(56,189,248,.17), transparent 34%),
+    linear-gradient(135deg, #07111f, #123d64 68%, #087a61 130%) !important;
+}
+
+body.coach-v2 .coach-v2-hero h1,
+body.coach-v2 .coach-v2-hero h2 {
+  font-size: 22px !important;
+  line-height: 1.05 !important;
+  margin: 8px 0 4px !important;
+}
+
+body.coach-v2 .coach-v2-hero p {
+  font-size: 8.5px !important;
+  line-height: 1.5 !important;
+  max-width: 620px !important;
+}
+
+body.coach-v2 .coach-v2-chip {
+  min-height: 18px !important;
+  line-height: 18px !important;
+  padding: 0 8px !important;
+  font-size: 7.5px !important;
+  margin: 0 !important;
+}
+
+body.coach-v2 .coach-v2-actions .btn {
+  min-height: 34px !important;
+  min-width: 90px !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  font-size: 8.5px !important;
+}
+
+body.coach-v2 .coach-v2-action-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 12px 0 12px !important;
+}
+
+body.coach-v2 .coach-v2-action-card {
+  min-height: 88px !important;
+  padding: 12px !important;
+  border-radius: 15px !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  gap: 10px !important;
+}
+
+body.coach-v2 .coach-v2-action-card .coach-v2-action-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 10px !important;
+  font-size: 9px !important;
+  margin: 0 !important;
+}
+
+body.coach-v2 .coach-v2-action-card h3 {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+}
+
+body.coach-v2 .coach-v2-action-card p {
+  margin-top: 5px !important;
+  font-size: 8px !important;
+  line-height: 1.3 !important;
+}
+
+body.coach-v2 .kpi-grid {
+  gap: 10px !important;
+}
+
+body.coach-v2 .kpi-card {
+  min-height: 92px !important;
+  padding: 14px !important;
+  border-radius: 14px !important;
+}
+
+body.coach-v2 .kpi-card .kpi-label,
+body.coach-v2 .metric-label {
+  font-size: 8px !important;
+}
+
+body.coach-v2 .kpi-card .kpi-value,
+body.coach-v2 .metric {
+  font-size: 23px !important;
+}
+
+body.coach-v2 .coach-v2-stepper {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+body.coach-v2 .coach-v2-step {
+  min-height: 34px !important;
+  border-radius: 999px !important;
+  font-size: 9px !important;
+}
+
+body.coach-v2 .coach-v2-sensitive-hidden {
+  display: none !important;
+}
+
+/* Final Coach V3 hardening. These rules deliberately sit late in the file so
+   older page-level desktop/mobile rules cannot collapse the design-board cards. */
+body.coach-v2 .coach-v2-hero {
+  box-sizing: border-box !important;
+  min-height: 90px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+}
+
+body.coach-v2 .coach-v2-hero > div:first-child {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+}
+
+body.coach-v2 .coach-v2-hero h1,
+body.coach-v2 .coach-v2-hero h2 {
+  margin: 0 !important;
+}
+
+body.coach-v2 .coach-v2-hero p {
+  margin: 0 !important;
+}
+
+body.coach-v2 .coach-v2-chip {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  min-height: 18px !important;
+  padding: 0 9px !important;
+  font-size: 7.5px !important;
+  line-height: 18px !important;
+}
+
+body.coach-v2 .coach-v2-actions {
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  margin-left: auto !important;
+}
+
+body.coach-v2 .coach-v2-actions .btn {
+  height: 36px !important;
+  min-height: 36px !important;
+  min-width: 102px !important;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 8.5px !important;
+  font-weight: 950 !important;
+}
+
+body.coach-v2 .coach-v2-action-grid {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin: 12px 0 18px !important;
+  padding: 0 !important;
+}
+
+body.coach-v2 .coach-v2-action-card {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  min-height: 94px !important;
+  padding: 13px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--coach-line) !important;
+  background: var(--coach-surface) !important;
+  color: var(--coach-text) !important;
+  text-decoration: none !important;
+  overflow: hidden !important;
+  box-shadow: var(--coach-shadow-sm) !important;
+}
+
+body.coach-v2 .coach-v2-action-card .coach-v2-action-icon {
+  display: inline-flex !important;
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 30px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  background: #e7fff6 !important;
+  color: var(--coach-green) !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  margin: 0 !important;
+}
+
+body.coach-v2 .coach-v2-action-card > div {
+  min-width: 0 !important;
+}
+
+body.coach-v2 .coach-v2-action-card h3 {
+  margin: 0 !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  color: var(--coach-text) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.coach-v2 .coach-v2-action-card p {
+  margin: 5px 0 0 !important;
+  font-size: 8px !important;
+  line-height: 1.3 !important;
+  color: var(--coach-muted) !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+}
+
+body.coach-v2 .coach-v2-stepper {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+body.coach-v2 .coach-v2-step {
+  box-sizing: border-box !important;
+  white-space: normal !important;
+}
+
+body.coach-v2 .bulk-row-status {
+  min-width: 130px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+body.coach-v2 .bulk-row-status.is-ok {
+  background: #dcfce7;
+  color: #047857;
+}
+
+body.coach-v2 .bulk-row-status.is-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+  body.coach-v2 .coach-v2-hero {
+    display: block !important;
+    min-height: 0 !important;
+  }
+
+  body.coach-v2 .coach-v2-actions {
+    margin: 14px 0 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  body.coach-v2 .coach-v2-actions .btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.coach-v2 .coach-v2-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.coach-v2 .coach-v2-action-card {
+    min-height: 92px !important;
+  }
+
+  body.coach-v2 .coach-v2-stepper {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+
+  body.coach-v2 .coach-v2-step {
+    flex: 0 0 auto !important;
+    min-width: 118px !important;
+  }
+}
+
+@media (max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+  body.coach-v2 .dashboard-main {
+    margin-left: 0 !important;
+  }
+
+  body.coach-v2 .page-content {
+    padding: 78px 14px 92px !important;
+  }
+
+  body.coach-v2 .coach-v2-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.coach-v2 .coach-v2-hero {
+    padding: 16px !important;
+  }
+
+  body.coach-v2 .coach-v2-hero h1,
+  body.coach-v2 .coach-v2-hero h2 {
+    font-size: 20px !important;
+  }
+
+  body.coach-v2 .coach-v2-hero p {
+    font-size: 12px !important;
+  }
+
+  body.coach-v2 .coach-v2-stepper {
+    display: flex !important;
+    overflow-x: auto !important;
+  }
+}

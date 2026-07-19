@@ -88,7 +88,7 @@ body:not(.super-user) .coach-col{display:none;}
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">ScoutLink</a></div>
+  <div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">ScoutLink</a></div>
   <div class="sidebar-nav" id="sidebarNav"></div>
   <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -490,7 +490,7 @@ function submitAll(){
       rb.innerHTML='<div class="table-card"><div style="padding:20px">'+
         '<p style="color:var(--accent);margin-bottom:12px;font-weight:600">'+(res.created?res.created.length:0)+' players added successfully.</p>'+
         (res.errors&&res.errors.length?'<p style="color:#f85149">'+res.errors.length+' errors: '+res.errors.map(function(e){return(e.player||"Row")+"("+e.error+")";}).join(", ")+"</p>":"")+
-        '<a href="coach-my-players.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex">View All Players</a></div></div>';
+        '<a href="/coach/my-players" class="btn btn-primary" style="margin-top:16px;display:inline-flex">View All Players</a></div></div>';
       btn.textContent="Submit All Players";btn.disabled=false;
     }).catch(function(e){
       err.textContent=e.message||"Failed to submit.";err.classList.add("show");

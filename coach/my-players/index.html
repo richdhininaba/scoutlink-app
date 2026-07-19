@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
@@ -29,7 +29,7 @@
 </head><body>
 <div class="dashboard">
 <nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+<div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
 <div class="sidebar-nav" id="sidebarNav"></div>
 <div class="sidebar-user" id="sidebarUser"></div>
 </nav>
@@ -37,7 +37,7 @@
 <div class="topbar">
 <span class="topbar-title">My players</span>
 <div class="topbar-right">
-<a href="add-player.html" class="btn btn-sm btn-primary">+ Add player</a>
+<a href="/coach/add-player" class="btn btn-sm btn-primary">+ Add player</a>
 <button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
 <button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
 </div>
@@ -122,7 +122,7 @@ document.getElementById('kpiValue').textContent='--';
 }
 renderPlayers();
 }catch(e){
-document.getElementById('playersContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="add-player.html" class="btn btn-primary" style="margin-top:14px">Add your first player</a></div>';
+document.getElementById('playersContainer').innerHTML='<div style="text-align:center;padding:48px;color:#546E7A"><p>No players yet.</p><a href="/coach/add-player" class="btn btn-primary" style="margin-top:14px">Add your first player</a></div>';
 document.getElementById('kpiTotal').textContent='0';
 console.error(e);
 }
@@ -212,7 +212,7 @@ keyAttrs.map(function(a){var pct2=attrPct(a[1]);var col=attrColor(pct2);return'<
 '</div>'+
 coachAssignControl(p)+
 '<div style="display:flex;gap:8px;margin-top:10px">'+
-'<a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline" style="flex:1;justify-content:center">View profile</a>'+
+'<a href="/player/profile?id='+p.id+'" class="btn btn-sm btn-outline" style="flex:1;justify-content:center">View profile</a>'+
 '</div>'+
 '</div>';
 });
@@ -235,7 +235,7 @@ html+='<tr>'+
 '<td>'+(p.assists||0)+'</td>'+
 '<td style="color:#1d9e75;font-weight:700">'+(p.transfer_value?formatValue(p.transfer_value):'Calculating...')+'</td>'+
 (isSuperUser?'<td>'+coachAssignControl(p)+'</td>':'')+
-'<td><a href="player-profile.html?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td>'+
+'<td><a href="/player/profile?id='+p.id+'" class="btn btn-sm btn-outline">View</a></td>'+
 '</tr>';
 });
 html+='</tbody></table></div>';
@@ -246,7 +246,6 @@ document.getElementById('playersContainer').innerHTML=html;
 <script src="/frontend/js/phone-shell.js"></script>
 <script src="/frontend/js/phone-pages.js"></script>
 </body></html>
-
 
 
 

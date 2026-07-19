@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
@@ -50,7 +50,7 @@
 </script>
 </head><body>
 <div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--green)">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="/" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--green)">Link</span></a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
 <div class="dashboard-main">
 <div class="topbar"><span class="topbar-title">Chat</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
 <div class="page-content">
@@ -91,7 +91,7 @@ function threadInitials(name){var parts=String(name||'').trim().split(/\s+/).fil
 function threadTime(t){var raw=t.lastMessageAt||t.last_message_at||t.updated_at||t.created_at;if(!raw)return '';return new Date(raw).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}
 function renderThreads(){
  var box=document.getElementById('threadList');
- if(!_threads.length){box.innerHTML='<div class="chat-empty-mobile"><h3>No chats yet</h3><p>Scouts can start a conversation after adding one of your players to their pipeline.</p><a class="btn btn-sm btn-outline" href="coach-my-players.html">View squad</a></div>';return;}
+ if(!_threads.length){box.innerHTML='<div class="chat-empty-mobile"><h3>No chats yet</h3><p>Scouts can start a conversation after adding one of your players to their pipeline.</p><a class="btn btn-sm btn-outline" href="/coach/my-players">View squad</a></div>';return;}
  box.innerHTML=_threads.map(function(t,i){var p=t.players||{},name=otherName(t),player=((p.first_name||'')+' '+(p.last_name||'')).trim();var preview=t.lastMessagePreview||('About '+(player||'a player'));return '<div class="thread-item '+(_activeThread&&_activeThread.id===t.id?'active':'')+'" data-thread="'+t.id+'"><div class="thread-avatar">'+esc(threadInitials(name)||'SL')+'</div><div class="thread-main"><div class="thread-title">'+esc(name)+(t.unreadCount?'<span class="unread-pill">'+t.unreadCount+'</span>':'')+'</div><div class="thread-meta">'+esc(preview)+'</div><div class="thread-meta">'+esc(player||'Player')+' - '+esc(p.team_name||'Team')+'</div></div><div class="thread-side"><span>'+esc(threadTime(t))+'</span><span aria-hidden="true">&rsaquo;</span></div></div>';}).join('');
  box.querySelectorAll('[data-thread]').forEach(function(el){el.addEventListener('click',function(){selectThread(this.getAttribute('data-thread'));});});
 }
@@ -174,7 +174,6 @@ document.addEventListener('DOMContentLoaded',function(){initNav();loadThreads();
 <script src="/frontend/js/phone-shell.js"></script>
 <script src="/frontend/js/phone-pages.js"></script>
 </body></html>
-
 
 
 
