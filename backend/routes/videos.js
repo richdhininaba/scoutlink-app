@@ -46,6 +46,42 @@ function tokenHash(token) {
   return crypto.createHash('sha256').update(String(token || '')).digest('hex');
 }
 
+function isStratexAccount(user) {
+  const accountType = String(user?.accountType || user?.role || '').toLowerCase();
+  return accountType === 'stratex' || accountType === 'stratex admin' || accountType === 'stratex_admin';
+}
+
+function uploadTokenSecret() {
+  return config.jwtSecret || config.secretKey || null;
+}
+
+function signUploadPayload(payload) {
+  const secret = uploadTokenSecret();
+  if (!secret) return null;
+  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(encoded).digest('base64url');
+  return 'slv1.' + encoded + '.' + signature;
+}
+
+function verifyUploadPayload(rawToken) {
+  try {
+    if (!String(rawToken || '').startsWith('slv1.')) return null;
+    const secret = uploadTokenSecret();
+    if (!secret) return null;
+    const parts = String(rawToken).split('.');
+    if (parts.length !== 3) return null;
+    const expected = crypto.createHmac('sha256', secret).update(parts[1]).digest('base64url');
+    const given = Buffer.from(parts[2]);
+    const want = Buffer.from(expected);
+    if (given.length !== want.length || !crypto.timingSafeEqual(given, want)) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    if (!payload.exp || Number(payload.exp) < Date.now()) return null;
+    return payload;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function loadPlayerForUploadLink(playerId) {
   const { data, error } = await supabase
     .from('players')
@@ -63,7 +99,7 @@ async function assertCanManagePlayerVideo(req, playerId) {
     e.status = 404;
     throw e;
   }
-  if (req.user.accountType === 'Stratex') return { player, coach: null };
+  if (isStratexAccount(req.user)) return { player, coach: null };
   const coach = await getCoachTeam(req.user.id);
   const sameTeamId = coach && coach.team_id && player.team_id === coach.team_id;
   const sameTeam = coach && (
@@ -80,6 +116,22 @@ async function assertCanManagePlayerVideo(req, playerId) {
 }
 
 async function getActiveUploadLink(rawToken) {
+  const stateless = verifyUploadPayload(rawToken);
+  if (stateless) {
+    const player = await loadPlayerForUploadLink(stateless.playerId);
+    if (!player || player.is_active === false) return null;
+    return {
+      id: null,
+      player_id: player.id,
+      coach_id: stateless.coachId || null,
+      team_id: stateless.teamId || player.team_id || null,
+      created_by: stateless.createdBy || null,
+      created_by_type: stateless.createdByType || 'Coach',
+      expires_at: new Date(Number(stateless.exp)).toISOString(),
+      is_active: true,
+      players: player
+    };
+  }
   const hash = tokenHash(rawToken);
   const { data, error } = await supabase
     .from('player_video_upload_links')
@@ -122,34 +174,57 @@ async function attachSignedVideoUrls(rows) {
   return list;
 }
 
-router.post('/upload-link', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
+router.post('/upload-link', requireAuth, requireRole('Coach','Stratex','Stratex Admin'), async (req, res) => {
   try {
     const { playerId } = req.body;
     if (!playerId) return res.status(400).json({ error: 'playerId required' });
     const { player, coach } = await assertCanManagePlayerVideo(req, playerId);
     const rawToken = crypto.randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-    const createdByType = req.user.accountType === 'Stratex' ? 'Stratex' : 'Coach';
+    const createdByType = isStratexAccount(req.user) ? 'Stratex' : 'Coach';
+    const linkPayload = {
+      player_id: player.id,
+      coach_id: createdByType === 'Coach' ? req.user.id : null,
+      team_id: player.team_id || coach?.team_id || null,
+      token_hash: tokenHash(rawToken),
+      expires_at: expiresAt,
+      created_by: req.user.id,
+      created_by_type: createdByType,
+      is_active: true
+    };
     const { data, error } = await supabase
       .from('player_video_upload_links')
-      .insert({
-        player_id: player.id,
-        coach_id: req.user.accountType === 'Coach' ? req.user.id : null,
-        team_id: player.team_id || coach?.team_id || null,
-        token_hash: tokenHash(rawToken),
-        expires_at: expiresAt,
-        created_by: req.user.id,
-        created_by_type: createdByType,
-        is_active: true
-      })
+      .insert(linkPayload)
       .select('id,expires_at')
       .single();
-    if (error) throw error;
+    let uploadToken = rawToken;
+    let uploadLinkId = data?.id || null;
+    let responseExpiresAt = data?.expires_at || expiresAt;
+    let linkMode = 'database';
+    if (error) {
+      const fallback = signUploadPayload({
+        playerId: player.id,
+        coachId: linkPayload.coach_id,
+        teamId: linkPayload.team_id,
+        createdBy: req.user.id,
+        createdByType,
+        exp: new Date(expiresAt).getTime()
+      });
+      if (!fallback) throw error;
+      console.warn('[Videos upload-link] database link insert failed; using signed token fallback', { code: error.code, message: error.message });
+      uploadToken = fallback;
+      linkMode = 'signed-token';
+    }
     const base = (config.brandUrl || 'https://www.scoutlink.app').replace(/\/$/, '');
+    const cleanPath = '/video-upload?token=' + encodeURIComponent(uploadToken);
+    const staticPath = '/frontend/pages/video-upload.html?token=' + encodeURIComponent(uploadToken);
     res.status(201).json({
-      uploadLinkId: data.id,
-      uploadUrl: base + '/video-upload?token=' + encodeURIComponent(rawToken),
-      expiresAt: data.expires_at,
+      uploadLinkId,
+      uploadUrl: base + cleanPath,
+      cleanUploadUrl: base + cleanPath,
+      staticUploadUrl: base + staticPath,
+      expiresAt: responseExpiresAt,
+      mode: linkMode,
       player: { id: player.id, firstName: player.first_name, lastName: player.last_name, teamName: player.team_name }
     });
   } catch(err) {
@@ -220,11 +295,13 @@ router.post('/public-upload', uploadSingleVideo, async (req, res) => {
       .select()
       .single();
     if (error) throw error;
-    const { error: linkUseErr } = await supabase
-      .from('player_video_upload_links')
-      .update({ used_at: new Date().toISOString() })
-      .eq('id', link.id);
-    if (linkUseErr) console.warn('[Videos public-upload] upload link usage update skipped:', linkUseErr.message);
+    if (link.id) {
+      const { error: linkUseErr } = await supabase
+        .from('player_video_upload_links')
+        .update({ used_at: new Date().toISOString() })
+        .eq('id', link.id);
+      if (linkUseErr) console.warn('[Videos public-upload] upload link usage update skipped:', linkUseErr.message);
+    }
     const [video] = await attachSignedVideoUrls([data]);
     res.status(201).json({ message: 'Video uploaded', video });
   } catch(err) {
