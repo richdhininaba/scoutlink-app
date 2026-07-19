@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var MOBILE_MAX = 767;
@@ -147,7 +147,9 @@
   };
 
   function setMode() {
-    document.body.classList.toggle("public-mobile", isPhone());
+    var phone = isPhone();
+    document.body.classList.toggle("public-mobile", phone);
+    document.body.classList.toggle("public-desktop", !phone);
   }
 
   function closeMenu() {
@@ -461,7 +463,8 @@
     box.innerHTML = rows.map(function (job) {
       var slug = encodeURIComponent(job.slug || job.id || "");
       var meta = [job.department, job.location, job.workingType, job.employmentType, salary(job), positionsText(job)].filter(Boolean);
-      return '<article class="role"><div><h4>' + esc(job.jobTitle || job.title || "Open role") + '</h4><span>' + esc(meta.slice(0, 3).join(" · ") || job.roleOverview || "ScoutLink role") + '</span></div><span class="role-hide-mobile">' + esc(meta[3] || "") + '</span><span class="role-hide-mobile">' + esc(meta.slice(4).join(" · ")) + '</span><a class="btn primary sm" href="/careers/' + slug + '">View role</a></article>';
+      var separator = " \u00b7 ";
+      return '<article class="role"><div><h4>' + esc(job.jobTitle || job.title || "Open role") + '</h4><span>' + esc(meta.slice(0, 3).join(separator) || job.roleOverview || "ScoutLink role") + '</span></div><span class="role-hide-mobile">' + esc(meta[3] || "") + '</span><span class="role-hide-mobile">' + esc(meta.slice(4).join(separator)) + '</span><a class="btn primary sm" href="/careers/' + slug + '">View role</a></article>';
     }).join("");
   }
 
@@ -495,33 +498,148 @@
     window.location.href = scout ? "/scout/dashboard" : "/coach/dashboard";
   }
 
+  var faqAnswers = {
+    "Who is ScoutLink for?": "ScoutLink is built for grassroots coaches, reviewed scouts, clubs, academies, schools, players and families who need clearer player evidence and safer visibility routes.",
+    "Can anyone browse players?": "No. Player search is only available to reviewed scout accounts and access can be restricted or removed where needed.",
+    "Does compatibility replace scout judgement?": "No. Compatibility is decision support. It explains fit, evidence and context, but final scouting judgement remains human.",
+    "How much does a coach account cost?": "Coach workspaces are free to start so teams can build player evidence before a scout ever searches for them.",
+    "How much time does profile maintenance take?": "The workflow is designed around short weekly updates: fixtures before a match, match facts afterwards and small profile improvements over time.",
+    "How is scout interest handled?": "Scout interest is routed through the responsible coach, club or adult account instead of direct unmanaged contact with children.",
+    "Can ScoutLink guarantee a player will be scouted?": "No. ScoutLink improves structure and visibility, but it does not guarantee selection, trials, representation or signings.",
+    "Who creates and manages player profiles?": "Authorised coaches, clubs, schools or approved adults create and manage the player records used inside ScoutLink.",
+    "How can a family raise a concern?": "Families can use the Report a Concern route or contact ScoutLink support so the issue is reviewed through the correct trust process.",
+    "Can scouts contact children directly?": "No. ScoutLink is designed around adult-mediated contact through coaches, clubs, schools or responsible guardians.",
+    "Who can create player profiles?": "Player profiles should be created only by authorised adults connected to the team, club, school or approved programme.",
+    "What happens after a concern is submitted?": "The concern is logged and reviewed by the appropriate Stratex team, with follow-up depending on urgency, evidence and safeguarding risk."
+  };
+
+  var productPanels = {
+    "Player profile": {
+      label: "PLAYER PROFILE",
+      title: "One structured record for the player.",
+      copy: "Ratings, match facts, fixtures, approved video, physical context and evidence confidence sit together.",
+      items: [["Ratings", "Coach-led attributes"], ["Match facts", "Game evidence"], ["Video", "Approved clips"], ["Confidence", "Evidence quality"]]
+    },
+    "Compatibility": {
+      label: "COMPATIBILITY",
+      title: "Explain fit without hiding the reasoning.",
+      copy: "Scout setup, role expectations, attributes, match output and evidence confidence combine into a clear compatibility view.",
+      items: [["Need fit", "Team gaps"], ["Role fit", "Position context"], ["Evidence", "Confidence level"], ["Output", "Readable breakdown"]]
+    },
+    "Scout search": {
+      label: "SCOUT SEARCH",
+      title: "Find relevant players faster.",
+      copy: "Reviewed scouts can search by position, age, location, overall rating, compatibility and evidence quality.",
+      items: [["Filters", "Focused search"], ["Cards", "Fast scanning"], ["Profiles", "Deep review"], ["Pipeline", "Next action"]]
+    },
+    "Match facts": {
+      label: "MATCH FACTS",
+      title: "Turn games into usable evidence.",
+      copy: "Fixtures, appearances, goals, assists, cards, positions and match ratings flow into player profiles.",
+      items: [["Fixtures", "Match setup"], ["Events", "Key moments"], ["Ratings", "Performance"], ["Profile", "Updated evidence"]]
+    },
+    "Pipeline": {
+      label: "PIPELINE",
+      title: "Keep recruitment follow-up organised.",
+      copy: "Scouts can shortlist players, manage stages, review history and keep coach messages connected.",
+      items: [["Stages", "Track status"], ["Chats", "Coach contact"], ["Exports", "Reports"], ["Predictions", "Analysis"]]
+    }
+  };
+
+  function productPanelHtml(panel) {
+    return '<span class="pill dark">' + esc(panel.label) + '</span><h3>' + esc(panel.title) + '</h3><p>' + esc(panel.copy) + '</p><div class="mini-grid">' +
+      panel.items.map(function (item) {
+        return '<div class="mini"><b>' + esc(item[0]) + '</b><span>' + esc(item[1]) + '</span></div>';
+      }).join("") +
+      '</div>';
+  }
+
+  function initProductTabs() {
+    document.querySelectorAll(".feature-showcase").forEach(function (showcase) {
+      var panel = showcase.querySelector(".product-panel");
+      var tabs = Array.prototype.slice.call(showcase.querySelectorAll(".tab"));
+      if (!panel || !tabs.length || showcase.dataset.tabsReady === "1") return;
+      showcase.dataset.tabsReady = "1";
+      tabs.forEach(function (tab) {
+        tab.setAttribute("type", "button");
+        tab.addEventListener("click", function () {
+          tabs.forEach(function (item) { item.classList.remove("active"); });
+          tab.classList.add("active");
+          var config = productPanels[(tab.textContent || "").trim()];
+          if (config) panel.innerHTML = productPanelHtml(config);
+        });
+      });
+    });
+  }
+
+  function initFaqs() {
+    document.querySelectorAll(".faq-item").forEach(function (item) {
+      if (item.dataset.faqReady === "1") return;
+      item.dataset.faqReady = "1";
+      var questionEl = item.querySelector("span:first-child");
+      var plus = item.querySelector(".plus");
+      var question = questionEl ? questionEl.textContent.trim() : "";
+      var answer = faqAnswers[question] || "This answer is reviewed as part of ScoutLink's product, trust and support documentation.";
+      var answerEl = document.createElement("div");
+      answerEl.className = "faq-answer";
+      answerEl.textContent = answer;
+      item.appendChild(answerEl);
+      item.setAttribute("role", "button");
+      item.setAttribute("tabindex", "0");
+      item.setAttribute("aria-expanded", "false");
+      function toggle() {
+        var open = !item.classList.contains("open");
+        item.classList.toggle("open", open);
+        item.setAttribute("aria-expanded", open ? "true" : "false");
+        if (plus) plus.textContent = "+";
+      }
+      item.addEventListener("click", toggle);
+      item.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle();
+        }
+      });
+    });
+  }
+
   function textRoute(label) {
     var normalized = label.replace(/\s+/g, " ").trim().toLowerCase();
-    if (normalized.indexOf("explore as coach") >= 0 || normalized.indexOf("start coach demo") >= 0) return { demo: "Coach" };
-    if (normalized.indexOf("explore as scout") >= 0 || normalized.indexOf("start scout demo") >= 0) return { demo: "Scout" };
+    if (normalized.indexOf("explore as coach") >= 0 || normalized.indexOf("start coach demo") >= 0 || normalized.indexOf("explore coach demo") >= 0) return { demo: "Coach" };
+    if (normalized.indexOf("explore as scout") >= 0 || normalized.indexOf("start scout demo") >= 0 || normalized.indexOf("explore scout demo") >= 0) return { demo: "Scout" };
     if (normalized.indexOf("register as coach") >= 0) return { href: "/register/coach" };
     if (normalized.indexOf("request scout access") >= 0) return { href: "/register/scout" };
     if (normalized === "demo" || normalized.indexOf("explore demo") >= 0 || normalized.indexOf("explore the demo") >= 0) return { href: "/demo" };
-    if (normalized.indexOf("sign in") >= 0 || normalized.indexOf("scoutlink login") >= 0) return { href: "/login" };
+    if (normalized.indexOf("sign in") >= 0 || normalized.indexOf("scoutlink login") >= 0 || normalized.indexOf("open scoutlink") >= 0) return { href: "/login" };
     if (normalized.indexOf("report a concern") >= 0) return { href: "/report-a-concern" };
     if (normalized.indexOf("parent") >= 0 && normalized.indexOf("notice") >= 0) return { href: "/parent-guardian-notice" };
     if (normalized.indexOf("privacy policy") >= 0) return { href: "/privacy-policy" };
     if (normalized.indexOf("privacy request") >= 0) return { href: "/privacy-request" };
     if (normalized.indexOf("contact") >= 0) return { href: "/contact" };
-    if (normalized.indexOf("view open roles") >= 0 || normalized === "view roles") return { hash: "#careerRoleList" };
+    if (normalized.indexOf("view open roles") >= 0 || normalized === "view roles" || normalized === "view all roles" || normalized === "view role") return { hash: "#careerRoleList" };
+    if (normalized === "register") return { href: "/contact?reason=careers" };
     if (normalized.indexOf("register interest") >= 0) return { href: "/contact?reason=careers" };
     if (normalized.indexOf("about stratex") >= 0) return { href: "/about" };
     if (normalized.indexOf("meet the team") >= 0) return { href: "/about#team" };
     if (normalized.indexOf("read safeguarding") >= 0) return { href: "/safeguarding" };
+    if (normalized.indexOf("for coaches") >= 0) return { href: "/coaches" };
+    if (normalized.indexOf("for scouts") >= 0) return { href: "/scouts" };
+    if (normalized.indexOf("for families") >= 0 || normalized.indexOf("parents") >= 0) return { href: "/parents-players" };
+    if (normalized.indexOf("read notice") >= 0) return { href: "/parent-guardian-notice" };
+    if (normalized.indexOf("explore scoutlink") >= 0) return { href: "/" };
     return null;
   }
 
   function initButtonRouting() {
     if (document.body.dataset.publicButtonRoutingReady === "1") return;
     document.body.dataset.publicButtonRoutingReady = "1";
+    document.querySelectorAll(".band-link").forEach(function (item) {
+      if (!item.hasAttribute("tabindex")) item.setAttribute("tabindex", "0");
+      if (!item.hasAttribute("role")) item.setAttribute("role", "button");
+    });
     document.addEventListener("click", function (event) {
       var button = event.target.closest("button.btn, .band-link");
-      if (!button || button.type === "submit" || button.closest("form")) return;
+      if (!button || button.closest("form")) return;
       var route = textRoute(button.textContent || "");
       if (!route) return;
       event.preventDefault();
@@ -536,11 +654,20 @@
       }
       window.location.href = route.href;
     });
+    document.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      var button = event.target.closest(".band-link");
+      if (!button) return;
+      event.preventDefault();
+      button.click();
+    });
   }
 
   function initPage() {
     initMenu();
     initButtonRouting();
+    initProductTabs();
+    initFaqs();
     var page = document.body.dataset.publicPage || "home";
     if (page === "login") initLogin();
     if (page === "contact") initContact();
