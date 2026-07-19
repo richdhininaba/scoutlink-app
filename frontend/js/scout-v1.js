@@ -312,3 +312,378 @@
   });
   window.addEventListener('resize', refresh);
 })();
+
+(function () {
+  'use strict';
+
+  var ROUTES = {
+    '/scout/dashboard': 'dashboard',
+    '/scout/player-search': 'player-search',
+    '/scout/pipeline': 'pipeline',
+    '/scout/rankings': 'rankings',
+    '/scout/fixtures': 'fixtures',
+    '/scout/predictions': 'predictions',
+    '/scout/exports': 'exports',
+    '/scout/compare-players': 'compare-players',
+    '/scout/setup': 'setup',
+    '/scout/chat': 'chat',
+    '/scout/notifications': 'notifications',
+    '/scout/settings': 'settings',
+    '/scout/events': 'events',
+    '/player/profile': 'profile'
+  };
+
+  var FILES = {
+    'scout-dashboard.html': 'dashboard',
+    'player-search.html': 'player-search',
+    'scout-pipeline.html': 'pipeline',
+    'scout-rankings.html': 'rankings',
+    'scout-fixtures.html': 'fixtures',
+    'scout-predictions.html': 'predictions',
+    'scout-exports.html': 'exports',
+    'compare-players.html': 'compare-players',
+    'scout-setup.html': 'setup',
+    'scout-chat.html': 'chat',
+    'scout-notifications.html': 'notifications',
+    'scout-settings.html': 'settings',
+    'scout-events.html': 'events',
+    'player-profile.html': 'profile'
+  };
+
+  var NAV_GROUPS = [
+    ['Overview', [['Dashboard', 'scout-dashboard.html', 'dashboard', 'DB']]],
+    ['Recruitment', [
+      ['Player database', 'player-search.html', 'player-search', 'PD'],
+      ['My pipeline', 'scout-pipeline.html', 'pipeline', 'MP'],
+      ['Rankings', 'scout-rankings.html', 'rankings', 'RK'],
+      ['Fixtures', 'scout-fixtures.html', 'fixtures', 'FX']
+    ]],
+    ['Analysis', [
+      ['Predictions', 'scout-predictions.html', 'predictions', 'PR'],
+      ['Exports', 'scout-exports.html', 'exports', 'EX'],
+      ['Compare players', 'compare-players.html', 'compare-players', 'CP'],
+      ['Scout setup', 'scout-setup.html', 'setup', 'SS']
+    ]],
+    ['Communication', [
+      ['Chat', 'scout-chat.html', 'chat', 'CH'],
+      ['Notifications', 'scout-notifications.html', 'notifications', 'NT']
+    ]]
+  ];
+
+  var COPY = {
+    dashboard: ['Find the right player', 'Search, shortlist, compare and run predictions from one calm scout workspace.'],
+    'player-search': ['Player database', 'Search by compatibility, age, position and location without fighting tables.'],
+    pipeline: ['My recruitment pipeline', 'Track interest stages and coach conversations from one clean view.'],
+    rankings: ['Rankings', 'Review leading players with evidence, confidence and position context.'],
+    fixtures: ['Fixtures', 'Plan attendance around scout-visible upcoming matches.'],
+    predictions: ['Predictions', 'Review analysis history and return to the relevant player profile fast.'],
+    exports: ['Exports', 'Track profile and prediction exports without losing sight of limits.'],
+    'compare-players': ['Compare players', 'Select two players and review the recommendation in stacked sections.'],
+    setup: ['Scout setup', 'Set weaknesses, role expectations and long-term recruitment goals.'],
+    chat: ['Chat', 'Message coaches after player interest is added to the pipeline.'],
+    notifications: ['Notifications', 'Recruitment updates, fixtures and messages in one focused feed.'],
+    settings: ['Settings', 'Manage account details, regions, preferences and support.'],
+    events: ['Events', 'Review showcase invitations and attendance.'],
+    profile: ['Player profile', 'Review performance, compatibility and evidence in a scout-first profile.']
+  };
+
+  function path() {
+    return window.location.pathname.toLowerCase().replace(/\/$/, '');
+  }
+
+  function fileName() {
+    return window.location.pathname.toLowerCase().split('/').pop() || '';
+  }
+
+  function storage(key) {
+    try {
+      return localStorage.getItem(key) || sessionStorage.getItem(key) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function scoutUser() {
+    try {
+      return (window.Auth && window.Auth.type === 'Scout') || storage('sl_type') === 'Scout' || storage('demoRole') === 'scout';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function routeKey() {
+    var p = path();
+    if (ROUTES[p]) return ROUTES[p];
+    return FILES[fileName()] || '';
+  }
+
+  function isScoutPage() {
+    var key = routeKey();
+    if (!key) return false;
+    if (key === 'profile') return scoutUser();
+    return path().indexOf('/scout/') === 0 || fileName().indexOf('scout-') === 0 || fileName() === 'player-search.html' || fileName() === 'compare-players.html';
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function cleanHref(target) {
+    var map = {
+      'scout-dashboard.html': '/scout/dashboard',
+      'player-search.html': '/scout/player-search',
+      'scout-pipeline.html': '/scout/pipeline',
+      'scout-rankings.html': '/scout/rankings',
+      'scout-fixtures.html': '/scout/fixtures',
+      'scout-predictions.html': '/scout/predictions',
+      'scout-exports.html': '/scout/exports',
+      'compare-players.html': '/scout/compare-players',
+      'scout-setup.html': '/scout/setup',
+      'scout-chat.html': '/scout/chat',
+      'scout-notifications.html': '/scout/notifications',
+      'scout-settings.html': '/scout/settings'
+    };
+    return map[target] || target;
+  }
+
+  function userName() {
+    try {
+      var u = window.Auth && window.Auth.user;
+      var name = [u && u.firstName, u && u.lastName].filter(Boolean).join(' ');
+      return name || [storage('sl_first_name'), storage('sl_last_name')].filter(Boolean).join(' ') || 'Scout';
+    } catch (e) {
+      return 'Scout';
+    }
+  }
+
+  function initials(name) {
+    return String(name || 'Scout').split(/\s+/).filter(Boolean).slice(0, 2).map(function (part) { return part.charAt(0); }).join('').toUpperCase() || 'SC';
+  }
+
+  function titleFor(key) {
+    return (COPY[key] && COPY[key][0]) || 'Scout';
+  }
+
+  function ensureShell() {
+    if (!isScoutPage()) return;
+    var key = routeKey();
+    document.body.classList.add('scout-v2', 'scout-page', 'scout-route-' + key);
+    document.body.classList.remove('coach-v2', 'theme-dark');
+    document.body.classList.add('theme-light');
+
+    var main = document.querySelector('.dashboard-main');
+    if (main) main.classList.add('workspace');
+    var topbar = document.querySelector('.topbar');
+    if (topbar) {
+      topbar.classList.add('workspace-top');
+      var title = topbar.querySelector('.topbar-title');
+      if (title) title.textContent = titleFor(key);
+      topbar.querySelectorAll('button[onclick*="logout"], #logoutBtn, .desktop-signout').forEach(function (btn) {
+        btn.classList.add('scout-v2-desktop-signout');
+        btn.textContent = 'Sign out';
+      });
+    }
+    var content = document.querySelector('.page-content');
+    if (content) content.classList.add('workspace-content');
+  }
+
+  function renderSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar || sidebar.dataset.scoutV2Done) return;
+    var key = routeKey();
+    var name = userName();
+    sidebar.dataset.scoutV2Done = '1';
+    sidebar.classList.add('scout-v2-sidebar');
+    sidebar.innerHTML =
+      '<div class="side-logo"><a class="logo" href="' + esc(cleanHref('scout-dashboard.html')) + '">Scout<span>Link</span></a></div>' +
+      '<div class="side-nav">' + NAV_GROUPS.map(function (group) {
+        return '<div class="side-group"><div class="nav-label">' + esc(group[0]) + '</div>' + group[1].map(function (item) {
+          var active = key === item[2] ? ' active' : '';
+          return '<a class="side-link' + active + '" href="' + esc(cleanHref(item[1])) + '"><span class="side-icon">' + esc(item[3]) + '</span><span>' + esc(item[0]) + '</span></a>';
+        }).join('') + '</div>';
+      }).join('') + '</div>' +
+      '<div class="side-user"><div class="user-avatar">' + esc(initials(name)) + '</div><div><b>' + esc(name) + '</b><span>Scout</span></div></div>';
+  }
+
+  function notificationButton() {
+    return '<button class="scout-v2-bell" type="button" aria-label="Open notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="scoutV2NotifDot" aria-hidden="true"></span></button>';
+  }
+
+  function renderMobileChrome() {
+    if (document.querySelector('.scout-v2-mobile-top')) return;
+    var key = routeKey();
+    var top = document.createElement('header');
+    top.className = 'scout-v2-mobile-top';
+    top.innerHTML = '<button class="scout-v2-menu-btn" type="button" aria-label="Open menu"><span></span><span></span><span></span></button><h1>' + esc(titleFor(key)) + '</h1>' + notificationButton();
+    document.body.appendChild(top);
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'scout-v2-backdrop';
+    document.body.appendChild(backdrop);
+
+    var drawer = document.createElement('aside');
+    drawer.className = 'scout-v2-drawer';
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.innerHTML = '<div class="drawer-head"><a class="logo" href="' + esc(cleanHref('scout-dashboard.html')) + '">Scout<span>Link</span></a><button type="button" class="drawer-close" aria-label="Close menu">Close</button></div><div class="drawer-user"><div class="user-avatar">' + esc(initials(userName())) + '</div><div><b>' + esc(userName()) + '</b><span>Scout</span></div></div><nav class="drawer-nav">' + NAV_GROUPS.map(function (group) {
+      return '<div class="nav-label">' + esc(group[0]) + '</div>' + group[1].map(function (item) {
+        return '<a class="side-link" href="' + esc(cleanHref(item[1])) + '"><span class="side-icon">' + esc(item[3]) + '</span><span>' + esc(item[0]) + '</span></a>';
+      }).join('');
+    }).join('') + '</nav><button type="button" class="drawer-signout">Sign out</button>';
+    document.body.appendChild(drawer);
+
+    function open() {
+      document.body.classList.add('scout-v2-menu-open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+    function close() {
+      document.body.classList.remove('scout-v2-menu-open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+    top.querySelector('.scout-v2-menu-btn').addEventListener('click', open);
+    backdrop.addEventListener('click', close);
+    drawer.querySelector('.drawer-close').addEventListener('click', close);
+    drawer.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', close); });
+    drawer.querySelector('.drawer-signout').addEventListener('click', function () {
+      close();
+      if (typeof window.logoutToLogin === 'function') window.logoutToLogin();
+      else if (typeof window.logout === 'function') window.logout();
+      else window.location.href = '/login';
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') close();
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth >= 768) close();
+    });
+  }
+
+  function renderHero() {
+    var key = routeKey();
+    if (key === 'profile') return;
+    var content = document.querySelector('.page-content');
+    if (!content) return;
+    content.querySelectorAll('.scout-v1-hero').forEach(function (el) { el.remove(); });
+    if (content.querySelector('.scout-v2-hero')) return;
+    var copy = COPY[key] || COPY.dashboard;
+    var actions = {
+      dashboard: [['Player database', 'player-search.html', 'primary'], ['Pipeline', 'scout-pipeline.html', 'ghost']],
+      'player-search': [['My pipeline', 'scout-pipeline.html', 'primary'], ['Compare players', 'compare-players.html', 'ghost']],
+      pipeline: [['Find players', 'player-search.html', 'primary']],
+      predictions: [['Find players', 'player-search.html', 'primary']],
+      exports: [['Find players', 'player-search.html', 'primary']],
+      'compare-players': [['Player database', 'player-search.html', 'ghost']],
+      setup: [['Save setup', '#save', 'primary']]
+    }[key] || [];
+    var hero = document.createElement('section');
+    hero.className = 'scout-v2-hero';
+    hero.innerHTML = '<div><span class="pill green">Scout workspace</span><h2>' + esc(copy[0]) + '</h2><p>' + esc(copy[1]) + '</p></div>' +
+      '<div class="hero-actions">' + actions.map(function (item) {
+        return '<a class="scout-v2-btn ' + esc(item[2]) + '" href="' + esc(item[1] === '#save' ? '#' : cleanHref(item[1])) + '">' + esc(item[0]) + '</a>';
+      }).join('') + '</div>';
+    content.insertBefore(hero, content.firstElementChild || null);
+    var save = hero.querySelector('a[href="#"]');
+    if (save) {
+      save.addEventListener('click', function (event) {
+        event.preventDefault();
+        var target = document.querySelector('button[type="submit"], #saveSetupBtn, .save-setup, .btn-primary');
+        if (target && target !== save) target.click();
+      });
+    }
+  }
+
+  function dashboardActions() {
+    if (routeKey() !== 'dashboard') return;
+    var content = document.querySelector('.page-content');
+    if (!content) return;
+    content.querySelectorAll('.scout-v1-action-grid').forEach(function (el) { el.remove(); });
+    if (content.querySelector('.scout-v2-action-grid')) return;
+    var items = [
+      ['Player database', 'Search cards', 'player-search.html', 'PD'],
+      ['Pipeline', 'Track interest', 'scout-pipeline.html', 'MP'],
+      ['Compare players', 'Stacked review', 'compare-players.html', 'CP'],
+      ['Predictions', 'Run analysis', 'scout-predictions.html', 'PR'],
+      ['Fixtures', 'Attend games', 'scout-fixtures.html', 'FX'],
+      ['Chat', 'Message coaches', 'scout-chat.html', 'CH'],
+      ['Rankings', 'Top players', 'scout-rankings.html', 'RK'],
+      ['Setup', 'Preferences', 'scout-setup.html', 'SS']
+    ];
+    var grid = document.createElement('section');
+    grid.className = 'scout-v2-action-grid';
+    grid.innerHTML = items.map(function (item) {
+      return '<a class="scout-v2-action-card" href="' + esc(cleanHref(item[2])) + '"><span>' + esc(item[3]) + '</span><b>' + esc(item[0]) + '</b><small>' + esc(item[1]) + '</small></a>';
+    }).join('');
+    var hero = content.querySelector('.scout-v2-hero');
+    if (hero && hero.nextSibling) content.insertBefore(grid, hero.nextSibling);
+    else content.insertBefore(grid, content.firstChild);
+  }
+
+  function restyleContent() {
+    document.querySelectorAll('.table-card, .kpi-card, .filter-card, .profile-card, .settings-card, .prediction-card, .export-card, .chat-shell').forEach(function (el) {
+      el.classList.add('scout-v2-card');
+    });
+    document.querySelectorAll('table').forEach(function (table) {
+      table.classList.add('scout-v2-table');
+      var headers = Array.prototype.slice.call(table.querySelectorAll('thead th')).map(function (th) {
+        return (th.textContent || '').trim();
+      });
+      table.querySelectorAll('tbody tr').forEach(function (row) {
+        Array.prototype.slice.call(row.children).forEach(function (cell, index) {
+          if (!cell.getAttribute('data-label') && headers[index]) cell.setAttribute('data-label', headers[index]);
+        });
+      });
+      if (!table.parentElement.classList.contains('scout-v2-table-wrap')) {
+        var wrap = document.createElement('div');
+        wrap.className = 'scout-v2-table-wrap';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+      }
+    });
+    document.querySelectorAll('.btn').forEach(function (btn) {
+      btn.classList.add('scout-v2-btn');
+      if (btn.classList.contains('btn-primary')) btn.classList.add('primary');
+      if (btn.classList.contains('btn-outline') || btn.classList.contains('btn-ghost')) btn.classList.add('ghost');
+    });
+  }
+
+  function addBottomNav() {
+    document.querySelectorAll('.scout-v1-bottom-nav').forEach(function (el) { el.remove(); });
+    if (document.querySelector('.scout-v2-bottom-nav')) return;
+    var key = routeKey();
+    var items = [
+      ['Home', 'scout-dashboard.html', 'dashboard', 'DB'],
+      ['Search', 'player-search.html', 'player-search', 'PD'],
+      ['Pipeline', 'scout-pipeline.html', 'pipeline', 'MP'],
+      ['Compare', 'compare-players.html', 'compare-players', 'CP'],
+      ['More', 'scout-settings.html', 'settings', 'ME']
+    ];
+    var nav = document.createElement('nav');
+    nav.className = 'scout-v2-bottom-nav';
+    nav.setAttribute('aria-label', 'Scout quick navigation');
+    nav.innerHTML = items.map(function (item) {
+      var active = key === item[2] || (item[2] === 'settings' && ['rankings', 'fixtures', 'predictions', 'exports', 'setup', 'chat', 'notifications', 'settings'].indexOf(key) >= 0);
+      return '<a class="' + (active ? 'active' : '') + '" href="' + esc(cleanHref(item[1])) + '"><span>' + esc(item[3]) + '</span>' + esc(item[0]) + '</a>';
+    }).join('');
+    document.body.appendChild(nav);
+  }
+
+  function apply() {
+    if (!document.body || !isScoutPage()) return;
+    ensureShell();
+    renderSidebar();
+    renderMobileChrome();
+    renderHero();
+    dashboardActions();
+    restyleContent();
+    addBottomNav();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    apply();
+    setTimeout(apply, 250);
+    setTimeout(apply, 1000);
+    setTimeout(apply, 1800);
+  });
+  if (document.body) apply();
+})();
