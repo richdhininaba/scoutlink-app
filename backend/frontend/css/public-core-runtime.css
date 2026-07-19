@@ -523,27 +523,27 @@ body.public-mobile .footer-col span {
   font-size: 8px;
 }
 @media (min-width: 768px) {
-  body.public-site.public-desktop,
-  body.public-site.public-desktop .public-root,
-  body.public-site.public-desktop .page {
+  body.public-site,
+  body.public-site .public-root,
+  body.public-site .page {
     width: 100%;
     max-width: none !important;
   }
-  body.public-site.public-desktop .site-header,
-  body.public-site.public-desktop .footer,
-  body.public-site.public-desktop .hero {
+  body.public-site .site-header,
+  body.public-site .footer,
+  body.public-site .hero {
     width: 100vw !important;
     max-width: 100vw !important;
     margin-left: calc(50% - 50vw) !important;
     margin-right: calc(50% - 50vw) !important;
   }
-  body.public-site.public-desktop .hero {
+  body.public-site .hero {
     grid-template-columns:
       minmax(0, calc((var(--public-max) - (var(--public-section-gutter) * 2) - 34px) * .52))
       minmax(0, calc((var(--public-max) - (var(--public-section-gutter) * 2) - 34px) * .48));
     justify-content: center;
   }
-  body.public-site.public-desktop .hero > * {
+  body.public-site .hero > * {
     max-width: 100%;
   }
   body.public-site .menu,
