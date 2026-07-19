@@ -191,6 +191,143 @@
     return map[key] || 'Coach';
   }
 
+  var COACH_NAV_GROUPS = [
+    ['Overview', [['dashboard', 'Dashboard', 'DB', 'coach-dashboard.html']]],
+    ['Players', [
+      ['my-players', 'My players', 'PL', 'coach-my-players.html'],
+      ['add-player', 'Add player', 'AP', 'add-player.html'],
+      ['bulk-add-players', 'Bulk import', 'BI', 'bulk-add-players.html']
+    ]],
+    ['Matchday', [
+      ['match-facts', 'Match facts', 'MF', 'match-facts.html'],
+      ['fixtures', 'Fixtures', 'FX', 'coach-fixtures.html'],
+      ['video-reels', 'Video reels', 'VR', 'coach-video-reels.html']
+    ]],
+    ['Communication', [
+      ['chat', 'Chat', 'CH', 'coach-chat.html'],
+      ['notifications', 'Notifications', 'NT', 'coach-notifications.html'],
+      ['report-a-concern', 'Report a Concern', 'RC', 'coach-report-concern.html']
+    ]],
+    ['Account', [['settings', 'Settings', 'ST', 'coach-settings.html']]]
+  ];
+
+  function currentUserName() {
+    try {
+      var first = (window.Auth && window.Auth.user && (window.Auth.user.firstName || window.Auth.user.first_name)) || localStorage.getItem('sl_first_name') || '';
+      var last = (window.Auth && window.Auth.user && (window.Auth.user.lastName || window.Auth.user.last_name)) || localStorage.getItem('sl_last_name') || '';
+      var combined = (first + ' ' + last).trim();
+      return combined || first || 'Coach';
+    } catch (e) {
+      return 'Coach';
+    }
+  }
+
+  function currentTeamName() {
+    try {
+      return localStorage.getItem('sl_team_name') ||
+        localStorage.getItem('demoTeamName') ||
+        sessionStorage.getItem('demoTeamName') ||
+        'Northgate United';
+    } catch (e) {
+      return 'Northgate United';
+    }
+  }
+
+  function initialsFromName(value) {
+    var parts = String(value || 'Coach').trim().split(/\s+/).filter(Boolean);
+    return ((parts[0] || 'C').charAt(0) + (parts[1] || parts[0] || 'O').charAt(0)).toUpperCase();
+  }
+
+  function navKey() {
+    var key = pageKey();
+    if (key === 'profile') return 'my-players';
+    return key;
+  }
+
+  function installCoachNavigation() {
+    var sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+    var name = currentUserName();
+    var active = navKey();
+    sidebar.classList.add('coach-v3-sidebar');
+    sidebar.innerHTML =
+      '<div class="sidebar-logo"><a href="' + esc(hrefFor('coach-dashboard.html')) + '">Scout<span>Link</span></a></div>' +
+      '<nav class="sidebar-nav" aria-label="Coach navigation">' +
+      COACH_NAV_GROUPS.map(function (group) {
+        return '<div class="coach-nav-group"><div class="coach-nav-label">' + esc(group[0]) + '</div>' +
+          group[1].map(function (item) {
+            return '<a class="nav-item ' + (active === item[0] ? 'active' : '') + '" href="' + esc(hrefFor(item[3])) + '">' +
+              '<span class="nav-ico">' + esc(item[2]) + '</span><span>' + esc(item[1]) + '</span></a>';
+          }).join('') + '</div>';
+      }).join('') +
+      '</nav>' +
+      '<div class="sidebar-user"><div class="user-avatar">' + esc(initialsFromName(name)) + '</div><div><div class="user-name">' + esc(name) + '</div><div class="user-role">Coach - ' + esc(currentTeamName()) + '</div></div></div>';
+  }
+
+  function closeMobileMenu() {
+    if (document.body) document.body.classList.remove('coach-v2-menu-open');
+  }
+
+  function openMobileMenu() {
+    if (document.body) document.body.classList.add('coach-v2-menu-open');
+  }
+
+  function installCoachMobileChrome() {
+    if (!document.body) return;
+    var top = document.querySelector('.coach-v2-mobile-top');
+    if (!top) {
+      top = document.createElement('header');
+      top.className = 'coach-v2-mobile-top';
+      top.innerHTML =
+        '<button type="button" class="coach-v2-menu-button" aria-label="Open menu"><span></span><span></span><span></span></button>' +
+        '<strong class="coach-v2-mobile-title"></strong>' +
+        '<button type="button" class="coach-v2-bell" aria-label="Notifications">NT</button>';
+      document.body.insertBefore(top, document.body.firstChild);
+    }
+    var title = top.querySelector('.coach-v2-mobile-title');
+    if (title) title.textContent = pageTitle();
+    var menu = top.querySelector('.coach-v2-menu-button');
+    if (menu && !menu.dataset.coachV2Bound) {
+      menu.dataset.coachV2Bound = '1';
+      menu.addEventListener('click', function () {
+        openMobileMenu();
+      });
+    }
+    var bell = top.querySelector('.coach-v2-bell');
+    if (bell && !bell.dataset.coachV2Bound) {
+      bell.dataset.coachV2Bound = '1';
+      bell.addEventListener('click', function () {
+        window.location.href = hrefFor('coach-notifications.html');
+      });
+    }
+    var backdrop = document.querySelector('.coach-v2-mobile-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('button');
+      backdrop.type = 'button';
+      backdrop.className = 'coach-v2-mobile-backdrop';
+      backdrop.setAttribute('aria-label', 'Close menu');
+      backdrop.addEventListener('click', closeMobileMenu);
+      document.body.appendChild(backdrop);
+    }
+    document.querySelectorAll('.sidebar .nav-item').forEach(function (link) {
+      if (!link.dataset.coachV2MobileBound) {
+        link.dataset.coachV2MobileBound = '1';
+        link.addEventListener('click', closeMobileMenu);
+      }
+    });
+  }
+
+  function installMobileMenuEvents() {
+    if (installMobileMenuEvents.done) return;
+    installMobileMenuEvents.done = true;
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeMobileMenu();
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 950) closeMobileMenu();
+    });
+  }
+
   function addHero() {
     var content = document.querySelector('.page-content');
     if (!content || content.querySelector('.coach-v2-hero')) return;
@@ -199,14 +336,14 @@
     var copy = {
       dashboard: ['Welcome' + (firstName() ? ', ' + firstName() : ''), 'Manage your squad, fixtures, match facts and messages from one calm coach workspace.'],
       'my-players': ['Your squad, clearly organised.', 'Search, review and update player profiles without fighting tables or clutter.'],
-      'add-player': ['Create a player profile.', 'Add the details scouts need, then build evidence with fixtures, match facts and video.'],
-      'bulk-add-players': ['Bulk player import.', 'Use the desktop-sized import view when you need to review every player column properly.'],
-      fixtures: ['Fixtures that scouts can act on.', 'Publish upcoming games with enough context for reviewed scouts to plan attendance.'],
-      'video-reels': ['Video evidence that stays organised.', 'Upload clips, assign them to players and keep approved evidence easy to find.'],
+      'add-player': ['Add a player profile.', 'Create one complete player record using the existing fields and validation already in ScoutLink.'],
+      'bulk-add-players': ['Add a squad without repetitive data entry.', 'Use the existing bulk-import logic with a clearer upload, validation and correction workflow.'],
+      fixtures: ['Fixtures and match schedule.', 'Create upcoming fixtures, review results and keep match-fact preparation in one place.'],
+      'video-reels': ['Video evidence, properly organised.', 'Generate secure upload links, review submitted clips and attach approved evidence to the correct player.'],
       chat: ['Coach-mediated conversations.', 'Keep scout conversations attached to the right player context and safeguarding route.'],
       notifications: ['What needs your attention.', 'Important player, fixture and scout activity without noise.'],
       'report-a-concern': ['Report a concern.', 'Tell Stratex about inappropriate contact, suspected misuse, inaccurate access or another product safety issue.'],
-      settings: ['Settings that match how you coach.', 'Manage team access, alerts, security and preferences.'],
+      settings: ['Settings.', 'Manage your account, team, notifications and privacy preferences.'],
       'match-facts': ['Match facts.', 'Record the evidence that feeds coach profiles, scout search and player development.']
     }[key] || ['Coach workspace', 'ScoutLink coach tools.'];
     var actions = {
@@ -235,11 +372,7 @@
     hero.className = 'coach-v2-hero';
     hero.innerHTML = '<div><span class="coach-v2-chip">Coach workspace</span><h1>' + esc(copy[0]) + '</h1><p>' + esc(copy[1]) + '</p></div>' +
       (actionHtml ? '<div class="coach-v2-actions">' + actionHtml + '</div>' : '');
-    if (key === 'dashboard') {
-      content.insertBefore(hero, content.firstChild);
-    } else if (key !== 'chat') {
-      content.insertBefore(hero, content.firstChild);
-    }
+    content.insertBefore(hero, content.firstChild);
   }
 
   function addBottomNav() {
@@ -266,7 +399,11 @@
     var title = document.querySelector('.topbar-title');
     if (title && !title.dataset.coachV2Title) {
       title.dataset.coachV2Title = '1';
-      if (!/welcome/i.test(title.textContent || '')) title.textContent = pageTitle();
+      if (pageKey() === 'dashboard') {
+        title.textContent = 'Welcome' + (firstName() ? ', ' + firstName() : '');
+      } else if (!/welcome/i.test(title.textContent || '')) {
+        title.textContent = pageTitle();
+      }
     }
     document.querySelectorAll('.topbar .btn[onclick*="logout"], .topbar button[onclick*="logout"]').forEach(function (btn) {
       btn.classList.add('btn-outline');
@@ -293,6 +430,21 @@
     }).join('');
     var hero = content.querySelector('.coach-v2-hero');
     content.insertBefore(grid, hero ? hero.nextSibling : content.firstChild);
+  }
+
+  function normaliseDashboard() {
+    if (pageKey() !== 'dashboard') return;
+    var content = document.querySelector('.page-content');
+    if (!content) return;
+    var grids = Array.prototype.slice.call(content.querySelectorAll('.coach-v2-action-grid'));
+    grids.slice(1).forEach(function (grid) { grid.remove(); });
+    var grid = grids[0];
+    var hero = content.querySelector('.coach-v2-hero');
+    if (grid && hero && grid.previousElementSibling !== hero) {
+      content.insertBefore(grid, hero.nextSibling);
+    }
+    var oldActionRow = content.querySelector('.coach-dashboard-actions');
+    if (oldActionRow) oldActionRow.classList.add('coach-v2-dashboard-old-actions');
   }
 
   function setupAddPlayerWizard() {
@@ -336,11 +488,11 @@
     var physicalCard = cardByHeading('physical') || cards[3] || cards[2];
     var attributesCard = cardByHeading('attribute') || cards[cards.length - 1];
     var steps = [
-      { label: 'Identity', helper: 'Player name and age group.', nodes: [personalCard] },
-      { label: 'Position', helper: 'Position, preferred foot and coach assignment.', nodes: [positionCard, assignment].filter(Boolean) },
+      { label: 'Personal details', helper: 'Player name and age group.', nodes: [personalCard] },
+      { label: 'Football profile', helper: 'Position, preferred foot and coach assignment.', nodes: [positionCard, assignment].filter(Boolean) },
       { label: 'Physical profile', helper: 'Height and build profile.', nodes: [physicalCard].filter(Boolean) },
       { label: 'Attributes', helper: 'Coach ratings out of 10.', nodes: [attributesCard].filter(Boolean) },
-      { label: 'Review and save', helper: 'Check the football profile summary before creating the player.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
+      { label: 'Review', helper: 'Check the football profile summary before creating the player.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
     ];
     var owned = [];
     steps.forEach(function (step) {
@@ -417,7 +569,10 @@
     if (next) next.addEventListener('click', function () { showStep(current + 1); tracker.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     host.addEventListener('input', updateReview);
     host.addEventListener('change', updateReview);
-    if (submit) submit.classList.add('coach-v2-save-player');
+    if (submit) {
+      submit.classList.add('coach-v2-save-player');
+      submit.textContent = 'Create player profile';
+    }
     showStep(0);
   }
 
@@ -530,9 +685,13 @@
     enable();
     if (!document.body || !document.body.classList.contains('coach-v2')) return;
     installRenderers();
+    installCoachNavigation();
+    installCoachMobileChrome();
+    installMobileMenuEvents();
     tidyTopbar();
     addHero();
     dashboardActions();
+    normaliseDashboard();
     setupAddPlayerWizard();
     enhanceBulkImport();
     removeLiveModePresentation();
