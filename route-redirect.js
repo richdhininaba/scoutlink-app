@@ -85,6 +85,7 @@
     '/coach/video-reels': '/frontend/pages/coach-video-reels.html',
     '/coach/chat': '/frontend/pages/coach-chat.html',
     '/coach/notifications': '/frontend/pages/coach-notifications.html',
+    '/coach/report-a-concern': '/frontend/pages/coach-report-concern.html',
     '/coach/settings': '/frontend/pages/coach-settings.html',
     '/scout/dashboard': '/frontend/pages/scout-dashboard.html',
     '/scout/onboarding': '/frontend/pages/scout-onboarding.html',

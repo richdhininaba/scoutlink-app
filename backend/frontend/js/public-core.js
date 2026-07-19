@@ -13,18 +13,35 @@ const routes=[
 ];
 
 function header(active="",mobile=false){
-  return `<header class="site-header"><div class="logo">Scout<span>Link</span></div>
-  <nav class="nav"><span class="${active==='coaches'?'active':''}">Coaches</span><span class="${active==='scouts'?'active':''}">Scouts</span><span class="${active==='parents'?'active':''}">Parents & Players</span><span class="${active==='safeguarding'?'active':''}">Safeguarding</span><span class="${active==='demo'?'active':''}">Demo</span></nav>
-  ${mobile?`<button class="menu">≡</button>`:`<div class="header-actions"><button class="btn ghost">Sign in</button><button class="btn primary">${active==='scouts'?'Request Scout Access':'Register as Coach'}</button></div>`}</header>`;
+  const navItems=[
+    ["coaches","Coaches","/coaches"],
+    ["scouts","Scouts","/scouts"],
+    ["parents","Parents & Players","/parents-players"],
+    ["safeguarding","Safeguarding","/safeguarding"],
+    ["demo","Demo","/demo"]
+  ];
+  const navHtml=navItems.map(item=>`<a class="${active===item[0]?'active':''}" href="${item[2]}">${item[1]}</a>`).join("");
+  const menuHtml=navHtml+`<a href="/register/scout">Request Scout Access</a><a class="primary" href="/register/coach">Register as Coach</a><a href="/login">Sign in</a>`;
+  const primaryLabel=active==='scouts'?'Request Scout Access':'Register as Coach';
+  const primaryHref=active==='scouts'?'/register/scout':'/register/coach';
+  return `<header class="site-header"><a class="logo" href="/">Scout<span>Link</span></a>
+  <nav class="nav" aria-label="ScoutLink public navigation">${navHtml}</nav>
+  <div class="header-actions"><a class="btn ghost" href="/login">Sign in</a><a class="btn primary" href="${primaryHref}">${primaryLabel}</a></div>
+  <button class="menu" type="button" data-public-menu-open aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="public-menu-panel" data-public-menu-backdrop aria-hidden="true"><div class="public-menu-drawer" role="dialog" aria-modal="true" aria-label="ScoutLink menu">
+  <div class="public-menu-head"><a class="logo" href="/">Scout<span>Link</span></a><button class="public-menu-close" type="button" data-public-menu-close aria-label="Close menu">&times;</button></div>
+  <nav class="public-menu-links" aria-label="Mobile navigation">${menuHtml}</nav>
+  <div class="public-menu-foot">Coach-led, scout-reviewed grassroots football intelligence by Stratex Analytics.</div>
+  </div></div></header>`;
 }
 function footer(){
   return `<footer class="footer"><div class="footer-grid">
-  <div class="footer-intro"><div class="logo">Scout<span>Link</span></div><p>Coach-led, scout-reviewed grassroots football intelligence by Stratex Analytics.</p></div>
-  <div class="footer-col"><b>Product</b><span>Coaches</span><span>Scouts</span><span>Demo</span><span>Compatibility</span></div>
-  <div class="footer-col"><b>Trust</b><span>Safeguarding</span><span>Parent / Guardian Notice</span><span>Report a Concern</span><span>Scout Verification</span></div>
-  <div class="footer-col"><b>Company</b><span>About</span><span>Contact</span><span>Careers</span><span>Learning Centre</span></div>
-  <div class="footer-col"><b>Legal</b><span>Privacy Policy</span><span>Terms of Use</span><span>Cookie Policy</span><span>Accessibility</span></div>
-  </div><div class="footer-bottom"><span>© 2026 ScoutLink. Powered by Stratex Analytics.</span><span>info@scoutlink.app</span></div></footer>`;
+  <div class="footer-intro"><a class="logo" href="/">Scout<span>Link</span></a><p>Coach-led, scout-reviewed grassroots football intelligence by Stratex Analytics.</p></div>
+  <div class="footer-col"><b>Product</b><a href="/coaches">Coaches</a><a href="/scouts">Scouts</a><a href="/demo">Demo</a><a href="/scoutlink/compatibility-score">Compatibility</a></div>
+  <div class="footer-col"><b>Trust</b><a href="/safeguarding">Safeguarding</a><a href="/parent-guardian-notice">Parent / Guardian Notice</a><a href="/report-a-concern">Report a Concern</a><a href="/scout-verification">Scout Verification</a></div>
+  <div class="footer-col"><b>Company</b><a href="/about">About</a><a href="/contact">Contact</a><a href="/careers">Careers</a><a href="/accessibility">Accessibility</a></div>
+  <div class="footer-col"><b>Legal</b><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms of Use</a><a href="/cookie-policy">Cookie Policy</a><a href="/privacy-request">Privacy Request</a></div>
+  </div><div class="footer-bottom"><span>&copy; 2026 ScoutLink. Powered by Stratex Analytics.</span><span><a href="mailto:info@scoutlink.app">info@scoutlink.app</a></span></div></footer>`;
 }
 function portrait(type){
   if(type==="coach"){
@@ -41,10 +58,12 @@ function trustBand(){
  return `<section class="section band"><div><span class="pill dark">Trust and safeguarding</span><h2>Player visibility should never feel uncontrolled.</h2><p>Scout access is reviewed, player information stays inside controlled product workflows and interest is routed through coaches, clubs and responsible adults.</p></div><div class="band-links"><div class="band-link"><span>Safeguarding</span><span>→</span></div><div class="band-link"><span>Parent / Guardian Notice</span><span>→</span></div><div class="band-link"><span>Report a Concern</span><span>→</span></div></div></section>`;
 }
 function commonCTA(title="Build better player evidence.",copy="Create a free coach account or explore ScoutLink before you register."){
- return `<section class="section cta"><div><span class="pill green">Ready when your team is</span><h2>${title}</h2><p>${copy}</p></div><div class="cta-actions"><button class="btn primary">Register as Coach</button><button class="btn">Explore Demo</button><button class="btn ghost">Request Scout Access</button></div></section>`;
+ return `<section class="section cta"><div><span class="pill green">Ready when your team is</span><h2>${title}</h2><p>${copy}</p></div><div class="cta-actions"><a class="btn primary" href="/register/coach">Register as Coach</a><a class="btn" href="/demo">Explore Demo</a><a class="btn ghost" href="/register/scout">Request Scout Access</a></div></section>`;
 }
 function mobileSticky(primary="Register as Coach"){
- return `<div class="mobile-sticky"><button class="btn primary">${primary}</button><button class="btn">Demo</button></div>`;
+ const label=primary.toLowerCase();
+ const href=label.includes("concern")?"/report-a-concern":label.includes("notice")?"/parent-guardian-notice":label.includes("role")?"#careerRoleList":label.includes("message")?"#publicContactForm":"/register/coach";
+ return `<div class="mobile-sticky"><a class="btn primary" href="${href}">${primary}</a><a class="btn" href="/demo">Demo</a></div>`;
 }
 function homePage(m){
  return `<div class="page">${header("home",m)}<section class="hero"><div><span class="pill white">Grassroots football intelligence</span><h1>Make player evidence easier to trust, find and act on.</h1><p class="lead">ScoutLink helps grassroots coaches organise player profiles, ratings, match facts, fixtures and approved video evidence so reviewed scouts can search, compare and shortlist U7–U16 players with better context.</p><div class="hero-actions"><button class="btn primary">Register as Coach</button><button class="btn">Explore Demo</button><button class="btn ghost">Request Scout Access →</button></div><div class="hero-pills"><span class="pill green">Free coach workspace</span><span class="pill blue">Reviewed scout access</span><span class="pill grey">Adult-led contact</span></div></div>${playerVisual()}</section>

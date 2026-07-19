@@ -8,6 +8,7 @@ const { requireAuth, requireRole, generateId } = require('../utils/auth');
 const email = require('../services/email');
 const config = require('../config');
 const { duplicateMessage } = require('../utils/dbErrors');
+const { hasPermission, loadCurrentStratexAdmin, normalizeRole } = require('../utils/stratexPermissions');
 
 const JOB_STATUSES = ['draft', 'scheduled', 'live', 'closed', 'archived'];
 const WORKING_TYPES = ['Remote', 'Hybrid', 'On-site'];
@@ -35,15 +36,21 @@ function slugify(value) {
 }
 
 async function currentAdmin(req) {
-  const { data } = await supabase.from('stratex').select('id,email,admin_role,role,permissions,is_active').eq('id', req.user.id).maybeSingle();
-  return data || null;
+  return loadCurrentStratexAdmin(req);
 }
 
-function canManageJobs(admin) {
+function canManageJobs(admin, req) {
   if (!admin || admin.is_active === false) return false;
-  const role = admin.admin_role || admin.role || '';
-  const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
-  return MANAGE_JOB_ROLES.includes(role) || perms.includes('management') || perms.includes('operations') || perms.includes('acquisition');
+  const role = normalizeRole(admin.admin_role || admin.role || '');
+  const legacyRole = admin.admin_role || admin.role || '';
+  const perms = Array.isArray(admin.permissions) ? admin.permissions.map(item => String(item || '').toLowerCase()) : [];
+  return MANAGE_JOB_ROLES.includes(legacyRole) ||
+    ['management', 'operations', 'acquisition', 'super admin', 'founder'].includes(role) ||
+    perms.includes('management') ||
+    perms.includes('operations') ||
+    perms.includes('acquisition') ||
+    perms.includes('hiring') ||
+    hasPermission(admin, 'hiring', req);
 }
 
 function requireServiceRole(res) {
@@ -54,7 +61,7 @@ function requireServiceRole(res) {
 
 async function requireJobManager(req, res) {
   const admin = await currentAdmin(req);
-  if (!canManageJobs(admin)) {
+  if (!canManageJobs(admin, req)) {
     res.status(403).json({ error: 'Only Management, Operations or Acquisition admins can manage job posts.' });
     return null;
   }
@@ -475,6 +482,8 @@ router.post('/jobs/:id/fill-vacancy', requireAuth, requireRole('Stratex'), async
 router.get('/job-applications', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     if (!requireServiceRole(res)) return;
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
     const { jobId } = req.query;
     let q = supabase.from('job_applications').select(applicationSelect()).order('submitted_at', { ascending: false }).limit(250);
     if (jobId) q = q.eq('job_post_id', jobId);
@@ -490,6 +499,8 @@ router.get('/job-applications', requireAuth, requireRole('Stratex'), async (req,
 router.get('/job-applications/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
   try {
     if (!requireServiceRole(res)) return;
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
     const app = await loadApplication(req.params.id);
     if (!app) return res.status(404).json({ error: 'Application not found' });
     res.json({ data: publicApplication(app) });
@@ -504,6 +515,8 @@ router.get('/job-applications/:id/cv-url', requireAuth, requireRole('Stratex'), 
     if (!config.supabase.serviceRoleKey) {
       return res.status(503).json({ error: 'Secure CV access is not configured.' });
     }
+    const admin = await requireJobManager(req, res);
+    if (!admin) return;
     const { data: file, error } = await supabase.from('job_application_files').select('*').eq('application_id', req.params.id).maybeSingle();
     if (error || !file) return res.status(404).json({ error: 'CV file not found' });
     const { data, error: signedErr } = await supabase.storage.from(file.bucket || 'job-cvs').createSignedUrl(file.file_path, 60 * 10);

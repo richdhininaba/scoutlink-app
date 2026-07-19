@@ -55,7 +55,7 @@ var COACH_NAV_ITEMS = [
   { icon: 'video', label: 'Video reels', href: 'coach-video-reels.html' },
   { icon: 'message', label: 'Chat', href: 'coach-chat.html' },
   { icon: 'bell', label: 'Notifications', href: 'coach-notifications.html' },
-  { icon: 'flag', label: 'Report a Concern', href: '/report-a-concern' },
+  { icon: 'flag', label: 'Report a Concern', href: '/coach/report-a-concern' },
   { icon: 'adjustments-horizontal', label: 'Settings', href: 'coach-settings.html' },
 ];
 
@@ -104,6 +104,9 @@ function buildScoutNav(containerId, role) {
         'coach-video-reels.html': '/coach/video-reels',
         'coach-chat.html': '/coach/chat',
         'coach-notifications.html': '/coach/notifications',
+        'coach-report-concern.html': '/coach/report-a-concern',
+        'report-concern.html': '/coach/report-a-concern',
+        '/coach/report-a-concern': '/coach/report-a-concern',
         'coach-settings.html': '/coach/settings'
       };
       return cleanMap[item.href] === cleanPath;

@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
 <title>Match facts - ScoutLink</title>
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="../css/variables.css">
 <link rel="stylesheet" href="../css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -89,9 +87,9 @@
 </div>
 <div class="page-content">
 <div class="step-indicator" id="stepIndicator">
-<div class="step active" id="s1">1 Mode and setup</div>
+<div class="step active" id="s1">1 Setup and players</div>
 <div class="step" id="s2">2 Formation</div>
-<div class="step" id="s3">3 Live match</div>
+<div class="step" id="s3">3 Events and score</div>
 <div class="step" id="s4">4 Player ratings</div>
 <div class="step" id="s5">5 Review and submit</div>
 </div>
@@ -105,26 +103,25 @@
 <script src="../js/coach-v2.js"></script>
 <script>
 /* =====================================================================
-   MATCH FACTS - LIVE FORMATION PITCH + POST-GAME MODE
+   MATCH FACTS - POST-MATCH FORMATION, EVENTS AND RATINGS
    ===================================================================== */
 'use strict';
 
 // ---- Shared state ----
 var state = {
-  mode: null, opponent: '', matchDate: '', format: '11', formation: '4-4-2',
+  mode: 'post', opponent: '', matchDate: '', format: '11', formation: '4-4-2',
   myTeamName: 'My team',
   coachTeamId: null,
   fixtureId: null,
   fixtures: [],
   players: [],          // selected players for this match
-  goals: [],            // [{player,assist}] post-game / [{playerId,minute}] live
-  yellowCards: [],      // [playerId] post / [{playerId,minute}] live
+  goals: [],            // [{player,assist}]
+  yellowCards: [],      // [playerId]
   redCards: [],         // same
   homeScore: 0, awayScore: 0, result: '',
   ratings: {},          // {playerId:{pace,agility,...}}
-  // Live mode specific
   playerPositions: {},  // {slotKey: playerId}
-  events: [],           // [{type,playerId,minute,...}]
+  events: [],
   timerSeconds: 0,
   timerInterval: null,
   halfTimePaused: false,
@@ -331,7 +328,7 @@ function applySelectedFixture(id){
 }
 
 /* =====================================================================
-   STEP 1 - MODE AND SETUP
+   STEP 1 - MATCH SETUP AND PLAYER SELECTION
    ===================================================================== */
 function renderStep1(){
   setStep(1);
@@ -352,12 +349,7 @@ function renderStep1(){
   var fixtureHelp=(state.fixtures&&state.fixtures.length)?'Choose a scheduled fixture or continue manually.':'No upcoming fixtures found. You can still enter match facts directly.';
 
   document.getElementById('stepContent').innerHTML=
-  '<div class="table-card"><div class="table-header"><h3>Select match mode</h3></div><div style="padding:20px">'+
-  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'+
-  '<div class="mode-card" data-mode="post" tabindex="0" role="button" aria-pressed="'+(state.mode==='post'?'true':'false')+'"><div class="mode-icon">Post</div><div class="mode-title">Post-game mode</div><div class="mode-desc">Enter match events and ratings after the game.</div><div class="mode-selected">Selected</div></div>'+
-  '<div class="mode-card" data-mode="live" tabindex="0" role="button" aria-pressed="'+(state.mode==='live'?'true':'false')+'"><div class="mode-icon">Live</div><div class="mode-title">Live game mode</div><div class="mode-desc">Record events in real time during the match.</div><div class="mode-selected">Selected</div></div>'+
-  '</div>'+
-  '<hr style="border-color:#30363d;margin-bottom:20px">'+
+  '<div class="table-card"><div class="table-header"><h3>Match setup and player selection</h3><span style="font-size:12px;color:#8b949e">Post-match evidence</span></div><div style="padding:20px">'+
   '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Use upcoming fixture (optional)</label>'+
   '<select id="mfFixture" class="form-select">'+fixtureOptions+'</select>'+
   '<div style="font-size:12px;color:#8b949e;margin-top:6px">'+fixtureHelp+'</div></div>'+
@@ -379,15 +371,7 @@ function renderStep1(){
   '<button class="btn btn-primary" id="nextToStep2Btn">Next: Assign positions &#8594;</button>'+
   '</div></div>';
 
-  document.querySelectorAll('.mode-card').forEach(function(card){
-    if(state.mode===card.getAttribute('data-mode')) card.classList.add('sel');
-    function chooseMode(){
-      document.querySelectorAll('.mode-card').forEach(function(c){c.classList.remove('sel');c.setAttribute('aria-pressed','false');});
-      card.classList.add('sel'); card.setAttribute('aria-pressed','true'); state.mode=card.getAttribute('data-mode');
-    }
-    card.addEventListener('click',chooseMode);
-    card.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();chooseMode();}});
-  });
+  state.mode='post';
   document.getElementById('mfFormat').addEventListener('change',function(){
     var fmt=this.value;
     var fSel=document.getElementById('mfFormation');
@@ -411,16 +395,12 @@ function goToStep2(){
   state.format=document.getElementById('mfFormat').value;
   state.formation=document.getElementById('mfFormation').value;
   if(!state.opponent||!state.matchDate){alert('Please fill in opponent and date.');return;}
-  if(!state.mode){alert('Please select a match mode (Post-game or Live).');return;}
+  state.mode='post';
   state.players=[];
   document.querySelectorAll('.player-check:checked').forEach(function(cb){
     state.players.push({id:cb.value,name:cb.getAttribute('data-name'),position:cb.getAttribute('data-pos')});
   });
-  if(state.mode==='live'){
-    renderStep2Live();
-  } else {
-    renderStep2Post();
-  }
+  renderStep2Post();
 }
 
 function renderStep2Live(){
@@ -601,7 +581,7 @@ function updateAssignStatus(slots){
   if(nextBtn) nextBtn.disabled=!allDone;
 }
 /* =====================================================================
-   STEP 3 - LIVE MATCH WITH TIMER AND PITCH
+   STEP 3 - MATCH EVENTS WITH TIMER AND PITCH
    ===================================================================== */
 function renderStep3Live(){
   setStep(3);
@@ -610,7 +590,7 @@ function renderStep3Live(){
   var pitchHtml=buildPitchHtml(slots,false);
 
   document.getElementById('stepContent').innerHTML=
-  '<div class="table-card"><div class="table-header"><h3>Live match</h3><span style="font-size:12px;color:#8b949e">'+state.opponent+' &bull; '+state.matchDate+'</span></div><div style="padding:20px">'+
+  '<div class="table-card"><div class="table-header"><h3>Match events</h3><span style="font-size:12px;color:#8b949e">'+state.opponent+' &bull; '+state.matchDate+'</span></div><div style="padding:20px">'+
   // Timer
   '<div style="text-align:center;margin-bottom:16px">'+
   '<div class="timer-display" id="timerDisp">00:00</div>'+
@@ -970,7 +950,7 @@ function renderStep5(){
   // Score entry or display
   var scoreSection='';
   if(state.mode==='live'){
-    // For live mode, ask for opponent score
+    // If an older saved session reaches this path, keep the score entry readable.
     var liveHome=state.liveGoals;
     scoreSection='<div style="margin-bottom:16px">'+
     '<label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:12px">Final score</label>'+
@@ -990,7 +970,7 @@ function renderStep5(){
     '<span style="color:'+resColor+';font-weight:700">'+resLabel+'</span></div>';
   }
 
-  // Positions summary (for live mode)
+  // Positions summary
   var posSummary='';
   if(state.mode==='live'&&Object.keys(state.playerPositions).length){
     posSummary='<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:#8b949e;text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em">Lineup</div>'+
@@ -1027,7 +1007,7 @@ function renderStep5(){
   '<div><span style="color:#8b949e">Date:</span> <strong>'+state.matchDate+'</strong></div>'+
   '<div><span style="color:#8b949e">Format:</span> <strong>'+state.format+'-a-side</strong></div>'+
   '<div><span style="color:#8b949e">Formation:</span> <strong>'+state.formation+'</strong></div>'+
-  '<div><span style="color:#8b949e">Mode:</span> <strong>'+(state.mode==='live'?'Live game':'Post-game')+'</strong></div>'+
+  '<div><span style="color:#8b949e">Workflow:</span> <strong>Post-match evidence</strong></div>'+
   '<div><span style="color:#8b949e">Players:</span> <strong>'+state.players.length+'</strong></div>'+
   '</div>'+
   scoreSection+posSummary+evtSummary+
@@ -1042,7 +1022,7 @@ function renderStep5(){
   '<span id="submitMsg" style="font-size:13px"></span>'+
   '</div></div></div>';
 
-  // Result preview for live mode score input
+  // Result preview for score input
   if(state.mode==='live'){
     function updateLiveResult(){
       var h=parseInt(document.getElementById('mfHomeScore').value)||0;
@@ -1120,7 +1100,7 @@ function submitMatchFacts(){
     msg.style.color='#1d9e75';
     setTimeout(function(){
       if(confirm(submitted+' player record'+(submitted!==1?'s':'')+' updated. Submit another match?')){
-        state={mode:null,opponent:'',matchDate:'',format:'11',formation:'4-4-2',myTeamName:state.myTeamName,coachTeamId:state.coachTeamId,fixtureId:null,fixtures:state.fixtures,
+        state={mode:'post',opponent:'',matchDate:'',format:'11',formation:'4-4-2',myTeamName:state.myTeamName,coachTeamId:state.coachTeamId,fixtureId:null,fixtures:state.fixtures,
           players:[],goals:[],yellowCards:[],redCards:[],homeScore:0,awayScore:0,result:'',
           ratings:{},playerPositions:{},events:[],timerSeconds:0,timerInterval:null,halfTimePaused:false,liveGoals:0};
         renderStep1();

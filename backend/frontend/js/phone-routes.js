@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 (function () {
   function item(label, href, icon) {
@@ -13,7 +13,7 @@
     item('Video reels', 'coach-video-reels.html', 'video'),
     item('Chat', 'coach-chat.html', 'message'),
     item('Notifications', 'coach-notifications.html', 'bell'),
-    item('Report a Concern', '/report-a-concern', 'flag'),
+item('Report a Concern', '/coach/report-a-concern', 'flag'),
     item('Settings', 'coach-settings.html', 'settings')
   ];
 

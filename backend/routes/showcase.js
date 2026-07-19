@@ -5,6 +5,9 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const config = require('../config');
 const { createNotification, createNotifications } = require('../services/notifications');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
+
+const requireShowcaseManager = requireStratexAdminPermission('showcase', 'Showcase event access is restricted to authorised Stratex admin users.');
 
 async function sendDirectEmail(to, subject, html) {
   if (!config.sendgrid.apiKey) return;
@@ -54,7 +57,7 @@ async function notifyStratexAdmins(title, body, data) {
 
 function eventHtml(eventName, eventDate, venueName, venueAddress, description, maxScouts) {
   const dateStr = eventDate ? new Date(eventDate).toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : 'TBC';
-  return '<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:24px"><h1 style="color:#00E676">ScoutLink Showcase Event</h1><div style="background:#111827;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00E676"><h2 style="color:#fff;margin:0">' + eventName + '</h2><p style="color:#94a3b8">' + dateStr + '</p><p style="color:#E2E8F0">' + (venueName||'') + ', ' + (venueAddress||'') + '</p>' + (description ? '<p style="color:#B0BEC5">' + description + '</p>' : '') + '</div><p>Spaces are limited to <strong>' + (maxScouts||20) + '</strong> scouts.</p><p style="color:#94a3b8;margin-top:32px">Stratex Analytics — ScoutLink Platform</p></div>';
+  return '<div style="font-family:Inter,sans-serif;max-width:600px;margin:auto;padding:24px"><h1 style="color:#00E676">ScoutLink Showcase Event</h1><div style="background:#111827;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00E676"><h2 style="color:#fff;margin:0">' + eventName + '</h2><p style="color:#94a3b8">' + dateStr + '</p><p style="color:#E2E8F0">' + (venueName||'') + ', ' + (venueAddress||'') + '</p>' + (description ? '<p style="color:#B0BEC5">' + description + '</p>' : '') + '</div><p>Spaces are limited to <strong>' + (maxScouts||20) + '</strong> scouts.</p><p style="color:#94a3b8;margin-top:32px">Stratex Analytics - ScoutLink Platform</p></div>';
 }
 
 // GET /api/showcase - list events
@@ -80,7 +83,7 @@ router.get('/', requireAuth, requireRole('Stratex','Scout'), async (req, res) =>
 });
 
 // POST /api/showcase - create event
-router.post('/', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const { eventName, eventDate, venueName, venueAddress, description, maxScouts, status } = req.body;
     if (!eventName) return res.status(400).json({ error: 'eventName required' });
@@ -102,7 +105,7 @@ router.get('/:id', requireAuth, requireRole('Stratex','Scout'), async (req, res)
 });
 
 // PATCH /api/showcase/:id - update event
-router.patch('/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/:id', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const updates = {};
     const fields = ['eventName','eventDate','venueName','venueAddress','description','maxScouts','status'];
@@ -115,7 +118,7 @@ router.patch('/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 });
 
 // POST /api/showcase/:id/players - add player to showcase
-router.post('/:id/players', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/players', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const { playerId } = req.body;
     if (!playerId) return res.status(400).json({ error: 'playerId required' });
@@ -157,7 +160,7 @@ router.post('/:id/players', requireAuth, requireRole('Stratex'), async (req, res
 });
 
 // DELETE /api/showcase/:id/players/:playerId
-router.delete('/:id/players/:playerId', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/:id/players/:playerId', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     await supabase.from('showcase_players').delete().eq('event_id', req.params.id).eq('player_id', req.params.playerId);
     res.json({ message: 'Player removed from showcase' });
@@ -165,7 +168,7 @@ router.delete('/:id/players/:playerId', requireAuth, requireRole('Stratex'), asy
 });
 
 // POST /api/showcase/:id/confirm - confirm event and notify all scouts
-router.post('/:id/confirm', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/confirm', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const { data: ev, error } = await supabase.from('showcase_events').update({ confirmed: true, status: 'confirmed' }).eq('id', req.params.id).select().single();
     if (error) throw error;
@@ -183,7 +186,7 @@ router.post('/:id/confirm', requireAuth, requireRole('Stratex'), async (req, res
 });
 
 // POST /api/showcase/:id/cancel - cancel event and notify affected users
-router.post('/:id/cancel', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/:id/cancel', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const { reason } = req.body || {};
     const { data: ev, error } = await supabase.from('showcase_events').update({ status: 'cancelled', confirmed: false }).eq('id', req.params.id).select().single();
@@ -292,7 +295,7 @@ router.post('/cancel-attendance', requireAuth, requireRole('Scout'), async (req,
 });
 
 // GET /api/showcase/:id/attendees
-router.get('/:id/attendees', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/:id/attendees', requireAuth, requireRole('Stratex'), requireShowcaseManager, async (req, res) => {
   try {
     const { data: scouts, error: scoutErr } = await supabase.from('scouts').select('id,first_name,last_name,email,club_name,scout_team_id').eq('is_active', true).order('first_name');
     if (scoutErr) throw scoutErr;

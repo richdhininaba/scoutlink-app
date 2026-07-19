@@ -1,4 +1,4 @@
-/* ScoutLink Coach Experience V2
+/* ScoutLink Coach Experience V3
    Scoped to body.coach-v2 so non-coach experiences keep their existing UI. */
 
 body.coach-v2 {
@@ -58,6 +58,8 @@ body.coach-v2 .sidebar {
 body.coach-v2 .dashboard-main {
   margin-left: 224px;
   background: var(--coach-bg);
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 body.coach-v2 .sidebar-logo {
@@ -209,6 +211,9 @@ body.coach-v2 .topbar-right {
 body.coach-v2 .page-content {
   padding: 24px 28px 28px;
   color: var(--coach-text);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body.coach-v2 .table-card,
@@ -365,21 +370,26 @@ body.coach-v2 .grid {
 }
 
 body.coach-v2 .coach-v2-hero {
-  margin-bottom: 18px;
-  padding: 20px;
+  margin-bottom: 20px;
+  padding: 18px 20px;
   border-radius: 22px;
   background: linear-gradient(135deg, #0b2039 0%, #0e3b57 62%, #0a7f64 100%);
   color: #fff;
   box-shadow: var(--coach-shadow-sm);
   display: flex;
   justify-content: space-between;
-  gap: 18px;
-  align-items: flex-end;
+  gap: 24px;
+  align-items: center;
+  overflow: hidden;
+}
+
+body.coach-v2 .coach-v2-hero > div:first-child {
+  min-width: 0;
 }
 
 body.coach-v2 .coach-v2-hero h1,
 body.coach-v2 .coach-v2-hero h2 {
-  margin: 6px 0 8px;
+  margin: 0 0 8px;
   color: #fff;
   font-size: 24px;
   font-weight: 950;
@@ -402,7 +412,7 @@ body.coach-v2 .coach-v2-actions {
 }
 
 body.coach-v2 .coach-v2-actions .btn {
-  min-width: 120px;
+  min-width: 112px;
   white-space: nowrap;
 }
 
@@ -416,29 +426,32 @@ body.coach-v2 .coach-v2-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  padding: 0 8px;
+  min-height: 18px;
+  padding: 0 7px;
   border-radius: 999px;
   background: #dcf8ee;
   color: #087a61;
   font-size: 9px;
   font-weight: 900;
   letter-spacing: .02em;
-  line-height: 1;
+  line-height: 18px;
   width: fit-content;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
 body.coach-v2 .coach-v2-action-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0 0 18px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 20px;
+  clear: both;
 }
 
 body.coach-v2 .coach-v2-action-card {
   min-width: 0;
-  min-height: 112px;
+  min-height: 104px;
   padding: 16px;
   border: 1px solid var(--coach-line);
   border-radius: 18px;
@@ -446,9 +459,10 @@ body.coach-v2 .coach-v2-action-card {
   color: var(--coach-text);
   box-shadow: var(--coach-shadow-sm);
   text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
   overflow: hidden;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
@@ -465,6 +479,8 @@ body.coach-v2 .coach-v2-action-card h3 {
   font-size: 15px;
   font-weight: 900;
   line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 body.coach-v2 .coach-v2-action-card p {
@@ -473,6 +489,10 @@ body.coach-v2 .coach-v2-action-card p {
   font-size: 12px;
   font-weight: 750;
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 body.coach-v2 .coach-v2-action-card span {
@@ -486,12 +506,12 @@ body.coach-v2 .coach-v2-action-card span {
   color: var(--coach-green);
   font-size: 12px;
   font-weight: 950;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 body.coach-v2 .coach-v2-stepper {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 12px;
 }
@@ -539,6 +559,42 @@ body.coach-v2 .coach-v2-wizard-progress {
   font-size: 12px;
   font-weight: 800;
   text-align: center;
+}
+
+body.coach-v2 .coach-v2-bulk-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--coach-line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--coach-shadow-sm);
+}
+
+body.coach-v2 .coach-v2-bulk-toolbar h2 {
+  margin: 0 0 8px;
+  color: var(--coach-text);
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -.03em;
+}
+
+body.coach-v2 .coach-v2-bulk-toolbar p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--coach-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+body.coach-v2 .coach-v2-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 body.coach-v2 .coach-v2-review-card dl {
@@ -858,7 +914,7 @@ body.coach-v2 .video-card {
   }
 
   body.coach-v2 .coach-v2-action-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(140px, 1fr));
   }
 
   body.coach-v2.coach-page-dashboard .table-card:first-of-type,
@@ -938,6 +994,7 @@ body.coach-v2 .video-card {
     min-height: 96px;
     padding: 14px;
     border-radius: 16px;
+    grid-template-columns: 30px minmax(0, 1fr);
   }
 
   body.coach-v2 .coach-v2-action-card span {
@@ -952,6 +1009,20 @@ body.coach-v2 .video-card {
 
   body.coach-v2 .coach-v2-action-card p {
     font-size: 11px;
+  }
+
+  body.coach-v2 .coach-v2-bulk-toolbar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  body.coach-v2 .coach-v2-bulk-actions {
+    justify-content: stretch;
+  }
+
+  body.coach-v2 .coach-v2-bulk-actions .btn {
+    flex: 1 1 150px;
   }
 
   body.coach-v2 .coach-v2-stepper {

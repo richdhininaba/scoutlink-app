@@ -895,6 +895,15 @@ a.pub-btn {
   text-decoration: none;
 }
 
+.experience-portrait {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid var(--pub-line);
+  background: #eef3f8;
+}
+
 .pub-choice-card p,
 .experience-card p {
   color: var(--pub-muted);

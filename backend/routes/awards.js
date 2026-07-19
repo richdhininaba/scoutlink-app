@@ -4,8 +4,10 @@ const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const config = require('../config');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
 
 const AWARD_YEAR = () => new Date().getFullYear();
+const requireAwardsManager = requireStratexAdminPermission('awards', 'Award ceremony access is restricted to authorised Stratex admin users.');
 
 async function sendEmail(to, subject, html) {
   if (!config.sendgrid || !config.sendgrid.apiKey) { console.warn('[Email] No SendGrid API key'); return; }
@@ -51,7 +53,7 @@ function coachNomEmail(playerFullName, awardName, year) {
 }
 
 // GET /api/awards - list nominations with optional year filter
-router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/', requireAuth, requireRole('Stratex'), requireAwardsManager, async (req, res) => {
   try {
     const year = req.query.year ? parseInt(req.query.year) : null;
     let q = supabase.from('award_nominations')
@@ -72,7 +74,7 @@ router.get('/', requireAuth, requireRole('Stratex'), async (req, res) => {
 });
 
 // GET /api/awards/players - all active players for nomination table
-router.get('/players', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.get('/players', requireAuth, requireRole('Stratex'), requireAwardsManager, async (req, res) => {
   try {
     const { data, error } = await supabase.from('players')
       .select('id,first_name,last_name,age,age_group,team_name,team_id,overall_rating,position_group,specific_position,primary_position,positions,appearances,transfer_value')
@@ -83,7 +85,7 @@ router.get('/players', requireAuth, requireRole('Stratex'), async (req, res) => 
 });
 
 // POST /api/awards/nominate - full nomination flow with emails and notifications
-router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/nominate', requireAuth, requireRole('Stratex'), requireAwardsManager, async (req, res) => {
   try {
     const { playerId, awardName } = req.body;
     if (!playerId || !awardName) return res.status(400).json({ error: 'playerId and awardName required' });
@@ -164,7 +166,7 @@ router.post('/nominate', requireAuth, requireRole('Stratex'), async (req, res) =
 });
 
 // PATCH /api/awards/:id/withdraw - withdraw a nomination
-router.patch('/:id/withdraw', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/:id/withdraw', requireAuth, requireRole('Stratex'), requireAwardsManager, async (req, res) => {
   try {
     const { error } = await supabase.from('award_nominations').update({ status: 'withdrawn' }).eq('id', req.params.id);
     if (error) throw error;

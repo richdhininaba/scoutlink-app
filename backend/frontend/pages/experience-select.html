@@ -3,22 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
 <title>Choose Your ScoutLink Workspace | Coach, Scout and Internal Access</title>
-<meta name="description" content="Choose the approved ScoutLink workspace for your account, including coach, scout, player, Stratex internal and isolated demo experiences.">
+<meta name="description" content="Choose the approved ScoutLink workspace for your account, including coach, scout, Stratex internal and isolated demo experiences.">
 <link rel="canonical" href="https://www.scoutlink.app/experience-select">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Choose Your ScoutLink Workspace">
-<meta property="og:description" content="Open coach, scout, player, internal or demo workspaces based on approved ScoutLink access.">
+<meta property="og:description" content="Open coach, scout, internal or demo workspaces based on approved ScoutLink access.">
 <meta property="og:url" content="https://www.scoutlink.app/experience-select">
 <meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0fa37f">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/frontend/css/public-v2.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Choose your ScoutLink workspace","url":"https://www.scoutlink.app/experience-select","description":"ScoutLink presents approved role-based workspaces for coach, scout, player, demo and internal product access."}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Choose your ScoutLink workspace","url":"https://www.scoutlink.app/experience-select","description":"ScoutLink presents approved role-based workspaces for coach, scout, demo and internal product access."}</script>
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -73,7 +71,7 @@
       <div class="pub-shell pub-grid three">
         <article class="pub-panel"><h3>Coach workspace</h3><p>Player profiles, match facts, fixtures, video evidence and controlled scout interest for grassroots teams.</p></article>
         <article class="pub-panel"><h3>Scout workspace</h3><p>Reviewed player search, compatibility scoring, comparison tools, exports, predictions and recruitment pipeline workflows.</p></article>
-        <article class="pub-panel"><h3>Demo and internal access</h3><p>Demo sessions use isolated fictional data, while Stratex internal access supports platform operations and administration.</p></article>
+        <article class="pub-panel"><h3>Demo and internal access</h3><p>Demo sessions use isolated fictional coach and scout data, while Stratex internal access supports platform operations and administration.</p></article>
       </div>
     </section>
   </main>
@@ -84,7 +82,7 @@
 var experiences=[];
 var selectedDemoUsers={};
 function roleHome(type){
-  return {Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'}[type]||'login.html';
+  return {Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html'}[type]||'login.html';
 }
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function badgeText(x){if(x.admin)return 'Admin view'; if(x.demo)return 'Demo experience'; return x.current?'Current role':'Linked role';}
@@ -94,11 +92,15 @@ function render(){
   document.getElementById('selectorMsg').textContent='Select an experience. Demo sessions use isolated records and do not affect live customer data.';
   grid.innerHTML=experiences.map(function(x,i){
     if(x.demo&&(x.demoUsers||[]).length&&!selectedDemoUsers[i]) selectedDemoUsers[i]=x.demoUsers[0].id;
+    var demoImage='';
+    if(x.demo&&x.accountType==='Coach') demoImage='<img class="experience-portrait" src="/frontend/images/coach-demo.png" alt="" loading="lazy">';
+    if(x.demo&&x.accountType==='Scout') demoImage='<img class="experience-portrait" src="/frontend/images/scout-demo.png" alt="" loading="lazy">';
     var userChoices=(x.demo&&(x.demoUsers||[]).length)?'<div class="demo-user-list" aria-label="Choose demo user">'+x.demoUsers.map(function(u){
       var active=selectedDemoUsers[i]===u.id;
       return '<button type="button" class="demo-user-option '+(active?'active':'')+'" data-demo-card="'+i+'" data-demo-user="'+esc(u.id)+'"><strong>'+esc(u.label||((u.firstName||'')+' '+(u.lastName||''))||u.email)+'</strong><span>'+esc(u.teamName||u.email||'Demo account')+'</span></button>';
     }).join('')+'</div>':'';
     return '<article class="experience-card '+(x.admin?'admin':'')+'">'+
+      demoImage+
       '<span class="experience-badge">'+esc(badgeText(x))+'</span>'+
       '<h2>'+esc(x.label||x.accountType)+'</h2>'+
       '<p>'+esc(x.description||'Open this ScoutLink experience.')+'</p>'+
@@ -152,7 +154,7 @@ async function load(){
   if(!Auth.isLoggedIn()){navigateClean('login.html');return;}
   try{
     var d=await api('GET','/api/auth/experiences');
-    experiences=d.data||[];
+    experiences=(d.data||[]).filter(function(x){return x && x.accountType !== 'Player';});
     render();
   }catch(e){
     document.getElementById('selectorMsg').textContent=e.message||'Could not load experiences.';

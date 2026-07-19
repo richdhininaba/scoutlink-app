@@ -178,6 +178,7 @@
     { "source": "/coach/video-reels", "destination": "/frontend/pages/coach-video-reels.html" },
     { "source": "/coach/chat", "destination": "/frontend/pages/coach-chat.html" },
     { "source": "/coach/notifications", "destination": "/frontend/pages/coach-notifications.html" },
+    { "source": "/coach/report-a-concern", "destination": "/frontend/pages/coach-report-concern.html" },
     { "source": "/coach/settings", "destination": "/frontend/pages/coach-settings.html" },
     { "source": "/scout/dashboard", "destination": "/frontend/pages/scout-dashboard.html" },
     { "source": "/scout/onboarding", "destination": "/frontend/pages/scout-onboarding.html" },

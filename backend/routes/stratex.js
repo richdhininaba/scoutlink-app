@@ -11,6 +11,9 @@ const config = require('../config');
 const { applyRealDataFilter } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan, effectiveLimits, addSubscriptionYear, displayLimit, normalizePlan, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
+const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
+
+const requireOperationsAdmin = requireStratexAdminPermission('operations', 'Operations permission is required for this Stratex admin action.');
 
 const contractUpload = multer({
 storage: multer.memoryStorage(),
@@ -447,10 +450,10 @@ res.json({ data: (data||[]).map(c => ({ ...c, academy_team: c.team_id ? teamMap[
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.patch('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), updateScoutSuperUser);
-router.post('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), updateScoutSuperUser);
-router.patch('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), updateCoachSuperUser);
-router.post('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), updateCoachSuperUser);
+router.patch('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), requireOperationsAdmin, updateScoutSuperUser);
+router.post('/scouts/:id/super-user', requireAuth, requireRole('Stratex'), requireOperationsAdmin, updateScoutSuperUser);
+router.patch('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), requireOperationsAdmin, updateCoachSuperUser);
+router.post('/coaches/:id/super-user', requireAuth, requireRole('Stratex'), requireOperationsAdmin, updateCoachSuperUser);
 
 router.get('/scouts/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
@@ -478,7 +481,7 @@ res.json({ scout, scoutTeam, teamUsage: scoutTeam ? await scoutTeamUsage(scoutTe
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.delete('/scouts/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/scouts/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const removed = await deleteScoutsByIds([req.params.id]);
 res.json({ message: 'Scout deleted', removed });
@@ -500,14 +503,14 @@ res.json({ coach, academyTeam, stats: { assignedPlayers, teamPlayers, startedAt:
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.delete('/coaches/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/coaches/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const removed = await deleteCoachesByIds([req.params.id]);
 res.json({ message: 'Coach deleted', removed });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.post('/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/scouts', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, subscriptionPlan } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
@@ -539,7 +542,7 @@ res.status(201).json({ message: 'Scout added. Complete-registration email sent.'
 } catch(err) { console.error(err); sendDbError(res, err); }
 });
 
-router.post('/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/coaches', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { firstName, lastName, emailAddr, phone, teamName, roleAtClub, county, league } = req.body;
 if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
@@ -607,7 +610,7 @@ res.json({ data: data || [] });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.post('/leagues', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/leagues', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const urls = teamUrlPayload(req.body || {});
 const league = await ensureLeagueOption(req.body.name || urls.leagueName, req.user.id, urls.leagueFullTimeUrl, urls.teamWebsiteUrl);
@@ -801,7 +804,7 @@ res.status(201).json({ message: 'Meeting booked', data });
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.patch('/scouts/:id/plan', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/scouts/:id/plan', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { subscriptionPlan } = req.body;
 const plan = normalizePlan(subscriptionPlan);
@@ -828,7 +831,7 @@ res.json({ data: (data||[]).map((t, i) => ({ ...t, usage: usage[i] })), total: c
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.post('/scout-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/scout-teams', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { team_name, tier, country, formation, playing_style } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
@@ -854,7 +857,7 @@ res.status(201).json({ data, message: 'Scout team created' });
 } catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
-router.patch('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/scout-teams/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const updates = {};
 if (req.body.team_name !== undefined) updates.team_name = String(req.body.team_name || '').trim();
@@ -888,7 +891,7 @@ res.json({ data, usage: await scoutTeamUsage(data) });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.post('/scout-teams/:id/activate', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/scout-teams/:id/activate', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const admin = await requireSensitiveAdmin(req, res);
 if (!admin) return;
@@ -925,7 +928,7 @@ res.json({ message: 'Scout team activated', data, usage: await scoutTeamUsage(da
 } catch(err) { console.error('[Scout team activate]', err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
-router.patch('/scout-teams/:id/limits', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/scout-teams/:id/limits', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const admin = await requireSensitiveAdmin(req, res);
 if (!admin) return;
@@ -946,7 +949,7 @@ res.json({ message: 'Scout team limits updated', data, usage: await scoutTeamUsa
 } catch(err) { console.error('[Scout team limits]', err); res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
-router.delete('/scout-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/scout-teams/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { data: assignedScouts } = await supabase.from('scouts').select('id').eq('scout_team_id', req.params.id);
 await supabase.from('compatibility_scores').delete().eq('scout_team_id', req.params.id);
@@ -968,7 +971,7 @@ res.json({ data: data||[] });
 });
 
 // Add scout to scout team
-router.post('/scout-teams/:id/scouts', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/scout-teams/:id/scouts', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { scout_id } = req.body;
 if (!scout_id) return res.status(400).json({ error: 'scout_id required' });
@@ -991,7 +994,7 @@ res.json({ message: 'Scout added to team' });
 });
 
 // Remove scout from scout team
-router.delete('/scout-teams/:id/scouts/:scoutId', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/scout-teams/:id/scouts/:scoutId', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { error } = await supabase.from('scouts').update({ scout_team_id: null }).eq('id', req.params.scoutId).eq('scout_team_id', req.params.id);
 if (error) throw error;
@@ -1008,7 +1011,7 @@ res.json({ data: data||[], total: count||0 });
 } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
-router.post('/school-teams', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/school-teams', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { team_name, county, city, country, contact_email } = req.body;
 if (!team_name) return res.status(400).json({ error: 'team_name required' });
@@ -1030,7 +1033,7 @@ res.status(201).json({ data, message: 'Non Pro Academy created' });
 } catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
-router.patch('/school-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.patch('/school-teams/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const updates = {};
 if (req.body.team_name !== undefined) updates.team_name = String(req.body.team_name || '').trim();
@@ -1052,7 +1055,7 @@ res.json({ data, message: 'Non Pro Academy updated' });
 } catch(err) { res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' }); }
 });
 
-router.delete('/school-teams/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/school-teams/:id', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { data: teamPlayers } = await supabase.from('players').select('id').eq('team_id', req.params.id);
 const { data: teamCoaches } = await supabase.from('coaches').select('id').eq('team_id', req.params.id);
@@ -1076,7 +1079,7 @@ res.json({ data: data||[] });
 });
 
 // Add coach to school team
-router.post('/school-teams/:id/coaches', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.post('/school-teams/:id/coaches', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { coach_id } = req.body;
 if (!coach_id) return res.status(400).json({ error: 'coach_id required' });
@@ -1088,7 +1091,7 @@ res.json({ message: 'Coach added to team' });
 });
 
 // Remove coach from school team
-router.delete('/school-teams/:id/coaches/:coachId', requireAuth, requireRole('Stratex'), async (req, res) => {
+router.delete('/school-teams/:id/coaches/:coachId', requireAuth, requireRole('Stratex'), requireOperationsAdmin, async (req, res) => {
 try {
 const { error } = await supabase.from('coaches').update({ team_id: null }).eq('id', req.params.coachId).eq('team_id', req.params.id);
 if (error) throw error;

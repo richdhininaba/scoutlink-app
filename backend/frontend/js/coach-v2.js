@@ -11,7 +11,9 @@
     'coach-chat.html': 'chat',
     'coach-notifications.html': 'notifications',
     'coach-settings.html': 'settings',
-    'match-facts.html': 'match-facts'
+    'match-facts.html': 'match-facts',
+    'coach-report-concern.html': 'report-a-concern',
+    'report-concern.html': 'report-a-concern'
   };
 
   function path() {
@@ -43,6 +45,7 @@
     if (p.indexOf('/coach/video-reels') === 0) return 'video-reels';
     if (p.indexOf('/coach/chat') === 0) return 'chat';
     if (p.indexOf('/coach/notifications') === 0) return 'notifications';
+    if (p.indexOf('/coach/report-a-concern') === 0) return 'report-a-concern';
     if (p.indexOf('/coach/settings') === 0) return 'settings';
     if (p.indexOf('/coach/match-facts') === 0) return 'match-facts';
     return COACH_PAGE_FILES[fileName()] || 'coach';
@@ -141,6 +144,7 @@
       'video-reels': 'Video reels',
       chat: 'Chat',
       notifications: 'Notifications',
+      'report-a-concern': 'Report a concern',
       settings: 'Settings',
       'match-facts': 'Match facts'
     };
@@ -160,6 +164,7 @@
       'video-reels': ['Video evidence that stays organised.', 'Upload clips, assign them to players and keep approved evidence easy to find.'],
       chat: ['Coach-mediated conversations.', 'Keep scout conversations attached to the right player context and safeguarding route.'],
       notifications: ['What needs your attention.', 'Important player, fixture and scout activity without noise.'],
+      'report-a-concern': ['Report a concern.', 'Tell Stratex about inappropriate contact, suspected misuse, inaccurate access or another product safety issue.'],
       settings: ['Settings that match how you coach.', 'Manage team access, alerts, security and preferences.'],
       'match-facts': ['Match facts.', 'Record the evidence that feeds coach profiles, scout search and player development.']
     }[key] || ['Coach workspace', 'ScoutLink coach tools.'];
@@ -276,13 +281,24 @@
       '</dl>';
     host.insertBefore(reviewCard, error || success || submit || null);
 
+    function cardByHeading(text) {
+      text = text.toLowerCase();
+      return cards.find(function (card) {
+        var h = card.querySelector('h1,h2,h3,h4');
+        return h && (h.textContent || '').toLowerCase().indexOf(text) >= 0;
+      });
+    }
+
     var assignment = document.getElementById('coachAssignmentCard');
+    var personalCard = cardByHeading('personal') || cards[0];
+    var positionCard = cardByHeading('position') || cards[1];
+    var physicalCard = cardByHeading('physical') || cards[3] || cards[2];
+    var attributesCard = cardByHeading('attribute') || cards[cards.length - 1];
     var steps = [
-      { label: 'Basic', helper: 'Player identity and age group.', nodes: [cards[0]] },
-      { label: 'Position', helper: 'Role, preferred foot and coach assignment.', nodes: [cards[1], assignment].filter(Boolean) },
-      { label: 'Physical', helper: 'Height and build ranges.', nodes: [cards[3] || cards[2]] },
-      { label: 'Attributes', helper: 'Coach ratings out of 10.', nodes: [cards[4] || cards[cards.length - 1]] },
-      { label: 'Review', helper: 'Save the player once the details look right.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
+      { label: 'Personal details', helper: 'Player identity, contact details and age group.', nodes: [personalCard] },
+      { label: 'Football profile', helper: 'Position, preferred foot and coach assignment.', nodes: [positionCard, assignment].filter(Boolean) },
+      { label: 'Physical profile and attributes', helper: 'Height, build and coach ratings out of 10.', nodes: [physicalCard, attributesCard].filter(Boolean) },
+      { label: 'Review and create', helper: 'Check the profile summary before creating the player.', nodes: [reviewCard, error, success, submit].filter(Boolean) }
     ];
     var owned = [];
     steps.forEach(function (step) {
@@ -291,7 +307,7 @@
       });
     });
     cards.forEach(function (card) {
-      if (owned.indexOf(card) === -1) steps[4].nodes.unshift(card);
+      if (owned.indexOf(card) === -1) steps[2].nodes.push(card);
     });
 
     var tracker = document.createElement('div');
@@ -396,6 +412,54 @@
     });
   }
 
+  function enhanceBulkImport() {
+    if (pageKey() !== 'bulk-add-players') return;
+    var content = document.querySelector('.page-content');
+    if (!content || content.querySelector('.coach-v2-bulk-toolbar')) return;
+    var firstCard = content.querySelector('.table-card, .card');
+    var toolbar = document.createElement('section');
+    toolbar.className = 'coach-v2-bulk-toolbar';
+    toolbar.innerHTML =
+      '<div><span class="coach-v2-chip">Bulk player management</span><h2>Add or update players in one controlled workspace.</h2><p>Use the add mode for new players. Existing player edits stay tied to their player ID and should be made through the current profile edit flow until the transactional bulk-edit endpoint is available.</p></div>' +
+      '<div class="coach-v2-bulk-actions">' +
+      '<button type="button" class="btn btn-primary is-active" data-bulk-mode="add">Add new players</button>' +
+      '<a class="btn btn-outline" href="coach-my-players.html">Edit existing players</a>' +
+      '<button type="button" class="btn btn-outline" data-download-template>Download CSV template</button>' +
+      '</div>';
+    content.insertBefore(toolbar, firstCard || content.firstChild);
+    var download = toolbar.querySelector('[data-download-template]');
+    if (download) {
+      download.addEventListener('click', function () {
+        var headers = [
+          'firstName', 'lastName', 'email', 'guardianEmail', 'dateOfBirth', 'ageGroup',
+          'pace', 'agility', 'strength', 'stamina', 'jumping', 'composure',
+          'shooting', 'passing', 'dribbling', 'defending', 'crossing', 'vision',
+          'positioning', 'heading', 'tackling', 'notes'
+        ];
+        var blob = new Blob([headers.join(',') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'scoutlink-player-import-template.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 250);
+      });
+    }
+  }
+
+  function removeLiveModePresentation() {
+    if (pageKey() !== 'match-facts') return;
+    document.querySelectorAll('#s1').forEach(function (el) { el.textContent = '1 Setup and players'; });
+    document.querySelectorAll('#s3').forEach(function (el) { el.textContent = '3 Events and score'; });
+    document.querySelectorAll('.mode-card[data-mode="live"]').forEach(function (el) { el.remove(); });
+    document.querySelectorAll('.mode-card[data-mode="post"]').forEach(function (el) {
+      el.classList.add('sel');
+      el.setAttribute('aria-pressed', 'true');
+    });
+  }
+
   function refresh() {
     enable();
     if (!document.body || !document.body.classList.contains('coach-v2')) return;
@@ -404,6 +468,8 @@
     addHero();
     dashboardActions();
     setupAddPlayerWizard();
+    enhanceBulkImport();
+    removeLiveModePresentation();
     addBottomNav();
     patchChatRefreshHero();
     bindHeroActions();
