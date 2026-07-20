@@ -1,0 +1,1773 @@
+/* ScoutLink Coach Player Profile V3
+   Applies only when the shared player profile is opened by a Coach account. */
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 {
+  --cp3-ink: #07111f;
+  --cp3-navy: #0b2139;
+  --cp3-navy-2: #123d64;
+  --cp3-green: #0fa37f;
+  --cp3-green-dark: #08775e;
+  --cp3-green-soft: #e3f8f1;
+  --cp3-blue: #2563eb;
+  --cp3-blue-soft: #e9f0ff;
+  --cp3-cyan: #28b7d6;
+  --cp3-violet: #8b5cf6;
+  --cp3-gold: #f4b400;
+  --cp3-orange: #f97316;
+  --cp3-red: #d94a5b;
+  --cp3-red-soft: #fff0f2;
+  --cp3-surface: #ffffff;
+  --cp3-surface-2: #f8fafc;
+  --cp3-page: #f2f5f9;
+  --cp3-line: #dbe4ee;
+  --cp3-line-strong: #c9d6e3;
+  --cp3-text: #101828;
+  --cp3-muted: #62748a;
+  --cp3-muted-2: #8ea0b3;
+  --cp3-shadow: 0 20px 50px rgba(7,17,31,.10);
+  --cp3-shadow-sm: 0 8px 22px rgba(7,17,31,.07);
+  --coach-sidebar-w: 165px;
+  background: var(--cp3-page) !important;
+  color: var(--cp3-text) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .dashboard {
+  min-height: 100dvh !important;
+  background: var(--cp3-page) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .sidebar {
+  width: var(--coach-sidebar-w) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .dashboard-main {
+  width: calc(100vw - var(--coach-sidebar-w)) !important;
+  min-height: 100dvh !important;
+  margin-left: var(--coach-sidebar-w) !important;
+  background: var(--cp3-page) !important;
+  overflow-x: hidden !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .topbar {
+  height: 64px !important;
+  min-height: 64px !important;
+  padding: 0 20px !important;
+  border-bottom: 1px solid var(--cp3-line) !important;
+  background: #fff !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .topbar-title {
+  color: var(--cp3-text) !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.02em !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .topbar-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .topbar .action-btn {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 11px !important;
+  border-radius: 9px !important;
+  font-size: 10px !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .notif-btn {
+  position: relative;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #31465d !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  box-shadow: none !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .notif-btn:hover {
+  background: #f3f7fa !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .notif-badge {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--cp3-red);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  align-items: center;
+  justify-content: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .page-content {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 15px 18px 30px !important;
+  overflow: visible !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .public-demo-banner {
+  margin-bottom: 12px !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-shell,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-shell * {
+  box-sizing: border-box;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-shell {
+  color: var(--cp3-text);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn {
+  min-height: 37px;
+  padding: 0 13px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 10px;
+  background: #fff;
+  color: #324960;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn:hover {
+  border-color: #b9c8d7;
+  background: #f8fafc;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-primary {
+  color: #fff;
+  background: var(--cp3-green);
+  border-color: var(--cp3-green);
+  box-shadow: 0 8px 20px rgba(15,163,127,.19);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-primary:hover {
+  background: var(--cp3-green-dark);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-dark {
+  color: #fff;
+  background: var(--cp3-ink);
+  border-color: var(--cp3-ink);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-danger {
+  color: #b42335;
+  background: #fff3f4;
+  border-color: #efc3c9;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-small {
+  min-height: 31px;
+  height: 31px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-btn.is-block {
+  width: 100%;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill {
+  min-height: 25px;
+  padding: 0 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #54677d;
+  background: #edf2f7;
+  font-size: 9px;
+  line-height: 1.1;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill.is-green {
+  background: var(--cp3-green-soft);
+  color: var(--cp3-green-dark);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill.is-blue {
+  background: var(--cp3-blue-soft);
+  color: #1d4ed8;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill.is-gold {
+  background: #fff5cd;
+  color: #8a6500;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill.is-orange {
+  background: #fff0e4;
+  color: #b44208;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-pill.is-red {
+  background: #ffe9ec;
+  color: #b42335;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-warning {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #f2ca8e;
+  border-radius: 13px;
+  background: #fff8e9;
+  color: #8b5a00;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero {
+  overflow: hidden;
+  border: 1px solid var(--cp3-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-main {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 22px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-player-avatar {
+  width: 65px;
+  height: 65px;
+  flex: 0 0 65px;
+  overflow: hidden;
+  border: 1px solid #cdd9e5;
+  border-radius: 20px;
+  background: #e8eef5;
+  color: var(--cp3-navy);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-player-avatar .sl-avatar,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-player-avatar > * {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity-copy {
+  min-width: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity h1 {
+  margin: 0;
+  color: var(--cp3-text);
+  font-size: 22px;
+  line-height: 1.08;
+  font-weight: 950;
+  letter-spacing: -.7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity-meta {
+  margin: 5px 0 0;
+  color: var(--cp3-muted);
+  font-size: 10px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tags,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tags {
+  margin-top: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-actions {
+  margin-top: 11px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-value {
+  min-width: 190px;
+  text-align: right;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-value strong {
+  display: block;
+  color: var(--cp3-green);
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-value span {
+  display: block;
+  margin-top: 5px;
+  color: var(--cp3-muted);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion {
+  padding: 11px 18px;
+  border-top: 1px solid var(--cp3-line);
+  background: #fbfcfe;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(250px,.45fr);
+  gap: 16px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion-copy b {
+  display: block;
+  color: var(--cp3-text);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion-copy span {
+  display: block;
+  margin-top: 3px;
+  color: var(--cp3-muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion-track {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e3eaf1;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cp3-green);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion-track b {
+  color: var(--cp3-green-dark);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-quick-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action {
+  min-height: 125px;
+  padding: 16px;
+  border-radius: 17px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 96% 8%,rgba(56,189,248,.18),transparent 31%),
+    linear-gradient(135deg,#07111f,#11395e 67%,#08775e 140%);
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 15px;
+  align-items: center;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action small {
+  color: #91dfca;
+  font-size: 8px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action h2,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action h3 {
+  margin: 8px 0 5px;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 950;
+  letter-spacing: -.45px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action p {
+  max-width: 650px;
+  margin: 0;
+  color: #c9d6e3;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action .cp3-btn:not(.is-primary) {
+  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust {
+  padding: 15px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust h3 {
+  margin: 0;
+  color: var(--cp3-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust-row {
+  min-height: 35px;
+  border-top: 1px solid #edf1f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust-row:first-of-type {
+  margin-top: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust-row span {
+  color: var(--cp3-muted);
+  font-size: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust-row b,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-trust-row a {
+  color: var(--cp3-text);
+  font-size: 9px;
+  font-weight: 900;
+  text-align: right;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat {
+  min-width: 0;
+  min-height: 108px;
+  padding: 14px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat small {
+  display: block;
+  color: #61758b;
+  font-size: 8px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .45px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat strong {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--cp3-text);
+  font-size: 19px;
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -.45px;
+  text-overflow: ellipsis;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat strong.is-gold {
+  color: var(--cp3-gold);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat strong.is-orange {
+  color: var(--cp3-orange);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat strong.is-green {
+  color: var(--cp3-green);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat p {
+  margin: 5px 0 0;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tabs {
+  position: sticky;
+  top: 72px;
+  z-index: 35;
+  margin-top: 12px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--cp3-line);
+  border-radius: 13px;
+  background: rgba(255,255,255,.96);
+  display: flex;
+  gap: 5px;
+  box-shadow: var(--cp3-shadow-sm);
+  scrollbar-width: none;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tab {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5a6e84;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tab.is-active {
+  background: var(--cp3-ink);
+  color: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--cp3-line);
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: var(--cp3-shadow-sm);
+  scroll-margin-top: 125px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-head {
+  min-height: 50px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--cp3-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-title {
+  min-width: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-title h2,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-title h3 {
+  margin: 0;
+  color: var(--cp3-text);
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-title p {
+  margin: 3px 0 0;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-panel-body {
+  padding: 14px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-rating-layout {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 12px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-card {
+  min-width: 0;
+  min-height: 86px;
+  padding: 11px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-card small {
+  display: block;
+  color: #63768b;
+  font-size: 7px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-card strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--cp3-text);
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-card p {
+  margin: 5px 0 0;
+  color: var(--cp3-muted);
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-bar-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-bar-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0,1fr) 30px;
+  gap: 8px;
+  align-items: center;
+  color: #40546a;
+  font-size: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-bar-row .cp3-progress {
+  height: 7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-bar-row b {
+  font-size: 9px;
+  text-align: right;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-box {
+  padding: 12px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 13px;
+  background: #f9fbfd;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-box h3,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-box h4 {
+  margin: 0 0 9px;
+  color: var(--cp3-text);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-card {
+  min-width: 0;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-card small {
+  color: var(--cp3-muted);
+  font-size: 7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-card b {
+  display: block;
+  margin-top: 7px;
+  overflow: hidden;
+  color: var(--cp3-text);
+  font-size: 12px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-blurred {
+  display: inline-block;
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-help {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #cfe0f2;
+  border-radius: 11px;
+  background: #f0f7ff;
+  color: #4e6278;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-controls {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-controls select {
+  width: 100%;
+  min-height: 37px;
+  padding: 0 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cp3-text);
+  font-size: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea {
+  margin-top: 10px;
+  color: var(--cp3-text);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea > div {
+  border: 1px solid var(--cp3-line) !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+  color: var(--cp3-text) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea p,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea span,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea small {
+  color: var(--cp3-muted) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #predResultArea b {
+  color: var(--cp3-text);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output {
+  min-height: 88px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 15px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output strong {
+  display: block;
+  color: var(--cp3-text);
+  font-size: 23px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output strong.is-green {
+  color: var(--cp3-green);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output strong.is-blue {
+  color: #4c91ff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output strong.is-gold {
+  color: var(--cp3-gold);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output span {
+  display: block;
+  margin-top: 5px;
+  color: #677a8f;
+  font-size: 7px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-profile-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1.2fr .9fr .9fr;
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-profile-grid .cp3-panel {
+  margin-top: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-attribute-list {
+  display: grid;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-attribute {
+  display: grid;
+  grid-template-columns: 72px minmax(0,1fr) 30px;
+  gap: 8px;
+  align-items: center;
+  color: #40546a;
+  font-size: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-attribute .cp3-progress {
+  height: 5px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-attribute b {
+  color: var(--cp3-green-dark);
+  font-size: 9px;
+  text-align: right;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-metric {
+  min-height: 92px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-metric b {
+  display: block;
+  color: var(--cp3-text);
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-metric span {
+  display: block;
+  margin-top: 5px;
+  color: var(--cp3-muted);
+  font-size: 7px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-hero {
+  padding: 12px;
+  border: 1px solid #d3e4ed;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#e8f7f2,#e6effc);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-hero small {
+  color: #61758b;
+  font-size: 7px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-hero h4 {
+  margin: 7px 0 3px;
+  color: var(--cp3-text);
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-hero p {
+  margin: 0;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-card {
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 11px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-card small {
+  display: block;
+  color: var(--cp3-muted);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-physical-card b {
+  display: block;
+  margin-top: 8px;
+  color: var(--cp3-text);
+  font-size: 10px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-grid .cp3-panel {
+  margin-top: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-list,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture-list {
+  display: grid;
+  gap: 7px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-item {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 11px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-item b {
+  display: block;
+  overflow: hidden;
+  color: var(--cp3-text);
+  font-size: 9px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-item span {
+  display: block;
+  margin-top: 3px;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-result {
+  text-align: right;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-result strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--cp3-gold);
+  font-size: 9px;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture {
+  min-height: 60px;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 11px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: 78px minmax(0,1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture time {
+  color: var(--cp3-muted);
+  font-size: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture b {
+  display: block;
+  color: var(--cp3-text);
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture span {
+  display: block;
+  margin-top: 3px;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-upload {
+  padding: 12px;
+  border: 1px solid #d0e9df;
+  border-radius: 12px;
+  background: #eef8f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-upload b {
+  display: block;
+  color: var(--cp3-text);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-upload p {
+  margin: 3px 0 0;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #videoUploadLinkResult {
+  margin-top: 10px !important;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #videoUploadLinkResult label,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #videoUploadLinkResult div {
+  color: var(--cp3-muted) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 #generatedVideoUploadUrl {
+  min-height: 38px;
+  border: 1px solid var(--cp3-line) !important;
+  background: #fff !important;
+  color: var(--cp3-text) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 9px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-card {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-thumb {
+  aspect-ratio: 16/9;
+  border-radius: 9px;
+  background: linear-gradient(135deg,#07111f,#123d64);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-card h4 {
+  margin: 9px 0 3px;
+  color: var(--cp3-text);
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-card p {
+  margin: 0 0 9px;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-empty {
+  min-height: 155px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #eef3f7;
+  color: #536a80;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-empty h4 {
+  margin: 10px 0 4px;
+  color: var(--cp3-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-empty p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-card {
+  min-width: 0;
+  min-height: 82px;
+  padding: 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 11px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-card small {
+  color: var(--cp3-muted);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-card b {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--cp3-text);
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: 900;
+  text-overflow: ellipsis;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-card p {
+  margin: 4px 0 0;
+  color: var(--cp3-muted);
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-loading,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-error {
+  min-height: 260px;
+  padding: 30px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 17px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  box-shadow: var(--cp3-shadow-sm);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-error {
+  border-color: #efc3c9;
+  background: var(--cp3-red-soft);
+  color: #9f2435;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12050;
+  padding: 20px;
+  background: rgba(7,17,31,.72);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal[aria-hidden="false"] {
+  display: flex;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-card {
+  width: min(860px,100%);
+  max-height: min(880px,90dvh);
+  overflow: auto;
+  border: 1px solid var(--cp3-line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--cp3-shadow);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 61px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--cp3-line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-head h2 {
+  margin: 0;
+  color: var(--cp3-text);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-body {
+  padding: 18px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-edit-section {
+  margin-bottom: 18px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-edit-section:last-child {
+  margin-bottom: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-edit-section h3 {
+  margin: 0 0 11px;
+  color: var(--cp3-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 10px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field {
+  min-width: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field.is-wide {
+  grid-column: span 2;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field label {
+  display: block;
+  margin: 0 0 5px;
+  color: var(--cp3-muted);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .45px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field input,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--cp3-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cp3-text);
+  font-size: 11px;
+  outline: 0;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field input:focus,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field select:focus {
+  border-color: var(--cp3-green);
+  box-shadow: 0 0 0 3px rgba(15,163,127,.12);
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 18px;
+  border-top: 1px solid var(--cp3-line);
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-status {
+  margin-right: auto;
+  align-self: center;
+  color: var(--cp3-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .video-modal,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .profile-modal {
+  background: rgba(7,17,31,.74) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .video-modal-box,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .profile-modal-box {
+  border: 1px solid var(--cp3-line) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  color: var(--cp3-text) !important;
+  box-shadow: var(--cp3-shadow) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .video-modal-head,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .profile-modal-head {
+  border-bottom-color: var(--cp3-line) !important;
+  background: #fff !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .video-modal-head *,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .profile-modal-head *,
+body.coach-v2.coach-page-profile.coach-player-profile-v3 .profile-modal-body {
+  color: var(--cp3-text) !important;
+}
+
+body.coach-v2.coach-page-profile.coach-player-profile-v3 :focus-visible {
+  outline: 3px solid rgba(15,163,127,.25) !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 1180px) and (min-width: 951px) {
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-profile-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-profile-grid .cp3-panel:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 950px), ((hover:none) and (pointer:coarse) and (max-width:1024px)) {
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 {
+    --coach-sidebar-w: 0px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .dashboard-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .topbar {
+    display: none !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9000 !important;
+    height: 60px !important;
+    padding: 0 15px !important;
+    border-bottom: 1px solid var(--cp3-line) !important;
+    background: #fff !important;
+    display: grid !important;
+    grid-template-columns: minmax(84px,1fr) auto minmax(84px,1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-shadow: 0 8px 20px rgba(15,23,42,.06) !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top::before {
+    content: "Scout";
+    justify-self: start;
+    color: var(--cp3-ink);
+    font-size: 19px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -1px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top::after {
+    content: "Link";
+    position: absolute;
+    left: 58px;
+    top: 22px;
+    color: var(--cp3-green);
+    font-size: 19px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -1px;
+    pointer-events: none;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-menu-button {
+    justify-self: end !important;
+    order: 3;
+    width: auto !important;
+    height: 36px !important;
+    min-width: 58px !important;
+    min-height: 36px !important;
+    padding: 0 11px !important;
+    border: 1px solid var(--cp3-line) !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #31465d !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-menu-button::after {
+    content: "Menu";
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-menu-button span {
+    display: none !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-title {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    color: var(--cp3-text) !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    white-space: nowrap;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-bell {
+    display: none !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .page-content {
+    padding: 74px 12px 82px !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .public-demo-banner {
+    margin-top: 60px !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3.public-demo-mode .page-content {
+    padding-top: 12px !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-main {
+    display: block;
+    padding: 14px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity {
+    align-items: flex-start;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-player-avatar {
+    width: 55px;
+    height: 55px;
+    flex-basis: 55px;
+    border-radius: 17px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-identity h1 {
+    font-size: 20px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-actions .cp3-btn:first-child {
+    grid-column: 1 / -1;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-value {
+    min-width: 0;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--cp3-line);
+    text-align: left;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-hero-value strong {
+    font-size: 22px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion {
+    display: block;
+    padding: 11px 14px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-completion-track {
+    margin-top: 9px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action {
+    display: block;
+    padding: 14px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action h3 {
+    font-size: 16px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-next-action-actions {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat-grid,
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-output-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat {
+    min-height: 98px;
+    padding: 12px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-stat strong {
+    font-size: 17px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tabs {
+    top: 66px;
+    white-space: nowrap;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-tab {
+    flex: 0 0 auto;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-rating-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-score-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-bar-row {
+    grid-template-columns: 88px minmax(0,1fr) 25px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-profile-grid,
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture {
+    grid-template-columns: 66px minmax(0,1fr);
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-fixture .cp3-btn {
+    grid-column: 1 / -1;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-upload {
+    display: block;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-upload .cp3-btn {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-video-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-audit-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 8900 !important;
+    min-height: 64px !important;
+    padding: 5px 7px max(7px,env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid var(--cp3-line) !important;
+    background: rgba(255,255,255,.98) !important;
+    display: grid !important;
+    grid-template-columns: repeat(5,1fr) !important;
+    box-shadow: 0 -12px 28px rgba(15,23,42,.08) !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3.public-demo-mode .coach-v2-bottom-nav {
+    grid-template-columns: repeat(4,1fr) !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-bottom-nav a {
+    min-height: 52px !important;
+    display: grid !important;
+    justify-items: center !important;
+    align-content: center !important;
+    gap: 3px !important;
+    color: var(--cp3-muted) !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    font-weight: 850 !important;
+    text-decoration: none !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-bottom-nav svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-bottom-nav a.active {
+    color: var(--cp3-green-dark) !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal {
+    padding: 10px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-modal-card {
+    max-height: 94dvh;
+    border-radius: 17px;
+  }
+}
+
+@media (max-width: 520px) {
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-form-field.is-wide {
+    grid-column: auto;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .cp3-position-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top {
+    grid-template-columns: minmax(74px,1fr) auto minmax(74px,1fr) !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top::before,
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top::after {
+    font-size: 17px;
+  }
+
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 .coach-v2-mobile-top::after {
+    left: 51px;
+    top: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 *,
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 *::before,
+  body.coach-v2.coach-page-profile.coach-player-profile-v3 *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
