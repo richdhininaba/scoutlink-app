@@ -513,41 +513,161 @@ router.post('/bulk', requireAuth, requireRole('Coach','Stratex'), async (req, re
 // Update player
 router.put('/:id', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const updates = { ...req.body };
-    delete updates.email;
-    delete updates.parent_email;
-    delete updates.parentEmail;
-    delete updates.date_of_birth;
-    delete updates.dateOfBirth;
-    delete updates.nationality;
-    delete updates.nationality_code;
-    delete updates.nationalityCode;
-    if (updates.positions) updates.positions = updates.positions.map(p=>p.toUpperCase());
-    if (updates.positions?.length) updates.primary_position = updates.positions[0];
-    if (updates.heightCategory && HEIGHT_RANGES[updates.heightCategory]) {
-      const h = HEIGHT_RANGES[updates.heightCategory];
-      updates.height_range_cm = h.range; updates.height_min_cm = h.min; updates.height_max_cm = h.max;
+    const playerId = req.params.id;
+    const body = req.body || {};
+
+    const { data: existing, error: existingErr } = await supabase
+      .from('players')
+      .select('*')
+      .eq('id', playerId)
+      .maybeSingle();
+
+    if (existingErr) throw existingErr;
+    if (!existing) return res.status(404).json({ error: 'Player not found' });
+
+    if (existing.is_demo && !isDemoSession(req)) {
+      return res.status(404).json({ error: 'Player not found' });
     }
-    if (updates.buildCategory && BUILD_RANGES[updates.buildCategory]) {
-      const b = BUILD_RANGES[updates.buildCategory];
-      updates.weight_range_kg = b.range; updates.weight_min_kg = b.min; updates.weight_max_kg = b.max;
+
+    // A Coach may only update players inside their permitted Coach scope.
+    // Stratex retains its existing administrative access.
+    if (req.user.accountType === 'Coach') {
+      const scope = await getCoachPlayerScope(req);
+      const allowed = scope.is_super_user
+        ? (
+            (scope.team_id && existing.team_id === scope.team_id) ||
+            (!scope.team_id && scope.team_name && existing.team_name === scope.team_name) ||
+            existing.assigned_coach_id === req.user.id
+          )
+        : existing.assigned_coach_id === req.user.id;
+
+      if (!allowed) {
+        return res.status(403).json({ error: 'You can only update players you are permitted to manage' });
+      }
     }
-    if (updates.ageGroup || updates.age_group) {
-      const ageInfo = requiredAgeGroupPayload(updates.ageGroup || updates.age_group);
+
+    const updates = {};
+    const directFields = [
+      'first_name',
+      'last_name',
+      'position_group',
+      'specific_position',
+      'primary_position',
+      'foot',
+      'height_category',
+      'height_range_cm',
+      'height_min_cm',
+      'height_max_cm',
+      'build_category',
+      'weight_range_kg',
+      'weight_min_kg',
+      'weight_max_kg',
+      'pace',
+      'agility',
+      'strength',
+      'stamina',
+      'jumping',
+      'composure',
+      'shooting',
+      'passing',
+      'dribbling',
+      'defending',
+      'crossing',
+      'vision',
+      'positioning',
+      'heading',
+      'tackling',
+      'gk_diving',
+      'gk_reflexes',
+      'gk_handling',
+      'gk_positioning',
+      'gk_kicking',
+      'gk_distribution',
+      'gk_communication',
+      'gk_sweeping',
+      'work_rate',
+      'avatar_config'
+    ];
+
+    directFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(body, field)) {
+        updates[field] = body[field];
+      }
+    });
+
+    if (Array.isArray(body.positions)) {
+      updates.positions = body.positions
+        .map((position) => String(position || '').trim().toUpperCase())
+        .filter(Boolean);
+
+      if (updates.positions.length && !updates.primary_position) {
+        updates.primary_position = updates.positions[0];
+      }
+    }
+
+    if (body.ageGroup || body.age_group) {
+      const ageInfo = requiredAgeGroupPayload(body.ageGroup || body.age_group);
       updates.age = ageInfo.age;
       updates.age_group = ageInfo.age_group;
-      delete updates.ageGroup;
     }
-    const { data, error } = await supabase.from('players').update(updates).eq('id', req.params.id).select().single();
+
+    if (body.heightCategory && HEIGHT_RANGES[body.heightCategory]) {
+      const height = HEIGHT_RANGES[body.heightCategory];
+      updates.height_category = body.heightCategory;
+      updates.height_range_cm = height.range;
+      updates.height_min_cm = height.min;
+      updates.height_max_cm = height.max;
+    }
+
+    if (body.buildCategory && BUILD_RANGES[body.buildCategory]) {
+      const build = BUILD_RANGES[body.buildCategory];
+      updates.build_category = body.buildCategory;
+      updates.weight_range_kg = build.range;
+      updates.weight_min_kg = build.min;
+      updates.weight_max_kg = build.max;
+    }
+
+    // Super-user Coaches can reassign within their own team. Regular Coaches
+    // cannot move a player to another Coach.
+    if (body.assignedCoachId || body.assigned_coach_id) {
+      if (req.user.accountType === 'Coach') {
+        const reassignment = await getCoachPlayerScope(
+          req,
+          body.assignedCoachId || body.assigned_coach_id
+        );
+        updates.assigned_coach_id = reassignment.assigned_coach_id;
+      } else {
+        updates.assigned_coach_id = body.assignedCoachId || body.assigned_coach_id;
+      }
+    }
+
+    if (!Object.keys(updates).length) {
+      return res.status(400).json({ error: 'No supported player fields were provided' });
+    }
+
+    const merged = { ...existing, ...updates };
+    const scoring = scoringPayload(merged);
+    const salary = predictedSalary({ ...merged, ...scoring }, { tier: 5 });
+
+    const { data, error } = await supabase
+      .from('players')
+      .update({
+        ...updates,
+        ...scoring,
+        predicted_salary_weekly: salary.weeklyGross,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', playerId)
+      .select()
+      .single();
+
     if (error) throw error;
-    const scoring = scoringPayload(data);
-    const salary = predictedSalary(data, { tier: 5 });
-    await supabase.from('players').update({
-      ...scoring,
-      predicted_salary_weekly: salary.weeklyGross
-    }).eq('id', data.id);
-    res.json({ player: { ...data, ...scoring, predicted_salary_weekly: salary.weeklyGross } });
-  } catch(err) { sendDbError(res, err); }
+
+    res.json({ player: data });
+  } catch (err) {
+    console.error('[PlayerUpdate]', err);
+    sendDbError(res, err);
+  }
 });
 
 // Analyse player vs team
