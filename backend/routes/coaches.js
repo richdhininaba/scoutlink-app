@@ -161,54 +161,98 @@ res.json({ message: 'Player assigned to coach' });
 
 
 // GET /api/coaches/dashboard - coach dashboard stats
+// GET /api/coaches/dashboard - coach dashboard stats
 router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => {
   try {
     const coachId = req.user.id;
-    // Get coach record to find team_id
-    const { data: coach } = await supabase.from('coaches').select('team_id,team_name').eq('id', coachId).single();
-    if (!coach) return res.status(404).json({ error: 'Coach not found' });
-    
-    const teamId = coach.team_id;
-    if (!teamId) {
-      return res.json({ totalPlayers: 0, topRatedPlayer: null, totalSquadValue: 0, scoutsInterested: 0, teamName: coach.team_name || '' });
+
+    // Use the same visibility rules as /api/coaches/my-players so every
+    // dashboard KPI describes the same squad shown in the table.
+    const { data: coach, error: coachErr } = await supabase
+      .from('coaches')
+      .select('id,team_id,team_name,is_super_user')
+      .eq('id', coachId)
+      .single();
+
+    if (coachErr || !coach) {
+      return res.status(404).json({ error: 'Coach not found' });
     }
-    
-    // Get all players for this team
-    let playerQ = supabase.from('players')
-      .select('id,first_name,last_name,overall_rating,transfer_value,position_group,appearances')
-      .eq('team_id', teamId).eq('is_active', true);
+
+    let playerQ = supabase
+      .from('players')
+      .select('id,first_name,last_name,overall_rating,transfer_value')
+      .eq('is_active', true);
+
     playerQ = applyRealDataFilter(playerQ, req);
-    const { data: players, error: pErr } = await playerQ;
-    if (pErr) throw pErr;
-    
+
+    if (coach.is_super_user) {
+      if (coach.team_id) playerQ = playerQ.eq('team_id', coach.team_id);
+      else if (coach.team_name) playerQ = playerQ.eq('team_name', coach.team_name);
+      else playerQ = playerQ.eq('assigned_coach_id', coachId);
+    } else {
+      playerQ = playerQ.eq('assigned_coach_id', coachId);
+    }
+
+    const { data: players, error: playerErr } = await playerQ;
+    if (playerErr) throw playerErr;
+
     const playerList = players || [];
     const totalPlayers = playerList.length;
-    
-    // Top rated player
-    const sorted = [...playerList].sort((a,b) => (parseFloat(b.overall_rating)||0) - (parseFloat(a.overall_rating)||0));
+    const sorted = [...playerList].sort(
+      (a, b) => (parseFloat(b.overall_rating) || 0) - (parseFloat(a.overall_rating) || 0)
+    );
     const topRated = sorted[0] || null;
-    
-    // Total squad value (sum transfer_value)
-    const totalSquadValue = playerList.reduce((sum, p) => sum + (Number(p.transfer_value)||0), 0);
-    
-    // Scouts interested (distinct scouts in recruitment_pipeline for these players)
+    const totalSquadValue = playerList.reduce(
+      (sum, player) => sum + (Number(player.transfer_value) || 0),
+      0
+    );
+
     let scoutsInterested = 0;
-    if (playerList.length > 0) {
-      const playerIds = playerList.map(p => p.id);
-      const { data: pipeline } = await supabase.from('recruitment_pipeline')
-        .select('scout_id').in('player_id', playerIds);
-      if (pipeline) {
-        scoutsInterested = new Set(pipeline.map(r => r.scout_id)).size;
-      }
+    let newInterestCount = 0;
+
+    if (playerList.length) {
+      const playerIds = playerList.map((player) => player.id);
+      const { data: pipeline, error: pipelineErr } = await supabase
+        .from('recruitment_pipeline')
+        .select('scout_id,created_at')
+        .in('player_id', playerIds)
+        .eq('is_active', true);
+
+      if (pipelineErr) throw pipelineErr;
+
+      const pipelineRows = pipeline || [];
+      scoutsInterested = new Set(
+        pipelineRows.map((row) => row.scout_id).filter(Boolean)
+      ).size;
+
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      newInterestCount = pipelineRows.filter((row) => {
+        const createdAt = new Date(row.created_at || 0).getTime();
+        return Number.isFinite(createdAt) && createdAt >= sevenDaysAgo;
+      }).length;
     }
-    
+
     res.json({
-      totalPlayers, totalSquadValue, scoutsInterested,
-      topRatedPlayer: topRated ? { name: (topRated.first_name||'') + ' ' + (topRated.last_name||''), overall_rating: topRated.overall_rating } : null,
-      teamName: coach.team_name || ''
+      totalPlayers,
+      totalSquadValue,
+      scoutsInterested,
+      newInterestCount,
+      topRatedPlayer: topRated
+        ? {
+            id: topRated.id,
+            name: `${topRated.first_name || ''} ${topRated.last_name || ''}`.trim(),
+            overall_rating: topRated.overall_rating
+          }
+        : null,
+      teamName: coach.team_name || '',
+      isSuperUser: !!coach.is_super_user
     });
-  } catch(err) { console.error('[CoachDashboard]', err); res.status(500).json({ error: err.message || 'Internal server error' }); }
+  } catch (err) {
+    console.error('[CoachDashboard]', err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
 });
+
 
 // GET /api/coaches/profile - coach profile
 router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
