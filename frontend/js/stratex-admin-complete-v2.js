@@ -668,7 +668,9 @@ function scoutVerificationForm(registration){
           'Scout subscription plan',
           'subscriptionPlan',
           'select',
-          registration.raw.payment_plan||'Core',
+          registration.raw.payment_plan||
+          registration.raw.preferred_scout_plan||
+          'Core',
           false,
           '',
           [
@@ -1039,7 +1041,8 @@ function registrationCommonItems(registration){
     ['Decision status',registration.status],
     ['Verification status',registration.verificationStatus],
     ['Submitted',date(registration.createdAt)],
-    ['Registration ID',registration.id]
+    ['Registration ID',registration.id],
+    ['Preferred ScoutLink plan',registration.raw.preferred_scout_plan || '—']
   ];
 }
 
