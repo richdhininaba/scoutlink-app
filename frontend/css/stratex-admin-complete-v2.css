@@ -571,3 +571,44 @@ body.stxv4-admin :focus-visible{outline:3px solid rgba(14,159,120,.30)!important
     width:100%;
   }
 }
+/* Smaller Stratex Admin sidebar typography */
+
+.stxv4-nav {
+  min-height: 32px;
+  gap: 7px;
+  padding: 0 7px;
+  font-size: 8.5px;
+  font-weight: 750;
+}
+
+.stxv4-nav em {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+  font-size: 6.5px;
+}
+
+.stxv4-navgroup {
+  margin-top: 14px;
+}
+
+.stxv4-navtitle {
+  padding: 0 7px 5px;
+  font-size: 6.5px;
+}
+
+.stxv4-brand b {
+  font-size: 10px;
+}
+
+.stxv4-brand span span {
+  font-size: 6.5px;
+}
+
+.stxv4-userbox b {
+  font-size: 7.5px;
+}
+
+.stxv4-userbox span {
+  font-size: 6.5px;
+}
