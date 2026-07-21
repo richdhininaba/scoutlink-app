@@ -590,68 +590,270 @@ router.patch('/leads/:id', requireAuth, requireRole('Stratex'), requireContactFo
 });
 
 async function loadCrmRows() {
-    const [leadResult, coachResult, scoutResult, applicationResult] = await Promise.allSettled([
-      supabase.from('stratex_website_leads').select('id,lead_type,full_name,email,phone,organisation,role,reason,status,created_at').order('created_at', { ascending: false }).limit(500),
-      supabase.from('coaches').select('id,first_name,last_name,email,phone,team_name,role_at_club,created_at,is_active').eq('is_demo', false).limit(500),
-      supabase.from('scouts').select('id,first_name,last_name,email,phone,club_name,role,created_at,is_active').eq('is_demo', false).limit(500),
-      supabase.from('job_applications').select('id,application_ref,first_name,last_name,email,phone,status,submitted_at,job_posts(job_title,department)').order('submitted_at', { ascending: false }).limit(500)
-    ]);
-    const rows = [];
-    if (leadResult.status === 'fulfilled' && !leadResult.value.error) {
-      (leadResult.value.data || []).forEach(row => rows.push({
-        source: 'Stratex website',
-        type: row.lead_type,
-        name: row.full_name || '',
-        email: row.email,
-        phone: row.phone,
-        organisation: row.organisation,
-        role: row.role || row.reason,
-        status: row.status,
-        createdAt: row.created_at
-      }));
+  const [
+    leadResult,
+    registrationResult,
+    coachResult,
+    scoutResult,
+    applicationResult
+  ] = await Promise.allSettled([
+    supabase
+      .from('stratex_website_leads')
+      .select('id,lead_type,full_name,email,phone,organisation,role,reason,status,source_page,safe_metadata,created_at')
+      .order('created_at', { ascending: false })
+      .limit(500),
+
+    supabase
+      .from('registration_requests')
+      .select('id,account_type,first_name,last_name,email,phone,team_name,scout_club,role_at_club,scout_league,status,verification_status,created_at,reviewed_at')
+      .order('created_at', { ascending: false })
+      .limit(500),
+
+    supabase
+      .from('coaches')
+      .select('id,first_name,last_name,email,phone,team_name,role_at_club,created_at,is_active')
+      .eq('is_demo', false)
+      .limit(500),
+
+    supabase
+      .from('scouts')
+      .select('id,first_name,last_name,email,phone,club_name,role,created_at,is_active')
+      .eq('is_demo', false)
+      .limit(500),
+
+    supabase
+      .from('job_applications')
+      .select('id,application_ref,first_name,last_name,email,phone,status,submitted_at,job_posts(job_title,department)')
+      .order('submitted_at', { ascending: false })
+      .limit(500)
+  ]);
+
+  const leads = leadResult.status === 'fulfilled' &&
+    !leadResult.value.error
+    ? leadResult.value.data || []
+    : [];
+
+  const registrations = registrationResult.status === 'fulfilled' &&
+    !registrationResult.value.error
+    ? registrationResult.value.data || []
+    : [];
+
+  const coaches = coachResult.status === 'fulfilled' &&
+    !coachResult.value.error
+    ? coachResult.value.data || []
+    : [];
+
+  const scouts = scoutResult.status === 'fulfilled' &&
+    !scoutResult.value.error
+    ? scoutResult.value.data || []
+    : [];
+
+  const applications = applicationResult.status === 'fulfilled' &&
+    !applicationResult.value.error
+    ? applicationResult.value.data || []
+    : [];
+
+  const normalEmail = value =>
+    String(value || '').trim().toLowerCase();
+
+  const latestRegistrationByEmail = new Map();
+
+  registrations.forEach(row => {
+    const key = normalEmail(row.email);
+    if (key && !latestRegistrationByEmail.has(key)) {
+      latestRegistrationByEmail.set(key, row);
     }
-    if (coachResult.status === 'fulfilled' && !coachResult.value.error) {
-      (coachResult.value.data || []).forEach(row => rows.push({
-        source: 'ScoutLink coach',
-        type: 'coach',
-        name: [row.first_name, row.last_name].filter(Boolean).join(' '),
-        email: row.email,
-        phone: row.phone,
-        organisation: row.team_name,
-        role: row.role_at_club || 'Coach',
-        status: row.is_active === false ? 'inactive' : 'active',
-        createdAt: row.created_at
-      }));
+  });
+
+  const accountByEmail = new Map();
+
+  coaches.forEach(row => {
+    const key = normalEmail(row.email);
+    if (key) {
+      accountByEmail.set(key, {
+        id: row.id,
+        type: 'Coach',
+        product: 'ScoutLink'
+      });
     }
-    if (scoutResult.status === 'fulfilled' && !scoutResult.value.error) {
-      (scoutResult.value.data || []).forEach(row => rows.push({
-        source: 'ScoutLink scout',
-        type: 'scout',
-        name: [row.first_name, row.last_name].filter(Boolean).join(' '),
-        email: row.email,
-        phone: row.phone,
-        organisation: row.club_name,
-        role: row.role || 'Scout',
-        status: row.is_active === false ? 'inactive' : 'active',
-        createdAt: row.created_at
-      }));
+  });
+
+  scouts.forEach(row => {
+    const key = normalEmail(row.email);
+    if (key) {
+      accountByEmail.set(key, {
+        id: row.id,
+        type: 'Scout',
+        product: 'ScoutLink'
+      });
     }
-    if (applicationResult.status === 'fulfilled' && !applicationResult.value.error) {
-      (applicationResult.value.data || []).forEach(row => rows.push({
-        source: 'Stratex careers',
-        type: 'job_application',
-        name: [row.first_name, row.last_name].filter(Boolean).join(' '),
-        email: row.email,
-        phone: row.phone,
-        organisation: row.job_posts && row.job_posts.department,
-        role: row.job_posts && row.job_posts.job_title,
-        status: row.status,
-        createdAt: row.submitted_at
-      }));
+  });
+
+  const leadByEmail = new Map();
+
+  leads.forEach(row => {
+    const key = normalEmail(row.email);
+    if (key && !leadByEmail.has(key)) {
+      leadByEmail.set(key, row);
     }
-    rows.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    return rows;
+  });
+
+  const rows = [];
+
+  leads.forEach(row => {
+    const key = normalEmail(row.email);
+    const registration = latestRegistrationByEmail.get(key);
+    const account = accountByEmail.get(key);
+    const meta = row.safe_metadata &&
+      typeof row.safe_metadata === 'object'
+      ? row.safe_metadata
+      : {};
+
+    const product =
+      meta.requested_product ||
+      (/scoutlink/i.test(String(row.source_page || ''))
+        ? 'ScoutLink'
+        : 'Stratex Analytics');
+
+    rows.push({
+      source: product === 'ScoutLink'
+        ? 'ScoutLink public form'
+        : 'Stratex website',
+      product,
+      type: row.lead_type,
+      name: row.full_name || '',
+      email: row.email,
+      phone: row.phone,
+      organisation: row.organisation,
+      role: row.role || row.reason,
+      status: row.status,
+      createdAt: row.created_at,
+      recordId: row.id,
+      linkedLeadId: row.id,
+      linkedRegistrationId: registration && registration.id || null,
+      linkedAccountId: account && account.id || null,
+      linkedAccountType: account && account.type || null
+    });
+  });
+
+  registrations.forEach(row => {
+    const key = normalEmail(row.email);
+    const account = accountByEmail.get(key);
+    const lead = leadByEmail.get(key);
+    const accountType = row.account_type || 'Registration';
+
+    rows.push({
+      source: 'ScoutLink registration',
+      product: 'ScoutLink',
+      type: String(accountType).toLowerCase() + '_registration',
+      name: [row.first_name, row.last_name].filter(Boolean).join(' '),
+      email: row.email,
+      phone: row.phone,
+      organisation:
+        row.team_name ||
+        row.scout_club ||
+        '',
+      role:
+        row.role_at_club ||
+        row.scout_league ||
+        accountType,
+      status:
+        row.status ||
+        row.verification_status ||
+        'pending',
+      createdAt: row.created_at,
+      recordId: row.id,
+      registrationId: row.id,
+      linkedRegistrationId: row.id,
+      linkedLeadId: lead && lead.id || null,
+      linkedAccountId: account && account.id || null,
+      linkedAccountType: account && account.type || null,
+      reviewedAt: row.reviewed_at || null
+    });
+  });
+
+  coaches.forEach(row => {
+    const key = normalEmail(row.email);
+    const registration = latestRegistrationByEmail.get(key);
+    const lead = leadByEmail.get(key);
+
+    rows.push({
+      source: 'ScoutLink Coach account',
+      product: 'ScoutLink',
+      type: 'coach',
+      name: [row.first_name, row.last_name].filter(Boolean).join(' '),
+      email: row.email,
+      phone: row.phone,
+      organisation: row.team_name,
+      role: row.role_at_club || 'Coach',
+      status: row.is_active === false ? 'inactive' : 'active',
+      createdAt: row.created_at,
+      recordId: row.id,
+      linkedAccountId: row.id,
+      linkedAccountType: 'Coach',
+      linkedRegistrationId: registration && registration.id || null,
+      linkedLeadId: lead && lead.id || null
+    });
+  });
+
+  scouts.forEach(row => {
+    const key = normalEmail(row.email);
+    const registration = latestRegistrationByEmail.get(key);
+    const lead = leadByEmail.get(key);
+
+    rows.push({
+      source: 'ScoutLink Scout account',
+      product: 'ScoutLink',
+      type: 'scout',
+      name: [row.first_name, row.last_name].filter(Boolean).join(' '),
+      email: row.email,
+      phone: row.phone,
+      organisation: row.club_name,
+      role: row.role || 'Scout',
+      status: row.is_active === false ? 'inactive' : 'active',
+      createdAt: row.created_at,
+      recordId: row.id,
+      linkedAccountId: row.id,
+      linkedAccountType: 'Scout',
+      linkedRegistrationId: registration && registration.id || null,
+      linkedLeadId: lead && lead.id || null
+    });
+  });
+
+  applications.forEach(row => {
+    const job = row.job_posts || {};
+    const key = normalEmail(row.email);
+    const lead = leadByEmail.get(key);
+
+    rows.push({
+      source: 'Stratex Careers',
+      product: 'Stratex Analytics',
+      type: 'job_application',
+      name: [row.first_name, row.last_name].filter(Boolean).join(' '),
+      email: row.email,
+      phone: row.phone,
+      organisation: job.department,
+      role: job.job_title,
+      status: row.status,
+      createdAt: row.submitted_at,
+      recordId: row.id,
+      applicationRef: row.application_ref,
+      linkedApplicationId: row.id,
+      linkedLeadId: lead && lead.id || null
+    });
+  });
+
+  rows.sort(
+    (a, b) =>
+      new Date(b.createdAt || 0) -
+      new Date(a.createdAt || 0)
+  );
+
+  return rows;
 }
+
+
+
 
 router.get('/crm', requireAuth, requireRole('Stratex'), requireCrmAccess, async (req, res) => {
   try {
@@ -666,8 +868,45 @@ router.get('/crm', requireAuth, requireRole('Stratex'), requireCrmAccess, async 
 router.get('/crm/export', requireAuth, requireRole('Stratex'), requireCrmAccess, async (req, res) => {
   try {
     const rows = await loadCrmRows();
-    const headers = ['Source', 'Type', 'Name', 'Email', 'Phone', 'Organisation', 'Role', 'Status', 'Created At'];
-    const fields = ['source', 'type', 'name', 'email', 'phone', 'organisation', 'role', 'status', 'createdAt'];
+    const headers = [
+    'Source',
+    'Product',
+    'Type',
+    'Name',
+    'Email',
+    'Phone',
+    'Organisation',
+    'Role',
+    'Status',
+    'Created At',
+    'Record ID',
+    'Linked Lead ID',
+    'Linked Registration ID',
+    'Linked Account ID',
+    'Linked Account Type',
+    'Linked Application ID',
+    'Application Reference'
+  ];
+  
+  const fields = [
+    'source',
+    'product',
+    'type',
+    'name',
+    'email',
+    'phone',
+    'organisation',
+    'role',
+    'status',
+    'createdAt',
+    'recordId',
+    'linkedLeadId',
+    'linkedRegistrationId',
+    'linkedAccountId',
+    'linkedAccountType',
+    'linkedApplicationId',
+    'applicationRef'
+  ];
     const sheetRows = [headers].concat(rows.map(row => fields.map(field => row[field] || '')));
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(sheetRows);
