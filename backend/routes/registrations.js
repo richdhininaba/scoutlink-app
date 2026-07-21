@@ -101,6 +101,28 @@ function titleCase(v) {
   return String(v || '').trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function registrationNameParts(body) {
+  const suppliedFirst = String(body.firstName || '').trim();
+  const suppliedLast = String(body.lastName || '').trim();
+
+  if (suppliedFirst && suppliedLast) {
+    return {
+      firstName: suppliedFirst,
+      lastName: suppliedLast
+    };
+  }
+
+  const parts = String(body.fullName || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return {
+    firstName: parts.shift() || '',
+    lastName: parts.join(' ') || ''
+  };
+}
+
 function isValidEmail(emailAddr) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
@@ -143,7 +165,8 @@ function validateCoachDeclarations(declarations) {
 }
 
 function validateScoutDeclarations(declarations) {
-  return declarations.legitimateCapacity === true;
+  return declarations.legitimateCapacity === true &&
+    declarations.responsibleAccess === true;
 }
 
 async function removeCreatedUser(accountType, id) {
@@ -186,77 +209,335 @@ async function sendRegistrationEmails({ accountType, request, alertPayload }) {
 // Public: coach registers
 router.post('/coach', async (req, res) => {
   try {
-    const { firstName, lastName, emailAddr, phone, teamName, county, league, roleAtClub, dataPolicyAgreed } = req.body;
-    const declarations = normalizeDeclarations(req.body.declarations);
-    if (!firstName||!lastName||!emailAddr||!teamName) return res.status(400).json({ error: 'firstName, lastName, email and teamName required' });
-    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
-    if (!validateCoachDeclarations(declarations)) return res.status(400).json({ error: 'Coach declarations are required.' });
-    const dup = await checkDuplicates(emailAddr, phone);
-    if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
-    if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error: 'A registration request is already pending for this email.' });
-    const { data: req2, error } = await supabase.from('registration_requests').insert({
-      account_type: 'Coach', first_name: firstName.trim(), last_name: lastName.trim(),
-      email: emailAddr.toLowerCase().trim(), phone: phone||null, team_name: teamName,
-      team_county: county?titleCase(county):null, team_league: league||null, role_at_club: roleAtClub||'Coach',
-      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending',
-      declaration_version: req.body.declarationVersion || 'coach-declarations-v1-2026-07',
-      activity_notice_version: req.body.activityNoticeVersion || 'platform-activity-v1-2026-07',
-      declarations
-    }).select().single();
-    if (error) throw error;
-    const emailResult = await sendRegistrationEmails({
-      accountType: 'Coach',
-      request: req2,
-      alertPayload: { firstName, lastName, email: emailAddr, teamName, county, league, roleAtClub, requestId: req2.id }
-    });
-    if (!emailResult.success) {
-      await removeRegistrationRequest(req2.id);
-      return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
+    const names = registrationNameParts(req.body);
+
+    const {
+      emailAddr,
+      phone,
+      country,
+      primaryRole,
+      preferredContactMethod,
+      teamName,
+      teamType,
+      league,
+      primaryAgeGroup,
+      county,
+      averageClubSize,
+      teamWebsite,
+      numberOfTeams,
+      dataPolicyAgreed
+    } = req.body;
+
+    const declarations = normalizeDeclarations(
+      req.body.declarations
+    );
+
+    if (
+      !names.firstName ||
+      !names.lastName ||
+      !emailAddr ||
+      !teamName
+    ) {
+      return res.status(400).json({
+        error:
+          'Full name, email address and club or team name are required.'
+      });
     }
-    res.status(201).json({ message: 'Registration submitted. We have emailed you confirmation and will get back to you shortly. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
-  } catch(err) { safeLog('[Registration coach]', err); res.status(500).json({ error: 'Internal server error' }); }
+
+    if (!isValidEmail(emailAddr)) {
+      return res.status(400).json({
+        error:'Please enter a valid email address.'
+      });
+    }
+
+    if (!dataPolicyAgreed) {
+      return res.status(400).json({
+        error:'Data policy agreement required'
+      });
+    }
+
+    if (!validateCoachDeclarations(declarations)) {
+      return res.status(400).json({
+        error:'Both Coach declarations are required.'
+      });
+    }
+
+    const dup = await checkDuplicates(emailAddr, phone);
+
+    if (dup.duplicate) {
+      return res.status(409).json({
+        error:
+          dup.field === 'email'
+            ? 'This email address is already registered on ScoutLink.'
+            : 'This phone number is already registered on ScoutLink.'
+      });
+    }
+
+    if (await checkPendingDuplicate(emailAddr)) {
+      return res.status(409).json({
+        error:
+          'A registration request is already pending for this email.'
+      });
+    }
+
+    const { data: request, error } = await supabase
+      .from('registration_requests')
+      .insert({
+        account_type:'Coach',
+        first_name:names.firstName,
+        last_name:names.lastName,
+        email:String(emailAddr).toLowerCase().trim(),
+        phone:phone || null,
+        country:country || null,
+        preferred_contact_method:
+          preferredContactMethod || 'Email',
+        team_name:teamName,
+        team_type:teamType || null,
+        team_county:county ? titleCase(county) : null,
+        team_league:league || null,
+        primary_age_group:primaryAgeGroup || null,
+        average_club_size:averageClubSize || null,
+        team_website:teamWebsite || null,
+        number_of_teams:numberOfTeams || null,
+        role_at_club:primaryRole || 'Coach',
+        data_policy_agreed:true,
+        data_policy_agreed_at:new Date(),
+        status:'pending',
+        registration_version:'registration-v3',
+        declaration_version:
+          req.body.declarationVersion ||
+          'coach-declarations-v2-2026-07',
+        activity_notice_version:
+          req.body.activityNoticeVersion ||
+          'platform-activity-v1-2026-07',
+        declarations
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const emailResult = await sendRegistrationEmails({
+      accountType:'Coach',
+      request,
+      alertPayload:{
+        firstName:names.firstName,
+        lastName:names.lastName,
+        email:emailAddr,
+        teamName,
+        county,
+        league,
+        roleAtClub:primaryRole,
+        requestId:request.id
+      }
+    });
+
+    if (!emailResult.success) {
+      await removeRegistrationRequest(request.id);
+
+      return res.status(502).json({
+        error:
+          'Registration email failed at ' +
+          emailResult.stage +
+          '. Please try again.',
+        details:
+          emailResult.result &&
+          (
+            emailResult.result.error ||
+            emailResult.result.details
+          ) ||
+          'Unknown email error'
+      });
+    }
+
+    res.status(201).json({
+      message:
+        'Registration submitted. We have emailed confirmation and will review the Coach request shortly.',
+      requestId:request.id,
+      emailSent:true
+    });
+  } catch (err) {
+    safeLog('[Registration coach]',err);
+    res.status(500).json({
+      error:'Internal server error'
+    });
+  }
 });
 
 // Public: scout registers
 router.post('/scout', async (req, res) => {
   try {
-    const { firstName, lastName, emailAddr, phone, scoutClub, scoutLeague, dataPolicyAgreed } = req.body;
-    const declarations = normalizeDeclarations(req.body.declarations);
-    if (!firstName||!lastName||!emailAddr||!scoutClub) return res.status(400).json({ error: 'firstName, lastName, email and scoutClub required' });
-    if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-    if (!dataPolicyAgreed) return res.status(400).json({ error: 'Data policy agreement required' });
-    if (!validateScoutDeclarations(declarations)) return res.status(400).json({ error: 'Scout verification declaration is required.' });
-    const dup = await checkDuplicates(emailAddr, phone);
-    if (dup.duplicate) return res.status(409).json({ error: dup.field === 'email' ? 'This email address is already registered on ScoutLink.' : 'This phone number is already registered on ScoutLink.' });
-    if (await checkPendingDuplicate(emailAddr)) return res.status(409).json({ error: 'A registration request is already pending for this email.' });
-    const token = generateVerificationToken();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const { data: req2, error } = await supabase.from('registration_requests').insert({
-      account_type: 'Scout', first_name: firstName.trim(), last_name: lastName.trim(),
-      email: emailAddr.toLowerCase().trim(), phone: phone||null, scout_club: scoutClub, scout_league: scoutLeague||null,
-      data_policy_agreed: true, data_policy_agreed_at: new Date(), status: 'pending',
-      declaration_version: req.body.declarationVersion || 'scout-verification-v1-2026-07',
-      activity_notice_version: req.body.activityNoticeVersion || 'platform-activity-v1-2026-07',
-      declarations,
-      verification_status: 'awaiting_documents',
-      verification_token_hash: hashToken(token),
-      verification_token_expires_at: expiresAt,
-      verification_link_sent_at: new Date()
-    }).select().single();
-    if (error) throw error;
-    req2.verificationLink = verificationLink(token);
-    const emailResult = await sendRegistrationEmails({
-      accountType: 'Scout',
-      request: req2,
-      alertPayload: { firstName, lastName, email: emailAddr, scoutClub, scoutLeague, requestId: req2.id }
-    });
-    if (!emailResult.success) {
-      await removeRegistrationRequest(req2.id);
-      return res.status(502).json({ error: 'Registration email failed at ' + emailResult.stage + '. Please try again.', details: emailResult.result && (emailResult.result.error || emailResult.result.details) || 'Unknown email error' });
+    const names = registrationNameParts(req.body);
+
+    const {
+      emailAddr,
+      phone,
+      country,
+      currentScoutingRole,
+      preferredContactMethod,
+      scoutClub,
+      organisationType,
+      scoutingTeamName,
+      primaryScoutingRegion,
+      organisationWebsite,
+      expectedScoutUsers,
+      preferredScoutPlan,
+      expectedSearchActivity,
+      dataPolicyAgreed
+    } = req.body;
+
+    const declarations = normalizeDeclarations(
+      req.body.declarations
+    );
+
+    if (
+      !names.firstName ||
+      !names.lastName ||
+      !emailAddr ||
+      !scoutClub
+    ) {
+      return res.status(400).json({
+        error:
+          'Full legal name, professional email and organisation are required.'
+      });
     }
-    res.status(201).json({ message: 'Registration submitted. We have emailed your verification link and will review your request after documents are uploaded. Please check junk if you do not see a response within 24 hours.', requestId: req2.id, emailSent: true });
-  } catch(err) { safeLog('[Registration scout]', err); res.status(500).json({ error: 'Internal server error' }); }
+
+    if (!isValidEmail(emailAddr)) {
+      return res.status(400).json({
+        error:'Please enter a valid email address.'
+      });
+    }
+
+    if (!dataPolicyAgreed) {
+      return res.status(400).json({
+        error:'Data policy agreement required'
+      });
+    }
+
+    if (!validateScoutDeclarations(declarations)) {
+      return res.status(400).json({
+        error:'Both Scout declarations are required.'
+      });
+    }
+
+    const dup = await checkDuplicates(emailAddr,phone);
+
+    if (dup.duplicate) {
+      return res.status(409).json({
+        error:
+          dup.field === 'email'
+            ? 'This email address is already registered on ScoutLink.'
+            : 'This phone number is already registered on ScoutLink.'
+      });
+    }
+
+    if (await checkPendingDuplicate(emailAddr)) {
+      return res.status(409).json({
+        error:
+          'A registration request is already pending for this email.'
+      });
+    }
+
+    const token = generateVerificationToken();
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    const { data: request, error } = await supabase
+      .from('registration_requests')
+      .insert({
+        account_type:'Scout',
+        first_name:names.firstName,
+        last_name:names.lastName,
+        email:String(emailAddr).toLowerCase().trim(),
+        phone:phone || null,
+        country:country || null,
+        preferred_contact_method:
+          preferredContactMethod || 'Email',
+        scout_club:scoutClub,
+        organisation_type:organisationType || null,
+        scouting_team_name:scoutingTeamName || null,
+        primary_scouting_region:
+          primaryScoutingRegion || null,
+        organisation_website:
+          organisationWebsite || null,
+        expected_scout_users:
+          expectedScoutUsers || null,
+        preferred_scout_plan:
+          preferredScoutPlan || 'Elite',
+        expected_search_activity:
+          expectedSearchActivity || null,
+        current_scouting_role:
+          currentScoutingRole || null,
+        role_at_club:
+          currentScoutingRole || 'Scout',
+        data_policy_agreed:true,
+        data_policy_agreed_at:new Date(),
+        status:'pending',
+        registration_version:'registration-v3',
+        declaration_version:
+          req.body.declarationVersion ||
+          'scout-declarations-v2-2026-07',
+        activity_notice_version:
+          req.body.activityNoticeVersion ||
+          'platform-activity-v1-2026-07',
+        declarations,
+        verification_status:'awaiting_documents',
+        verification_token_hash:hashToken(token),
+        verification_token_expires_at:expiresAt,
+        verification_link_sent_at:new Date()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    request.verificationLink = verificationLink(token);
+
+    const emailResult = await sendRegistrationEmails({
+      accountType:'Scout',
+      request,
+      alertPayload:{
+        firstName:names.firstName,
+        lastName:names.lastName,
+        email:emailAddr,
+        scoutClub,
+        scoutLeague:primaryScoutingRegion,
+        preferredScoutPlan,
+        requestId:request.id
+      }
+    });
+
+    if (!emailResult.success) {
+      await removeRegistrationRequest(request.id);
+
+      return res.status(502).json({
+        error:
+          'Registration email failed at ' +
+          emailResult.stage +
+          '. Please try again.',
+        details:
+          emailResult.result &&
+          (
+            emailResult.result.error ||
+            emailResult.result.details
+          ) ||
+          'Unknown email error'
+      });
+    }
+
+    res.status(201).json({
+      message:
+        'Scout access application submitted. We have emailed the secure verification link. No payment has started.',
+      requestId:request.id,
+      emailSent:true
+    });
+  } catch (err) {
+    safeLog('[Registration scout]',err);
+    res.status(500).json({
+      error:'Internal server error'
+    });
+  }
 });
 
 async function requestByVerificationToken(token) {
@@ -646,138 +927,281 @@ router.post('/:id/resend-payment', requireAuth, requireRole('Stratex'), requireR
 // Stratex: approve
 router.post('/:id/approve', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
-    const { subscriptionPlan, safeguardingReview, paymentLink } = req.body;
-    const { data: rq, error: rqErr } = await supabase.from('registration_requests').select('*').eq('id', req.params.id).single();
-    if (rqErr || !rq) return res.status(404).json({ error: 'Registration request not found' });
-    if (rq.status !== 'pending') return res.status(400).json({ error: 'Registration is not pending' });
+    const {
+      subscriptionPlan,
+      safeguardingReview,
+      paymentLink
+    } = req.body;
 
-  // Check duplicates before creating account
-  const dup = await checkDuplicates(rq.email, rq.phone);
-    if (dup.duplicate) return res.status(409).json({ error: 'An account with this ' + dup.field + ' already exists.' });
+    const { data: request, error: requestError } =
+      await supabase
+        .from('registration_requests')
+        .select('*')
+        .eq('id',req.params.id)
+        .single();
 
-  const loginCode = await generateUniqueCode();
-    const expires = new Date(Date.now() + 7*24*60*60*1000); // 7 days
-  let newUser;
-
-  if (rq.account_type === 'Coach') {
-    const { data, error } = await supabase.from('coaches').insert({
-      coach_id: generateId('CHC'), first_name: rq.first_name, last_name: rq.last_name,
-      email: rq.email, phone: rq.phone||null, team_name: rq.team_name,
-      role_at_club: rq.role_at_club||'Coach',
-      team_county: rq.team_county||null, team_league: rq.team_league||null,
-      data_policy_agreed: true, login_code: loginCode, login_code_expires: expires,
-      is_active: true, is_super_user: false, registration_complete: false
-    }).select().single();
-    if (error) { safeLog('[Approve coach insert]', error); throw error; }
-    newUser = data;
-  } else if (rq.account_type === 'Scout') {
-    const uploadedDocs = uploadedDocuments(rq);
-    if ((rq.verification_status || '') !== 'documents_submitted') {
-      return res.status(400).json({ error: 'Scout approval blocked. Verification documents must be uploaded before approval.' });
-    }
-    if (!paymentLink || !/^https?:\/\//i.test(String(paymentLink).trim())) {
-      return res.status(400).json({ error: 'A valid payment link is required before sending the payment email.' });
-    }
-    const review = { ...(safeguardingReview || {}), documents: uploadedDocs };
-    const reviewValidation = validateScoutSafeguardingReview(review);
-    if (!reviewValidation.ok) return res.status(400).json({ error: reviewValidation.error });
-    const plan = subscriptionPlan||'Core';
-    const paymentResult = await email.sendScoutPaymentRequired({
-      to: rq.email,
-      firstName: rq.first_name,
-      planName: plan,
-      paymentLink: String(paymentLink).trim()
-    }).catch(e => ({ success: false, error: e.message }));
-    if (!paymentResult || !paymentResult.success) {
-      return res.status(502).json({
-        error: 'SendGrid did not accept the scout payment email. Registration is still awaiting approval.',
-        details: paymentResult && (paymentResult.error || paymentResult.details) || 'Unknown email error'
+    if (requestError || !request) {
+      return res.status(404).json({
+        error:'Registration request not found'
       });
     }
-    await supabase.from('registration_requests').update({
-      status: 'approved',
-      login_code: loginCode,
-      reviewed_by: req.user.email || 'stratex',
-      reviewed_at: new Date(),
-      activated_at: new Date(),
-      linked_account_id:
-        newUser && newUser.id
-          ? String(newUser.id)
-          : null,
-      linked_account_type: rq.account_type,
-      safeguarding_review:
-        safeguardingReview || {},
-      safeguarding_documents:
-        safeguardingReview &&
-        safeguardingReview.documents
-          ? safeguardingReview.documents
-          : []
-    }).eq('id', req.params.id);
-    await supabase.from('scout_verification_reviews').insert({
-      registration_request_id: rq.id,
-      scout_id: null,
-      reviewed_by: req.user.id || null,
-      checklist: review.checklist || {},
-      documents: uploadedDocs,
-      dbs_certificate_number: review.dbsCertificateNumber || null,
-      dbs_issue_date: review.dbsIssueDate || null,
-      dbs_level: review.dbsLevel || null,
-      status: 'verified_awaiting_payment',
-      notes: review.notes || null
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({
+        error:'Registration is not pending'
+      });
+    }
+
+    const dup = await checkDuplicates(
+      request.email,
+      request.phone
+    );
+
+    if (dup.duplicate) {
+      return res.status(409).json({
+        error:
+          'An account with this ' +
+          dup.field +
+          ' already exists.'
+      });
+    }
+
+    if (request.account_type === 'Coach') {
+      const loginCode = await generateUniqueCode();
+      const expires = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      );
+
+      const { data: newUser, error: insertError } =
+        await supabase
+          .from('coaches')
+          .insert({
+            coach_id:generateId('CHC'),
+            first_name:request.first_name,
+            last_name:request.last_name,
+            email:request.email,
+            phone:request.phone || null,
+            team_name:request.team_name,
+            role_at_club:
+              request.role_at_club || 'Coach',
+            team_county:
+              request.team_county || null,
+            team_league:
+              request.team_league || null,
+            data_policy_agreed:true,
+            login_code:loginCode,
+            login_code_expires:expires,
+            is_active:true,
+            is_super_user:false,
+            registration_complete:false
+          })
+          .select()
+          .single();
+
+      if (insertError) throw insertError;
+
+      const baseUrl =
+        config.brandUrl || 'https://scoutlink.app';
+
+      const completeLink =
+        baseUrl +
+        '/complete-registration?code=' +
+        loginCode +
+        '&email=' +
+        encodeURIComponent(request.email) +
+        '&type=Coach';
+
+      const emailResult = await email
+        .sendRegApproved({
+          to:request.email,
+          firstName:request.first_name,
+          loginCode,
+          accountType:'Coach',
+          completeLink,
+          email:request.email
+        })
+        .catch(error => ({
+          success:false,
+          error:error.message
+        }));
+
+      if (!emailResult || !emailResult.success) {
+        await removeCreatedUser(
+          'Coach',
+          newUser && newUser.id
+        );
+
+        return res.status(502).json({
+          error:
+            'SendGrid did not accept the approval email. Registration is still pending.',
+          details:
+            emailResult &&
+            (
+              emailResult.error ||
+              emailResult.details
+            ) ||
+            'Unknown email error'
+        });
+      }
+
+      const { error: updateError } = await supabase
+        .from('registration_requests')
+        .update({
+          status:'approved',
+          verification_status:'activated',
+          login_code:loginCode,
+          activated_at:new Date(),
+          linked_account_id:String(newUser.id),
+          linked_account_type:'Coach',
+          reviewed_by:
+            req.user.email || 'stratex',
+          reviewed_at:new Date()
+        })
+        .eq('id',request.id);
+
+      if (updateError) throw updateError;
+
+      return res.json({
+        message:
+          'Coach approved. Complete-registration email sent.',
+        userId:newUser.id,
+        loginCode,
+        completeLink,
+        emailSent:true,
+        emailTemplate:
+          emailResult.template || null
+      });
+    }
+
+    if (request.account_type !== 'Scout') {
+      return res.status(400).json({
+        error:
+          'Unsupported account type: ' +
+          request.account_type
+      });
+    }
+
+    if (
+      request.verification_status !==
+      'documents_submitted'
+    ) {
+      return res.status(400).json({
+        error:
+          'Scout verification documents must be submitted before review.'
+      });
+    }
+
+    if (
+      !paymentLink ||
+      !/^https:\/\//i.test(String(paymentLink).trim())
+    ) {
+      return res.status(400).json({
+        error:
+          'A secure payment link beginning with https:// is required.'
+      });
+    }
+
+    const uploadedDocs =
+      uploadedDocuments(request);
+
+    const review = {
+      ...(safeguardingReview || {}),
+      documents:uploadedDocs
+    };
+
+    const validation =
+      validateScoutSafeguardingReview(review);
+
+    if (!validation.ok) {
+      return res.status(400).json({
+        error:validation.error
+      });
+    }
+
+    const plan =
+      subscriptionPlan ||
+      request.preferred_scout_plan ||
+      'Core';
+
+    const paymentResult = await email
+      .sendScoutPaymentRequired({
+        to:request.email,
+        firstName:request.first_name,
+        planName:plan,
+        paymentLink:String(paymentLink).trim()
+      })
+      .catch(error => ({
+        success:false,
+        error:error.message
+      }));
+
+    if (!paymentResult || !paymentResult.success) {
+      return res.status(502).json({
+        error:
+          'SendGrid did not accept the Scout payment email. The registration remains ready for review.',
+        details:
+          paymentResult &&
+          (
+            paymentResult.error ||
+            paymentResult.details
+          ) ||
+          'Unknown email error'
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from('registration_requests')
+      .update({
+        status:'pending',
+        verification_status:
+          'verified_awaiting_payment',
+        payment_plan:plan,
+        payment_link:
+          String(paymentLink).trim(),
+        payment_email_sent_at:new Date(),
+        safeguarding_review:review,
+        safeguarding_documents:uploadedDocs,
+        reviewed_by:
+          req.user.email || 'stratex',
+        reviewed_at:new Date()
+      })
+      .eq('id',request.id);
+
+    if (updateError) throw updateError;
+
+    await supabase
+      .from('scout_verification_reviews')
+      .insert({
+        registration_request_id:request.id,
+        scout_id:null,
+        reviewed_by:req.user.id || null,
+        checklist:review.checklist || {},
+        documents:uploadedDocs,
+        dbs_certificate_number:
+          review.dbsCertificateNumber || null,
+        dbs_issue_date:
+          review.dbsIssueDate || null,
+        dbs_level:review.dbsLevel || null,
+        status:'verified_awaiting_payment',
+        notes:review.notes || null
+      });
+
+    return res.json({
+      message:
+        'Scout verified. Payment email sent. The Scout account will be created only after payment is confirmed.',
+      paymentEmailSent:true,
+      plan,
+      emailTemplate:
+        paymentResult.template || null
     });
-    return res.json({ message: 'Scout verified. Payment email sent.', paymentEmailSent: true, emailTemplate: paymentResult.template || null });
-  } else {
-    return res.status(400).json({ error: 'Unsupported account type: ' + rq.account_type });
-  }
+  } catch (err) {
+    safeLog('[Approve registration]',err);
 
-  // Build complete-registration link
-  const baseUrl = config.brandUrl || 'https://scoutlink.app';
-    const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=' + rq.account_type;
-
-  // Send approved email using the central Registration Approved template.
-  const emailResult = await email.sendRegApproved({
-    to: rq.email, firstName: rq.first_name, loginCode,
-    accountType: rq.account_type, completeLink, email: rq.email
-  }).catch(e => ({ success: false, error: e.message }));
-  if (!emailResult || !emailResult.success) {
-    await removeCreatedUser(rq.account_type, newUser && newUser.id);
-    console.error('[Approve email failed; rolled back]', { error: emailResult && emailResult.error, template: emailResult && emailResult.template });
-    return res.status(502).json({
-      error: 'SendGrid did not accept the approval email. Registration is still pending.',
-      details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
+    res.status(500).json({
+      error:'Internal server error',
+      details:err.message
     });
   }
-
-  await supabase.from('registration_requests').update({
-    status: 'approved',
-    verification_status: 'activated',
-    login_code: loginCode,
-    payment_received_at: new Date(),
-    activated_at: new Date(),
-    linked_account_id: String(newUser.id),
-    linked_account_type: 'Scout',
-    reviewed_by:
-      req.user.email || 'stratex',
-    reviewed_at: new Date()
-  }).eq('id', rq.id);
-
-  if (rq.account_type === 'Scout') {
-    await supabase.from('scout_verification_reviews').insert({
-      registration_request_id: rq.id,
-      scout_id: newUser.id,
-      reviewed_by: req.user.id || null,
-      checklist: safeguardingReview.checklist || {},
-      documents: safeguardingReview.documents || [],
-      dbs_certificate_number: safeguardingReview.dbsCertificateNumber || null,
-      dbs_issue_date: safeguardingReview.dbsIssueDate || null,
-      dbs_level: safeguardingReview.dbsLevel || null,
-      status: 'approved',
-      notes: safeguardingReview.notes || null
-    });
-  }
-
-  res.json({ message: 'Approved. Complete-registration email sent.', userId: newUser.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-  } catch(err) { safeLog('[Approve]', err); res.status(500).json({ error: 'Internal server error', details: err.message }); }
 });
 
 router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
@@ -791,7 +1215,11 @@ router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), requir
     const dup = await checkDuplicates(rq.email, rq.phone);
     if (dup.duplicate) return res.status(409).json({ error: 'An account with this ' + dup.field + ' already exists.' });
 
-    const plan = rq.payment_plan || req.body.subscriptionPlan || 'Core';
+    const plan =
+      rq.payment_plan ||
+      rq.preferred_scout_plan ||
+      req.body.subscriptionPlan ||
+      'Core';
     const limits = limitsForPlan(plan);
     const loginCode = await generateUniqueCode();
     const expires = new Date(Date.now() + 7*24*60*60*1000);
@@ -823,14 +1251,16 @@ router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), requir
     }
 
     await supabase.from('registration_requests').update({
-      status: 'approved',
-      verification_status: 'activated',
-      login_code: loginCode,
-      payment_received_at: new Date(),
-      activated_at: new Date(),
-      reviewed_by: req.user.email||'stratex',
-      reviewed_at: new Date()
-    }).eq('id', rq.id);
+      status:'approved',
+      verification_status:'activated',
+      login_code:loginCode,
+      payment_received_at:new Date(),
+      activated_at:new Date(),
+      linked_account_id:String(newUser.id),
+      linked_account_type:'Scout',
+      reviewed_by:req.user.email || 'stratex',
+      reviewed_at:new Date()
+    }).eq('id',rq.id);
 
     await supabase.from('scout_verification_reviews').insert({
       registration_request_id: rq.id,
