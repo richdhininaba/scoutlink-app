@@ -1,0 +1,1336 @@
+/* Stratex Analytics Company and Trust Pages V3
+   Routes:
+   /about
+   /leadership
+   /trust
+   /scout-verification
+   /parent-guardian-notice
+   /contact
+   /report-a-concern
+*/
+
+body.stratex-company-trust-pages-v3 {
+  --sct-ink:#07111f;
+  --sct-navy:#0b2139;
+  --sct-navy-2:#113b60;
+  --sct-green:#0fa37f;
+  --sct-green-dark:#08775e;
+  --sct-blue:#1f67d2;
+  --sct-cyan:#25b8d6;
+  --sct-red:#b42335;
+  --sct-red-soft:#fff0f2;
+  --sct-gold:#f4b400;
+  --sct-page:#f3f6f9;
+  --sct-soft:#edf2f6;
+  --sct-surface:#f8fafc;
+  --sct-paper:#fff;
+  --sct-line:#dbe4ee;
+  --sct-line-strong:#c5d3e0;
+  --sct-muted:#62748a;
+  --sct-green-soft:#e8f8f3;
+  --sct-blue-soft:#eaf2ff;
+  --sct-shadow:0 22px 55px rgba(7,17,31,.09);
+  --sct-shadow-sm:0 9px 25px rgba(7,17,31,.07);
+  background:var(--sct-page);
+  color:var(--sct-ink);
+}
+
+body.stratex-company-trust-pages-v3 .stx-shell,
+body.stratex-company-trust-pages-v3 .stx-main,
+body.stratex-company-trust-pages-v3 #stratexSiteApp {
+  background:var(--sct-page);
+}
+
+body.stratex-company-trust-pages-v3 .sct-main,
+body.stratex-company-trust-pages-v3 .sct-main * {
+  box-sizing:border-box;
+}
+
+body.stratex-company-trust-pages-v3 .sct-inner {
+  width:min(990px,calc(100% - 32px));
+  margin:0 auto;
+}
+
+/* Shared Stratex header */
+body.stratex-company-trust-pages-v3 .stx-header {
+  position:sticky;
+  top:0;
+  z-index:80;
+  border-bottom:1px solid var(--sct-line);
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(16px);
+}
+
+body.stratex-company-trust-pages-v3 .stx-header-inner {
+  width:min(1090px,calc(100% - 32px));
+  min-height:70px;
+  gap:22px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-brand {
+  gap:4px;
+  color:var(--sct-ink);
+  font-size:19px;
+  letter-spacing:-.7px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-brand .stx-mark {
+  color:var(--sct-ink);
+}
+
+body.stratex-company-trust-pages-v3 .stx-brand span:not(.stx-mark) {
+  color:var(--sct-green);
+}
+
+body.stratex-company-trust-pages-v3 .stx-nav {
+  gap:21px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-nav > a,
+body.stratex-company-trust-pages-v3 .stx-link-button {
+  color:#31485e;
+  font-size:12px;
+  font-weight:850;
+}
+
+body.stratex-company-trust-pages-v3 .stx-nav > a[aria-current="page"] {
+  color:var(--sct-green-dark);
+}
+
+body.stratex-company-trust-pages-v3 .stx-login-menu {
+  border-color:var(--sct-line);
+  border-radius:14px;
+  box-shadow:var(--sct-shadow);
+}
+
+body.stratex-company-trust-pages-v3 .stx-nav > .stx-btn {
+  min-height:40px;
+  padding:0 15px;
+  border-radius:9px;
+  font-size:12px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-nav > .stx-btn-primary {
+  border-color:var(--sct-green);
+  background:var(--sct-green);
+  color:#fff;
+  box-shadow:0 9px 20px rgba(15,163,127,.17);
+}
+
+/* Shared controls */
+body.stratex-company-trust-pages-v3 .sct-button {
+  min-height:40px;
+  padding:0 15px;
+  border:1px solid var(--sct-line);
+  border-radius:9px;
+  background:#fff;
+  color:#29435b;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  font:inherit;
+  font-size:12px;
+  line-height:1;
+  font-weight:900;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease;
+}
+
+body.stratex-company-trust-pages-v3 .sct-button:hover {
+  transform:translateY(-1px);
+  border-color:#b8c7d5;
+  box-shadow:0 9px 20px rgba(7,17,31,.08);
+}
+
+body.stratex-company-trust-pages-v3 .sct-button.is-primary {
+  border-color:var(--sct-green);
+  background:var(--sct-green);
+  color:#fff;
+  box-shadow:0 9px 20px rgba(15,163,127,.17);
+}
+
+body.stratex-company-trust-pages-v3 .sct-button.is-primary:hover {
+  border-color:var(--sct-green-dark);
+  background:var(--sct-green-dark);
+}
+
+body.stratex-company-trust-pages-v3 .sct-button.is-soft {
+  border-color:#bfe5da;
+  background:#f2fbf8;
+  color:var(--sct-green-dark);
+}
+
+body.stratex-company-trust-pages-v3 .sct-button.is-danger {
+  border-color:var(--sct-red);
+  background:var(--sct-red);
+  color:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-button.is-small {
+  min-height:34px;
+  padding:0 11px;
+  font-size:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-button:disabled {
+  opacity:.55;
+  cursor:not-allowed;
+  transform:none;
+  box-shadow:none;
+}
+
+body.stratex-company-trust-pages-v3 .sct-kicker {
+  display:block;
+  color:var(--sct-green-dark);
+  font-size:11px;
+  line-height:1.2;
+  font-weight:950;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+}
+
+body.stratex-company-trust-pages-v3 .sct-actions {
+  margin-top:22px;
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+}
+
+/* Hero */
+body.stratex-company-trust-pages-v3 .sct-hero {
+  padding:58px 0 46px;
+  background:
+    radial-gradient(circle at 84% 12%,rgba(15,163,127,.08),transparent 27%),
+    linear-gradient(#fbfcfd,#f2f6f9);
+}
+
+body.stratex-company-trust-pages-v3 .sct-hero-grid {
+  display:grid;
+  grid-template-columns:1.08fr .92fr;
+  gap:32px;
+  align-items:center;
+}
+
+body.stratex-company-trust-pages-v3 .sct-hero.is-simple .sct-hero-grid {
+  grid-template-columns:minmax(0,760px);
+}
+
+body.stratex-company-trust-pages-v3 .sct-hero h1 {
+  max-width:710px;
+  margin:14px 0 13px;
+  color:var(--sct-ink);
+  font-size:43px;
+  line-height:1.01;
+  letter-spacing:-1.9px;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-hero-copy {
+  max-width:700px;
+  margin:0;
+  color:#40566d;
+  font-size:15px;
+  line-height:1.65;
+}
+
+body.stratex-company-trust-pages-v3 .sct-hero-note {
+  margin-top:18px;
+  padding:13px 14px;
+  border-left:3px solid var(--sct-green);
+  background:#edf9f5;
+  color:#355f54;
+  font-size:11px;
+  line-height:1.5;
+}
+
+/* Route-specific dark visual */
+body.stratex-company-trust-pages-v3 .sct-visual {
+  min-height:340px;
+  padding:23px;
+  border-radius:23px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 100% 0,rgba(15,163,127,.22),transparent 35%),
+    linear-gradient(145deg,#07111f,#10395d 70%,#0b675d 145%);
+  box-shadow:0 24px 45px rgba(7,17,31,.20);
+  display:flex;
+  flex-direction:column;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-label {
+  color:#9fddce;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:900;
+  letter-spacing:.7px;
+  text-transform:uppercase;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual h2 {
+  margin:13px 0 7px;
+  color:#fff;
+  font-size:25px;
+  line-height:1.02;
+  letter-spacing:-.8px;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual > p {
+  margin:0;
+  color:#cad8e5;
+  font-size:12px;
+  line-height:1.55;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-lines {
+  margin-top:18px;
+  display:grid;
+  gap:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-line {
+  padding:12px;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:12px;
+  background:rgba(255,255,255,.07);
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-line b {
+  display:block;
+  color:#fff;
+  font-size:12px;
+  line-height:1.3;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-line span {
+  display:block;
+  margin-top:4px;
+  color:#bed0df;
+  font-size:10px;
+  line-height:1.45;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-stats {
+  margin-top:auto;
+  padding-top:18px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-stat {
+  min-width:0;
+  padding:11px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:11px;
+  background:rgba(255,255,255,.08);
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-stat b {
+  display:block;
+  overflow:hidden;
+  color:#fff;
+  font-size:14px;
+  line-height:1.1;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+body.stratex-company-trust-pages-v3 .sct-visual-stat span {
+  display:block;
+  margin-top:4px;
+  color:#bfd0dd;
+  font-size:8px;
+  line-height:1.3;
+  text-transform:uppercase;
+}
+
+/* Sections */
+body.stratex-company-trust-pages-v3 .sct-section {
+  padding:52px 0;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-white {
+  background:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-soft {
+  background:var(--sct-soft);
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark {
+  background:var(--sct-ink);
+  color:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section-head {
+  display:grid;
+  grid-template-columns:1fr .55fr;
+  gap:28px;
+  align-items:end;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section-head h2 {
+  margin:9px 0 0;
+  color:var(--sct-ink);
+  font-size:29px;
+  line-height:1.03;
+  letter-spacing:-1.1px;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section-head > p {
+  margin:0;
+  color:var(--sct-muted);
+  font-size:12px;
+  line-height:1.55;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-kicker {
+  color:#9fddce;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-section-head h2 {
+  color:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-section-head > p {
+  color:#c6d4df;
+}
+
+/* Cards */
+body.stratex-company-trust-pages-v3 .sct-grid {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-grid.is-three {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+body.stratex-company-trust-pages-v3 .sct-grid.is-four {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+body.stratex-company-trust-pages-v3 .sct-card {
+  min-height:165px;
+  padding:20px;
+  border:1px solid var(--sct-line);
+  border-radius:17px;
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-card-number {
+  display:block;
+  margin-bottom:14px;
+  color:var(--sct-blue);
+  font-size:11px;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-card h3 {
+  margin:0;
+  color:var(--sct-ink);
+  font-size:16px;
+  line-height:1.18;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-card p {
+  margin:8px 0 0;
+  color:var(--sct-muted);
+  font-size:11px;
+  line-height:1.58;
+}
+
+body.stratex-company-trust-pages-v3 .sct-card-actions {
+  margin-top:15px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-card {
+  border-color:rgba(255,255,255,.12);
+  background:rgba(255,255,255,.07);
+  box-shadow:none;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-card h3 {
+  color:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-section.is-dark .sct-card p {
+  color:#c8d5df;
+}
+
+/* Principles */
+body.stratex-company-trust-pages-v3 .sct-principles {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-principle {
+  min-height:145px;
+  padding:17px;
+  border-top:3px solid var(--sct-green);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-principle b {
+  display:block;
+  color:var(--sct-ink);
+  font-size:13px;
+  line-height:1.3;
+}
+
+body.stratex-company-trust-pages-v3 .sct-principle span {
+  display:block;
+  margin-top:7px;
+  color:var(--sct-muted);
+  font-size:10px;
+  line-height:1.48;
+}
+
+/* Leadership */
+body.stratex-company-trust-pages-v3 .sct-leaders {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:13px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader {
+  overflow:hidden;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-photo {
+  height:255px;
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,#dfe7ee,#b9cad9);
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-photo img {
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-fallback {
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:#29445b;
+  font-size:42px;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-body {
+  padding:19px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-role {
+  color:var(--sct-green-dark);
+  font-size:10px;
+  line-height:1.3;
+  font-weight:900;
+  letter-spacing:.55px;
+  text-transform:uppercase;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader h3 {
+  margin:8px 0 4px;
+  color:var(--sct-ink);
+  font-size:18px;
+  line-height:1.2;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-area {
+  color:#496178;
+  font-size:10px;
+  line-height:1.4;
+  font-weight:850;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader p {
+  margin:10px 0 0;
+  color:var(--sct-muted);
+  font-size:11px;
+  line-height:1.55;
+}
+
+body.stratex-company-trust-pages-v3 .sct-leader-actions {
+  margin-top:15px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+/* Accessible leadership modal */
+body.stratex-company-trust-pages-v3.sct-modal-open {
+  overflow:hidden;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-host {
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-backdrop {
+  position:absolute;
+  inset:0;
+  background:rgba(7,17,31,.72);
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal {
+  position:relative;
+  z-index:1;
+  width:min(680px,100%);
+  max-height:calc(100dvh - 40px);
+  overflow:auto;
+  padding:24px;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 30px 80px rgba(7,17,31,.35);
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-close {
+  position:absolute;
+  top:15px;
+  right:15px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-head {
+  padding-right:70px;
+  display:grid;
+  grid-template-columns:125px minmax(0,1fr);
+  gap:18px;
+  align-items:center;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-image {
+  width:125px;
+  height:125px;
+  object-fit:cover;
+  border-radius:16px;
+  background:#dce6ee;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-head h2 {
+  margin:8px 0 4px;
+  color:var(--sct-ink);
+  font-size:25px;
+  line-height:1.1;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-head p,
+body.stratex-company-trust-pages-v3 .sct-modal-copy {
+  color:var(--sct-muted);
+  font-size:12px;
+  line-height:1.6;
+}
+
+body.stratex-company-trust-pages-v3 .sct-modal-copy {
+  margin:20px 0 0;
+}
+
+body.stratex-company-trust-pages-v3 .sct-tags {
+  margin-top:16px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+body.stratex-company-trust-pages-v3 .sct-tag {
+  min-height:28px;
+  padding:0 9px;
+  border-radius:999px;
+  background:var(--sct-green-soft);
+  color:var(--sct-green-dark);
+  display:inline-flex;
+  align-items:center;
+  font-size:9px;
+  font-weight:900;
+}
+
+/* Verification steps */
+body.stratex-company-trust-pages-v3 .sct-steps {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-step {
+  min-height:180px;
+  padding:19px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-step strong {
+  display:block;
+  color:var(--sct-green-dark);
+  font-size:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-step h3 {
+  margin:13px 0 7px;
+  color:var(--sct-ink);
+  font-size:14px;
+  line-height:1.25;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-step p {
+  margin:0;
+  color:var(--sct-muted);
+  font-size:10px;
+  line-height:1.55;
+}
+
+/* Link routes */
+body.stratex-company-trust-pages-v3 .sct-route-grid {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route-link {
+  min-height:105px;
+  padding:16px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  color:inherit;
+  text-decoration:none;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-route-link b {
+  display:block;
+  color:var(--sct-ink);
+  font-size:13px;
+  line-height:1.3;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route-link span {
+  display:block;
+  margin-top:6px;
+  color:var(--sct-muted);
+  font-size:10px;
+  line-height:1.45;
+}
+
+/* Forms */
+body.stratex-company-trust-pages-v3 .sct-form-layout {
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:.68fr 1.32fr;
+  gap:14px;
+  align-items:start;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route-list {
+  display:grid;
+  gap:8px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route {
+  padding:15px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route b {
+  display:block;
+  color:var(--sct-ink);
+  font-size:12px;
+  line-height:1.35;
+}
+
+body.stratex-company-trust-pages-v3 .sct-route span {
+  display:block;
+  margin-top:5px;
+  color:var(--sct-muted);
+  font-size:10px;
+  line-height:1.45;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-card {
+  padding:22px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-card h2,
+body.stratex-company-trust-pages-v3 .sct-form-card h3 {
+  margin:0 0 16px;
+  color:var(--sct-ink);
+  font-size:20px;
+  line-height:1.2;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-fields {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-field {
+  display:block;
+}
+
+body.stratex-company-trust-pages-v3 .sct-field.is-full {
+  grid-column:1/-1;
+}
+
+body.stratex-company-trust-pages-v3 .sct-label {
+  display:block;
+  margin-bottom:6px;
+  color:#536a80;
+  font-size:9px;
+  line-height:1.3;
+  font-weight:950;
+  letter-spacing:.55px;
+  text-transform:uppercase;
+}
+
+body.stratex-company-trust-pages-v3 .sct-input,
+body.stratex-company-trust-pages-v3 .sct-select,
+body.stratex-company-trust-pages-v3 .sct-textarea {
+  width:100%;
+  border:1px solid var(--sct-line-strong);
+  border-radius:9px;
+  background:#fff;
+  color:var(--sct-ink);
+  font:inherit;
+  font-size:12px;
+  outline:none;
+}
+
+body.stratex-company-trust-pages-v3 .sct-input,
+body.stratex-company-trust-pages-v3 .sct-select {
+  height:44px;
+  padding:0 12px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-textarea {
+  min-height:126px;
+  padding:11px 12px;
+  line-height:1.5;
+  resize:vertical;
+}
+
+body.stratex-company-trust-pages-v3 .sct-input:focus,
+body.stratex-company-trust-pages-v3 .sct-select:focus,
+body.stratex-company-trust-pages-v3 .sct-textarea:focus {
+  border-color:#59c6a8;
+  box-shadow:0 0 0 3px rgba(15,163,127,.10);
+}
+
+body.stratex-company-trust-pages-v3 .sct-check {
+  margin-top:13px;
+  display:flex;
+  gap:9px;
+  align-items:flex-start;
+  color:#455b70;
+  font-size:10px;
+  line-height:1.5;
+}
+
+body.stratex-company-trust-pages-v3 .sct-check input {
+  width:17px;
+  height:17px;
+  margin:0;
+  flex:0 0 17px;
+  accent-color:var(--sct-green);
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-actions {
+  margin-top:16px;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-actions .sct-button {
+  width:100%;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-message {
+  display:none;
+  margin-top:13px;
+  padding:11px 12px;
+  border-radius:9px;
+  font-size:10px;
+  line-height:1.5;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-message.is-visible {
+  display:block;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-message.is-success {
+  border:1px solid #b9e4d8;
+  background:#edf9f5;
+  color:#256052;
+}
+
+body.stratex-company-trust-pages-v3 .sct-form-message.is-error {
+  border:1px solid #efbfc6;
+  background:var(--sct-red-soft);
+  color:#8f1f31;
+}
+
+body.stratex-company-trust-pages-v3 .sct-help {
+  margin:7px 0 0;
+  color:var(--sct-muted);
+  font-size:9px;
+  line-height:1.5;
+}
+
+/* Warnings and status panels */
+body.stratex-company-trust-pages-v3 .sct-callout {
+  margin-top:20px;
+  padding:18px;
+  border-left:4px solid var(--sct-green);
+  background:#eff8f5;
+  color:#294e44;
+}
+
+body.stratex-company-trust-pages-v3 .sct-callout.is-danger {
+  border-left-color:var(--sct-red);
+  background:var(--sct-red-soft);
+  color:#7f1d2d;
+}
+
+body.stratex-company-trust-pages-v3 .sct-callout b {
+  display:block;
+  font-size:12px;
+  line-height:1.4;
+}
+
+body.stratex-company-trust-pages-v3 .sct-callout p {
+  margin:6px 0 0;
+  font-size:10px;
+  line-height:1.55;
+}
+
+body.stratex-company-trust-pages-v3 .sct-status-card {
+  min-height:230px;
+  padding:21px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+}
+
+body.stratex-company-trust-pages-v3 .sct-status-pill {
+  display:inline-flex;
+  min-height:26px;
+  padding:0 9px;
+  border-radius:999px;
+  background:var(--sct-green-soft);
+  color:var(--sct-green-dark);
+  align-items:center;
+  font-size:9px;
+  font-weight:900;
+}
+
+body.stratex-company-trust-pages-v3 .sct-status-card h2 {
+  margin:13px 0 7px;
+  color:var(--sct-ink);
+  font-size:22px;
+  line-height:1.15;
+}
+
+body.stratex-company-trust-pages-v3 .sct-status-card p {
+  margin:0 0 8px;
+  color:var(--sct-muted);
+  font-size:11px;
+  line-height:1.55;
+}
+
+/* CTA */
+body.stratex-company-trust-pages-v3 .sct-cta {
+  padding:26px 0;
+  background:var(--sct-soft);
+}
+
+body.stratex-company-trust-pages-v3 .sct-cta-box {
+  padding:25px;
+  border:1px solid var(--sct-line);
+  background:#fff;
+  box-shadow:var(--sct-shadow-sm);
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:20px;
+  align-items:center;
+}
+
+body.stratex-company-trust-pages-v3 .sct-cta-box h2 {
+  margin:0;
+  color:var(--sct-ink);
+  font-size:22px;
+  line-height:1.15;
+  font-weight:950;
+}
+
+body.stratex-company-trust-pages-v3 .sct-cta-box p {
+  margin:7px 0 0;
+  color:var(--sct-muted);
+  font-size:12px;
+  line-height:1.5;
+}
+
+body.stratex-company-trust-pages-v3 .sct-cta-actions {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* Footer */
+body.stratex-company-trust-pages-v3 .stx-footer {
+  padding:31px 42px 23px;
+  border-top:1px solid var(--sct-line);
+  background:#fff;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-grid {
+  width:min(990px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1.5fr 3.5fr;
+  gap:24px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-grid > div:first-child p {
+  margin:8px 0 0;
+  color:var(--sct-muted);
+  font-size:10px;
+  line-height:1.55;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-links {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:24px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-links strong {
+  display:block;
+  margin-bottom:8px;
+  color:var(--sct-ink);
+  font-size:11px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-links a {
+  display:block;
+  margin:6px 0;
+  color:#52677d;
+  text-decoration:none;
+  font-size:10px;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-links a:hover {
+  color:var(--sct-green-dark);
+}
+
+body.stratex-company-trust-pages-v3 .sct-footer-bottom {
+  width:min(990px,100%);
+  margin:20px auto 0;
+  padding-top:14px;
+  border-top:1px solid #edf1f5;
+  color:#71849a;
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  font-size:9px;
+  line-height:1.45;
+}
+
+body.stratex-company-trust-pages-v3 .stx-footer-accordion {
+  display:none;
+}
+
+/* Accessibility */
+body.stratex-company-trust-pages-v3 :focus-visible {
+  outline:3px solid rgba(15,163,127,.28)!important;
+  outline-offset:3px!important;
+}
+
+/* Tablet */
+@media (max-width:950px) {
+  body.stratex-company-trust-pages-v3 .stx-header-inner {
+    width:min(100% - 28px,1090px);
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-nav {
+    gap:14px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-hero-grid {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-visual {
+    min-height:310px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-principles,
+  body.stratex-company-trust-pages-v3 .sct-steps {
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+/* Phone */
+@media (max-width:767px) {
+  body.stratex-company-trust-pages-v3 .stx-header-inner {
+    min-height:62px;
+    width:calc(100% - 32px);
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-brand {
+    font-size:17px;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-menu-button {
+    display:flex;
+    width:40px;
+    height:40px;
+    border-radius:9px;
+    box-shadow:none;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-nav {
+    display:none;
+    position:absolute;
+    top:62px;
+    left:0;
+    right:0;
+    padding:15px 16px 20px;
+    border-bottom:1px solid var(--sct-line);
+    background:#fff;
+    box-shadow:0 18px 28px rgba(7,17,31,.10);
+  }
+
+  body.stratex-company-trust-pages-v3.stx-menu-open .stx-nav {
+    display:grid;
+    gap:6px;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-nav > a,
+  body.stratex-company-trust-pages-v3 .stx-link-button {
+    min-height:42px;
+    width:100%;
+    padding:0 10px;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    font-size:13px;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-login {
+    width:100%;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-login-menu {
+    position:static;
+    width:100%;
+    margin-top:5px;
+    box-shadow:none;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-nav > .stx-btn {
+    width:100%;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-inner {
+    width:calc(100% - 32px);
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-hero {
+    padding:35px 0 30px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-hero h1 {
+    font-size:36px;
+    letter-spacing:-1.5px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-hero-copy {
+    font-size:14px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-actions {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-actions .is-primary {
+    grid-column:1/-1;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-button {
+    width:100%;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-visual {
+    min-height:300px;
+    padding:20px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-visual h2 {
+    font-size:23px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-section {
+    padding:38px 0;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-section-head {
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-section-head h2 {
+    font-size:27px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-grid,
+  body.stratex-company-trust-pages-v3 .sct-grid.is-three,
+  body.stratex-company-trust-pages-v3 .sct-grid.is-four,
+  body.stratex-company-trust-pages-v3 .sct-principles,
+  body.stratex-company-trust-pages-v3 .sct-steps,
+  body.stratex-company-trust-pages-v3 .sct-route-grid,
+  body.stratex-company-trust-pages-v3 .sct-leaders,
+  body.stratex-company-trust-pages-v3 .sct-form-layout {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-card,
+  body.stratex-company-trust-pages-v3 .sct-step,
+  body.stratex-company-trust-pages-v3 .sct-principle {
+    min-height:0;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-leader-photo {
+    height:310px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-fields {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-field.is-full {
+    grid-column:auto;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-input,
+  body.stratex-company-trust-pages-v3 .sct-select,
+  body.stratex-company-trust-pages-v3 .sct-textarea {
+    font-size:16px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-cta {
+    padding:24px 0;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-cta-box {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-cta-actions {
+    display:grid;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-modal-host {
+    align-items:end;
+    padding:0;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-modal {
+    width:100%;
+    max-height:90dvh;
+    border-radius:20px 20px 0 0;
+    padding:22px 18px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-modal-head {
+    grid-template-columns:88px minmax(0,1fr);
+    padding-right:50px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-modal-image {
+    width:88px;
+    height:88px;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-footer {
+    padding:25px 16px 18px;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-footer-grid {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-footer-links {
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-footer-bottom {
+    display:block;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-footer-bottom span {
+    display:block;
+    margin-top:5px;
+  }
+}
+
+@media (max-width:370px) {
+  body.stratex-company-trust-pages-v3 .sct-actions {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-actions .is-primary {
+    grid-column:auto;
+  }
+
+  body.stratex-company-trust-pages-v3 .sct-visual-stats {
+    grid-template-columns:1fr;
+  }
+
+  body.stratex-company-trust-pages-v3 .stx-footer-links {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  body.stratex-company-trust-pages-v3 *,
+  body.stratex-company-trust-pages-v3 *::before,
+  body.stratex-company-trust-pages-v3 *::after {
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
