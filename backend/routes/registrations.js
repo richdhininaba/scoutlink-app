@@ -377,6 +377,272 @@ router.get('/:id/verification-documents', requireAuth, requireRole('Stratex'), r
   }
 });
 
+router.post('/:id/request-information', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
+  try {
+    const message = String(req.body.message || '').trim();
+
+    if (message.length < 10 || message.length > 2000) {
+      return res.status(400).json({
+        error: 'Enter a clear information request between 10 and 2,000 characters.'
+      });
+    }
+
+    const { data: rq, error } = await supabase
+      .from('registration_requests')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !rq) {
+      return res.status(404).json({
+        error: 'Registration request not found'
+      });
+    }
+
+    if (rq.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Information can only be requested while the registration is pending.'
+      });
+    }
+
+    const emailResult = await email.sendNotification({
+      to: rq.email,
+      firstName: rq.first_name,
+      notificationTitle: 'More information is needed for your ScoutLink registration',
+      notificationBody: message,
+      notificationTypeLabel: 'Registration update',
+      actionLabel: '',
+      actionUrl: ''
+    }).catch(err => ({
+      success: false,
+      error: err.message
+    }));
+
+    if (!emailResult || !emailResult.success) {
+      return res.status(502).json({
+        error: 'The information request email was not accepted.',
+        details:
+          emailResult &&
+          (emailResult.error || emailResult.details) ||
+          'Unknown email error'
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from('registration_requests')
+      .update({
+        information_request_message: message,
+        information_requested_at: new Date(),
+        information_requested_by:
+          req.user.email || 'stratex'
+      })
+      .eq('id', rq.id);
+
+    if (updateError) throw updateError;
+
+    res.json({
+      message: 'Information request sent to the applicant.'
+    });
+  } catch (err) {
+    safeLog('[Registration request information]', err);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: err.message
+    });
+  }
+});
+
+
+router.post('/:id/resend-verification', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
+  try {
+    const { data: rq, error } = await supabase
+      .from('registration_requests')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !rq) {
+      return res.status(404).json({
+        error: 'Registration request not found'
+      });
+    }
+
+    if (rq.account_type !== 'Scout') {
+      return res.status(400).json({
+        error: 'Verification links are only used for Scout registrations.'
+      });
+    }
+
+    if (rq.status !== 'pending') {
+      return res.status(400).json({
+        error: 'This Scout registration is no longer pending.'
+      });
+    }
+
+    if (
+      ![
+        'awaiting_documents',
+        'documents_submitted'
+      ].includes(rq.verification_status || 'awaiting_documents')
+    ) {
+      return res.status(400).json({
+        error: 'A verification link is not required at the current Scout stage.'
+      });
+    }
+
+    const previous = {
+      verification_token_hash: rq.verification_token_hash,
+      verification_token_expires_at:
+        rq.verification_token_expires_at,
+      verification_link_sent_at:
+        rq.verification_link_sent_at
+    };
+
+    const verificationToken = generateVerificationToken();
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    const { error: tokenError } = await supabase
+      .from('registration_requests')
+      .update({
+        verification_token_hash:
+          hashToken(verificationToken),
+        verification_token_expires_at:
+          expiresAt,
+        verification_link_sent_at:
+          new Date(),
+        verification_link_resent_at:
+          new Date()
+      })
+      .eq('id', rq.id);
+
+    if (tokenError) throw tokenError;
+
+    const emailResult =
+      await email.sendScoutVerificationRequired({
+        to: rq.email,
+        firstName: rq.first_name,
+        verificationLink:
+          verificationLink(verificationToken)
+      }).catch(err => ({
+        success: false,
+        error: err.message
+      }));
+
+    if (!emailResult || !emailResult.success) {
+      await supabase
+        .from('registration_requests')
+        .update(previous)
+        .eq('id', rq.id);
+
+      return res.status(502).json({
+        error: 'The verification email was not accepted.',
+        details:
+          emailResult &&
+          (emailResult.error || emailResult.details) ||
+          'Unknown email error'
+      });
+    }
+
+    res.json({
+      message: 'A new Scout verification link has been sent.'
+    });
+  } catch (err) {
+    safeLog('[Resend Scout verification]', err);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: err.message
+    });
+  }
+});
+
+
+router.post('/:id/resend-payment', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
+  try {
+    const { data: rq, error } = await supabase
+      .from('registration_requests')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (error || !rq) {
+      return res.status(404).json({
+        error: 'Registration request not found'
+      });
+    }
+
+    if (rq.account_type !== 'Scout') {
+      return res.status(400).json({
+        error: 'Payment requests are only used for Scout registrations.'
+      });
+    }
+
+    if (
+      rq.status !== 'pending' ||
+      rq.verification_status !==
+        'verified_awaiting_payment'
+    ) {
+      return res.status(400).json({
+        error: 'The Scout must be verified and awaiting payment.'
+      });
+    }
+
+    if (
+      !rq.payment_link ||
+      !/^https?:\/\//i.test(rq.payment_link)
+    ) {
+      return res.status(400).json({
+        error: 'The saved payment link is invalid.'
+      });
+    }
+
+    const emailResult =
+      await email.sendScoutPaymentRequired({
+        to: rq.email,
+        firstName: rq.first_name,
+        planName: rq.payment_plan || 'Core',
+        paymentLink: rq.payment_link
+      }).catch(err => ({
+        success: false,
+        error: err.message
+      }));
+
+    if (!emailResult || !emailResult.success) {
+      return res.status(502).json({
+        error: 'The payment email was not accepted.',
+        details:
+          emailResult &&
+          (emailResult.error || emailResult.details) ||
+          'Unknown email error'
+      });
+    }
+
+    const { error: updateError } = await supabase
+      .from('registration_requests')
+      .update({
+        payment_email_sent_at: new Date(),
+        payment_email_resent_at: new Date(),
+        reviewed_by:
+          req.user.email || 'stratex',
+        reviewed_at: new Date()
+      })
+      .eq('id', rq.id);
+
+    if (updateError) throw updateError;
+
+    res.json({
+      message: 'The Scout payment email has been sent again.'
+    });
+  } catch (err) {
+    safeLog('[Resend Scout payment]', err);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: err.message
+    });
+  }
+});
+
 // Stratex: approve
 router.post('/:id/approve', requireAuth, requireRole('Stratex'), requireRegistrationsAdmin, async (req, res) => {
   try {
@@ -429,14 +695,23 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), requireRegistra
       });
     }
     await supabase.from('registration_requests').update({
-      verification_status: 'verified_awaiting_payment',
-      payment_plan: plan,
-      payment_link: String(paymentLink).trim(),
-      payment_email_sent_at: new Date(),
-      reviewed_by: req.user.email||'stratex',
+      status: 'approved',
+      login_code: loginCode,
+      reviewed_by: req.user.email || 'stratex',
       reviewed_at: new Date(),
-      safeguarding_review: review,
-      safeguarding_documents: uploadedDocs
+      activated_at: new Date(),
+      linked_account_id:
+        newUser && newUser.id
+          ? String(newUser.id)
+          : null,
+      linked_account_type: rq.account_type,
+      safeguarding_review:
+        safeguardingReview || {},
+      safeguarding_documents:
+        safeguardingReview &&
+        safeguardingReview.documents
+          ? safeguardingReview.documents
+          : []
     }).eq('id', req.params.id);
     await supabase.from('scout_verification_reviews').insert({
       registration_request_id: rq.id,
@@ -474,11 +749,17 @@ router.post('/:id/approve', requireAuth, requireRole('Stratex'), requireRegistra
   }
 
   await supabase.from('registration_requests').update({
-    status: 'approved', login_code: loginCode,
-    reviewed_by: req.user.email||'stratex', reviewed_at: new Date(),
-    safeguarding_review: safeguardingReview || {},
-    safeguarding_documents: safeguardingReview && safeguardingReview.documents ? safeguardingReview.documents : []
-  }).eq('id', req.params.id);
+    status: 'approved',
+    verification_status: 'activated',
+    login_code: loginCode,
+    payment_received_at: new Date(),
+    activated_at: new Date(),
+    linked_account_id: String(newUser.id),
+    linked_account_type: 'Scout',
+    reviewed_by:
+      req.user.email || 'stratex',
+    reviewed_at: new Date()
+  }).eq('id', rq.id);
 
   if (rq.account_type === 'Scout') {
     await supabase.from('scout_verification_reviews').insert({
