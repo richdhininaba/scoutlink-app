@@ -363,7 +363,7 @@ router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) =
       player_id: generateId('PLY'),
       first_name: b.firstName.trim(), last_name: b.lastName.trim(),
       email: null, phone: b.phone||null, parent_email: null,
-      date_of_birth: null,
+      date_of_birth: b.dateOfBirth || b.date_of_birth || null,
       age: ageInfo.age,
       age_group: ageInfo.age_group,
       nationality: null, nationality_code: null,
