@@ -206,40 +206,1327 @@
       document.getElementById('stxv4DashConcerns').textContent=num(concerns.filter(function(x){var meta=x.safe_metadata||{};return /urgent|high/i.test(String(x.priority||x.severity||meta.priority||''))&&!/closed|resolved/i.test(String(x.status||''));}).length);
     }catch(_){}
   }
-  function pageRegistrations(){
-    return pageHead('Registrations','Review all Stratex product registrations and keep ScoutLink status synchronised.',btn('Refresh','','id="stxv4RefreshRegistrations"'))+
-      '<div class="stxv4-filters"><input class="stxv4-input" id="stxv4RegistrationSearch" placeholder="Search name, email or organisation" aria-label="Search registrations">'+
-      '<select class="stxv4-select" id="stxv4RegistrationProduct" aria-label="Product"><option value="">All products</option><option>ScoutLink</option></select>'+
-      '<select class="stxv4-select" id="stxv4RegistrationType" aria-label="Type"><option value="">All types</option><option>Coach</option><option>Scout</option></select>'+
-      '<select class="stxv4-select" id="stxv4RegistrationStatus" aria-label="Status"><option value="">All statuses</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="declined">Declined</option></select>'+
-      btn('Filter','primary','id="stxv4ApplyRegistrationFilters"')+'</div>'+
-      '<section class="stxv4-card">'+cardHead('Registration records','ScoutLink Coach and Scout access requests')+'<div class="stxv4-cardbody" id="stxv4RegistrationRows">'+loading()+'</div></section><div id="stxv4RegistrationDetail"></div>';
+ function pageRegistrations(){
+  return pageHead(
+    'Registrations',
+    'Review and complete Coach and Scout registrations directly inside Stratex Admin.',
+    btn('Refresh','','id="stxv4RefreshRegistrations"')
+  )+
+    '<div class="stxv4-metrics stxreg-metrics">'+
+      metric('All registrations','—','Every ScoutLink request','','stxregMetricAll')+
+      metric('Needs admin action','—','Review, documents or payment','gold','stxregMetricAction')+
+      metric('Awaiting documents','—','Scout verification outstanding','blue','stxregMetricDocuments')+
+      metric('Awaiting payment','—','Verified Scout requests','red','stxregMetricPayment')+
+    '</div>'+
+    '<div class="stxv4-filters stxreg-filters">'+
+      '<input class="stxv4-input" id="stxv4RegistrationSearch" placeholder="Search name, email or organisation" aria-label="Search registrations">'+
+      '<select class="stxv4-select" id="stxv4RegistrationType" aria-label="Registration type">'+
+        '<option value="">Coach and Scout</option>'+
+        '<option value="coach">Coach</option>'+
+        '<option value="scout">Scout</option>'+
+      '</select>'+
+      '<select class="stxv4-select" id="stxv4RegistrationStatus" aria-label="Registration decision status">'+
+        '<option value="">All decisions</option>'+
+        '<option value="pending">Pending</option>'+
+        '<option value="approved">Approved</option>'+
+        '<option value="declined">Declined</option>'+
+      '</select>'+
+      '<select class="stxv4-select" id="stxregWorkflowFilter" aria-label="Registration workflow stage">'+
+        '<option value="">All workflow stages</option>'+
+        '<option value="admin_review">Coach admin review</option>'+
+        '<option value="awaiting_documents">Scout awaiting documents</option>'+
+        '<option value="documents_ready">Scout documents ready</option>'+
+        '<option value="awaiting_payment">Scout awaiting payment</option>'+
+        '<option value="account_created">Account created</option>'+
+        '<option value="declined">Declined</option>'+
+      '</select>'+
+      btn('Filter','primary','id="stxv4ApplyRegistrationFilters"')+
+    '</div>'+
+    '<section class="stxv4-card">'+
+      cardHead(
+        'Registration records',
+        'Select a request to complete its workflow without leaving this page'
+      )+
+      '<div class="stxv4-cardbody" id="stxv4RegistrationRows">'+
+        loading()+
+      '</div>'+
+    '</section>'+
+    '<div id="stxv4RegistrationDetail"></div>';
+}
+
+function normalizeRegistration(row){
+  row=row||{};
+  var type=String(
+    row.account_type||
+    row.accountType||
+    row.type||
+    'Registration'
+  );
+
+  return{
+    id:row.id,
+    source:'ScoutLink registration',
+    product:'ScoutLink',
+    type:type,
+    name:[
+      row.first_name,
+      row.last_name
+    ].filter(Boolean).join(' ')||
+      row.full_name||
+      row.name||
+      '',
+    email:row.email||'',
+    phone:row.phone||'',
+    organisation:
+      row.team_name||
+      row.scout_club||
+      row.organisation||
+      row.club_name||
+      '',
+    role:
+      row.role_at_club||
+      row.role||
+      row.scout_league||
+      '',
+    status:row.status||'pending',
+    verificationStatus:
+      row.verification_status||
+      (type.toLowerCase()==='scout'
+        ?'awaiting_documents'
+        :'not_required'),
+    createdAt:
+      row.created_at||
+      row.submitted_at||
+      row.updated_at,
+    raw:row
+  };
+}
+
+function registrationStage(registration){
+  var type=String(registration.type||'').toLowerCase();
+  var statusValue=String(registration.status||'').toLowerCase();
+  var verification=String(
+    registration.verificationStatus||''
+  ).toLowerCase();
+
+  if(statusValue==='declined')return'declined';
+  if(statusValue==='approved')return'account_created';
+
+  if(type==='coach')return'admin_review';
+
+  if(verification==='verified_awaiting_payment'){
+    return'awaiting_payment';
   }
-  function normalizeRegistration(row){var t=row.account_type||row.accountType||row.type||'Registration';return{id:row.id,source:'Website registration',product:row.product||'ScoutLink',type:t,name:[row.first_name,row.last_name].filter(Boolean).join(' ')||row.full_name||row.name||'',email:row.email||'',phone:row.phone||'',organisation:row.team_name||row.scout_club||row.organisation||row.club_name||'',role:row.role_at_club||row.role||row.scout_league||'',status:row.status||row.decision||row.verification_status||'pending',createdAt:row.created_at||row.submitted_at||row.updated_at,raw:row};}
-  async function loadRegistrations(){
-    var root=document.getElementById('stxv4RegistrationRows');if(!root)return;root.innerHTML=loading();
-    try{var statusNode=document.getElementById('stxv4RegistrationStatus');var qs='?limit=250'+(statusNode&&statusNode.value?'&status='+encodeURIComponent(statusNode.value):'');var data=await api('GET','/api/registrations'+qs);state.data.registrations=(data.data||[]).map(normalizeRegistration);renderRegistrationRows();}catch(err){root.innerHTML=empty(err.message||'Could not load registration records.');}
+
+  if(verification==='documents_submitted'){
+    return'documents_ready';
   }
-  function filteredRegistrations(){
-    var q=String(document.getElementById('stxv4RegistrationSearch')&&document.getElementById('stxv4RegistrationSearch').value||'').toLowerCase();
-    var p=String(document.getElementById('stxv4RegistrationProduct')&&document.getElementById('stxv4RegistrationProduct').value||'').toLowerCase();
-    var t=String(document.getElementById('stxv4RegistrationType')&&document.getElementById('stxv4RegistrationType').value||'').toLowerCase();
-    var s=String(document.getElementById('stxv4RegistrationStatus')&&document.getElementById('stxv4RegistrationStatus').value||'').toLowerCase();
-    return(state.data.registrations||[]).filter(function(r){var text=[r.name,r.email,r.organisation,r.role,r.type,r.status,r.product].join(' ').toLowerCase();return(!q||text.indexOf(q)>=0)&&(!p||String(r.product).toLowerCase()===p)&&(!t||String(r.type).toLowerCase()===t)&&(!s||String(r.status).toLowerCase()===s);});
+
+  if(verification==='activated'){
+    return'account_created';
   }
-  function renderRegistrationRows(){
-    var rows=filteredRegistrations();var root=document.getElementById('stxv4RegistrationRows');if(!root)return;
-    root.innerHTML=table(['Product / Source','Type','Name / Email','Organisation','Role','Status','Created','Actions'],rows.map(function(r,i){return'<tr data-row="'+i+'" data-registration-id="'+esc(r.id)+'"><td><span class="stxv4-rowtitle">'+esc(r.product)+'</span><span class="stxv4-rowsub">'+esc(r.source)+'</span></td><td>'+status(r.type,String(r.type).toLowerCase()==='scout'?'blue':'grey')+'</td><td><span class="stxv4-rowtitle">'+esc(r.name||'—')+'</span><span class="stxv4-rowsub">'+esc(r.email)+'</span></td><td>'+esc(r.organisation||'—')+'</td><td>'+esc(r.role||'—')+'</td><td>'+status(r.status,statusColor(r.status))+'</td><td>'+esc(date(r.createdAt))+'</td><td>'+btn('Open','small','data-open-registration="'+esc(r.id)+'"')+'</td></tr>'; }));
-    root.querySelectorAll('[data-open-registration]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();openRegistration(b.dataset.openRegistration);});});
-    root.querySelectorAll('tr[data-registration-id]').forEach(function(tr){tr.addEventListener('click',function(e){if(e.target.closest('button,a'))return;openRegistration(tr.dataset.registrationId);});});
+
+  return'awaiting_documents';
+}
+
+function registrationStageLabel(registration){
+  var labels={
+    admin_review:'Admin review',
+    awaiting_documents:'Awaiting documents',
+    documents_ready:'Documents ready',
+    awaiting_payment:'Awaiting payment',
+    account_created:'Account created',
+    declined:'Declined'
+  };
+
+  return labels[registrationStage(registration)]||
+    'Registration review';
+}
+
+function registrationStep(label,stateValue,copy){
+  return'<div class="stxreg-step '+esc(stateValue)+'">'+
+    '<i aria-hidden="true"></i>'+
+    '<div><b>'+esc(label)+'</b><span>'+esc(copy)+'</span></div>'+
+  '</div>';
+}
+
+function coachWorkflowSteps(registration){
+  var stage=registrationStage(registration);
+
+  return'<div class="stxreg-steps" aria-label="Coach registration workflow">'+
+    registrationStep(
+      '1. Registration submitted',
+      'complete',
+      'Coach details and required declarations received.'
+    )+
+    registrationStep(
+      '2. Stratex admin review',
+      stage==='admin_review'
+        ?'current'
+        :stage==='declined'
+          ?'declined'
+          :'complete',
+      stage==='declined'
+        ?'The request was declined.'
+        :'Review the club, role and declarations.'
+    )+
+    registrationStep(
+      '3. Coach account and login code',
+      stage==='account_created'
+        ?'complete'
+        :'waiting',
+      stage==='account_created'
+        ?'The Coach account has been created.'
+        :'Created automatically after approval.'
+    )+
+  '</div>';
+}
+
+function scoutWorkflowSteps(registration){
+  var stage=registrationStage(registration);
+  var order=[
+    'awaiting_documents',
+    'documents_ready',
+    'awaiting_payment',
+    'account_created'
+  ];
+  var index=order.indexOf(stage);
+
+  function stateFor(stepIndex){
+    if(stage==='declined')return stepIndex===0?'complete':'declined';
+    if(index>stepIndex)return'complete';
+    if(index===stepIndex)return'current';
+    return'waiting';
   }
-  function openRegistration(id){
-    var r=(state.data.registrations||[]).find(function(x){return String(x.id)===String(id);});if(!r)return;state.selected.registration=r;
-    var workflow='/stratex/registrations?request='+encodeURIComponent(r.id);
-    var actions='<a class="stxv4-btn small red" href="'+workflow+'&action=decline">Decline</a><a class="stxv4-btn small" href="mailto:'+esc(r.email)+'?subject='+encodeURIComponent('More information required for your ScoutLink registration')+'">Request info</a><a class="stxv4-btn small primary" href="'+workflow+'&action=approve">Accept</a>';
-    document.getElementById('stxv4RegistrationDetail').innerHTML=detail(r.name,r.type+' registration · '+r.status,[['Product',r.product],['Organisation',r.organisation],['Role',r.role],['Email',r.email],['Phone',r.phone],['Verification',r.raw.verification_status||'—'],['Created',date(r.createdAt)],['Registration ID',r.id]],actions,note('green','Parent-company record','This registration remains in Stratex Admin after a linked ScoutLink account is created.'));
-    document.getElementById('stxv4RegistrationDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  return'<div class="stxreg-steps" aria-label="Scout registration workflow">'+
+    registrationStep(
+      '1. Registration submitted',
+      'complete',
+      'Scout identity, club and declaration received.'
+    )+
+    registrationStep(
+      '2. Verification documents',
+      stateFor(0),
+      stage==='awaiting_documents'
+        ?'Waiting for DBS or safeguarding evidence and proof of ID.'
+        :'Required files have been submitted.'
+    )+
+    registrationStep(
+      '3. Safeguarding review',
+      stateFor(1),
+      stage==='documents_ready'
+        ?'Complete every review gate and verify the Enhanced DBS details.'
+        :'Stratex reviews identity, DBS, credentials and club association.'
+    )+
+    registrationStep(
+      '4. Payment',
+      stateFor(2),
+      stage==='awaiting_payment'
+        ?'Payment request sent. Confirm payment when received.'
+        :'Payment is requested only after verification.'
+    )+
+    registrationStep(
+      '5. Scout account activated',
+      stateFor(3),
+      stage==='account_created'
+        ?'The Scout account and login code have been created.'
+        :'Created automatically after payment confirmation.'
+    )+
+  '</div>';
+}
+
+function registrationDeclaration(
+  label,
+  value
+){
+  return'<span class="stxreg-declaration '+(value?'yes':'no')+'">'+
+    esc(label)+': '+(value?'Confirmed':'Not confirmed')+
+  '</span>';
+}
+
+function coachDeclarations(registration){
+  var declarations=
+    registration.raw.declarations&&
+    typeof registration.raw.declarations==='object'
+      ?registration.raw.declarations
+      :{};
+
+  return'<div class="stxreg-declarations">'+
+    registrationDeclaration(
+      'Authorised club representative',
+      declarations.authorised===true
+    )+
+    registrationDeclaration(
+      'Under-18 permissions',
+      declarations.under18Permissions===true
+    )+
+    registrationDeclaration(
+      'Dispute and removal process',
+      declarations.disputeRemoval===true
+    )+
+    registrationDeclaration(
+      'Media permission responsibility',
+      declarations.mediaPermission===true
+    )+
+    registrationDeclaration(
+      'Data policy',
+      registration.raw.data_policy_agreed===true
+    )+
+  '</div>';
+}
+
+function scoutDeclarations(registration){
+  var declarations=
+    registration.raw.declarations&&
+    typeof registration.raw.declarations==='object'
+      ?registration.raw.declarations
+      :{};
+
+  return'<div class="stxreg-declarations">'+
+    registrationDeclaration(
+      'Legitimate scouting capacity',
+      declarations.legitimateCapacity===true
+    )+
+    registrationDeclaration(
+      'Data policy',
+      registration.raw.data_policy_agreed===true
+    )+
+  '</div>';
+}
+
+function requestInformationForm(registration){
+  if(String(registration.status).toLowerCase()!=='pending'){
+    return'';
   }
+
+  return'<section class="stxreg-action-card">'+
+    '<h4>Request more information</h4>'+
+    '<p>Send the applicant a registration update without leaving Stratex Admin.</p>'+
+    '<form id="stxregRequestInfoForm">'+
+      '<label class="stxv4-field full">'+
+        '<span>Message to applicant</span>'+
+        '<textarea class="stxv4-textarea" name="message" required '+
+          'placeholder="Explain exactly what information or evidence is required."></textarea>'+
+      '</label>'+
+      '<div class="stxv4-actions">'+
+        btn(
+          'Send information request',
+          '',
+          'type="submit"'
+        )+
+      '</div>'+
+    '</form>'+
+  '</section>';
+}
+
+function declineRegistrationForm(registration){
+  if(String(registration.status).toLowerCase()!=='pending'){
+    return'';
+  }
+
+  return'<section class="stxreg-action-card danger">'+
+    '<h4>Decline registration</h4>'+
+    '<p>The applicant receives the selected reason by email.</p>'+
+    '<form id="stxregDeclineForm">'+
+      '<div class="stxv4-formgrid">'+
+        field(
+          'Decline reason',
+          'declineReason',
+          'select',
+          '',
+          false,
+          '',
+          [
+            ['','Select a reason'],
+            ['Unable to verify football team','Unable to verify football team'],
+            ['Unable to verify professional club affiliation','Unable to verify professional club affiliation'],
+            ['Insufficient information provided','Insufficient information provided'],
+            ['Cannot verify age eligibility','Cannot verify age eligibility'],
+            ['Duplicate registration','Duplicate registration'],
+            ['Account suspended','Account suspended'],
+            ['Other','Other']
+          ]
+        )+
+        field(
+          'Custom reason when Other is selected',
+          'customReason',
+          'textarea',
+          '',
+          true
+        )+
+      '</div>'+
+      '<div class="stxv4-actions">'+
+        btn(
+          'Decline and email applicant',
+          'red',
+          'type="submit"'
+        )+
+      '</div>'+
+    '</form>'+
+  '</section>';
+}
+
+function coachReviewActions(registration){
+  if(registrationStage(registration)!=='admin_review'){
+    return'';
+  }
+
+  return'<section class="stxreg-action-card primary">'+
+    '<h4>Approve Coach registration</h4>'+
+    '<p>Approval creates the Coach account immediately and emails the secure completion code.</p>'+
+    '<div class="stxv4-actions">'+
+      btn(
+        'Approve Coach and create account',
+        'primary',
+        'id="stxregApproveCoach"'
+      )+
+    '</div>'+
+  '</section>';
+}
+
+function scoutAwaitingDocumentsActions(registration){
+  if(registrationStage(registration)!=='awaiting_documents'){
+    return'';
+  }
+
+  return'<section class="stxreg-action-card waiting">'+
+    '<h4>Verification documents outstanding</h4>'+
+    '<p>The Scout must upload safeguarding or DBS evidence and proof of ID before review.</p>'+
+    '<div class="stxv4-actions">'+
+      btn(
+        'Resend verification link',
+        'primary',
+        'id="stxregResendVerification"'
+      )+
+    '</div>'+
+  '</section>';
+}
+
+function scoutVerificationForm(registration){
+  if(registrationStage(registration)!=='documents_ready'){
+    return'';
+  }
+
+  var review=
+    registration.raw.safeguarding_review&&
+    typeof registration.raw.safeguarding_review==='object'
+      ?registration.raw.safeguarding_review
+      :{};
+
+  var checklist=review.checklist||{};
+
+  function check(name,label){
+    return'<label class="stxreg-check">'+
+      '<input type="checkbox" name="'+esc(name)+'" '+
+        (checklist[name]===true?'checked':'')+'>'+
+      '<span>'+esc(label)+'</span>'+
+    '</label>';
+  }
+
+  return'<section class="stxreg-action-card primary">'+
+    '<h4>Complete Scout safeguarding review</h4>'+
+    '<p>Every gate is required before a payment request can be sent.</p>'+
+    '<div id="stxregVerificationDocuments">'+
+      loading()+
+    '</div>'+
+    '<form id="stxregScoutVerificationForm">'+
+      '<div class="stxreg-checklist">'+
+        check('identity','Identity matches the applicant')+
+        check('dbs','Enhanced DBS evidence reviewed')+
+        check('faCredentials','Football or FA credentials reviewed')+
+        check('clubAssociation','Professional club association verified')+
+        check('contactDetails','Contact details verified')+
+        check('noSafeguardingFlags','No unresolved safeguarding flags')+
+        check('termsAccepted','Required declarations and terms accepted')+
+      '</div>'+
+      '<div class="stxv4-formgrid">'+
+        field(
+          'Enhanced DBS certificate number',
+          'dbsCertificateNumber',
+          'text',
+          review.dbsCertificateNumber||'',
+          false
+        )+
+        field(
+          'DBS issue date',
+          'dbsIssueDate',
+          'date',
+          review.dbsIssueDate||'',
+          false
+        )+
+        field(
+          'DBS level',
+          'dbsLevel',
+          'select',
+          String(review.dbsLevel||'Enhanced'),
+          false,
+          '',
+          [['Enhanced','Enhanced']]
+        )+
+        field(
+          'Scout subscription plan',
+          'subscriptionPlan',
+          'select',
+          registration.raw.payment_plan||'Core',
+          false,
+          '',
+          [
+            ['Core','Core'],
+            ['Plus','Plus'],
+            ['Elite','Elite']
+          ]
+        )+
+        field(
+          'Secure payment link',
+          'paymentLink',
+          'url',
+          registration.raw.payment_link||'',
+          true,
+          'Must begin with https://'
+        )+
+        field(
+          'Internal safeguarding notes',
+          'notes',
+          'textarea',
+          review.notes||'',
+          true
+        )+
+      '</div>'+
+      '<div class="stxv4-actions">'+
+        btn(
+          'Verify Scout and send payment request',
+          'primary',
+          'type="submit"'
+        )+
+      '</div>'+
+    '</form>'+
+  '</section>';
+}
+
+function scoutPaymentActions(registration){
+  if(registrationStage(registration)!=='awaiting_payment'){
+    return'';
+  }
+
+  return'<section class="stxreg-action-card payment">'+
+    '<h4>Scout verified and awaiting payment</h4>'+
+    '<p>Plan: <strong>'+
+      esc(registration.raw.payment_plan||'Core')+
+      '</strong>. Confirm only after the payment has been received.</p>'+
+    '<div class="stxv4-actions">'+
+      btn(
+        'Resend payment email',
+        '',
+        'id="stxregResendPayment"'
+      )+
+      btn(
+        'Mark payment received and create Scout account',
+        'primary',
+        'id="stxregPaymentReceived"'
+      )+
+    '</div>'+
+  '</section>';
+}
+
+function completedRegistrationPanel(registration){
+  var stage=registrationStage(registration);
+
+  if(stage==='account_created'){
+    return'<section class="stxreg-action-card complete">'+
+      '<h4>Registration completed</h4>'+
+      '<p>The '+esc(registration.type)+' account is active and the completion code has been emailed.</p>'+
+      '<div class="stxreg-completion-grid">'+
+        '<div><span>Linked account ID</span><b>'+
+          esc(
+            registration.raw.linked_account_id||
+            registration.raw.linkedAccountId||
+            'Created before linked-ID tracking'
+          )+
+        '</b></div>'+
+        '<div><span>Activated</span><b>'+
+          esc(
+            date(
+              registration.raw.activated_at||
+              registration.raw.reviewed_at||
+              registration.raw.updated_at
+            )
+          )+
+        '</b></div>'+
+      '</div>'+
+    '</section>';
+  }
+
+  if(stage==='declined'){
+    return'<section class="stxreg-action-card danger">'+
+      '<h4>Registration declined</h4>'+
+      '<p>'+esc(
+        registration.raw.decline_reason||
+        'No decline reason was stored.'
+      )+'</p>'+
+    '</section>';
+  }
+
+  return'';
+}
+
+async function loadRegistrations(reopenId){
+  var root=document.getElementById('stxv4RegistrationRows');
+  if(!root)return;
+
+  root.innerHTML=loading();
+
+  try{
+    var statusNode=document.getElementById(
+      'stxv4RegistrationStatus'
+    );
+
+    var statusValue=statusNode
+      ?String(statusNode.value||'')
+      :'';
+
+    /*
+    An explicit empty status prevents the existing backend default
+    from limiting the parent-company page to pending records only.
+    */
+    var query=
+      '?limit=250&status='+
+      encodeURIComponent(statusValue);
+
+    var data=await api(
+      'GET',
+      '/api/registrations'+query
+    );
+
+    state.data.registrations=(data.data||[])
+      .map(normalizeRegistration);
+
+    renderRegistrationRows();
+
+    var selectedId=
+      reopenId||
+      (
+        state.selected.registration&&
+        state.selected.registration.id
+      );
+
+    if(
+      selectedId&&
+      state.data.registrations.some(function(item){
+        return String(item.id)===String(selectedId);
+      })
+    ){
+      await openRegistration(selectedId);
+    }
+  }catch(err){
+    root.innerHTML=empty(
+      err.message||
+      'Could not load registration records.'
+    );
+  }
+}
+
+function filteredRegistrations(){
+  var searchNode=document.getElementById(
+    'stxv4RegistrationSearch'
+  );
+
+  var typeNode=document.getElementById(
+    'stxv4RegistrationType'
+  );
+
+  var statusNode=document.getElementById(
+    'stxv4RegistrationStatus'
+  );
+
+  var workflowNode=document.getElementById(
+    'stxregWorkflowFilter'
+  );
+
+  var query=String(
+    searchNode&&searchNode.value||''
+  ).toLowerCase();
+
+  var typeValue=String(
+    typeNode&&typeNode.value||''
+  ).toLowerCase();
+
+  var statusValue=String(
+    statusNode&&statusNode.value||''
+  ).toLowerCase();
+
+  var workflowValue=String(
+    workflowNode&&workflowNode.value||''
+  ).toLowerCase();
+
+  return(state.data.registrations||[])
+    .filter(function(registration){
+      var text=[
+        registration.name,
+        registration.email,
+        registration.organisation,
+        registration.role,
+        registration.type,
+        registration.status,
+        registration.verificationStatus
+      ].join(' ').toLowerCase();
+
+      return(
+        !query||
+        text.indexOf(query)>=0
+      )&&(
+        !typeValue||
+        String(registration.type).toLowerCase()===typeValue
+      )&&(
+        !statusValue||
+        String(registration.status).toLowerCase()===statusValue
+      )&&(
+        !workflowValue||
+        registrationStage(registration)===workflowValue
+      );
+    });
+}
+
+function updateRegistrationMetrics(){
+  var registrations=state.data.registrations||[];
+
+  var actionCount=registrations.filter(function(item){
+    return[
+      'admin_review',
+      'documents_ready',
+      'awaiting_payment'
+    ].indexOf(registrationStage(item))>=0;
+  }).length;
+
+  var documentsCount=registrations.filter(function(item){
+    return registrationStage(item)==='awaiting_documents';
+  }).length;
+
+  var paymentCount=registrations.filter(function(item){
+    return registrationStage(item)==='awaiting_payment';
+  }).length;
+
+  var values={
+    stxregMetricAll:registrations.length,
+    stxregMetricAction:actionCount,
+    stxregMetricDocuments:documentsCount,
+    stxregMetricPayment:paymentCount
+  };
+
+  Object.keys(values).forEach(function(id){
+    var node=document.getElementById(id);
+    if(node)node.textContent=num(values[id]);
+  });
+}
+
+function renderRegistrationRows(){
+  var registrations=filteredRegistrations();
+  var root=document.getElementById(
+    'stxv4RegistrationRows'
+  );
+
+  if(!root)return;
+
+  updateRegistrationMetrics();
+
+  root.innerHTML=table(
+    [
+      'Product',
+      'Applicant',
+      'Organisation',
+      'Type',
+      'Workflow stage',
+      'Decision',
+      'Submitted',
+      'Action'
+    ],
+    registrations.map(function(registration){
+      var actionLabel=
+        registrationStage(registration)==='account_created'||
+        registrationStage(registration)==='declined'
+          ?'View'
+          :'Review';
+
+      return'<tr data-registration-id="'+
+        esc(registration.id)+'">'+
+        '<td>'+
+          status('ScoutLink','green')+
+        '</td>'+
+        '<td>'+
+          '<span class="stxv4-rowtitle">'+
+            esc(registration.name||'—')+
+          '</span>'+
+          '<span class="stxv4-rowsub">'+
+            esc(registration.email)+
+          '</span>'+
+        '</td>'+
+        '<td>'+
+          esc(registration.organisation||'—')+
+        '</td>'+
+        '<td>'+
+          status(
+            registration.type,
+            String(registration.type).toLowerCase()==='scout'
+              ?'blue'
+              :'grey'
+          )+
+        '</td>'+
+        '<td>'+
+          status(
+            registrationStageLabel(registration),
+            statusColor(
+              registrationStage(registration)
+            )
+          )+
+        '</td>'+
+        '<td>'+
+          status(
+            registration.status,
+            statusColor(registration.status)
+          )+
+        '</td>'+
+        '<td>'+
+          esc(date(registration.createdAt))+
+        '</td>'+
+        '<td>'+
+          btn(
+            actionLabel,
+            registrationStage(registration)==='account_created'
+              ?'small'
+              :'small primary',
+            'data-open-registration="'+
+              esc(registration.id)+'"'
+          )+
+        '</td>'+
+      '</tr>';
+    })
+  );
+
+  root.querySelectorAll(
+    '[data-open-registration]'
+  ).forEach(function(button){
+    button.addEventListener('click',function(event){
+      event.stopPropagation();
+      openRegistration(
+        button.dataset.openRegistration
+      );
+    });
+  });
+
+  root.querySelectorAll(
+    'tr[data-registration-id]'
+  ).forEach(function(row){
+    row.addEventListener('click',function(event){
+      if(event.target.closest('button,a,input,select')){
+        return;
+      }
+
+      openRegistration(
+        row.dataset.registrationId
+      );
+    });
+  });
+}
+
+function registrationCommonItems(registration){
+  return[
+    ['Product','ScoutLink'],
+    ['Registration type',registration.type],
+    ['Organisation',registration.organisation],
+    ['Role or league',registration.role],
+    ['Email',registration.email],
+    ['Phone',registration.phone],
+    ['Decision status',registration.status],
+    ['Verification status',registration.verificationStatus],
+    ['Submitted',date(registration.createdAt)],
+    ['Registration ID',registration.id]
+  ];
+}
+
+function renderRegistrationWorkflow(registration){
+  var type=String(registration.type||'').toLowerCase();
+
+  var steps=type==='scout'
+    ?scoutWorkflowSteps(registration)
+    :coachWorkflowSteps(registration);
+
+  var declarations=type==='scout'
+    ?scoutDeclarations(registration)
+    :coachDeclarations(registration);
+
+  var actions='';
+
+  if(type==='coach'){
+    actions+=coachReviewActions(registration);
+  }else{
+    actions+=scoutAwaitingDocumentsActions(registration);
+    actions+=scoutVerificationForm(registration);
+    actions+=scoutPaymentActions(registration);
+  }
+
+  actions+=requestInformationForm(registration);
+  actions+=declineRegistrationForm(registration);
+  actions+=completedRegistrationPanel(registration);
+
+  return steps+
+    '<section class="stxreg-summary">'+
+      '<h4>Applicant confirmations</h4>'+
+      declarations+
+    '</section>'+
+    '<div class="stxv4-message" id="stxregWorkflowMessage" role="status"></div>'+
+    '<div class="stxreg-actions-grid">'+
+      actions+
+    '</div>';
+}
+
+async function openRegistration(id){
+  var registration=(state.data.registrations||[])
+    .find(function(item){
+      return String(item.id)===String(id);
+    });
+
+  if(!registration)return;
+
+  state.selected.registration=registration;
+
+  var root=document.getElementById(
+    'stxv4RegistrationDetail'
+  );
+
+  root.innerHTML=detail(
+    registration.name,
+    registration.type+
+      ' registration · '+
+      registrationStageLabel(registration),
+    registrationCommonItems(registration),
+    registration.email
+      ?'<a class="stxv4-btn small" href="mailto:'+
+        esc(registration.email)+
+        '">Email applicant</a>'
+      :'',
+    renderRegistrationWorkflow(registration)
+  );
+
+  bindRegistrationWorkflow(registration);
+
+  root.scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+
+  if(
+    String(registration.type).toLowerCase()==='scout'&&
+    registrationStage(registration)==='documents_ready'
+  ){
+    await loadScoutVerificationDocuments(
+      registration
+    );
+  }
+}
+
+async function loadScoutVerificationDocuments(registration){
+  var root=document.getElementById(
+    'stxregVerificationDocuments'
+  );
+
+  if(!root)return;
+
+  root.innerHTML=loading();
+
+  try{
+    var response=await api(
+      'GET',
+      '/api/registrations/'+
+        encodeURIComponent(registration.id)+
+        '/verification-documents'
+    );
+
+    var documents=response.data||[];
+
+    if(!documents.length){
+      root.innerHTML=note(
+        'red',
+        'Documents missing',
+        'The Scout cannot be verified until both required documents are available.'
+      );
+      return;
+    }
+
+    root.innerHTML=
+      '<div class="stxreg-documents">'+
+        documents.map(function(documentRow,index){
+          return'<article class="stxreg-document">'+
+            '<div>'+
+              '<b>'+
+                esc(
+                  documentRow.kind||
+                  'Verification document'
+                )+
+              '</b>'+
+              '<span>'+
+                esc(
+                  documentRow.fileName||
+                  'Document '+(index+1)
+                )+
+              '</span>'+
+            '</div>'+
+            (
+              documentRow.signedUrl
+                ?'<a class="stxv4-btn small" '+
+                  'href="'+
+                  esc(documentRow.signedUrl)+
+                  '" target="_blank" rel="noopener">'+
+                  'Open secure document</a>'
+                :''
+            )+
+          '</article>';
+        }).join('')+
+      '</div>';
+  }catch(err){
+    root.innerHTML=note(
+      'red',
+      'Documents could not be loaded',
+      err.message||
+      'Refresh the registration and try again.'
+    );
+  }
+}
+
+async function performRegistrationAction(
+  registration,
+  button,
+  path,
+  body,
+  pendingLabel,
+  successMessage
+){
+  var original=button.textContent;
+
+  button.disabled=true;
+  button.textContent=pendingLabel;
+
+  try{
+    var response=await api(
+      'POST',
+      '/api/registrations/'+
+        encodeURIComponent(registration.id)+
+        path,
+      body||{}
+    );
+
+    showMessage(
+      'stxregWorkflowMessage',
+      response.message||
+        successMessage,
+      true
+    );
+
+    await loadRegistrations(
+      registration.id
+    );
+  }catch(err){
+    showMessage(
+      'stxregWorkflowMessage',
+      err.message||
+        'The registration action could not be completed.',
+      false
+    );
+  }finally{
+    button.disabled=false;
+    button.textContent=original;
+  }
+}
+
+function bindRegistrationWorkflow(registration){
+  var approveCoach=document.getElementById(
+    'stxregApproveCoach'
+  );
+
+  if(approveCoach){
+    approveCoach.addEventListener(
+      'click',
+      function(){
+        if(!window.confirm(
+          'Approve this Coach registration and create the Coach account now?'
+        )){
+          return;
+        }
+
+        performRegistrationAction(
+          registration,
+          approveCoach,
+          '/approve',
+          {},
+          'Creating Coach account…',
+          'Coach approved and account created.'
+        );
+      }
+    );
+  }
+
+  var resendVerification=document.getElementById(
+    'stxregResendVerification'
+  );
+
+  if(resendVerification){
+    resendVerification.addEventListener(
+      'click',
+      function(){
+        performRegistrationAction(
+          registration,
+          resendVerification,
+          '/resend-verification',
+          {},
+          'Sending verification link…',
+          'Verification link sent.'
+        );
+      }
+    );
+  }
+
+  var requestInfoForm=document.getElementById(
+    'stxregRequestInfoForm'
+  );
+
+  if(requestInfoForm){
+    requestInfoForm.addEventListener(
+      'submit',
+      function(event){
+        event.preventDefault();
+
+        var messageValue=String(
+          new FormData(requestInfoForm).get('message')||
+          ''
+        ).trim();
+
+        if(messageValue.length<10){
+          showMessage(
+            'stxregWorkflowMessage',
+            'Explain what information is required.',
+            false
+          );
+          return;
+        }
+
+        var submit=requestInfoForm.querySelector(
+          'button[type="submit"]'
+        );
+
+        performRegistrationAction(
+          registration,
+          submit,
+          '/request-information',
+          {message:messageValue},
+          'Sending request…',
+          'Information request sent.'
+        );
+      }
+    );
+  }
+
+  var declineForm=document.getElementById(
+    'stxregDeclineForm'
+  );
+
+  if(declineForm){
+    declineForm.addEventListener(
+      'submit',
+      function(event){
+        event.preventDefault();
+
+        var formData=new FormData(declineForm);
+        var declineReason=String(
+          formData.get('declineReason')||
+          ''
+        );
+
+        var customReason=String(
+          formData.get('customReason')||
+          ''
+        ).trim();
+
+        if(!declineReason){
+          showMessage(
+            'stxregWorkflowMessage',
+            'Select a decline reason.',
+            false
+          );
+          return;
+        }
+
+        if(
+          declineReason==='Other'&&
+          !customReason
+        ){
+          showMessage(
+            'stxregWorkflowMessage',
+            'Enter the custom decline reason.',
+            false
+          );
+          return;
+        }
+
+        if(!window.confirm(
+          'Decline this registration and email the applicant?'
+        )){
+          return;
+        }
+
+        var submit=declineForm.querySelector(
+          'button[type="submit"]'
+        );
+
+        performRegistrationAction(
+          registration,
+          submit,
+          '/decline',
+          {
+            declineReason:declineReason,
+            customReason:customReason
+          },
+          'Declining registration…',
+          'Registration declined.'
+        );
+      }
+    );
+  }
+
+  var verificationForm=document.getElementById(
+    'stxregScoutVerificationForm'
+  );
+
+  if(verificationForm){
+    verificationForm.addEventListener(
+      'submit',
+      function(event){
+        event.preventDefault();
+
+        var formData=new FormData(
+          verificationForm
+        );
+
+        var checklist={};
+        [
+          'identity',
+          'dbs',
+          'faCredentials',
+          'clubAssociation',
+          'contactDetails',
+          'noSafeguardingFlags',
+          'termsAccepted'
+        ].forEach(function(key){
+          checklist[key]=formData.get(key)==='on';
+        });
+
+        var allComplete=Object.keys(checklist)
+          .every(function(key){
+            return checklist[key]===true;
+          });
+
+        if(!allComplete){
+          showMessage(
+            'stxregWorkflowMessage',
+            'Complete every safeguarding review gate before continuing.',
+            false
+          );
+          return;
+        }
+
+        var paymentLink=String(
+          formData.get('paymentLink')||
+          ''
+        ).trim();
+
+        if(!/^https:\/\//i.test(paymentLink)){
+          showMessage(
+            'stxregWorkflowMessage',
+            'Enter a secure payment link beginning with https://',
+            false
+          );
+          return;
+        }
+
+        var submit=verificationForm.querySelector(
+          'button[type="submit"]'
+        );
+
+        performRegistrationAction(
+          registration,
+          submit,
+          '/approve',
+          {
+            subscriptionPlan:
+              formData.get('subscriptionPlan'),
+            paymentLink:paymentLink,
+            safeguardingReview:{
+              checklist:checklist,
+              dbsCertificateNumber:
+                formData.get('dbsCertificateNumber'),
+              dbsIssueDate:
+                formData.get('dbsIssueDate'),
+              dbsLevel:
+                formData.get('dbsLevel'),
+              notes:
+                formData.get('notes')
+            }
+          },
+          'Verifying and sending payment request…',
+          'Scout verified and payment request sent.'
+        );
+      }
+    );
+  }
+
+  var resendPayment=document.getElementById(
+    'stxregResendPayment'
+  );
+
+  if(resendPayment){
+    resendPayment.addEventListener(
+      'click',
+      function(){
+        performRegistrationAction(
+          registration,
+          resendPayment,
+          '/resend-payment',
+          {},
+          'Resending payment email…',
+          'Payment email sent again.'
+        );
+      }
+    );
+  }
+
+  var paymentReceived=document.getElementById(
+    'stxregPaymentReceived'
+  );
+
+  if(paymentReceived){
+    paymentReceived.addEventListener(
+      'click',
+      function(){
+        if(!window.confirm(
+          'Confirm that payment has been received and create the Scout account now?'
+        )){
+          return;
+        }
+
+        performRegistrationAction(
+          registration,
+          paymentReceived,
+          '/payment-received',
+          {
+            subscriptionPlan:
+              registration.raw.payment_plan||
+              'Core'
+          },
+          'Creating Scout account…',
+          'Payment confirmed and Scout account created.'
+        );
+      }
+    );
+  }
+}
   function pageContact(){
     return pageHead('Contact Forms','All website contact, demo, lead and public form submissions in one queue.',btn('Refresh','','id="stxv4RefreshContact"'))+
       '<section class="stxv4-card">'+cardHead('Recent website submissions','Stratex and ScoutLink public forms')+'<div class="stxv4-cardbody" id="stxv4ContactRows">'+loading()+'</div></section><div id="stxv4ContactDetail"></div>';
