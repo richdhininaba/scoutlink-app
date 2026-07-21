@@ -26,6 +26,17 @@ const leadershipImageUpload = multer({
   }
 });
 
+const blogImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 6 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!LEADERSHIP_IMAGE_TYPES[file.mimetype]) {
+      return cb(new Error('Please upload a JPG, PNG or WEBP image under 6MB.'));
+    }
+    cb(null, true);
+  }
+});
+
 const requireWebsiteActivityAccess = requireStratexAdminPermission('website_activity', 'Website activity access is restricted to authorised Stratex admin users.');
 const requireContactFormAccess = requireStratexAdminPermission('contact_forms', 'Contact form access is restricted to authorised Stratex admin users.');
 const requireCrmAccess = requireStratexAdminPermission('crm', 'CRM access is restricted to authorised Stratex admin users.');
@@ -362,8 +373,44 @@ router.get('/activity', requireAuth, requireRole('Stratex'), requireWebsiteActiv
         visitors: new Set(rows.map(row => row.visitor_hash).filter(Boolean)).size
       },
       pages,
+      daily,
       rangeDays: rangeDays || 'all'
     });
+
+  const byDay = new Map();
+  
+  rows.forEach(row => {
+    const day = row.created_at
+      ? new Date(row.created_at).toISOString().slice(0, 10)
+      : '';
+  
+    if (!day) return;
+  
+    if (!byDay.has(day)) {
+      byDay.set(day, {
+        day,
+        views: 0,
+        sessionsSet: new Set(),
+        visitorsSet: new Set()
+      });
+    }
+  
+    const item = byDay.get(day);
+    item.views += 1;
+  
+    if (row.session_hash) item.sessionsSet.add(row.session_hash);
+    if (row.visitor_hash) item.visitorsSet.add(row.visitor_hash);
+  });
+  
+  const daily = Array.from(byDay.values())
+    .map(item => ({
+      day: item.day,
+      views: item.views,
+      sessions: item.sessionsSet.size,
+      visitors: item.visitorsSet.size
+    }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+    
   } catch (err) {
     console.error('[Stratex website activity admin]', { code: err.code, message: err.message });
     res.status(500).json({ error: 'Could not load website activity.' });
@@ -470,7 +517,7 @@ router.get('/blog', async (req, res) => {
   try {
     let q = supabase
       .from('stratex_learning_posts')
-      .select('id,slug,title,excerpt,category,status,published_at,created_at,updated_at,view_count,like_count')
+      .select('id,slug,title,excerpt,category,status,published_at,created_at,updated_at,view_count,like_count,featured_image_url,image_alt,seo_title,meta_description,canonical_url,index_when_published')
       .order('published_at', { ascending: false, nullsFirst: false })
       .limit(100);
     if (String(req.query.published || '').toLowerCase() === 'true') q = q.eq('status', 'published');
@@ -483,11 +530,51 @@ router.get('/blog', async (req, res) => {
   }
 });
 
+router.get(
+  '/blog/admin/:id',
+  requireAuth,
+  requireRole('Stratex'),
+  requireContentAccess,
+  async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('stratex_learning_posts')
+        .select(
+          'id,slug,title,excerpt,category,body,status,published_at,' +
+          'created_at,updated_at,view_count,like_count,' +
+          'featured_image_url,image_alt,seo_title,meta_description,' +
+          'canonical_url,index_when_published'
+        )
+        .eq('id', req.params.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: 'Post not found.'
+        });
+      }
+
+      res.json({ data });
+    } catch (err) {
+      console.error('[Stratex blog admin detail]', {
+        code: err.code,
+        message: err.message
+      });
+
+      res.status(500).json({
+        error: 'Could not load this post for editing.'
+      });
+    }
+  }
+);
+
 router.get('/blog/:slug', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('stratex_learning_posts')
-      .select('id,slug,title,excerpt,category,body,status,published_at,created_at,updated_at,view_count,like_count')
+      .select('id,slug,title,excerpt,category,body,status,published_at,created_at,updated_at,view_count,like_count,featured_image_url,image_alt,seo_title,meta_description,canonical_url,index_when_published')
       .eq('slug', req.params.slug)
       .eq('status', 'published')
       .maybeSingle();
@@ -923,6 +1010,69 @@ router.get('/crm/export', requireAuth, requireRole('Stratex'), requireCrmAccess,
   }
 });
 
+router.post(
+  '/blog/image',
+  requireAuth,
+  requireRole('Stratex'),
+  requireContentAccess,
+  blogImageUpload.single('image'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Choose an article image.' });
+      }
+
+      try {
+        await supabase.storage.createBucket(LEADERSHIP_ASSET_BUCKET, {
+          public: true,
+          fileSizeLimit: 6 * 1024 * 1024,
+          allowedMimeTypes: Object.keys(LEADERSHIP_IMAGE_TYPES)
+        });
+      } catch (_) {}
+
+      const ext = LEADERSHIP_IMAGE_TYPES[req.file.mimetype] || '.jpg';
+      const filePath =
+        'learning-centre/' +
+        Date.now() +
+        '-' +
+        crypto.randomUUID() +
+        ext;
+
+      const { error } = await supabase.storage
+        .from(LEADERSHIP_ASSET_BUCKET)
+        .upload(filePath, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false,
+          metadata: {
+            uploadedBy: req.user.id,
+            source: 'stratex_learning_centre_admin'
+          }
+        });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage
+        .from(LEADERSHIP_ASSET_BUCKET)
+        .getPublicUrl(filePath);
+
+      res.status(201).json({
+        url: data.publicUrl,
+        bucket: LEADERSHIP_ASSET_BUCKET,
+        path: filePath
+      });
+    } catch (err) {
+      console.error('[Stratex blog image upload]', {
+        code: err.code,
+        message: err.message
+      });
+
+      res.status(500).json({
+        error: err.message || 'Could not upload this article image.'
+      });
+    }
+  }
+);
+
 router.post('/blog', requireAuth, requireRole('Stratex'), requireContentAccess, async (req, res) => {
   try {
     const title = text(req.body.title, 180);
@@ -936,7 +1086,15 @@ router.post('/blog', requireAuth, requireRole('Stratex'), requireContentAccess, 
       category: text(req.body.category, 120) || 'Learning',
       status,
       author_id: req.user.id,
-      published_at: status === 'published' ? new Date().toISOString() : null
+      published_at: status === 'published' ? new Date().toISOString() : null,
+      featured_image_url: text(req.body.featuredImageUrl || req.body.featured_image_url, 1000) || null,
+      image_alt: text(req.body.imageAlt || req.body.image_alt, 500) || null,
+      seo_title: text(req.body.seoTitle || req.body.seo_title, 180) || null,
+      meta_description: text(req.body.metaDescription || req.body.meta_description, 500) || null,
+      canonical_url: text(req.body.canonicalUrl || req.body.canonical_url, 1000) || null,
+      index_when_published:
+        req.body.indexWhenPublished !== false &&
+        req.body.index_when_published !== false
     };
     const { data, error } = await supabase.from('stratex_learning_posts').insert(payload).select('*').single();
     if (error) throw error;
@@ -954,6 +1112,58 @@ router.patch('/blog/:id', requireAuth, requireRole('Stratex'), requireContentAcc
       if (req.body[field] !== undefined) patch[field] = text(req.body[field], field === 'body' ? 20000 : 500);
     });
     if (req.body.slug !== undefined) patch.slug = slugify(req.body.slug);
+    if (
+      req.body.featuredImageUrl !== undefined ||
+      req.body.featured_image_url !== undefined
+    ) {
+      patch.featured_image_url = text(
+        req.body.featuredImageUrl || req.body.featured_image_url,
+        1000
+      ) || null;
+    }
+    
+    if (req.body.imageAlt !== undefined || req.body.image_alt !== undefined) {
+      patch.image_alt = text(
+        req.body.imageAlt || req.body.image_alt,
+        500
+      ) || null;
+    }
+    
+    if (req.body.seoTitle !== undefined || req.body.seo_title !== undefined) {
+      patch.seo_title = text(
+        req.body.seoTitle || req.body.seo_title,
+        180
+      ) || null;
+    }
+    
+    if (
+      req.body.metaDescription !== undefined ||
+      req.body.meta_description !== undefined
+    ) {
+      patch.meta_description = text(
+        req.body.metaDescription || req.body.meta_description,
+        500
+      ) || null;
+    }
+    
+    if (
+      req.body.canonicalUrl !== undefined ||
+      req.body.canonical_url !== undefined
+    ) {
+      patch.canonical_url = text(
+        req.body.canonicalUrl || req.body.canonical_url,
+        1000
+      ) || null;
+    }
+    
+    if (
+      req.body.indexWhenPublished !== undefined ||
+      req.body.index_when_published !== undefined
+    ) {
+      patch.index_when_published =
+        req.body.indexWhenPublished !== false &&
+        req.body.index_when_published !== false;
+    }
     if (patch.status === 'published') patch.published_at = new Date().toISOString();
     const { data, error } = await supabase.from('stratex_learning_posts').update(patch).eq('id', req.params.id).select('*').maybeSingle();
     if (error) throw error;
