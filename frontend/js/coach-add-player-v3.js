@@ -169,9 +169,7 @@
           '<input class="ap3-input" type="text" id="firstName" autocomplete="given-name" placeholder="Player first name"></div>' +
         '<div class="ap3-field"><label for="lastName">Last name <span class="ap3-required">*</span></label>' +
           '<input class="ap3-input" type="text" id="lastName" autocomplete="family-name" placeholder="Player last name"></div>' +
-        '<div class="ap3-field"><label for="dateOfBirth">Date of birth</label>' +
-          '<input class="ap3-input" type="date" id="dateOfBirth"><small>Optional supporting information.</small></div>' +
-        '<div class="ap3-field"><label for="ageGroup">Age group <span class="ap3-required">*</span></label>' +
+        '<div class="ap3-field is-full"><label for="ageGroup">Age group <span class="ap3-required">*</span></label>' +
           '<select class="ap3-select" id="ageGroup"><option value="">Select age group</option>' +
           ['U7','U8','U9','U10','U11','U12','U13','U14','U15','U16'].map(function (group) {
             return '<option>' + group + '</option>';
@@ -337,7 +335,6 @@
         '<div class="ap3-review-card"><h3>Player profile</h3><div class="ap3-review-list">' +
           reviewRow('Name','ap3ReviewName') +
           reviewRow('Age group','ap3ReviewAge') +
-          reviewRow('Date of birth','ap3ReviewDob') +
           reviewRow('Position','ap3ReviewPosition') +
           reviewRow('Preferred foot','ap3ReviewFoot') +
           reviewRow('Team','ap3ReviewTeam') +
@@ -643,7 +640,6 @@
     el('ap3ReviewName').textContent =
       [value('firstName').trim(),value('lastName').trim()].filter(Boolean).join(' ') || 'Not entered';
     el('ap3ReviewAge').textContent = value('ageGroup') || 'Not selected';
-    el('ap3ReviewDob').textContent = value('dateOfBirth') || 'Not added';
 
     var position = [value('positionGroup'),value('specificPosition')]
       .filter(Boolean).join(' · ');
@@ -721,7 +717,7 @@
 
   function draftData() {
     var fields = [
-      'firstName','lastName','dateOfBirth','ageGroup',
+      'firstName','lastName','ageGroup',
       'positionGroup','specificPosition','foot',
       'heightCategory','buildCategory','assignedCoachId'
     ].concat(RATING_IDS);
@@ -770,7 +766,7 @@
       pendingCoachId = values.assignedCoachId || '';
 
       [
-        'firstName','lastName','dateOfBirth','ageGroup',
+        'firstName','lastName','ageGroup',
         'positionGroup','foot','heightCategory','buildCategory'
       ].concat(RATING_IDS).forEach(function (id) {
         if (el(id) && values[id] != null) el(id).value = values[id];
@@ -832,7 +828,6 @@
     var body = {
       firstName:value('firstName').trim(),
       lastName:value('lastName').trim(),
-      dateOfBirth:value('dateOfBirth') || null,
       ageGroup:value('ageGroup'),
       positionGroup:positionGroup,
       specificPosition:specificPosition,
@@ -941,7 +936,7 @@
     el('ap3Confirm').checked = false;
 
     document.querySelectorAll(
-      '#ap3Root input[type="text"],#ap3Root input[type="date"],#ap3Root input[type="number"]'
+      '#ap3Root input[type="text"],#ap3Root input[type="number"]'
     ).forEach(function (input) {
       input.value = '';
     });
