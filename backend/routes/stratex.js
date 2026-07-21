@@ -11,7 +11,11 @@ const config = require('../config');
 const { applyRealDataFilter } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
 const { limitsForPlan, effectiveLimits, addSubscriptionYear, displayLimit, normalizePlan, INTEREST_REQUEST_LABEL } = require('../utils/scoutPlans');
-const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
+const {
+  SUPER_ADMIN_EMAIL,
+  isSuperAdmin,
+  requireStratexAdminPermission
+} = require('../utils/stratexPermissions');
 
 const requireOperationsAdmin = requireStratexAdminPermission('operations', 'Operations permission is required for this Stratex admin action.');
 
@@ -33,8 +37,32 @@ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
 }
 
 const ADMIN_ROLE_PERMISSIONS = {
-Management: ['management','admin_users','delete_users','permissions','registrations','operations','showcase','awards','trust','content','hiring','contracts'],
-Employee: ['employee','contact_forms','crm','website_activity','profile','settings']
+Management: [
+  'management',
+  'registrations',
+  'operations',
+  'contact_forms',
+  'crm',
+  'website_activity',
+  'content',
+  'leadership',
+  'org',
+  'contracts',
+  'hiring',
+  'trust',
+  'showcase',
+  'awards',
+  'profile',
+  'settings'
+],
+Employee: [
+  'employee',
+  'contact_forms',
+  'crm',
+  'website_activity',
+  'profile',
+  'settings'
+]
 };
 
 function normalizeAdminRole(role) {
@@ -71,7 +99,9 @@ function canManageSensitiveAdmin(admin) {
 if (!admin || admin.is_active === false) return false;
 const perms = Array.isArray(admin.permissions) ? admin.permissions : [];
 const role = normalizeAdminRole(admin.admin_role || admin.role);
-return role === 'Management' || perms.includes('super_admin') || perms.includes('management') || perms.includes('permissions');
+return isSuperAdmin(admin) ||
+  role === 'Management' ||
+  perms.includes('management');
 }
 
 function canManageContracts(admin) {
@@ -127,7 +157,20 @@ console.error('[Stratex audit]', { code: err.code, message: err.message });
 async function requireSensitiveAdmin(req, res) {
 const current = await loadCurrentAdmin(req);
 if (!canManageSensitiveAdmin(current)) {
-res.status(403).json({ error: 'Only Management admins can change admin permissions or deactivate admins.' });
+res.status(403).json({
+  error: 'Management access is required for this Stratex operating action.'
+});
+return null;
+}
+return current;
+}
+
+async function requireSuperAdmin(req, res) {
+const current = await loadCurrentAdmin(req);
+if (!isSuperAdmin(current)) {
+res.status(403).json({
+  error: 'Only Richdhin Inaba can create internal users, change permissions or deactivate Stratex admins.'
+});
 return null;
 }
 return current;
@@ -201,6 +244,19 @@ return { ok: true };
 function completeRegistrationLink(accountType, emailAddr, loginCode) {
 const baseUrl = String(config.brandUrl || 'https://scoutlink.app').replace(/\/+$/, '');
 return baseUrl + '/complete-registration?code=' + encodeURIComponent(loginCode) + '&email=' + encodeURIComponent(String(emailAddr || '').toLowerCase().trim()) + '&type=' + encodeURIComponent(accountType);
+}
+
+function stratexAdminSetupLink(emailAddr, loginCode) {
+const baseUrl = String(
+  process.env.STRATEX_URL ||
+  'https://www.stratexanalytics.co.uk'
+).replace(/\/+$/, '');
+
+return baseUrl +
+  '/admin/login?setup=1&code=' +
+  encodeURIComponent(loginCode) +
+  '&email=' +
+  encodeURIComponent(String(emailAddr || '').toLowerCase().trim());
 }
 
 // Generate login code unique across all user tables
@@ -572,7 +628,7 @@ res.status(201).json({ message: 'Coach added. Complete-registration email sent.'
 
 router.post('/admins', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const currentAdmin = await requireSensitiveAdmin(req, res);
+const currentAdmin = await requireSuperAdmin(req, res);
 if (!currentAdmin) return;
 const { firstName, lastName, emailAddr, role, adminRole, jobTitle, managerId, annualLeaveDays, contractData } = req.body;
 if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName and email required' });
@@ -592,7 +648,7 @@ contract_data: contractData || {},
 is_active: true, login_code: loginCode, login_code_expires: expires, registration_complete: false
 }).select().single();
 if (error) throw error;
-const completeLink = completeRegistrationLink('Stratex', emailAddr, loginCode);
+const completeLink = stratexAdminSetupLink(emailAddr, loginCode);
 const emailResult = await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Stratex', completeLink });
 if (!emailResult || !emailResult.success) {
 await removeInserted('stratex', data.id);
@@ -750,9 +806,27 @@ res.json({ admins: visibleAdmins, leave: visibleLeave, meetings: visibleMeetings
 } catch(err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+const RESERVED_STRATEX_PERMISSIONS = new Set([
+  'super_admin',
+  'permissions',
+  'admin_users',
+  'delete_users'
+]);
+
+function cleanDelegatedPermissions(value) {
+  if (!Array.isArray(value)) return [];
+
+  return [...new Set(
+    value
+      .map(item => String(item || '').trim().toLowerCase())
+      .filter(Boolean)
+      .filter(item => !RESERVED_STRATEX_PERMISSIONS.has(item))
+  )];
+}
+
 router.patch('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const currentAdmin = await requireSensitiveAdmin(req, res);
+const currentAdmin = await requireSuperAdmin(req, res);
 if (!currentAdmin) return;
 const body = req.body || {};
 const patch = {};
@@ -769,11 +843,104 @@ res.json({ message: 'Admin updated', admin: data });
 } catch(err) { console.error(err); sendDbError(res, err); }
 });
 
+router.patch('/admins/:id/permissions', requireAuth, requireRole('Stratex'), async (req, res) => {
+try {
+const currentAdmin = await requireSuperAdmin(req, res);
+if (!currentAdmin) return;
+
+const { data: target, error: targetError } = await supabase
+  .from('stratex')
+  .select('id,email,admin_role,role,permissions,is_active')
+  .eq('id', req.params.id)
+  .maybeSingle();
+
+if (targetError || !target) {
+  return res.status(404).json({ error: 'Stratex user not found.' });
+}
+
+if (String(target.email || '').trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
+  return res.status(400).json({
+    error: 'Richdhin Inaba is the fixed Stratex Super Admin and this access cannot be reduced or reassigned.'
+  });
+}
+
+const nextAdminRole = normalizeAdminRole(
+  req.body.adminRole ||
+  req.body.admin_role ||
+  target.admin_role ||
+  target.role ||
+  'Employee'
+);
+
+const defaults = adminPermissions(nextAdminRole)
+  .map(item => String(item || '').trim().toLowerCase())
+  .filter(item => !RESERVED_STRATEX_PERMISSIONS.has(item));
+
+const delegated = cleanDelegatedPermissions(req.body.permissions);
+const permissions = [...new Set(defaults.concat(delegated))];
+
+const { data, error } = await supabase
+  .from('stratex')
+  .update({
+    admin_role: nextAdminRole,
+    role: nextAdminRole,
+    permissions,
+    updated_at: new Date().toISOString()
+  })
+  .eq('id', req.params.id)
+  .select('id,email,admin_role,role,permissions,is_active,updated_at')
+  .maybeSingle();
+
+if (error || !data) {
+  return res.status(404).json({ error: 'Stratex user not found.' });
+}
+
+await auditStratexAction(
+  req,
+  'stratex_admin_permissions_updated',
+  'stratex',
+  data.id,
+  {
+    updatedBy: currentAdmin.id,
+    adminRole: nextAdminRole,
+    permissions
+  }
+);
+
+res.json({
+  message: 'Stratex Admin permissions updated.',
+  data
+});
+} catch (err) {
+console.error('[Stratex permissions update]', {
+  code: err.code,
+  message: err.message
+});
+res.status(500).json({
+  error: 'Could not update Stratex Admin permissions.'
+});
+}
+});
+
 router.delete('/admins/:id', requireAuth, requireRole('Stratex'), async (req, res) => {
 try {
-const currentAdmin = await requireSensitiveAdmin(req, res);
+const currentAdmin = await requireSuperAdmin(req, res);
 if (!currentAdmin) return;
 if (req.params.id === req.user.id) return res.status(400).json({ error: 'You cannot delete your own admin account.' });
+const { data: targetAdmin } = await supabase
+  .from('stratex')
+  .select('id,email')
+  .eq('id', req.params.id)
+  .maybeSingle();
+
+if (
+  targetAdmin &&
+  String(targetAdmin.email || '').trim().toLowerCase() === SUPER_ADMIN_EMAIL
+) {
+  return res.status(400).json({
+    error: 'The fixed Stratex Super Admin account cannot be deactivated.'
+  });
+}
 const { error } = await supabase.from('stratex').update({ is_active: false, updated_at: new Date().toISOString() }).eq('id', req.params.id);
 if (error) throw error;
 res.json({ message: 'Admin deactivated' });
