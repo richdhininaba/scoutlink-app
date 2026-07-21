@@ -52,6 +52,184 @@ function coachNomEmail(playerFullName, awardName, year) {
     '<p style="color:#8b949e;margin-top:32px;font-size:12px">Stratex Analytics - ScoutLink Platform</p></div>';
 }
 
+function ceremonyPayload(body) {
+  const validStatuses = [
+    'planning',
+    'published',
+    'completed',
+    'cancelled'
+  ];
+
+  const status = String(body.status || 'planning')
+    .trim()
+    .toLowerCase();
+
+  return {
+    name: String(
+      body.name ||
+      body.ceremonyName ||
+      body.ceremony_name ||
+      ''
+    ).trim(),
+    event_date:
+      body.eventDate ||
+      body.event_date ||
+      null,
+    location: String(body.location || '').trim() || null,
+    status: validStatuses.includes(status)
+      ? status
+      : 'planning',
+    categories: Array.isArray(body.categories)
+      ? body.categories
+          .map(item => String(item || '').trim())
+          .filter(Boolean)
+      : [],
+    audience: Array.isArray(body.audience)
+      ? body.audience
+          .map(item => String(item || '').trim())
+          .filter(Boolean)
+      : [],
+    description:
+      String(body.description || '').trim() || null
+  };
+}
+
+router.get(
+  '/ceremonies',
+  requireAuth,
+  requireRole('Stratex'),
+  requireAwardsManager,
+  async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('award_ceremonies')
+        .select('*')
+        .order('event_date', {
+          ascending: true,
+          nullsFirst: false
+        })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      res.json({ data: data || [] });
+    } catch (err) {
+      console.error('[Award ceremonies list]', {
+        code: err.code,
+        message: err.message
+      });
+
+      res.status(500).json({
+        error: 'Could not load award ceremonies.'
+      });
+    }
+  }
+);
+
+router.post(
+  '/ceremonies',
+  requireAuth,
+  requireRole('Stratex'),
+  requireAwardsManager,
+  async (req, res) => {
+    try {
+      const payload = ceremonyPayload(req.body);
+
+      if (!payload.name) {
+        return res.status(400).json({
+          error: 'Ceremony name is required.'
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('award_ceremonies')
+        .insert({
+          ...payload,
+          created_by: req.user.id
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      await notify(
+        req.user.id,
+        'Stratex',
+        'Award ceremony created',
+        payload.name + ' has been added to Stratex Admin.',
+        {
+          ceremonyId: data.id,
+          type: 'award_ceremony'
+        }
+      );
+
+      res.status(201).json({
+        message: 'Award ceremony created.',
+        data
+      });
+    } catch (err) {
+      console.error('[Award ceremony create]', {
+        code: err.code,
+        message: err.message
+      });
+
+      res.status(500).json({
+        error: 'Could not create the award ceremony.'
+      });
+    }
+  }
+);
+
+router.patch(
+  '/ceremonies/:id',
+  requireAuth,
+  requireRole('Stratex'),
+  requireAwardsManager,
+  async (req, res) => {
+    try {
+      const payload = {
+        ...ceremonyPayload(req.body),
+        updated_at: new Date().toISOString()
+      };
+
+      if (!payload.name) {
+        return res.status(400).json({
+          error: 'Ceremony name is required.'
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('award_ceremonies')
+        .update(payload)
+        .eq('id', req.params.id)
+        .select('*')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data) {
+        return res.status(404).json({
+          error: 'Award ceremony not found.'
+        });
+      }
+
+      res.json({
+        message: 'Award ceremony updated.',
+        data
+      });
+    } catch (err) {
+      console.error('[Award ceremony update]', {
+        code: err.code,
+        message: err.message
+      });
+
+      res.status(500).json({
+        error: 'Could not update the award ceremony.'
+      });
+    }
+  }
+);
+
 // GET /api/awards - list nominations with optional year filter
 router.get('/', requireAuth, requireRole('Stratex'), requireAwardsManager, async (req, res) => {
   try {
