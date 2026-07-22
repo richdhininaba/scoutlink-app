@@ -482,21 +482,128 @@
     }
   }
 
-  function startPublicDemo(role) {
-    var scout = role === "Scout";
-    sessionStorage.setItem("sl_public_demo", "1");
-    sessionStorage.setItem("sl_public_demo_role", role);
-    localStorage.setItem("sl_demo_mode", "1");
-    localStorage.setItem("sl_token", "public-demo-session");
-    localStorage.setItem("sl_type", role);
-    localStorage.setItem("sl_user", JSON.stringify({
-      id: scout ? "demo-scout-noah" : "demo-coach-marcus",
-      firstName: scout ? "Noah" : "Marcus",
-      lastName: scout ? "Patel" : "Reed",
-      email: scout ? "demo.scout@scoutlink.app" : "demo.coach@scoutlink.app"
-    }));
-    window.location.href = scout ? "/scout/dashboard" : "/coach/dashboard";
+async function startPublicDemo(role) {
+  var scout = role === "Scout";
+
+  try {
+    var response = await fetch(
+      apiBase() + "/api/players/public-demo",
+      {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        },
+        cache: "no-store"
+      }
+    );
+
+    var result = await response
+      .json()
+      .catch(function () {
+        return {};
+      });
+
+    if (!response.ok) {
+      throw new Error(
+        result.error ||
+        "The demo players could not be loaded."
+      );
+    }
+
+    var players = Array.isArray(result.data)
+      ? result.data
+      : [];
+
+    if (!players.length) {
+      throw new Error(
+        "No Supabase demo players were returned."
+      );
+    }
+
+    /*
+     * Remove the previous eight-player or empty
+     * browser demo state.
+     */
+    sessionStorage.removeItem(
+      "sl_public_demo_state"
+    );
+
+    /*
+     * main.js will turn these Supabase records
+     * into the complete Coach and Scout demo state.
+     */
+    sessionStorage.setItem(
+      "sl_public_demo_seed_players",
+      JSON.stringify
+     * into the complete Coach and Scout demo state.
+     */
+    sessionStorage.setItem(
+      "sl(players)
+    );
+
+    sessionStorage.setItem(
+      "sl_public_demo",
+      "1"
+    );
+
+    sessionStorage.setItem(
+      "sl_public_demo_role",
+      role
+    );
+
+    sessionStorage.setItem(
+      "sl_public_demo_started_at",
+      new Date().toISOString()
+    );
+
+    localStorage.setItem(
+      "sl_demo_mode",
+      "1"
+    );
+
+    localStorage.setItem(
+      "sl_token",
+      "public-demo-session"
+    );
+
+    localStorage.setItem(
+      "sl_type",
+      role
+    );
+
+    localStorage.setItem(
+      "sl_user",
+      JSON.stringify({
+        id: scout
+          ? "demo-scout-noah"
+          : "demo-coach-marcus",
+        firstName: scout
+          ? "Noah"
+          : "Marcus",
+        lastName: scout
+          ? "Patel"
+          : "Reed",
+        email: scout
+          ? "demo.scout@scoutlink.app"
+          : "demo.coach@scoutlink.app"
+      })
+    );
+
+    window.location.href = scout
+      ? "/scout/dashboard"
+      : "/coach/dashboard";
+  } catch (error) {
+    console.error(
+      "[Start public demo]",
+      error
+    );
+
+    window.alert(
+      error.message ||
+      "The demo players could not be loaded. Please try again."
+    );
   }
+}
 
   var faqAnswers = {
     "Who is ScoutLink for?": "ScoutLink is built for grassroots coaches, reviewed scouts, clubs, academies, schools, players and families who need clearer player evidence and safer visibility routes.",
