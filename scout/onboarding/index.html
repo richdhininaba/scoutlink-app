@@ -1,60 +1,25 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Confirm Password & Setup | ScoutLink</title>
+<meta name="description" content="Secure first Scout account access and recruitment setup.">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Scout setup - ScoutLink</title>
-<link rel="stylesheet" href="/frontend/css/variables.css"><link rel="stylesheet" href="/frontend/css/main.css">
-<style>.wizard{max-width:840px;margin:0 auto}.wizard-step{display:none}.wizard-step.active{display:block}.pill-grid{display:flex;flex-wrap:wrap;gap:8px}.pill{border:1px solid #243447;background:#07111f;color:#cbd5e1;border-radius:999px;padding:8px 12px;cursor:pointer}.pill.active{border-color:#00e676;color:#00e676;background:rgba(0,230,118,.08)}.progress-chip{display:inline-flex;padding:6px 10px;border:1px solid rgba(0,230,118,.35);border-radius:999px;color:#00e676;font-size:12px;font-weight:800}</style>
-<link rel="stylesheet" href="/frontend/css/phone-base.css">
-<link rel="stylesheet" href="/frontend/css/phone-shell.css">
-<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/frontend/css/scout-experience-exact-v3.css">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
+window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};heap.load("3441720574");
 </script>
-</head><body><div class="dashboard"><nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
-<div class="dashboard-main"><div class="topbar"><span class="topbar-title">Scout setup</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="finishLater()">Skip for now</button></div></div>
-<div class="page-content"><div class="wizard"><div class="table-card"><div class="table-header"><h3 id="stepTitle">Welcome. We have verified your credentials and you are all set.</h3><span class="progress-chip" id="stepChip">1 of 4</span></div><div style="padding:24px">
-<div class="form-error" id="err"></div>
-<section class="wizard-step active" data-title="Welcome. We have verified your credentials and you are all set." data-chip="1 of 4">
-<p style="color:#B0BEC5;margin-bottom:18px">Before we show you players, let us personalise your feed so you only see players worth your time.</p>
-<button class="btn btn-primary" onclick="nextStep()">Personalise my feed</button>
-</section>
-<section class="wizard-step" data-title="Tell us what your current teams are missing." data-chip="2 of 4">
-<p style="color:#B0BEC5;margin-bottom:14px">We will surface players most likely to fill those gaps.</p>
-<div class="pill-grid" id="weaknessPills"></div>
-</section>
-<section class="wizard-step" data-title="Confirm the search lane." data-chip="3 of 4">
-<div class="form-row"><div class="form-group"><label>Country</label><input id="country" value="England"></div><div class="form-group"><label>Region / city</label><input id="region" placeholder="London"></div></div>
-<div class="form-group"><label>Priority positions</label><div class="pill-grid" id="positionPills"></div></div>
-<div class="form-group"><label>Age groups</label><div class="pill-grid" id="agePills"></div></div>
-</section>
-<section class="wizard-step" data-title="How should we keep you updated?" data-chip="4 of 4">
-<p style="color:#B0BEC5;margin-bottom:14px">We will monitor new registrations and let you know when someone worth a look comes in.</p>
-<select id="alerts"><option value="immediate_email">Immediate email alerts</option><option value="weekly_digest" selected>Weekly digest</option><option value="in_app_only">In-app only</option></select>
-<div id="summary" style="margin-top:16px;border:1px solid #243447;background:#07111f;border-radius:12px;padding:14px;color:#cbd5e1"></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px"><button class="btn btn-outline" onclick="prevStep()">Back</button><button class="btn btn-primary" onclick="saveWizard()">Open my player feed</button></div>
-</section>
-<div id="navButtons" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px"><button class="btn btn-outline" onclick="prevStep()">Back</button><button class="btn btn-primary" onclick="nextStep()">Next</button></div>
-</div></div></div></div></div></div>
+</head>
+<body class="scout-experience-body" data-scout-route="confirm">
+<div id="scoutExperienceApp" class="is-loading" aria-live="polite"></div>
 <script src="/frontend/js/main.js"></script>
-<script src="/frontend/js/heap-analytics.js"></script><script src="/frontend/js/scout-nav.js"></script>
-<script>
-var step=0,steps=[],weaknesses=['Tactical awareness gaps','Insufficient game pace and speed','Low team chemistry and leadership','Weak set-piece defending','Need left-footed balance','Need a mobile goalkeeper','Need final-third creativity','Need defensive recovery pace'],positions=['Goalkeeper','Right Back','Centre Back','Left Back','Defensive Midfielder','Central Midfielder','Attacking Midfielder','Right Winger','Left Winger','Striker'],ages=['U13','U14','U15','U16','U17','U18'];
-function finishLater(){navigateClean('scout-dashboard.html');}
-function pill(label,group){return '<button type="button" class="pill" data-group="'+group+'" data-value="'+label+'" onclick="this.classList.toggle(\\'active\\');updateSummary()">'+label+'</button>';}
-function selected(group){return [].slice.call(document.querySelectorAll('.pill[data-group="'+group+'"].active')).map(function(x){return x.dataset.value;});}
-function init(){if(!Auth.isLoggedIn()||Auth.type!=='Scout')return navigateClean('login.html'); if(typeof buildScoutNav==='function')buildScoutNav('sidebarNav','Scout'); weaknessPills.innerHTML=weaknesses.map(function(x){return pill(x,'weakness');}).join(''); positionPills.innerHTML=positions.map(function(x){return pill(x,'position');}).join(''); agePills.innerHTML=ages.map(function(x){return pill(x,'age');}).join(''); steps=[].slice.call(document.querySelectorAll('.wizard-step'));showStep(0);}
-function showStep(i){step=Math.max(0,Math.min(i,steps.length-1));steps.forEach(function(s,idx){s.classList.toggle('active',idx===step);});stepTitle.textContent=steps[step].dataset.title;stepChip.textContent=steps[step].dataset.chip;navButtons.style.display=(step===0||step===steps.length-1)?'none':'grid';if(step===steps.length-1)updateSummary();}
-function nextStep(){showStep(step+1);}function prevStep(){showStep(step-1);}
-function updateSummary(){summary.innerHTML='You are set up to scout <b>'+((selected('position').join(', '))||'all priority positions')+'</b> across <b>'+(region.value||'your region')+'</b>, with a priority on <b>'+((selected('weakness').join(', '))||'team needs you select')+'</b>. Alerts: <b>'+alerts.options[alerts.selectedIndex].text+'</b>.';}
-async function saveWizard(){try{var body={teamWeaknesses:selected('weakness'),preferredPositions:selected('position'),ageGroups:selected('age'),scoutCountry:country.value,scoutRegion:region.value,alertPreference:alerts.value,setupSummary:summary.textContent};await api('POST','/api/onboarding/scout-wizard',body);navigateClean('player-search.html?setup=done');}catch(e){err.textContent=e.message;err.classList.add('show');}}
-document.addEventListener('DOMContentLoaded',init);
-</script><script src="/frontend/js/phone-routes.js"></script>
-<script src="/frontend/js/phone-shell.js"></script>
-<script src="/frontend/js/phone-pages.js"></script>
-</body></html>
-
-
-
+<script src="/frontend/js/scout-experience-exact-v3.js"></script>
+<script src="/frontend/js/heap-analytics.js"></script>
+</body>
+</html>
