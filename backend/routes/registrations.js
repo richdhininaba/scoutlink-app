@@ -1237,7 +1237,13 @@ router.post('/:id/payment-received', requireAuth, requireRole('Stratex'), requir
     if (insertError) throw insertError;
 
     const baseUrl = config.brandUrl || 'https://scoutlink.app';
-    const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(rq.email) + '&type=Scout';
+    const completeLink =
+      baseUrl +
+      '/confirm-password?code=' +
+      encodeURIComponent(loginCode) +
+      '&email=' +
+      encodeURIComponent(rq.email) +
+      '&type=Scout';
     const emailResult = await email.sendRegApproved({
       to: rq.email, firstName: rq.first_name, loginCode,
       accountType: 'Scout', completeLink, email: rq.email
