@@ -7,7 +7,7 @@ const CLEAN_ROUTES = {
   'index.html':'/',
   'login.html':'/login',
   'forgot-password.html':'/forgot-password',
-  'experience-select.html':'/experience-select',x
+  'experience-select.html':'/experience-select',
   'demo.html':'/demo',
   'register.html':'/register',
   'register-scout.html':'/register/scout',
