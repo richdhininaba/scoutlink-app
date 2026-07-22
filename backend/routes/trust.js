@@ -4,8 +4,97 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { requireStratexAdminPermission } = require('../utils/stratexPermissions');
 const email = require('../services/email');
+const multer = require('multer');
+const path = require('path');
+const crypto = require('crypto');
 
 const requireTrustAdmin = requireStratexAdminPermission('trust', 'Trust and concern access is restricted to authorised Stratex admins.');
+const CONCERN_EVIDENCE_BUCKET = 'trust-concern-evidence';
+
+const concernEvidenceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    files: 1,
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (req, file, callback) => {
+    const allowedMimeTypes = new Set([
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ]);
+
+    const allowedExtension =
+      /\.(pdf|jpe?g|png|doc|docx)$/i.test(
+        file.originalname || ''
+      );
+
+    if (
+      !allowedMimeTypes.has(file.mimetype) ||
+      !allowedExtension
+    ) {
+      return callback(
+        new Error(
+          'Supporting evidence must be PDF, JPG, PNG, DOC or DOCX.'
+        )
+      );
+    }
+
+    callback(null, true);
+  }
+});
+
+function safeEvidenceName(value) {
+  const extension = path
+    .extname(String(value || ''))
+    .toLowerCase()
+    .replace(/[^.a-z0-9]/g, '');
+
+  return (
+    Date.now() +
+    '-' +
+    crypto.randomUUID() +
+    extension
+  );
+}
+
+async function uploadConcernEvidence(file, concernId) {
+  if (!file) {
+    return {
+      storagePath: null,
+      fileName: null,
+      mimeType: null,
+      sizeBytes: null
+    };
+  }
+
+  const storagePath =
+    String(concernId) +
+    '/' +
+    safeEvidenceName(file.originalname);
+
+  const { error } = await supabase.storage
+    .from(CONCERN_EVIDENCE_BUCKET)
+    .upload(
+      storagePath,
+      file.buffer,
+      {
+        contentType: file.mimetype,
+        upsert: false
+      }
+    );
+
+  if (error) throw error;
+
+  return {
+    storagePath,
+    fileName: cleanText(file.originalname, 260),
+    mimeType: cleanText(file.mimetype, 120),
+    sizeBytes: Number(file.size) || null
+  };
+}
 
 function cleanText(value, max = 4000) {
   return String(value || '').trim().slice(0, max);
@@ -62,6 +151,14 @@ async function saveTrustSubmission(input) {
     message: input.message,
     safeguarding_flag: !!input.safeguarding_flag,
     source_page: input.source_page || null,
+    evidence_storage_path:
+      input.evidence_storage_path || null,
+    evidence_file_name:
+      input.evidence_file_name || null,
+    evidence_mime_type:
+      input.evidence_mime_type || null,
+    evidence_size_bytes:
+      input.evidence_size_bytes || null,
     status: 'new',
     email_alert_sent: false,
   };
@@ -221,6 +318,269 @@ router.post('/safeguarding-concerns', async (req, res) => {
     res.status(500).json({ error: 'Could not submit the concern right now.' });
   }
 });
+
+router.post(
+  '/safeguarding-concerns-with-evidence',
+  concernEvidenceUpload.single('supportingFile'),
+  async (req, res) => {
+    let uploadedPath = null;
+
+    try {
+      const concernType = cleanText(
+        req.body.concernType ||
+        req.body.concern_type,
+        120
+      );
+
+      const description = cleanText(
+        req.body.description,
+        6000
+      );
+
+      const contactEmail = cleanEmail(
+        req.body.contactEmail ||
+        req.body.contact_email
+      );
+
+      if (
+        !concernType ||
+        !description ||
+        !contactEmail
+      ) {
+        return publicError(
+          res,
+          400,
+          'Concern type, description and a valid contact email are required.'
+        );
+      }
+
+      const concernId = crypto.randomUUID();
+
+      const evidence = await uploadConcernEvidence(
+        req.file,
+        concernId
+      );
+
+      uploadedPath = evidence.storagePath;
+
+      const payload = {
+        id: concernId,
+        concern_type: concernType,
+        person_or_account:
+          cleanText(
+            req.body.personOrAccount ||
+            req.body.person_or_account,
+            500
+          ) || null,
+        player_or_team:
+          cleanText(
+            req.body.playerOrTeam ||
+            req.body.player_or_team,
+            500
+          ) || null,
+        description,
+        urgency:
+          cleanText(req.body.urgency, 80) ||
+          'standard',
+        contact_name:
+          cleanText(
+            req.body.contactName ||
+            req.body.contact_name,
+            180
+          ) || null,
+        contact_email: contactEmail,
+        contact_phone:
+          cleanText(
+            req.body.contactPhone ||
+            req.body.contact_phone,
+            80
+          ) || null,
+        evidence_storage_path:
+          evidence.storagePath,
+        evidence_file_name:
+          evidence.fileName,
+        evidence_mime_type:
+          evidence.mimeType,
+        evidence_size_bytes:
+          evidence.sizeBytes,
+        source: 'scout_workspace',
+        status: 'new'
+      };
+
+      const { data, error } = await supabase
+        .from('safeguarding_concerns')
+        .insert(payload)
+        .select('id, created_at')
+        .single();
+
+      if (error) throw error;
+
+      const saved = await saveTrustSubmission({
+        submission_type:
+          'safeguarding_concern',
+        priority:
+          /urgent/i.test(payload.urgency) ||
+          isSafeguardingFlag(concernType)
+            ? 'urgent'
+            : 'standard',
+        concern_category:
+          concernType,
+        name:
+          payload.contact_name,
+        email:
+          payload.contact_email,
+        phone:
+          payload.contact_phone,
+        role:
+          cleanText(req.body.role, 120) ||
+          'Scout',
+        organisation:
+          cleanText(
+            req.body.organisation ||
+            req.body.organization,
+            220
+          ) || null,
+        player_or_team_mentioned:
+          payload.player_or_team,
+        message:
+          description,
+        source_page:
+          sourcePage(
+            req,
+            '/scout/report-a-concern'
+          ),
+        safeguarding_flag:
+          isSafeguardingFlag(
+            concernType +
+            ' ' +
+            description
+          ),
+        evidence_storage_path:
+          evidence.storagePath,
+        evidence_file_name:
+          evidence.fileName,
+        evidence_mime_type:
+          evidence.mimeType,
+        evidence_size_bytes:
+          evidence.sizeBytes
+      });
+
+      res.status(201).json({
+        message:
+          'Concern submitted. A restricted Stratex reviewer will assess it.',
+        concernId:
+          data.id,
+        submissionId:
+          saved.id,
+        submittedAt:
+          data.created_at,
+        evidenceReceived:
+          !!evidence.storagePath,
+        userConfirmationSent:
+          saved.userConfirmationSent
+      });
+    } catch (err) {
+      if (uploadedPath) {
+        await supabase.storage
+          .from(CONCERN_EVIDENCE_BUCKET)
+          .remove([uploadedPath])
+          .catch(() => {});
+      }
+
+      console.error(
+        '[Scout concern with evidence]',
+        {
+          code: err.code,
+          message: err.message
+        }
+      );
+
+      if (
+        err instanceof multer.MulterError ||
+        /file|pdf|jpg|png|doc/i.test(
+          err.message || ''
+        )
+      ) {
+        return res.status(400).json({
+          error:
+            err.message ||
+            'The supporting file could not be accepted.'
+        });
+      }
+
+      res.status(500).json({
+        error:
+          'Could not submit the concern right now.'
+      });
+    }
+  }
+);
+
+router.get(
+  '/safeguarding-concerns/:id/evidence',
+  requireAuth,
+  requireRole('Stratex'),
+  requireTrustAdmin,
+  async (req, res) => {
+    try {
+      const { data: concern, error } =
+        await supabase
+          .from('safeguarding_concerns')
+          .select(
+            'id,evidence_storage_path,evidence_file_name,evidence_mime_type,evidence_size_bytes'
+          )
+          .eq('id', req.params.id)
+          .maybeSingle();
+
+      if (error) throw error;
+
+      if (
+        !concern ||
+        !concern.evidence_storage_path
+      ) {
+        return res.status(404).json({
+          error:
+            'No supporting evidence is attached to this concern.'
+        });
+      }
+
+      const { data: signed, error: signedError } =
+        await supabase.storage
+          .from(CONCERN_EVIDENCE_BUCKET)
+          .createSignedUrl(
+            concern.evidence_storage_path,
+            120
+          );
+
+      if (signedError) throw signedError;
+
+      res.json({
+        signedUrl: signed.signedUrl,
+        expiresInSeconds: 120,
+        fileName:
+          concern.evidence_file_name,
+        mimeType:
+          concern.evidence_mime_type,
+        sizeBytes:
+          concern.evidence_size_bytes
+      });
+    } catch (err) {
+      console.error(
+        '[Trust concern evidence]',
+        {
+          code: err.code,
+          message: err.message
+        }
+      );
+
+      res.status(500).json({
+        error:
+          'Could not open the private supporting evidence.'
+      });
+    }
+  }
+);
+
 
 router.post('/privacy-requests', async (req, res) => {
   try {
