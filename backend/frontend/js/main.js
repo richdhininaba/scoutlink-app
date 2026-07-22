@@ -143,7 +143,14 @@ const Auth = {
   },
   clear() {
     ['sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email','sl_user_role','sl_user_data','sl_demo_mode','sl_admin_token','sl_admin_user','sl_admin_type','sl_experience_switcher'].forEach(k => localStorage.removeItem(k));
-    ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_started_at','sl_heap_demo_sid'].forEach(k => sessionStorage.removeItem(k));
+    [
+      'sl_public_demo',
+      'sl_public_demo_role',
+      'sl_public_demo_state',
+      'sl_public_demo_seed_players',
+      'sl_public_demo_started_at',
+      'sl_heap_demo_sid'
+    ].forEach(k => sessionStorage.removeItem(k));
     clearProductTourState();
   },
   isLoggedIn() { return !!this.token && !!this.user; },
