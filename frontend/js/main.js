@@ -7,7 +7,7 @@ const CLEAN_ROUTES = {
   'index.html':'/',
   'login.html':'/login',
   'forgot-password.html':'/forgot-password',
-  'experience-select.html':'/experience-select',
+  'experience-select.html':'/experience-select',x
   'demo.html':'/demo',
   'register.html':'/register',
   'register-scout.html':'/register/scout',
@@ -164,7 +164,7 @@ function isPublicDemoMode() {
 }
 
 function demoBannerText() {
-  return 'This is demo data only. These players, teams, scouts and records are not real.';
+  return 'You are viewing sample ScoutLink data. No players, teams, scouts or records shown here are real.';
 }
 
 function restoreAdminSessionForSelector() {
@@ -559,20 +559,141 @@ function publicDemoApi(method, path, body) {
 function insertPublicDemoBanner() {
   if (!isPublicDemoMode()) return;
   if (document.getElementById('publicDemoBanner')) return;
-  const host = document.querySelector('.dashboard-main') || document.querySelector('.page-content') || document.body;
-  const banner = document.createElement('div');
+
+  const scoutRoot =
+    document.getElementById('scoutExperienceApp');
+
+  const scoutWorkspace =
+    scoutRoot &&
+    scoutRoot.querySelector('.workspace');
+
+  /*
+   * The exact Scout Experience renders after main.js.
+   * Wait until its workspace exists instead of placing
+   * the banner above the entire application.
+   */
+  if (scoutRoot && !scoutWorkspace) {
+    if (
+      scoutRoot.dataset.demoBannerWaiting === '1'
+    ) {
+      return;
+    }
+
+    scoutRoot.dataset.demoBannerWaiting = '1';
+
+    const observer = new MutationObserver(
+      function() {
+        if (
+          !scoutRoot.querySelector('.workspace')
+        ) {
+          return;
+        }
+
+        observer.disconnect();
+
+        delete scoutRoot.dataset.demoBannerWaiting;
+
+        insertPublicDemoBanner();
+      }
+    );
+
+    observer.observe(
+      scoutRoot,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+
+    return;
+  }
+
+  const host =
+    scoutWorkspace ||
+    document.querySelector('.dashboard-main') ||
+    document.querySelector('.page-content') ||
+    document.body;
+
+  const banner =
+    document.createElement('aside');
+
   banner.id = 'publicDemoBanner';
   banner.className = 'public-demo-banner';
-  const role = sessionStorage.getItem('sl_public_demo_role') || Auth.type || 'Coach';
-  const roleCta = role === 'Scout'
-    ? '<a href="' + cleanRouteFor('register-scout.html') + '">Request Scout Access</a>'
-    : '<a href="' + cleanRouteFor('register-coach.html') + '">Register as Coach</a>';
-  banner.innerHTML = '<div class="public-demo-main"><span class="public-demo-badge">Demo</span><span>' + demoBannerText() + ' Register to start building real ScoutLink profiles.</span></div><div class="public-demo-cta"><a href="' + cleanRouteFor('index.html') + '">Back to home</a>' + roleCta + '<button type="button" class="public-demo-exit">Exit demo</button></div>';
-  const exitBtn = banner.querySelector('.public-demo-exit');
-  if (exitBtn) exitBtn.onclick = exitPublicDemo;
-  const topbar = host.querySelector ? host.querySelector('.topbar') : null;
-  if (topbar && topbar.parentNode === host) host.insertBefore(banner, topbar.nextSibling);
-  else host.insertBefore(banner, host.firstChild);
+  banner.setAttribute('aria-label', 'Demo mode notice');
+
+  const role =
+    sessionStorage.getItem(
+      'sl_public_demo_role'
+    ) ||
+    Auth.type ||
+    'Coach';
+
+  const roleCta =
+    role === 'Scout'
+      ? (
+          '<a class="public-demo-access" href="' +
+          cleanRouteFor('register-scout.html') +
+          '">Request Scout Access</a>'
+        )
+      : (
+          '<a class="public-demo-access" href="' +
+          cleanRouteFor('register-coach.html') +
+          '">Register as Coach</a>'
+        );
+
+  banner.innerHTML =
+    '<div class="public-demo-main">' +
+      '<span class="public-demo-badge">' +
+        'Demo mode' +
+      '</span>' +
+      '<span class="public-demo-copy">' +
+        demoBannerText() +
+      '</span>' +
+    '</div>' +
+    '<div class="public-demo-cta">' +
+      '<a class="public-demo-home" href="' +
+        cleanRouteFor('index.html') +
+      '">' +
+        'Back to home' +
+      '</a>' +
+      roleCta +
+      '<button ' +
+        'type="button" ' +
+        'class="public-demo-exit"' +
+      '>' +
+        'Exit demo' +
+      '</button>' +
+    '</div>';
+
+  const exitButton =
+    banner.querySelector('.public-demo-exit');
+
+  if (exitButton) {
+    exitButton.onclick = exitPublicDemo;
+  }
+
+  const topbar =
+    host.querySelector
+      ? (
+          host.querySelector('.workspace-top') ||
+          host.querySelector('.topbar')
+        )
+      : null;
+
+  if (
+    topbar &&
+    topbar.parentNode === host
+  ) {
+    host.insertBefore(
+      banner,
+      topbar.nextSibling
+    );
+  } else {
+    host.insertBefore(
+      banner,
+      host.firstChild
+    );
+  }
 }
 
 function applyPublicDemoChrome() {
