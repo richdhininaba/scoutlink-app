@@ -400,12 +400,79 @@ function demoInitialState(
 }
 
 function getDemoState() {
+  /*
+   * Prefer freshly downloaded Supabase players.
+   * This also replaces an old empty or eight-player
+   * demo state when the user starts a new demo.
+   */
   try {
-    const raw = sessionStorage.getItem('sl_public_demo_state');
-    if (raw) return JSON.parse(raw);
+    const seedRaw =
+      sessionStorage.getItem(
+        'sl_public_demo_seed_players'
+      );
+
+    if (seedRaw) {
+      const seedPlayers =
+        JSON.parse(seedRaw);
+
+      if (
+        Array.isArray(seedPlayers) &&
+        seedPlayers.length
+      ) {
+        const seededState =
+          demoInitialState(seedPlayers);
+
+        sessionStorage.removeItem(
+          'sl_public_demo_seed_players'
+        );
+
+        setDemoState(seededState);
+
+        return seededState;
+      }
+    }
+  } catch (_) {
+    sessionStorage.removeItem(
+      'sl_public_demo_seed_players'
+    );
+  }
+
+  try {
+    const raw =
+      sessionStorage.getItem(
+        'sl_public_demo_state'
+      );
+
+    if (raw) {
+      const existing =
+        JSON.parse(raw);
+
+      if (
+        existing &&
+        Array.isArray(existing.players)
+      ) {
+        return existing;
+      }
+    }
   } catch (_) {}
-  const state = demoInitialState();
+
+  /*
+   * Emergency fallback only.
+   * This prevents a broken demo from showing zero.
+   */
+  const fallbackPlayers =
+    Array.from(
+      { length: 8 },
+      function (_, index) {
+        return demoPlayer(index);
+      }
+    );
+
+  const state =
+    demoInitialState(fallbackPlayers);
+
   setDemoState(state);
+
   return state;
 }
 
