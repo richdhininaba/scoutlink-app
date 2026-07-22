@@ -261,8 +261,97 @@ function demoPlayer(seed) {
   };
 }
 
-function demoInitialState() {
-  const players = Array.from({ length: 8 }, (_, i) => demoPlayer(i));
+function normaliseSupabaseDemoPlayer(
+  player,
+  index
+) {
+  const fallback =
+    demoPlayer(index);
+
+  const rawOverall =
+    Number(player.overall_rating);
+
+  const overall =
+    rawOverall > 0 && rawOverall <= 10
+      ? Math.round(rawOverall * 10)
+      : Math.round(
+          rawOverall ||
+          fallback.overall_rating
+        );
+
+  const rawCompatibility =
+    Number(player.compatibilityScore);
+
+  const compatibilityScore =
+    Number.isFinite(rawCompatibility) &&
+    rawCompatibility > 0
+      ? Math.round(rawCompatibility)
+      : Math.max(
+          55,
+          Math.min(
+            95,
+            Math.round(
+              overall +
+              8 -
+              (index % 9)
+            )
+          )
+        );
+
+  const suppliedTeam =
+    player.team || {};
+
+  const teamId =
+    player.team_id ||
+    suppliedTeam.id ||
+    fallback.team_id;
+
+  const teamName =
+    player.team_name ||
+    suppliedTeam.team_name ||
+    fallback.team_name;
+
+  const teamCity =
+    player.team_city ||
+    suppliedTeam.city ||
+    suppliedTeam.county ||
+    fallback.team_city;
+
+  const teamCountry =
+    player.team_country ||
+    suppliedTeam.country ||
+    'England';
+
+  return {
+    ...fallback,
+    ...player,
+    id: String(player.id),
+    team_id: teamId,
+    team_name: teamName,
+    team_city: teamCity,
+    team_country: teamCountry,
+    overall_rating: overall,
+    compatibilityScore,
+    team: {
+      ...fallback.team,
+      ...suppliedTeam,
+      id: teamId,
+      team_name: teamName,
+      city: teamCity,
+      country: teamCountry
+    }
+  };
+}
+
+function demoInitialState(
+    remotePlayers
+  ) {
+    const players =
+      Array.isArray(remotePlayers)
+        ? remotePlayers.map(
+            normaliseSupabaseDemoPlayer
+          )
+        : [];
   return {
     players,
     fixtures: [
@@ -324,22 +413,115 @@ function setDemoState(state) {
   sessionStorage.setItem('sl_public_demo_state', JSON.stringify(state));
 }
 
+async function loadPublicDemoPlayers() {
+  const response = await fetch(
+    API + '/api/players/public-demo',
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json'
+      },
+      cache: 'no-store'
+    }
+  );
+
+  const payload = await response
+    .json()
+    .catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      payload.error ||
+      'The public demo players could not be loaded.'
+    );
+  }
+
+  if (
+    !Array.isArray(payload.data) ||
+    payload.data.length === 0
+  ) {
+    throw new Error(
+      'No Supabase demo players were returned.'
+    );
+  }
+
+  return payload.data;
+}
+
 function demoRoleUser(role) {
   if (role === 'Scout') return { id:'demo-scout-noah', firstName:'Noah', lastName:'Patel', email:'noah.patel@example.test', teamName:'ScoutLink Demo FC' };
   return { id:'demo-coach-marcus', firstName:'Marcus', lastName:'Reed', email:'marcus.reed@example.test', teamName:'Northgate United (Demo)' };
 }
 
-function startPublicDemo(role) {
-  const nextRole = role === 'Scout' ? 'Scout' : 'Coach';
-  const user = demoRoleUser(nextRole);
-  sessionStorage.setItem('sl_public_demo', '1');
-  sessionStorage.setItem('sl_public_demo_role', nextRole);
-  sessionStorage.setItem('sl_public_demo_started_at', new Date().toISOString());
-  if (!sessionStorage.getItem('sl_public_demo_state')) setDemoState(demoInitialState());
-  localStorage.setItem('sl_demo_mode', '1');
-  Auth.set('public-demo-session', user, nextRole);
-  clearProductTourState();
-  navigateClean(nextRole === 'Scout' ? 'scout-dashboard.html' : 'coach-dashboard.html');
+async function startPublicDemo(role) {
+  const nextRole =
+    role === 'Scout'
+      ? 'Scout'
+      : 'Coach';
+
+  try {
+    const players =
+      await loadPublicDemoPlayers();
+
+    const user =
+      demoRoleUser(nextRole);
+
+    /*
+     * Always replace the session data.
+     * This removes the old cached eight-player
+     * public-demo state.
+     */
+    sessionStorage.removeItem(
+      'sl_public_demo_state'
+    );
+
+    setDemoState(
+      demoInitialState(players)
+    );
+
+    sessionStorage.setItem(
+      'sl_public_demo',
+      '1'
+    );
+
+    sessionStorage.setItem(
+      'sl_public_demo_role',
+      nextRole
+    );
+
+    sessionStorage.setItem(
+      'sl_public_demo_started_at',
+      new Date().toISOString()
+    );
+
+    localStorage.setItem(
+      'sl_demo_mode',
+      '1'
+    );
+
+    Auth.set(
+      'public-demo-session',
+      user,
+      nextRole
+    );
+
+    clearProductTourState();
+
+    navigateClean(
+      nextRole === 'Scout'
+        ? 'scout-dashboard.html'
+        : 'coach-dashboard.html'
+    );
+  } catch (error) {
+    console.error(
+      '[Start public demo]',
+      error
+    );
+
+    window.alert(
+      'The demo players could not be loaded. Please try again.'
+    );
+  }
 }
 
 function exitPublicDemo() {
