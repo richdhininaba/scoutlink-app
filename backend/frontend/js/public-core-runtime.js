@@ -482,176 +482,116 @@
     }
   }
 
-async function startPublicDemo(role) {
-  var scout = role === "Scout";
+  async function startPublicDemo(role) {
+    var scout = role === "Scout";
 
-  try {
-    var response = await fetch(
-      apiBase() + "/api/players/public-demo",
-      {
-        method: "GET",
-        headers: {
-          "Accept": "application/json"
-        },
-        cache: "no-store"
+    try {
+      var response = await fetch(
+        apiBase() + "/api/players/public-demo",
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json"
+          },
+          cache: "no-store"
+        }
+      );
+
+      var result = await response
+        .json()
+        .catch(function () {
+          return {};
+        });
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+          "The demo players could not be loaded."
+        );
       }
-    );
 
-    var result = await response
-      .json()
-      .catch(function () {
-        return {};
-      });
+      var players = Array.isArray(result.data)
+        ? result.data
+        : [];
 
-    if (!response.ok) {
-      throw new Error(
-        result.error ||
-        "The demo players could not be loaded."
+      if (!players.length) {
+        throw new Error(
+          "No Supabase demo players were returned."
+        );
+      }
+
+      sessionStorage.removeItem(
+        "sl_public_demo_state"
+      );
+
+      sessionStorage.setItem(
+        "sl_public_demo_seed_players",
+        JSON.stringify(players)
+      );
+
+      sessionStorage.setItem(
+        "sl_public_demo",
+        "1"
+      );
+
+      sessionStorage.setItem(
+        "sl_public_demo_role",
+        role
+      );
+
+      sessionStorage.setItem(
+        "sl_public_demo_started_at",
+        new Date().toISOString()
+      );
+
+      localStorage.setItem(
+        "sl_demo_mode",
+        "1"
+      );
+
+      localStorage.setItem(
+        "sl_token",
+        "public-demo-session"
+      );
+
+      localStorage.setItem(
+        "sl_type",
+        role
+      );
+
+      localStorage.setItem(
+        "sl_user",
+        JSON.stringify({
+          id: scout
+            ? "demo-scout-noah"
+            : "demo-coach-marcus",
+          firstName: scout
+            ? "Noah"
+            : "Marcus",
+          lastName: scout
+            ? "Patel"
+            : "Reed",
+          email: scout
+            ? "demo.scout@scoutlink.app"
+            : "demo.coach@scoutlink.app"
+        })
+      );
+
+      window.location.href = scout
+        ? "/scout/dashboard"
+        : "/coach/dashboard";
+    } catch (error) {
+      console.error(
+        "[Start public demo]",
+        error
+      );
+
+      window.alert(
+        error.message ||
+        "The demo players could not be loaded. Please try again."
       );
     }
-
-    var players = Array.isArray(result.data)
-      ? result.data
-      : [];
-
-    if (!players.length) {
-      throw new Error(
-        "No Supabase demo players were returned."
-      );
-    }
-
-    /*
-     * Remove the previous eight-player or empty
-     * browser demo state.
-     */
-    sessionStorage.removeItem(
-      "sl_public_demo_state"
-    );
-
-    /*
-     * main.js will turn these Supabase records
-     * into the complete Coach and Scout demo state.
-     */
-    sessionStorage.setItem(
-      "sl_public_demo_seed_players",
-      JSON.stringify
-     * into the complete Coach and Scout demo state.
-     */
-    sessionStorage.setItem(
-      "sl(players)
-    );
-
-    sessionStorage.setItem(
-      "sl_public_demo",
-      "1"
-    );
-
-    sessionStorage.setItem(
-      "sl_public_demo_role",
-      role
-    );
-
-    sessionStorage.setItem(
-      "sl_public_demo_started_at",
-      new Date().toISOString()
-    );
-
-    localStorage.setItem(
-      "sl_demo_mode",
-      "1"
-    );
-
-    localStorage.setItem(
-      "sl_token",
-      "public-demo-session"
-    );
-
-    localStorage.setItem(
-      "sl_type",
-      role
-    );
-
-    localStorage.setItem(
-      "sl_user",
-      JSON.stringify({
-        id: scout
-          ? "demo-scout-noah"
-          : "demo-coach-marcus",
-        firstName: scout
-          ? "Noah"
-          : "Marcus",
-        lastName: scout
-          ? "Patel"
-          : "Reed",
-        email: scout
-          ? "demo.scout@scoutlink.app"
-          : "demo.coach@scoutlink.app"
-      })
-    );
-
-    window.location.href = scout
-      ? "/scout/dashboard"
-      : "/coach/dashboard";
-  } catch (error) {
-    console.error(
-      "[Start public demo]",
-      error
-    );
-
-    window.alert(
-      error.message ||
-      "The demo players could not be loaded. Please try again."
-    );
   }
-}
-
-  var faqAnswers = {
-    "Who is ScoutLink for?": "ScoutLink is built for grassroots coaches, reviewed scouts, clubs, academies, schools, players and families who need clearer player evidence and safer visibility routes.",
-    "Can anyone browse players?": "No. Player search is only available to reviewed scout accounts and access can be restricted or removed where needed.",
-    "Does compatibility replace scout judgement?": "No. Compatibility is decision support. It explains fit, evidence and context, but final scouting judgement remains human.",
-    "How much does a coach account cost?": "Coach workspaces are free to start so teams can build player evidence before a scout ever searches for them.",
-    "How much time does profile maintenance take?": "The workflow is designed around short weekly updates: fixtures before a match, match facts afterwards and small profile improvements over time.",
-    "How is scout interest handled?": "Scout interest is routed through the responsible coach, club or adult account instead of direct unmanaged contact with children.",
-    "Can ScoutLink guarantee a player will be scouted?": "No. ScoutLink improves structure and visibility, but it does not guarantee selection, trials, representation or signings.",
-    "Who creates and manages player profiles?": "Authorised coaches, clubs, schools or approved adults create and manage the player records used inside ScoutLink.",
-    "How can a family raise a concern?": "Families can use the Report a Concern route or contact ScoutLink support so the issue is reviewed through the correct trust process.",
-    "Can scouts contact children directly?": "No. ScoutLink is designed around adult-mediated contact through coaches, clubs, schools or responsible guardians.",
-    "Who can create player profiles?": "Player profiles should be created only by authorised adults connected to the team, club, school or approved programme.",
-    "What happens after a concern is submitted?": "The concern is logged and reviewed by the appropriate Stratex team, with follow-up depending on urgency, evidence and safeguarding risk."
-  };
-
-  var productPanels = {
-    "Player profile": {
-      label: "PLAYER PROFILE",
-      title: "One structured record for the player.",
-      copy: "Ratings, match facts, fixtures, approved video, physical context and evidence confidence sit together.",
-      items: [["Ratings", "Coach-led attributes"], ["Match facts", "Game evidence"], ["Video", "Approved clips"], ["Confidence", "Evidence quality"]]
-    },
-    "Compatibility": {
-      label: "COMPATIBILITY",
-      title: "Explain fit without hiding the reasoning.",
-      copy: "Scout setup, role expectations, attributes, match output and evidence confidence combine into a clear compatibility view.",
-      items: [["Need fit", "Team gaps"], ["Role fit", "Position context"], ["Evidence", "Confidence level"], ["Output", "Readable breakdown"]]
-    },
-    "Scout search": {
-      label: "SCOUT SEARCH",
-      title: "Find relevant players faster.",
-      copy: "Reviewed scouts can search by position, age, location, overall rating, compatibility and evidence quality.",
-      items: [["Filters", "Focused search"], ["Cards", "Fast scanning"], ["Profiles", "Deep review"], ["Pipeline", "Next action"]]
-    },
-    "Match facts": {
-      label: "MATCH FACTS",
-      title: "Turn games into usable evidence.",
-      copy: "Fixtures, appearances, goals, assists, cards, positions and match ratings flow into player profiles.",
-      items: [["Fixtures", "Match setup"], ["Events", "Key moments"], ["Ratings", "Performance"], ["Profile", "Updated evidence"]]
-    },
-    "Pipeline": {
-      label: "PIPELINE",
-      title: "Keep recruitment follow-up organised.",
-      copy: "Scouts can shortlist players, manage stages, review history and keep coach messages connected.",
-      items: [["Stages", "Track status"], ["Chats", "Coach contact"], ["Exports", "Reports"], ["Predictions", "Analysis"]]
-    }
-  };
 
   function productPanelHtml(panel) {
     return '<span class="pill dark">' + esc(panel.label) + '</span><h3>' + esc(panel.title) + '</h3><p>' + esc(panel.copy) + '</p><div class="mini-grid">' +
