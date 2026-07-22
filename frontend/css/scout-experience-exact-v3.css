@@ -518,3 +518,144 @@ body.scout-experience-body .screen{
     animation-iteration-count:1!important;
   }
 }
+/* ScoutLink public demo notice */
+
+.scout-experience-body .public-demo-banner {
+  position:relative;
+  z-index:40;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  min-height:48px;
+  margin:12px 20px 0;
+  padding:8px 9px 8px 13px;
+  border:1px solid #b9e7da;
+  border-radius:13px;
+  background:
+    linear-gradient(
+      90deg,
+      #ecfdf5 0%,
+      #f5fffb 100%
+    );
+  color:#164e3f;
+  box-shadow:
+    0 7px 18px rgba(7,17,31,.06);
+  font-size:9px;
+  font-weight:750;
+  line-height:1.45;
+}
+
+.scout-experience-body .public-demo-main {
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.scout-experience-body .public-demo-copy {
+  color:#365f55;
+}
+
+.scout-experience-body .public-demo-badge {
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:26px;
+  padding:0 10px;
+  border-radius:999px;
+  background:#d7f5eb;
+  border:1px solid #a7dfce;
+  color:#087a61;
+  font-size:7.5px;
+  font-weight:950;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+}
+
+.scout-experience-body .public-demo-cta {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.scout-experience-body .public-demo-cta a,
+.scout-experience-body .public-demo-exit {
+  min-height:31px;
+  padding:0 11px;
+  border-radius:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #b9d8cf;
+  background:#fff;
+  color:#365f55;
+  font-size:8px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.scout-experience-body .public-demo-access {
+  background:#0fa37f !important;
+  border-color:#0fa37f !important;
+  color:#fff !important;
+  box-shadow:
+    0 6px 14px rgba(15,163,127,.18);
+}
+
+.scout-experience-body .public-demo-exit {
+  border-color:#d7e0e8;
+  background:#f8fafc;
+  color:#40546b;
+}
+
+.scout-experience-body .public-demo-cta a:hover,
+.scout-experience-body .public-demo-exit:hover {
+  transform:translateY(-1px);
+}
+
+.scout-experience-body
+.public-demo-cta
+a:focus-visible,
+.scout-experience-body
+.public-demo-exit:focus-visible {
+  outline:3px solid rgba(15,163,127,.24);
+  outline-offset:2px;
+}
+
+@media (max-width:767px) {
+  .scout-experience-body .public-demo-banner {
+    margin:10px 12px 0;
+    padding:11px;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    border-radius:12px;
+  }
+
+  .scout-experience-body .public-demo-main {
+    align-items:flex-start;
+  }
+
+  .scout-experience-body .public-demo-copy {
+    font-size:9px;
+  }
+
+  .scout-experience-body .public-demo-cta {
+    display:grid;
+    grid-template-columns:
+      repeat(3,minmax(0,1fr));
+  }
+
+  .scout-experience-body .public-demo-cta a,
+  .scout-experience-body .public-demo-exit {
+    width:100%;
+    min-height:34px;
+    padding:0 7px;
+    font-size:7.5px;
+  }
+}
