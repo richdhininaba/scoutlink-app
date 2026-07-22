@@ -199,6 +199,8 @@ router.get('/settings', requireAuth, requireRole('Scout'), async (req, res) => {
         theme: prefs.theme || 'dark',
         emailAlerts: prefs.emailAlerts !== false,
         pushAlerts: prefs.pushAlerts !== false,
+        eventAlerts: prefs.eventAlerts !== false,
+        platformUpdates: prefs.platformUpdates === true,
         weeklySummary: prefs.weeklySummary !== false
       }
     });
@@ -219,12 +221,21 @@ router.patch('/settings', requireAuth, requireRole('Scout'), async (req, res) =>
       theme: req.body.theme === 'light' ? 'light' : 'dark',
       emailAlerts: req.body.emailAlerts !== false,
       pushAlerts: req.body.pushAlerts !== false,
+      eventAlerts: req.body.eventAlerts !== false,
+      platformUpdates: req.body.platformUpdates === true,
       weeklySummary: req.body.weeklySummary !== false,
       settingsUpdatedAt: new Date().toISOString()
     };
     const { error: updateErr } = await supabase.from('scouts').update({ scout_preferences: next }).eq('id', req.user.id);
     if (updateErr) throw updateErr;
-    res.json({ message: 'Settings saved', settings: { theme: next.theme, emailAlerts: next.emailAlerts, pushAlerts: next.pushAlerts, weeklySummary: next.weeklySummary } });
+    res.json({ message: 'Settings saved', settings: {
+      theme: next.theme,
+      emailAlerts: next.emailAlerts,
+      pushAlerts: next.pushAlerts,
+      eventAlerts: next.eventAlerts,
+      platformUpdates: next.platformUpdates,
+      weeklySummary: next.weeklySummary
+    } });
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
