@@ -210,6 +210,191 @@ router.get('/count', requireAuth, requireRole('Scout','Coach','Stratex'), async 
   } catch(err) { res.status(500).json({ error: 'Internal server error' }); }
 });
 
+// Public demo players
+// Returns safe football-only fields from records marked as demo.
+// No contact records marked as demo.
+// No contact details, passwords, login codes or parent details are exposed.
+router.get('/public-demo', async (req, res) => {
+  try {
+    const { data: players, error } = await supabase
+      .from('players')
+      .select(
+        [
+          'id',
+          'player_id',
+          'first_name',
+          'last_name',
+          'age',
+          'age_group',
+          'nationality',
+          'position_group',
+          'specific_position',
+          'primary_position',
+          'positions',
+          'foot',
+          'height_category',
+          'height_range_cm',
+          'build_category',
+          'weight_range_kg',
+          'team_id',
+          'team_name',
+          'appearances',
+          'goals',
+          'assists',
+          'clean_sheets',
+          'yellow_cards',
+          'red_cards',
+          'pace',
+          'agility',
+          'strength',
+          'stamina',
+          'jumping',
+          'composure',
+          'shooting',
+          'passing',
+          'dribbling',
+          'defending',
+          'crossing',
+          'vision',
+          'positioning',
+          'heading',
+          'tackling',
+          'overall_rating',
+          'transfer_value',
+          'avatar_config',
+          'created_at',
+          'updated_at'
+        ].join(',')
+      )
+      .eq('is_demo', true)
+      .order('overall_rating', {
+        ascending: false
+      })
+      .limit(100);
+
+    if (error) throw error;
+
+    const teamIds = [
+      ...new Set(
+        (players || [])
+          .map(player => player.team_id)
+          .filter(Boolean)
+      )
+    ];
+
+    const teamsById = {};
+
+    if (teamIds.length) {
+      const { data: teams, error: teamsError } =
+        await supabase
+          .from('school_academy_teams')
+          .select(
+            [
+              'id',
+              'team_name',
+              'city',
+              'county',
+              'country',
+              'league_name',
+              'league_fulltime_url',
+              'team_website_url'
+            ].join(',')
+          )
+          .in('id', teamIds)
+          .eq('is_demo', true);
+
+      if (teamsError) throw teamsError;
+
+      (teams || []).forEach(team => {
+        teamsById[team.id] = team;
+      });
+    }
+
+    const safePlayers = (players || []).map(
+      (player, index) => {
+        const team =
+          teamsById[player.team_id] || null;
+
+        const rawOverall =
+          Number(player.overall_rating);
+
+        const overall =
+          rawOverall > 0 && rawOverall <= 10
+            ? Math.round(rawOverall * 10)
+            : Math.round(rawOverall || 65);
+
+        const compatibilityScore =
+          Math.max(
+            55,
+            Math.min(
+              95,
+              Math.round(
+                overall +
+                8 -
+                (index % 9)
+              )
+            )
+          );
+
+        return {
+          ...player,
+          overall_rating: overall,
+          compatibilityScore,
+          team_city:
+            team?.city ||
+            team?.county ||
+            null,
+          team_country:
+            team?.country ||
+            null,
+          team: team
+            ? {
+                id: team.id,
+                team_name:
+                  team.team_name,
+                city:
+                  team.city,
+                county:
+                  team.county,
+                country:
+                  team.country,
+                league_name:
+                  team.league_name,
+                league_fulltime_url:
+                  team.league_fulltime_url,
+                team_website_url:
+                  team.team_website_url
+              }
+            : null
+        };
+      }
+    );
+
+    res.set(
+      'Cache-Control',
+      'public, max-age=60, s-maxage=300'
+    );
+
+    res.json({
+      data: safePlayers,
+      total: safePlayers.length
+    });
+  } catch (err) {
+    console.error(
+      '[Public demo players]',
+      {
+        code: err.code,
+        message: err.message
+      }
+    );
+
+    res.status(500).json({
+      error:
+        'The public demo players could not be loaded.'
+    });
+  }
+});
+
 // List players
 router.get('/', requireAuth, requireRole('Scout','Coach','Stratex'), async (req, res) => {
   try {
