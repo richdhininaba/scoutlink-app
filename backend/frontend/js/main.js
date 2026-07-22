@@ -599,7 +599,7 @@ async function startPublicDemo(role) {
 }
 
 function exitPublicDemo() {
-  ['sl_public_demo','sl_public_demo_role','sl_public_demo_state', 'sl_public_demo_seed_players', 'sl_public_demo_started_at','sl_heap_demo_sid'].forEach(k => sessionStorage.removeItem(k));
+  ['sl_public_demo','sl_public_demo_role','sl_public_demo_state', 'sl_public_demo_seed_players', 'sl_public_demo_seed_players', 'sl_public_demo_started_at','sl_heap_demo_sid'].forEach(k => sessionStorage.removeItem(k));
   ['sl_token','sl_user','sl_type','sl_demo_mode'].forEach(k => localStorage.removeItem(k));
   clearProductTourState();
   navigateClean('demo.html');
