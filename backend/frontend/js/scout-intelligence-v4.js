@@ -89,9 +89,46 @@ async function loadOverview(){
  state.overview=await request('GET','/api/scout-intelligence/overview').catch(function(){return fallback});if(isDemo())state.overview.usage=demoUsage();return state.overview
 }
 function usageValue(usage,key,limit){var row=usage&&usage[key]||{},max=num(row.limit,limit),used=num(row.used,Math.max(0,max-num(row.remaining,max)));return {used:used,limit:max,remaining:row.remaining==null?Math.max(0,max-used):num(row.remaining),percent:max?Math.round(used/max*100):0}}
-function mount(content){
- content.innerHTML='<div class="slv6-approved" data-slv6-route="'+esc(state.route)+'">'+templates[state.route]+'</div>';var root=q(content,'.slv6-approved'),title=(state.route==='search'?'Player Search':state.route.charAt(0).toUpperCase()+state.route.slice(1));
- var top=q(document,'#scoutExperienceApp .workspace-top h1'),mobile=q(document,'#scoutExperienceApp .mobile-top b');if(top)top.textContent=title;if(mobile)mobile.textContent=title;return root
+function mount(content) {
+  content.innerHTML =
+    '<div class="slv6-approved" data-slv6-route="' +
+    esc(state.route) +
+    '">' +
+    templates[state.route] +
+    '</div>';
+
+  var root = q(content, '.slv6-approved');
+  var app = document.getElementById('scoutExperienceApp');
+
+  var title = state.route === 'search'
+    ? 'Player Search'
+    : state.route.charAt(0).toUpperCase() +
+      state.route.slice(1);
+
+  var top = q(
+    document,
+    '#scoutExperienceApp .workspace-top h1'
+  );
+
+  var mobile = q(
+    document,
+    '#scoutExperienceApp .mobile-top b'
+  );
+
+  if (top) top.textContent = title;
+  if (mobile) mobile.textContent = title;
+
+  if (app) {
+    app.classList.remove(
+      'scout-v6-booting',
+      'is-loading'
+    );
+
+    app.classList.add('scout-v6-ready');
+    app.removeAttribute('aria-busy');
+  }
+
+  return root;
 }
 function findButton(root,text){return qa(root,'button').find(function(b){return b.textContent.trim().toLowerCase()===text.toLowerCase()})}
 function bindOpenButtons(root){qa(root,'button').forEach(function(btn){if(['Open','Review','View player','Open profile'].includes(btn.textContent.trim()))btn.addEventListener('click',function(){var row=btn.closest('tr,.rank-widget,.top-fit-player,.selected-player,.shared-card'),id=row&&row.dataset.playerId;if(id)location.href='/player/profile?id='+encodeURIComponent(id)})})}
