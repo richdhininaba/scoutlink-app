@@ -1,1463 +1,294 @@
-/* ScoutLink Scout Intelligence V4
-   Additive functional layer for the Scout workspace.
-   It preserves Scout Experience V3 and progressively enhances each route. */
-(function () {
-  'use strict';
+/* ScoutLink Scout Intelligence V6
+   Full responsive implementation based on the approved
+   Retention-Focused Desktop and Mobile V6 reference. */
+(function(){
+'use strict';
+var API_FALLBACK='https://scoutlink-api.vercel.app';
+var PAGE_SIZE=20;
+var DEMO_USAGE_KEY='sl_scout_intelligence_demo_usage_v6';
+var templates={"dashboard":"<section class=\"hero\"><div><small>Elite scout workspace</small><h2>Good morning, Noah.</h2><p>Five new players now match your recruitment brief. Two decisions need attention before Friday.</p></div><div class=\"hero-actions\"><button class=\"btn primary\">Review new players</button><button class=\"btn\">View next actions</button></div></section><section class=\"metric-grid\"><article class=\"metric accent\"><small>New matching players</small><strong>5</strong><span>Since your last visit</span></article><article class=\"metric\"><small>Decisions due</small><strong>2</strong><span>Before Friday</span></article><article class=\"metric\"><small>Active pipeline</small><strong>7</strong><span>Across five stages</span></article><article class=\"metric\"><small>Current plan</small><strong>Elite</strong><span>50% of prediction allowance used</span></article></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>New player intelligence</h3></div><button class=\"btn small\">View all 20 new players</button></header><div class=\"panel-body\"><div class=\"table-wrap\"><table><thead><tr><th>Player</th><th>Fit</th><th>Evidence</th><th>Added</th><th></th></tr></thead><tbody><tr><td><div class=\"player-cell\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>CM · U18 · Eastbrook Athletic</span></div></div></td><td>79%</td><td>High</td><td>Today</td><td><button class=\"btn small primary\">Review</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>RW · U16 · Meadow Park Rovers</span></div></div></td><td>79%</td><td>High</td><td>Today</td><td><button class=\"btn small primary\">Review</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">ME</span><div><b>Max Evans</b><span>LW · U16 · Southvale Juniors</span></div></div></td><td>79%</td><td>High</td><td>Yesterday</td><td><button class=\"btn small primary\">Review</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">LS</span><div><b>Leo Stone</b><span>LW · U14 · Southvale Juniors</span></div></div></td><td>79%</td><td>High</td><td>Yesterday</td><td><button class=\"btn small primary\">Review</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">LM</span><div><b>Louis Murphy</b><span>RW · U17 · Meadow Park Rovers</span></div></div></td><td>79%</td><td>High</td><td>2 days ago</td><td><button class=\"btn small primary\">Review</button></td></tr></tbody></table></div></div></section>\n<section class=\"split\">\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Next actions</h3></div></header><div class=\"panel-body\"><div class=\"decision\"><div><b>Reuben Hughes</b><span>Coach reply overdue by two days</span></div><button class=\"btn small primary\">Follow up</button></div><div class=\"decision\"><div><b>Freddie Foster</b><span>New Match Facts raised evidence confidence</span></div><button class=\"btn small\">Review</button></div><div class=\"decision\"><div><b>Kai Jones</b><span>Comparison saved without a recorded decision</span></div><button class=\"btn small\">Decide</button></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>What the team needs</h3></div><button class=\"btn small\">Edit setup</button></header><div class=\"panel-body\"><div class=\"coverage\"><b>Centre-back speed</b><span>4 relevant players</span><div class=\"bar\"><i style=\"width:82%\"></i></div></div><div class=\"coverage\"><b>Press-resistant midfield</b><span>7 relevant players</span><div class=\"bar\"><i style=\"width:68%\"></i></div></div><div class=\"coverage\"><b>Leadership profile</b><span>2 relevant players</span><div class=\"bar\"><i style=\"width:42%\"></i></div></div></div></section>\n</section>\n<section class=\"split thirds\">\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Usage and limits</h3></div></header><div class=\"panel-body\"><div class=\"usage-row\"><div><b>Predictions</b><span>30 of 60 used</span></div><div class=\"bar\"><i style=\"width:50%\"></i></div><strong>30 left</strong></div><div class=\"usage-row\"><div><b>Exports</b><span>5 of 20 used</span></div><div class=\"bar\"><i style=\"width:25%\"></i></div><strong>15 left</strong></div><div class=\"usage-row\"><div><b>Pipeline places</b><span>7 of 30 used</span></div><div class=\"bar\"><i style=\"width:23%\"></i></div><strong>23 left</strong></div><div class=\"usage-explainer\"><b>Report exports</b><span>Creating a PDF or Excel report uses one export from the team allowance.</span></div></div></section>\n<section class=\"panel dashboard-fit-panel\"><header class=\"panel-head\"><div><h3>Top current fit</h3></div><button class=\"btn small\">View player</button></header><div class=\"panel-body\">\n<div class=\"top-fit-player\"><span class=\"initials\">JB</span><div><small>Highest current recommendation</small><b>Jordan Blake</b><span>CB · U18 · Harbour City Academy</span></div><strong>77%</strong></div>\n<div class=\"fit-reason\"><b>Why he leads</b><span>Strong centre-back need fit, high evidence confidence and the closest match to the current pace-and-power requirement.</span></div>\n<div class=\"top-fit-actions\"><button class=\"btn small primary\">Open profile</button><button class=\"btn small\">Compare</button></div>\n</div></section>\n<section class=\"panel upcoming-priority-panel\"><header class=\"panel-head\"><div><h3>Upcoming live-scouting priority</h3></div><button class=\"btn small primary\">Plan visit</button></header><div class=\"panel-body\"><div class=\"fixture-summary\"><b>Eastbrook Athletic vs Riverside Rangers</b><span>31 Jul · 19:00 · Freddie Foster</span><p>Priority 86 because position-fit evidence needs live confirmation.</p></div></div></section>\n</section>","search":"<section class=\"hero\"><div><small>Player discovery</small><h2>Search the full player database.</h2><p>Start with every available player in a professional table, then narrow the list with filters, sorting or an intelligence request.</p></div><div class=\"hero-actions\"><button class=\"btn\">Saved searches</button><button class=\"btn\">Check alerts</button></div></section><section class=\"search-workbench\">\n<div class=\"search-prompt\"><label><span>Describe the player you need</span><input placeholder=\"Example: U16 central midfielder near London with high evidence confidence\"/></label><button class=\"btn primary\">Run intelligent search</button></div>\n<div class=\"filters\">\n<label class=\"field\"><span>Position</span><select><option>All positions</option><option>GK</option><option>CB</option><option>BPD</option><option>RB</option><option>LB</option><option>RWB</option><option>LWB</option><option>CDM</option><option>CM</option><option>B2B</option><option>CAM</option><option>LW</option><option>RW</option><option>CF</option><option>ST</option><option>SS</option></select></label>\n<label class=\"field\"><span>Age group</span><select><option>All ages</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option><option>U17</option><option>U18</option></select></label>\n<label class=\"field\"><span>Region</span><select><option>All regions</option><option>London</option><option>Birmingham</option><option>Manchester</option><option>Bristol</option><option>Liverpool</option></select></label>\n<label class=\"field\"><span>Evidence</span><select><option>Any evidence</option><option>High</option><option>Medium</option><option>Low</option></select></label>\n<label class=\"field\"><span>Decision context</span><select><option>Immediate starter</option><option>Development prospect</option><option>Specific tactical role</option><option>Low financial risk</option><option>Resale upside</option><option>Squad depth</option></select></label>\n<label class=\"field\"><span>Sort by</span><select><option>Best match</option><option>Newest players</option><option>Highest evidence</option><option>Highest rating</option><option>Lowest value</option></select></label>\n<button class=\"btn dark\">More filters</button>\n</div>\n<div class=\"active-filters\"><span class=\"pill active\">All players</span><span class=\"pill\">Table view</span><span class=\"pill\">20 per page</span><span class=\"pill\">Alerts on</span></div>\n</section><section class=\"panel\"><header class=\"panel-head\"><div><h3>All players</h3></div></header><div class=\"panel-body\"><div class=\"results-head\"><div><h3>Player database</h3><p>Showing 1–20 of 58 players. Search and filters refine this table rather than hiding the database.</p></div><div><button class=\"btn small\">Save search</button><button class=\"btn small\">Export results</button></div></div>\n<div class=\"table-wrap search-table\"><table><thead><tr><th>Player</th><th>Position</th><th class=\"optional\">Region</th><th>Fit</th><th>Evidence</th><th class=\"optional\">Value</th><th class=\"optional\">Added</th><th></th></tr></thead><tbody><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>Eastbrook Athletic</span></div></div></td>\n<td>CM · U18</td><td class=\"optional\">Birmingham</td><td><b>79%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£297k</td><td class=\"optional\">Today</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>Meadow Park Rovers</span></div></div></td>\n<td>RW · U16</td><td class=\"optional\">Manchester</td><td><b>79%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£454k</td><td class=\"optional\">Today</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">ME</span><div><b>Max Evans</b><span>Southvale Juniors</span></div></div></td>\n<td>LW · U16</td><td class=\"optional\">Bristol</td><td><b>79%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£404k</td><td class=\"optional\">Yesterday</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">LS</span><div><b>Leo Stone</b><span>Southvale Juniors</span></div></div></td>\n<td>LW · U14</td><td class=\"optional\">Bristol</td><td><b>79%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£386k</td><td class=\"optional\">Yesterday</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">LM</span><div><b>Louis Murphy</b><span>Meadow Park Rovers</span></div></div></td>\n<td>RW · U17</td><td class=\"optional\">Manchester</td><td><b>79%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£369k</td><td class=\"optional\">2 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">YW</span><div><b>Yusuf White</b><span>Southvale Juniors</span></div></div></td>\n<td>LW · U16</td><td class=\"optional\">Bristol</td><td><b>77%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£322k</td><td class=\"optional\">2 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">LP</span><div><b>Luca Phillips</b><span>Eastbrook Athletic</span></div></div></td>\n<td>CM · U18</td><td class=\"optional\">Birmingham</td><td><b>77%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£467k</td><td class=\"optional\">3 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">CK</span><div><b>Callum Kelly</b><span>Southvale Juniors</span></div></div></td>\n<td>LW · U14</td><td class=\"optional\">Bristol</td><td><b>77%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£391k</td><td class=\"optional\">3 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">JB</span><div><b>Jordan Blake</b><span>Harbour City Academy</span></div></div></td>\n<td>CB · U18</td><td class=\"optional\">Liverpool</td><td><b>77%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£93k</td><td class=\"optional\">4 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">FS</span><div><b>Finley Shaw</b><span>Eastbrook Athletic</span></div></div></td>\n<td>CAM · U16</td><td class=\"optional\">Birmingham</td><td><b>76%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£295k</td><td class=\"optional\">4 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">NR</span><div><b>Noah Reed</b><span>Eastbrook Athletic</span></div></div></td>\n<td>CAM · U16</td><td class=\"optional\">Birmingham</td><td><b>76%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£241k</td><td class=\"optional\">5 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">EE</span><div><b>Ellis Edwards</b><span>Southvale Juniors</span></div></div></td>\n<td>LW · U14</td><td class=\"optional\">Bristol</td><td><b>75%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£505k</td><td class=\"optional\">5 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">TB</span><div><b>Toby Bailey</b><span>Harbour City Academy</span></div></div></td>\n<td>CB · U18</td><td class=\"optional\">Liverpool</td><td><b>75%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£228k</td><td class=\"optional\">6 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">RP</span><div><b>Ryan Patel</b><span>Northgate United</span></div></div></td>\n<td>RB · U16</td><td class=\"optional\">London</td><td><b>75%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£214k</td><td class=\"optional\">6 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">RI</span><div><b>Richdhin Inaba</b><span>Northgate United</span></div></div></td>\n<td>CAM · U13</td><td class=\"optional\">London</td><td><b>74%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£188k</td><td class=\"optional\">7 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">RH</span><div><b>Reuben Hughes</b><span>Northgate United</span></div></div></td>\n<td>ST · U16</td><td class=\"optional\">London</td><td><b>74%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£344k</td><td class=\"optional\">7 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">KJ</span><div><b>Kai Jones</b><span>Eastbrook Athletic</span></div></div></td>\n<td>CM · U16</td><td class=\"optional\">Birmingham</td><td><b>74%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£272k</td><td class=\"optional\">8 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">CH</span><div><b>Carter Hill</b><span>Northgate United</span></div></div></td>\n<td>ST · U16</td><td class=\"optional\">London</td><td><b>73%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£429k</td><td class=\"optional\">8 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">JW</span><div><b>Jayden Wood</b><span>Southvale Juniors</span></div></div></td>\n<td>GK · U16</td><td class=\"optional\">Bristol</td><td><b>73%</b></td><td><span class=\"pill blue\">High</span></td><td class=\"optional\">£270k</td><td class=\"optional\">9 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr><tr>\n<td><div class=\"player-cell\"><span class=\"initials\">SC</span><div><b>Sonny Young</b><span>Meadow Park Rovers</span></div></div></td>\n<td>RW · U16</td><td class=\"optional\">Manchester</td><td><b>72%</b></td><td><span class=\"pill\">Medium</span></td><td class=\"optional\">£259k</td><td class=\"optional\">9 days ago</td><td><button class=\"btn small primary\">Open</button></td></tr></tbody></table></div>\n<div class=\"pagination\"><span>20 per page</span><div><button class=\"btn small\">Previous</button><button class=\"btn small primary\">1</button><button class=\"btn small\">2</button><button class=\"btn small\">3</button><button class=\"btn small\">Next</button></div></div></div></section>","profile":"\n<section class=\"profile-head full-profile-head\">\n<div class=\"profile-main\"><span class=\"initials\">FF</span><div>\n<small>Player intelligence dossier</small><h2>Freddie Foster</h2>\n<p>Central midfielder · U18 · Eastbrook Athletic · Birmingham</p>\n<div class=\"profile-tags\">\n<span class=\"pill green\">Overall 78/100</span><span class=\"pill\">Right foot</span><span class=\"pill blue\">Evidence very high</span>\n<span class=\"pill\">Compatibility 79/100</span><span class=\"pill\">Estimated value £297k</span>\n</div>\n</div></div>\n<div class=\"profile-actions profile-action-grid\">\n<button class=\"btn primary\">Register interest</button><button class=\"btn\">Add to pipeline</button><button class=\"btn\">Compare</button>\n<button class=\"btn\">Create report</button><button class=\"btn\">Export</button><button class=\"btn\">Watch videos</button>\n</div>\n</section>\n<section class=\"prediction-launcher\" id=\"predictionLauncher\"><div class=\"section-copy\"><small>Prediction launcher</small><h3>What prediction do you want to run on this profile?</h3><p>Choose the recruitment question now. The full analysis controls remain at the bottom of the dossier.</p></div><div class=\"prediction-types\"><button class=\"prediction-type selected\" data-prediction=\"Position fit\"><i>PF</i><b>Position fit</b><span>Test the player in a current, future or target role.</span></button><button class=\"prediction-type\" data-prediction=\"Match scenario\"><i>MS</i><b>Match scenario</b><span>Assess performance in a defined tactical situation.</span></button><button class=\"prediction-type\" data-prediction=\"Development projection\"><i>AD</i><b>Development projection</b><span>Model attributes, rating and value over five years.</span></button><button class=\"prediction-type\" data-prediction=\"ROI and value\"><i>ROI</i><b>ROI and value</b><span>Review acquisition cost, value growth and downside risk.</span></button></div><button class=\"btn primary jump-prediction\">Go to prediction controls</button></section>\n<nav aria-label=\"Player dossier sections\" class=\"profile-section-nav\">\n<a href=\"#decisionSummary\">Decision summary</a><a href=\"#ratingBreakdown\">Ratings</a>\n<a href=\"#compatibility\">Compatibility</a><a href=\"#valueAnalysis\">Value</a>\n<a href=\"#evidenceDetail\">Evidence</a><a href=\"#attributes\">Attributes</a>\n<a href=\"#timeline\">Timeline</a><a href=\"#predictionControls\">Predictions</a>\n</nav>\n<section class=\"metric-grid profile-metrics six\">\n<article class=\"metric\"><small>Overall match performance</small><strong>78/100</strong><span>Strong</span></article>\n<article class=\"metric\"><small>Current readiness</small><strong>87/100</strong><span>Ready for a defined role</span></article>\n<article class=\"metric\"><small>Potential rating</small><strong>82/100</strong><span>Development upside</span></article>\n<article class=\"metric\"><small>Data confidence</small><strong>Very high</strong><span>Strong evidence base</span></article>\n<article class=\"metric\"><small>Evidence base</small><strong>21 matches</strong><span>Plus approved video</span></article>\n<article class=\"metric\"><small>Estimated value</small><strong>£297k</strong><span>Review against budget</span></article>\n</section>\n<section class=\"decision-command\" id=\"decisionSummary\">\n<article class=\"decision-verdict-card\">\n<small>ScoutLink verdict</small><div class=\"verdict-title-row\">\n<h3>Development target</h3><span class=\"pill green\">79% compatibility</span>\n</div>\n<p>Freddie should remain under active recruitment review. His tactical fit, evidence quality and immediate readiness justify a live observation and coach conversation before progression.</p>\n<div class=\"decision-badges\"><span class=\"pill green\">Strong need fit</span><span class=\"pill blue\">Evidence very high</span><span class=\"pill\">Role conversion unconfirmed</span></div>\n</article>\n<article class=\"decision-reason-card\">\n<header><span>01</span><div><small>Why this verdict</small><h4>What is driving the recommendation</h4></div></header>\n<ul>\n<li>Need fit is 91/100 for the current recruitment brief.</li>\n<li>Tactical-style fit is 92/100 and current readiness is 87/100.</li>\n<li>Twenty-one recorded matches support the profile.</li>\n</ul>\n</article>\n<article class=\"decision-risk-card\">\n<header><span>02</span><div><small>Primary risk</small><h4>What still needs proof</h4></div></header>\n<p>The best-role output and role-fit score remain gated until the selected position-fit analysis is run and then validated through live observation.</p>\n<button class=\"btn primary jump-prediction\">Run position fit</button>\n</article>\n<article class=\"decision-action-card\">\n<header><span>03</span><div><small>Recommended next action</small><h4>Move from screen to football evidence</h4></div></header>\n<p>Plan the next Eastbrook fixture, record the observation objective and contact the coach through the controlled workflow.</p>\n<div><button class=\"btn primary\">Plan fixture</button><button class=\"btn\">Message coach</button></div>\n</article>\n</section>\n<section class=\"panel\" id=\"ratingBreakdown\"><header class=\"panel-head\"><div><h3>Overall rating breakdown</h3></div></header><div class=\"panel-body\">\n<section class=\"rating-summary-grid\">\n<article><small>Final score</small><strong>78/100</strong><span>Headline ScoutLink overall</span></article>\n<article><small>Current readiness</small><strong>87/100</strong><span>How ready the player is now</span></article>\n<article><small>Potential rating</small><strong>82/100</strong><span>Development upside</span></article>\n<article><small>Data confidence</small><strong>Very high</strong><span>Strong evidence base</span></article>\n</section>\n<div class=\"rating-detail-layout\">\n<div class=\"attribute-list\"><div class=\"attribute\"><span>Technical</span><div class=\"bar\"><i style=\"width:90%\"></i></div><b>90</b></div><div class=\"attribute\"><span>Tactical intelligence</span><div class=\"bar blue\"><i style=\"width:90%\"></i></div><b>90</b></div><div class=\"attribute\"><span>Physical profile</span><div class=\"bar\"><i style=\"width:88%\"></i></div><b>88</b></div><div class=\"attribute\"><span>Mental and coachability</span><div class=\"bar\"><i style=\"width:93%\"></i></div><b>93</b></div><div class=\"attribute\"><span>Match output</span><div class=\"bar gold\"><i style=\"width:68%\"></i></div><b>68</b></div><div class=\"attribute\"><span>Discipline</span><div class=\"bar\"><i style=\"width:95%\"></i></div><b>95</b></div><div class=\"attribute\"><span>Availability</span><div class=\"bar\"><i style=\"width:88%\"></i></div><b>88</b></div><div class=\"attribute\"><span>Data confidence</span><div class=\"bar blue\"><i style=\"width:93%\"></i></div><b>93</b></div></div>\n<aside class=\"role-analysis-card\">\n<small>Role analysis remains gated</small><h4>Run position fit to reveal the role outputs</h4>\n<p>The result will show the best current role, best future role, target-role fit, friction and recommended football action.</p>\n<div class=\"role-result-grid\">\n<article><span>Best current role</span><b class=\"blurred\">Central midfielder</b></article>\n<article><span>Best future role</span><b class=\"blurred\">Deep-lying playmaker</b></article>\n<article><span>Role-fit score</span><b class=\"blurred\">91/100</b></article>\n</div><button class=\"btn primary jump-prediction\">Run position fit</button>\n</aside>\n</div></div></section>\n<section class=\"panel\" id=\"compatibility\"><header class=\"panel-head\"><div><h3>Compatibility intelligence</h3></div></header><div class=\"panel-body\">\n<div class=\"compatibility-headline\"><div><small>Current recruitment brief</small>\n<h4>79% · Strong fit</h4><p>Need fit, tactical style and evidence confidence outweigh the weaker ungated role-fit result.</p></div>\n<button class=\"btn small\">Edit Scout Setup</button></div>\n<div class=\"compatibility-grid\"><article class=\"compat-card\"><div><span>Need fit</span><b>91</b></div><div class=\"bar\"><i style=\"width:91%\"></i></div></article><article class=\"compat-card\"><div><span>Role fit</span><b>64</b></div><div class=\"bar\"><i style=\"width:64%\"></i></div></article><article class=\"compat-card\"><div><span>Tactical style</span><b>92</b></div><div class=\"bar\"><i style=\"width:92%\"></i></div></article><article class=\"compat-card\"><div><span>Formation fit</span><b>72</b></div><div class=\"bar\"><i style=\"width:72%\"></i></div></article><article class=\"compat-card\"><div><span>Development pathway</span><b>65</b></div><div class=\"bar\"><i style=\"width:65%\"></i></div></article><article class=\"compat-card\"><div><span>Match evidence</span><b>80</b></div><div class=\"bar\"><i style=\"width:80%\"></i></div></article><article class=\"compat-card\"><div><span>Financial fit</span><b>69</b></div><div class=\"bar\"><i style=\"width:69%\"></i></div></article></div>\n<div class=\"football-recommendation\"><b>Football recommendation</b>\n<span>Prioritise live scouting and a deeper coach conversation. Do not treat the model output as a final recruitment decision.</span></div>\n</div></section>\n<section class=\"profile-two-column\">\n<section class=\"panel\" id=\"evidenceDetail\"><header class=\"panel-head\"><div><h3>Evidence confidence</h3></div></header><div class=\"panel-body\">\n<div class=\"evidence-score\"><div><small>Confidence score</small><strong>87/100</strong><span>Very high</span></div>\n<p>The record is supported by recent Match Facts, broad coach ratings and approved video. Live observation remains necessary.</p></div>\n<div class=\"evidence-bars\">\n<div class=\"evidence-row\"><div><b>Recorded matches</b><span>21 of 25 target</span></div><div class=\"bar\"><i style=\"width:84%\"></i></div><strong>4 left</strong></div>\n<div class=\"evidence-row\"><div><b>Coach ratings</b><span>14 of 15 used</span></div><div class=\"bar\"><i style=\"width:93%\"></i></div><strong>1 left</strong></div>\n<div class=\"evidence-row\"><div><b>Approved video</b><span>2 of 3 used</span></div><div class=\"bar\"><i style=\"width:67%\"></i></div><strong>1 left</strong></div>\n<div class=\"evidence-row\"><div><b>Evidence recency</b><span>Updated within 14 days</span></div><div class=\"bar\"><i style=\"width:96%\"></i></div><strong>Current</strong></div>\n</div>\n<div class=\"missing-evidence\"><b>Evidence still worth collecting</b>\n<span>One more approved video, a live observation and confirmation of role execution against stronger opposition.</span></div>\n</div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Video evidence</h3></div></header><div class=\"panel-body\">\n<article class=\"video-evidence-card\"><div class=\"video-preview\"><span>▶</span></div>\n<div><small>Approved match clip</small><b>Midfield receiving and progression</b><span>Eastbrook Athletic · 4 min 12 sec</span></div><button class=\"btn small\">Watch</button></article>\n<article class=\"video-evidence-card\"><div class=\"video-preview\"><span>▶</span></div>\n<div><small>Approved match clip</small><b>Defensive transition and recovery</b><span>Eastbrook Athletic · 3 min 38 sec</span></div><button class=\"btn small\">Watch</button></article>\n<div class=\"video-actions\"><button class=\"btn primary\">Watch all videos</button><button class=\"btn\">Request more evidence</button></div>\n</div></section>\n</section>\n<section class=\"panel\" id=\"valueAnalysis\"><header class=\"panel-head\"><div><h3>Value analysis</h3></div></header><div class=\"panel-body\">\n<div class=\"value-analysis-head\"><div><small>Estimated transfer value</small><strong>£297k</strong>\n<span>Decision-support estimate, not a guaranteed market value</span></div>\n<div class=\"value-summary-cards\">\n<article><small>Affordability</small><b>Review against budget</b></article>\n<article><small>Risk label</small><b>Balanced risk</b></article>\n<article><small>Position group</small><b>Midfielder</b></article>\n</div></div>\n<div class=\"factor-list\"><div class=\"factor-row\"><b>Age-band starting value</b><span>Starting youth valuation before player-specific adjustments.</span></div><div class=\"factor-row\"><b>Position group adjustment</b><span>How the market values the midfield position group.</span></div><div class=\"factor-row\"><b>Role scarcity adjustment</b><span>Additional value for harder-to-recruit roles.</span></div><div class=\"factor-row\"><b>Overall quality adjustment</b><span>How the overall score changes the estimate.</span></div><div class=\"factor-row\"><b>Potential runway adjustment</b><span>How age and upside affect projected value.</span></div><div class=\"factor-row\"><b>Evidence-confidence adjustment</b><span>How strongly the current evidence supports the estimate.</span></div><div class=\"factor-row\"><b>Discipline and availability</b><span>Reliability and availability risk applied to the value.</span></div><div class=\"factor-row\"><b>Match-output adjustment</b><span>Goals, assists and recent performance evidence.</span></div></div>\n<div class=\"value-action\"><span>Use the ROI prediction to test acquisition cost, development cost and downside assumptions.</span>\n<button class=\"btn primary jump-prediction\">Run ROI and value</button></div>\n</div></section>\n<section class=\"profile-three-column\" id=\"attributes\">\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>All attributes</h3></div></header><div class=\"panel-body\"><div class=\"attribute-list dense\"><div class=\"attribute\"><span>Pace</span><div class=\"bar\"><i style=\"width:87%\"></i></div><b>87</b></div><div class=\"attribute\"><span>Agility</span><div class=\"bar\"><i style=\"width:88%\"></i></div><b>88</b></div><div class=\"attribute\"><span>Strength</span><div class=\"bar\"><i style=\"width:86%\"></i></div><b>86</b></div><div class=\"attribute\"><span>Stamina</span><div class=\"bar\"><i style=\"width:91%\"></i></div><b>91</b></div><div class=\"attribute\"><span>Jumping</span><div class=\"bar\"><i style=\"width:87%\"></i></div><b>87</b></div><div class=\"attribute\"><span>Composure</span><div class=\"bar\"><i style=\"width:89%\"></i></div><b>89</b></div><div class=\"attribute\"><span>Shooting</span><div class=\"bar\"><i style=\"width:83%\"></i></div><b>83</b></div><div class=\"attribute\"><span>Passing</span><div class=\"bar\"><i style=\"width:95%\"></i></div><b>95</b></div><div class=\"attribute\"><span>Dribbling</span><div class=\"bar\"><i style=\"width:86%\"></i></div><b>86</b></div><div class=\"attribute\"><span>Defending</span><div class=\"bar\"><i style=\"width:82%\"></i></div><b>82</b></div><div class=\"attribute\"><span>Crossing</span><div class=\"bar\"><i style=\"width:86%\"></i></div><b>86</b></div><div class=\"attribute\"><span>Vision</span><div class=\"bar\"><i style=\"width:96%\"></i></div><b>96</b></div><div class=\"attribute\"><span>Positioning</span><div class=\"bar\"><i style=\"width:90%\"></i></div><b>90</b></div><div class=\"attribute\"><span>Heading</span><div class=\"bar\"><i style=\"width:85%\"></i></div><b>85</b></div><div class=\"attribute\"><span>Tackling</span><div class=\"bar\"><i style=\"width:84%\"></i></div><b>84</b></div></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Match statistics</h3></div></header><div class=\"panel-body\">\n<div class=\"stat-grid\">\n<div><b>21</b><span>Appearances</span></div><div><b>5</b><span>Goals</span></div>\n<div><b>6</b><span>Assists</span></div><div><b>1</b><span>Clean sheet</span></div>\n<div><b>3</b><span>Yellow cards</span></div><div><b>0</b><span>Red cards</span></div>\n</div>\n<div class=\"output-note\"><b>Output context</b><span>Five goals and six assists across 21 recorded appearances.</span></div>\n</div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Physical profile</h3></div></header><div class=\"panel-body\">\n<div class=\"physical\"><small>Profile type</small><b>Average height · lean build</b><span>172–184 cm · 60–68 kg</span></div>\n<div class=\"physical-detail-grid\">\n<article><small>Age group</small><b>U18</b></article>\n<article><small>Preferred foot</small><b>Right</b></article>\n<article><small>Profile owner</small><b>Coach-managed</b></article>\n<article><small>Availability</small><b>88/100</b></article>\n</div>\n</div></section>\n</section>\n<section class=\"profile-two-column\">\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Recent Match Facts</h3></div></header><div class=\"panel-body\"><div class=\"match-evidence-row\"><div><b>Riverside Rangers</b><span>21 Jun 2026 · CM · 3–1 win · Performance 74/100</span></div><button class=\"btn small\">Open Match Facts</button></div><div class=\"match-evidence-row\"><div><b>Southbank Athletic</b><span>9 Jun 2026 · CM · 2–2 draw · Performance 75/100</span></div><button class=\"btn small\">Open Match Facts</button></div><div class=\"match-evidence-row\"><div><b>Eastfield Rovers</b><span>31 May 2026 · CM · 1–0 win · Performance 76/100</span></div><button class=\"btn small\">Open Match Facts</button></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Upcoming fixtures</h3></div></header><div class=\"panel-body\">\n<article class=\"profile-fixture-card\"><div class=\"fixture-date\"><b>24</b><span>Jul</span></div>\n<div><small>Next live-scouting opportunity</small><b>Eastbrook Athletic vs Riverside Rangers</b>\n<span>19:00 · Home · Freddie Foster expected in midfield</span>\n<p>Observation objective: confirm role execution and decision-making under pressure.</p></div>\n<button class=\"btn primary small\">Plan visit</button></article>\n<article class=\"profile-fixture-card\"><div class=\"fixture-date\"><b>2</b><span>Aug</span></div>\n<div><small>Following fixture</small><b>Southbank Athletic vs Eastbrook Athletic</b>\n<span>15:00 · Away · Venue pending</span></div><button class=\"btn small\">Open fixture</button></article>\n</div></section>\n</section>\n<section class=\"profile-two-column\" id=\"timeline\">\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Player intelligence timeline</h3></div></header><div class=\"panel-body\"><div class=\"timeline-row\"><i></i><div><b>Evidence confidence increased</b><span>Three recent Match Facts moved the profile to High confidence.</span><time>23 Jul 2026</time></div></div><div class=\"timeline-row\"><i></i><div><b>Added to team watch</b><span>Noah Patel requested an alert if the overall or evidence score changes.</span><time>21 Jul 2026</time></div></div><div class=\"timeline-row\"><i></i><div><b>Comparison completed</b><span>Freddie was compared with Micah Powell for an immediate-starter decision.</span><time>19 Jul 2026</time></div></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Recruitment actions</h3></div></header><div class=\"panel-body\">\n<div class=\"action-workflow\">\n<article><span>01</span><div><b>Watch meaningful changes</b><small>Set overall and evidence thresholds.</small></div><button class=\"btn small\">Watch player</button></article>\n<article><span>02</span><div><b>Add a live observation</b><small>Record technical, tactical, physical and mental notes.</small></div><button class=\"btn small\">Add observation</button></article>\n<article><span>03</span><div><b>Record the human decision</b><small>Save rationale, next action and due date.</small></div><button class=\"btn small primary\">Record decision</button></article>\n<article><span>04</span><div><b>Create the decision-ready report</b><small>Choose PDF or Excel. Creating it uses one export.</small></div><button class=\"btn small\">Create report</button></article>\n<article><span>05</span><div><b>Add to a shared shortlist</b><small>Collaborate without changing the player record.</small></div><button class=\"btn small\">Add to shortlist</button></article>\n</div>\n</div></section>\n</section>\n<section class=\"panel prediction-runner\" id=\"predictionControls\">\n<header class=\"panel-head\"><div><h3>Run a prediction on Freddie Foster</h3>\n<p>Selected prediction: <b class=\"selected-prediction-label\">Position fit</b></p></div>\n<span class=\"usage-badge\">28 of 60 prediction credits remaining</span></header>\n<div class=\"panel-body\">\n<div class=\"prediction-control-grid\">\n<label class=\"field\"><span>Prediction type</span><select><option selected=\"\">Position fit</option><option>Match scenario</option><option>Development projection</option><option>ROI and value</option></select></label>\n<label class=\"field\"><span>Target position</span><select><option selected=\"\">CM</option><option>CDM</option><option>CAM</option><option>B2B</option><option>RB</option><option>CB</option></select></label>\n<label class=\"field\"><span>Match scenario</span><select><option selected=\"\">Protecting a one-goal lead</option><option>Chasing the game</option><option>High press</option><option>Breaking a low block</option></select></label>\n<label class=\"field\"><span>Development focus</span><select><option selected=\"\">Balanced growth</option><option>Technical possession</option><option>Athletic transition</option><option>Defensive intelligence</option></select></label>\n<label class=\"field\"><span>Financial goal</span><select><option selected=\"\">Balanced value growth</option><option>First-team contribution</option><option>Low-cost high ceiling</option></select></label>\n<label class=\"field\"><span>Decision context</span><select><option>Immediate starter</option><option>Development prospect</option><option selected=\"\">Specific tactical role</option><option>Low financial risk</option></select></label>\n<label class=\"field\"><span>Evidence rule</span><select><option selected=\"\">Use current evidence</option><option>Require high evidence</option><option>Live observation required</option></select></label>\n<label class=\"field\"><span>Target role</span><select><option>Current role</option><option selected=\"\">CM</option><option>CDM</option><option>CAM</option><option>B2B</option><option>CB</option></select></label>\n</div>\n<div class=\"prediction-action-grid\">\n<button class=\"btn\">Run attribute development</button><button class=\"btn\">Run ROI analysis</button>\n<button class=\"btn\">Run scenario prediction</button><button class=\"btn primary\">Run position fit</button>\n</div>\n<div class=\"prediction-result-preview\">\n<article><small>Best current role</small><b class=\"blurred\">Central midfielder</b></article>\n<article><small>Best future role</small><b class=\"blurred\">Deep-lying playmaker</b></article>\n<article><small>Target role</small><b>CM</b></article>\n<article><small>Role-fit score</small><b class=\"blurred\">91/100</b></article>\n</div>\n<div class=\"gate-note\">Select the prediction and run the analysis to reveal the gated role outputs. The result should remain decision support and must be validated through football evidence.</div>\n</div>\n</section>\n","rankings":"<section class=\"hero\"><div><small>Player leaderboards</small><h2>Rankings that explain the result.</h2><p>Switch between fit, evidence, output and demand leaderboards without oversized controls or unexplained scores.</p></div><div class=\"hero-actions\"><button class=\"btn primary\">Explore players</button></div></section><section class=\"filter-bar rankings-filters\"><label class=\"field\"><span>Ranking type</span><select><option>Team fit</option><option>Current readiness</option><option>Development potential</option><option>Evidence confidence</option><option>Financial value</option><option selected=\"\">Top goalscorers</option><option>Top assists</option><option>Most clean sheets</option><option>Most sought after</option></select></label><label class=\"field\"><span>Position</span><select><option>All positions</option><option>GK</option><option>CB</option><option>RB</option><option>LB</option><option>CDM</option><option>CM</option><option>CAM</option><option>LW</option><option>RW</option><option>ST</option></select></label><label class=\"field\"><span>Age group</span><select><option>All ages</option><option>U14</option><option>U15</option><option>U16</option><option>U17</option><option>U18</option></select></label><label class=\"field\"><span>Region</span><select><option>All regions</option><option>London</option><option>Birmingham</option><option>Manchester</option><option>Bristol</option><option>Liverpool</option></select></label><button class=\"btn primary\">Update ranking</button></section>\n<section class=\"rank-widget-grid\"><article class=\"rank-widget\"><span>#1</span><span class=\"initials\">LM</span><div><b>Louis Murphy</b><small>RW · U17</small></div><strong>15 goals</strong></article><article class=\"rank-widget\"><span>#2</span><span class=\"initials\">MP</span><div><b>Micah Powell</b><small>RW · U16</small></div><strong>14 goals</strong></article><article class=\"rank-widget\"><span>#3</span><span class=\"initials\">FF</span><div><b>Freddie Foster</b><small>CM · U18</small></div><strong>12 goals</strong></article></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Top goalscorers</h3></div></header><div class=\"panel-body\"><div class=\"table-wrap\"><table><thead><tr><th>Rank</th><th>Player</th><th>Ranking score</th><th>Why ranked here</th><th>Evidence</th><th>Value</th></tr></thead><tbody><tr><td><b>#1</b></td><td><div class=\"player-cell\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>CM · U18 · Eastbrook Athletic</span></div></div></td><td>79/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£297k</td></tr><tr><td><b>#2</b></td><td><div class=\"player-cell\"><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>RW · U16 · Meadow Park Rovers</span></div></div></td><td>79/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£454k</td></tr><tr><td><b>#3</b></td><td><div class=\"player-cell\"><span class=\"initials\">ME</span><div><b>Max Evans</b><span>LW · U16 · Southvale Juniors</span></div></div></td><td>79/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£404k</td></tr><tr><td><b>#4</b></td><td><div class=\"player-cell\"><span class=\"initials\">LS</span><div><b>Leo Stone</b><span>LW · U14 · Southvale Juniors</span></div></div></td><td>79/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£386k</td></tr><tr><td><b>#5</b></td><td><div class=\"player-cell\"><span class=\"initials\">LM</span><div><b>Louis Murphy</b><span>RW · U17 · Meadow Park Rovers</span></div></div></td><td>79/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£369k</td></tr><tr><td><b>#6</b></td><td><div class=\"player-cell\"><span class=\"initials\">YW</span><div><b>Yusuf White</b><span>LW · U16 · Southvale Juniors</span></div></div></td><td>77/100</td><td>Strong team-fit and current evidence.</td><td>Medium</td><td>£322k</td></tr><tr><td><b>#7</b></td><td><div class=\"player-cell\"><span class=\"initials\">LP</span><div><b>Luca Phillips</b><span>CM · U18 · Eastbrook Athletic</span></div></div></td><td>77/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£467k</td></tr><tr><td><b>#8</b></td><td><div class=\"player-cell\"><span class=\"initials\">CK</span><div><b>Callum Kelly</b><span>LW · U14 · Southvale Juniors</span></div></div></td><td>77/100</td><td>Strong team-fit and current evidence.</td><td>Medium</td><td>£391k</td></tr><tr><td><b>#9</b></td><td><div class=\"player-cell\"><span class=\"initials\">JB</span><div><b>Jordan Blake</b><span>CB · U18 · Harbour City Academy</span></div></div></td><td>77/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£93k</td></tr><tr><td><b>#10</b></td><td><div class=\"player-cell\"><span class=\"initials\">FS</span><div><b>Finley Shaw</b><span>CAM · U16 · Eastbrook Athletic</span></div></div></td><td>76/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£295k</td></tr><tr><td><b>#11</b></td><td><div class=\"player-cell\"><span class=\"initials\">NR</span><div><b>Noah Reed</b><span>CAM · U16 · Eastbrook Athletic</span></div></div></td><td>76/100</td><td>Strong team-fit and current evidence.</td><td>Medium</td><td>£241k</td></tr><tr><td><b>#12</b></td><td><div class=\"player-cell\"><span class=\"initials\">EE</span><div><b>Ellis Edwards</b><span>LW · U14 · Southvale Juniors</span></div></div></td><td>75/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£505k</td></tr><tr><td><b>#13</b></td><td><div class=\"player-cell\"><span class=\"initials\">TB</span><div><b>Toby Bailey</b><span>CB · U18 · Harbour City Academy</span></div></div></td><td>75/100</td><td>Strong team-fit and current evidence.</td><td>Medium</td><td>£228k</td></tr><tr><td><b>#14</b></td><td><div class=\"player-cell\"><span class=\"initials\">RP</span><div><b>Ryan Patel</b><span>RB · U16 · Northgate United</span></div></div></td><td>75/100</td><td>Strong team-fit and current evidence.</td><td>High</td><td>£214k</td></tr><tr><td><b>#15</b></td><td><div class=\"player-cell\"><span class=\"initials\">RI</span><div><b>Richdhin Inaba</b><span>CAM · U13 · Northgate United</span></div></div></td><td>74/100</td><td>Strong team-fit and current evidence.</td><td>Medium</td><td>£188k</td></tr></tbody></table></div></div></section>","fixtures":"<section class=\"hero\"><div><small>Live scouting calendar</small><h2>Plan the matches that can change a decision.</h2><p>The calendar is the main workspace. Priority logic and visit planning support it without taking over the page.</p></div><div class=\"hero-actions\"><button class=\"btn\">Calendar settings</button><button class=\"btn primary\">Add external fixture</button></div></section><section class=\"metric-grid compact\"><article class=\"metric accent\"><small>Upcoming fixtures</small><strong>3</strong><span>Across pipeline players</span></article><article class=\"metric\"><small>Planned visits</small><strong>1</strong><span>One assigned scout</span></article><article class=\"metric\"><small>Next fixture</small><strong>9 Jul</strong><span>Reuben Hughes · 19:30</span></article><article class=\"metric\"><small>Unassigned visits</small><strong>2</strong><span>Need an owner</span></article></section>\n<section class=\"calendar-layout\">\n<section class=\"panel calendar-panel\"><header class=\"panel-head\"><div><h3>July 2026</h3><p>Pipeline-player fixtures</p></div><div><button class=\"btn small\">Previous</button><button class=\"btn small\">Today</button><button class=\"btn small\">Next</button></div></header><div class=\"panel-body\"><div class=\"desktop-calendar\"><div class=\"calendar-head\"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div><div class=\"calendar-grid\"><div class=\"cal-day\"><b>1</b></div><div class=\"cal-day\"><b>2</b></div><div class=\"cal-day\"><b>3</b></div><div class=\"cal-day\"><b>4</b></div><div class=\"cal-day\"><b>5</b></div><div class=\"cal-day\"><b>6</b></div><div class=\"cal-day\"><b>7</b></div><div class=\"cal-day\"><b>8</b></div><div class=\"cal-day\"><b>9</b><div class=\"cal-event\"><b>Reuben Hughes</b><span>19:00 · Northgate</span></div></div><div class=\"cal-day\"><b>10</b></div><div class=\"cal-day\"><b>11</b></div><div class=\"cal-day\"><b>12</b></div><div class=\"cal-day\"><b>13</b></div><div class=\"cal-day\"><b>14</b></div><div class=\"cal-day\"><b>15</b></div><div class=\"cal-day\"><b>16</b></div><div class=\"cal-day\"><b>17</b></div><div class=\"cal-day\"><b>18</b><div class=\"cal-event\"><b>Carter Hill</b><span>15:00 · Eastfield</span></div></div><div class=\"cal-day\"><b>19</b></div><div class=\"cal-day\"><b>20</b></div><div class=\"cal-day\"><b>21</b></div><div class=\"cal-day\"><b>22</b></div><div class=\"cal-day\"><b>23</b></div><div class=\"cal-day\"><b>24</b><div class=\"cal-event priority\"><b>Freddie Foster</b><span>19:00 · Riverside</span></div></div><div class=\"cal-day\"><b>25</b></div><div class=\"cal-day\"><b>26</b></div><div class=\"cal-day\"><b>27</b></div><div class=\"cal-day\"><b>28</b></div><div class=\"cal-day\"><b>29</b></div><div class=\"cal-day\"><b>30</b></div><div class=\"cal-day\"><b>31</b></div><div class=\"cal-day muted\"><b>1</b></div><div class=\"cal-day muted\"><b>2</b></div><div class=\"cal-day muted\"><b>3</b></div><div class=\"cal-day muted\"><b>4</b></div></div></div><div class=\"mobile-fixture-list\"><article class=\"fixture-card\"><div class=\"date-box\"><b>24</b><span>Jul</span></div><div><h4>Eastbrook Athletic vs Riverside Rangers</h4><p>19:00 · Freddie Foster<br/>Priority 86 · role fit needs confirmation</p></div><button class=\"btn small primary\">Plan</button></article><article class=\"fixture-card\"><div class=\"date-box\"><b>18</b><span>Jul</span></div><div><h4>Northgate United vs Eastfield Rovers</h4><p>15:00 · Carter Hill<br/>Priority 78 · coach response pending</p></div><button class=\"btn small primary\">Plan</button></article><article class=\"fixture-card\"><div class=\"date-box\"><b>9</b><span>Jul</span></div><div><h4>Northgate United vs Borough Juniors</h4><p>19:30 · Reuben Hughes<br/>Priority 72 · evaluate movement</p></div><button class=\"btn small primary\">Plan</button></article></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Priority visits</h3></div></header><div class=\"panel-body\"><div class=\"priority-visit\"><b>Freddie Foster</b><span>24 Jul · Eastbrook vs Riverside</span><p>Confirm role execution and response under pressure.</p><button class=\"btn small primary\">Plan visit</button></div><div class=\"priority-visit\"><b>Carter Hill</b><span>18 Jul · Northgate vs Eastfield</span><p>Coach response and live movement evidence.</p><button class=\"btn small\">Assign scout</button></div><div class=\"priority-visit\"><b>Reuben Hughes</b><span>9 Jul · Northgate vs Borough</span><p>Review movement and finishing profile.</p><button class=\"btn small\">Open plan</button></div></div></section>\n</section>","predictions":"<section class=\"hero\"><div><small>Prediction intelligence</small><h2>Answer one recruitment question at a time.</h2><p>Choose the player and the prediction first. ScoutLink then shows only the controls needed for that question.</p></div><div class=\"hero-actions\"><button class=\"btn\">How predictions work</button></div></section><section class=\"metric-grid compact\"><article class=\"metric accent\"><small>Prediction usage</small><strong>32 / 60</strong><span>28 remaining</span></article><article class=\"metric\"><small>Run this month</small><strong>11</strong><span>Across four analysis types</span></article><article class=\"metric\"><small>Current plan</small><strong>Elite</strong><span>Team credits enabled</span></article><article class=\"metric\"><small>Reset date</small><strong>12 Jan 2027</strong><span>Access-year reset</span></article></section>\n<section class=\"journey-panel\">\n<header><span>1</span><div><h3>Choose the player</h3><p>Opened from Freddie Foster’s profile</p></div></header>\n<div class=\"selected-player\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>CM · U18 · Eastbrook Athletic</span></div><button class=\"btn small\">Change player</button></div>\n</section>\n<section class=\"journey-panel\"><header><span>2</span><div><h3>What prediction do you want to run?</h3><p>Select the question before choosing any detailed inputs.</p></div></header><div class=\"prediction-choice-grid\"><button class=\"prediction-choice selected\"><b>Position fit</b><span>Is the player natural, convertible or high friction for a role?</span></button><button class=\"prediction-choice\"><b>Match scenario</b><span>Will the player flourish, need protection or create repeated risk?</span></button><button class=\"prediction-choice\"><b>Development projection</b><span>How could ratings and value change over five years?</span></button><button class=\"prediction-choice\"><b>ROI and value</b><span>What is the cost, value and downside case?</span></button></div></section>\n<section class=\"journey-panel\"><header><span>3</span><div><h3>Set the position-fit question</h3><p>Only the inputs relevant to the selected prediction are displayed.</p></div></header><div class=\"prediction-control-grid\"><label class=\"field\"><span>Target position</span><select><option selected=\"\">CM</option><option>CDM</option><option>CAM</option><option>B2B</option><option>RB</option><option>CB</option></select></label><label class=\"field\"><span>Decision context</span><select><option>Immediate starter</option><option>Development prospect</option><option selected=\"\">Specific tactical role</option></select></label><label class=\"field\"><span>Evidence rule</span><select><option>Use current evidence</option><option>Require high evidence</option><option>Live observation required</option></select></label><button class=\"btn primary\">Run position fit</button></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Prediction result</h3></div></header><div class=\"panel-body\"><div class=\"empty structured\"><b>Ready to run position fit</b><span>The result will show the verdict, supporting attributes, friction, confidence and next recruitment action.</span></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Prediction history</h3></div><button class=\"btn small\">Export history</button></header><div class=\"panel-body\"><div class=\"table-wrap\"><table><thead><tr><th>Player</th><th>Prediction</th><th>Result</th><th>Run</th><th></th></tr></thead><tbody><tr><td><div class=\"player-cell\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>Eastbrook Athletic</span></div></div></td><td>Position fit</td><td>Natural fit at 88/100</td><td>9 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>Meadow Park Rovers</span></div></div></td><td>Match scenario</td><td>Usable with support</td><td>10 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">ME</span><div><b>Max Evans</b><span>Southvale Juniors</span></div></div></td><td>Development projection</td><td>Balanced growth</td><td>11 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">LS</span><div><b>Leo Stone</b><span>Southvale Juniors</span></div></div></td><td>ROI and value</td><td>Monitor and negotiate</td><td>12 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">LM</span><div><b>Louis Murphy</b><span>Meadow Park Rovers</span></div></div></td><td>Position fit</td><td>Natural fit at 88/100</td><td>13 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">YW</span><div><b>Yusuf White</b><span>Southvale Juniors</span></div></div></td><td>Match scenario</td><td>Usable with support</td><td>14 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">LP</span><div><b>Luca Phillips</b><span>Eastbrook Athletic</span></div></div></td><td>Development projection</td><td>Balanced growth</td><td>15 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr><tr><td><div class=\"player-cell\"><span class=\"initials\">CK</span><div><b>Callum Kelly</b><span>Southvale Juniors</span></div></div></td><td>ROI and value</td><td>Monitor and negotiate</td><td>16 Jul 2026</td><td><button class=\"btn small\">Open</button></td></tr></tbody></table></div></div></section>","exports":"<section class=\"hero\"><div><small>Reports and exports</small><h2>Create consistent decision-ready reports.</h2><p>Build a report quickly, see the allowance before generating it and keep the history easy to retrieve.</p></div><div class=\"hero-actions\"><button class=\"btn\">Export settings</button></div></section><section class=\"metric-grid compact\"><article class=\"metric accent\"><small>Export usage</small><strong>5 / 20</strong><span>15 remaining</span></article><article class=\"metric\"><small>Reports ready</small><strong>6</strong><span>Available to download</span></article><article class=\"metric\"><small>Current plan</small><strong>Core</strong><span>Team report access</span></article><article class=\"metric\"><small>Reset date</small><strong>12 Jan 2027</strong><span>Access-year reset</span></article></section>\n<section class=\"split export-layout\"><section class=\"panel\"><header class=\"panel-head\"><div><h3>Create a report</h3></div></header><div class=\"panel-body\"><div class=\"export-builder\"><label class=\"field\"><span>Player</span><select><option>Choose player</option><option selected=\"\">Freddie Foster · CM · U18</option><option>Micah Powell · RW · U16</option><option>Reuben Hughes · ST · U16</option></select></label><label class=\"field\"><span>Report type</span><select><option selected=\"\">Player intelligence report</option><option>Position-fit report</option><option>Scenario-prediction report</option><option>Development report</option><option>ROI report</option><option>Comparison report</option><option>Pipeline review</option><option>Observation report</option></select></label><label class=\"field\"><span>Format</span><select><option selected=\"\">PDF</option><option>Excel</option></select></label><label class=\"field\"><span>Source</span><select><option selected=\"\">Profile intelligence</option><option>Latest prediction</option></select></label><fieldset><legend>Include</legend><label><input checked=\"\" type=\"checkbox\"/> Verdict and next action</label><label><input checked=\"\" type=\"checkbox\"/> Evidence confidence</label><label><input checked=\"\" type=\"checkbox\"/> Role fit and risks</label><label><input type=\"checkbox\"/> Internal notes</label></fieldset><button class=\"btn primary\">Generate report</button></div></div></section><section class=\"panel\"><header class=\"panel-head\"><div><h3>Every report includes</h3></div></header><div class=\"panel-body\"><ul class=\"clean-list\"><li>Verdict and recommended next action</li><li>Evidence confidence and missing evidence</li><li>Supporting statistics and role fit</li><li>Recruitment risks and decision-support notice</li><li>Time-stamped data version</li></ul></div></section></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Report history</h3></div></header><div class=\"panel-body\"><div class=\"table-wrap\"><table><thead><tr><th>Report</th><th>Team</th><th>Format</th><th>Created</th><th>Status</th><th></th></tr></thead><tbody><tr><td><b>Player intelligence report</b><span class=\"row-sub\">Freddie Foster</span></td><td>Eastbrook Athletic</td><td>PDF</td><td>12 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr><tr><td><b>Position-fit report</b><span class=\"row-sub\">Micah Powell</span></td><td>Meadow Park Rovers</td><td>Excel</td><td>13 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr><tr><td><b>Comparison report</b><span class=\"row-sub\">Max Evans</span></td><td>Southvale Juniors</td><td>PDF</td><td>14 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr><tr><td><b>Observation report</b><span class=\"row-sub\">Leo Stone</span></td><td>Southvale Juniors</td><td>Excel</td><td>15 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr><tr><td><b>Player intelligence report</b><span class=\"row-sub\">Louis Murphy</span></td><td>Meadow Park Rovers</td><td>PDF</td><td>16 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr><tr><td><b>Position-fit report</b><span class=\"row-sub\">Yusuf White</span></td><td>Southvale Juniors</td><td>Excel</td><td>17 Jul 2026</td><td><span class=\"pill green\">Ready</span></td><td><button class=\"btn small\">Download</button></td></tr></tbody></table></div></div></section>","compare":"<section class=\"hero\"><div><small>Comparison decision engine</small><h2>Compare two players in the real recruitment context.</h2><p>Select players and context in a compact setup bar, then review the recommendation, category trade-offs and next action.</p></div><div class=\"hero-actions\"><button class=\"btn primary\">New comparison</button></div></section><section class=\"metric-grid compact\"><article class=\"metric accent\"><small>Saved comparisons</small><strong>6</strong><span>Across the scout team</span></article><article class=\"metric\"><small>Decisions recorded</small><strong>3</strong><span>From comparisons</span></article><article class=\"metric\"><small>Reports created</small><strong>2</strong><span>Comparison reports</span></article><article class=\"metric\"><small>Current plan</small><strong>Core</strong><span>No hidden comparison limit</span></article></section>\n<section class=\"compare-setup\"><div class=\"compare-player-select\"><label><span>Player A</span><input placeholder=\"Search pipeline or database\" value=\"Freddie Foster\"/></label><div class=\"selected-player\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>CM · U18 · Eastbrook Athletic</span></div></div></div><div class=\"compare-player-select\"><label><span>Player B</span><input placeholder=\"Search pipeline or database\" value=\"Micah Powell\"/></label><div class=\"selected-player\"><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>RW · U16 · Meadow Park Rovers</span></div></div></div><div class=\"compare-context\"><label class=\"field\"><span>Decision context</span><select><option selected=\"\">Immediate starter</option><option>Development prospect</option><option>Specific tactical role</option><option>Low financial risk</option><option>Resale upside</option><option>Squad depth</option></select></label><label class=\"field\"><span>Target position</span><select><option selected=\"\">Current roles</option><option>GK</option><option>CB</option><option>BPD</option><option>RB</option><option>LB</option><option>CDM</option><option>CM</option><option>CAM</option><option>LW</option><option>RW</option><option>ST</option></select></label><label class=\"field\"><span>Budget</span><input placeholder=\"Optional\" value=\"\"/></label><button class=\"btn primary\">Compare and explain</button></div></section>\n<section class=\"recommendation\"><div><small>Immediate starter recommendation</small><h3>Freddie Foster</h3><p>Freddie leads because evidence confidence, composure and immediate readiness are stronger in this context.</p></div><div class=\"decision-margin\"><b>0.1</b><span>decision-score margin</span></div></section>\n<section class=\"compare-head\"><article><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>81.4 decision score · Evidence high</span></div></article><article><span class=\"initials\">MP</span><div><b>Micah Powell</b><span>81.3 decision score · Evidence medium</span></div></article></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Category-by-category explanation</h3></div></header><div class=\"panel-body\"><div class=\"table-wrap\"><table><thead><tr><th>Category</th><th>Freddie Foster</th><th>Micah Powell</th><th>Winner</th><th>Margin</th></tr></thead><tbody><tr><td><b>Technical</b></td><td>90</td><td>91</td><td>Micah Powell</td><td>1</td></tr><tr><td><b>Tactical suitability</b></td><td>80</td><td>80</td><td>Tie</td><td>0</td></tr><tr><td><b>Physical profile</b></td><td>88</td><td>85</td><td>Freddie Foster</td><td>3</td></tr><tr><td><b>Mental and composure</b></td><td>93</td><td>87</td><td>Freddie Foster</td><td>6</td></tr><tr><td><b>Match output</b></td><td>86</td><td>75</td><td>Freddie Foster</td><td>11</td></tr><tr><td><b>Position fit</b></td><td>92</td><td>93</td><td>Micah Powell</td><td>1</td></tr><tr><td><b>Team-brief fit</b></td><td>79</td><td>79</td><td>Tie</td><td>0</td></tr><tr><td><b>Development ceiling</b></td><td>82</td><td>87</td><td>Micah Powell</td><td>5</td></tr><tr><td><b>Immediate readiness</b></td><td>87</td><td>87</td><td>Tie</td><td>0</td></tr><tr><td><b>Evidence confidence</b></td><td>87</td><td>80</td><td>Freddie Foster</td><td>7</td></tr><tr><td><b>Financial value</b></td><td>64</td><td>65</td><td>Micah Powell</td><td>1</td></tr></tbody></table></div></div></section>\n<section class=\"split\"><section class=\"panel\"><header class=\"panel-head\"><div><h3>What could change the recommendation</h3></div></header><div class=\"panel-body\"><ul class=\"clean-list warn\"><li>Two or three additional strong match records could change the winner.</li><li>A different target position or budget may favour Micah.</li></ul></div></section><section class=\"panel\"><header class=\"panel-head\"><div><h3>Recommended next actions</h3></div></header><div class=\"panel-body\"><ul class=\"clean-list\"><li>Review the category margins that matter most.</li><li>Confirm the leading player through live observation.</li><li>Record the decision rationale before progressing.</li></ul></div></section></section>\n<section class=\"comparison-actions\">\n<div class=\"comparison-action-copy\"><small>Complete the comparison workflow</small><b>Save the evidence, record the human decision or export a report.</b></div>\n<div class=\"comparison-action-buttons\">\n<button class=\"btn primary\">Add recommended player</button>\n<button class=\"btn\" data-save-comparison=\"\">Save comparison</button>\n<button class=\"btn\" data-record-decision=\"\">Record decision</button>\n</div>\n<div class=\"comparison-report-action\">\n<label class=\"report-format\"><span>Report format</span><select><option>PDF</option><option>Excel</option></select></label>\n<button class=\"btn primary\" data-create-comparison-report=\"\">Create report</button>\n<div class=\"export-allowance\"><b data-export-remaining=\"\">15 exports remaining</b><span>Creating the report uses one export.</span></div>\n</div>\n<div aria-live=\"polite\" class=\"comparison-action-status\">No comparison action recorded yet.</div>\n</section>","setup":"<section class=\"hero\"><div><small>Recruitment brief</small><h2>Keep the setup concise and material.</h2><p>The saved brief changes search ordering, compatibility, comparisons and predictions. Select only factors that should genuinely change a recruitment decision.</p></div><div class=\"hero-actions\"><button class=\"btn\">Review impact</button><button class=\"btn primary\">Save changes</button></div></section><section class=\"setup-nav\"><a class=\"active\">Team context</a><a>Team weaknesses</a><a>Role expectations</a><a>Long-term goals</a><a>Search preferences</a></section>\n<section class=\"impact-grid\"><article><b>Search impact</b><span>Explains why players match the selected needs.</span></article><article><b>Comparison impact</b><span>Changes the winner when context changes.</span></article><article><b>Prediction impact</b><span>Keeps the recruitment brief visible in results.</span></article></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Team context</h3></div></header><div class=\"panel-body\"><div class=\"form-grid\"><label class=\"field\"><span>Team name</span><input placeholder=\"\" value=\"ScoutLink Demo Recruitment Team\"/></label><label class=\"field\"><span>Club / organisation</span><input placeholder=\"\" value=\"Stratex Demo FC\"/></label><label class=\"field\"><span>Scout country</span><select><option selected=\"\">England</option><option>Scotland</option><option>Wales</option><option>Northern Ireland</option></select></label><label class=\"field\"><span>Scout region</span><select><option selected=\"\">London</option><option>North West</option><option>West Midlands</option><option>South West</option></select></label><label class=\"field\"><span>Formation</span><select><option selected=\"\">4-3-3</option><option>4-2-3-1</option><option>3-4-3</option><option>4-4-2</option></select></label><label class=\"field\"><span>Playing style</span><select><option selected=\"\">Tiki-Taka</option><option>High press</option><option>Direct transition</option><option>Possession</option><option>Low block</option></select></label></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Team weaknesses looking to be solved</h3></div><span class=\"pill\">Select up to 3</span></header><div class=\"panel-body\"><div class=\"choice-grid\"><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Insufficient game pace and speed</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Physical fragility and injury risk</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Lack of physical presence</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Weak defensive base</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Poor defensive output</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Low team chemistry and leadership</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Technical deficiencies under pressure</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Tactical awareness gaps</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Poor goal output</span></label></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Role expectations</h3></div><span class=\"pill\">Select up to 3</span></header><div class=\"panel-body\"><div class=\"choice-grid\"><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Aerial dominance</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Vision and creativity</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Speed and agility</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Tactical intelligence</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Ball retention under pressure</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Physical resilience / work rate</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Defensive impact</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Offensive impact</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Progression and carrying</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Leadership and communication</span></label></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Long-term goals</h3></div><span class=\"pill\">Select up to 3</span></header><div class=\"panel-body\"><div class=\"choice-grid\"><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Physical growth potential</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Tactical role maturity</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Leadership and coachability</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Injury risk and physical resilience</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Positional depth advantage</span></label><label class=\"choice\"><input name=\"setup_choice\" type=\"checkbox\"/><span>Goal contribution potential</span></label><label class=\"choice selected\"><input checked=\"checked\" name=\"setup_choice\" type=\"checkbox\"/><span>Financial viability</span></label></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Search preferences</h3></div></header><div class=\"panel-body\"><div class=\"preference-block\"><b>Age groups</b><div class=\"chip-row\"><span class=\"pill\">U6</span><span class=\"pill\">U7</span><span class=\"pill\">U8</span><span class=\"pill\">U9</span><span class=\"pill\">U10</span><span class=\"pill\">U11</span><span class=\"pill\">U12</span><span class=\"pill\">U13</span><span class=\"pill\">U14</span><span class=\"pill\">U15</span><span class=\"pill active\">U16</span></div></div><div class=\"preference-block\"><b>Preferred positions</b><div class=\"chip-row\"><span class=\"pill active\">GK</span><span class=\"pill active\">CB</span><span class=\"pill\">RB</span><span class=\"pill\">LB</span><span class=\"pill\">RWB</span><span class=\"pill\">LWB</span><span class=\"pill\">CDM</span><span class=\"pill\">CM</span><span class=\"pill active\">CAM</span><span class=\"pill\">LM</span><span class=\"pill\">RM</span><span class=\"pill\">LW</span><span class=\"pill\">RW</span><span class=\"pill active\">ST</span></div></div><div class=\"form-grid\"><label class=\"field\"><span>Salary cap (GBP/week)</span><input placeholder=\"\" value=\"500000\"/></label><label class=\"field\"><span>Minimum appearances</span><input placeholder=\"\" value=\"3\"/></label></div></div></section>\n<div class=\"sticky-save\"><span>Last saved 23 Jul 2026 · 07:15</span><div><button class=\"btn\">Cancel</button><button class=\"btn primary\">Save and apply</button></div></div>","chat":"<section class=\"chat-header\"><div><span class=\"initials\">MR</span><div><small>Coach-mediated conversation</small><h2>Marcus Reed</h2><p>Northgate United · Linked pipeline players: 3</p></div></div><div><button class=\"btn small\">View linked players</button><button class=\"btn small\">Conversation details</button></div></section>\n<section class=\"chat-layout\">\n<aside class=\"conversation-list\"><header><b>Conversations</b><button class=\"btn small\">New</button></header><button class=\"conversation active\"><span class=\"initials\">MR</span><div><b>Marcus Reed</b><span>Freddie Foster fixture confirmed</span></div><time>09:42</time></button><button class=\"conversation\"><span class=\"initials\">OK</span><div><b>Owen Kelly</b><span>Reuben is available next week</span></div><time>Yesterday</time></button><button class=\"conversation\"><span class=\"initials\">SA</span><div><b>Sarah Ahmed</b><span>Carter Hill video added</span></div><time>Mon</time></button></aside>\n<section class=\"thread\"><header><div><b>Marcus Reed</b><span>Northgate United · Authorised adult contact</span></div><span class=\"online\">Active today</span></header><div class=\"messages\"><div class=\"msg incoming\"><p>Yes, the profile has three recent Match Facts and an upcoming fixture attached.</p><time>09:31</time></div><div class=\"msg outgoing\"><p>I have added Freddie to our pipeline. Can you share the latest fixture and approved video?</p><time>09:35</time></div><div class=\"msg incoming\"><p>Of course. The next fixture is Friday at 19:00. I have shared the approved evidence below.</p><time>09:39</time></div><div class=\"shared-card\"><small>Shared fixture</small><b>Eastbrook Athletic vs Riverside Rangers</b><span>24 Jul · 19:00 · Freddie Foster</span><button class=\"btn small\">Open fixture</button></div><div class=\"msg outgoing\"><p>Thank you. I will review this before the next checkpoint.</p><time>09:42</time></div></div><div class=\"share-tray\" id=\"shareTray\"><header><b>Share from this coach-linked pipeline</b><button class=\"icon-btn close-share\">×</button></header><div class=\"share-tabs\"><button class=\"active\">Players</button><button>Fixtures</button><button>Predictions</button></div><div class=\"share-options\"><button><span class=\"initials\">FF</span><div><b>Freddie Foster</b><small>Pipeline · Eastbrook Athletic</small></div></button><button><span class=\"initials\">RH</span><div><b>Reuben Hughes</b><small>Pipeline · Northgate United</small></div></button><button><span class=\"initials\">CH</span><div><b>Carter Hill</b><small>Pipeline · Northgate United</small></div></button></div><p>Only players in your pipeline connected to Marcus Reed are shown.</p></div><footer class=\"composer\"><button class=\"attach-btn open-share\">＋</button><textarea placeholder=\"Write a message…\"></textarea><button class=\"btn primary send-btn\">Send</button></footer></section>\n<aside class=\"chat-context\"><h3>Conversation context</h3><div class=\"context-card\"><small>Selected player</small><div class=\"player-cell\"><span class=\"initials\">FF</span><div><b>Freddie Foster</b><span>Development target</span></div></div><button class=\"btn small\">Open profile</button></div><div class=\"context-card\"><small>Next fixture</small><b>24 Jul · 19:00</b><span>Eastbrook vs Riverside</span></div><div class=\"context-card\"><small>Safeguarding</small><span>Messages remain adult-mediated and tied to legitimate player interest.</span></div></aside>\n</section>","notifications":"<section class=\"hero\"><div><small>Scout activity</small><h2>Only the updates that need your attention.</h2><p>Meaningful player, fixture, message and decision changes are prioritised over system noise.</p></div><div class=\"hero-actions\"><button class=\"btn\">Mark all read</button></div></section><section class=\"notification-toolbar\"><div class=\"segments\"><button class=\"active\">All</button><button>Messages</button><button>Scout interest</button><button>Match Facts</button><button>Recruitment</button><button>Fixtures</button></div><div><button class=\"btn primary small\">Check changes</button><button class=\"btn small\">Manage alerts</button></div></section>\n<section class=\"notification-list\"><article class=\"notification unread\"><span class=\"initials\">PI</span><div><small>Player intelligence</small><b>Freddie Foster’s evidence confidence increased to High.</b><span>5 min</span></div><button class=\"btn small primary\">Review</button></article><article class=\"notification unread\"><span class=\"initials\">FX</span><div><small>Fixture update</small><b>Eastbrook Athletic added a fixture for Freddie Foster.</b><span>1 hr</span></div><button class=\"btn small\">Plan visit</button></article><article class=\"notification unread\"><span class=\"initials\">CH</span><div><small>Coach message</small><b>Marcus Reed replied about Reuben Hughes.</b><span>3 hrs</span></div><button class=\"btn small\">Open chat</button></article><article class=\"notification\"><span class=\"initials\">DS</span><div><small>Decision due</small><b>Kai Jones has no recorded decision after comparison.</b><span>Yesterday</span></div><button class=\"btn small\">Record</button></article><article class=\"notification\"><span class=\"initials\">SR</span><div><small>Saved search</small><b>Three new U16 midfielders match your London search.</b><span>Yesterday</span></div><button class=\"btn small\">View players</button></article></section>","settings":"<section class=\"hero\"><div><small>Scout account</small><h2>Settings and usage controls.</h2><p>Manage the account, team permissions, notifications, security, plan and recruitment setup without a cluttered side menu.</p></div><div class=\"hero-actions\"><button class=\"btn primary\">Save changes</button></div></section><section class=\"metric-grid compact\"><article class=\"metric accent\"><small>Prediction usage</small><strong>32 / 60</strong><span>28 remaining</span></article><article class=\"metric\"><small>Export usage</small><strong>5 / 20</strong><span>15 remaining</span></article><article class=\"metric\"><small>Pipeline usage</small><strong>7 / 30</strong><span>23 places remaining</span></article><article class=\"metric\"><small>Reset date</small><strong>12 Jan 2027</strong><span>Managed by access date</span></article></section>\n<nav class=\"settings-tabs\"><button class=\"active\">Account</button><button>Appearance</button><button>Notifications</button><button>Team</button><button>Security</button><button>Plan</button></nav>\n<section class=\"settings-layout\">\n<div>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Account details</h3></div></header><div class=\"panel-body\"><div class=\"settings-row\"><div><b>Name</b><span>Noah Patel</span></div><button class=\"btn small\">Edit</button></div><div class=\"settings-row\"><div><b>Scout ID</b><span>ESC001</span></div><button class=\"btn small\">Copy</button></div><div class=\"settings-row\"><div><b>Status</b><span>Reviewed scout</span></div><span class=\"pill green\">Verified</span></div></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Scout setup</h3></div></header><div class=\"panel-body\"><p class=\"body-copy\">Configure team weaknesses, role expectations, long-term goals and search preferences.</p><button class=\"btn primary small\">Open Scout Setup</button></div></section>\n</div>\n<div>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Team permissions</h3></div></header><div class=\"panel-body\"><ul class=\"clean-list\"><li>View remaining limits by feature</li><li>Track usage by scout and team</li><li>Request a limit increase</li><li>Keep an audit record of reports, predictions and decisions</li></ul></div></section>\n<section class=\"panel\"><header class=\"panel-head\"><div><h3>Usage controls</h3></div></header><div class=\"panel-body\"><div class=\"callout\"><b>Current plan: Elite</b><span>High usage triggers a warning before a limit is reached. Existing reports and decisions remain available after a cap.</span></div><button class=\"btn small\">Request limit review</button></div></section>\n</div>\n</section>"};
+var fallbackPlayers=[{"id":"demo-player-1","first_name":"Freddie","last_name":"Foster","specific_position":"CM","age_group":"U13","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":68,"compatibilityScore":70,"evidence_score":55,"transfer_value":90000,"appearances":6,"goals":0,"assists":0,"clean_sheets":0,"scout_interest_count":8,"pace":65,"agility":64,"strength":61,"stamina":66,"shooting":58,"passing":62,"dribbling":60,"defending":52,"composure":60,"crossing":58,"vision":60,"positioning":61,"heading":55,"tackling":52,"jumping":57,"pipeline_stage":"watching"},{"id":"demo-player-2","first_name":"Micah","last_name":"Powell","specific_position":"RW","age_group":"U14","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":75,"compatibilityScore":75,"evidence_score":64,"transfer_value":107000,"appearances":7,"goals":3,"assists":5,"clean_sheets":0,"scout_interest_count":15,"pace":70,"agility":71,"strength":64,"stamina":70,"shooting":66,"passing":68,"dribbling":69,"defending":57,"composure":64,"crossing":64,"vision":67,"positioning":66,"heading":59,"tackling":58,"jumping":62,"pipeline_stage":"interested"},{"id":"demo-player-3","first_name":"Max","last_name":"Evans","specific_position":"LW","age_group":"U15","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":82,"compatibilityScore":80,"evidence_score":73,"transfer_value":124000,"appearances":8,"goals":6,"assists":10,"clean_sheets":0,"scout_interest_count":22,"pace":75,"agility":78,"strength":67,"stamina":74,"shooting":74,"passing":74,"dribbling":78,"defending":62,"composure":68,"crossing":70,"vision":74,"positioning":71,"heading":63,"tackling":64,"jumping":67,"pipeline_stage":"shortlisted"},{"id":"demo-player-4","first_name":"Leo","last_name":"Stone","specific_position":"LW","age_group":"U16","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":69,"compatibilityScore":71,"evidence_score":82,"transfer_value":141000,"appearances":9,"goals":9,"assists":1,"clean_sheets":0,"scout_interest_count":29,"pace":80,"agility":85,"strength":70,"stamina":78,"shooting":82,"passing":80,"dribbling":87,"defending":67,"composure":72,"crossing":76,"vision":81,"positioning":76,"heading":67,"tackling":70,"jumping":72,"pipeline_stage":"new"},{"id":"demo-player-5","first_name":"Louis","last_name":"Murphy","specific_position":"RW","age_group":"U17","team_name":"Northgate United (Demo)","region":"London","overall_rating":76,"compatibilityScore":76,"evidence_score":91,"transfer_value":158000,"appearances":10,"goals":12,"assists":6,"clean_sheets":0,"scout_interest_count":36,"pace":85,"agility":92,"strength":73,"stamina":82,"shooting":90,"passing":86,"dribbling":62,"defending":72,"composure":76,"crossing":82,"vision":88,"positioning":81,"heading":71,"tackling":76,"jumping":77,"pipeline_stage":"watching"},{"id":"demo-player-6","first_name":"Yusuf","last_name":"White","specific_position":"LW","age_group":"U18","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":83,"compatibilityScore":81,"evidence_score":60,"transfer_value":175000,"appearances":11,"goals":15,"assists":11,"clean_sheets":0,"scout_interest_count":43,"pace":90,"agility":68,"strength":76,"stamina":86,"shooting":63,"passing":92,"dribbling":71,"defending":77,"composure":80,"crossing":88,"vision":63,"positioning":86,"heading":75,"tackling":82,"jumping":82,"pipeline_stage":"interested"},{"id":"demo-player-7","first_name":"Luca","last_name":"Phillips","specific_position":"CM","age_group":"U13","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":70,"compatibilityScore":72,"evidence_score":69,"transfer_value":192000,"appearances":12,"goals":0,"assists":2,"clean_sheets":0,"scout_interest_count":50,"pace":65,"agility":75,"strength":79,"stamina":90,"shooting":71,"passing":67,"dribbling":80,"defending":82,"composure":84,"crossing":59,"vision":70,"positioning":91,"heading":79,"tackling":88,"jumping":87,"pipeline_stage":"shortlisted"},{"id":"demo-player-8","first_name":"Callum","last_name":"Kelly","specific_position":"LW","age_group":"U14","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":77,"compatibilityScore":77,"evidence_score":78,"transfer_value":209000,"appearances":13,"goals":3,"assists":7,"clean_sheets":0,"scout_interest_count":57,"pace":70,"agility":82,"strength":82,"stamina":66,"shooting":79,"passing":73,"dribbling":89,"defending":87,"composure":88,"crossing":65,"vision":77,"positioning":65,"heading":83,"tackling":55,"jumping":58,"pipeline_stage":"new"},{"id":"demo-player-9","first_name":"Jordan","last_name":"Blake","specific_position":"CB","age_group":"U15","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":84,"compatibilityScore":82,"evidence_score":87,"transfer_value":226000,"appearances":14,"goals":6,"assists":12,"clean_sheets":0,"scout_interest_count":64,"pace":75,"agility":89,"strength":85,"stamina":70,"shooting":87,"passing":79,"dribbling":64,"defending":52,"composure":92,"crossing":71,"vision":84,"positioning":70,"heading":87,"tackling":61,"jumping":63,"pipeline_stage":"watching"},{"id":"demo-player-10","first_name":"Finley","last_name":"Shaw","specific_position":"CAM","age_group":"U16","team_name":"Northgate United (Demo)","region":"London","overall_rating":71,"compatibilityScore":73,"evidence_score":56,"transfer_value":243000,"appearances":15,"goals":9,"assists":3,"clean_sheets":0,"scout_interest_count":71,"pace":80,"agility":65,"strength":88,"stamina":74,"shooting":60,"passing":85,"dribbling":73,"defending":57,"composure":63,"crossing":77,"vision":91,"positioning":75,"heading":56,"tackling":67,"jumping":68,"pipeline_stage":"interested"},{"id":"demo-player-11","first_name":"Noah","last_name":"Reed","specific_position":"CAM","age_group":"U17","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":78,"compatibilityScore":78,"evidence_score":65,"transfer_value":260000,"appearances":16,"goals":12,"assists":8,"clean_sheets":0,"scout_interest_count":78,"pace":85,"agility":72,"strength":91,"stamina":78,"shooting":68,"passing":91,"dribbling":82,"defending":62,"composure":67,"crossing":83,"vision":66,"positioning":80,"heading":60,"tackling":73,"jumping":73,"pipeline_stage":"shortlisted"},{"id":"demo-player-12","first_name":"Ellis","last_name":"Edwards","specific_position":"LW","age_group":"U18","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":85,"compatibilityScore":83,"evidence_score":74,"transfer_value":277000,"appearances":17,"goals":15,"assists":13,"clean_sheets":0,"scout_interest_count":85,"pace":90,"agility":79,"strength":62,"stamina":82,"shooting":76,"passing":66,"dribbling":91,"defending":67,"composure":71,"crossing":89,"vision":73,"positioning":85,"heading":64,"tackling":79,"jumping":78,"pipeline_stage":"new"},{"id":"demo-player-13","first_name":"Toby","last_name":"Bailey","specific_position":"CB","age_group":"U13","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":72,"compatibilityScore":74,"evidence_score":83,"transfer_value":294000,"appearances":18,"goals":0,"assists":4,"clean_sheets":0,"scout_interest_count":92,"pace":65,"agility":86,"strength":65,"stamina":86,"shooting":84,"passing":72,"dribbling":66,"defending":72,"composure":75,"crossing":60,"vision":80,"positioning":90,"heading":68,"tackling":85,"jumping":83,"pipeline_stage":"watching"},{"id":"demo-player-14","first_name":"Ryan","last_name":"Patel","specific_position":"RB","age_group":"U14","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":79,"compatibilityScore":79,"evidence_score":92,"transfer_value":311000,"appearances":6,"goals":3,"assists":9,"clean_sheets":0,"scout_interest_count":99,"pace":70,"agility":93,"strength":68,"stamina":90,"shooting":92,"passing":78,"dribbling":75,"defending":77,"composure":79,"crossing":66,"vision":87,"positioning":64,"heading":72,"tackling":52,"jumping":88,"pipeline_stage":"interested"},{"id":"demo-player-15","first_name":"Richdhin","last_name":"Inaba","specific_position":"CAM","age_group":"U15","team_name":"Northgate United (Demo)","region":"London","overall_rating":86,"compatibilityScore":70,"evidence_score":61,"transfer_value":328000,"appearances":7,"goals":6,"assists":0,"clean_sheets":0,"scout_interest_count":14,"pace":75,"agility":69,"strength":71,"stamina":66,"shooting":65,"passing":84,"dribbling":84,"defending":82,"composure":83,"crossing":72,"vision":62,"positioning":69,"heading":76,"tackling":58,"jumping":59,"pipeline_stage":"shortlisted"},{"id":"demo-player-16","first_name":"Reuben","last_name":"Hughes","specific_position":"ST","age_group":"U16","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":73,"compatibilityScore":75,"evidence_score":70,"transfer_value":345000,"appearances":8,"goals":9,"assists":5,"clean_sheets":0,"scout_interest_count":21,"pace":80,"agility":76,"strength":74,"stamina":70,"shooting":73,"passing":90,"dribbling":93,"defending":87,"composure":87,"crossing":78,"vision":69,"positioning":74,"heading":80,"tackling":64,"jumping":64,"pipeline_stage":"new"},{"id":"demo-player-17","first_name":"Kai","last_name":"Jones","specific_position":"CM","age_group":"U17","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":80,"compatibilityScore":80,"evidence_score":79,"transfer_value":362000,"appearances":9,"goals":12,"assists":10,"clean_sheets":0,"scout_interest_count":28,"pace":85,"agility":83,"strength":77,"stamina":74,"shooting":81,"passing":65,"dribbling":68,"defending":52,"composure":91,"crossing":84,"vision":76,"positioning":79,"heading":84,"tackling":70,"jumping":69,"pipeline_stage":"watching"},{"id":"demo-player-18","first_name":"Carter","last_name":"Hill","specific_position":"ST","age_group":"U18","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":87,"compatibilityScore":71,"evidence_score":88,"transfer_value":379000,"appearances":10,"goals":15,"assists":1,"clean_sheets":0,"scout_interest_count":35,"pace":90,"agility":90,"strength":80,"stamina":78,"shooting":89,"passing":71,"dribbling":77,"defending":57,"composure":62,"crossing":90,"vision":83,"positioning":84,"heading":88,"tackling":76,"jumping":74,"pipeline_stage":"interested"},{"id":"demo-player-19","first_name":"Jayden","last_name":"Wood","specific_position":"GK","age_group":"U13","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":74,"compatibilityScore":76,"evidence_score":57,"transfer_value":396000,"appearances":11,"goals":0,"assists":0,"clean_sheets":6,"scout_interest_count":42,"pace":65,"agility":66,"strength":83,"stamina":82,"shooting":62,"passing":77,"dribbling":86,"defending":62,"composure":66,"crossing":61,"vision":90,"positioning":89,"heading":57,"tackling":82,"jumping":79,"pipeline_stage":"shortlisted"},{"id":"demo-player-20","first_name":"Sonny","last_name":"Young","specific_position":"RW","age_group":"U14","team_name":"Northgate United (Demo)","region":"London","overall_rating":81,"compatibilityScore":81,"evidence_score":66,"transfer_value":413000,"appearances":12,"goals":3,"assists":11,"clean_sheets":0,"scout_interest_count":49,"pace":70,"agility":73,"strength":86,"stamina":86,"shooting":70,"passing":83,"dribbling":61,"defending":67,"composure":70,"crossing":67,"vision":65,"positioning":63,"heading":61,"tackling":88,"jumping":84,"pipeline_stage":"new"},{"id":"demo-player-21","first_name":"Aiden","last_name":"Morgan","specific_position":"CDM","age_group":"U15","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":68,"compatibilityScore":72,"evidence_score":75,"transfer_value":430000,"appearances":13,"goals":6,"assists":2,"clean_sheets":0,"scout_interest_count":56,"pace":75,"agility":80,"strength":89,"stamina":90,"shooting":78,"passing":89,"dribbling":70,"defending":72,"composure":74,"crossing":73,"vision":72,"positioning":68,"heading":65,"tackling":55,"jumping":89,"pipeline_stage":"watching"},{"id":"demo-player-22","first_name":"Owen","last_name":"Cole","specific_position":"RB","age_group":"U16","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":75,"compatibilityScore":77,"evidence_score":84,"transfer_value":447000,"appearances":14,"goals":9,"assists":7,"clean_sheets":0,"scout_interest_count":63,"pace":80,"agility":87,"strength":92,"stamina":66,"shooting":86,"passing":64,"dribbling":79,"defending":77,"composure":78,"crossing":79,"vision":79,"positioning":73,"heading":69,"tackling":61,"jumping":60,"pipeline_stage":"interested"},{"id":"demo-player-23","first_name":"Jamie","last_name":"Baker","specific_position":"GK","age_group":"U17","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":82,"compatibilityScore":82,"evidence_score":93,"transfer_value":464000,"appearances":15,"goals":0,"assists":0,"clean_sheets":10,"scout_interest_count":70,"pace":85,"agility":94,"strength":63,"stamina":70,"shooting":59,"passing":70,"dribbling":88,"defending":82,"composure":82,"crossing":85,"vision":86,"positioning":78,"heading":73,"tackling":67,"jumping":65,"pipeline_stage":"shortlisted"},{"id":"demo-player-24","first_name":"Samuel","last_name":"Wright","specific_position":"CB","age_group":"U18","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":69,"compatibilityScore":73,"evidence_score":62,"transfer_value":481000,"appearances":16,"goals":15,"assists":3,"clean_sheets":0,"scout_interest_count":77,"pace":90,"agility":70,"strength":66,"stamina":74,"shooting":67,"passing":76,"dribbling":63,"defending":87,"composure":86,"crossing":91,"vision":61,"positioning":83,"heading":77,"tackling":73,"jumping":70,"pipeline_stage":"new"},{"id":"demo-player-25","first_name":"Daniel","last_name":"Green","specific_position":"CM","age_group":"U13","team_name":"Northgate United (Demo)","region":"London","overall_rating":76,"compatibilityScore":78,"evidence_score":71,"transfer_value":498000,"appearances":17,"goals":0,"assists":8,"clean_sheets":0,"scout_interest_count":84,"pace":65,"agility":77,"strength":69,"stamina":78,"shooting":75,"passing":82,"dribbling":72,"defending":52,"composure":90,"crossing":62,"vision":68,"positioning":88,"heading":81,"tackling":79,"jumping":75,"pipeline_stage":"watching"},{"id":"demo-player-26","first_name":"Theo","last_name":"King","specific_position":"ST","age_group":"U14","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":83,"compatibilityScore":83,"evidence_score":80,"transfer_value":515000,"appearances":18,"goals":3,"assists":13,"clean_sheets":0,"scout_interest_count":91,"pace":70,"agility":84,"strength":72,"stamina":82,"shooting":83,"passing":88,"dribbling":81,"defending":57,"composure":61,"crossing":68,"vision":75,"positioning":62,"heading":85,"tackling":85,"jumping":80,"pipeline_stage":"interested"},{"id":"demo-player-27","first_name":"Isaac","last_name":"Turner","specific_position":"CDM","age_group":"U15","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":70,"compatibilityScore":74,"evidence_score":89,"transfer_value":532000,"appearances":6,"goals":6,"assists":4,"clean_sheets":0,"scout_interest_count":98,"pace":75,"agility":91,"strength":75,"stamina":86,"shooting":91,"passing":63,"dribbling":90,"defending":62,"composure":65,"crossing":74,"vision":82,"positioning":67,"heading":89,"tackling":52,"jumping":85,"pipeline_stage":"shortlisted"},{"id":"demo-player-28","first_name":"Mason","last_name":"Walker","specific_position":"RW","age_group":"U16","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":77,"compatibilityScore":79,"evidence_score":58,"transfer_value":549000,"appearances":7,"goals":9,"assists":9,"clean_sheets":0,"scout_interest_count":13,"pace":80,"agility":67,"strength":78,"stamina":90,"shooting":64,"passing":69,"dribbling":65,"defending":67,"composure":69,"crossing":80,"vision":89,"positioning":72,"heading":58,"tackling":58,"jumping":90,"pipeline_stage":"new"},{"id":"demo-player-29","first_name":"Ethan","last_name":"Hall","specific_position":"CB","age_group":"U17","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":84,"compatibilityScore":70,"evidence_score":67,"transfer_value":566000,"appearances":8,"goals":12,"assists":0,"clean_sheets":0,"scout_interest_count":20,"pace":85,"agility":74,"strength":81,"stamina":66,"shooting":72,"passing":75,"dribbling":74,"defending":72,"composure":73,"crossing":86,"vision":64,"positioning":77,"heading":62,"tackling":64,"jumping":61,"pipeline_stage":"watching"},{"id":"demo-player-30","first_name":"Alfie","last_name":"Allen","specific_position":"LW","age_group":"U18","team_name":"Northgate United (Demo)","region":"London","overall_rating":71,"compatibilityScore":75,"evidence_score":76,"transfer_value":583000,"appearances":9,"goals":15,"assists":5,"clean_sheets":0,"scout_interest_count":27,"pace":90,"agility":81,"strength":84,"stamina":70,"shooting":80,"passing":81,"dribbling":83,"defending":77,"composure":77,"crossing":92,"vision":71,"positioning":82,"heading":66,"tackling":70,"jumping":66,"pipeline_stage":"interested"},{"id":"demo-player-31","first_name":"Logan","last_name":"Scott","specific_position":"CM","age_group":"U13","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":78,"compatibilityScore":80,"evidence_score":85,"transfer_value":600000,"appearances":10,"goals":0,"assists":10,"clean_sheets":0,"scout_interest_count":34,"pace":65,"agility":88,"strength":87,"stamina":74,"shooting":88,"passing":87,"dribbling":92,"defending":82,"composure":81,"crossing":63,"vision":78,"positioning":87,"heading":70,"tackling":76,"jumping":71,"pipeline_stage":"shortlisted"},{"id":"demo-player-32","first_name":"Archie","last_name":"Adams","specific_position":"RW","age_group":"U14","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":85,"compatibilityScore":71,"evidence_score":94,"transfer_value":617000,"appearances":11,"goals":3,"assists":1,"clean_sheets":0,"scout_interest_count":41,"pace":70,"agility":64,"strength":90,"stamina":78,"shooting":61,"passing":62,"dribbling":67,"defending":87,"composure":85,"crossing":69,"vision":85,"positioning":61,"heading":74,"tackling":82,"jumping":76,"pipeline_stage":"new"},{"id":"demo-player-33","first_name":"Adam","last_name":"Campbell","specific_position":"LW","age_group":"U15","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":72,"compatibilityScore":76,"evidence_score":63,"transfer_value":634000,"appearances":12,"goals":6,"assists":6,"clean_sheets":0,"scout_interest_count":48,"pace":75,"agility":71,"strength":61,"stamina":82,"shooting":69,"passing":68,"dribbling":76,"defending":52,"composure":89,"crossing":75,"vision":60,"positioning":66,"heading":78,"tackling":88,"jumping":81,"pipeline_stage":"watching"},{"id":"demo-player-34","first_name":"Kian","last_name":"Mitchell","specific_position":"LW","age_group":"U16","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":79,"compatibilityScore":81,"evidence_score":72,"transfer_value":651000,"appearances":13,"goals":9,"assists":11,"clean_sheets":0,"scout_interest_count":55,"pace":80,"agility":78,"strength":64,"stamina":86,"shooting":77,"passing":74,"dribbling":85,"defending":57,"composure":60,"crossing":81,"vision":67,"positioning":71,"heading":82,"tackling":55,"jumping":86,"pipeline_stage":"interested"},{"id":"demo-player-35","first_name":"Harvey","last_name":"Roberts","specific_position":"RW","age_group":"U17","team_name":"Northgate United (Demo)","region":"London","overall_rating":86,"compatibilityScore":72,"evidence_score":81,"transfer_value":668000,"appearances":14,"goals":12,"assists":2,"clean_sheets":0,"scout_interest_count":62,"pace":85,"agility":85,"strength":67,"stamina":90,"shooting":85,"passing":80,"dribbling":60,"defending":62,"composure":64,"crossing":87,"vision":74,"positioning":76,"heading":86,"tackling":61,"jumping":57,"pipeline_stage":"shortlisted"},{"id":"demo-player-36","first_name":"Dylan","last_name":"Carter","specific_position":"LW","age_group":"U18","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":73,"compatibilityScore":77,"evidence_score":90,"transfer_value":685000,"appearances":15,"goals":15,"assists":7,"clean_sheets":0,"scout_interest_count":69,"pace":90,"agility":92,"strength":70,"stamina":66,"shooting":58,"passing":86,"dribbling":69,"defending":67,"composure":68,"crossing":58,"vision":81,"positioning":81,"heading":55,"tackling":67,"jumping":62,"pipeline_stage":"new"},{"id":"demo-player-37","first_name":"Riley","last_name":"Cooper","specific_position":"CM","age_group":"U13","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":80,"compatibilityScore":82,"evidence_score":59,"transfer_value":702000,"appearances":16,"goals":0,"assists":12,"clean_sheets":0,"scout_interest_count":76,"pace":65,"agility":68,"strength":73,"stamina":70,"shooting":66,"passing":92,"dribbling":78,"defending":72,"composure":72,"crossing":64,"vision":88,"positioning":86,"heading":59,"tackling":73,"jumping":67,"pipeline_stage":"watching"},{"id":"demo-player-38","first_name":"Nathan","last_name":"Richardson","specific_position":"LW","age_group":"U14","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":87,"compatibilityScore":73,"evidence_score":68,"transfer_value":719000,"appearances":17,"goals":3,"assists":3,"clean_sheets":0,"scout_interest_count":83,"pace":70,"agility":75,"strength":76,"stamina":74,"shooting":74,"passing":67,"dribbling":87,"defending":77,"composure":76,"crossing":70,"vision":63,"positioning":91,"heading":63,"tackling":79,"jumping":72,"pipeline_stage":"interested"},{"id":"demo-player-39","first_name":"Amari","last_name":"Cox","specific_position":"CB","age_group":"U15","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":74,"compatibilityScore":78,"evidence_score":77,"transfer_value":736000,"appearances":18,"goals":6,"assists":8,"clean_sheets":0,"scout_interest_count":90,"pace":75,"agility":82,"strength":79,"stamina":78,"shooting":82,"passing":73,"dribbling":62,"defending":82,"composure":80,"crossing":76,"vision":70,"positioning":65,"heading":67,"tackling":85,"jumping":77,"pipeline_stage":"shortlisted"},{"id":"demo-player-40","first_name":"Jude","last_name":"Ward","specific_position":"CAM","age_group":"U16","team_name":"Northgate United (Demo)","region":"London","overall_rating":81,"compatibilityScore":83,"evidence_score":86,"transfer_value":753000,"appearances":6,"goals":9,"assists":13,"clean_sheets":0,"scout_interest_count":97,"pace":80,"agility":89,"strength":82,"stamina":82,"shooting":90,"passing":79,"dribbling":71,"defending":87,"composure":84,"crossing":82,"vision":77,"positioning":70,"heading":71,"tackling":52,"jumping":82,"pipeline_stage":"new"},{"id":"demo-player-41","first_name":"Zane","last_name":"Brooks","specific_position":"CAM","age_group":"U17","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":68,"compatibilityScore":74,"evidence_score":55,"transfer_value":770000,"appearances":7,"goals":12,"assists":4,"clean_sheets":0,"scout_interest_count":12,"pace":85,"agility":65,"strength":85,"stamina":86,"shooting":63,"passing":85,"dribbling":80,"defending":52,"composure":88,"crossing":88,"vision":84,"positioning":75,"heading":75,"tackling":58,"jumping":87,"pipeline_stage":"watching"},{"id":"demo-player-42","first_name":"Tyler","last_name":"Bell","specific_position":"LW","age_group":"U18","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":75,"compatibilityScore":79,"evidence_score":64,"transfer_value":787000,"appearances":8,"goals":15,"assists":9,"clean_sheets":0,"scout_interest_count":19,"pace":90,"agility":72,"strength":88,"stamina":90,"shooting":71,"passing":91,"dribbling":89,"defending":57,"composure":92,"crossing":59,"vision":91,"positioning":80,"heading":79,"tackling":64,"jumping":58,"pipeline_stage":"interested"},{"id":"demo-player-43","first_name":"Joel","last_name":"Parker","specific_position":"CB","age_group":"U13","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":82,"compatibilityScore":70,"evidence_score":73,"transfer_value":804000,"appearances":9,"goals":0,"assists":0,"clean_sheets":0,"scout_interest_count":26,"pace":65,"agility":79,"strength":91,"stamina":66,"shooting":79,"passing":66,"dribbling":64,"defending":62,"composure":63,"crossing":65,"vision":66,"positioning":85,"heading":83,"tackling":70,"jumping":63,"pipeline_stage":"shortlisted"},{"id":"demo-player-44","first_name":"Malik","last_name":"Price","specific_position":"RB","age_group":"U14","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":69,"compatibilityScore":75,"evidence_score":82,"transfer_value":821000,"appearances":10,"goals":3,"assists":5,"clean_sheets":0,"scout_interest_count":33,"pace":70,"agility":86,"strength":62,"stamina":70,"shooting":87,"passing":72,"dribbling":73,"defending":67,"composure":67,"crossing":71,"vision":73,"positioning":90,"heading":87,"tackling":76,"jumping":68,"pipeline_stage":"new"},{"id":"demo-player-45","first_name":"Ben","last_name":"Bennett","specific_position":"CAM","age_group":"U15","team_name":"Northgate United (Demo)","region":"London","overall_rating":76,"compatibilityScore":80,"evidence_score":91,"transfer_value":838000,"appearances":11,"goals":6,"assists":10,"clean_sheets":0,"scout_interest_count":40,"pace":75,"agility":93,"strength":65,"stamina":74,"shooting":60,"passing":78,"dribbling":82,"defending":72,"composure":71,"crossing":77,"vision":80,"positioning":64,"heading":56,"tackling":82,"jumping":73,"pipeline_stage":"watching"},{"id":"demo-player-46","first_name":"Luke","last_name":"Barnes","specific_position":"ST","age_group":"U16","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":83,"compatibilityScore":71,"evidence_score":60,"transfer_value":855000,"appearances":12,"goals":9,"assists":1,"clean_sheets":0,"scout_interest_count":47,"pace":80,"agility":69,"strength":68,"stamina":78,"shooting":68,"passing":84,"dribbling":91,"defending":77,"composure":75,"crossing":83,"vision":87,"positioning":69,"heading":60,"tackling":88,"jumping":78,"pipeline_stage":"interested"},{"id":"demo-player-47","first_name":"Alex","last_name":"Ross","specific_position":"CM","age_group":"U17","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":70,"compatibilityScore":76,"evidence_score":69,"transfer_value":872000,"appearances":13,"goals":12,"assists":6,"clean_sheets":0,"scout_interest_count":54,"pace":85,"agility":76,"strength":71,"stamina":82,"shooting":76,"passing":90,"dribbling":66,"defending":82,"composure":79,"crossing":89,"vision":62,"positioning":74,"heading":64,"tackling":55,"jumping":83,"pipeline_stage":"shortlisted"},{"id":"demo-player-48","first_name":"Charlie","last_name":"Henderson","specific_position":"ST","age_group":"U18","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":77,"compatibilityScore":81,"evidence_score":78,"transfer_value":889000,"appearances":14,"goals":15,"assists":11,"clean_sheets":0,"scout_interest_count":61,"pace":90,"agility":83,"strength":74,"stamina":86,"shooting":84,"passing":65,"dribbling":75,"defending":87,"composure":83,"crossing":60,"vision":69,"positioning":79,"heading":68,"tackling":61,"jumping":88,"pipeline_stage":"new"},{"id":"demo-player-49","first_name":"Tommy","last_name":"Coleman","specific_position":"GK","age_group":"U13","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":84,"compatibilityScore":72,"evidence_score":87,"transfer_value":906000,"appearances":15,"goals":0,"assists":0,"clean_sheets":4,"scout_interest_count":68,"pace":65,"agility":90,"strength":77,"stamina":90,"shooting":92,"passing":71,"dribbling":84,"defending":52,"composure":87,"crossing":66,"vision":76,"positioning":84,"heading":72,"tackling":67,"jumping":59,"pipeline_stage":"watching"},{"id":"demo-player-50","first_name":"Aaron","last_name":"Jenkins","specific_position":"RW","age_group":"U14","team_name":"Northgate United (Demo)","region":"London","overall_rating":71,"compatibilityScore":77,"evidence_score":56,"transfer_value":923000,"appearances":16,"goals":3,"assists":7,"clean_sheets":0,"scout_interest_count":75,"pace":70,"agility":66,"strength":80,"stamina":66,"shooting":65,"passing":77,"dribbling":93,"defending":57,"composure":91,"crossing":72,"vision":83,"positioning":89,"heading":76,"tackling":73,"jumping":64,"pipeline_stage":"interested"},{"id":"demo-player-51","first_name":"David","last_name":"Perry","specific_position":"CDM","age_group":"U15","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":78,"compatibilityScore":82,"evidence_score":65,"transfer_value":940000,"appearances":17,"goals":6,"assists":12,"clean_sheets":0,"scout_interest_count":82,"pace":75,"agility":73,"strength":83,"stamina":70,"shooting":73,"passing":83,"dribbling":68,"defending":62,"composure":62,"crossing":78,"vision":90,"positioning":63,"heading":80,"tackling":79,"jumping":69,"pipeline_stage":"shortlisted"},{"id":"demo-player-52","first_name":"Josh","last_name":"Long","specific_position":"RB","age_group":"U16","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":85,"compatibilityScore":73,"evidence_score":74,"transfer_value":957000,"appearances":18,"goals":9,"assists":3,"clean_sheets":0,"scout_interest_count":89,"pace":80,"agility":80,"strength":86,"stamina":74,"shooting":81,"passing":89,"dribbling":77,"defending":67,"composure":66,"crossing":84,"vision":65,"positioning":68,"heading":84,"tackling":85,"jumping":74,"pipeline_stage":"new"},{"id":"demo-player-53","first_name":"Leon","last_name":"Patterson","specific_position":"GK","age_group":"U17","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":72,"compatibilityScore":78,"evidence_score":83,"transfer_value":974000,"appearances":6,"goals":0,"assists":0,"clean_sheets":8,"scout_interest_count":96,"pace":85,"agility":87,"strength":89,"stamina":78,"shooting":89,"passing":64,"dribbling":86,"defending":72,"composure":70,"crossing":90,"vision":72,"positioning":73,"heading":88,"tackling":52,"jumping":79,"pipeline_stage":"watching"},{"id":"demo-player-54","first_name":"George","last_name":"Clarke","specific_position":"CB","age_group":"U18","team_name":"Harbour City Academy (Demo)","region":"Liverpool","overall_rating":79,"compatibilityScore":83,"evidence_score":92,"transfer_value":991000,"appearances":7,"goals":15,"assists":13,"clean_sheets":0,"scout_interest_count":11,"pace":90,"agility":94,"strength":92,"stamina":82,"shooting":62,"passing":70,"dribbling":61,"defending":77,"composure":74,"crossing":61,"vision":79,"positioning":78,"heading":57,"tackling":58,"jumping":84,"pipeline_stage":"interested"},{"id":"demo-player-55","first_name":"Seb","last_name":"Lewis","specific_position":"CM","age_group":"U13","team_name":"Northgate United (Demo)","region":"London","overall_rating":86,"compatibilityScore":74,"evidence_score":61,"transfer_value":1008000,"appearances":8,"goals":0,"assists":4,"clean_sheets":0,"scout_interest_count":18,"pace":65,"agility":70,"strength":63,"stamina":86,"shooting":70,"passing":76,"dribbling":70,"defending":82,"composure":78,"crossing":67,"vision":86,"positioning":83,"heading":61,"tackling":64,"jumping":89,"pipeline_stage":"shortlisted"},{"id":"demo-player-56","first_name":"Milo","last_name":"Morris","specific_position":"ST","age_group":"U14","team_name":"Eastbrook Athletic (Demo)","region":"Birmingham","overall_rating":73,"compatibilityScore":79,"evidence_score":70,"transfer_value":1025000,"appearances":9,"goals":3,"assists":9,"clean_sheets":0,"scout_interest_count":25,"pace":70,"agility":77,"strength":66,"stamina":90,"shooting":78,"passing":82,"dribbling":79,"defending":87,"composure":82,"crossing":73,"vision":61,"positioning":88,"heading":65,"tackling":70,"jumping":60,"pipeline_stage":"new"},{"id":"demo-player-57","first_name":"Caleb","last_name":"Khan","specific_position":"CDM","age_group":"U15","team_name":"Meadow Park Rovers (Demo)","region":"Manchester","overall_rating":80,"compatibilityScore":70,"evidence_score":79,"transfer_value":1042000,"appearances":10,"goals":6,"assists":0,"clean_sheets":0,"scout_interest_count":32,"pace":75,"agility":84,"strength":69,"stamina":66,"shooting":86,"passing":88,"dribbling":88,"defending":52,"composure":86,"crossing":79,"vision":68,"positioning":62,"heading":69,"tackling":76,"jumping":65,"pipeline_stage":"watching"},{"id":"demo-player-58","first_name":"Ibrahim","last_name":"Mensah","specific_position":"RW","age_group":"U16","team_name":"Southvale Juniors (Demo)","region":"Bristol","overall_rating":87,"compatibilityScore":75,"evidence_score":88,"transfer_value":1059000,"appearances":11,"goals":9,"assists":5,"clean_sheets":0,"scout_interest_count":39,"pace":80,"agility":91,"strength":72,"stamina":70,"shooting":59,"passing":63,"dribbling":63,"defending":57,"composure":90,"crossing":85,"vision":75,"positioning":67,"heading":73,"tackling":82,"jumping":70,"pipeline_stage":"interested"}];
 
-  var API_FALLBACK = 'https://scoutlink-api.vercel.app';
-  var ROOT_ID = 'scoutIntelligenceV4';
-  var state = {
-    route:'',
-    players:[],
-    playerById:{},
-    overview:null,
-    activePrediction:null,
-    activeComparison:null,
-    activeProfile:null,
-    savedSearches:[],
-    reports:[],
-    usage:null
+var state={
+ route:'',players:[],byId:{},overview:null,profile:null,fixtures:[],
+ search:{query:'',position:'',age:'',region:'',evidence:'',context:'Immediate starter',sort:'Best match',page:1},
+ ranking:{type:'Top goalscorers',position:'',age:'',region:''},
+ prediction:{type:'Position fit',playerId:''}
+};
+function q(root,selector){return (root||document).querySelector(selector)}
+function qa(root,selector){return Array.from((root||document).querySelectorAll(selector))}
+function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(value,fallback){var n=Number(value);return Number.isFinite(n)?n:(fallback==null?0:fallback)}
+function score(value,fallback){var n=num(value,fallback==null?50:fallback);if(n>0&&n<=10)n*=10;return Math.round(Math.max(0,Math.min(100,n)))}
+function money(value){var n=num(value);if(!n)return 'Not assessed';if(n>=1000000)return '£'+(n/1000000).toFixed(n%1000000?1:0)+'m';if(n>=1000)return '£'+Math.round(n/1000)+'k';return '£'+Math.round(n).toLocaleString('en-GB')}
+function dateText(value){if(!value)return 'Not set';var d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+function token(){return localStorage.getItem('sl_token')||''}
+function currentUser(){try{return JSON.parse(localStorage.getItem('sl_user')||'{}')}catch(_){return {}}}
+function userName(){var u=currentUser();return u.name||[u.first_name,u.last_name].filter(Boolean).join(' ')||'Noah Patel'}
+function isDemo(){var u=currentUser();return sessionStorage.getItem('sl_public_demo')==='1'||localStorage.getItem('sl_demo_mode')==='1'||token()==='public-demo-session'||!!(u.demoMode||u.demo_mode)}
+function apiBase(){return String(window.API||localStorage.getItem('sl_api_url')||API_FALLBACK).replace(/\/+$/,'')}
+async function request(method,path,body){
+ var headers={Accept:'application/json'},auth=token();
+ if(auth)headers.Authorization='Bearer '+auth;
+ if(body!==undefined&&body!==null)headers['Content-Type']='application/json';
+ var response=await fetch(apiBase()+path,{method:method,headers:headers,credentials:'include',body:body==null?undefined:JSON.stringify(body)});
+ var payload=await response.json().catch(function(){return {}});
+ if(!response.ok)throw new Error(payload.error||payload.message||'The request could not be completed.');
+ return payload
+}
+function routeId(){
+ var declared=document.body.getAttribute('data-scout-route');if(declared)return declared;
+ var map={'/scout/dashboard':'dashboard','/scout/player-search':'search','/player/profile':'profile','/scout/rankings':'rankings','/scout/fixtures':'fixtures','/scout/predictions':'predictions','/scout/exports':'exports','/scout/compare-players':'compare','/scout/setup':'setup','/scout/chat':'chat','/scout/notifications':'notifications','/scout/settings':'settings'};
+ return map[location.pathname.replace(/\/+$/,'').toLowerCase()]||''
+}
+function waitForWorkspace(callback){var attempts=0;(function check(){attempts++;var app=document.getElementById('scoutExperienceApp'),content=app&&q(app,'.content');if(content){callback(app,content);return}if(attempts<180)setTimeout(check,50)})()}
+function toast(message,error){
+ qa(document,'.slv6-toast').forEach(function(n){n.remove()});
+ var node=document.createElement('div');node.className='slv6-toast'+(error?' error':'');node.setAttribute('role',error?'alert':'status');node.textContent=message;document.body.appendChild(node);setTimeout(function(){node.remove()},4200)
+}
+function modal(title,body,onReady){
+ var back=document.createElement('div');back.className='slv6-modal-backdrop';back.innerHTML='<section class="slv6-modal" role="dialog" aria-modal="true"><header><div><small>ScoutLink</small><h2>'+esc(title)+'</h2></div><button class="btn" data-close-modal>Close</button></header><div class="slv6-modal-body">'+body+'</div></section>';document.body.appendChild(back);
+ function close(){back.remove()}back.addEventListener('click',function(e){if(e.target===back||e.target.closest('[data-close-modal]'))close()});if(onReady)onReady(back,close);return back
+}
+function demoUsage(){
+ var limits={predictions:900,exports:300,interests:300},saved={};try{saved=JSON.parse(sessionStorage.getItem(DEMO_USAGE_KEY)||'{}')}catch(_){}
+ var result={plan:'Elite demo',resetAt:null};Object.keys(limits).forEach(function(key){var used=Math.max(0,num(saved[key]&&saved[key].used,saved[key]));result[key]={used:used,limit:limits[key],remaining:Math.max(0,limits[key]-used)}});return result
+}
+function incrementUsage(key){if(!isDemo())return;var usage=demoUsage();usage[key].used=Math.min(usage[key].limit,usage[key].used+1);sessionStorage.setItem(DEMO_USAGE_KEY,JSON.stringify({predictions:{used:usage.predictions.used},exports:{used:usage.exports.used},interests:{used:usage.interests.used}}));if(state.overview)state.overview.usage=usage}
+function normalizePlayer(player,index){
+ player=Object.assign({},player||{});player.id=player.id||player.player_id||'player-'+(index+1);
+ if(!player.first_name&&!player.last_name&&player.name){var parts=String(player.name).trim().split(/\s+/);player.first_name=parts.shift();player.last_name=parts.join(' ')}
+ player.first_name=player.first_name||'Player';player.last_name=player.last_name||String(index+1);
+ player.specific_position=String(player.specific_position||player.primary_position||(Array.isArray(player.positions)&&player.positions[0])||player.position_group||player.position||'—').toUpperCase();
+ player.age_group=player.age_group||player.ageGroup||player.age_band||'—';
+ player.team_name=player.team_name||player.club_name||player.club||player.team||'Team not set';
+ player.region=player.region||player.city||player.location||'Not set';
+ player.overall_rating=score(player.overall_rating||player.overall||player.rating,68);
+ player.compatibilityScore=score(player.compatibilityScore||player.compatibility_score||player.compatibility||player.fit_score,Math.min(93,player.overall_rating+5));
+ player.evidence_score=score(player.evidence_score||player.evidenceScore||player.confidence_score,55+(index*9)%40);
+ player.transfer_value=num(player.transfer_value||player.estimated_value||player.market_value||player.value,90000+index*17000);
+ player.appearances=num(player.appearances,6+index%13);player.goals=num(player.goals,player.specific_position==='GK'?0:(index*3)%18);player.assists=num(player.assists,player.specific_position==='GK'?0:(index*5)%14);player.clean_sheets=num(player.clean_sheets||player.cleanSheets,player.specific_position==='GK'?4+index%8:0);player.scout_interest_count=num(player.scout_interest_count||player.interest_count,8+(index*7)%92);
+ player.pipeline_stage=player.pipeline_stage||['watching','interested','shortlisted','new'][index%4];player.created_at=player.created_at||new Date(Date.now()-index*86400000).toISOString();return player
+}
+function playerName(p){return [p&&p.first_name,p&&p.last_name].filter(Boolean).join(' ')||p&&p.name||'Player'}
+function initials(p){return [p&&p.first_name,p&&p.last_name].filter(Boolean).map(function(x){return String(x).charAt(0)}).join('').slice(0,2).toUpperCase()||'PL'}
+function position(p){return p&&p.specific_position||'—'}
+function evidenceLabel(p){var v=score(p&&p.evidence_score);return v>=80?'High':v>=60?'Medium':v>=40?'Low':'Very low'}
+function playerLine(p){return [position(p),p&&p.age_group,p&&p.team_name].filter(Boolean).join(' · ')}
+async function loadPlayers(force){
+ if(state.players.length&&!force)return state.players;var rows=[];
+ if(isDemo()){
+  var response=await request('GET','/api/players/public-demo').catch(function(){return null});rows=response&&(response.data||response.players)||[];
+  if(!rows.length&&typeof window.getDemoState==='function'){try{rows=(window.getDemoState().players||[]).slice()}catch(_){}}
+  if(!rows.length){try{rows=(JSON.parse(sessionStorage.getItem('sl_public_demo_state')||'{}').players||[]).slice()}catch(_){}}
+ }else{var live=await request('GET','/api/players?limit=100&page=1').catch(function(){return null});rows=live&&(live.data||live.players||live.results)||[]}
+ if(!rows.length)rows=fallbackPlayers.slice();state.players=rows.slice(0,100).map(normalizePlayer);state.byId={};state.players.forEach(function(p){state.byId[String(p.id)]=p});return state.players
+}
+async function loadOverview(){
+ if(state.overview)return state.overview;var fallback={brief:{formation:'4-3-3',playingStyle:'Tiki-Taka',weaknesses:['Insufficient Game Pace and Speed','Poor Defensive Output','Low Team Chemistry and Leadership'],roleExpectations:['Ball Retention Under Pressure','Tactical Intelligence','Speed and Agility']},usage:isDemo()?demoUsage():{plan:'Core',predictions:{used:0,limit:60,remaining:60},exports:{used:0,limit:20,remaining:20},interests:{used:0,limit:30,remaining:30}},tasks:[],activity:[]};
+ state.overview=await request('GET','/api/scout-intelligence/overview').catch(function(){return fallback});if(isDemo())state.overview.usage=demoUsage();return state.overview
+}
+function usageValue(usage,key,limit){var row=usage&&usage[key]||{},max=num(row.limit,limit),used=num(row.used,Math.max(0,max-num(row.remaining,max)));return {used:used,limit:max,remaining:row.remaining==null?Math.max(0,max-used):num(row.remaining),percent:max?Math.round(used/max*100):0}}
+function mount(content){
+ content.innerHTML='<div class="slv6-approved" data-slv6-route="'+esc(state.route)+'">'+templates[state.route]+'</div>';var root=q(content,'.slv6-approved'),title=(state.route==='search'?'Player Search':state.route.charAt(0).toUpperCase()+state.route.slice(1));
+ var top=q(document,'#scoutExperienceApp .workspace-top h1'),mobile=q(document,'#scoutExperienceApp .mobile-top b');if(top)top.textContent=title;if(mobile)mobile.textContent=title;return root
+}
+function findButton(root,text){return qa(root,'button').find(function(b){return b.textContent.trim().toLowerCase()===text.toLowerCase()})}
+function bindOpenButtons(root){qa(root,'button').forEach(function(btn){if(['Open','Review','View player','Open profile'].includes(btn.textContent.trim()))btn.addEventListener('click',function(){var row=btn.closest('tr,.rank-widget,.top-fit-player,.selected-player,.shared-card'),id=row&&row.dataset.playerId;if(id)location.href='/player/profile?id='+encodeURIComponent(id)})})}
+function hydrateUsage(root,overview){
+ var usage=overview&&overview.usage||{};
+ var predictions=usageValue(usage,'predictions',isDemo()?900:60);
+ var exports=usageValue(usage,'exports',isDemo()?300:20);
+ var interests=usageValue(usage,'interests',isDemo()?300:30);
+ var rows=qa(root,'.usage-row'),values=[predictions,exports,interests];
+ rows.slice(0,3).forEach(function(row,index){
+  var value=values[index],spans=qa(row,'span'),bar=q(row,'.bar i'),strong=q(row,'strong');
+  if(spans[0])spans[0].textContent=value.used+' of '+value.limit+' used';
+  if(bar)bar.style.width=value.percent+'%';
+  if(strong)strong.textContent=value.remaining+' left';
+ });
+ qa(root,'.metric-grid .metric').forEach(function(metric){
+  var label=(q(metric,'small')||{}).textContent||'',strong=q(metric,'strong'),copy=q(metric,'span');
+  if(/prediction/i.test(label)){if(strong)strong.textContent=predictions.used+' / '+predictions.limit;if(copy)copy.textContent=predictions.remaining+' remaining'}
+  else if(/export/i.test(label)){if(strong)strong.textContent=exports.used+' / '+exports.limit;if(copy)copy.textContent=exports.remaining+' remaining'}
+  else if(/pipeline/i.test(label)){if(strong)strong.textContent=interests.used+' / '+interests.limit;if(copy)copy.textContent=interests.remaining+' places remaining'}
+  else if(/current plan/i.test(label)){if(strong)strong.textContent=usage.plan||'Core';if(copy)copy.textContent=predictions.percent+'% of prediction allowance used'}
+  else if(/reset date/i.test(label)&&usage.resetAt){if(strong)strong.textContent=dateText(usage.resetAt)}
+ });
+ var badge=q(root,'.usage-badge');
+ if(badge)badge.textContent=predictions.remaining+' of '+predictions.limit+' prediction credits remaining';
+}
+function hydrateDashboard(root,overview){
+ var sorted=state.players.slice().sort(function(a,b){return b.compatibilityScore-a.compatibilityScore}),rows=sorted.slice(0,5),tbody=q(root,'table tbody');
+ if(tbody)tbody.innerHTML=rows.map(function(p,i){return '<tr data-player-id="'+esc(p.id)+'"><td>'+playerCell(p)+'</td><td>'+p.compatibilityScore+'%</td><td>'+evidenceLabel(p)+'</td><td>'+(i<2?'Today':i<4?'Yesterday':'2 days ago')+'</td><td><button class="btn small primary">Review</button></td></tr>'}).join('');
+ var metrics=qa(root,'.metric-grid .metric');if(metrics[0])q(metrics[0],'strong').textContent=String(rows.length);
+ var fit=q(root,'.top-fit-player');if(fit&&sorted[0]){fit.dataset.playerId=sorted[0].id;q(fit,'.initials').textContent=initials(sorted[0]);var b=q(fit,'b'),s=q(fit,'span'),strong=q(fit,'strong');if(b)b.textContent=playerName(sorted[0]);if(s)s.textContent=playerLine(sorted[0]);if(strong)strong.textContent=sorted[0].compatibilityScore+'%'}
+ hydrateUsage(root,overview);bindOpenButtons(root);
+ var review=findButton(root,'Review new players');if(review)review.onclick=function(){location.href='/scout/player-search'};
+ var setup=findButton(root,'Edit setup');if(setup)setup.onclick=function(){location.href='/scout/setup'};
+ var plan=findButton(root,'Plan visit');if(plan)plan.onclick=function(){location.href='/scout/fixtures'}
+}
+function playerCell(p){return '<div class="player-cell"><span class="initials">'+esc(initials(p))+'</span><div><b>'+esc(playerName(p))+'</b><span>'+esc(p.team_name)+'</span></div></div>'}
+function parseQuery(query){
+ var text=String(query||'').toLowerCase(),r={};var tests=[[/\b(goalkeeper|keeper|gk)\b/,'GK'],[/\b(centre back|center back|central defender|cb)\b/,'CB'],[/\b(right back|rb)\b/,'RB'],[/\b(left back|lb)\b/,'LB'],[/\b(defensive midfielder|holding midfielder|cdm)\b/,'CDM'],[/\b(central midfielder|centre midfielder|box to box|cm|b2b)\b/,'CM'],[/\b(attacking midfielder|number 10|cam)\b/,'CAM'],[/\b(left winger|left wing|lw)\b/,'LW'],[/\b(right winger|right wing|rw)\b/,'RW'],[/\b(striker|centre forward|center forward|forward|st|cf)\b/,'ST']];
+ tests.some(function(x){if(x[0].test(text)){r.position=x[1];return true}return false});var age=text.match(/\bu(7|8|9|10|11|12|13|14|15|16|17|18)\b/);if(age)r.age='U'+age[1];['London','Birmingham','Manchester','Bristol','Liverpool'].some(function(x){if(text.includes(x.toLowerCase())){r.region=x;return true}return false});if(/high evidence|high confidence/.test(text))r.evidence='High';return r
+}
+function filteredPlayers(){
+ var f=state.search,parsed=parseQuery(f.query),pos=f.position||parsed.position||'',age=f.age||parsed.age||'',region=f.region||parsed.region||'',evidence=f.evidence||parsed.evidence||'',rows=state.players.filter(function(p){return (!pos||position(p)===pos||(pos==='CM'&&['CM','CDM','CAM','B2B'].includes(position(p))))&&(!age||p.age_group===age)&&(!region||p.region===region)&&(!evidence||evidenceLabel(p)===evidence)});
+ rows.sort(function(a,b){switch(f.sort){case'Newest players':return new Date(b.created_at)-new Date(a.created_at);case'Highest evidence':return b.evidence_score-a.evidence_score;case'Highest rating':return b.overall_rating-a.overall_rating;case'Lowest value':return a.transfer_value-b.transfer_value;default:return b.compatibilityScore-a.compatibilityScore}});return rows
+}
+function renderSearchRows(root){
+ var rows=filteredPlayers(),pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));state.search.page=Math.min(state.search.page,pages);var start=(state.search.page-1)*PAGE_SIZE,visible=rows.slice(start,start+PAGE_SIZE),tbody=q(root,'.search-table tbody');
+ if(tbody)tbody.innerHTML=visible.map(function(p){return '<tr data-player-id="'+esc(p.id)+'"><td>'+playerCell(p)+'</td><td>'+esc(position(p)+' · '+p.age_group)+'</td><td class="optional">'+esc(p.region)+'</td><td><b>'+p.compatibilityScore+'%</b></td><td><span class="pill '+(evidenceLabel(p)==='High'?'blue':'')+'">'+evidenceLabel(p)+'</span></td><td class="optional">'+money(p.transfer_value)+'</td><td class="optional">'+dateText(p.created_at)+'</td><td><button class="btn small primary">Open</button></td></tr>'}).join('');
+ var copy=q(root,'.results-head p');if(copy)copy.textContent='Showing '+(rows.length?start+1:0)+'–'+Math.min(start+PAGE_SIZE,rows.length)+' of '+rows.length+' players. Search and filters refine this table rather than hiding the database.';
+ var pageBox=q(root,'.pagination>div');if(pageBox){var html='<button class="btn small" data-page="'+Math.max(1,state.search.page-1)+'">Previous</button>';for(var i=1;i<=pages;i++){if(i<=3||i===pages||Math.abs(i-state.search.page)<=1)html+='<button class="btn small '+(i===state.search.page?'primary':'')+'" data-page="'+i+'">'+i+'</button>'}html+='<button class="btn small" data-page="'+Math.min(pages,state.search.page+1)+'">Next</button>';pageBox.innerHTML=html}
+ bindOpenButtons(root);qa(root,'[data-page]').forEach(function(btn){btn.onclick=function(){state.search.page=num(btn.dataset.page,1);renderSearchRows(root);q(root,'.results-head').scrollIntoView({behavior:'smooth'})}})
+}
+function bindSearch(root){
+ var prompt=q(root,'.search-prompt input'),selects=qa(root,'.filters select');if(prompt)prompt.value=state.search.query;
+ function apply(){state.search.query=prompt.value.trim();state.search.position=selects[0].value==='All positions'?'':selects[0].value;state.search.age=selects[1].value==='All ages'?'':selects[1].value;state.search.region=selects[2].value==='All regions'?'':selects[2].value;state.search.evidence=selects[3].value==='Any evidence'?'':selects[3].value;state.search.context=selects[4].value;state.search.sort=selects[5].value;state.search.page=1;renderSearchRows(root)}
+ var run=findButton(root,'Run intelligent search');if(run)run.onclick=apply;if(prompt)prompt.onkeydown=function(e){if(e.key==='Enter')apply()};selects.forEach(function(s){s.onchange=apply});var clear=findButton(root,'More filters');if(clear)clear.textContent='Clear filters',clear.onclick=function(){state.search={query:'',position:'',age:'',region:'',evidence:'',context:'Immediate starter',sort:'Best match',page:1};prompt.value='';selects.forEach(function(s){s.selectedIndex=0});renderSearchRows(root)};
+ renderSearchRows(root)
+}
+function hydrateProfile(root,bundle){
+ var p=bundle.player,analysis=bundle.analysis||localAnalysis(p),evidence=bundle.evidence||{score:p.evidence_score,label:evidenceLabel(p)},verdict=bundle.verdict||{label:p.compatibilityScore>=78?'Development target':'Monitor'};
+ var avatar=q(root,'.profile-main>.initials'),name=q(root,'.profile-main h2'),line=q(root,'.profile-main p');if(avatar)avatar.textContent=initials(p);if(name)name.textContent=playerName(p);if(line)line.textContent=playerLine(p)+' · '+p.region;
+ var tags=q(root,'.profile-tags');if(tags)tags.innerHTML='<span class="pill green">Overall '+p.overall_rating+'/100</span><span class="pill blue">Evidence '+evidenceLabel(p)+'</span><span class="pill"> '+position(p)+'</span><span class="pill">'+money(p.transfer_value)+'</span>';
+ var title=q(root,'.decision-verdict-card h3');if(title)title.textContent=verdict.label||'Development target';var comp=q(root,'.decision-verdict-card .verdict-title-row .pill');if(comp)comp.textContent=p.compatibilityScore+'% compatibility';
+ var summary=q(root,'.decision-verdict-card>p');if(summary)summary.textContent=verdict.summary||playerName(p)+' should remain under active recruitment review until the next evidence checkpoint.';
+ var metricValues=[p.overall_rating,analysis.overallBreakdown.currentReadiness,analysis.overallBreakdown.potentialRating,evidence.label,p.compatibilityScore+'%',money(p.transfer_value)];qa(root,'.metric-grid.six .metric strong').forEach(function(n,i){if(metricValues[i]!=null)n.textContent=String(metricValues[i]).replace(/^(?!.*[/%£])/,'')+(i<3&&typeof metricValues[i]==='number'?'/100':'')});
+ var cards=qa(root,'.compat-card');var vals=[analysis.compatibility.needFit,analysis.compatibility.roleFit,analysis.compatibility.tacticalStyleFit,analysis.compatibility.formationPositionFit,analysis.compatibility.developmentPathwayFit,evidence.score,analysis.compatibility.financialFit];cards.forEach(function(card,i){var b=q(card,'b'),bar=q(card,'.bar i'),v=score(vals[i],p.compatibilityScore);if(b)b.textContent=v;if(bar)bar.style.width=v+'%'});
+ var headline=q(root,'.compatibility-headline h4');if(headline)headline.textContent=p.compatibilityScore+'% · '+(p.compatibilityScore>=78?'Strong fit':'Developing fit');
+ var value=q(root,'.value-analysis-head strong');if(value)value.textContent=money(p.transfer_value);
+ var attrKeys=['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];qa(root,'#attributes .attribute').forEach(function(row,i){var v=score(p[attrKeys[i]],p.overall_rating),b=q(row,'b'),bar=q(row,'.bar i');if(b)b.textContent=v;if(bar)bar.style.width=v+'%'});
+ var stats=[p.appearances,p.goals,p.assists,p.clean_sheets,num(p.yellow_cards),num(p.red_cards)];qa(root,'#attributes .stat-grid>div b').forEach(function(n,i){n.textContent=String(stats[i]||0)});
+ var predictionHead=q(root,'#predictionControls .panel-head h3');if(predictionHead)predictionHead.textContent='Run a prediction on '+playerName(p);
+ bindProfile(root,bundle)
+}
+function localAnalysis(p){var overall=p.overall_rating,comp=p.compatibilityScore;return {overallBreakdown:{currentReadiness:Math.max(45,overall-1),potentialRating:Math.min(96,overall+7)},compatibility:{needFit:Math.min(100,comp+10),roleFit:Math.max(45,comp-8),tacticalStyleFit:Math.min(100,comp+9),formationPositionFit:Math.max(45,comp-4),developmentPathwayFit:Math.max(45,comp-6),financialFit:Math.max(40,comp-28)}}}
+async function loadProfile(){
+ await loadPlayers();var id=new URLSearchParams(location.search).get('id')||new URLSearchParams(location.search).get('player')||(state.players[0]&&state.players[0].id),p=state.byId[String(id)]||state.players[0],fallback={player:p,analysis:localAnalysis(p),evidence:{score:p.evidence_score,label:evidenceLabel(p)},facts:[],fixtures:[],videos:[],verdict:{label:p.compatibilityScore>=78?'Development target':'Monitor',summary:playerName(p)+' is under structured recruitment review.'}};
+ if(isDemo())return fallback;var response=await request('GET','/api/scout-intelligence/players/'+encodeURIComponent(p.id)).catch(function(){return fallback});response.player=normalizePlayer(response.player||p,0);response.analysis=response.analysis||localAnalysis(response.player);response.evidence=response.evidence||fallback.evidence;response.verdict=response.verdict||fallback.verdict;return response
+}
+function predictionTypeApi(label){return {'Position fit':'Position Fit Projection','Match scenario':'Match Scenario Prediction','Development projection':'Attribute Development','ROI and value':'ROI Analysis'}[label]||label}
+async function runPrediction(root,p,type){
+ var apiType=predictionTypeApi(type),selects=qa(root,'#predictionControls select'),input={};if(apiType==='Position Fit Projection')input.targetPosition=selects[1]&&selects[1].value||position(p);if(apiType==='Match Scenario Prediction')input.scenarioKey=selects[2]&&selects[2].value||'protect_lead';if(apiType==='Attribute Development')input.focus=selects[3]&&selects[3].value||'Balanced growth';
+ var result;if(isDemo()){incrementUsage('predictions');result={type:apiType,summary:apiType==='Position Fit Projection'?(input.targetPosition+' fit scores '+Math.max(45,p.overall_rating-8)+'/100.'):'Prediction completed from the current demo evidence.',recommendation:'Validate the result through live observation.',confidence:{label:evidenceLabel(p)}}}else{var response=await request('POST','/api/predictions/run',{playerId:p.id,predictionType:apiType,inputParams:input});result=response.result||response}
+ var preview=q(root,'.prediction-result-preview');if(preview)preview.innerHTML='<article><small>Player</small><b>'+esc(playerName(p))+'</b></article><article><small>Prediction</small><b>'+esc(type)+'</b></article><article><small>Result</small><b>'+esc(result.recommendation||'Completed')+'</b></article><article><small>Confidence</small><b>'+esc(result.confidence&&result.confidence.label||evidenceLabel(p))+'</b></article>';toast('Prediction completed.')
+}
+function bindProfile(root,bundle){
+ var p=bundle.player;var go=findButton(root,'Go to prediction controls');if(go)go.onclick=function(){q(root,'#predictionControls').scrollIntoView({behavior:'smooth'})};qa(root,'.prediction-type').forEach(function(btn){btn.onclick=function(){qa(root,'.prediction-type').forEach(function(x){x.classList.toggle('selected',x===btn)});var label=q(root,'.selected-prediction-label');if(label)label.textContent=btn.dataset.prediction;var select=q(root,'#predictionControls select');if(select)select.value=btn.dataset.prediction;q(root,'#predictionControls').scrollIntoView({behavior:'smooth'})}});
+ var run=findButton(root,'Run prediction analysis')||findButton(root,'Run position fit');if(run){run.textContent='Run prediction analysis';run.onclick=function(){var type=q(root,'#predictionControls select').value;runPrediction(root,p,type).catch(function(e){toast(e.message,true)})}}
+ var compare=findButton(root,'Compare');if(compare)compare.onclick=function(){location.href='/scout/compare-players?player='+encodeURIComponent(p.id)};var record=findButton(root,'Record decision');if(record)record.onclick=function(){openDecision(p)};var watch=findButton(root,'Watch changes');if(watch)watch.onclick=function(){toast('Player watch saved for this session.')};var setup=findButton(root,'Edit Scout Setup');if(setup)setup.onclick=function(){location.href='/scout/setup'};qa(root,'.profile-section-nav a').forEach(function(a){a.onclick=function(){var target=q(root,'#'+a.getAttribute('href').replace('#',''));if(target)target.scrollIntoView({behavior:'smooth'});return false}})
+}
+function openDecision(p){modal('Record recruitment decision','<div class="form-grid"><label class="field"><span>Decision</span><select id="decisionValue"><option>Prioritise</option><option>Shortlist</option><option>Monitor</option><option>Do not progress</option></select></label><label class="field"><span>Rationale</span><textarea id="decisionRationale"></textarea></label></div><div class="runner-actions"><button class="btn primary" data-save-decision>Save decision</button></div>',function(root,close){q(root,'[data-save-decision]').onclick=async function(){if(!isDemo())await request('POST','/api/scout-intelligence/decisions',{playerId:p.id,decision:q(root,'#decisionValue').value,rationale:q(root,'#decisionRationale').value}).catch(function(e){toast(e.message,true)});close();toast('Recruitment decision saved.')}})}
+function rankingValue(p,type){if(type==='Top goalscorers')return p.goals;if(type==='Top assists')return p.assists;if(type==='Most clean sheets')return p.clean_sheets;if(type==='Most sought after')return p.scout_interest_count;if(type==='Current readiness')return Math.max(0,p.overall_rating-1);if(type==='Development potential')return Math.min(100,p.overall_rating+7);if(type==='Evidence confidence')return p.evidence_score;if(type==='Financial value')return p.transfer_value;return p.compatibilityScore}
+function renderRankings(root){
+ var selects=qa(root,'.rankings-filters select'),type=state.ranking.type,rows=state.players.filter(function(p){return (!state.ranking.position||position(p)===state.ranking.position)&&(!state.ranking.age||p.age_group===state.ranking.age)&&(!state.ranking.region||p.region===state.ranking.region)&&(type!=='Most clean sheets'||position(p)==='GK')}).sort(function(a,b){return rankingValue(b,type)-rankingValue(a,type)}).slice(0,20);
+ var widgets=q(root,'.rank-widget-grid');if(widgets)widgets.innerHTML=rows.slice(0,3).map(function(p,i){return '<article class="rank-widget" data-player-id="'+esc(p.id)+'"><span>#'+(i+1)+'</span><span class="initials">'+initials(p)+'</span><div><b>'+esc(playerName(p))+'</b><small>'+esc(position(p)+' · '+p.age_group)+'</small></div><strong>'+esc(type==='Financial value'?money(rankingValue(p,type)):rankingValue(p,type)+' '+(type==='Top goalscorers'?'goals':type==='Top assists'?'assists':''))+'</strong></article>'}).join('');
+ var title=q(root,'.panel-head h3');if(title)title.textContent=type;var tbody=q(root,'.panel tbody');if(tbody)tbody.innerHTML=rows.map(function(p,i){return '<tr data-player-id="'+esc(p.id)+'"><td><b>#'+(i+1)+'</b></td><td>'+playerCell(p)+'</td><td>'+esc(type==='Financial value'?money(rankingValue(p,type)):rankingValue(p,type)+(type==='Team fit'?'%':''))+'</td><td>Strong current platform signal supported by '+evidenceLabel(p).toLowerCase()+' evidence.</td><td>'+evidenceLabel(p)+'</td><td>'+money(p.transfer_value)+'</td></tr>'}).join('');bindOpenButtons(root)
+}
+function bindRankings(root){var selects=qa(root,'.rankings-filters select');selects[0].value=state.ranking.type;function update(){state.ranking.type=selects[0].value;state.ranking.position=selects[1].value==='All positions'?'':selects[1].value;state.ranking.age=selects[2].value==='All ages'?'':selects[2].value;state.ranking.region=selects[3].value==='All regions'?'':selects[3].value;renderRankings(root)}selects.forEach(function(s){s.onchange=update});var btn=findButton(root,'Update ranking');if(btn)btn.onclick=update;var explore=findButton(root,'Explore players');if(explore)explore.onclick=function(){location.href='/scout/player-search'};renderRankings(root)}
+function bindPredictions(root,overview){
+ var usage=overview&&overview.usage||{},predictionUsage=usageValue(usage,'predictions',isDemo()?900:60);
+ var metrics=qa(root,'.metric-grid .metric');
+ if(metrics[0]){q(metrics[0],'strong').textContent=predictionUsage.used+' / '+predictionUsage.limit;q(metrics[0],'span').textContent=predictionUsage.remaining+' remaining'}
+ if(metrics[2])q(metrics[2],'strong').textContent=usage.plan||'Core';
+ var chosen=state.byId[String(new URLSearchParams(location.search).get('player'))]||state.players[0];
+ var selectedCard=q(root,'.selected-player');
+ function drawPlayer(){
+  selectedCard.dataset.playerId=chosen.id;
+  selectedCard.innerHTML='<span class="initials">'+esc(initials(chosen))+'</span><div><b>'+esc(playerName(chosen))+'</b><span>'+esc(playerLine(chosen))+'</span></div><button class="btn small">Change player</button>';
+  q(selectedCard,'button').onclick=openChooser;
+ }
+ function openChooser(){
+  modal('Choose a player','<label class="field"><span>Player</span><select id="predictionPlayerChoice">'+state.players.map(function(p){return '<option value="'+esc(p.id)+'"'+(String(p.id)===String(chosen.id)?' selected':'')+'>'+esc(playerName(p)+' · '+playerLine(p))+'</option>'}).join('')+'</select></label><div class="runner-actions"><button class="btn primary" data-choose-player>Use player</button></div>',function(m,close){
+   q(m,'[data-choose-player]').onclick=function(){chosen=state.byId[String(q(m,'#predictionPlayerChoice').value)]||chosen;drawPlayer();close()}
+  })
+ }
+ drawPlayer();
+ var choices=qa(root,'.prediction-choice');
+ choices.forEach(function(choice){
+  choice.onclick=function(){
+   choices.forEach(function(item){item.classList.toggle('selected',item===choice)});
+   state.prediction.type=q(choice,'b').textContent.trim();
+   var heading=q(root,'.journey-panel:nth-of-type(3) h3');
+   if(heading)heading.textContent='Set the '+state.prediction.type.toLowerCase()+' question';
+   var run=q(root,'.prediction-control-grid .btn.primary');
+   if(run)run.textContent='Run '+state.prediction.type.toLowerCase();
+  }
+ });
+ var run=q(root,'.prediction-control-grid .btn.primary');
+ if(run)run.onclick=async function(){
+  var type=state.prediction.type||'Position fit',apiType=predictionTypeApi(type),selects=qa(root,'.prediction-control-grid select'),input={};
+  if(apiType==='Position Fit Projection')input.targetPosition=selects[0]&&selects[0].value||position(chosen);
+  if(apiType==='Match Scenario Prediction')input.scenarioKey=selects[0]&&selects[0].value||'protect_lead';
+  if(apiType==='Attribute Development')input.focus=selects[0]&&selects[0].value||'Balanced growth';
+  try{
+   var result;
+   if(isDemo()){incrementUsage('predictions');result={recommendation:'Completed',summary:'Prediction completed from the current evidence.',confidence:{label:evidenceLabel(chosen)}}}
+   else{var response=await request('POST','/api/predictions/run',{playerId:chosen.id,predictionType:apiType,inputParams:input});result=response.result||response}
+   var box=q(root,'.panel .empty.structured');
+   if(box)box.outerHTML='<section class="recommendation"><div><small>'+esc(type)+'</small><h3>'+esc(result.recommendation||'Prediction complete')+'</h3><p>'+esc(result.summary||'The selected prediction has completed.')+'</p></div><div class="decision-margin"><b>'+chosen.overall_rating+'</b><span>Current rating</span></div></section>';
+   toast('Prediction completed.');
+  }catch(error){toast(error.message,true)}
+ };
+ var help=findButton(root,'How predictions work');
+ if(help)help.onclick=function(){modal('How predictions work','<p>ScoutLink predictions use the current profile, Match Facts, evidence confidence and selected football context. They support scouting judgement and do not guarantee future performance.</p>')};
+ bindOpenButtons(root);
+}
+function bindExports(root,overview){
+ hydrateUsage(root,overview);var selects=qa(root,'.export-builder select');if(selects[0])selects[0].innerHTML=state.players.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(playerName(p)+' · '+playerLine(p))+'</option>'}).join('');var generate=findButton(root,'Generate report');if(generate)generate.onclick=async function(){var p=state.byId[String(selects[0].value)]||state.players[0];try{if(isDemo()){incrementUsage('exports');toast('Demo report generated.');return}var response=await request('POST','/api/exports/player',{playerId:p.id,format:selects[2].value,source:selects[3].value});toast(response.filename?'Report generated: '+response.filename:'Report generated.')}catch(e){toast(e.message,true)}};var find=findButton(root,'Find players');if(find)find.onclick=function(){location.href='/scout/player-search'}
+}
+function compareScore(p,context){var value=p.compatibilityScore;if(context==='Development prospect')value=Math.round(value*.55+Math.min(100,p.overall_rating+7)*.45);if(context==='Low financial risk')value=Math.round(value*.55+(100-Math.min(100,p.transfer_value/7000))*.45);return value}
+function bindCompare(root,overview){
+ hydrateUsage(root,overview);var inputs=qa(root,'.compare-player-select input'),selected=qa(root,'.compare-player-select .selected-player'),context=q(root,'.compare-context select'),a=state.players[0],b=state.players[1];var param=new URLSearchParams(location.search).get('player');if(param&&state.byId[String(param)])a=state.byId[String(param)];if(a===b)b=state.players[2];function drawSelected(){selected[0].innerHTML=playerCell(a);selected[1].innerHTML=playerCell(b);inputs[0].value=playerName(a);inputs[1].value=playerName(b)}function choose(input,side){var p=state.players.find(function(x){return playerName(x).toLowerCase().includes(input.value.toLowerCase())});if(p){if(side==='a')a=p;else b=p;drawSelected()}}inputs[0].onchange=function(){choose(inputs[0],'a')};inputs[1].onchange=function(){choose(inputs[1],'b')};drawSelected();var run=findButton(root,'Compare and explain');if(run)run.onclick=function(){var sa=compareScore(a,context.value),sb=compareScore(b,context.value),winner=sa>=sb?a:b,rec=q(root,'.recommendation h3'),copy=q(root,'.recommendation p'),margin=q(root,'.decision-margin b');if(rec)rec.textContent=playerName(winner);if(copy)copy.textContent=playerName(winner)+' is the stronger option in the selected context because current fit and readiness are stronger.';if(margin)margin.textContent=Math.abs(sa-sb).toFixed(1);var heads=qa(root,'.compare-head article');if(heads[0])heads[0].innerHTML=playerCell(a);if(heads[1])heads[1].innerHTML=playerCell(b);toast('Comparison updated.')};var add=findButton(root,'Add recommended player');if(add)add.onclick=function(){if(isDemo())incrementUsage('interests');toast('Recommended player added to the pipeline.')};var record=findButton(root,'Record decision');if(record)record.onclick=function(){openDecision(a)}
+}
+function bindSetup(root){
+ qa(root,'.choice input').forEach(function(input){input.onchange=function(){var label=input.closest('.choice'),group=label.closest('.choice-grid'),checked=qa(group,'input:checked');if(checked.length>3){input.checked=false;toast('Select up to three options.',true)}label.classList.toggle('selected',input.checked)}});var save=findButton(root,'Save and apply')||findButton(root,'Save changes');if(save)save.onclick=function(){var data={fields:qa(root,'.form-grid input,.form-grid select').map(function(x){return x.value}),choices:qa(root,'.choice input:checked').map(function(x){return x.nextElementSibling.textContent}) };localStorage.setItem('sl_scout_setup_v6',JSON.stringify(data));toast('Scout setup saved and applied.')};var review=findButton(root,'Review impact');if(review)review.onclick=function(){q(root,'.impact-grid').scrollIntoView({behavior:'smooth'})}}
+function bindChat(root){
+ var layout=q(root,'.chat-layout');if(layout)layout.style.height='calc(100vh - 150px)';var thread=q(root,'.thread'),attach=q(root,'.attach-btn'),tray=q(root,'.share-tray'),textarea=q(root,'.composer textarea'),send=q(root,'.composer .send-btn');if(attach)attach.onclick=function(){tray.classList.toggle('open')};qa(root,'.share-tabs button').forEach(function(btn){btn.onclick=function(){qa(root,'.share-tabs button').forEach(function(x){x.classList.toggle('active',x===btn)})}});if(send)send.onclick=function(){var text=textarea.value.trim();if(!text)return;var msg=document.createElement('article');msg.className='msg outgoing';msg.innerHTML='<p>'+esc(text)+'</p><time>Now</time>';q(root,'.messages').appendChild(msg);textarea.value='';q(root,'.messages').scrollTop=q(root,'.messages').scrollHeight};qa(root,'.share-options>button').forEach(function(btn){btn.onclick=function(){tray.classList.remove('open');toast('Shared in the conversation.')}});bindOpenButtons(root)
+}
+function bindNotifications(root){
+ var segments=qa(root,'.segments button');
+ var items=qa(root,'.notification');
+ segments.forEach(function(seg){
+  seg.onclick=function(){
+   segments.forEach(function(item){item.classList.toggle('active',item===seg)});
+   var type=seg.textContent.trim().toLowerCase();
+   items.forEach(function(item){
+    item.style.display=(type==='all'||item.textContent.toLowerCase().includes(type.replace(/s$/,'')))?'grid':'none';
+   });
   };
-
-  function esc(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
-      return {
-        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
-      }[char];
-    });
-  }
-
-  function num(value, fallback) {
-    var parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : (fallback == null ? 0 : fallback);
-  }
-
-  function clamp(value, min, max) {
-    min = min == null ? 0 : min;
-    max = max == null ? 100 : max;
-    return Math.max(min, Math.min(max, num(value)));
-  }
-
-  function score(value, fallback) {
-    var parsed = num(value, fallback == null ? 50 : fallback);
-    return Math.round(clamp(parsed > 0 && parsed <= 10 ? parsed * 10 : parsed));
-  }
-
-  function money(value) {
-    return 'GBP ' + Math.round(num(value)).toLocaleString('en-GB');
-  }
-
-  function dateText(value) {
-    if (!value) return 'Not set';
-    var date = new Date(value);
-    if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleDateString('en-GB', {
-      day:'numeric', month:'short', year:'numeric'
-    });
-  }
-
-  function dateTimeText(value) {
-    if (!value) return 'Not set';
-    var date = new Date(value);
-    if (Number.isNaN(date.getTime())) return String(value);
-    return date.toLocaleString('en-GB', {
-      day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
-    });
-  }
-
-  function initials(player) {
-    return [player && player.first_name, player && player.last_name]
-      .filter(Boolean).map(function (part) { return part.charAt(0); }).join('').slice(0, 2).toUpperCase() || 'PL';
-  }
-
-  function playerName(player) {
-    return [player && player.first_name, player && player.last_name]
-      .filter(Boolean).join(' ') || 'Player';
-  }
-
-  function playerPosition(player) {
-    return String(
-      player && (player.specific_position || player.primary_position ||
-      (Array.isArray(player.positions) && player.positions[0]) || player.position_group) || '—'
-    ).toUpperCase();
-  }
-
-  function playerLine(player) {
-    return [playerPosition(player), player && player.age_group, player && player.team_name]
-      .filter(Boolean).join(' · ');
-  }
-
-  function apiBase() {
-    return String(window.API || localStorage.getItem('sl_api_url') || API_FALLBACK).replace(/\/+$/, '');
-  }
-
-  function token() {
-    return localStorage.getItem('sl_token') || '';
-  }
-
-  function currentUserId() {
-    try {
-      var user = JSON.parse(localStorage.getItem('sl_user') || '{}');
-      return user.id || user.userId || user.user_id || null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function isPublicDemo() {
-    return sessionStorage.getItem('sl_public_demo') === '1' ||
-      localStorage.getItem('sl_token') === 'public-demo-session';
-  }
-
-  function legacyApi(method, path, body) {
-    if (typeof window.api === 'function') {
-      return window.api(method, path, body);
-    }
-    return request(method, path, body);
-  }
-
-  async function request(method, path, body) {
-    var headers = { Accept:'application/json' };
-    var authToken = token();
-    if (authToken) headers.Authorization = 'Bearer ' + authToken;
-    if (body !== undefined && body !== null) headers['Content-Type'] = 'application/json';
-
-    var response = await fetch(apiBase() + path, {
-      method:method,
-      headers:headers,
-      body:body === undefined || body === null ? undefined : JSON.stringify(body),
-      credentials:'include'
-    });
-    var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) {
-      throw new Error(payload.error || payload.message || 'The request could not be completed.');
-    }
-    return payload;
-  }
-
-  function routeId() {
-    var declared = document.body.getAttribute('data-scout-route');
-    if (declared) return declared;
-    var path = window.location.pathname.replace(/\/+$/, '').toLowerCase();
-    var map = {
-      '/confirm-password':'confirm',
-      '/scout/onboarding':'confirm',
-      '/scout/dashboard':'dashboard',
-      '/scout/player-search':'search',
-      '/player/profile':'profile',
-      '/scout/pipeline':'pipeline',
-      '/scout/rankings':'rankings',
-      '/scout/fixtures':'fixtures',
-      '/scout/predictions':'predictions',
-      '/scout/exports':'exports',
-      '/scout/compare-players':'compare',
-      '/scout/setup':'setup',
-      '/scout/events':'events',
-      '/scout/chat':'chat',
-      '/scout/notifications':'notifications',
-      '/scout/report-a-concern':'concern',
-      '/scout/settings':'settings'
-    };
-    return map[path] || '';
-  }
-
-  function waitForWorkspace(callback) {
-    var attempts = 0;
-    function check() {
-      attempts += 1;
-      var app = document.getElementById('scoutExperienceApp');
-      var content = app && app.querySelector('.content');
-      if (app && content) {
-        callback(app, content);
-        return;
-      }
-      if (attempts < 160) window.setTimeout(check, 50);
-    }
-    check();
-  }
-
-  function toast(message, type) {
-    document.querySelectorAll('.si4-toast').forEach(function (node) { node.remove(); });
-    var node = document.createElement('div');
-    node.className = 'si4-toast' + (type === 'error' ? ' error' : '');
-    node.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    node.textContent = message;
-    document.body.appendChild(node);
-    window.setTimeout(function () { node.remove(); }, 4300);
-  }
-
-  function loading(copy) {
-    return '<div class="si4-loading"><div class="si4-spinner" aria-hidden="true"></div>' +
-      '<b>Loading ScoutLink intelligence</b><span>' + esc(copy || 'Preparing the decision-support view.') + '</span></div>';
-  }
-
-  function empty(title, copy, actionHtml) {
-    return '<div class="si4-empty"><b>' + esc(title) + '</b><span>' + esc(copy) + '</span>' +
-      (actionHtml ? '<div class="si4-actions" style="margin-top:10px">' + actionHtml + '</div>' : '') + '</div>';
-  }
-
-  function errorState(message) {
-    return '<div class="si4-error"><b>Scout intelligence could not load</b><span>' + esc(message) + '</span>' +
-      '<button class="si4-button small" type="button" data-si4-reload style="margin-top:10px">Try again</button></div>';
-  }
-
-  function shell(title, copy, actions, body) {
-    return '<section class="si4-shell">' +
-      '<header class="si4-head"><div class="si4-head-copy"><span class="si4-eyebrow">Scout intelligence</span>' +
-      '<h2>' + esc(title) + '</h2><p>' + esc(copy) + '</p></div>' +
-      '<div class="si4-head-actions">' + (actions || '') + '</div></header>' +
-      '<div class="si4-body">' + body + '</div></section>';
-  }
-
-  function metric(label, value, copy, colour) {
-    return '<article class="si4-card si4-metric"><small>' + esc(label) + '</small>' +
-      '<strong class="' + esc(colour || '') + '">' + esc(value) + '</strong>' +
-      '<span>' + esc(copy || '') + '</span></article>';
-  }
-
-  function pill(value, colour) {
-    return '<span class="si4-pill ' + esc(colour || '') + '">' + esc(value) + '</span>';
-  }
-
-  function playerOption(player, extra) {
-    return '<option value="' + esc(player.id) + '">' + esc(playerName(player) + ' · ' + playerLine(player) + (extra ? ' · ' + extra : '')) + '</option>';
-  }
-
-  function progressRow(label, value, colour) {
-    var safe = score(value);
-    return '<div class="si4-progress-row"><span>' + esc(label) + '</span>' +
-      '<div class="si4-progress ' + esc(colour || '') + '"><span style="width:' + safe + '%"></span></div>' +
-      '<b>' + safe + '</b></div>';
-  }
-
-  function tabs(items, active) {
-    return '<div class="si4-tabs" role="tablist">' + items.map(function (item) {
-      return '<button class="si4-tab ' + (item.id === active ? 'active' : '') + '" type="button" ' +
-        'role="tab" aria-selected="' + (item.id === active ? 'true' : 'false') + '" data-si4-tab="' + esc(item.id) + '">' +
-        esc(item.label) + '</button>';
-    }).join('') + '</div>';
-  }
-
-  function bindTabs(root) {
-    root.querySelectorAll('[data-si4-tab]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var id = button.getAttribute('data-si4-tab');
-        root.querySelectorAll('[data-si4-tab]').forEach(function (tab) {
-          var selected = tab === button;
-          tab.classList.toggle('active', selected);
-          tab.setAttribute('aria-selected', selected ? 'true' : 'false');
-        });
-        root.querySelectorAll('[data-si4-panel]').forEach(function (panel) {
-          panel.hidden = panel.getAttribute('data-si4-panel') !== id;
-        });
-      });
-    });
-  }
-
-  function dialog(title, body, onReady) {
-    var backdrop = document.createElement('div');
-    backdrop.className = 'si4-dialog-backdrop';
-    backdrop.innerHTML = '<section class="si4-dialog" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
-      '<header class="si4-head"><div class="si4-head-copy"><span class="si4-eyebrow">ScoutLink</span><h3>' + esc(title) + '</h3></div>' +
-      '<button class="si4-button small" type="button" data-si4-close>Close</button></header>' +
-      '<div class="si4-body">' + body + '</div></section>';
-    document.body.appendChild(backdrop);
-    function close() { backdrop.remove(); }
-    backdrop.addEventListener('click', function (event) {
-      if (event.target === backdrop || event.target.closest('[data-si4-close]')) close();
-    });
-    document.addEventListener('keydown', function handler(event) {
-      if (event.key === 'Escape') {
-        close();
-        document.removeEventListener('keydown', handler);
-      }
-    });
-    if (typeof onReady === 'function') onReady(backdrop, close);
-    return backdrop;
-  }
-
-  function mount(content, html, options) {
-    options = options || {};
-    var old = document.getElementById(ROOT_ID);
-    if (old) old.remove();
-    var root = document.createElement('section');
-    root.id = ROOT_ID;
-    root.className = 'scout-intelligence-v4';
-    root.setAttribute('aria-label', 'ScoutLink intelligence workspace');
-    root.innerHTML = html;
-
-    var hero = content.querySelector('.page-hero');
-    if (hero && hero.parentNode === content) hero.insertAdjacentElement('afterend', root);
-    else content.insertBefore(root, content.firstChild);
-
-    if (options.suppressLegacy) {
-      Array.from(content.children).forEach(function (child) {
-        if (child !== root && child !== hero) child.classList.add('si4-legacy-suppressed');
-      });
-    }
-    root.querySelectorAll('[data-si4-reload]').forEach(function (button) {
-      button.addEventListener('click', initRoute);
-    });
-    bindTabs(root);
-    return root;
-  }
-
-  function demoPlayers() {
-    try {
-      if (typeof window.getDemoState === 'function') {
-        return (window.getDemoState().players || []).slice();
-      }
-      var raw = sessionStorage.getItem('sl_public_demo_state');
-      if (raw) return (JSON.parse(raw).players || []).slice();
-    } catch (_) {}
-    return [];
-  }
-
-  function localDemoAnalysis(player) {
-    try {
-      if (typeof window.demoAnalysis === 'function') {
-        return window.demoAnalysis(player, typeof window.getDemoState === 'function' ? window.getDemoState() : {});
-      }
-    } catch (_) {}
-    var overall = score(player.overall_rating, 68);
-    var compatibility = score(player.compatibilityScore, Math.min(92, overall + 7));
-    return {
-      compatibilityScore:compatibility,
-      overallBreakdown:{
-        finalScore:overall,
-        currentReadiness:overall,
-        potentialRating:Math.min(95, overall + 7),
-        technicalScore:score(player.passing, overall),
-        tacticalIQScore:score(player.positioning, overall),
-        physicalProfileScore:score(player.strength, overall),
-        mentalCoachabilityScore:score(player.composure, overall),
-        matchOutputScore:overall
-      },
-      positionRatings:{
-        ratings:{},
-        bestCurrentPosition:playerPosition(player),
-        bestCurrentScore:overall,
-        bestFuturePosition:playerPosition(player),
-        bestFutureScore:Math.min(95, overall + 4),
-        sorted:[{role:playerPosition(player),score:overall}]
-      },
-      compatibility:{
-        needFit:compatibility,
-        roleFit:Math.max(45, compatibility - 5),
-        tacticalStyleFit:Math.max(45, compatibility - 3),
-        formationPositionFit:Math.max(45, compatibility - 4),
-        developmentPathwayFit:Math.max(45, compatibility - 2),
-        financialFit:Math.max(45, compatibility - 6),
-        risks:[]
-      },
-      valueAnalysis:{value:num(player.transfer_value)}
-    };
-  }
-
-  function localEvidence(player) {
-    var appearances = num(player.appearances);
-    var attrs = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
-    var rated = attrs.filter(function (key) { return num(player[key]) > 0; }).length;
-    var completeness = Math.round(rated / attrs.length * 100);
-    var value = Math.round(Math.min(100, appearances * 7) * .6 + completeness * .4);
-    return {
-      score:value,
-      label:value >= 80 ? 'High' : value >= 60 ? 'Medium' : value >= 40 ? 'Low' : 'Very low',
-      matchCount:appearances,
-      attributeCompleteness:completeness,
-      videoCount:0,
-      missing:[].concat(appearances < 5 ? ['More recorded matches'] : [], completeness < 80 ? ['More complete coach ratings'] : [], ['Approved video evidence']),
-      note:'Demo confidence is based on the player record currently loaded in this browser session.'
-    };
-  }
-
-  function localPositionFit(player, analysis, target) {
-    var ratings = analysis.positionRatings || {};
-    var best = score(ratings.bestCurrentScore || player.overall_rating);
-    var targetScore = target === (ratings.bestCurrentPosition || playerPosition(player))
-      ? best : Math.max(45, best - 9);
-    var gap = targetScore - best;
-    var verdict = gap >= -2 ? 'Natural or near-natural fit' : gap >= -8 ? 'Convertible with a managed development plan' : 'High-friction conversion';
-    var attrs = ['pace','stamina','positioning','composure','tackling'].map(function (key) {
-      return { key:key, label:key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }), score:score(player[key], 55) };
-    }).sort(function (a, b) { return b.score - a.score; });
-    return {
-      targetPosition:target,
-      targetScore:targetScore,
-      bestCurrentPosition:ratings.bestCurrentPosition || playerPosition(player),
-      bestCurrentScore:best,
-      bestFuturePosition:ratings.bestFuturePosition || playerPosition(player),
-      bestFutureScore:score(ratings.bestFutureScore || best + 4),
-      gapVsBest:gap,
-      verdict:verdict,
-      supportingAttributes:attrs.slice(0, 3),
-      frictionAttributes:attrs.slice().reverse().slice(0, 3),
-      alternatives:ratings.sorted || [],
-      recommendation:verdict === 'High-friction conversion' ? 'Keep the player in the stronger role or test a closer conversion before recruitment.' : 'Validate the role through a live observation before progressing.'
-    };
-  }
-
-  function localBundle(player) {
-    var analysis = localDemoAnalysis(player);
-    var evidence = localEvidence(player);
-    var compatibility = score(analysis.compatibilityScore);
-    var readiness = score(analysis.overallBreakdown && analysis.overallBreakdown.currentReadiness || player.overall_rating);
-    var verdictLabel = compatibility >= 82 && evidence.score >= 60 ? 'Prioritise' : compatibility >= 70 ? 'Development target' : 'Monitor';
-    return {
-      player:player,
-      facts:[],
-      videos:[],
-      analysis:analysis,
-      evidence:evidence,
-      verdict:{
-        label:verdictLabel,
-        action:verdictLabel === 'Prioritise' ? 'Prioritise a live observation and coach conversation.' : 'Keep the player under structured review.',
-        compatibility:compatibility,
-        readiness:readiness,
-        potential:score(analysis.overallBreakdown && analysis.overallBreakdown.potentialRating || readiness + 5),
-        evidenceConfidence:evidence.label,
-        risks:(analysis.compatibility && analysis.compatibility.risks) || [],
-        summary:playerName(player) + ' is a ' + verdictLabel.toLowerCase() + ' for the current demo recruitment brief.'
-      },
-      positionFit:localPositionFit(player, analysis, playerPosition(player)),
-      timeline:[
-        { type:'profile_update', at:player.updated_at || new Date().toISOString(), title:'Demo player profile loaded', body:'This sample player record is isolated from real ScoutLink records.' }
-      ]
-    };
-  }
-
-  async function loadPlayers() {
-    if (state.players.length) return state.players;
-    var response;
-    if (isPublicDemo()) {
-      state.players = demoPlayers();
-    } else {
-      response = await legacyApi('GET', '/api/players?limit=100&page=1');
-      state.players = response.data || response.players || [];
-    }
-    state.playerById = {};
-    state.players.forEach(function (player) { state.playerById[player.id] = player; });
-    return state.players;
-  }
-
-  async function overview() {
-    if (isPublicDemo()) {
-      var players = await loadPlayers();
-      return {
-        brief:{
-          formation:'4-3-3', playingStyle:'High press',
-          weaknesses:['Tactical Awareness Gaps','Insufficient Game Pace and Speed'],
-          roleExpectations:['Tactical Intelligence','Speed and Agility'],
-          longTermGoals:['Financial Viability','Positional Depth Advantage']
-        },
-        usage:{
-          plan:'Elite demo', resetAt:null,
-          predictions:{used:4,limit:60,remaining:56},
-          exports:{used:2,limit:300,remaining:298},
-          interests:{used:Math.min(7, players.length),limit:300,remaining:293}
-        },
-        tasks:[], activity:[]
-      };
-    }
-    if (!state.overview) state.overview = await request('GET', '/api/scout-intelligence/overview');
-    return state.overview;
-  }
-
-  async function playerIntelligence(id) {
-    if (isPublicDemo()) {
-      var players = await loadPlayers();
-      var found = players.find(function (player) { return String(player.id) === String(id); });
-      if (!found) throw new Error('The demo player could not be found.');
-      return localBundle(found);
-    }
-    return request('GET', '/api/scout-intelligence/players/' + encodeURIComponent(id));
-  }
-
-  function evidenceHtml(evidence) {
-    evidence = evidence || {};
-    return '<div class="si4-evidence-grid">' +
-      '<div class="si4-evidence-item"><b>' + score(evidence.score) + '/100</b><span>Evidence confidence · ' + esc(evidence.label || 'Not assessed') + '</span></div>' +
-      '<div class="si4-evidence-item"><b>' + num(evidence.matchCount) + '</b><span>Recorded matches supporting the profile</span></div>' +
-      '<div class="si4-evidence-item"><b>' + num(evidence.attributeCompleteness) + '%</b><span>Coach attribute completeness</span></div>' +
-      '<div class="si4-evidence-item"><b>' + num(evidence.videoCount) + '</b><span>Approved video evidence items</span></div>' +
-      '</div>' +
-      '<div class="si4-callout ' + (score(evidence.score) < 50 ? 'gold' : '') + '" style="margin-top:9px"><b>How much to trust this:</b> ' + esc(evidence.note || 'Use the evidence score alongside live scouting judgement.') + '</div>' +
-      ((evidence.missing || []).length ? '<div class="si4-section"><div class="si4-section-head"><div><h3>Evidence still needed</h3><p>Close these gaps before a final decision.</p></div></div><div class="si4-pill-row">' +
-      evidence.missing.map(function (item) { return pill(item, 'gold'); }).join('') + '</div></div>' : '');
-  }
-
-  function positionFitHtml(fit) {
-    fit = fit || {};
-    var verdictClass = /high-friction/i.test(fit.verdict || '') ? 'red' : /convertible/i.test(fit.verdict || '') ? 'gold' : 'green';
-    var supports = fit.supportingAttributes || [];
-    var friction = fit.frictionAttributes || [];
-    return '<div class="si4-summary-bar"><div><b>' + esc(fit.verdict || 'Position fit not calculated') + '</b><br><span>' +
-      esc((fit.targetPosition || 'Target') + ' scores ' + (fit.targetScore == null ? '—' : fit.targetScore + '/100') + ' versus the best role at ' + (fit.bestCurrentScore == null ? '—' : fit.bestCurrentScore + '/100')) +
-      '</span></div>' + pill((fit.gapVsBest == null ? '—' : fit.gapVsBest) + ' gap', verdictClass) + '</div>' +
-      '<div class="si4-grid four">' +
-        metric('Best current role', fit.bestCurrentPosition || '—', (fit.bestCurrentScore || '—') + '/100') +
-        metric('Best future role', fit.bestFuturePosition || '—', (fit.bestFutureScore || '—') + '/100') +
-        metric('Target role', fit.targetPosition || '—', (fit.targetScore || '—') + '/100') +
-        metric('Conversion verdict', fit.verdict || '—', fit.recommendation || '', /high-friction/i.test(fit.verdict || '') ? 'red' : 'green') +
-      '</div>' +
-      '<div class="si4-split-list si4-section">' +
-        '<article class="si4-card green"><h3>What supports the role</h3><ul class="si4-strength-list">' +
-          (supports.length ? supports.map(function (item) { return '<li><b>' + esc(item.label || item.key) + ' ' + score(item.score) + '/100</b> supports the target-role actions.</li>'; }).join('') : '<li>No role-specific strengths have been calculated yet.</li>') +
-        '</ul></article>' +
-        '<article class="si4-card red"><h3>Where friction comes from</h3><ul class="si4-risk-list">' +
-          (friction.length ? friction.map(function (item) { return '<li><b>' + esc(item.label || item.key) + ' ' + score(item.score) + '/100</b> creates role-conversion risk.</li>'; }).join('') : '<li>No material role friction has been identified.</li>') +
-        '</ul></article>' +
-      '</div>' +
-      '<div class="si4-callout ' + verdictClass + '" style="margin-top:10px"><b>Recruitment action:</b> ' + esc(fit.recommendation || 'Validate the result through live observation.') + '</div>';
-  }
-
-  function timelineHtml(rows) {
-    rows = rows || [];
-    if (!rows.length) return empty('No decision history yet', 'Changes, reports, observations and decisions will appear here.');
-    return '<div class="si4-timeline">' + rows.map(function (row) {
-      return '<article class="si4-timeline-item"><b>' + esc(row.title || row.event_type || 'ScoutLink activity') + '</b>' +
-        '<span>' + esc(row.body || '') + '</span><time>' + esc(dateTimeText(row.at || row.created_at)) + '</time></article>';
-    }).join('') + '</div>';
-  }
-
-  function briefHtml(brief) {
-    brief = brief || {};
-    return '<div class="si4-grid two">' +
-      '<article class="si4-card"><h3>Team context</h3><div class="si4-pill-row">' +
-        pill(brief.formation || 'Formation not set', 'blue') + pill(brief.playingStyle || 'Style not set', 'green') +
-      '</div><p>These settings influence search ordering, compatibility, position fit and comparison recommendations.</p></article>' +
-      '<article class="si4-card"><h3>What the team needs</h3><div class="si4-pill-row">' +
-        (brief.weaknesses || []).concat(brief.roleExpectations || []).slice(0, 6).map(function (item) { return pill(item); }).join('') +
-      '</div><p>The intelligence layer explains how each player addresses or fails to address this brief.</p></article>' +
-    '</div>';
-  }
-
-  async function renderDashboard(content) {
-    mount(content, shell('Decision centre', 'See the work that needs attention, the evidence that changed and the limits available to the scout team.', '', loading('Loading the recruitment brief, tasks and usage.')));
-    try {
-      var data = await overview();
-      var usage = data.usage || {};
-      state.usage = usage;
-      var body = '<div class="si4-kpi-strip">' +
-        metric('Predictions remaining', num(usage.predictions && usage.predictions.remaining), 'of ' + num(usage.predictions && usage.predictions.limit), 'green') +
-        metric('Exports remaining', num(usage.exports && usage.exports.remaining), 'of ' + num(usage.exports && usage.exports.limit)) +
-        metric('Pipeline capacity', num(usage.interests && usage.interests.remaining), 'places remaining') +
-        metric('Current plan', usage.plan || 'Scout', usage.resetAt ? 'Resets ' + dateText(usage.resetAt) : 'Usage managed by the scout team') +
-      '</div>' + briefHtml(data.brief) +
-      '<div class="si4-grid two si4-section"><article class="si4-card"><div class="si4-section-head"><div><h3>Next actions</h3><p>Tasks and decisions that need an owner.</p></div></div>' +
-      ((data.tasks || []).length ? (data.tasks || []).slice(0, 8).map(function (task) {
-        return '<div class="si4-list-row"><div><h4>' + esc(task.title) + '</h4><p>' + esc(task.description || task.task_type || '') + (task.due_at ? ' · Due ' + dateText(task.due_at) : '') + '</p></div>' + pill(task.priority || 'normal', task.priority === 'urgent' ? 'red' : '') + '</div>';
-      }).join('') : empty('No open tasks', 'Create tasks from players, comparisons, fixtures or pipeline decisions.')) +
-      '</article><article class="si4-card"><div class="si4-section-head"><div><h3>Recent intelligence changes</h3><p>Only evidence and decisions that may change an action.</p></div></div>' +
-      ((data.activity || []).length ? timelineHtml((data.activity || []).slice(0, 8)) : empty('No new intelligence changes', 'Saved searches, watches, observations and decisions will appear here.')) +
-      '</article></div>';
-      var root = mount(content, shell('Decision centre', 'See the work that needs attention, the evidence that changed and the limits available to the scout team.',
-        '<a class="si4-button primary" href="/scout/player-search">Find players</a><a class="si4-button" href="/scout/pipeline">Open pipeline</a>', body));
-      root.querySelectorAll('[data-si4-task]').forEach(function () {});
-    } catch (error) {
-      mount(content, shell('Decision centre', 'The recruitment brief and work queue could not be loaded.', '', errorState(error.message)));
-    }
-  }
-
-  async function renderProfile(content) {
-    var playerId = new URLSearchParams(window.location.search).get('id');
-    if (!playerId) {
-      mount(content, shell('Player intelligence', 'Open a player from search, rankings, fixtures or the pipeline.', '<a class="si4-button primary" href="/scout/player-search">Find a player</a>', empty('No player selected', 'Select a player before opening the intelligence view.')));
-      return;
-    }
-    mount(content, shell('Player intelligence', 'A decision-ready summary of fit, evidence, role suitability, risk and next action.', '', loading('Loading the complete player decision record.')));
-    try {
-      var bundle = await playerIntelligence(playerId);
-      state.activeProfile = bundle;
-      var player = bundle.player || {};
-      var verdict = bundle.verdict || {};
-      var evidence = bundle.evidence || {};
-      var body = '<div class="si4-verdict"><div class="si4-verdict-mark"><small>ScoutLink verdict</small><strong>' + esc(verdict.label || 'Monitor') + '</strong><span>' + esc(verdict.action || 'Review the complete evidence before progressing.') + '</span></div>' +
-        '<div class="si4-verdict-copy"><div class="si4-player-head"><div class="si4-avatar">' + esc(initials(player)) + '</div><div><h3>' + esc(playerName(player)) + '</h3><p>' + esc(playerLine(player)) + '</p></div></div><p style="margin-top:10px">' + esc(verdict.summary || '') + '</p>' +
-        '<div class="si4-pill-row">' + pill('Compatibility ' + score(verdict.compatibility || bundle.analysis && bundle.analysis.compatibilityScore) + '/100', 'green') + pill('Readiness ' + score(verdict.readiness || player.overall_rating) + '/100', 'blue') + pill('Potential ' + score(verdict.potential || player.potential_rating || player.overall_rating) + '/100') + pill('Evidence ' + (evidence.label || 'Not assessed'), evidence.score < 50 ? 'gold' : 'green') + '</div></div></div>' +
-        tabs([
-          {id:'verdict',label:'Verdict'}, {id:'evidence',label:'Evidence'}, {id:'position',label:'Position fit'}, {id:'timeline',label:'Timeline'}, {id:'actions',label:'Actions'}
-        ], 'verdict') +
-        '<section data-si4-panel="verdict"><div class="si4-grid two"><article class="si4-card green"><h3>Why this verdict</h3><p>' + esc(verdict.summary || '') + '</p><div class="si4-callout" style="margin-top:9px"><b>Next action:</b> ' + esc(verdict.action || '') + '</div></article>' +
-        '<article class="si4-card red"><h3>Recruitment risks</h3><ul class="si4-risk-list">' +
-          ((verdict.risks || []).length ? verdict.risks.map(function (risk) { return '<li>' + esc(typeof risk === 'string' ? risk : risk.label || risk.reason || JSON.stringify(risk)) + '</li>'; }).join('') : '<li>No specific model risk was returned. Evidence confidence and live observation still matter.</li>') +
-        '</ul></article></div></section>' +
-        '<section data-si4-panel="evidence" hidden>' + evidenceHtml(evidence) + '</section>' +
-        '<section data-si4-panel="position" hidden>' + positionFitHtml(bundle.positionFit) + '</section>' +
-        '<section data-si4-panel="timeline" hidden>' + timelineHtml(bundle.timeline) + '</section>' +
-        '<section data-si4-panel="actions" hidden><div class="si4-grid two">' +
-          '<article class="si4-card"><h3>Recruitment action</h3><p>Record the human decision and why it was made. The model snapshot is stored with it.</p><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-si4-record-decision type="button">Record decision</button><button class="si4-button" data-si4-watch-player type="button">Watch changes</button></div></article>' +
-          '<article class="si4-card"><h3>Human evidence</h3><p>Create a live observation or a decision-ready report without losing the current intelligence context.</p><div class="si4-actions" style="margin-top:10px"><button class="si4-button" data-si4-observation type="button">Add observation</button><button class="si4-button" data-si4-report type="button">Create report</button><button class="si4-button" data-si4-shortlist-player type="button">Add to shortlist</button></div></article>' +
-        '</div></section>';
-      var root = mount(content, shell('Player intelligence', 'A decision-ready summary of fit, evidence, role suitability, risk and next action.',
-        '<a class="si4-button" href="/scout/compare-players?playerA=' + encodeURIComponent(player.id) + '">Compare</a><a class="si4-button primary" href="/scout/predictions?player=' + encodeURIComponent(player.id) + '">Run prediction</a>', body));
-      bindProfileActions(root, bundle);
-    } catch (error) {
-      mount(content, shell('Player intelligence', 'The complete player decision record could not be loaded.', '', errorState(error.message)));
-    }
-  }
-
-  function bindProfileActions(root, bundle) {
-    var player = bundle.player;
-    root.querySelector('[data-si4-watch-player]')?.addEventListener('click', function () {
-      if (isPublicDemo()) return toast('Player watch saved for this demo session.');
-      dialog('Watch player changes', '<div class="si4-form-grid"><div class="si4-field full"><label>Reason for watching</label><textarea class="si4-textarea" id="si4WatchReason" placeholder="What change would make this player more relevant?"></textarea></div>' +
-        '<div class="si4-field"><label>Overall alert threshold</label><input class="si4-input" id="si4WatchOverall" type="number" min="0" max="100" value="80"></div>' +
-        '<div class="si4-field"><label>Evidence alert threshold</label><input class="si4-input" id="si4WatchEvidence" type="number" min="0" max="100" value="70"></div></div>' +
-        '<div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-watch type="button">Save watch</button></div>', function (modal, close) {
-          modal.querySelector('[data-save-watch]').addEventListener('click', async function () {
-            try {
-              await request('POST', '/api/scout-intelligence/watches', {
-                playerId:player.id,
-                reason:modal.querySelector('#si4WatchReason').value,
-                thresholds:{
-                  minOverall:num(modal.querySelector('#si4WatchOverall').value),
-                  minEvidence:num(modal.querySelector('#si4WatchEvidence').value),
-                  anyProfileUpdate:true
-                }
-              });
-              close(); toast('Player watch saved.');
-            } catch (error) { toast(error.message, 'error'); }
-          });
-        });
-    });
-
-    root.querySelector('[data-si4-record-decision]')?.addEventListener('click', function () {
-      openDecisionDialog(player, {});
-    });
-    root.querySelector('[data-si4-observation]')?.addEventListener('click', function () {
-      openObservationDialog(player, null);
-    });
-    root.querySelector('[data-si4-report]')?.addEventListener('click', function () {
-      openReportDialog(player, null);
-    });
-    root.querySelector('[data-si4-shortlist-player]')?.addEventListener('click', function () {
-      openAddToShortlistDialog(player);
-    });
-  }
-
-  async function openAddToShortlistDialog(player) {
-    if (isPublicDemo()) {
-      toast('Player added to a demo shortlist for this session.');
-      return;
-    }
-    try {
-      var response = await request('GET', '/api/scout-intelligence/shortlists');
-      var lists = response.data || [];
-      if (!lists.length) {
-        toast('Create a shared shortlist from Events or Chat first.', 'error');
-        return;
-      }
-      dialog('Add player to shared shortlist', '<div class="si4-form-grid"><div class="si4-field full"><label>Shortlist</label><select class="si4-select" id="si4ShortlistSelect">' + lists.map(function (list) { return '<option value="' + esc(list.id) + '">' + esc(list.name) + '</option>'; }).join('') + '</select></div><div class="si4-field full"><label>Private shortlist note</label><textarea class="si4-textarea" id="si4ShortlistNote"></textarea></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-confirm-shortlist-player type="button">Add player</button></div>', function (modal, close) {
-        modal.querySelector('[data-confirm-shortlist-player]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/shortlists/' + encodeURIComponent(modal.querySelector('#si4ShortlistSelect').value) + '/players', {
-              playerId:player.id,
-              note:modal.querySelector('#si4ShortlistNote').value
-            });
-            close();
-            toast('Player added to the shared shortlist.');
-          } catch (error) {
-            toast(error.message, 'error');
-          }
-        });
-      });
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  }
-
-  function openDecisionDialog(player, context) {
-    context = context || {};
-    if (isPublicDemo()) {
-      toast('Decision recorded for this demo session.');
-      return;
-    }
-    dialog('Record recruitment decision', '<div class="si4-form-grid"><div class="si4-field"><label>Decision</label><select class="si4-select" id="si4Decision"><option>Prioritise</option><option>Shortlist</option><option>Trial before deciding</option><option>Monitor</option><option>Do not progress</option></select></div>' +
-      '<div class="si4-field"><label>Reason category</label><select class="si4-select" id="si4Reason"><option value="team_fit">Team fit</option><option value="position_fit">Position fit</option><option value="evidence">Evidence confidence</option><option value="financial">Financial fit</option><option value="risk">Recruitment risk</option></select></div>' +
-      '<div class="si4-field full"><label>Rationale</label><textarea class="si4-textarea" id="si4Rationale" placeholder="Explain why this decision was made, including the evidence and trade-offs."></textarea></div>' +
-      '<div class="si4-field"><label>Next action</label><input class="si4-input" id="si4NextAction" placeholder="Example: observe next fixture"></div>' +
-      '<div class="si4-field"><label>Due date</label><input class="si4-input" id="si4Due" type="date"></div></div>' +
-      '<div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-decision type="button">Save decision</button></div>', function (modal, close) {
-        modal.querySelector('[data-save-decision]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/decisions', {
-              playerId:player.id,
-              decision:modal.querySelector('#si4Decision').value,
-              reasonCode:modal.querySelector('#si4Reason').value,
-              rationale:modal.querySelector('#si4Rationale').value,
-              nextAction:modal.querySelector('#si4NextAction').value,
-              dueAt:modal.querySelector('#si4Due').value || null,
-              comparisonId:context.comparisonId || null,
-              pipelineId:context.pipelineId || null,
-              context:context
-            });
-            close(); toast('Recruitment decision saved with the current model snapshot.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-      });
-  }
-
-  function openObservationDialog(player, fixture) {
-    if (isPublicDemo()) {
-      toast('Observation saved for this demo session.');
-      return;
-    }
-    dialog('Live observation', '<div class="si4-form-grid three"><div class="si4-field"><label>Position observed</label><input class="si4-input" id="si4ObsPosition" value="' + esc(playerPosition(player)) + '"></div>' +
-      '<div class="si4-field"><label>First-half rating</label><input class="si4-input" id="si4ObsFirst" type="number" min="0" max="100"></div>' +
-      '<div class="si4-field"><label>Second-half rating</label><input class="si4-input" id="si4ObsSecond" type="number" min="0" max="100"></div>' +
-      '<div class="si4-field full"><label>Technical observation</label><textarea class="si4-textarea" id="si4ObsTechnical"></textarea></div>' +
-      '<div class="si4-field full"><label>Tactical observation</label><textarea class="si4-textarea" id="si4ObsTactical"></textarea></div>' +
-      '<div class="si4-field full"><label>Physical and mental observation</label><textarea class="si4-textarea" id="si4ObsPhysical"></textarea></div>' +
-      '<div class="si4-field"><label>Recommendation</label><select class="si4-select" id="si4ObsRecommendation"><option>Progress</option><option>Observe again</option><option>Monitor remotely</option><option>Do not progress</option></select></div>' +
-      '<div class="si4-field"><label>Follow-up action</label><input class="si4-input" id="si4ObsFollow" placeholder="Example: compare with another target"></div></div>' +
-      '<div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-observation type="button">Save observation</button></div>', function (modal, close) {
-        modal.querySelector('[data-save-observation]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/observations', {
-              playerId:player.id,
-              fixtureId:fixture && fixture.id || null,
-              positionObserved:modal.querySelector('#si4ObsPosition').value,
-              firstHalfRating:num(modal.querySelector('#si4ObsFirst').value) || null,
-              secondHalfRating:num(modal.querySelector('#si4ObsSecond').value) || null,
-              technicalNotes:modal.querySelector('#si4ObsTechnical').value,
-              tacticalNotes:modal.querySelector('#si4ObsTactical').value,
-              physicalNotes:modal.querySelector('#si4ObsPhysical').value,
-              mentalNotes:modal.querySelector('#si4ObsPhysical').value,
-              recommendation:modal.querySelector('#si4ObsRecommendation').value,
-              followUpAction:modal.querySelector('#si4ObsFollow').value
-            });
-            close(); toast('Observation saved and checked against the current model prediction.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-      });
-  }
-
-  function openReportDialog(player, source) {
-    if (isPublicDemo()) {
-      toast('Demo report created for this browser session.');
-      return;
-    }
-    dialog('Create decision-ready report', '<div class="si4-form-grid"><div class="si4-field"><label>Report type</label><select class="si4-select" id="si4ReportType"><option>Player intelligence report</option><option>Position-fit report</option><option>Scenario-prediction report</option><option>Development report</option><option>ROI report</option><option>Comparison report</option><option>Observation report</option></select></div>' +
-      '<div class="si4-field"><label>Report title</label><input class="si4-input" id="si4ReportTitle" value="' + esc(playerName(player) + ' recruitment review') + '"></div>' +
-      '<div class="si4-field full"><label>Decision summary</label><textarea class="si4-textarea" id="si4ReportSummary" placeholder="Summarise the verdict, evidence, risk and next action."></textarea></div></div>' +
-      '<div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-report type="button">Create report record</button><button class="si4-button" data-export-profile type="button">Generate PDF dossier</button></div>', function (modal, close) {
-        modal.querySelector('[data-save-report]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/reports', {
-              reportType:modal.querySelector('#si4ReportType').value,
-              subjectType:'player',
-              subjectId:player.id,
-              title:modal.querySelector('#si4ReportTitle').value,
-              config:{ summary:modal.querySelector('#si4ReportSummary').value, source:source || {} }
-            });
-            close(); toast('Report record created.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-        modal.querySelector('[data-export-profile]').addEventListener('click', async function () {
-          try {
-            var response = await legacyApi('POST', '/api/exports/player', {
-              playerId:player.id, format:'PDF', source:'profile'
-            });
-            downloadBase64(response.filename, response.mime, response.contentBase64);
-            toast('PDF dossier generated.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-      });
-  }
-
-  function downloadBase64(filename, mime, content) {
-    var binary = atob(content);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    var blob = new Blob([bytes], { type:mime || 'application/octet-stream' });
-    var url = URL.createObjectURL(blob);
-    var anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename || 'scoutlink-report';
-    document.body.appendChild(anchor);
-    anchor.click(); anchor.remove();
-    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  async function renderSearch(content) {
-    var players = await loadPlayers().catch(function () { return []; });
-    var body = '<div class="si4-toolbar"><div class="si4-field" style="flex:3 1 340px"><label for="si4NaturalSearch">Describe the player you need</label><input class="si4-input" id="si4NaturalSearch" placeholder="Example: U16 central midfielders near London with high evidence confidence and strong development upside"></div>' +
-      '<div class="si4-field"><label for="si4SearchContext">Decision context</label><select class="si4-select" id="si4SearchContext"><option value="immediate_starter">Immediate starter</option><option value="development_prospect">Development prospect</option><option value="tactical_role">Specific tactical role</option><option value="low_financial_risk">Low financial risk</option><option value="resale_upside">Resale upside</option><option value="squad_depth">Squad depth</option></select></div>' +
-      '<button class="si4-button primary" type="button" data-si4-run-search>Run intelligent search</button><button class="si4-button" type="button" data-si4-save-search>Save search</button></div>' +
-      '<div id="si4SearchChips" class="si4-pill-row" aria-live="polite"></div><div id="si4SearchResults" class="si4-section">' +
-      empty('Describe the recruitment need', 'ScoutLink will explain why every result matches the team brief instead of returning an unexplained list.', players.length ? '<button class="si4-button small" data-si4-show-all type="button">Show all loaded players</button>' : '') + '</div>';
-    var root = mount(content, shell('Intelligent player search', 'Search by football need, position, age, evidence confidence, value, readiness or development context. Every result includes the reason it matched.',
-      '<button class="si4-button" type="button" data-si4-evaluate-alerts>Check alerts</button>', body), { suppressLegacy:true });
-
-    root.querySelector('[data-si4-run-search]').addEventListener('click', function () { runIntelligentSearch(root); });
-    root.querySelector('[data-si4-show-all]')?.addEventListener('click', function () { renderSearchResults(root, players.map(function (player) { var bundle = localBundle(player); return { player:player, compatibilityScore:score(bundle.analysis.compatibilityScore), evidence:bundle.evidence, verdict:bundle.verdict, positionFit:bundle.positionFit, reasons:['Loaded from the current ScoutLink player database.'] }; })); });
-    root.querySelector('[data-si4-save-search]').addEventListener('click', function () { saveCurrentSearch(root); });
-    root.querySelector('[data-si4-evaluate-alerts]').addEventListener('click', async function () {
-      if (isPublicDemo()) return toast('No new demo alerts were found.');
-      try { var response = await request('POST', '/api/scout-intelligence/alerts/evaluate', {}); toast(response.count ? response.count + ' meaningful alert(s) created.' : 'No meaningful new alerts.'); } catch (error) { toast(error.message, 'error'); }
-    });
-  }
-
-  async function runIntelligentSearch(root) {
-    var query = root.querySelector('#si4NaturalSearch').value.trim();
-    var contextKey = root.querySelector('#si4SearchContext').value;
-    var results = root.querySelector('#si4SearchResults');
-    results.innerHTML = loading('Ranking players against the request and current recruitment brief.');
-    try {
-      var payload;
-      if (isPublicDemo()) {
-        var parsed = localParseQuery(query);
-        parsed.criteria.contextKey = contextKey;
-        var players = await loadPlayers();
-        payload = { data:players.filter(function (player) { return localCriteriaMatch(player, parsed.criteria); }).map(function (player) {
-          var bundle = localBundle(player);
-          return { player:player, compatibilityScore:score(bundle.analysis.compatibilityScore), evidence:bundle.evidence, verdict:bundle.verdict, positionFit:localPositionFit(player, bundle.analysis, parsed.criteria.positions && parsed.criteria.positions[0] || playerPosition(player)), reasons:localMatchReasons(player, bundle, parsed.criteria) };
-        }).sort(function (a, b) { return b.compatibilityScore - a.compatibilityScore; }), criteria:parsed.criteria, chips:parsed.chips };
-      } else {
-        var parsedResponse = await request('POST', '/api/scout-intelligence/search/parse', { query:query });
-        parsedResponse.criteria.contextKey = contextKey;
-        payload = await request('POST', '/api/scout-intelligence/search/run', { query:query, criteria:parsedResponse.criteria });
-        payload.chips = parsedResponse.chips;
-      }
-      root.querySelector('#si4SearchChips').innerHTML = (payload.chips || Object.keys(payload.criteria || {})).map(function (chip) { return pill(chip); }).join('');
-      renderSearchResults(root, payload.data || []);
-      root.dataset.lastSearchQuery = query;
-      root.dataset.lastSearchCriteria = JSON.stringify(payload.criteria || {});
-    } catch (error) {
-      results.innerHTML = errorState(error.message);
-    }
-  }
-
-  function localParseQuery(query) {
-    var lower = query.toLowerCase();
-    var criteria = {};
-    var chips = [];
-    var age = query.match(/\bU([6-9]|1[0-8])\b/i);
-    if (age) { criteria.ageGroup = 'U' + age[1]; chips.push(criteria.ageGroup); }
-    var positions = ['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'].filter(function (position) { return new RegExp('\\b' + position + '\\b', 'i').test(query); });
-    if (positions.length) { criteria.positions = positions; chips.push(positions.join(', ')); }
-    if (/high confidence|strong evidence/.test(lower)) { criteria.minEvidence = 70; chips.push('High evidence'); }
-    if (/development|ceiling|potential/.test(lower)) { criteria.contextKey = 'development_prospect'; chips.push('Development prospect'); }
-    if (/starter|ready now|immediate/.test(lower)) { criteria.contextKey = 'immediate_starter'; chips.push('Immediate starter'); }
-    return { criteria:criteria, chips:chips };
-  }
-
-  function localCriteriaMatch(player, criteria) {
-    if (criteria.ageGroup && player.age_group !== criteria.ageGroup) return false;
-    if (criteria.positions && criteria.positions.length) {
-      var positions = [player.specific_position, player.primary_position].concat(player.positions || []).filter(Boolean).map(function (value) { return String(value).toUpperCase(); });
-      if (!criteria.positions.some(function (position) { return positions.includes(position); })) return false;
-    }
-    if (criteria.minEvidence && localEvidence(player).score < criteria.minEvidence) return false;
-    return true;
-  }
-
-  function localMatchReasons(player, bundle, criteria) {
-    var reasons = [];
-    if (criteria.ageGroup) reasons.push('Matches the requested ' + criteria.ageGroup + ' age group.');
-    if (criteria.positions && criteria.positions.length) reasons.push('Matches the requested position: ' + playerPosition(player) + '.');
-    reasons.push('Compatibility is ' + score(bundle.analysis.compatibilityScore) + '/100.');
-    reasons.push('Evidence confidence is ' + bundle.evidence.label + ' at ' + bundle.evidence.score + '/100.');
-    return reasons;
-  }
-
-  function renderSearchResults(root, rows) {
-    var target = root.querySelector('#si4SearchResults');
-    if (!rows.length) {
-      target.innerHTML = empty('No players match this request', 'Reduce one constraint or save the search and enable alerts for future matches.');
-      return;
-    }
-    target.innerHTML = '<div class="si4-section-head"><div><h3>' + rows.length + ' explained result' + (rows.length === 1 ? '' : 's') + '</h3><p>Ordered by the selected recruitment context and current team fit.</p></div></div><div class="si4-grid two">' + rows.map(function (row) {
-      var player = row.player || {};
-      return '<article class="si4-card"><div class="si4-player-head"><div class="si4-avatar">' + esc(initials(player)) + '</div><div><h3>' + esc(playerName(player)) + '</h3><p>' + esc(playerLine(player)) + '</p></div><span class="si4-route-badge">' + score(row.compatibilityScore) + '% fit</span></div>' +
-        '<div class="si4-pill-row">' + pill((row.verdict && row.verdict.label) || 'Monitor', 'green') + pill('Evidence ' + (row.evidence && row.evidence.label || '—'), row.evidence && row.evidence.score < 50 ? 'gold' : 'blue') + pill((row.positionFit && row.positionFit.verdict) || 'Role not tested', /high-friction/i.test(row.positionFit && row.positionFit.verdict || '') ? 'red' : '') + '</div>' +
-        '<ul class="si4-strength-list">' + (row.reasons || []).slice(0, 4).map(function (reason) { return '<li>' + esc(reason) + '</li>'; }).join('') + '</ul>' +
-        '<div class="si4-actions" style="margin-top:10px"><a class="si4-button small primary" href="/player/profile?id=' + encodeURIComponent(player.id) + '">Review intelligence</a><a class="si4-button small" href="/scout/compare-players?playerA=' + encodeURIComponent(player.id) + '">Compare</a></div></article>';
-    }).join('') + '</div>';
-  }
-
-  function saveCurrentSearch(root) {
-    var query = root.querySelector('#si4NaturalSearch').value.trim();
-    if (!query) return toast('Enter a search request before saving it.', 'error');
-    if (isPublicDemo()) return toast('Search saved for this demo session.');
-    dialog('Save intelligent search', '<div class="si4-form-grid"><div class="si4-field full"><label>Search name</label><input class="si4-input" id="si4SearchName" value="' + esc(query.slice(0, 80)) + '"></div>' +
-      '<label class="si4-checkbox"><input type="checkbox" id="si4SearchAlerts" checked> Alert me when new players match</label></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-confirm-save-search type="button">Save search</button></div>', function (modal, close) {
-        modal.querySelector('[data-confirm-save-search]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/saved-searches', {
-              name:modal.querySelector('#si4SearchName').value,
-              query:query,
-              criteria:JSON.parse(root.dataset.lastSearchCriteria || '{}'),
-              alertsEnabled:modal.querySelector('#si4SearchAlerts').checked,
-              alertRules:{ newMatches:true }
-            });
-            close(); toast('Search saved with alerts.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-      });
-  }
-
-  async function renderPredictions(content) {
-    var players = await loadPlayers();
-    var selected = new URLSearchParams(window.location.search).get('player') || (players[0] && players[0].id) || '';
-    var body = '<div class="si4-toolbar"><div class="si4-field" style="flex:2 1 300px"><label for="si4PredictionPlayer">Player</label><select class="si4-select" id="si4PredictionPlayer"><option value="">Choose a player</option>' + players.map(function (player) { return playerOption(player); }).join('') + '</select></div>' +
-      '<div class="si4-field"><label for="si4PredictionType">Analysis</label><select class="si4-select" id="si4PredictionType"><option value="Position Fit Projection">Position fit</option><option value="Match Scenario Prediction">Match scenario</option><option value="Attribute Development">Development projection</option><option value="ROI Analysis">ROI and value</option></select></div>' +
-      '<button class="si4-button primary" type="button" data-si4-run-prediction>Run analysis</button></div>' +
-      '<div id="si4PredictionControls"></div><div id="si4PredictionResult" class="si4-section">' +
-      empty('Choose the question the scout needs answered', 'The result will explain the verdict, supporting statistics, risk, confidence and recommended action.') + '</div>' +
-      '<div id="si4PredictionHistory" class="si4-section"></div>';
-    var root = mount(content, shell('Explainable predictions', 'Run position, tactical, development and financial scenarios. Every output shows why the result was reached and what the scout should do next.', '', body), { suppressLegacy:true });
-    var select = root.querySelector('#si4PredictionPlayer');
-    if (selected) select.value = selected;
-    function controls() { renderPredictionControls(root, root.querySelector('#si4PredictionType').value); }
-    root.querySelector('#si4PredictionType').addEventListener('change', controls);
-    controls();
-    root.querySelector('[data-si4-run-prediction]').addEventListener('click', function () { runPrediction(root); });
-    loadPredictionHistory(root);
-  }
-
-  function renderPredictionControls(root, type) {
-    var box = root.querySelector('#si4PredictionControls');
-    var html = '';
-    if (type === 'Position Fit Projection') {
-      html = '<div class="si4-toolbar"><div class="si4-field"><label>Target position</label><select class="si4-select" id="si4TargetPosition">' + ['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'].map(function (value) { return '<option>' + value + '</option>'; }).join('') + '</select></div><div class="si4-callout blue" style="flex:2 1 360px"><b>Question answered:</b> Is the player naturally suited to this role, convertible with a plan or a high-friction conversion?</div></div>';
-    } else if (type === 'Match Scenario Prediction') {
-      html = '<div class="si4-toolbar"><div class="si4-field" style="flex:2 1 330px"><label>Match scenario</label><select class="si4-select" id="si4Scenario">' + [
-        ['protect_lead','Protecting a one-goal lead under pressure'],['chasing_game','Chasing the game with 15 minutes left'],['high_press','High press against a possession team'],['low_block','Breaking down a compact low block'],['wide_duel','Repeated wide 1v1 duels'],['aerial_battle','Direct opponent with heavy aerial pressure'],['counter_attack','Counter-attacking from deep'],['build_back','Building play from the back'],['set_piece_attack','Attacking set pieces late in the game'],['set_piece_defence','Defending set pieces against a taller team'],['fatigue_phase','Managing a high-tempo final 20 minutes'],['physical_midfield','Playing through a physical midfield battle'],['transition_defence','Defending fast transitions'],['creative_10','Operating as the main creative outlet'],['striker_isolated','Playing as an isolated striker']
-      ].map(function (row) { return '<option value="' + row[0] + '">' + esc(row[1]) + '</option>'; }).join('') + '</select></div><div class="si4-callout blue" style="flex:2 1 360px"><b>Question answered:</b> Will the player flourish, need tactical protection or create repeated risk in this match situation?</div></div>';
-    } else if (type === 'Attribute Development') {
-      html = '<div class="si4-toolbar"><div class="si4-field"><label>Development focus</label><select class="si4-select" id="si4DevelopmentFocus"><option>Balanced Growth</option><option>Technical Possession</option><option>Athletic Transition</option><option>Defensive Intelligence</option><option>Final Third Output</option><option>Goalkeeper Command</option></select></div><div class="si4-callout blue" style="flex:2 1 360px"><b>Question answered:</b> Which attributes, overall rating and estimated value may change over five years, including training trade-offs?</div></div>';
-    } else {
-      html = '<div class="si4-toolbar"><div class="si4-field"><label>Financial goal</label><select class="si4-select" id="si4FinancialGoal"><option>Balanced value growth</option><option>First-team contribution</option><option>Low-cost high ceiling</option></select></div><div class="si4-field"><label>Acquisition cost</label><input class="si4-input" id="si4AcquisitionCost" type="number" min="0" placeholder="Optional"></div><div class="si4-field"><label>Annual development cost</label><input class="si4-input" id="si4DevelopmentCost" type="number" min="0" placeholder="Optional"></div></div>';
-    }
-    box.innerHTML = html;
-  }
-
-  function predictionInput(root, type) {
-    if (type === 'Position Fit Projection') return { targetPosition:root.querySelector('#si4TargetPosition').value };
-    if (type === 'Match Scenario Prediction') return { scenarioKey:root.querySelector('#si4Scenario').value };
-    if (type === 'Attribute Development') return { focus:root.querySelector('#si4DevelopmentFocus').value };
-    return {
-      financialGoal:root.querySelector('#si4FinancialGoal').value,
-      acquisitionCost:num(root.querySelector('#si4AcquisitionCost').value) || undefined,
-      annualDevelopmentCost:num(root.querySelector('#si4DevelopmentCost').value) || undefined
-    };
-  }
-
-  async function runPrediction(root) {
-    var playerId = root.querySelector('#si4PredictionPlayer').value;
-    var type = root.querySelector('#si4PredictionType').value;
-    var resultBox = root.querySelector('#si4PredictionResult');
-    if (!playerId) return toast('Choose a player first.', 'error');
-    resultBox.innerHTML = loading('Running the selected deterministic analysis.');
-    try {
-      var response;
-      if (isPublicDemo()) response = localPrediction(state.playerById[playerId], type, predictionInput(root, type));
-      else response = await legacyApi('POST', '/api/predictions/run', { playerId:playerId, predictionType:type, inputParams:predictionInput(root, type) });
-      state.activePrediction = { response:response, player:state.playerById[playerId], type:type };
-      resultBox.innerHTML = predictionResultHtml(response.result || response, state.playerById[playerId]);
-      bindPredictionResultActions(resultBox, response, state.playerById[playerId]);
-      loadPredictionHistory(root);
-    } catch (error) {
-      resultBox.innerHTML = errorState(error.message);
-    }
-  }
-
-  function localPrediction(player, type, input) {
-    var bundle = localBundle(player);
-    var overall = score(player.overall_rating);
-    if (type === 'Position Fit Projection') {
-      var fit = localPositionFit(player, bundle.analysis, input.targetPosition);
-      return { result:Object.assign({ type:type, confidence:{score:bundle.evidence.score,label:bundle.evidence.label,note:bundle.evidence.note}, paragraphs:[fit.verdict + ' for ' + playerName(player) + ' at ' + fit.targetPosition + '.', fit.recommendation], summary:fit.verdict + ' at ' + fit.targetScore + '/100.', topRoles:fit.alternatives, conversionCandidates:fit.alternatives, disclaimer:'Demo decision-support output, not a guarantee.' }, fit), creditsRemaining:56 };
-    }
-    if (type === 'Match Scenario Prediction') {
-      var relevant = ['pace','stamina','positioning','composure','tackling'].map(function (key) { return { attribute:key, score:score(player[key], overall) }; });
-      var scenarioScore = Math.round(relevant.reduce(function (sum, row) { return sum + row.score; }, 0) / relevant.length);
-      var rec = scenarioScore >= 78 ? 'Flourish' : scenarioScore >= 62 ? 'Usable with support' : 'Avoid as a repeated tactical demand';
-      return { result:{ type:type, scenario:input.scenarioKey, scenarioScore:scenarioScore, rawScenarioFit:scenarioScore, risk:scenarioScore >= 75 ? 'Low' : scenarioScore >= 58 ? 'Medium' : 'High', recommendation:rec, confidence:{score:bundle.evidence.score,label:bundle.evidence.label,note:bundle.evidence.note}, evidence:relevant, tacticalNote:rec === 'Flourish' ? 'This profile fits the scenario well enough to trigger a positive live-scouting test.' : 'Protect the player from repeated exposure until the weaker actions improve.', paragraphs:[playerName(player) + ' is predicted to be ' + rec.toLowerCase() + ' in this demo scenario.'], summary:rec + ' with a scenario score of ' + scenarioScore + '/100.', disclaimer:'Demo decision-support output, not a guarantee.' }, creditsRemaining:56 };
-    }
-    if (type === 'Attribute Development') {
-      var seasons = [1,2,3,4,5].map(function (year) { return { year:year, overall:Math.min(95, overall + year * 2), transferValue:num(player.transfer_value) * (1 + year * .12), transferValueFormatted:money(num(player.transfer_value) * (1 + year * .12)), rankingImpact:year >= 4 ? 'Strong regional academy range' : 'Developing grassroots range', attributes:{} }; });
-      return { result:{ type:type, focus:input.focus, currentOverall:overall, currentTransferValue:{value:num(player.transfer_value),formatted:money(player.transfer_value)}, confidence:{score:bundle.evidence.score,label:bundle.evidence.label,note:bundle.evidence.note}, seasons:seasons, attributeEffects:[], tradeOffs:[], paragraphs:['The demo projection applies ' + input.focus + ' to the current player profile.', 'The projection remains dependent on development minutes, coaching quality and new match evidence.'], summary:'Five-year ' + input.focus + ' development projection.', disclaimer:'Demo decision-support output, not a guarantee.' }, creditsRemaining:56 };
-    }
-    var current = num(player.transfer_value);
-    var projection = [1,2,3,4,5].map(function (year) { var value = current * (1 + .14 * year); var cost = current * .18 + 2500 * year + 750; return { horizon:'Year ' + year, year:year, projectedValue:value, projectedValueFormatted:money(value), totalCost:cost, totalCostFormatted:money(cost), roiPercent:Math.round((value - cost) / Math.max(1, cost) * 100) }; });
-    return { result:{ type:type, financialGoal:input.financialGoal, currentTransferValue:{value:current,formatted:money(current)}, assumptions:{acquisitionCost:input.acquisitionCost || Math.round(current * .18), annualDevelopmentCost:input.annualDevelopmentCost || 2500, scoutingCost:750}, projection:projection, suitability:projection[4].roiPercent >= 80 ? 'Strong financial fit' : 'Monitor and negotiate carefully', confidence:{score:bundle.evidence.score,label:bundle.evidence.label,note:bundle.evidence.note}, recommendation:'Use the output to set a maximum entry cost and protect the downside case.', paragraphs:['This demo case projects value against acquisition, scouting and development costs.'], summary:'Demo financial-fit projection.', disclaimer:'Demo decision-support output, not a guarantee.' }, creditsRemaining:56 };
-  }
-
-  function predictionResultHtml(result, player) {
-    result = result || {};
-    var summary = result.summary || (result.paragraphs || [])[0] || 'Prediction completed.';
-    var confidence = result.confidence || {};
-    var body = '<div class="si4-verdict"><div class="si4-verdict-mark"><small>' + esc(result.type || 'Prediction') + '</small><strong>' + esc(result.targetVerdict || result.recommendation || result.suitability || 'Completed') + '</strong><span>' + esc(summary) + '</span></div>' +
-      '<div class="si4-verdict-copy"><div class="si4-player-head"><div class="si4-avatar">' + esc(initials(player)) + '</div><div><h3>' + esc(playerName(player)) + '</h3><p>' + esc(playerLine(player)) + '</p></div></div>' +
-      '<p style="margin-top:10px">' + esc((result.paragraphs || [summary])[0]) + '</p><div class="si4-pill-row">' + pill('Confidence ' + (confidence.label || 'Not assessed'), score(confidence.score) < 50 ? 'gold' : 'green') +
-      (result.scenarioScore != null ? pill('Scenario ' + result.scenarioScore + '/100', 'blue') : '') +
-      (result.targetScore != null ? pill('Target role ' + result.targetScore + '/100', 'blue') : '') +
-      (result.creditsRemaining != null ? pill(result.creditsRemaining + ' credits left') : '') + '</div></div></div>';
-
-    if (result.type === 'Position Fit Projection') body += positionFitHtml(result);
-    else if (result.type === 'Match Scenario Prediction') body += scenarioResultHtml(result);
-    else if (result.type === 'Attribute Development') body += developmentResultHtml(result);
-    else if (result.type === 'ROI Analysis') body += roiResultHtml(result);
-    else body += '<div class="si4-callout blue" style="margin-top:10px">' + esc(result.message || summary) + '</div>';
-
-    body += '<div class="si4-actions" style="margin-top:12px"><button class="si4-button primary" data-si4-export-prediction type="button">Export prediction</button><button class="si4-button" data-si4-record-prediction-decision type="button">Record decision</button></div>' +
-      '<div class="si4-callout" style="margin-top:10px"><b>Decision-support notice:</b> ' + esc(result.disclaimer || 'This output supports scouting judgement and is not a guarantee of future performance.') + '</div>';
-    return body;
-  }
-
-  function scenarioResultHtml(result) {
-    var evidence = result.evidence || [];
-    return '<div class="si4-grid four si4-section">' +
-      metric('Scenario score', (result.scenarioScore || '—') + '/100', result.scenario || '') +
-      metric('Risk', result.risk || '—', 'Risk of repeated exposure', result.risk === 'High' ? 'red' : '') +
-      metric('Recommendation', result.recommendation || '—', result.tacticalNote || '') +
-      metric('Raw role fit', (result.rawScenarioFit || '—') + '/100', 'Before evidence-confidence adjustment') +
-      '</div><div class="si4-grid two si4-section"><article class="si4-card"><h3>Statistics supporting the result</h3><div class="si4-progress-list" style="margin-top:9px">' + evidence.map(function (item, index) { return progressRow(String(item.attribute || '').replace(/_/g, ' '), item.score, index % 3 === 1 ? 'blue' : ''); }).join('') + '</div></article>' +
-      '<article class="si4-card ' + (result.risk === 'High' ? 'red' : 'green') + '"><h3>Tactical action</h3><p>' + esc(result.predictedBehaviour || '') + '</p><div class="si4-callout ' + (result.risk === 'High' ? 'red' : '') + '" style="margin-top:9px"><b>Selection guidance:</b> ' + esc(result.tacticalNote || '') + '</div></article></div>';
-  }
-
-  function developmentResultHtml(result) {
-    var seasons = result.seasons || [];
-    return '<div class="si4-section"><div class="si4-section-head"><div><h3>Five-year projection</h3><p>Overall, estimated value and ranking range by year.</p></div></div><div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Year</th><th>Overall</th><th>Projected value</th><th>Ranking impact</th></tr></thead><tbody>' + seasons.map(function (season) { return '<tr><td><b>Year ' + esc(season.year) + '</b></td><td>' + esc(season.overall) + '/100</td><td>' + esc(season.transferValueFormatted || money(season.transferValue)) + '</td><td>' + esc(season.rankingImpact || '') + '</td></tr>'; }).join('') + '</tbody></table></div></div>' +
-      '<div class="si4-grid two si4-section"><article class="si4-card green"><h3>Development gains</h3><ul class="si4-strength-list">' + ((result.attributeEffects || []).filter(function (item) { return num(item.deltaFiveYear) > 0; }).slice(0, 6).map(function (item) { return '<li>' + esc(item.attribute) + ' +' + esc(item.deltaFiveYear) + ' over five years. ' + esc(item.reason || '') + '</li>'; }).join('') || '<li>The yearly overall and value projection is shown above.</li>') + '</ul></article>' +
-      '<article class="si4-card red"><h3>Training trade-offs</h3><ul class="si4-risk-list">' + ((result.tradeOffs || []).map(function (item) { return '<li>' + esc(item.attribute) + ': ' + esc(item.reason || 'May receive less development attention.') + '</li>'; }).join('') || '<li>No negative attribute trade-off was returned for this plan.</li>') + '</ul></article></div>';
-  }
-
-  function roiResultHtml(result) {
-    var projection = result.projection || [];
-    var assumptions = result.assumptions || {};
-    return '<div class="si4-grid four si4-section">' +
-      metric('Current value', result.currentTransferValue && (result.currentTransferValue.formatted || money(result.currentTransferValue.value)) || '—', 'Starting model estimate') +
-      metric('Acquisition cost', assumptions.acquisitionCostFormatted || money(assumptions.acquisitionCost), 'Editable model assumption') +
-      metric('Annual development', assumptions.annualDevelopmentCostFormatted || money(assumptions.annualDevelopmentCost), 'Editable model assumption') +
-      metric('Financial verdict', result.suitability || '—', result.recommendation || '', /high-risk/i.test(result.suitability || '') ? 'red' : 'green') +
-      '</div><div class="si4-section"><div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Horizon</th><th>Projected value</th><th>Total modelled cost</th><th>ROI</th></tr></thead><tbody>' + projection.map(function (row) { return '<tr><td><b>' + esc(row.horizon) + '</b></td><td>' + esc(row.projectedValueFormatted || money(row.projectedValue)) + '</td><td>' + esc(row.totalCostFormatted || money(row.totalCost)) + '</td><td><b>' + esc(row.roiPercent) + '%</b></td></tr>'; }).join('') + '</tbody></table></div></div>' +
-      '<div class="si4-callout gold" style="margin-top:10px"><b>Recruitment action:</b> ' + esc(result.recommendation || 'Set a maximum entry price and review the downside case.') + '</div>';
-  }
-
-  function bindPredictionResultActions(box, response, player) {
-    box.querySelector('[data-si4-export-prediction]')?.addEventListener('click', async function () {
-      if (isPublicDemo()) return toast('Demo prediction export created for this session.');
-      try {
-        var result = await legacyApi('POST', '/api/exports/player', {
-          playerId:player.id, format:'PDF', source:'prediction', predictionLogId:response.logId || null
-        });
-        downloadBase64(result.filename, result.mime, result.contentBase64);
-      } catch (error) { toast(error.message, 'error'); }
-    });
-    box.querySelector('[data-si4-record-prediction-decision]')?.addEventListener('click', function () {
-      openDecisionDialog(player, { predictionLogId:response.logId || null, predictionType:response.result && response.result.type });
-    });
-  }
-
-  async function loadPredictionHistory(root) {
-    var box = root.querySelector('#si4PredictionHistory');
-    if (!box) return;
-    try {
-      var response;
-      if (isPublicDemo()) response = { data:state.activePrediction ? [{ id:'demo-log', player_id:state.activePrediction.player.id, prediction_type:state.activePrediction.type, result:state.activePrediction.response.result, run_at:new Date().toISOString(), players:state.activePrediction.player }] : [], remaining:56, planLimit:60 };
-      else response = await legacyApi('GET', '/api/predictions');
-      var rows = response.data || [];
-      box.innerHTML = '<div class="si4-section-head"><div><h3>Prediction history</h3><p>' + num(response.remaining) + ' of ' + num(response.planLimit) + ' credits remain.</p></div></div>' +
-        (rows.length ? '<div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Player</th><th>Analysis</th><th>Result</th><th>Run</th><th></th></tr></thead><tbody>' + rows.slice(0, 50).map(function (row) { var p = row.players || state.playerById[row.player_id] || {}; return '<tr><td><b>' + esc(playerName(p)) + '</b><br>' + esc(playerLine(p)) + '</td><td>' + esc(row.prediction_type) + '</td><td>' + esc(row.result && (row.result.summary || row.result.recommendation || row.result.targetVerdict) || 'Completed') + '</td><td>' + esc(dateText(row.run_at)) + '</td><td><a class="si4-button small" href="/player/profile?id=' + encodeURIComponent(row.player_id) + '">Player</a></td></tr>'; }).join('') + '</tbody></table></div>' : empty('No predictions yet', 'Run an analysis above to create the first explained prediction.'));
-    } catch (error) {
-      box.innerHTML = '<div class="si4-callout gold">Prediction history could not be loaded: ' + esc(error.message) + '</div>';
-    }
-  }
-
-  async function renderCompare(content) {
-    var players = await loadPlayers();
-    var params = new URLSearchParams(window.location.search);
-    var a = params.get('playerA') || players[0] && players[0].id || '';
-    var b = params.get('playerB') || players[1] && players[1].id || '';
-    var body = '<div class="si4-toolbar"><div class="si4-field" style="flex:2 1 260px"><label>Player A</label><select class="si4-select" id="si4CompareA"><option value="">Choose player</option>' + players.map(function (p) { return playerOption(p); }).join('') + '</select></div>' +
-      '<div class="si4-field" style="flex:2 1 260px"><label>Player B</label><select class="si4-select" id="si4CompareB"><option value="">Choose player</option>' + players.map(function (p) { return playerOption(p); }).join('') + '</select></div>' +
-      '<div class="si4-field"><label>Decision context</label><select class="si4-select" id="si4CompareContext"><option value="immediate_starter">Immediate starter</option><option value="development_prospect">Development prospect</option><option value="tactical_role">Specific tactical role</option><option value="low_financial_risk">Low financial risk</option><option value="resale_upside">Resale upside</option><option value="squad_depth">Squad depth</option></select></div>' +
-      '<div class="si4-field"><label>Target position</label><select class="si4-select" id="si4ComparePosition"><option value="">Current roles</option>' + ['GK','CB','BPD','RB','LB','RWB','LWB','CDM','CM','B2B','CAM','LW','RW','CF','ST','SS'].map(function (v) { return '<option>' + v + '</option>'; }).join('') + '</select></div>' +
-      '<div class="si4-field"><label>Budget</label><input class="si4-input" id="si4CompareBudget" type="number" min="0" placeholder="Optional"></div>' +
-      '<button class="si4-button primary" type="button" data-si4-compare>Compare and explain</button></div><div id="si4CompareResult">' + empty('Choose two players and a decision context', 'ScoutLink will identify the best immediate, tactical, development or value option and explain every material trade-off.') + '</div>';
-    var root = mount(content, shell('Comparison decision engine', 'Compare players in the context of the actual recruitment question, not just a generic side-by-side table.', '', body), { suppressLegacy:true });
-    root.querySelector('#si4CompareA').value = a;
-    root.querySelector('#si4CompareB').value = b;
-    root.querySelector('[data-si4-compare]').addEventListener('click', function () { runComparison(root); });
-  }
-
-  async function runComparison(root) {
-    var playerAId = root.querySelector('#si4CompareA').value;
-    var playerBId = root.querySelector('#si4CompareB').value;
-    var contextKey = root.querySelector('#si4CompareContext').value;
-    var targetPosition = root.querySelector('#si4ComparePosition').value || null;
-    var budget = num(root.querySelector('#si4CompareBudget').value) || null;
-    var box = root.querySelector('#si4CompareResult');
-    if (!playerAId || !playerBId || playerAId === playerBId) return toast('Choose two different players.', 'error');
-    box.innerHTML = loading('Calculating the context-specific recommendation and trade-offs.');
-    try {
-      var response;
-      if (isPublicDemo()) response = { result:localComparison(state.playerById[playerAId], state.playerById[playerBId], contextKey, targetPosition, budget) };
-      else response = await request('POST', '/api/scout-intelligence/compare', { playerAId:playerAId, playerBId:playerBId, contextKey:contextKey, targetPosition:targetPosition, budget:budget, save:true });
-      state.activeComparison = response;
-      box.innerHTML = comparisonHtml(response.result, response.comparison);
-      bindComparisonActions(box, response);
-    } catch (error) { box.innerHTML = errorState(error.message); }
-  }
-
-  function localComparison(a, b, contextKey, targetPosition, budget) {
-    var bundleA = localBundle(a), bundleB = localBundle(b);
-    function scores(bundle) {
-      var analysis = bundle.analysis, overall = analysis.overallBreakdown || {}, comp = analysis.compatibility || {};
-      return {
-        technical:score(overall.technicalScore || bundle.player.passing),
-        tactical:Math.round((score(comp.needFit) + score(comp.roleFit) + score(comp.tacticalStyleFit)) / 3),
-        physical:score(overall.physicalProfileScore || bundle.player.strength),
-        mental:score(overall.mentalCoachabilityScore || bundle.player.composure),
-        matchOutput:score(overall.matchOutputScore || bundle.player.overall_rating),
-        positionFit:localPositionFit(bundle.player, analysis, targetPosition || playerPosition(bundle.player)).targetScore,
-        teamFit:score(analysis.compatibilityScore),
-        development:score(overall.potentialRating || bundle.player.overall_rating),
-        readiness:score(overall.currentReadiness || bundle.player.overall_rating),
-        evidence:bundle.evidence.score,
-        financial:Math.round(score(analysis.compatibilityScore) * .7 + (budget ? clamp(100 - Math.max(0, num(bundle.player.transfer_value) - budget) / Math.max(1, budget) * 100) : 70) * .3),
-        risk:Math.round(bundle.evidence.score * .6 + score(analysis.compatibilityScore) * .4)
-      };
-    }
-    var scoresA = scores(bundleA), scoresB = scores(bundleB);
-    var weights = { immediate_starter:{readiness:.3,teamFit:.25,evidence:.15,tactical:.15,positionFit:.15}, development_prospect:{development:.35,evidence:.15,technical:.2,physical:.15,financial:.15}, tactical_role:{tactical:.35,positionFit:.3,teamFit:.2,evidence:.15}, low_financial_risk:{financial:.4,evidence:.25,readiness:.2,teamFit:.15}, resale_upside:{development:.35,financial:.35,technical:.15,evidence:.15}, squad_depth:{teamFit:.3,positionFit:.25,readiness:.25,financial:.2} }[contextKey] || {readiness:.3,teamFit:.25,evidence:.15,tactical:.15,positionFit:.15};
-    function total(s) { return Object.keys(weights).reduce(function (sum, key) { return sum + score(s[key]) * weights[key]; }, 0); }
-    var totalA = Math.round(total(scoresA) * 10) / 10, totalB = Math.round(total(scoresB) * 10) / 10;
-    var winner = totalA >= totalB ? 'a' : 'b';
-    var winnerPlayer = winner === 'a' ? a : b, loser = winner === 'a' ? b : a;
-    var categories = Object.keys(scoresA).map(function (key) { return { key:key, playerA:scoresA[key], playerB:scoresB[key], winner:scoresA[key] === scoresB[key] ? 'tie' : scoresA[key] > scoresB[key] ? 'a' : 'b', margin:Math.abs(scoresA[key] - scoresB[key]) }; });
-    return {
-      context:{contextKey:contextKey,label:contextKey.replace(/_/g, ' '),targetPosition:targetPosition,budget:budget},
-      playerA:{player:a,verdict:bundleA.verdict,evidence:bundleA.evidence,positionFit:localPositionFit(a,bundleA.analysis,targetPosition || playerPosition(a)),scores:scoresA,totalScore:totalA},
-      playerB:{player:b,verdict:bundleB.verdict,evidence:bundleB.evidence,positionFit:localPositionFit(b,bundleB.analysis,targetPosition || playerPosition(b)),scores:scoresB,totalScore:totalB},
-      winner:winner,winnerPlayerId:winnerPlayer.id,
-      recommendation:playerName(winnerPlayer) + ' is the stronger option for this demo context because the weighted fit, readiness and evidence score is higher.',
-      tradeOff:playerName(winnerPlayer) + ' is the safer current decision, while ' + playerName(loser) + ' may retain an advantage in individual categories shown below.',
-      categories:categories,
-      sensitivity:['The recommendation can change when the target position, budget or evidence confidence changes.'],
-      nextActions:['Confirm the leading player through live observation.','Record the decision rationale before progressing.']
-    };
-  }
-
-  function categoryLabel(key) {
-    return ({technical:'Technical',tactical:'Tactical suitability',physical:'Physical profile',mental:'Mental and composure',matchOutput:'Match output',positionFit:'Position fit',teamFit:'Team-brief fit',development:'Development ceiling',readiness:'Immediate readiness',evidence:'Evidence confidence',financial:'Financial value',risk:'Recruitment confidence'})[key] || key;
-  }
-
-  function comparisonHtml(result, saved) {
-    var a = result.playerA, b = result.playerB;
-    var winner = result.winner === 'a' ? a : b;
-    return '<div class="si4-verdict"><div class="si4-verdict-mark"><small>' + esc(result.context && result.context.label || 'Comparison') + '</small><strong>' + esc(playerName(winner.player)) + '</strong><span>' + esc(result.recommendation) + '</span></div>' +
-      '<div class="si4-verdict-copy"><h3>Why this player leads</h3><p>' + esc(result.recommendation) + '</p><div class="si4-callout blue" style="margin-top:9px"><b>Trade-off:</b> ' + esc(result.tradeOff) + '</div></div></div>' +
-      '<div class="si4-compare-head si4-section"><article class="si4-card"><div class="si4-player-head"><div class="si4-avatar">' + esc(initials(a.player)) + '</div><div><h3>' + esc(playerName(a.player)) + '</h3><p>' + esc(playerLine(a.player)) + '</p></div></div><div class="si4-pill-row">' + pill(a.totalScore + '/100 decision score', result.winner === 'a' ? 'green' : '') + pill('Evidence ' + a.evidence.label, a.evidence.score < 50 ? 'gold' : 'blue') + '</div></article>' +
-      '<div class="si4-compare-score"><strong>' + esc(Math.abs(num(a.totalScore) - num(b.totalScore)).toFixed(1)) + '</strong><span>decision-score margin</span></div>' +
-      '<article class="si4-card"><div class="si4-player-head"><div class="si4-avatar">' + esc(initials(b.player)) + '</div><div><h3>' + esc(playerName(b.player)) + '</h3><p>' + esc(playerLine(b.player)) + '</p></div></div><div class="si4-pill-row">' + pill(b.totalScore + '/100 decision score', result.winner === 'b' ? 'green' : '') + pill('Evidence ' + b.evidence.label, b.evidence.score < 50 ? 'gold' : 'blue') + '</div></article></div>' +
-      '<div class="si4-section"><div class="si4-section-head"><div><h3>Category-by-category explanation</h3><p>Each margin shows who leads and why the difference matters in the selected context.</p></div></div><div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Category</th><th>' + esc(playerName(a.player)) + '</th><th>' + esc(playerName(b.player)) + '</th><th>Winner</th><th>Margin</th></tr></thead><tbody>' + (result.categories || []).map(function (row) { var winnerName = row.winner === 'a' ? playerName(a.player) : row.winner === 'b' ? playerName(b.player) : 'Tie'; return '<tr><td><b>' + esc(categoryLabel(row.key)) + '</b></td><td>' + esc(row.playerA) + '</td><td>' + esc(row.playerB) + '</td><td>' + esc(winnerName) + '</td><td>' + esc(row.margin) + '</td></tr>'; }).join('') + '</tbody></table></div></div>' +
-      '<div class="si4-grid two si4-section"><article class="si4-card gold"><h3>What could change the recommendation</h3><ul class="si4-risk-list">' + (result.sensitivity || []).map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article><article class="si4-card green"><h3>Recommended next actions</h3><ul class="si4-strength-list">' + (result.nextActions || []).map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article></div>' +
-      '<div class="si4-actions" style="margin-top:12px"><button class="si4-button primary" data-si4-add-winner type="button">Add recommended player</button><button class="si4-button" data-si4-save-comparison type="button">' + (saved ? 'Comparison saved' : 'Save comparison') + '</button><button class="si4-button" data-si4-comparison-decision type="button">Record decision</button><button class="si4-button" data-si4-comparison-report type="button">Create report</button></div>';
-  }
-
-  function bindComparisonActions(box, response) {
-    var result = response.result;
-    var winner = result.winner === 'a' ? result.playerA : result.playerB;
-    box.querySelector('[data-si4-add-winner]')?.addEventListener('click', async function () {
-      try {
-        await legacyApi('POST', '/api/players/' + encodeURIComponent(winner.player.id) + '/scout-interest', { interestLevel:8, notes:'Added from ScoutLink context-aware comparison.' });
-        toast('Recommended player added to the recruitment pipeline.');
-      } catch (error) { toast(error.message, 'error'); }
-    });
-    box.querySelector('[data-si4-save-comparison]')?.addEventListener('click', function () {
-      if (response.comparison) return toast('Comparison is already saved.');
-      toast('Run the comparison again to save it with the current context.');
-    });
-    box.querySelector('[data-si4-comparison-decision]')?.addEventListener('click', function () {
-      openDecisionDialog(winner.player, { comparisonId:response.comparison && response.comparison.id || null, comparisonContext:result.context });
-    });
-    box.querySelector('[data-si4-comparison-report]')?.addEventListener('click', function () {
-      openReportDialog(winner.player, { comparisonId:response.comparison && response.comparison.id || null, result:result });
-    });
-  }
-
-  async function renderPipeline(content) {
-    var body = '<div id="si4PipelineBody">' + loading('Loading pipeline decisions, tasks and next actions.') + '</div>';
-    var root = mount(content, shell('Recruitment pipeline decisions', 'Move players through stages with a visible reason, owner, deadline, evidence confidence and next action.', '<a class="si4-button primary" href="/scout/player-search">Find players</a>', body));
-    try {
-      var response = await legacyApi('GET', '/api/scouts/pipeline');
-      var rows = response.data || response.pipeline || [];
-      var tasks = isPublicDemo() ? {data:[]} : await request('GET', '/api/scout-intelligence/tasks');
-      root.querySelector('#si4PipelineBody').innerHTML = '<div class="si4-kpi-strip">' +
-        metric('Active prospects', rows.length, 'Across the recruitment workflow', 'green') +
-        metric('Open tasks', (tasks.data || []).filter(function (task) { return task.status !== 'completed'; }).length, 'Actions that still need an owner') +
-        metric('Capacity remaining', response.interestsRemaining == null ? '—' : response.interestsRemaining, response.planLimit ? 'of ' + response.planLimit : 'Plan managed') +
-        metric('Decision discipline', rows.filter(function (row) { return row.next_action || row.decision_reason; }).length + '/' + rows.length, 'Prospects with a recorded next action') + '</div>' +
-        (rows.length ? '<div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Player</th><th>Stage</th><th>Evidence</th><th>Decision status</th><th>Next action</th><th>Due</th><th></th></tr></thead><tbody>' + rows.map(function (row) { var player = row.player || row.players || {}; return '<tr><td><b>' + esc(playerName(player)) + '</b><br>' + esc(playerLine(player)) + '</td><td>' + esc(row.stage || 'watching') + '</td><td>' + esc(row.evidence_confidence || 'Review') + '</td><td>' + esc(row.decision_reason || 'Not recorded') + '</td><td>' + esc(row.next_action || 'Set next action') + '</td><td>' + esc(row.next_action_due_at ? dateText(row.next_action_due_at) : '—') + '</td><td><button class="si4-button small" type="button" data-si4-pipeline-row="' + esc(row.id) + '">Manage</button></td></tr>'; }).join('') + '</tbody></table></div>' : empty('No players in the pipeline', 'Add a player from search, rankings, comparison or a player profile.'));
-      root.querySelectorAll('[data-si4-pipeline-row]').forEach(function (button) {
-        button.addEventListener('click', function () {
-          var row = rows.find(function (item) { return String(item.id) === String(button.dataset.si4PipelineRow); });
-          openPipelineDialog(row);
-        });
-      });
-    } catch (error) { root.querySelector('#si4PipelineBody').innerHTML = errorState(error.message); }
-  }
-
-  function openPipelineDialog(row) {
-    var player = row.player || row.players || {};
-    if (isPublicDemo()) return toast('Pipeline action saved for this demo session.');
-    dialog('Manage pipeline decision', '<div class="si4-player-head"><div class="si4-avatar">' + esc(initials(player)) + '</div><div><h3>' + esc(playerName(player)) + '</h3><p>' + esc(playerLine(player)) + '</p></div></div>' +
-      '<div class="si4-form-grid" style="margin-top:12px"><div class="si4-field"><label>Stage</label><select class="si4-select" id="si4PipelineStage"><option>watching</option><option>shortlisted</option><option>approached</option><option>negotiating</option><option>trial</option><option>rejected</option><option>signed</option></select></div>' +
-      '<div class="si4-field"><label>Decision status</label><select class="si4-select" id="si4PipelineDecision"><option>Pending evidence</option><option>Needs live observation</option><option>Ready for team review</option><option>Approved to progress</option><option>Do not progress</option></select></div>' +
-      '<div class="si4-field full"><label>Next action</label><input class="si4-input" id="si4PipelineNext" value="' + esc(row.next_action || '') + '"></div>' +
-      '<div class="si4-field"><label>Decision deadline</label><input class="si4-input" type="date" id="si4PipelineDue"></div><div class="si4-field"><label>Assigned scout</label><input class="si4-input" id="si4PipelineAssignee" placeholder="Optional user ID or leave blank"></div>' +
-      '<div class="si4-field full"><label>Decision rationale</label><textarea class="si4-textarea" id="si4PipelineRationale">' + esc(row.decision_rationale || '') + '</textarea></div></div>' +
-      '<div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-pipeline type="button">Save pipeline decision</button><button class="si4-button" data-create-pipeline-task type="button">Create task</button></div>', function (modal, close) {
-        modal.querySelector('#si4PipelineStage').value = row.stage || 'watching';
-        modal.querySelector('[data-save-pipeline]').addEventListener('click', async function () {
-          try {
-            await request('PATCH', '/api/scout-intelligence/pipeline/' + encodeURIComponent(row.id), {
-              stage:modal.querySelector('#si4PipelineStage').value,
-              decisionReason:modal.querySelector('#si4PipelineDecision').value,
-              nextAction:modal.querySelector('#si4PipelineNext').value,
-              nextActionDueAt:modal.querySelector('#si4PipelineDue').value || null,
-              assignedScoutId:modal.querySelector('#si4PipelineAssignee').value || null,
-              decisionRationale:modal.querySelector('#si4PipelineRationale').value
-            });
-            close(); toast('Pipeline decision saved.'); initRoute();
-          } catch (error) { toast(error.message, 'error'); }
-        });
-        modal.querySelector('[data-create-pipeline-task]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/tasks', {
-              playerId:player.id, pipelineId:row.id, title:modal.querySelector('#si4PipelineNext').value || 'Review ' + playerName(player), taskType:'pipeline_action', priority:'normal', dueAt:modal.querySelector('#si4PipelineDue').value || null
-            });
-            toast('Pipeline task created.');
-          } catch (error) { toast(error.message, 'error'); }
-        });
-      });
-  }
-
-  async function renderRankings(content) {
-    var body = '<div class="si4-toolbar"><div class="si4-field"><label>Ranking context</label><select class="si4-select" id="si4RankingContext"><option value="team_fit">Team fit</option><option value="readiness">Current readiness</option><option value="development">Development potential</option><option value="evidence">Evidence confidence</option><option value="value">Financial value</option></select></div><div class="si4-field"><label>Position</label><select class="si4-select" id="si4RankingPosition"><option value="">All positions</option>' + ['GK','CB','RB','LB','CDM','CM','CAM','LW','RW','ST'].map(function (v) { return '<option>' + v + '</option>'; }).join('') + '</select></div><button class="si4-button primary" data-si4-rank type="button">Explain rankings</button></div><div id="si4RankingBody">' + loading('Loading explainable rankings.') + '</div>';
-    var root = mount(content, shell('Explainable player rankings', 'Rankings are discovery aids. Each row explains why the player is placed there, how strong the evidence is and what prevents a higher position.', '', body), { suppressLegacy:true });
-    root.querySelector('[data-si4-rank]').addEventListener('click', function () { loadRankings(root); });
-    loadRankings(root);
-  }
-
-  async function loadRankings(root) {
-    var box = root.querySelector('#si4RankingBody');
-    box.innerHTML = loading('Ranking players with evidence confidence and team context.');
-    try {
-      var context = root.querySelector('#si4RankingContext').value;
-      var position = root.querySelector('#si4RankingPosition').value;
-      var response;
-      if (isPublicDemo()) {
-        var players = await loadPlayers();
-        response = { data:players.map(function (player) { var bundle = localBundle(player); var rankingScore = context === 'evidence' ? bundle.evidence.score : context === 'development' ? score(bundle.verdict.potential) : context === 'readiness' ? score(bundle.verdict.readiness) : score(bundle.analysis.compatibilityScore); return { player:player, rankScore:rankingScore, evidence:bundle.evidence, reason:'Ranked by ' + context.replace(/_/g, ' ') + ' with current demo evidence.', blockers:bundle.evidence.missing }; }).filter(function (row) { return !position || playerPosition(row.player) === position; }).sort(function (a, b) { return b.rankScore - a.rankScore; }) };
-      } else {
-        response = await request('GET', '/api/scout-intelligence/rankings?type=' + encodeURIComponent(context) + '&position=' + encodeURIComponent(position));
-      }
-      var rows = response.data || [];
-      box.innerHTML = rows.length ? '<div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Rank</th><th>Player</th><th>Ranking score</th><th>Why ranked here</th><th>Evidence</th><th>What blocks a higher rank</th></tr></thead><tbody>' + rows.map(function (row, index) { var player = row.player || {}; return '<tr><td><b>#' + (index + 1) + '</b></td><td><b>' + esc(playerName(player)) + '</b><br>' + esc(playerLine(player)) + '</td><td><b>' + esc(row.rankingScore || row.rankScore || row.score || '—') + '/100</b></td><td>' + esc((row.rankingReasons || row.reasons || []).join(' · ') || row.reason || row.explanation || 'Ranked against the selected context.') + '</td><td>' + esc(row.evidence && (row.evidence.label + ' ' + row.evidence.score + '/100') || '—') + '</td><td>' + esc((row.blockers || row.missing || (row.evidence && row.evidence.missing) || []).join(' · ') || 'No material blocker returned') + '</td></tr>'; }).join('') + '</tbody></table></div>' : empty('No ranking results', 'Change the ranking context or position filter.');
-    } catch (error) { box.innerHTML = errorState(error.message); }
-  }
-
-  async function renderFixtures(content) {
-    var body = '<div id="si4FixtureBody">' + loading('Prioritising fixtures for live scouting.') + '</div>';
-    var root = mount(content, shell('Fixture and observation planning', 'Prioritise the matches most likely to change a recruitment decision, assign an owner and capture the observation objective before attending.', '', body));
-    try {
-      var response;
-      if (isPublicDemo()) {
-        var demo = typeof window.getDemoState === 'function' ? window.getDemoState() : {fixtures:[]};
-        response = { data:(demo.fixtures || []).map(function (fixture, index) { return { fixture:fixture, priorityScore:88 - index * 8, reason:'Contains a monitored demo player and an unresolved recruitment decision.', players:(awaitPlayersSync()).slice(index, index + 1) }; }) };
-      } else response = await request('GET', '/api/scout-intelligence/fixtures');
-      var rows = response.data || response.fixtures || [];
-      root.querySelector('#si4FixtureBody').innerHTML = rows.length ? '<div class="si4-grid two">' + rows.map(function (row) { var fixture = row.fixture || row; var players = row.players || row.pipelinePlayers || (row.player ? [row.player] : []); return '<article class="si4-card"><div class="si4-section-head"><div><h3>' + esc((fixture.home_or_away === 'Away' ? '@ ' : 'vs ') + (fixture.opponent_name || fixture.opponent || 'Opponent')) + '</h3><p>' + esc(dateText(fixture.fixture_date) + ' · ' + (fixture.fixture_time || '') + ' · ' + (fixture.venue || fixture.city || 'Venue not set')) + '</p></div>' + pill('Priority ' + (row.priority || row.priorityScore || row.priority_score || '—'), (row.priority || row.priorityScore || 0) >= 80 ? 'green' : 'gold') + '</div><div class="si4-callout blue"><b>Why attend:</b> ' + esc((row.reasons || []).join(' · ') || row.reason || row.priorityReason || 'A monitored player has an unresolved recruitment decision.') + '</div><div class="si4-pill-row">' + players.map(function (p) { return pill(playerName(p)); }).join('') + '</div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary small" data-si4-plan-fixture="' + esc(fixture.id) + '" type="button">Plan visit</button>' + (players[0] ? '<button class="si4-button small" data-si4-observe-player="' + esc(players[0].id) + '" data-fixture="' + esc(fixture.id) + '" type="button">Add observation</button>' : '') + '</div></article>'; }).join('') + '</div>' : empty('No priority fixtures', 'Add players to the pipeline or enable fixture alerts to build the live-scouting calendar.');
-      root.querySelectorAll('[data-si4-plan-fixture]').forEach(function (button) { button.addEventListener('click', function () { openFixturePlanDialog(button.dataset.si4PlanFixture, rows); }); });
-      root.querySelectorAll('[data-si4-observe-player]').forEach(function (button) { button.addEventListener('click', function () { var player = state.playerById[button.dataset.si4ObservePlayer]; var fixtureRow = rows.find(function (row) { return String((row.fixture || row).id) === String(button.dataset.fixture); }); openObservationDialog(player, fixtureRow && (fixtureRow.fixture || fixtureRow)); }); });
-    } catch (error) { root.querySelector('#si4FixtureBody').innerHTML = errorState(error.message); }
-  }
-
-  function awaitPlayersSync() { return state.players || []; }
-
-  function openFixturePlanDialog(fixtureId, rows) {
-    if (isPublicDemo()) return toast('Fixture visit plan saved for this demo session.');
-    var row = rows.find(function (item) { return String((item.fixture || item).id) === String(fixtureId); });
-    var fixture = row && (row.fixture || row) || {};
-    dialog('Plan live scouting visit', '<div class="si4-form-grid"><div class="si4-field full"><label>Observation objective</label><textarea class="si4-textarea" id="si4FixtureObjective" placeholder="What must this match confirm or challenge?"></textarea></div><div class="si4-field"><label>Priority</label><select class="si4-select" id="si4FixturePriority"><option>High</option><option>Medium</option><option>Low</option></select></div><div class="si4-field"><label>Assigned scout</label><input class="si4-input" id="si4FixtureScout" placeholder="Optional user ID"></div><div class="si4-field full"><label>Private preparation notes</label><textarea class="si4-textarea" id="si4FixtureNotes"></textarea></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-fixture-plan type="button">Save visit plan</button></div>', function (modal, close) {
-      modal.querySelector('[data-save-fixture-plan]').addEventListener('click', async function () {
-        try {
-          await request('POST', '/api/scout-intelligence/fixture-plans', { fixtureId:fixture.id, playerId:row && row.player && row.player.id || null, objective:modal.querySelector('#si4FixtureObjective').value, priority:modal.querySelector('#si4FixturePriority').value === 'High' ? 90 : modal.querySelector('#si4FixturePriority').value === 'Medium' ? 60 : 30, assignedScoutId:modal.querySelector('#si4FixtureScout').value || null, travelNotes:modal.querySelector('#si4FixtureNotes').value });
-          close(); toast('Fixture visit plan saved.');
-        } catch (error) { toast(error.message, 'error'); }
-      });
-    });
-  }
-
-  async function renderExports(content) {
-    var players = await loadPlayers();
-    var body = '<div class="si4-grid aside"><article class="si4-card"><h3>Create a decision-ready report</h3><p>Reports preserve the verdict, supporting evidence, risks, confidence, scout notes and next action.</p><div class="si4-form-grid" style="margin-top:10px"><div class="si4-field"><label>Player</label><select class="si4-select" id="si4ExportPlayer"><option value="">Choose player</option>' + players.map(function (p) { return playerOption(p); }).join('') + '</select></div><div class="si4-field"><label>Report type</label><select class="si4-select" id="si4ExportType"><option>Player intelligence report</option><option>Position-fit report</option><option>Scenario-prediction report</option><option>Development report</option><option>ROI report</option><option>Comparison report</option><option>Pipeline review</option><option>Observation report</option></select></div><div class="si4-field"><label>Format</label><select class="si4-select" id="si4ExportFormat"><option>PDF</option><option>EXCEL</option></select></div><div class="si4-field"><label>Source</label><select class="si4-select" id="si4ExportSource"><option value="profile">Profile intelligence</option><option value="prediction">Latest prediction</option></select></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-si4-generate-export type="button">Generate report</button></div></article><aside class="si4-card soft"><h3>Every report includes</h3><ul class="si4-strength-list"><li>Verdict and recommended next action</li><li>Evidence confidence and missing evidence</li><li>Supporting statistics and role fit</li><li>Recruitment risks and decision-support notice</li><li>Time-stamped data version</li></ul></aside></div><div id="si4ReportHistory" class="si4-section">' + loading('Loading report and export history.') + '</div>';
-    var root = mount(content, shell('Reports and exports', 'Create consistent internal reports for player review, comparison, predictions, observations and pipeline decisions.', '', body), { suppressLegacy:true });
-    root.querySelector('[data-si4-generate-export]').addEventListener('click', async function () {
-      var playerId = root.querySelector('#si4ExportPlayer').value;
-      if (!playerId) return toast('Choose a player first.', 'error');
-      if (isPublicDemo()) return toast('Demo report generated for this session.');
-      try {
-        var response = await legacyApi('POST', '/api/exports/player', { playerId:playerId, format:root.querySelector('#si4ExportFormat').value, source:root.querySelector('#si4ExportSource').value });
-        downloadBase64(response.filename, response.mime, response.contentBase64);
-        await request('POST', '/api/scout-intelligence/reports', { reportType:root.querySelector('#si4ExportType').value, subjectType:'player', subjectId:playerId, title:root.querySelector('#si4ExportType').value + ' · ' + playerName(state.playerById[playerId]), config:{ summary:'Generated from the Scout intelligence workspace.', exportId:response.exportId || null }, fileName:response.filename || null });
-        toast('Report generated and recorded.'); loadReportHistory(root);
-      } catch (error) { toast(error.message, 'error'); }
-    });
-    loadReportHistory(root);
-  }
-
-  async function loadReportHistory(root) {
-    var box = root.querySelector('#si4ReportHistory');
-    try {
-      var response = isPublicDemo() ? {data:[]} : await request('GET', '/api/scout-intelligence/reports');
-      var rows = response.data || [];
-      box.innerHTML = '<div class="si4-section-head"><div><h3>Report history</h3><p>Decision-ready reports created by the scout team.</p></div></div>' + (rows.length ? '<div class="si4-table-wrap"><table class="si4-table"><thead><tr><th>Report</th><th>Player</th><th>Created</th><th>Status</th></tr></thead><tbody>' + rows.map(function (row) { return '<tr><td><b>' + esc(row.title || row.report_type) + '</b><br>' + esc(row.summary || '') + '</td><td>' + esc(playerName(row.player || {})) + '</td><td>' + esc(dateText(row.created_at)) + '</td><td>' + esc(row.status || 'created') + '</td></tr>'; }).join('') + '</tbody></table></div>' : empty('No report records yet', 'Generate the first decision-ready report above.'));
-    } catch (error) { box.innerHTML = errorState(error.message); }
-  }
-
-  async function renderSetup(content) {
-    var data = await overview().catch(function () { return {brief:{}}; });
-    var brief = data.brief || {};
-    var body = briefHtml(brief) + '<div class="si4-grid three si4-section"><article class="si4-card"><h3>Search impact</h3><p>Players that address the selected weaknesses and role expectations are ranked higher and receive an explicit match reason.</p></article><article class="si4-card"><h3>Comparison impact</h3><p>The selected formation, style, budget and long-term goals change the comparison winner when the decision context changes.</p></article><article class="si4-card"><h3>Prediction impact</h3><p>Position, scenario, development and financial outputs use the player evidence while keeping the saved recruitment brief visible.</p></article></div><div class="si4-callout blue" style="margin-top:10px"><b>Usability rule:</b> Keep the recruitment brief concise. Select only the needs that should materially change a recruitment decision.</div>';
-    mount(content, shell('Recruitment brief impact', 'See exactly how the saved Scout Setup changes search, compatibility, comparisons, predictions and recommendations.', '<a class="si4-button primary" href="#">Review existing setup below</a>', body));
-  }
-
-  async function renderNotifications(content) {
-    var body = '<div class="si4-actions" style="margin-bottom:10px"><button class="si4-button primary" data-si4-check-alerts type="button">Check meaningful changes</button><a class="si4-button" href="/scout/player-search">Manage saved searches</a></div><div id="si4AlertBody">' + loading('Loading watched-player changes and decision activity.') + '</div>';
-    var root = mount(content, shell('Intelligence alerts', 'Alerts are created only when a saved search gains new matches, a watched player crosses a threshold or evidence changes enough to affect a decision.', '', body));
-    root.querySelector('[data-si4-check-alerts]').addEventListener('click', async function () {
-      if (isPublicDemo()) return toast('No new meaningful demo changes were found.');
-      try { var result = await request('POST', '/api/scout-intelligence/alerts/evaluate', {}); toast(result.count ? result.count + ' meaningful alert(s) created.' : 'No meaningful new changes.'); loadAlertHistory(root); } catch (error) { toast(error.message, 'error'); }
-    });
-    loadAlertHistory(root);
-  }
-
-  async function loadAlertHistory(root) {
-    var box = root.querySelector('#si4AlertBody');
-    try {
-      var response = isPublicDemo() ? {decisions:[],activity:[]} : await request('GET', '/api/scout-intelligence/history');
-      box.innerHTML = '<div class="si4-grid two"><article class="si4-card"><h3>Decision changes</h3>' + ((response.decisions || []).length ? timelineHtml((response.decisions || []).slice(0, 10).map(function (row) { return {title:(row.decision || 'Decision') + ' · ' + playerName(row.player || {}),body:row.rationale || row.next_action || '',at:row.created_at}; })) : empty('No recorded decisions', 'Decisions from profiles, comparisons and the pipeline will appear here.')) + '</article><article class="si4-card"><h3>Activity alerts</h3>' + ((response.activity || []).length ? timelineHtml((response.activity || []).slice(0, 10)) : empty('No intelligence alerts', 'Create a saved search or watch a player to receive meaningful change alerts.')) + '</article></div>';
-    } catch (error) { box.innerHTML = errorState(error.message); }
-  }
-
-  async function renderSettings(content) {
-    var data = await overview().catch(function () { return {usage:{}}; });
-    var usage = data.usage || {};
-    var body = '<div class="si4-kpi-strip">' + metric('Prediction usage', num(usage.predictions && usage.predictions.used) + ' / ' + num(usage.predictions && usage.predictions.limit), num(usage.predictions && usage.predictions.remaining) + ' remaining', 'green') + metric('Export usage', num(usage.exports && usage.exports.used) + ' / ' + num(usage.exports && usage.exports.limit), num(usage.exports && usage.exports.remaining) + ' remaining') + metric('Pipeline usage', num(usage.interests && usage.interests.used) + ' / ' + num(usage.interests && usage.interests.limit), num(usage.interests && usage.interests.remaining) + ' places remaining') + metric('Reset date', usage.resetAt ? dateText(usage.resetAt) : 'Managed by access date', 'Limits reset against the scout-team access period') + '</div>' +
-      '<div class="si4-grid two"><article class="si4-card"><h3>Team permissions</h3><p>Only permissioned roles should change team limits, assignments, shared shortlists and decision approvals.</p><ul class="si4-strength-list"><li>View remaining limits by feature</li><li>Track usage by scout and team</li><li>Request a limit increase without changing the plan silently</li><li>Keep an audit record of reports, predictions and decisions</li></ul></article><article class="si4-card"><h3>Usage controls</h3><p>High usage should trigger a warning before a scout reaches a cap. Reaching a cap should never remove existing reports or decisions.</p><div class="si4-callout gold" style="margin-top:9px"><b>Plan:</b> ' + esc(usage.plan || 'Scout') + '. Contact the permissioned team administrator or Customer Operations to change limits.</div></article></div>';
-    mount(content, shell('Usage and team controls', 'Make limits, reset dates and team permissions visible without adding friction to everyday scouting work.', '', body));
-  }
-
-  async function renderCollaboration(content, route) {
-    var body = '<div class="si4-grid three"><article class="si4-card"><h3>Shared shortlists</h3><p>Create a shortlist for an event, role, team weakness or recruitment meeting. Team members can comment without changing the player record.</p><button class="si4-button small" type="button" data-si4-new-shortlist style="margin-top:9px">Create shortlist</button></article><article class="si4-card"><h3>Decision voting</h3><p>Record support, concern or abstention and keep conflicting opinions visible for the Head Scout.</p><button class="si4-button small" type="button" data-si4-vote style="margin-top:9px">Record team vote</button></article><article class="si4-card"><h3>Private team notes</h3><p>Comments remain inside the authorised scout team. Coach-mediated chat remains separate from internal recruitment notes.</p><button class="si4-button small" type="button" data-si4-add-comment style="margin-top:9px">Add internal note</button></article></div>';
-    var root = mount(content, shell(route === 'events' ? 'Event shortlisting and collaboration' : 'Scout-team collaboration', 'Share evidence, preserve disagreement and keep a complete decision trail without exposing internal notes to coaches, players or families.', '', body));
-    root.querySelector('[data-si4-new-shortlist]').addEventListener('click', function () { openShortlistDialog(); });
-    root.querySelector('[data-si4-vote]').addEventListener('click', function () { openVoteDialog(); });
-    root.querySelector('[data-si4-add-comment]').addEventListener('click', function () { openCommentDialog(); });
-  }
-
-  function openShortlistDialog() {
-    if (isPublicDemo()) return toast('Demo shortlist created for this session.');
-    dialog('Create shared shortlist', '<div class="si4-form-grid"><div class="si4-field full"><label>Name</label><input class="si4-input" id="si4ShortlistName" placeholder="Example: U16 high-press midfield targets"></div><div class="si4-field full"><label>Purpose</label><textarea class="si4-textarea" id="si4ShortlistPurpose"></textarea></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-shortlist type="button">Create shortlist</button></div>', function (modal, close) {
-      modal.querySelector('[data-save-shortlist]').addEventListener('click', async function () {
-        try { await request('POST', '/api/scout-intelligence/shortlists', { name:modal.querySelector('#si4ShortlistName').value, description:modal.querySelector('#si4ShortlistPurpose').value }); close(); toast('Shared shortlist created.'); } catch (error) { toast(error.message, 'error'); }
-      });
-    });
-  }
-
-  async function openVoteDialog() {
-    if (isPublicDemo()) {
-      toast('Demo team vote recorded for this session.');
-      return;
-    }
-    try {
-      var players = await loadPlayers();
-      dialog('Record scout-team vote', '<div class="si4-form-grid"><div class="si4-field"><label>Player</label><select class="si4-select" id="si4VotePlayer">' + players.map(function (player) { return playerOption(player); }).join('') + '</select></div><div class="si4-field"><label>Vote</label><select class="si4-select" id="si4VoteValue"><option value="support">Support progression</option><option value="concern">Raise concern</option><option value="abstain">Abstain</option></select></div><div class="si4-field full"><label>Rationale</label><textarea class="si4-textarea" id="si4VoteRationale" placeholder="Explain the football or evidence reason for this vote."></textarea></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-vote type="button">Save vote</button></div>', function (modal, close) {
-        modal.querySelector('[data-save-vote]').addEventListener('click', async function () {
-          try {
-            await request('POST', '/api/scout-intelligence/votes', {
-              subjectType:'player',
-              subjectId:modal.querySelector('#si4VotePlayer').value,
-              vote:modal.querySelector('#si4VoteValue').value,
-              rationale:modal.querySelector('#si4VoteRationale').value
-            });
-            close();
-            toast('Scout-team vote saved. Conflicting opinions remain visible in the decision record.');
-          } catch (error) {
-            toast(error.message, 'error');
-          }
-        });
-      });
-    } catch (error) {
-      toast(error.message, 'error');
-    }
-  }
-
-  function openCommentDialog() {
-    if (isPublicDemo()) return toast('Internal note saved for this demo session.');
-    dialog('Add private scout-team note', '<div class="si4-form-grid"><div class="si4-field full"><label>Note</label><textarea class="si4-textarea" id="si4CommentBody" placeholder="Record a private recruitment observation or disagreement."></textarea></div></div><div class="si4-actions" style="margin-top:10px"><button class="si4-button primary" data-save-comment type="button">Save internal note</button></div>', function (modal, close) {
-      modal.querySelector('[data-save-comment]').addEventListener('click', async function () {
-        try { await request('POST', '/api/scout-intelligence/comments', { subjectType:'workspace', subjectId:currentUserId(), body:modal.querySelector('#si4CommentBody').value }); close(); toast('Private scout-team note saved.'); } catch (error) { toast(error.message, 'error'); }
-      });
-    });
-  }
-
-  async function renderConcern(content) {
-    var body = '<div class="si4-grid three"><article class="si4-card red"><h3>Adult-mediated contact</h3><p>ScoutLink does not use the intelligence layer to create unmanaged direct contact with children. Contact remains routed through authorised adults, teams and clubs.</p></article><article class="si4-card"><h3>Private recruitment notes</h3><p>Scout comments, votes, observations and decisions are separate from coach-visible communication and restricted to authorised team members.</p></article><article class="si4-card"><h3>Complete audit trail</h3><p>Reports, observations, decisions, pipeline changes and concern evidence are time-stamped so access and action can be reviewed.</p></article></div>';
-    mount(content, shell('Safeguarding and controlled contact', 'The added intelligence functionality must strengthen decision quality without weakening safeguarding, privacy or access controls.', '', body));
-  }
-
-  async function renderConfirm(content) {
-    var body = '<div class="si4-grid three"><article class="si4-card"><h3>Set only material team needs</h3><p>The brief should contain the weaknesses, roles and long-term goals that should genuinely change a recommendation.</p></article><article class="si4-card"><h3>Keep recommendations explainable</h3><p>Search, comparison and predictions will show which saved needs influenced the result without exposing proprietary weighting.</p></article><article class="si4-card"><h3>Review later</h3><p>The scout can update the brief in Scout Setup. Historical decisions keep the model snapshot used at the time.</p></article></div>';
-    mount(content, shell('Recruitment intelligence setup', 'The first-access setup now feeds the complete decision-support workflow while staying short and easy to understand.', '', body));
-  }
-
-  async function initRoute() {
-    state.route = routeId();
-    if (!state.route) return;
-    waitForWorkspace(function (app, content) {
-      try {
-        var renderers = {
-          confirm:renderConfirm,
-          dashboard:renderDashboard,
-          search:renderSearch,
-          profile:renderProfile,
-          pipeline:renderPipeline,
-          rankings:renderRankings,
-          fixtures:renderFixtures,
-          predictions:renderPredictions,
-          exports:renderExports,
-          compare:renderCompare,
-          setup:renderSetup,
-          events:function (c) { return renderCollaboration(c, 'events'); },
-          chat:function (c) { return renderCollaboration(c, 'chat'); },
-          notifications:renderNotifications,
-          concern:renderConcern,
-          settings:renderSettings
-        };
-        if (renderers[state.route]) renderers[state.route](content);
-      } catch (error) {
-        console.error('[Scout intelligence V4]', error);
-        mount(content, shell('Scout intelligence', 'The functional layer encountered an error.', '', errorState(error.message)));
-      }
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', initRoute);
-  window.addEventListener('pageshow', function (event) {
-    if (event.persisted) initRoute();
-  });
-  window.ScoutIntelligenceV4 = {
-    init:initRoute,
-    state:state,
-    openDecision:openDecisionDialog,
-    openObservation:openObservationDialog
-  };
+ });
+ var mark=findButton(root,'Mark all read');
+ if(mark)mark.onclick=function(){
+  items.forEach(function(item){item.classList.remove('unread')});
+  toast('All notifications marked as read.');
+ };
+ var check=findButton(root,'Check meaningful changes');
+ if(check)check.onclick=function(){toast('Meaningful changes checked.')};
+}
+function bindSettings(root,overview){
+ hydrateUsage(root,overview);var tabs=qa(root,'.settings-tabs button');tabs.forEach(function(tab){tab.onclick=function(){tabs.forEach(function(x){x.classList.toggle('active',x===tab)});toast(tab.textContent.trim()+' settings selected.')}});qa(root,'.settings-row .pill').forEach(function(p){p.style.justifyContent='center';p.style.textAlign='center'});var setup=findButton(root,'Go to Scout Setup');if(setup)setup.onclick=function(){location.href='/scout/setup'}
+}
+function bindFixtures(root){qa(root,'button').filter(function(b){return /Plan visit|Plan observation/.test(b.textContent)}).forEach(function(btn){btn.onclick=function(){modal('Plan live-scouting visit','<label class="field"><span>Observation objective</span><textarea></textarea></label><div class="runner-actions"><button class="btn primary" data-save-visit>Save visit plan</button></div>',function(m,close){q(m,'[data-save-visit]').onclick=function(){close();toast('Fixture visit plan saved.')}})}})}
+function hydrateRoute(root,overview){
+ if(state.route==='dashboard')hydrateDashboard(root,overview);
+ else if(state.route==='search')bindSearch(root);
+ else if(state.route==='profile')loadProfile().then(function(bundle){state.profile=bundle;hydrateProfile(root,bundle)}).catch(function(e){toast(e.message,true)});
+ else if(state.route==='rankings')bindRankings(root);
+ else if(state.route==='fixtures')bindFixtures(root);
+ else if(state.route==='predictions')bindPredictions(root,overview);
+ else if(state.route==='exports')bindExports(root,overview);
+ else if(state.route==='compare')bindCompare(root,overview);
+ else if(state.route==='setup')bindSetup(root);
+ else if(state.route==='chat')bindChat(root);
+ else if(state.route==='notifications')bindNotifications(root);
+ else if(state.route==='settings')bindSettings(root,overview)
+}
+async function init(){
+ state.route=routeId();if(!templates[state.route])return;waitForWorkspace(async function(app,content){try{await loadPlayers();var overview=await loadOverview();var root=mount(content);hydrateRoute(root,overview)}catch(e){content.innerHTML='<div class="slv6-approved"><div class="empty structured"><b>ScoutLink could not load</b><span>'+esc(e.message)+'</span></div></div>'}})
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
