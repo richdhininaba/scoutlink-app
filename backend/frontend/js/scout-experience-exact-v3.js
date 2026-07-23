@@ -6672,6 +6672,58 @@ async function liveHydrateRoute(route) {
   }
 }
 
+const LIVE_V6_ROUTES = new Set([
+  'dashboard',
+  'search',
+  'profile',
+  'rankings',
+  'fixtures',
+  'predictions',
+  'exports',
+  'compare',
+  'setup',
+  'chat',
+  'notifications',
+  'settings'
+]);
+
+function liveV6ControlsRoute(route) {
+  if (!LIVE_V6_ROUTES.has(route)) return false;
+
+  return Boolean(
+    document.querySelector(
+      'script[src*="scout-intelligence-v4.js"]'
+    )
+  );
+}
+
+function liveV6BootContent(route) {
+  const title = LIVE_TITLES[route] || 'Scout workspace';
+
+  return `
+    <main class="content">
+      <section
+        class="scout-v6-boot"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading ${liveEsc(title)}"
+      >
+        <div class="scout-v6-boot-brand">
+          Scout<span>Link</span>
+        </div>
+
+        <div
+          class="scout-v6-boot-spinner"
+          aria-hidden="true"
+        ></div>
+
+        <b>Loading ${liveEsc(title)}</b>
+        <span>Preparing your scout workspace.</span>
+      </section>
+    </main>
+  `;
+}
+ 
 function liveRenderRoute() {
   const route = liveRouteId();
   const root = document.getElementById('scoutExperienceApp');
@@ -6680,15 +6732,16 @@ function liveRenderRoute() {
   if (!liveRequiredAuth(route)) return;
 
   liveState.route = route;
-  liveState.mobile = window.matchMedia('(max-width:767px)').matches;
+  liveState.mobile =
+    window.matchMedia('(max-width:767px)').matches;
 
-  root.className = liveState.mobile ? 'mobile' : 'desktop-live';
+  const useV6 = liveV6ControlsRoute(route);
 
-  const renderer = route === 'confirm'
-    ? confirmPage
-    : renderers[route];
+  root.className =
+    (liveState.mobile ? 'mobile' : 'desktop-live') +
+    (useV6 ? ' scout-v6-booting' : ' is-loading');
 
-  root.innerHTML = renderer(liveState.mobile);
+  root.setAttribute('aria-busy', 'true');
 
   document.body.className =
     'scout-experience-body theme-light';
@@ -6696,10 +6749,63 @@ function liveRenderRoute() {
   document.title =
     LIVE_TITLES[route] + ' | ScoutLink';
 
+  if (useV6) {
+    /*
+     * V6 owns this route.
+     *
+     * Render only the shared navigation shell and a neutral,
+     * branded loading state. Never insert the old route template
+     * and never run the old route hydration.
+     */
+    root.innerHTML = shell(
+      route,
+      LIVE_TITLES[route],
+      liveV6BootContent(route),
+      liveState.mobile
+    );
+
+    liveBindGlobalActions();
+
+    window.setTimeout(function () {
+      if (!root.classList.contains('scout-v6-booting')) {
+        return;
+      }
+
+      const boot = root.querySelector('.scout-v6-boot');
+
+      if (boot) {
+        boot.innerHTML = `
+          <div class="scout-v6-boot-brand">
+            Scout<span>Link</span>
+          </div>
+
+          <b>ScoutLink is taking longer than expected</b>
+          <span>
+            Refresh the page. The previous Scout interface will
+            not be shown.
+          </span>
+        `;
+      }
+    }, 15000);
+
+    return;
+  }
+
+  /*
+   * Routes that have not moved to V6 keep the existing
+   * Scout Experience V3 behaviour.
+   */
+  const renderer = route === 'confirm'
+    ? confirmPage
+    : renderers[route];
+
+  root.innerHTML = renderer(liveState.mobile);
+
   liveBindGlobalActions();
 
   liveHydrateRoute(route).finally(function () {
     root.classList.remove('is-loading');
+    root.removeAttribute('aria-busy');
   });
 }
 
