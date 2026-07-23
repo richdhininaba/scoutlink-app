@@ -85,6 +85,7 @@ app.use('/api/coaches', require('./routes/coaches'));
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/awards', require('./routes/awards'));
 app.use('/api/predictions', require('./routes/predictions'));
+app.use('/api/scout-intelligence', require('./routes/scoutIntelligence'));
 app.use('/api/exports', require('./routes/exports'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/season', require('./routes/season'));
@@ -197,6 +198,7 @@ const routeMap = {
   '/scout/events': 'pages/scout-events.html',
   '/scout/chat': 'pages/scout-chat.html',
   '/scout/notifications': 'pages/scout-notifications.html',
+  '/scout/report-a-concern': 'pages/scout-report-concern.html',
   '/scout/settings': 'pages/scout-settings.html',
   '/scout/preferences': 'pages/scout-preferences.html',
   '/player/dashboard': 'pages/player-dashboard.html',
