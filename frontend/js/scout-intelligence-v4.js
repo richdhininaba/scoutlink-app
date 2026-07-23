@@ -89,46 +89,9 @@ async function loadOverview(){
  state.overview=await request('GET','/api/scout-intelligence/overview').catch(function(){return fallback});if(isDemo())state.overview.usage=demoUsage();return state.overview
 }
 function usageValue(usage,key,limit){var row=usage&&usage[key]||{},max=num(row.limit,limit),used=num(row.used,Math.max(0,max-num(row.remaining,max)));return {used:used,limit:max,remaining:row.remaining==null?Math.max(0,max-used):num(row.remaining),percent:max?Math.round(used/max*100):0}}
-function mount(content) {
-  content.innerHTML =
-    '<div class="slv6-approved" data-slv6-route="' +
-    esc(state.route) +
-    '">' +
-    templates[state.route] +
-    '</div>';
-
-  var root = q(content, '.slv6-approved');
-  var app = document.getElementById('scoutExperienceApp');
-
-  var title = state.route === 'search'
-    ? 'Player Search'
-    : state.route.charAt(0).toUpperCase() +
-      state.route.slice(1);
-
-  var top = q(
-    document,
-    '#scoutExperienceApp .workspace-top h1'
-  );
-
-  var mobile = q(
-    document,
-    '#scoutExperienceApp .mobile-top b'
-  );
-
-  if (top) top.textContent = title;
-  if (mobile) mobile.textContent = title;
-
-  if (app) {
-    app.classList.remove(
-      'scout-v6-booting',
-      'is-loading'
-    );
-
-    app.classList.add('scout-v6-ready');
-    app.removeAttribute('aria-busy');
-  }
-
-  return root;
+function mount(content){
+ content.innerHTML='<div class="slv6-approved" data-slv6-route="'+esc(state.route)+'">'+templates[state.route]+'</div>';var root=q(content,'.slv6-approved'),title=(state.route==='search'?'Player Search':state.route.charAt(0).toUpperCase()+state.route.slice(1));
+ var top=q(document,'#scoutExperienceApp .workspace-top h1'),mobile=q(document,'#scoutExperienceApp .mobile-top b');if(top)top.textContent=title;if(mobile)mobile.textContent=title;return root
 }
 function findButton(root,text){return qa(root,'button').find(function(b){return b.textContent.trim().toLowerCase()===text.toLowerCase()})}
 function bindOpenButtons(root){qa(root,'button').forEach(function(btn){if(['Open','Review','View player','Open profile'].includes(btn.textContent.trim()))btn.addEventListener('click',function(){var row=btn.closest('tr,.rank-widget,.top-fit-player,.selected-player,.shared-card'),id=row&&row.dataset.playerId;if(id)location.href='/player/profile?id='+encodeURIComponent(id)})})}
@@ -328,4 +291,868 @@ async function init(){
  state.route=routeId();if(!templates[state.route])return;waitForWorkspace(async function(app,content){try{await loadPlayers();var overview=await loadOverview();var root=mount(content);hydrateRoute(root,overview)}catch(e){content.innerHTML='<div class="slv6-approved"><div class="empty structured"><b>ScoutLink could not load</b><span>'+esc(e.message)+'</span></div></div>'}})
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* ScoutLink Scout Intelligence V6.2
+   Interaction completion, workflow logic and button behaviour.
+   This layer is intentionally appended after the approved V6 renderer so
+   every visible action has a real destination, overlay or API request. */
+(function () {
+  'use strict';
+
+  var API_FALLBACK = 'https://scoutlink-api.vercel.app';
+  var REPORT_KEY = 'sl_scout_reports_v62';
+  var PIPELINE_KEY = 'sl_scout_pipeline_v62';
+  var WATCH_KEY = 'sl_scout_watches_v62';
+  var COMPARISON_KEY = 'sl_scout_comparisons_v62';
+  var PREDICTION_KEY = 'sl_scout_predictions_v62';
+  var lastRoot = null;
+
+  function apiBase() {
+    return String(window.API || localStorage.getItem('sl_api_url') || API_FALLBACK).replace(/\/+$/, '');
+  }
+
+  function token() {
+    return localStorage.getItem('sl_token') || '';
+  }
+
+  function isDemo() {
+    var user = {};
+    try { user = JSON.parse(localStorage.getItem('sl_user') || '{}'); } catch (_) {}
+    return sessionStorage.getItem('sl_public_demo') === '1' ||
+      localStorage.getItem('sl_demo_mode') === '1' ||
+      token() === 'public-demo-session' ||
+      Boolean(user.demoMode || user.demo_mode);
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
+    });
+  }
+
+  function readStore(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+    catch (_) { return fallback; }
+  }
+
+  function writeStore(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function request(method, path, body) {
+    var headers = { Accept: 'application/json' };
+    if (token()) headers.Authorization = 'Bearer ' + token();
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(apiBase() + path, {
+      method: method,
+      headers: headers,
+      credentials: 'include',
+      body: body === undefined ? undefined : JSON.stringify(body)
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok) throw new Error(payload.error || payload.message || 'The request could not be completed.');
+        return payload;
+      });
+    });
+  }
+
+  function toast(message, error) {
+    document.querySelectorAll('.slv62-toast').forEach(function (node) { node.remove(); });
+    var node = document.createElement('div');
+    node.className = 'slv62-toast' + (error ? ' error' : '');
+    node.setAttribute('role', error ? 'alert' : 'status');
+    node.textContent = message;
+    document.body.appendChild(node);
+    setTimeout(function () { node.remove(); }, 4300);
+  }
+
+  function modal(title, body, onReady, options) {
+    options = options || {};
+    var back = document.createElement('div');
+    back.className = 'slv62-modal-backdrop';
+    back.innerHTML = '<section class="slv62-modal ' + esc(options.className || '') + '" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
+      '<header><div><small>ScoutLink workflow</small><h2>' + esc(title) + '</h2></div>' +
+      '<button type="button" class="slv62-button" data-v62-close>Close</button></header>' +
+      '<div class="slv62-modal-body">' + body + '</div></section>';
+    document.body.appendChild(back);
+    function close() { back.remove(); }
+    back.addEventListener('click', function (event) {
+      if (event.target === back || event.target.closest('[data-v62-close]')) close();
+    });
+    if (typeof onReady === 'function') onReady(back, close);
+    return back;
+  }
+
+  function buttonText(button) {
+    return String(button && button.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function currentPlayerId(root) {
+    var params = new URLSearchParams(location.search);
+    var id = params.get('id') || params.get('player');
+    if (id) return id;
+    var node = root && root.querySelector('[data-player-id]');
+    return node && node.dataset.playerId || '';
+  }
+
+  function currentPlayerName(root) {
+    var heading = root && (root.querySelector('.profile-main h2') || root.querySelector('.profile-head h2'));
+    return heading ? heading.textContent.trim() : 'this player';
+  }
+
+  function pipelineEntries() {
+    return readStore(PIPELINE_KEY, []);
+  }
+
+  function isInPipeline(playerId) {
+    return pipelineEntries().some(function (row) { return String(row.playerId) === String(playerId); });
+  }
+
+  function addDemoPipeline(playerId, playerName, stage) {
+    var rows = pipelineEntries();
+    var existing = rows.find(function (row) { return String(row.playerId) === String(playerId); });
+    if (existing) {
+      existing.stage = stage || existing.stage || 'interested';
+      existing.updatedAt = new Date().toISOString();
+    } else {
+      rows.unshift({
+        id: 'demo-pipeline-' + Date.now(),
+        playerId: playerId,
+        playerName: playerName,
+        stage: stage || 'interested',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+    writeStore(PIPELINE_KEY, rows);
+  }
+
+  function registerInterest(root, stage) {
+    var playerId = currentPlayerId(root);
+    var playerName = currentPlayerName(root);
+    if (!playerId) return toast('The player could not be identified.', true);
+
+    if (isDemo()) {
+      addDemoPipeline(playerId, playerName, stage || 'interested');
+      updateProfileInterestState(root, true);
+      toast(playerName + ' was added to the pipeline.');
+      return Promise.resolve();
+    }
+
+    return request('POST', '/api/scout-intelligence/pipeline', {
+      playerId: playerId,
+      stage: stage || 'interested',
+      notes: 'Interest registered from the player profile.'
+    }).then(function () {
+      updateProfileInterestState(root, true);
+      toast(playerName + ' was added to the pipeline.');
+    }).catch(function (error) {
+      toast(error.message, true);
+      throw error;
+    });
+  }
+
+  function updateProfileInterestState(root, interested) {
+    root.querySelectorAll('button').forEach(function (button) {
+      var text = buttonText(button).toLowerCase();
+      if (/register interest|add to pipeline/.test(text)) {
+        button.textContent = interested ? 'Interest registered' : 'Register interest';
+        button.disabled = interested;
+        button.classList.toggle('is-complete', interested);
+      }
+      if (/message coach/.test(text)) {
+        button.disabled = !interested;
+        button.title = interested ? 'Message the authorised coach' : 'Register interest before messaging the coach';
+      }
+    });
+  }
+
+  function openEvidenceRequest(root) {
+    var playerId = currentPlayerId(root);
+    var playerName = currentPlayerName(root);
+    modal('Request more evidence',
+      '<div class="slv62-step-list"><article><span>1</span><div><b>Choose the evidence needed</b><small>The request is recorded against the player.</small></div></article>' +
+      '<article><span>2</span><div><b>Add a clear reason</b><small>Explain what decision the evidence should support.</small></div></article>' +
+      '<article><span>3</span><div><b>Send to the authorised coach</b><small>The coach sees only the relevant player request.</small></div></article></div>' +
+      '<div class="slv62-form-grid two">' +
+      '<label><span>Evidence type</span><select id="v62EvidenceType"><option>Recent Match Facts</option><option>Approved match video</option><option>Position-specific clips</option><option>Physical profile update</option><option>Coach observation</option></select></label>' +
+      '<label><span>Priority</span><select id="v62EvidencePriority"><option>Normal</option><option>High</option><option>Urgent</option></select></label>' +
+      '<label class="full"><span>Reason for the request</span><textarea id="v62EvidenceReason" placeholder="Example: confirm decision making under a high press before shortlisting."></textarea></label>' +
+      '<label><span>Needed by</span><input id="v62EvidenceDue" type="date"></label>' +
+      '</div><div class="slv62-modal-actions"><button class="slv62-button primary" type="button" data-v62-send-evidence>Send evidence request</button></div>',
+      function (dialog, close) {
+        dialog.querySelector('[data-v62-send-evidence]').addEventListener('click', function () {
+          var evidenceType = dialog.querySelector('#v62EvidenceType').value;
+          var reason = dialog.querySelector('#v62EvidenceReason').value.trim();
+          if (!reason) return toast('Add a reason for the evidence request.', true);
+          var payload = {
+            subjectType: 'player',
+            subjectId: playerId,
+            body: 'Evidence request: ' + evidenceType + '. ' + reason,
+            visibility: 'team',
+            metadata: {
+              requestType: 'evidence',
+              priority: dialog.querySelector('#v62EvidencePriority').value,
+              dueAt: dialog.querySelector('#v62EvidenceDue').value || null
+            }
+          };
+          if (isDemo()) {
+            var requests = readStore('sl_scout_evidence_requests_v62', []);
+            requests.unshift(Object.assign({ id: 'demo-evidence-' + Date.now(), playerName: playerName, createdAt: new Date().toISOString() }, payload));
+            writeStore('sl_scout_evidence_requests_v62', requests);
+            close();
+            toast('Evidence request sent for ' + playerName + '.');
+            return;
+          }
+          request('POST', '/api/scout-intelligence/comments', payload).then(function () {
+            close();
+            toast('Evidence request sent for ' + playerName + '.');
+          }).catch(function (error) { toast(error.message, true); });
+        });
+      });
+  }
+
+  function openWatchDialog(root) {
+    var playerId = currentPlayerId(root);
+    var playerName = currentPlayerName(root);
+    modal('Watch player changes',
+      '<p class="slv62-copy">Choose which changes should trigger an intelligence alert.</p>' +
+      '<div class="slv62-form-grid two">' +
+      '<label class="full"><span>Reason for watching</span><textarea id="v62WatchReason" placeholder="What future change would affect the recruitment decision?"></textarea></label>' +
+      '<label><span>Minimum overall rating</span><input id="v62WatchOverall" type="number" min="0" max="100" value="80"></label>' +
+      '<label><span>Minimum evidence confidence</span><input id="v62WatchEvidence" type="number" min="0" max="100" value="70"></label>' +
+      '<label class="slv62-check"><input id="v62WatchProfile" type="checkbox" checked><span>Alert me to any major profile update</span></label>' +
+      '<label class="slv62-check"><input id="v62WatchMatch" type="checkbox" checked><span>Alert me to new Match Facts</span></label>' +
+      '</div><div class="slv62-modal-actions"><button class="slv62-button primary" type="button" data-v62-save-watch>Save player watch</button></div>',
+      function (dialog, close) {
+        dialog.querySelector('[data-v62-save-watch]').addEventListener('click', function () {
+          var payload = {
+            playerId: playerId,
+            reason: dialog.querySelector('#v62WatchReason').value.trim() || 'Monitor meaningful player changes.',
+            thresholds: {
+              minOverall: Number(dialog.querySelector('#v62WatchOverall').value || 0),
+              minEvidence: Number(dialog.querySelector('#v62WatchEvidence').value || 0),
+              anyProfileUpdate: dialog.querySelector('#v62WatchProfile').checked,
+              newMatchFacts: dialog.querySelector('#v62WatchMatch').checked
+            }
+          };
+          if (isDemo()) {
+            var rows = readStore(WATCH_KEY, []);
+            rows.unshift(Object.assign({ id: 'demo-watch-' + Date.now(), playerName: playerName, status: 'active', createdAt: new Date().toISOString() }, payload));
+            writeStore(WATCH_KEY, rows);
+            close();
+            toast('Player watch saved.');
+            return;
+          }
+          request('POST', '/api/scout-intelligence/watches', payload).then(function () {
+            close();
+            toast('Player watch saved.');
+          }).catch(function (error) { toast(error.message, true); });
+        });
+      });
+  }
+
+  function openVideos(root) {
+    var cards = Array.from(root.querySelectorAll('.video-row,.slv6-video-row,[data-video-url]'));
+    var rows = cards.map(function (card, index) {
+      var link = card.dataset.videoUrl || card.getAttribute('data-url') || '';
+      var title = (card.querySelector('b') || {}).textContent || 'Player video ' + (index + 1);
+      var status = (card.querySelector('small') || {}).textContent || 'Video evidence';
+      return { title: title.trim(), status: status.trim(), url: link };
+    });
+    if (!rows.length) {
+      rows = [
+        { title: 'Recent match highlights', status: 'Approved', url: '' },
+        { title: 'Position-specific clips', status: 'Pending review', url: '' }
+      ];
+    }
+    modal('Player video evidence',
+      '<div class="slv62-video-grid">' + rows.map(function (video, index) {
+        return '<article data-v62-video-card><div class="slv62-video-preview"><span>▶</span></div><div><small>' + esc(video.status) + '</small><b>' + esc(video.title) + '</b>' +
+          '<span>' + (video.url ? 'Available to open' : 'Video file not currently attached') + '</span></div>' +
+          '<button class="slv62-button" type="button" data-v62-play-video="' + index + '"' + (video.url ? '' : ' disabled') + '>Open video</button></article>';
+      }).join('') + '</div>',
+      function (dialog) {
+        dialog.querySelectorAll('[data-v62-play-video]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var row = rows[Number(button.dataset.v62PlayVideo)];
+            if (row && row.url) window.open(row.url, '_blank', 'noopener');
+          });
+        });
+      }, { className: 'wide' });
+  }
+
+  function openMatchFacts(root) {
+    var rows = Array.from(root.querySelectorAll('.match-fact,.slv6-match-fact,.match-row')).map(function (row) {
+      return {
+        opponent: (row.querySelector('b') || {}).textContent || 'Opponent',
+        meta: Array.from(row.querySelectorAll('span')).map(function (node) { return node.textContent.trim(); }).join(' · ')
+      };
+    });
+    modal('Match Facts',
+      rows.length ? '<div class="slv62-table-wrap"><table><thead><tr><th>Match</th><th>Recorded evidence</th><th></th></tr></thead><tbody>' +
+        rows.map(function (row, index) { return '<tr><td><b>' + esc(row.opponent) + '</b></td><td>' + esc(row.meta) + '</td><td><button type="button" class="slv62-button" data-v62-match-row="' + index + '">Open</button></td></tr>'; }).join('') +
+        '</tbody></table></div>' : '<div class="slv62-empty"><b>No Match Facts are available</b><span>Ask the coach to add recent match evidence.</span></div>',
+      function (dialog) {
+        dialog.querySelectorAll('[data-v62-match-row]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var row = rows[Number(button.dataset.v62MatchRow)];
+            modal(row.opponent, '<div class="slv62-detail-card"><b>Recorded Match Facts</b><p>' + esc(row.meta || 'No additional match detail is attached.') + '</p></div>');
+          });
+        });
+      }, { className: 'wide' });
+  }
+
+  function openRecruitmentActions(root) {
+    var playerName = currentPlayerName(root);
+    modal('Recruitment actions for ' + playerName,
+      '<div class="slv62-action-grid">' +
+      '<button type="button" data-v62-action="interest"><span>01</span><b>Register interest</b><small>Add the player to the pipeline.</small></button>' +
+      '<button type="button" data-v62-action="evidence"><span>02</span><b>Request evidence</b><small>Ask for the evidence needed for the next decision.</small></button>' +
+      '<button type="button" data-v62-action="watch"><span>03</span><b>Watch changes</b><small>Create meaningful-change alerts.</small></button>' +
+      '<button type="button" data-v62-action="fixture"><span>04</span><b>Plan observation</b><small>Create a live-scouting objective.</small></button>' +
+      '<button type="button" data-v62-action="decision"><span>05</span><b>Record decision</b><small>Save a rationale and next action.</small></button>' +
+      '<button type="button" data-v62-action="report"><span>06</span><b>Create report</b><small>Generate a downloadable player dossier.</small></button>' +
+      '</div>',
+      function (dialog, close) {
+        dialog.querySelectorAll('[data-v62-action]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            var action = button.dataset.v62Action;
+            close();
+            if (action === 'interest') registerInterest(root);
+            if (action === 'evidence') openEvidenceRequest(root);
+            if (action === 'watch') openWatchDialog(root);
+            if (action === 'fixture') openFixturePlan(root);
+            if (action === 'decision') openDecision(root);
+            if (action === 'report') createAndStoreReport(root, 'Player intelligence report', 'PDF');
+          });
+        });
+      });
+  }
+
+  function openDecision(root, comparison) {
+    var playerId = comparison && comparison.playerId || currentPlayerId(root);
+    var playerName = comparison && comparison.playerName || currentPlayerName(root);
+    modal('Record recruitment decision',
+      '<div class="slv62-decision-layout"><aside><span>Decision workflow</span><h3>' + esc(playerName) + '</h3><p>Record the recommendation, evidence and next action together.</p><ol><li>Choose the decision</li><li>Explain the football reason</li><li>Set the next action</li></ol></aside>' +
+      '<div class="slv62-form-grid two">' +
+      '<label><span>Decision</span><select id="v62Decision"><option>Prioritise</option><option>Shortlist</option><option>Trial before deciding</option><option>Monitor</option><option>Do not progress</option></select></label>' +
+      '<label><span>Primary reason</span><select id="v62DecisionReason"><option value="team_fit">Team fit</option><option value="position_fit">Position fit</option><option value="evidence">Evidence confidence</option><option value="financial">Financial fit</option><option value="risk">Recruitment risk</option></select></label>' +
+      '<label class="full"><span>Decision rationale</span><textarea id="v62DecisionRationale" placeholder="Explain the evidence, trade-offs and football judgement."></textarea></label>' +
+      '<label><span>Next action</span><input id="v62DecisionNext" placeholder="Example: observe the next fixture"></label>' +
+      '<label><span>Due date</span><input id="v62DecisionDue" type="date"></label>' +
+      '<label class="full"><span>Recruitment risk</span><select id="v62DecisionRisk"><option>Low</option><option selected>Medium</option><option>High</option></select></label>' +
+      '</div></div><div class="slv62-modal-actions"><button class="slv62-button primary" type="button" data-v62-save-decision>Save decision</button></div>',
+      function (dialog, close) {
+        dialog.querySelector('[data-v62-save-decision]').addEventListener('click', function () {
+          var rationale = dialog.querySelector('#v62DecisionRationale').value.trim();
+          if (!rationale) return toast('Add a decision rationale.', true);
+          var payload = {
+            playerId: playerId,
+            decision: dialog.querySelector('#v62Decision').value,
+            reasonCode: dialog.querySelector('#v62DecisionReason').value,
+            rationale: rationale,
+            nextAction: dialog.querySelector('#v62DecisionNext').value.trim(),
+            dueAt: dialog.querySelector('#v62DecisionDue').value || null,
+            decisionContext: {
+              source: comparison ? 'comparison' : 'profile',
+              recruitmentRisk: dialog.querySelector('#v62DecisionRisk').value,
+              comparisonId: comparison && comparison.comparisonId || null
+            }
+          };
+          if (isDemo()) {
+            var decisions = readStore('sl_scout_decisions_v62', []);
+            decisions.unshift(Object.assign({ id: 'demo-decision-' + Date.now(), playerName: playerName, createdAt: new Date().toISOString() }, payload));
+            writeStore('sl_scout_decisions_v62', decisions);
+            close();
+            toast('Recruitment decision saved.');
+            return;
+          }
+          request('POST', '/api/scout-intelligence/decisions', payload).then(function () {
+            close();
+            toast('Recruitment decision saved.');
+          }).catch(function (error) { toast(error.message, true); });
+        });
+      }, { className: 'wide' });
+  }
+
+  function openFixturePlan(root, fixtureId) {
+    var playerId = currentPlayerId(root);
+    var playerName = currentPlayerName(root);
+    modal('Plan live-scouting visit',
+      '<div class="slv62-step-list"><article><span>1</span><div><b>Define the objective</b><small>What must the fixture confirm or challenge?</small></div></article><article><span>2</span><div><b>Assign the scout</b><small>Choose who owns the observation.</small></div></article><article><span>3</span><div><b>Set the follow-up</b><small>Record when the decision will be reviewed.</small></div></article></div>' +
+      '<div class="slv62-form-grid two">' +
+      '<label class="full"><span>Observation objective</span><textarea id="v62FixtureObjective" placeholder="Example: assess defensive scanning and recovery pace against direct runners."></textarea></label>' +
+      '<label><span>Assigned scout</span><input id="v62FixtureScout" placeholder="Search or enter scout name"></label>' +
+      '<label><span>Priority</span><select id="v62FixturePriority"><option value="90">High</option><option value="60" selected>Medium</option><option value="30">Low</option></select></label>' +
+      '<label><span>Target role</span><input id="v62FixtureRole" placeholder="Example: right-sided centre-back"></label>' +
+      '<label><span>Review date</span><input id="v62FixtureReview" type="date"></label>' +
+      '<label class="full"><span>Travel and preparation notes</span><textarea id="v62FixtureNotes"></textarea></label>' +
+      '</div><div class="slv62-modal-actions"><button class="slv62-button primary" type="button" data-v62-save-fixture>Save observation plan</button></div>',
+      function (dialog, close) {
+        dialog.querySelector('[data-v62-save-fixture]').addEventListener('click', function () {
+          var objective = dialog.querySelector('#v62FixtureObjective').value.trim();
+          if (!objective) return toast('Add an observation objective.', true);
+          var payload = {
+            fixtureId: fixtureId || null,
+            playerId: playerId || null,
+            assignedScoutId: null,
+            assignedScoutName: dialog.querySelector('#v62FixtureScout').value.trim() || null,
+            priority: Number(dialog.querySelector('#v62FixturePriority').value),
+            objective: objective,
+            travelNotes: dialog.querySelector('#v62FixtureNotes').value.trim(),
+            targetRole: dialog.querySelector('#v62FixtureRole').value.trim(),
+            reviewDate: dialog.querySelector('#v62FixtureReview').value || null
+          };
+          if (isDemo() || !fixtureId) {
+            var plans = readStore('sl_scout_fixture_plans_v62', []);
+            plans.unshift(Object.assign({ id: 'demo-plan-' + Date.now(), playerName: playerName, status: 'planned', createdAt: new Date().toISOString() }, payload));
+            writeStore('sl_scout_fixture_plans_v62', plans);
+            close();
+            toast('Observation plan saved.');
+            return;
+          }
+          request('POST', '/api/scout-intelligence/fixture-plans', payload).then(function () {
+            close();
+            toast('Observation plan saved.');
+          }).catch(function (error) { toast(error.message, true); });
+        });
+      }, { className: 'wide' });
+  }
+
+  function openMessageCoach(root) {
+    var playerId = currentPlayerId(root);
+    if (!isInPipeline(playerId) && isDemo()) {
+      return modal('Register interest first',
+        '<div class="slv62-gate"><span>Pipeline permission required</span><h3>Add the player before contacting the coach</h3><p>ScoutLink only opens coach messaging after the scout has registered a recruitment interest. This keeps player contact authorised and traceable.</p>' +
+        '<button class="slv62-button primary" type="button" data-v62-register-before-message>Register interest</button></div>',
+        function (dialog, close) {
+          dialog.querySelector('[data-v62-register-before-message]').addEventListener('click', function () {
+            registerInterest(root).then(function () {
+              close();
+              location.href = '/scout/chat?player=' + encodeURIComponent(playerId);
+            });
+          });
+        });
+    }
+    location.href = '/scout/chat?player=' + encodeURIComponent(playerId);
+  }
+
+  function openTeamLinks(root) {
+    var playerName = currentPlayerName(root);
+    var teamName = (root.querySelector('.profile-main p') || root.querySelector('.profile-head p') || {}).textContent || 'Player team';
+    var teamWebsite = root.dataset.teamWebsite || '';
+    var leagueUrl = root.dataset.leagueUrl || '';
+    var teamMatchesUrl = root.dataset.teamMatchesUrl || leagueUrl;
+    modal('Team and match links',
+      '<div class="slv62-link-grid"><article><span>Team</span><h3>' + esc(teamName) + '</h3><p>External team information connected to ' + esc(playerName) + '.</p></article>' +
+      '<a class="' + (teamWebsite ? '' : 'disabled') + '" ' + (teamWebsite ? 'href="' + esc(teamWebsite) + '" target="_blank" rel="noopener"' : '') + '><b>Team website</b><span>' + (teamWebsite ? 'Open the official team website' : 'No team website has been added') + '</span></a>' +
+      '<a class="' + (leagueUrl ? '' : 'disabled') + '" ' + (leagueUrl ? 'href="' + esc(leagueUrl) + '" target="_blank" rel="noopener"' : '') + '><b>League page</b><span>' + (leagueUrl ? 'Open the team league record' : 'No league page has been added') + '</span></a>' +
+      '<a class="' + (teamMatchesUrl ? '' : 'disabled') + '" ' + (teamMatchesUrl ? 'href="' + esc(teamMatchesUrl) + '" target="_blank" rel="noopener"' : '') + '><b>Fixtures and results</b><span>' + (teamMatchesUrl ? 'Open external fixtures and results' : 'No external match link has been added') + '</span></a></div>');
+  }
+
+  function storeReport(report) {
+    var reports = readStore(REPORT_KEY, []);
+    reports.unshift(report);
+    writeStore(REPORT_KEY, reports.slice(0, 50));
+  }
+
+  function reportText(root, title) {
+    var playerName = currentPlayerName(root);
+    return [
+      'SCOUTLINK ' + title.toUpperCase(),
+      '',
+      'Player: ' + playerName,
+      'Created: ' + new Date().toLocaleString('en-GB'),
+      '',
+      'Decision support notice',
+      'This report is based on the current ScoutLink player profile, Match Facts and scout workflow context. It supports football judgement and is not a guarantee of future performance.'
+    ].join('\n');
+  }
+
+  function downloadText(filename, text, mime) {
+    var blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 800);
+  }
+
+  function createAndStoreReport(root, title, format) {
+    var playerId = currentPlayerId(root);
+    var playerName = currentPlayerName(root);
+    format = String(format || 'PDF').toUpperCase();
+    var filename = ('ScoutLink_' + playerName + '_' + title).replace(/[^a-z0-9]+/gi, '_') + (format === 'EXCEL' ? '.csv' : '.txt');
+    var content = reportText(root, title);
+    if (format === 'EXCEL') content = 'Field,Value\nPlayer,"' + playerName.replace(/"/g, '""') + '"\nReport,"' + title.replace(/"/g, '""') + '"\nCreated,"' + new Date().toISOString() + '"';
+    var report = {
+      id: 'local-report-' + Date.now(),
+      playerId: playerId,
+      playerName: playerName,
+      title: title,
+      format: format,
+      filename: filename,
+      status: 'ready',
+      content: content,
+      createdAt: new Date().toISOString()
+    };
+    storeReport(report);
+    downloadText(filename, content, format === 'EXCEL' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8');
+    toast('Report generated, stored in report history and downloaded.');
+    refreshReportHistory(root);
+  }
+
+  function refreshReportHistory(root) {
+    if (!root || !/exports/.test(location.pathname)) return;
+    var reports = readStore(REPORT_KEY, []);
+    var table = Array.from(root.querySelectorAll('table')).find(function (node) {
+      return /report history|report/i.test((node.closest('.panel') || {}).textContent || '');
+    }) || root.querySelector('table');
+    if (!table) return;
+    var tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = reports.map(function (report) {
+      return '<tr data-v62-report-id="' + esc(report.id) + '"><td><b>' + esc(report.title) + '</b></td><td>' + esc(report.playerName) + '</td><td>' + esc(report.format) + '</td><td>' + esc(new Date(report.createdAt).toLocaleDateString('en-GB')) + '</td><td><span class="pill green">Ready</span></td><td><button type="button" class="btn small" data-v62-download-report>Download</button></td></tr>';
+    }).join('') || '<tr><td colspan="6">No generated reports yet.</td></tr>';
+    tbody.querySelectorAll('[data-v62-download-report]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var id = button.closest('tr').dataset.v62ReportId;
+        var report = reports.find(function (row) { return row.id === id; });
+        if (report) downloadText(report.filename, report.content, report.format === 'EXCEL' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8');
+      });
+    });
+  }
+
+  function profilePredictionWizard(root) {
+    var playerName = currentPlayerName(root);
+    var playerId = currentPlayerId(root);
+    var types = [
+      { id: 'position', label: 'Position fit', api: 'Position Fit Projection', prompt: 'Can this player perform a different role?' },
+      { id: 'development', label: 'Development path', api: 'Attribute Development', prompt: 'How could the profile develop over time?' },
+      { id: 'scenario', label: 'Match scenario', api: 'Match Scenario Prediction', prompt: 'How might the player perform in a tactical scenario?' },
+      { id: 'value', label: 'ROI and value', api: 'ROI Analysis', prompt: 'How could value and salary change?' }
+    ];
+    modal('Run prediction on ' + playerName,
+      '<div class="slv62-wizard"><div class="slv62-wizard-progress"><span class="active">1 Choose prediction</span><span>2 Set question</span><span>3 Review result</span></div>' +
+      '<div id="v62PredictionStep"></div></div>',
+      function (dialog) {
+        var selected = null;
+        function stepOne() {
+          dialog.querySelector('#v62PredictionStep').innerHTML = '<h3>What do you want to predict?</h3><p>Choose one prediction. The next step only shows the controls needed for that question.</p><div class="slv62-prediction-grid">' +
+            types.map(function (type) { return '<button type="button" data-v62-prediction="' + type.id + '"><span>' + type.label.slice(0,2).toUpperCase() + '</span><b>' + type.label + '</b><small>' + type.prompt + '</small></button>'; }).join('') + '</div>';
+          dialog.querySelectorAll('[data-v62-prediction]').forEach(function (button) {
+            button.addEventListener('click', function () {
+              selected = types.find(function (type) { return type.id === button.dataset.v62Prediction; });
+              stepTwo();
+            });
+          });
+        }
+        function controls() {
+          if (selected.id === 'position') return '<label><span>Target position</span><select id="v62PredictionInput"><option>GK</option><option>CB</option><option>RB</option><option>LB</option><option>CDM</option><option>CM</option><option>CAM</option><option>LW</option><option>RW</option><option>ST</option></select></label>';
+          if (selected.id === 'development') return '<label><span>Development focus</span><select id="v62PredictionInput"><option>Balanced growth</option><option>Technical possession</option><option>Athletic transition</option><option>Defensive intelligence</option><option>Final-third output</option></select></label>';
+          if (selected.id === 'scenario') return '<label><span>Match scenario</span><select id="v62PredictionInput"><option value="protect_lead">Protecting a one-goal lead</option><option value="high_press">High press</option><option value="low_block">Breaking a low block</option><option value="counter_attack">Counter-attacking</option></select></label>';
+          return '<label><span>Financial goal</span><select id="v62PredictionInput"><option>Balanced value growth</option><option>Low-cost high ceiling</option><option>First-team contribution</option></select></label>';
+        }
+        function stepTwo() {
+          dialog.querySelectorAll('.slv62-wizard-progress span').forEach(function (node, index) { node.classList.toggle('active', index <= 1); });
+          dialog.querySelector('#v62PredictionStep').innerHTML = '<div class="slv62-selected-prediction"><span>' + selected.label.slice(0,2).toUpperCase() + '</span><div><b>' + selected.label + '</b><small>' + selected.prompt + '</small></div></div><div class="slv62-form-grid two">' + controls() +
+            '<label><span>Evidence rule</span><select id="v62PredictionEvidence"><option>Use current evidence</option><option>Use confirmed Match Facts only</option><option>Require high evidence confidence</option></select></label>' +
+            '<label><span>Decision purpose</span><select id="v62PredictionPurpose"><option>Recruitment review</option><option>Shortlist decision</option><option>Live-scouting preparation</option><option>Budget review</option></select></label>' +
+            '<label><span>Time horizon</span><select id="v62PredictionHorizon"><option>Current season</option><option>12 months</option><option>3 years</option><option>5 years</option></select></label></div>' +
+            '<div class="slv62-modal-actions"><button class="slv62-button" type="button" data-v62-back-prediction>Back</button><button class="slv62-button primary" type="button" data-v62-run-prediction>Run ' + esc(selected.label.toLowerCase()) + '</button></div>';
+          dialog.querySelector('[data-v62-back-prediction]').addEventListener('click', stepOne);
+          dialog.querySelector('[data-v62-run-prediction]').addEventListener('click', run);
+        }
+        function run() {
+          var inputValue = dialog.querySelector('#v62PredictionInput').value;
+          var inputParams = {
+            evidenceRule: dialog.querySelector('#v62PredictionEvidence').value,
+            decisionPurpose: dialog.querySelector('#v62PredictionPurpose').value,
+            timeHorizon: dialog.querySelector('#v62PredictionHorizon').value
+          };
+          if (selected.id === 'position') inputParams.targetPosition = inputValue;
+          if (selected.id === 'development') inputParams.focus = inputValue;
+          if (selected.id === 'scenario') inputParams.scenarioKey = inputValue;
+          if (selected.id === 'value') inputParams.financialGoal = inputValue;
+          dialog.querySelector('#v62PredictionStep').innerHTML = '<div class="slv62-loading"><span></span><b>Running ' + esc(selected.label.toLowerCase()) + '</b><small>Using the current player evidence.</small></div>';
+          var resultPromise = isDemo() ? Promise.resolve({
+            result: {
+              recommendation: selected.id === 'position' ? 'Convertible with a managed plan' : 'Prediction complete',
+              summary: selected.prompt + ' Current evidence supports a structured review.',
+              confidence: { label: 'Medium' },
+              score: 76
+            }
+          }) : request('POST', '/api/predictions/run', { playerId: playerId, predictionType: selected.api, inputParams: inputParams });
+          resultPromise.then(function (response) {
+            var result = response.result || response;
+            var rows = readStore(PREDICTION_KEY, []);
+            rows.unshift({ id: 'prediction-' + Date.now(), playerId: playerId, playerName: playerName, type: selected.label, result: result, createdAt: new Date().toISOString() });
+            writeStore(PREDICTION_KEY, rows.slice(0,50));
+            dialog.querySelectorAll('.slv62-wizard-progress span').forEach(function (node) { node.classList.add('active'); });
+            dialog.querySelector('#v62PredictionStep').innerHTML = '<div class="slv62-prediction-result"><aside><small>' + esc(selected.label) + '</small><h3>' + esc(result.recommendation || result.verdict || 'Prediction complete') + '</h3><p>' + esc(result.summary || 'The selected prediction has completed.') + '</p></aside><div><article><span>Confidence</span><b>' + esc(result.confidence && result.confidence.label || 'Current evidence') + '</b></article><article><span>Prediction score</span><b>' + esc(result.score || result.targetScore || result.scenarioScore || '—') + '</b></article></div></div>' +
+              '<div class="slv62-modal-actions"><button class="slv62-button" type="button" data-v62-new-prediction>Run another prediction</button><button class="slv62-button primary" type="button" data-v62-save-prediction>Save and close</button></div>';
+            dialog.querySelector('[data-v62-new-prediction]').addEventListener('click', stepOne);
+            dialog.querySelector('[data-v62-save-prediction]').addEventListener('click', function () { dialog.remove(); toast('Prediction saved to the player history.'); });
+          }).catch(function (error) {
+            dialog.querySelector('#v62PredictionStep').innerHTML = '<div class="slv62-error"><b>Prediction could not run</b><span>' + esc(error.message) + '</span><button type="button" class="slv62-button" data-v62-retry-prediction>Try again</button></div>';
+            dialog.querySelector('[data-v62-retry-prediction]').addEventListener('click', stepTwo);
+          });
+        }
+        stepOne();
+      }, { className: 'wide' });
+  }
+
+  function removeSearchPrompt(root) {
+    var prompt = root.querySelector('.search-prompt,.slv6-search-prompt');
+    if (prompt) prompt.remove();
+    var filters = root.querySelector('.filters,.slv6-filters');
+    if (!filters) return;
+    Array.from(filters.querySelectorAll('label')).forEach(function (label) {
+      var text = buttonText(label).toLowerCase();
+      if (/decision context/.test(text)) label.remove();
+    });
+    var heroCopy = root.querySelector('.hero p,.slv6-hero p');
+    if (heroCopy) heroCopy.textContent = 'Start with every available player, then use football filters and sorting to narrow the table.';
+  }
+
+  function rankingMetricLabel(value) {
+    var text = String(value || '').toLowerCase();
+    if (/goal/.test(text)) return 'Goals';
+    if (/assist/.test(text)) return 'Assists';
+    if (/clean/.test(text)) return 'Clean sheets';
+    if (/sought|interest/.test(text)) return 'Scout interest';
+    if (/value/.test(text)) return 'Estimated value';
+    if (/evidence/.test(text)) return 'Evidence score';
+    if (/readiness/.test(text)) return 'Readiness';
+    if (/development|potential/.test(text)) return 'Potential';
+    if (/overall/.test(text)) return 'Overall rating';
+    return 'Team-fit score';
+  }
+
+  function updateRankingColumn(root) {
+    var select = root.querySelector('.rankings-filters select,.slv6-rankings-filters select,#slv6RankingType');
+    var table = root.querySelector('table');
+    if (!select || !table) return;
+    var headers = table.querySelectorAll('th');
+    var label = rankingMetricLabel(select.value || select.options[select.selectedIndex] && select.options[select.selectedIndex].text);
+    var target = Array.from(headers).find(function (header) { return /score|metric|ranking/i.test(header.textContent); });
+    if (!target && headers.length > 2) target = headers[2];
+    if (target) target.textContent = label;
+    select.addEventListener('change', function () { setTimeout(function () { updateRankingColumn(root); }, 0); }, { once: true });
+  }
+
+  function predictionPageWizard(root) {
+    var choices = Array.from(root.querySelectorAll('.prediction-choice,.slv6-prediction-choice,[data-prediction-type]'));
+    var playerSelect = root.querySelector('.prediction-player-picker select,#slv6PredictionPlayer');
+    if (!playerSelect) {
+      var playerArea = root.querySelector('.selected-player,.slv6-selected-player');
+      if (playerArea) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'slv62-player-combobox';
+        wrapper.innerHTML = '<label><span>Player</span><input type="search" list="v62PredictionPlayers" placeholder="Type a player name"><datalist id="v62PredictionPlayers"></datalist></label>';
+        playerArea.replaceWith(wrapper);
+      }
+    }
+    var first = choices[0];
+    if (first && !choices.some(function (choice) { return choice.classList.contains('selected'); })) first.click();
+    var panels = root.querySelectorAll('.journey-panel,.slv6-prediction-runner');
+    panels.forEach(function (panel, index) { panel.classList.toggle('slv62-step-visible', index < 2); });
+  }
+
+  function comparePageLogic(root) {
+    var result = root.querySelector('.recommendation,.slv6-recommendation,#slv6ComparisonResult');
+    var inputs = root.querySelectorAll('.compare-player-select input,.slv6-compare-player-select input');
+    if (result && inputs.length >= 2 && (!inputs[0].value || !inputs[1].value || inputs[0].value === inputs[1].value)) result.classList.add('slv62-hidden-result');
+    var run = Array.from(root.querySelectorAll('button')).find(function (button) { return /compare and explain/i.test(buttonText(button)); });
+    if (run) {
+      run.addEventListener('click', function () {
+        setTimeout(function () {
+          if (result) result.classList.remove('slv62-hidden-result');
+        }, 0);
+      });
+    }
+  }
+
+  function saveComparison(root) {
+    var players = Array.from(root.querySelectorAll('.compare-player-select input,.slv6-compare-player-select input')).map(function (input) { return input.value.trim(); }).filter(Boolean);
+    if (players.length < 2 || players[0] === players[1]) return toast('Choose two different players before saving.', true);
+    var rows = readStore(COMPARISON_KEY, []);
+    var comparison = { id: 'comparison-' + Date.now(), players: players.slice(0,2), createdAt: new Date().toISOString(), status: 'saved' };
+    rows.unshift(comparison);
+    writeStore(COMPARISON_KEY, rows.slice(0,50));
+    toast('Comparison saved.');
+    return comparison;
+  }
+
+  function bindPipelineCompare(root) {
+    if (!/\/scout\/pipeline/.test(location.pathname)) return;
+    root.addEventListener('click', function (event) {
+      var button = event.target.closest('button');
+      if (!button || !/compare/i.test(buttonText(button))) return;
+      var selected = Array.from(root.querySelectorAll('input[type="checkbox"]:checked,[aria-selected="true"],[data-selected="true"]')).map(function (node) {
+        return node.value || node.dataset.playerId || node.closest('[data-player-id]') && node.closest('[data-player-id]').dataset.playerId;
+      }).filter(Boolean);
+      if (selected.length < 2) {
+        var recommended = Array.from(root.querySelectorAll('[data-player-id]')).slice(0,2).map(function (node) { return node.dataset.playerId; });
+        selected = recommended;
+      }
+      if (selected.length < 2) return toast('Choose two pipeline players to compare.', true);
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.href = '/scout/compare-players?player=' + encodeURIComponent(selected[0]) + '&playerB=' + encodeURIComponent(selected[1]);
+    }, true);
+  }
+
+  function fixtureButtons(root) {
+    if (!/\/scout\/fixtures/.test(location.pathname)) return;
+    root.querySelectorAll('button').forEach(function (button) {
+      var text = buttonText(button).toLowerCase();
+      if (/assign scout|open plan|plan visit|plan observation/.test(text)) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          var fixture = button.closest('[data-fixture-id]');
+          openFixturePlan(root, fixture && fixture.dataset.fixtureId || null);
+        }, true);
+      }
+      if (/calendar settings/.test(text)) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          modal('Calendar settings', '<div class="slv62-form-grid two"><label><span>Default view</span><select><option>Month</option><option>List</option></select></label><label><span>Week starts</span><select><option>Monday</option><option>Sunday</option></select></label><label class="slv62-check"><input type="checkbox" checked><span>Show priority fixtures</span></label><label class="slv62-check"><input type="checkbox" checked><span>Show assigned scouts</span></label></div><div class="slv62-modal-actions"><button class="slv62-button primary" type="button" data-v62-save-calendar>Save calendar settings</button></div>', function (dialog, close) {
+            dialog.querySelector('[data-v62-save-calendar]').addEventListener('click', function () { close(); toast('Calendar settings saved.'); });
+          });
+        }, true);
+      }
+    });
+  }
+
+  function exportButtons(root) {
+    if (!/\/scout\/exports/.test(location.pathname)) return;
+    refreshReportHistory(root);
+    root.querySelectorAll('button').forEach(function (button) {
+      var text = buttonText(button).toLowerCase();
+      if (/generate report/.test(text)) {
+        button.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          var selects = root.querySelectorAll('select');
+          var format = Array.from(selects).find(function (select) { return /pdf|excel/i.test(select.textContent); });
+          var type = Array.from(selects).find(function (select) { return /player intelligence|position-fit|comparison/i.test(select.textContent); });
+          createAndStoreReport(root, type && type.value || 'Player intelligence report', format && format.value || 'PDF');
+        }, true);
+      }
+      if (/download/.test(text)) button.title = 'Download the stored report';
+    });
+  }
+
+  function profileButtons(root) {
+    if (!/\/player\/profile/.test(location.pathname)) return;
+    var interested = isInPipeline(currentPlayerId(root));
+    updateProfileInterestState(root, interested);
+    root.querySelectorAll('button,a').forEach(function (control) {
+      var text = buttonText(control).toLowerCase();
+      if (!text) return;
+      if (/register interest|add to pipeline/.test(text)) bindCapture(control, function () { registerInterest(root); });
+      else if (/request more evidence|request evidence/.test(text)) bindCapture(control, function () { openEvidenceRequest(root); });
+      else if (/watch all videos|view all videos/.test(text)) bindCapture(control, function () { openVideos(root); });
+      else if (/open match facts|view all match facts/.test(text)) bindCapture(control, function () { openMatchFacts(root); });
+      else if (/recruitment actions|next actions/.test(text)) bindCapture(control, function () { openRecruitmentActions(root); });
+      else if (/run prediction/.test(text)) bindCapture(control, function () { profilePredictionWizard(root); });
+      else if (/plan fixture|plan observation|plan visit/.test(text)) bindCapture(control, function () { openFixturePlan(root); });
+      else if (/message coach/.test(text)) bindCapture(control, function () { openMessageCoach(root); });
+      else if (/team website|club website|league page|matches and results/.test(text)) bindCapture(control, function () { openTeamLinks(root); });
+      else if (/record decision/.test(text)) bindCapture(control, function () { openDecision(root); });
+      else if (/create report|export report/.test(text)) bindCapture(control, function () { createAndStoreReport(root, 'Player intelligence report', 'PDF'); });
+    });
+    root.querySelectorAll('.video-row,.slv6-video-row,[data-video-url]').forEach(function (card) {
+      card.classList.add('is-clickable');
+      card.setAttribute('tabindex', '0');
+      card.addEventListener('click', function () {
+        var url = card.dataset.videoUrl || card.getAttribute('data-url');
+        if (url) window.open(url, '_blank', 'noopener'); else openVideos(root);
+      });
+      card.addEventListener('keydown', function (event) { if (event.key === 'Enter') card.click(); });
+    });
+  }
+
+  function bindCapture(control, handler) {
+    if (control.dataset.v62Bound === '1') return;
+    control.dataset.v62Bound = '1';
+    control.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      handler(event);
+    }, true);
+  }
+
+  function compareButtons(root) {
+    if (!/\/scout\/compare-players/.test(location.pathname)) return;
+    comparePageLogic(root);
+    root.querySelectorAll('button').forEach(function (button) {
+      var text = buttonText(button).toLowerCase();
+      if (/save comparison/.test(text)) bindCapture(button, function () { saveComparison(root); });
+      if (/record decision/.test(text)) bindCapture(button, function () {
+        var comparison = saveComparison(root);
+        if (!comparison) return;
+        openDecision(root, { playerId: currentPlayerId(root), playerName: comparison.players[0], comparisonId: comparison.id });
+      });
+      if (/add recommended player/.test(text)) bindCapture(button, function () {
+        var name = (root.querySelector('.recommendation h3,.slv6-recommendation h3') || {}).textContent || 'Recommended player';
+        var node = Array.from(root.querySelectorAll('[data-player-id]')).find(function (row) { return row.textContent.indexOf(name) !== -1; });
+        var id = node && node.dataset.playerId || currentPlayerId(root) || 'recommended-' + Date.now();
+        if (isDemo()) {
+          addDemoPipeline(id, name, 'interested');
+          toast(name + ' was added to the pipeline.');
+        } else {
+          request('POST', '/api/scout-intelligence/pipeline', { playerId: id, stage: 'interested', notes: 'Added from comparison recommendation.' }).then(function () { toast(name + ' was added to the pipeline.'); }).catch(function (error) { toast(error.message, true); });
+        }
+      });
+    });
+  }
+
+  function globalButtons(root) {
+    root.querySelectorAll('button,a').forEach(function (control) {
+      if (!control.title && !control.disabled) control.title = buttonText(control);
+    });
+  }
+
+  function enhance(root) {
+    if (!root || root === lastRoot && root.dataset.v62Enhanced === '1') return;
+    lastRoot = root;
+    root.dataset.v62Enhanced = '1';
+    globalButtons(root);
+    removeSearchPrompt(root);
+    updateRankingColumn(root);
+    predictionPageWizard(root);
+    profileButtons(root);
+    fixtureButtons(root);
+    exportButtons(root);
+    compareButtons(root);
+    bindPipelineCompare(root);
+  }
+
+  function findRoot() {
+    return document.querySelector('.slv6-approved,.scout-intelligence-v6,#scoutExperienceApp');
+  }
+
+  function boot() {
+    var observer = new MutationObserver(function () {
+      var root = findRoot();
+      if (root) enhance(root);
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    var root = findRoot();
+    if (root) enhance(root);
+    setTimeout(function () { var next = findRoot(); if (next) enhance(next); }, 300);
+    setTimeout(function () { var next = findRoot(); if (next) enhance(next); }, 1200);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
