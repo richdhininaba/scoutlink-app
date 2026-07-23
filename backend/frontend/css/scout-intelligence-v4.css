@@ -710,3 +710,89 @@
     font-size:14px;
   }
 }
+/* ScoutLink V6 boot state
+   Prevents the previous Scout page from ever entering view. */
+
+#scoutExperienceApp.scout-v6-booting .content {
+  min-height: calc(100vh - 66px);
+  display: grid;
+  place-items: center;
+}
+
+#scoutExperienceApp .scout-v6-boot {
+  width: min(420px, calc(100% - 32px));
+  min-height: 260px;
+  margin: 32px auto;
+  padding: 32px;
+  border: 1px solid #d9e3ec;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(7, 17, 31, 0.09);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#scoutExperienceApp .scout-v6-boot-brand {
+  color: #07111f;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+#scoutExperienceApp .scout-v6-boot-brand span {
+  color: #087a61;
+}
+
+#scoutExperienceApp .scout-v6-boot-spinner {
+  width: 34px;
+  height: 34px;
+  margin: 22px 0 16px;
+  border: 3px solid #d9e3ec;
+  border-top-color: #087a61;
+  border-radius: 50%;
+  animation: scoutV6BootSpin 0.8s linear infinite;
+}
+
+#scoutExperienceApp .scout-v6-boot b {
+  color: #07111f;
+  font-size: 16px;
+}
+
+#scoutExperienceApp .scout-v6-boot > span {
+  margin-top: 7px;
+  color: #66788b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@keyframes scoutV6BootSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #scoutExperienceApp .scout-v6-boot-spinner {
+    animation: none;
+    border-top-color: #d9e3ec;
+    box-shadow: inset 0 0 0 3px #087a61;
+  }
+}
+
+@media (max-width: 767px) {
+  #scoutExperienceApp.scout-v6-booting .content {
+    min-height: calc(100vh - 112px);
+    padding: 12px 10px 76px;
+  }
+
+  #scoutExperienceApp .scout-v6-boot {
+    width: 100%;
+    min-height: 230px;
+    margin: 8px auto;
+    padding: 24px 18px;
+    border-radius: 14px;
+  }
+}
