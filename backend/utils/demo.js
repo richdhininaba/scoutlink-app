@@ -14,4 +14,8 @@ function demoWriteFields(req) {
   return isDemoSession(req) ? { is_demo: true } : {};
 }
 
-module.exports = { isDemoSession, applyRealDataFilter, demoWriteFields };
+module.exports = {
+  isDemoSession,
+  applyRealDataFilter,
+  demoWriteFields
+};
