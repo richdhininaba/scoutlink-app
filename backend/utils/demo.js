@@ -5,8 +5,9 @@ function isDemoSession(req) {
 }
 
 function applyRealDataFilter(query, req) {
-  if (isDemoSession(req)) return query;
-  return query.eq('is_demo', false);
+  return isDemoSession(req)
+    ? query.eq('is_demo', true)
+    : query.eq('is_demo', false);
 }
 
 function demoWriteFields(req) {
