@@ -53,6 +53,7 @@
     '/company/learning-centre': '/frontend/pages/stratex-site.html',
     '/company/admin': '/frontend/pages/stratex-company-admin.html',
     '/admin': '/frontend/pages/stratex-company-admin.html',
+    '/admin/usage-requests': '/frontend/pages/stratex-usage-requests.html',
     '/404': '/frontend/pages/404.html',
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
     '/stratex/company-site': '/frontend/pages/stratex-company-admin.html',
@@ -75,6 +76,7 @@
     '/stratex/notifications': '/frontend/pages/stratex-notifications.html',
     '/stratex/concerns': '/frontend/pages/stratex-concerns.html',
     '/stratex/settings': '/frontend/pages/stratex-settings.html',
+    '/stratex/usage-requests': '/frontend/pages/stratex-usage-requests.html',
     '/coach/dashboard': '/frontend/pages/coach-dashboard.html',
     '/coach/onboarding': '/frontend/pages/coach-onboarding.html',
     '/coach/my-players': '/frontend/pages/coach-my-players.html',
@@ -101,6 +103,7 @@
     '/scout/chat': '/frontend/pages/scout-chat.html',
     '/scout/notifications': '/frontend/pages/scout-notifications.html',
     '/scout/settings': '/frontend/pages/scout-settings.html',
+    '/scout/usage-requests': '/frontend/pages/scout-usage-requests.html',
     '/scout/preferences': '/frontend/pages/scout-preferences.html',
     '/player/dashboard': '/frontend/pages/player-dashboard.html',
     '/player/profile': '/frontend/pages/player-profile.html',
@@ -111,44 +114,78 @@
     '/careers': '/frontend/pages/careers.html',
     '/careers/interview-availability': '/frontend/pages/interview-availability.html'
   };
+
   var path = window.location.pathname.replace(/\/$/, '') || '/';
+
   if (path === '/pricing') {
     window.location.replace('/scoutlink/pricing' + window.location.search + window.location.hash);
     return;
   }
+
   if (path === '/compatibility-score') {
     window.location.replace('/scoutlink/compatibility-score' + window.location.search + window.location.hash);
     return;
   }
-  if ((window.location.hostname === 'www.stratexanalytics.co.uk' || window.location.hostname === 'stratexanalytics.co.uk') && path === '/coaches') {
+
+  if (
+    (window.location.hostname === 'www.stratexanalytics.co.uk' ||
+      window.location.hostname === 'stratexanalytics.co.uk') &&
+    path === '/coaches'
+  ) {
     window.location.replace('/scoutlink/coaches' + window.location.search + window.location.hash);
     return;
   }
-  if ((window.location.hostname === 'www.stratexanalytics.co.uk' || window.location.hostname === 'stratexanalytics.co.uk') && path === '/scouts') {
+
+  if (
+    (window.location.hostname === 'www.stratexanalytics.co.uk' ||
+      window.location.hostname === 'stratexanalytics.co.uk') &&
+    path === '/scouts'
+  ) {
     window.location.replace('/scoutlink/scouts' + window.location.search + window.location.hash);
     return;
   }
+
   if (path === '/company' || path.indexOf('/company/') === 0) {
     var cleanPath = path.replace(/^\/company/, '') || '/';
     window.location.replace(cleanPath + window.location.search + window.location.hash);
     return;
   }
+
   var target = routes[path];
+
   if (!target && path.indexOf('/admin/') === 0) {
     target = '/frontend/pages/stratex-company-admin.html';
   }
+
   if (!target && path.indexOf('/careers/') === 0) {
     var slug = path.split('/').filter(Boolean).slice(1).join('/');
+
     if (slug) {
       target = '/frontend/pages/career-detail.html';
       var params = new URLSearchParams(window.location.search);
-      if (!params.get('slug')) params.set('slug', slug);
-      window.location.replace(target + '?' + params.toString() + window.location.hash);
+
+      if (!params.get('slug')) {
+        params.set('slug', slug);
+      }
+
+      window.location.replace(
+        target + '?' + params.toString() + window.location.hash
+      );
       return;
     }
   }
-  if (!target && (path.indexOf('/company/careers/') === 0 || path.indexOf('/company/learning-centre/') === 0)) {
+
+  if (
+    !target &&
+    (path.indexOf('/company/careers/') === 0 ||
+      path.indexOf('/company/learning-centre/') === 0)
+  ) {
     target = '/frontend/pages/stratex-site.html';
   }
-  if (target) window.location.replace(target + window.location.search + window.location.hash);
+
+  if (target) {
+    window.location.replace(
+      target + window.location.search + window.location.hash
+    );
+  }
 })();
