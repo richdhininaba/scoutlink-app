@@ -7,11 +7,10 @@
     var PAGE_SIZE = 20;
     var DEMO_USAGE_KEY = 'sl_scout_intelligence_demo_usage_v6_4';
     var templates = {
-        "dashboard": `<section class="hero dashboard-hero-old"><div><small>Elite scout workspace</small><h2>Good morning.</h2><p>Your highest-fit players, real recruitment actions, team needs and plan usage are updated from the current ScoutLink records.</p></div><div class="hero-actions"><button class="btn primary" type="button">Review top matches</button><button class="btn" type="button">View next actions</button></div></section>
-<section class="metric-grid"><article class="metric accent"><small>Players in system</small><strong data-dashboard-player-count>0</strong><span data-dashboard-player-scope>Current accessible dataset</span></article><article class="metric"><small>Next actions</small><strong data-dashboard-action-count>0</strong><span>Evidence-led recruitment work</span></article><article class="metric"><small>Your active pipeline</small><strong data-dashboard-pipeline-count>0</strong><span>Your registered player interests</span></article><article class="metric"><small>Current plan</small><strong data-dashboard-plan>Core</strong><span data-dashboard-plan-copy>One source of truth for every allowance</span></article></section>
+        "dashboard": `<section class="hero dashboard-hero-old"><div><small>Elite scout workspace</small><h2>Good morning.</h2><p>Your highest-fit players, plan usage and upcoming live-scouting priorities are updated from the current ScoutLink records.</p></div><div class="hero-actions"><button class="btn primary" type="button">Review top matches</button><button class="btn" type="button">Open fixtures</button></div></section>
+<section class="metric-grid"><article class="metric accent"><small>Players in system</small><strong data-dashboard-player-count>0</strong><span data-dashboard-player-scope>Current accessible dataset</span></article><article class="metric"><small>Your active pipeline</small><strong data-dashboard-pipeline-count>0</strong><span>Your registered player interests</span></article><article class="metric"><small>Current plan</small><strong data-dashboard-plan>Core</strong><span data-dashboard-plan-copy>One source of truth for every allowance</span></article></section>
 <section class="panel dashboard-compatible-panel"><header class="panel-head"><div><h3>Top 5 most compatible players</h3><p>Highest current compatibility against the saved team brief</p></div><button class="btn small" type="button" data-view-all-compatible>View all players</button></header><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>Player</th><th>Compatibility</th><th>Evidence</th><th>Current rating</th><th></th></tr></thead><tbody data-dashboard-compatible></tbody></table></div></div></section>
-<section class="split"><section class="panel"><header class="panel-head"><div><h3>Next actions</h3><p>Only real actions that move a recruitment decision forward</p></div></header><div class="panel-body" data-dashboard-actions></div></section><section class="panel"><header class="panel-head"><div><h3>What the team needs</h3><p>Every saved need and the players currently matching it</p></div><button class="btn small" type="button">Edit setup</button></header><div class="panel-body" data-dashboard-needs></div></section></section>
-<section class="split thirds"><section class="panel"><header class="panel-head"><div><h3>Usage and limits</h3><p>The same allowance totals are used everywhere</p></div><button class="btn small" type="button" data-open-usage-requests>Usage requests</button></header><div class="panel-body" data-dashboard-usage></div></section><section class="panel dashboard-fit-panel"><header class="panel-head"><div><h3>Top current fit</h3><p>Strongest recommendation for the current brief</p></div></header><div class="panel-body" data-dashboard-top-fit></div></section><section class="panel upcoming-priority-panel"><header class="panel-head"><div><h3>Upcoming live-scouting priority</h3><p>The next fixture action connected to a pipeline player</p></div></header><div class="panel-body" data-dashboard-priority></div></section></section>`,
+<section class="split dashboard-lower-grid"><section class="panel"><header class="panel-head"><div><h3>Usage and limits</h3><p>The same allowance totals are used everywhere</p></div><button class="btn small" type="button" data-open-usage-requests>Usage requests</button></header><div class="panel-body" data-dashboard-usage></div></section><section class="panel upcoming-priority-panel"><header class="panel-head"><div><h3>Upcoming live-scouting priority</h3><p>The next fixture action connected to a pipeline player</p></div></header><div class="panel-body" data-dashboard-priority></div></section></section>`,
         "search": `<section class="hero">
   <div>
     <small>Player discovery</small>
@@ -981,10 +980,6 @@
         if ((!actions.length || actions.every(function (action) { return action.kind === 'explore'; })) && num(data.activePipelineCount) > 0) {
             actions = [{ kind: 'pipeline_review', priority: 20, title: 'Review the active recruitment pipeline', body: num(data.activePipelineCount) + ' active player interests need a confirmed next decision step.', actionLabel: 'Open pipeline', actionUrl: '/scout/pipeline' }];
         }
-        var meaningful = actions.filter(function (action) { return action.kind !== 'explore'; });
-        var actionCount = q(root, '[data-dashboard-action-count]');
-        if (actionCount)
-            actionCount.textContent = meaningful.length;
         var pipelineUsed = data.activePipelineCount != null
             ? num(data.activePipelineCount)
             : data.usage && data.usage.interests && data.usage.interests.used || 0,
@@ -1006,55 +1001,17 @@
             all.onclick = function () { location.href = '/scout/player-search'; };
         if (review)
             review.onclick = function () { location.href = '/scout/player-search?sort=compatibility'; };
-        var actionBody = q(root, '[data-dashboard-actions]');
-        if (actionBody)
-            actionBody.innerHTML = actions.map(function (action) { return '<article class="decision"><div><b>' + esc(action.title) + '</b><span>' + esc(action.body) + '</span></div><a class="btn small ' + (action.priority >= 80 ? 'primary' : '') + '" href="' + esc(action.actionUrl || '/scout/player-search') + '">' + esc(action.actionLabel || 'Open') + '</a></article>'; }).join('');
-        var needs = q(root, '[data-dashboard-needs]'), needRows = data.teamNeeds || [];
-        if (needs) {
-            if (needRows.length) {
-                needs.innerHTML = ['weaknesses', 'roles', 'goals', 'positions', 'ages'].map(function (type) {
-                    var rows = needRows.filter(function (row) { return row.type === type; });
-                    if (!rows.length)
-                        return '';
-                    var label = { weaknesses: 'Team weaknesses', roles: 'Role expectations', goals: 'Long-term goals', positions: 'Preferred positions', ages: 'Age groups' }[type];
-                    return '<section class="need-group-v64"><h4>' + label + '</h4>' + rows.map(function (row) {
-                        var width = Math.min(100, Math.max(5, num(row.relevantPlayers) * 10));
-                        return '<div class="coverage"><b>' + esc(row.need) + '</b><span>' + num(row.relevantPlayers) + ' matching player' + (num(row.relevantPlayers) === 1 ? '' : 's') + '</span><div class="bar"><i style="width:' + width + '%"></i></div></div>';
-                    }).join('') + '</section>';
-                }).join('');
-            }
-            else if (data.dashboardUnavailable) {
-                needs.innerHTML = '<div class="empty structured"><b>Live team needs could not load</b><span>Reload the dashboard to read the saved Scout Setup and matching-player counts.</span></div>';
-            }
-            else {
-                needs.innerHTML = '<div class="empty structured"><b>No team needs saved</b><span>Complete Scout Setup to show each saved need and matching-player count.</span></div>';
-            }
-        }
         var usage = q(root, '[data-dashboard-usage]');
         if (usage) {
             var keys = [['predictions', 'Predictions'], ['exports', 'Exports'], ['interests', 'Pipeline interests']];
             usage.innerHTML = keys.map(function (item) { var row = data.usage && data.usage[item[0]] || { used: 0, limit: 0, remaining: 0 }, pct = row.limit ? Math.round(row.used / row.limit * 100) : 0; return '<div class="usage-row"><div><b>' + item[1] + '</b><span>' + row.used + ' of ' + row.limit + ' used</span></div><div class="bar"><i style="width:' + pct + '%"></i></div><strong>' + row.remaining + ' left</strong></div>'; }).join('') + '<div class="usage-explainer"><b>One ' + esc(data.usage && data.usage.scope === 'team' ? 'team' : 'Scout') + ' allowance source</b><span>The Dashboard, Predictions, Exports and Usage Requests pages read these exact totals.</span></div>';
         }
-        var fit = q(root, '[data-dashboard-top-fit]');
-        if (fit) {
-            if (data.topFit && data.topFit.player) {
-                var p = normalizePlayer(data.topFit.player, 0);
-                fit.innerHTML = '<div class="top-fit-player" data-player-id="' + esc(p.id) + '"><span class="initials">' + initials(p) + '</span><div><small>Highest current recommendation</small><b>' + esc(playerName(p)) + '</b><span>' + esc(playerLine(p)) + '</span></div><strong>' + score(data.topFit.score) + '%</strong></div><div class="fit-reason"><b>Why this player leads</b><span>' + esc(data.topFit.reason) + '</span></div><div class="top-fit-actions"><button class="btn small primary" type="button" data-open-top-fit>Open profile</button><button class="btn small" type="button" data-compare-top-fit>Compare</button></div>';
-                q(fit, '[data-open-top-fit]').onclick = function () { location.href = '/player/profile?id=' + encodeURIComponent(p.id); };
-                q(fit, '[data-compare-top-fit]').onclick = function () { location.href = '/scout/compare-players?player=' + encodeURIComponent(p.id); };
-            }
-            else
-                fit.innerHTML = '<div class="empty structured"><b>No player fit is available</b><span>Add a real player or open a demo experience.</span></div>';
-        }
         var priority = q(root, '[data-dashboard-priority]'), priorityAction = actions.find(function (action) { return action.kind === 'upcoming_fixture'; });
         if (priority)
             priority.innerHTML = priorityAction ? '<div class="fixture-summary"><b>' + esc(priorityAction.title) + '</b><span>' + esc(priorityAction.body) + '</span><p>Open the fixture plan to define the live evidence objective.</p><a class="btn small primary" href="' + esc(priorityAction.actionUrl) + '">' + esc(priorityAction.actionLabel || 'Plan visit') + '</a></div>' : '<div class="empty structured"><b>No live-scouting priority</b><span>Upcoming fixtures for pipeline players will appear here.</span></div>';
-        var next = findButton(root, 'View next actions');
-        if (next)
-            next.onclick = function () { q(root, '[data-dashboard-actions]').scrollIntoView({ behavior: 'smooth' }); };
-        var setup = findButton(root, 'Edit setup');
-        if (setup)
-            setup.onclick = function () { location.href = '/scout/setup'; };
+        var fixtures = findButton(root, 'Open fixtures');
+        if (fixtures)
+            fixtures.onclick = function () { location.href = '/scout/fixtures'; };
         var requests = q(root, '[data-open-usage-requests]');
         if (requests)
             requests.onclick = function () { location.href = '/scout/usage-requests'; };
