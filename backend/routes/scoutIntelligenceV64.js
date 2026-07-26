@@ -5,7 +5,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { analysePlayer } = require('../engines/compatibility');
 const { applyRealDataFilter, isDemoSession } = require('../utils/demo');
-const { limitsForPlan, effectiveLimits } = require('../utils/scoutPlans');
+const { getScoutUsageSnapshot } = require('../utils/scoutUsage');
 function number(value, fallback = 0) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
@@ -167,7 +167,7 @@ async function allPlayers(context) {
         'positioning', 'heading', 'tackling', 'gk_diving', 'gk_handling',
         'gk_kicking', 'gk_reflexes', 'gk_positioning', 'gk_distribution',
         'gk_communication', 'gk_sweeping', 'overall_rating',
-        'potential_rating', 'transfer_value', 'predicted_salary_weekly',
+        'transfer_value', 'predicted_salary_weekly',
         'avatar_config', 'is_active', 'is_demo', 'created_at', 'updated_at'
     ].join(',');
     let query = supabase
@@ -315,6 +315,8 @@ function needFit(player, type, need) {
         return average([a('strength'), a('jumping'), a('stamina')]) >= 65;
     if (containsAny(n, ['defen', 'ball-winning', 'tackle', 'screen']))
         return average([a('defending'), a('tackling'), a('positioning')]) >= 65;
+    if (containsAny(n, ['evidence', 'match fact', 'data confidence', 'proof']))
+        return number(player.evidence_score) >= 60 || list(player._facts).length >= 5;
     if (containsAny(n, ['creative', 'vision', 'passing', 'retention', 'pressure']))
         return average([a('passing'), a('vision'), a('dribbling'), a('composure')]) >= 65;
     if (containsAny(n, ['goal', 'offensive', 'finish', 'attack']))
@@ -323,6 +325,14 @@ function needFit(player, type, need) {
         return average([a('composure'), a('positioning'), score(compatibility.roleFit)]) >= 65;
     if (containsAny(n, ['financial', 'resale', 'value', 'risk']))
         return score(player.overall_rating) >= 65 && number(player.transfer_value) <= 100000;
+    if (containsAny(n, ['readiness', 'maturity', 'pathway', 'development', 'growth', 'potential'])) {
+        const overall = analysis.overallBreakdown || {};
+        return average([
+            score(overall.currentReadiness || player.overall_rating),
+            score(overall.potentialRating || player.overall_rating),
+            score(compatibility.developmentPathwayFit)
+        ]) >= 65;
+    }
     if (containsAny(n, ['tactical', 'formation', 'role']))
         return average([score(compatibility.roleFit), score(compatibility.tacticalStyleFit), score(compatibility.formationPositionFit)]) >= 65;
     return number(player.compatibilityScore) >= 70;
@@ -341,59 +351,7 @@ function teamNeeds(context, players) {
     }));
 }
 async function usageSnapshot(context) {
-    const plan =
-        context.team.subscription_plan ||
-        context.scout.subscription_plan ||
-        'Core';
-
-    const limits = context.scout.scout_team_id
-        ? effectiveLimits(plan, context.team.limit_overrides || {})
-        : limitsForPlan(plan);
-
-    async function countAllowanceRows(table, activeOnly) {
-        let query = supabase
-            .from(table)
-            .select('id', { count: 'exact', head: true });
-
-        if (activeOnly) {
-            query = query.eq('is_active', true);
-        }
-
-        if (context.scout.scout_team_id) {
-            query = query.eq('scout_team_id', context.scout.scout_team_id);
-        }
-        else {
-            query = query.eq('scout_id', context.scout.id);
-        }
-
-        const { count: total, error } = await query;
-
-        if (error) {
-            console.warn('[Scout usage count]', table, error.message);
-            return 0;
-        }
-
-        return total || 0;
-    }
-
-    const [predictions, exportsUsed, interests] = await Promise.all([
-        countAllowanceRows('predictions_log', false),
-        countAllowanceRows('scout_exports', false),
-        countAllowanceRows('recruitment_pipeline', true)
-    ]);
-
-    const row = (used, limit) => ({
-        used,
-        limit: number(limit),
-        remaining: Math.max(0, number(limit) - used)
-    });
-
-    return {
-        plan,
-        predictions: row(predictions, limits.predictions),
-        exports: row(exportsUsed, limits.exports),
-        interests: row(interests, limits.interests)
-    };
+    return getScoutUsageSnapshot(context);
 }
 
 async function activePipelineCount(context) {
@@ -412,94 +370,229 @@ async function activePipelineCount(context) {
 }
 
 async function dashboardActions(context, players) {
-    let pipelineQuery = supabase
+    const { data: pipelineRows, error: pipelineError } = await supabase
         .from('recruitment_pipeline')
         .select('id,player_id,stage,updated_at,created_at,next_action,next_action_due_at,assigned_scout_id,is_active')
+        .eq('scout_id', context.scout.id)
         .eq('is_active', true)
         .order('updated_at', { ascending: true });
-    pipelineQuery = pipelineQuery.eq('scout_id', context.scout.id);
-    const pipelineResult = await pipelineQuery;
-    if (pipelineResult.error)
-        throw pipelineResult.error;
-    const pipeline = pipelineResult.data || [];
+
+    if (pipelineError) {
+        throw pipelineError;
+    }
+
+    const pipeline = pipelineRows || [];
     const byId = Object.fromEntries(players.map(player => [player.id, player]));
     const actions = [];
     const now = Date.now();
+
+    function profileUrl(playerId, anchor) {
+        return '/player/profile?id=' + encodeURIComponent(playerId) + (anchor || '');
+    }
+
+    function stageAction(row, player) {
+        const stage = String(row.stage || '').toLowerCase();
+
+        if (stage === 'trial_pending') {
+            return {
+                kind: 'trial_preparation',
+                priority: 76,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: 'Prepare the next trial step for ' + playerName(player),
+                body: 'This player is trial pending. Confirm the observation objective, evidence gap and decision owner before the next football action.',
+                actionLabel: 'Open player plan',
+                actionUrl: profileUrl(player.id, '#decisionSummary')
+            };
+        }
+
+        if (stage === 'shortlisted') {
+            return {
+                kind: 'shortlist_review',
+                priority: 62,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: 'Review the shortlist decision for ' + playerName(player),
+                body: 'The player is shortlisted but no later recruitment action is recorded. Review the evidence and decide the next step.',
+                actionLabel: 'Review player',
+                actionUrl: profileUrl(player.id, '#decisionSummary')
+            };
+        }
+
+        if (stage === 'watching' || stage === 'monitoring') {
+            return {
+                kind: 'watchlist_review',
+                priority: 56,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: 'Review the latest evidence for ' + playerName(player),
+                body: 'This player is being monitored. Check whether new evidence changes the recruitment position.',
+                actionLabel: 'Review evidence',
+                actionUrl: profileUrl(player.id, '#evidence')
+            };
+        }
+
+        return {
+            kind: 'pipeline_review',
+            priority: 50,
+            playerId: player.id,
+            pipelineId: row.id,
+            title: 'Review ' + playerName(player) + ' in the pipeline',
+            body: 'A recruitment interest is active but the next decision step has not been recorded.',
+            actionLabel: 'Open pipeline item',
+            actionUrl: '/scout/pipeline?focus=' + encodeURIComponent(row.id)
+        };
+    }
+
     for (const row of pipeline) {
         const player = byId[row.player_id];
-        if (!player)
+
+        if (!player) {
             continue;
-        const updated = new Date(row.updated_at || row.created_at || 0).getTime();
-        const days = Number.isFinite(updated) ? Math.floor((now - updated) / 86400000) : 0;
-        const due = row.next_action_due_at && new Date(row.next_action_due_at).getTime() < now;
-        if (due) {
-            actions.push({
-                kind: 'overdue_action', priority: 100, playerId: player.id, pipelineId: row.id,
-                title: playerName(player),
-                body: row.next_action ? 'Next action is overdue: ' + row.next_action : 'A pipeline action is overdue.',
-                actionLabel: 'Open action', actionUrl: '/scout/pipeline?focus=' + encodeURIComponent(row.id)
+        }
+
+        const candidates = [];
+        const updatedAt = new Date(row.updated_at || row.created_at || 0).getTime();
+        const daysSinceUpdate = Number.isFinite(updatedAt)
+            ? Math.max(0, Math.floor((now - updatedAt) / 86400000))
+            : 0;
+        const dueAt = row.next_action_due_at
+            ? new Date(row.next_action_due_at).getTime()
+            : null;
+
+        if (dueAt && Number.isFinite(dueAt) && dueAt <= now) {
+            candidates.push({
+                kind: 'overdue_action',
+                priority: 100,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: playerName(player) + ' has an overdue next action',
+                body: row.next_action
+                    ? 'Overdue action: ' + row.next_action
+                    : 'A recorded pipeline action is overdue and needs an owner or outcome.',
+                actionLabel: 'Open overdue action',
+                actionUrl: '/scout/pipeline?focus=' + encodeURIComponent(row.id)
             });
         }
-        else if (days >= 14) {
-            actions.push({
-                kind: 'pipeline_stagnation', priority: 85, playerId: player.id, pipelineId: row.id,
-                title: playerName(player), body: 'This player has remained in ' + (row.stage || 'the pipeline') + ' for ' + days + ' days without a recorded step.',
-                actionLabel: 'Review pipeline', actionUrl: '/scout/pipeline?focus=' + encodeURIComponent(row.id)
+
+        if (daysSinceUpdate >= 14) {
+            candidates.push({
+                kind: 'pipeline_stagnation',
+                priority: 88,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: playerName(player) + ' needs a pipeline decision',
+                body: 'This player has remained in ' + (row.stage || 'the pipeline') + ' for ' + daysSinceUpdate + ' days without a recorded progression step.',
+                actionLabel: 'Review pipeline',
+                actionUrl: '/scout/pipeline?focus=' + encodeURIComponent(row.id)
             });
         }
-        const confidence = player._facts.length >= 10 ? 'high' : player._facts.length >= 5 ? 'medium' : 'low';
-        if (confidence === 'low') {
-            actions.push({
-                kind: 'evidence_gap', priority: 70, playerId: player.id, pipelineId: row.id,
-                title: playerName(player), body: 'The current evidence is thin. Plan a focused observation or request more Match Facts.',
-                actionLabel: 'Review evidence', actionUrl: '/player/profile?id=' + encodeURIComponent(player.id) + '#evidence'
+
+        const factCount = Array.isArray(player._facts) ? player._facts.length : 0;
+
+        if (factCount < 5) {
+            candidates.push({
+                kind: 'evidence_gap',
+                priority: 72,
+                playerId: player.id,
+                pipelineId: row.id,
+                title: playerName(player) + ' needs stronger evidence',
+                body: 'Only ' + factCount + ' recorded Match Fact' + (factCount === 1 ? '' : 's') + ' currently support this recruitment decision. Plan a focused observation or request more evidence.',
+                actionLabel: 'Review evidence',
+                actionUrl: profileUrl(player.id, '#evidence')
             });
         }
+
+        candidates.push(stageAction(row, player));
+        candidates.sort((a, b) => b.priority - a.priority);
+        actions.push(candidates[0]);
     }
-    const teamIds = [...new Set(pipeline.map(row => byId[row.player_id]?.team_id).filter(Boolean))];
+
+    const teamIds = [...new Set(
+        pipeline
+            .map(row => byId[row.player_id] && byId[row.player_id].team_id)
+            .filter(Boolean)
+    )];
+
     if (teamIds.length) {
         const today = new Date().toISOString().slice(0, 10);
         const fixturesResult = await supabase
-            .from('fixtures').select('*').in('team_id', teamIds).gte('fixture_date', today)
-            .order('fixture_date', { ascending: true }).limit(100);
+            .from('fixtures')
+            .select('*')
+            .in('team_id', teamIds)
+            .gte('fixture_date', today)
+            .order('fixture_date', { ascending: true })
+            .limit(100);
+
         if (!fixturesResult.error) {
-            const fixtures = fixturesResult.data || [];
-            let planQuery = supabase.from('scout_fixture_plans').select('fixture_id,player_id');
-            planQuery = planQuery.eq('scout_id', context.scout.id);
-            const planResult = await planQuery;
-            const planned = new Set((planResult.data || []).map(plan => plan.fixture_id + ':' + (plan.player_id || '')));
-            fixtures.slice(0, 20).forEach(fixture => {
-                pipeline.filter(row => byId[row.player_id]?.team_id === fixture.team_id).forEach(row => {
-                    const player = byId[row.player_id];
-                    if (!planned.has(fixture.id + ':' + player.id)) {
-                        actions.push({
-                            kind: 'upcoming_fixture', priority: 80, playerId: player.id, fixtureId: fixture.id,
-                            title: playerName(player) + ' has an upcoming match',
-                            body: (fixture.opponent_name || fixture.opponent || 'Opponent TBC') + ' on ' + fixture.fixture_date + '. Define what the scout must test before attending.',
-                            actionLabel: 'Plan observation',
-                            actionUrl: '/scout/fixtures?fixture=' + encodeURIComponent(fixture.id) + '&player=' + encodeURIComponent(player.id)
-                        });
-                    }
-                });
+            const planResult = await supabase
+                .from('scout_fixture_plans')
+                .select('fixture_id,player_id')
+                .eq('scout_id', context.scout.id);
+            const planned = new Set(
+                (planResult.data || []).map(plan => plan.fixture_id + ':' + (plan.player_id || ''))
+            );
+
+            (fixturesResult.data || []).slice(0, 20).forEach(fixture => {
+                pipeline
+                    .filter(row => byId[row.player_id] && byId[row.player_id].team_id === fixture.team_id)
+                    .forEach(row => {
+                        const player = byId[row.player_id];
+                        const planKey = fixture.id + ':' + player.id;
+
+                        if (!planned.has(planKey)) {
+                            actions.push({
+                                kind: 'upcoming_fixture',
+                                priority: 82,
+                                playerId: player.id,
+                                fixtureId: fixture.id,
+                                title: playerName(player) + ' has an upcoming match',
+                                body: (fixture.opponent_name || fixture.opponent || 'Opponent TBC') + ' on ' + fixture.fixture_date + '. Define the live evidence objective before attending.',
+                                actionLabel: 'Plan observation',
+                                actionUrl: '/scout/fixtures?fixture=' + encodeURIComponent(fixture.id) + '&player=' + encodeURIComponent(player.id)
+                            });
+                        }
+                    });
             });
         }
     }
+
     const unique = [];
-    const keys = new Set();
-    actions.sort((a, b) => b.priority - a.priority).forEach(action => {
-        const key = action.kind + ':' + (action.playerId || '') + ':' + (action.fixtureId || '');
-        if (!keys.has(key)) {
-            keys.add(key);
-            unique.push(action);
-        }
-    });
-    if (!unique.length) {
+    const playerKeys = new Set();
+
+    actions
+        .sort((a, b) => b.priority - a.priority)
+        .forEach(action => {
+            const playerKey = action.playerId || action.kind + ':' + (action.fixtureId || '');
+
+            if (!playerKeys.has(playerKey)) {
+                playerKeys.add(playerKey);
+                unique.push(action);
+            }
+        });
+
+    if (!unique.length && pipeline.length) {
         unique.push({
-            kind: 'explore', priority: 1, title: 'No next steps right now',
-            body: 'There are no overdue or evidence-led actions. Explore the player database to identify the next recruitment target.',
-            actionLabel: 'Explore player database', actionUrl: '/scout/player-search'
+            kind: 'pipeline_review',
+            priority: 20,
+            title: 'Review the active recruitment pipeline',
+            body: pipeline.length + ' active player interest' + (pipeline.length === 1 ? '' : 's') + ' need a confirmed next decision step.',
+            actionLabel: 'Open pipeline',
+            actionUrl: '/scout/pipeline'
         });
     }
+
+    if (!unique.length) {
+        unique.push({
+            kind: 'explore',
+            priority: 1,
+            title: 'No next steps right now',
+            body: 'There are no active pipeline actions. Explore the player database to identify the next recruitment target.',
+            actionLabel: 'Explore player database',
+            actionUrl: '/scout/player-search'
+        });
+    }
+
     return unique.slice(0, 6);
 }
 async function buildDashboardPayload(context) {
@@ -524,6 +617,7 @@ async function buildDashboardPayload(context) {
         activePipelineCount: pipelineCount,
         topMatches: ordered.slice(0, 5),
         brief: needValues(context),
+        setupComplete: needs.length > 0,
         usage,
         teamNeeds: needs,
         nextActions: actions,
@@ -553,6 +647,23 @@ router.get('/public-demo/dashboard', async (req, res) => {
     }
 });
 
+
+router.get('/public-demo/usage', async (req, res) => {
+    try {
+        const context = await publicDemoContext();
+        const usage = await usageSnapshot(context);
+
+        res.set('Cache-Control', 'no-store');
+        res.json({ usage });
+    }
+    catch (error) {
+        console.error('[Public Scout usage]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The demo usage totals could not be loaded.'
+        });
+    }
+});
+
 router.post('/public-demo/compare', async (req, res) => {
     try {
         const context = await publicDemoContext();
@@ -568,6 +679,23 @@ router.post('/public-demo/compare', async (req, res) => {
 });
 
 router.use(requireAuth, requireRole('Scout'));
+
+router.get('/usage', async (req, res) => {
+    try {
+        const context = await contextFor(req);
+        const usage = await usageSnapshot(context);
+
+        res.set('Cache-Control', 'no-store');
+        res.json({ usage });
+    }
+    catch (error) {
+        console.error('[Scout usage]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The Scout usage totals could not be loaded.'
+        });
+    }
+});
+
 router.get('/players', async (req, res) => {
     try {
         const context = await contextFor(req);
