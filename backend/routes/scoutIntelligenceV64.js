@@ -47,27 +47,113 @@ function displayNeed(type, need) {
         ages: 'Age group'
     }[type] + ': ' + need;
 }
+async function loadScoutTeam(scout) {
+    if (!scout?.scout_team_id) {
+        return {};
+    }
+
+    const { data, error } = await supabase
+        .from('scout_teams')
+        .select('*')
+        .eq('id', scout.scout_team_id)
+        .maybeSingle();
+
+    if (error) {
+        throw error;
+    }
+
+    return data || {};
+}
+
+function preferenceMaterialScore(scout) {
+    const prefs = scout?.scout_preferences || {};
+    const arrayKeys = [
+        'teamWeaknesses',
+        'roleExpectations',
+        'longTermGoals',
+        'preferredPositions',
+        'ageGroups'
+    ];
+
+    const arrayScore = arrayKeys.reduce((total, key) => {
+        return total + list(prefs[key]).length;
+    }, 0);
+
+    return arrayScore +
+        (prefs.formation ? 1 : 0) +
+        (prefs.playingStyle ? 1 : 0) +
+        (prefs.scoutRegion ? 1 : 0);
+}
+
 async function contextFor(req) {
     const { data: scout, error } = await supabase
         .from('scouts')
         .select('*')
         .eq('id', req.user.id)
         .single();
+
     if (error || !scout) {
-        const e = new Error('Scout account not found.');
-        e.status = 404;
-        throw e;
+        const issue = new Error('Scout account not found.');
+        issue.status = 404;
+        throw issue;
     }
-    let team = {};
-    if (scout.scout_team_id) {
-        const result = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
-        if (result.error)
-            throw result.error;
-        team = result.data || {};
-    }
-    const prefs = scout.scout_preferences || {};
-    return { req, scout, team, prefs };
+
+    const team = await loadScoutTeam(scout);
+
+    return {
+        req,
+        scout,
+        team,
+        prefs: scout.scout_preferences || {},
+        publicDemo: false
+    };
 }
+
+async function publicDemoContext() {
+    const { data: scouts, error } = await supabase
+        .from('scouts')
+        .select('*')
+        .eq('is_demo', true)
+        .eq('is_active', true)
+        .limit(50);
+
+    if (error) {
+        throw error;
+    }
+
+    const scout = (scouts || [])
+        .slice()
+        .sort((a, b) => {
+            const scoreDifference =
+                preferenceMaterialScore(b) -
+                preferenceMaterialScore(a);
+
+            if (scoreDifference) {
+                return scoreDifference;
+            }
+
+            return String(a.email || '').localeCompare(
+                String(b.email || '')
+            );
+        })[0];
+
+    if (!scout) {
+        const issue = new Error('The Scout demo account could not be loaded.');
+        issue.status = 404;
+        throw issue;
+    }
+
+    const team = await loadScoutTeam(scout);
+
+    return {
+        req: null,
+        scout,
+        team,
+        prefs: scout.scout_preferences || {},
+        publicDemo: true
+    };
+}
+
 async function allPlayers(context) {
     const playerSelect = [
         'id', 'player_id', 'first_name', 'last_name',
@@ -89,10 +175,17 @@ async function allPlayers(context) {
         .select(playerSelect)
         .order('overall_rating', { ascending: false })
         .limit(300);
-    if (!isDemoSession(context.req)) {
-        query = query.eq('is_active', true);
+    if (context.publicDemo) {
+        query = query
+            .eq('is_demo', true)
+            .eq('is_active', true);
     }
-    query = applyRealDataFilter(query, context.req);
+    else {
+        if (!isDemoSession(context.req)) {
+            query = query.eq('is_active', true);
+        }
+        query = applyRealDataFilter(query, context.req);
+    }
     const { data, error } = await query;
     if (error)
         throw error;
@@ -143,17 +236,64 @@ async function allPlayers(context) {
         };
     });
 }
+function firstMaterialList(...values) {
+    for (const value of values) {
+        const items = list(value)
+            .map(item => text(item))
+            .filter(Boolean);
+
+        if (items.length) {
+            return [...new Set(items)];
+        }
+    }
+
+    return [];
+}
+
 function needValues(context) {
     const prefs = context.prefs || {};
     const team = context.team || {};
+    const setup = prefs.setup || prefs.recruitmentBrief || {};
+
     return {
-        weaknesses: list(prefs.teamWeaknesses || team.team_weaknesses),
-        roles: list(prefs.roleExpectations || team.role_expectations),
-        goals: list(prefs.longTermGoals || team.long_term_goals),
-        positions: list(prefs.preferredPositions || team.preferred_positions),
-        ages: list(prefs.ageGroups || team.age_groups)
+        weaknesses: firstMaterialList(
+            prefs.teamWeaknesses,
+            prefs.team_weaknesses,
+            setup.teamWeaknesses,
+            setup.team_weaknesses,
+            team.team_weaknesses
+        ),
+        roles: firstMaterialList(
+            prefs.roleExpectations,
+            prefs.role_expectations,
+            setup.roleExpectations,
+            setup.role_expectations,
+            team.role_expectations
+        ),
+        goals: firstMaterialList(
+            prefs.longTermGoals,
+            prefs.long_term_goals,
+            setup.longTermGoals,
+            setup.long_term_goals,
+            team.long_term_goals
+        ),
+        positions: firstMaterialList(
+            prefs.preferredPositions,
+            prefs.preferred_positions,
+            setup.preferredPositions,
+            setup.preferred_positions,
+            team.preferred_positions
+        ),
+        ages: firstMaterialList(
+            prefs.ageGroups,
+            prefs.age_groups,
+            setup.ageGroups,
+            setup.age_groups,
+            team.age_groups
+        )
     };
 }
+
 function containsAny(haystack, words) {
     const value = String(haystack || '').toLowerCase();
     return words.some(word => value.includes(word));
@@ -201,26 +341,53 @@ function teamNeeds(context, players) {
     }));
 }
 async function usageSnapshot(context) {
-    const plan = context.team.subscription_plan || context.scout.subscription_plan || 'Core';
+    const plan =
+        context.team.subscription_plan ||
+        context.scout.subscription_plan ||
+        'Core';
+
     const limits = context.scout.scout_team_id
         ? effectiveLimits(plan, context.team.limit_overrides || {})
         : limitsForPlan(plan);
-    const count = async (table, activeOnly) => {
-        let query = supabase.from(table).select('id', { count: 'exact', head: true });
-        if (activeOnly)
+
+    async function countAllowanceRows(table, activeOnly) {
+        let query = supabase
+            .from(table)
+            .select('id', { count: 'exact', head: true });
+
+        if (activeOnly) {
             query = query.eq('is_active', true);
-        query = context.scout.scout_team_id
-            ? query.eq('scout_team_id', context.scout.scout_team_id)
-            : query.eq('scout_id', context.scout.id);
+        }
+
+        if (context.scout.scout_team_id) {
+            query = query.eq('scout_team_id', context.scout.scout_team_id);
+        }
+        else {
+            query = query.eq('scout_id', context.scout.id);
+        }
+
         const { count: total, error } = await query;
-        if (error)
-            throw error;
+
+        if (error) {
+            console.warn('[Scout usage count]', table, error.message);
+            return 0;
+        }
+
         return total || 0;
-    };
+    }
+
     const [predictions, exportsUsed, interests] = await Promise.all([
-        count('predictions_log'), count('scout_exports'), count('recruitment_pipeline', true)
+        countAllowanceRows('predictions_log', false),
+        countAllowanceRows('scout_exports', false),
+        countAllowanceRows('recruitment_pipeline', true)
     ]);
-    const row = (used, limit) => ({ used, limit: number(limit), remaining: Math.max(0, number(limit) - used) });
+
+    const row = (used, limit) => ({
+        used,
+        limit: number(limit),
+        remaining: Math.max(0, number(limit) - used)
+    });
+
     return {
         plan,
         predictions: row(predictions, limits.predictions),
@@ -228,15 +395,29 @@ async function usageSnapshot(context) {
         interests: row(interests, limits.interests)
     };
 }
+
+async function activePipelineCount(context) {
+    const { count, error } = await supabase
+        .from('recruitment_pipeline')
+        .select('id', { count: 'exact', head: true })
+        .eq('scout_id', context.scout.id)
+        .eq('is_active', true);
+
+    if (error) {
+        console.warn('[Scout active pipeline count]', error.message);
+        return 0;
+    }
+
+    return count || 0;
+}
+
 async function dashboardActions(context, players) {
     let pipelineQuery = supabase
         .from('recruitment_pipeline')
         .select('id,player_id,stage,updated_at,created_at,next_action,next_action_due_at,assigned_scout_id,is_active')
         .eq('is_active', true)
         .order('updated_at', { ascending: true });
-    pipelineQuery = context.scout.scout_team_id
-        ? pipelineQuery.eq('scout_team_id', context.scout.scout_team_id)
-        : pipelineQuery.eq('scout_id', context.scout.id);
+    pipelineQuery = pipelineQuery.eq('scout_id', context.scout.id);
     const pipelineResult = await pipelineQuery;
     if (pipelineResult.error)
         throw pipelineResult.error;
@@ -284,9 +465,7 @@ async function dashboardActions(context, players) {
         if (!fixturesResult.error) {
             const fixtures = fixturesResult.data || [];
             let planQuery = supabase.from('scout_fixture_plans').select('fixture_id,player_id');
-            planQuery = context.scout.scout_team_id
-                ? planQuery.eq('scout_team_id', context.scout.scout_team_id)
-                : planQuery.eq('scout_id', context.scout.id);
+            planQuery = planQuery.eq('scout_id', context.scout.id);
             const planResult = await planQuery;
             const planned = new Set((planResult.data || []).map(plan => plan.fixture_id + ':' + (plan.player_id || '')));
             fixtures.slice(0, 20).forEach(fixture => {
@@ -323,6 +502,71 @@ async function dashboardActions(context, players) {
     }
     return unique.slice(0, 6);
 }
+async function buildDashboardPayload(context) {
+    const players = await allPlayers(context);
+    const needs = teamNeeds(context, players);
+
+    const [usage, actions, pipelineCount] = await Promise.all([
+        usageSnapshot(context),
+        dashboardActions(context, players),
+        activePipelineCount(context)
+    ]);
+
+    const ordered = players
+        .slice()
+        .sort((a, b) => number(b.compatibilityScore) - number(a.compatibilityScore));
+
+    const top = ordered[0] || null;
+
+    return {
+        playerCount: players.length,
+        playersInSystem: players.length,
+        activePipelineCount: pipelineCount,
+        topMatches: ordered.slice(0, 5),
+        brief: needValues(context),
+        usage,
+        teamNeeds: needs,
+        nextActions: actions,
+        topFit: top
+            ? {
+                player: top,
+                score: top.compatibilityScore,
+                reason: 'This player leads the current recruitment brief after team need, role, tactical style, formation, development and evidence signals are evaluated together.'
+            }
+            : null
+    };
+}
+
+router.get('/public-demo/dashboard', async (req, res) => {
+    try {
+        const context = await publicDemoContext();
+        const payload = await buildDashboardPayload(context);
+
+        res.set('Cache-Control', 'public, max-age=30, s-maxage=60');
+        res.json(payload);
+    }
+    catch (error) {
+        console.error('[Public Scout dashboard]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The demo dashboard could not be loaded.'
+        });
+    }
+});
+
+router.post('/public-demo/compare', async (req, res) => {
+    try {
+        const context = await publicDemoContext();
+        const result = await buildComparisonResult(context, req.body || {});
+        res.json({ result });
+    }
+    catch (error) {
+        console.error('[Public Scout comparison]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The demo comparison could not be completed.'
+        });
+    }
+});
+
 router.use(requireAuth, requireRole('Scout'));
 router.get('/players', async (req, res) => {
     try {
@@ -344,31 +588,17 @@ router.get('/players', async (req, res) => {
 router.get('/dashboard', async (req, res) => {
     try {
         const context = await contextFor(req);
-        const players = await allPlayers(context);
-        const needs = teamNeeds(context, players);
-        const usage = await usageSnapshot(context);
-        const actions = await dashboardActions(context, players);
-        const top = players.slice().sort((a, b) => number(b.compatibilityScore) - number(a.compatibilityScore))[0] || null;
-        res.json({
-            playerCount: players.length,
-            playersInSystem: players.length,
-            topMatches: players.slice().sort((a, b) => number(b.compatibilityScore) - number(a.compatibilityScore)).slice(0, 5),
-            brief: needValues(context),
-            usage,
-            teamNeeds: needs,
-            nextActions: actions,
-            topFit: top ? {
-                player: top,
-                score: top.compatibilityScore,
-                reason: 'This player leads the current recruitment brief after team need, role, tactical style, formation, development and evidence signals are evaluated together.'
-            } : null
-        });
+        const payload = await buildDashboardPayload(context);
+        res.json(payload);
     }
     catch (error) {
-        console.error('[Scout dashboard v6.4]', error);
-        res.status(error.status || 500).json({ error: error.message || 'The dashboard could not be loaded.' });
+        console.error('[Scout dashboard v6.7]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The dashboard could not be loaded.'
+        });
     }
 });
+
 router.get('/team-members', async (req, res) => {
     try {
         const context = await contextFor(req);
@@ -449,62 +679,109 @@ function comparisonCategories(player, targetPosition, budget) {
 function weighted(categories, context) {
     return round(Object.entries(context.weights).reduce((total, [key, weight]) => total + number(categories[key]) * weight, 0), 1);
 }
+async function buildComparisonResult(context, body) {
+    const playerAId = body.playerAId;
+    const playerBId = body.playerBId;
+
+    if (!playerAId || !playerBId || String(playerAId) === String(playerBId)) {
+        const issue = new Error('Choose two different players.');
+        issue.status = 400;
+        throw issue;
+    }
+
+    const players = await allPlayers(context);
+    const playerA = players.find(player => String(player.id) === String(playerAId));
+    const playerB = players.find(player => String(player.id) === String(playerBId));
+
+    if (!playerA || !playerB) {
+        const issue = new Error('One or both players could not be loaded.');
+        issue.status = 404;
+        throw issue;
+    }
+
+    const selected = CONTEXTS[body.contextKey] || CONTEXTS.immediate_starter;
+    const categoriesA = comparisonCategories(playerA, body.targetPosition, body.budget);
+    const categoriesB = comparisonCategories(playerB, body.targetPosition, body.budget);
+    const totalA = weighted(categoriesA, selected);
+    const totalB = weighted(categoriesB, selected);
+    const winner = totalA === totalB ? 'tie' : totalA > totalB ? 'a' : 'b';
+
+    const rows = Object.keys(selected.weights).map(key => ({
+        category: key
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, character => character.toUpperCase()),
+        key,
+        weight: selected.weights[key],
+        playerA: round(categoriesA[key], 1),
+        playerB: round(categoriesB[key], 1),
+        winner: categoriesA[key] === categoriesB[key]
+            ? 'Tie'
+            : categoriesA[key] > categoriesB[key]
+                ? playerName(playerA)
+                : playerName(playerB),
+        margin: round(Math.abs(categoriesA[key] - categoriesB[key]), 1)
+    }));
+
+    const winnerPlayer = winner === 'a'
+        ? playerA
+        : winner === 'b'
+            ? playerB
+            : null;
+
+    return {
+        context: {
+            key: body.contextKey || 'immediate_starter',
+            label: selected.label,
+            weights: selected.weights
+        },
+        playerA: {
+            player: playerA,
+            totalScore: totalA,
+            categories: categoriesA
+        },
+        playerB: {
+            player: playerB,
+            totalScore: totalB,
+            categories: categoriesB
+        },
+        winner,
+        winnerPlayerId: winnerPlayer?.id || null,
+        decisionScoreMargin: round(Math.abs(totalA - totalB), 1),
+        categories: rows,
+        recommendation: winnerPlayer
+            ? playerName(winnerPlayer) +
+                ' is the stronger option for the ' +
+                selected.label.toLowerCase() +
+                ' context. The recommendation changes when the decision context changes because the category weights change.'
+            : 'The players are level in the selected context. Use live evidence and the most important category trade-offs to make the decision.',
+        tradeOff: rows
+            .slice()
+            .sort((a, b) => b.margin * b.weight - a.margin * a.weight)
+            .slice(0, 3)
+            .map(row => row.category + ': ' + row.winner + ' leads by ' + row.margin + '.')
+            .join(' '),
+        changeFactors: [
+            'Additional recent Match Facts can change evidence confidence and readiness.',
+            'Changing the decision context changes the category weights and may change the recommendation.',
+            'A different target position or budget changes position-fit and financial-fit scores.'
+        ]
+    };
+}
+
 router.post('/compare', async (req, res) => {
     try {
         const context = await contextFor(req);
-        const playerAId = req.body.playerAId;
-        const playerBId = req.body.playerBId;
-        if (!playerAId || !playerBId || playerAId === playerBId) {
-            return res.status(400).json({ error: 'Choose two different players.' });
-        }
-        const players = await allPlayers(context);
-        const a = players.find(player => String(player.id) === String(playerAId));
-        const b = players.find(player => String(player.id) === String(playerBId));
-        if (!a || !b)
-            return res.status(404).json({ error: 'One or both players could not be loaded.' });
-        const selected = CONTEXTS[req.body.contextKey] || CONTEXTS.immediate_starter;
-        const categoriesA = comparisonCategories(a, req.body.targetPosition, req.body.budget);
-        const categoriesB = comparisonCategories(b, req.body.targetPosition, req.body.budget);
-        const totalA = weighted(categoriesA, selected);
-        const totalB = weighted(categoriesB, selected);
-        const winner = totalA === totalB ? 'tie' : totalA > totalB ? 'a' : 'b';
-        const keys = Object.keys(selected.weights);
-        const rows = keys.map(key => ({
-            category: key.replace(/([A-Z])/g, ' $1').replace(/^./, char => char.toUpperCase()),
-            key,
-            weight: selected.weights[key],
-            playerA: round(categoriesA[key], 1),
-            playerB: round(categoriesB[key], 1),
-            winner: categoriesA[key] === categoriesB[key] ? 'Tie' : categoriesA[key] > categoriesB[key] ? playerName(a) : playerName(b),
-            margin: round(Math.abs(categoriesA[key] - categoriesB[key]), 1)
-        }));
-        const winnerPlayer = winner === 'a' ? a : winner === 'b' ? b : null;
-        const result = {
-            context: { key: req.body.contextKey || 'immediate_starter', label: selected.label, weights: selected.weights },
-            playerA: { player: a, totalScore: totalA, categories: categoriesA },
-            playerB: { player: b, totalScore: totalB, categories: categoriesB },
-            winner,
-            winnerPlayerId: winnerPlayer?.id || null,
-            decisionScoreMargin: round(Math.abs(totalA - totalB), 1),
-            categories: rows,
-            recommendation: winnerPlayer
-                ? playerName(winnerPlayer) + ' is the stronger option for the ' + selected.label.toLowerCase() + ' context. The recommendation changes when the decision context changes because the category weights change.'
-                : 'The players are level in the selected context. Use live evidence and the most important category trade-offs to make the decision.',
-            tradeOff: rows.slice().sort((x, y) => y.margin * y.weight - x.margin * x.weight).slice(0, 3)
-                .map(row => row.category + ': ' + row.winner + ' leads by ' + row.margin + '.').join(' '),
-            changeFactors: [
-                'Additional recent Match Facts can change evidence confidence and readiness.',
-                'Changing the decision context changes the category weights and may change the recommendation.',
-                'A different target position or budget changes position-fit and financial-fit scores.'
-            ]
-        };
+        const result = await buildComparisonResult(context, req.body || {});
         res.json({ result });
     }
     catch (error) {
-        console.error('[Scout comparison v6.4]', error);
-        res.status(error.status || 500).json({ error: error.message || 'The comparison could not be completed.' });
+        console.error('[Scout comparison v6.7]', error);
+        res.status(error.status || 500).json({
+            error: error.message || 'The comparison could not be completed.'
+        });
     }
 });
+
 const CHAT_THREAD_SELECT = '*,players(id,first_name,last_name,team_name,specific_position,primary_position,age_group),coaches(id,first_name,last_name,team_name),scouts(id,first_name,last_name,club_name)';
 async function scoutChatThread(threadId, scoutId) {
     const { data, error } = await supabase.from('chat_threads').select(CHAT_THREAD_SELECT).eq('id', threadId).eq('scout_id', scoutId).maybeSingle();
