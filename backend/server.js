@@ -86,6 +86,8 @@ app.use('/api/videos', require('./routes/videos'));
 app.use('/api/awards', require('./routes/awards'));
 app.use('/api/predictions', require('./routes/predictions'));
 app.use('/api/scout-intelligence', require('./routes/scoutIntelligence'));
+app.use('/api/scout-intelligence-v64', require('./routes/scoutIntelligenceV64'));
+app.use('/api/usage-requests', require('./routes/usageRequests'));
 app.use('/api/exports', require('./routes/exports'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/season', require('./routes/season'));
@@ -154,6 +156,7 @@ const routeMap = {
   '/company/learning-centre': 'pages/stratex-site.html',
   '/company/admin': 'pages/stratex-company-admin.html',
   '/admin': 'pages/stratex-company-admin.html',
+  '/admin/usage-requests': 'pages/stratex-usage-requests.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
   '/stratex/company-site': 'pages/stratex-company-admin.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
@@ -165,6 +168,7 @@ const routeMap = {
   '/stratex/contracts-pay': 'pages/stratex-contracts-pay.html',
   '/stratex/players': 'pages/stratex-players.html',
   '/stratex/scouts': 'pages/stratex-scouts.html',
+  '/stratex/usage-requests': 'pages/stratex-usage-requests.html',
   '/stratex/coaches': 'pages/stratex-coaches.html',
   '/stratex/scout-teams': 'pages/stratex-scout-teams.html',
   '/stratex/school-teams': 'pages/stratex-school-teams.html',
@@ -177,6 +181,7 @@ const routeMap = {
   '/coach/dashboard': 'pages/coach-dashboard.html',
   '/coach/onboarding': 'pages/coach-onboarding.html',
   '/coach/my-players': 'pages/coach-my-players.html',
+  '/coach/usage-requests': 'pages/coach-usage-requests.html',
   '/coach/add-player': 'pages/add-player.html',
   '/coach/bulk-add-players': 'pages/bulk-add-players.html',
   '/coach/match-facts': 'pages/match-facts.html',
@@ -192,6 +197,7 @@ const routeMap = {
   '/scout/rankings': 'pages/scout-rankings.html',
   '/scout/fixtures': 'pages/scout-fixtures.html',
   '/scout/predictions': 'pages/scout-predictions.html',
+  '/scout/usage-requests': 'pages/scout-usage-requests.html',
   '/scout/exports': 'pages/scout-exports.html',
   '/scout/compare-players': 'pages/compare-players.html',
   '/scout/setup': 'pages/scout-setup.html',
