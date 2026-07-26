@@ -1,3 +1,183 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Usage requests | ScoutLink</title><link rel="stylesheet" href="/frontend/css/usage-requests-v1.css"></head>
-<body data-usage-role="admin"><a class="si4-screen-reader-only" href="#usageMain">Skip to usage requests</a><div class="ur-shell"><aside class="ur-sidebar admin"><div class="ur-logo">Scout<span>Link</span></div><nav class="ur-nav"><a class="" href="/stratex/dashboard">Dashboard</a><a class="" href="/stratex/registrations">Registrations</a><a class="" href="/stratex/company-site#contacts">Contact Forms</a><a class="" href="/stratex/company-site#crm">CRM</a><a class="" href="/stratex/company-site#activity">Website Activity</a><a class="" href="/stratex/org">Leadership</a><a class="" href="/stratex/org">Org Charts</a><a class="" href="/stratex/contracts-pay">Contracts & Pay</a><a class="" href="/stratex/hiring">Hiring</a><a class="active" href="/stratex/usage-requests">Usage Requests</a><a class="" href="/stratex/concerns">Trust & Concerns</a><a class="" href="/stratex/settings">Settings</a></nav><div class="ur-user"><span>SL</span><div><b>Stratex Admin</b><small>Internal operations</small></div></div></aside><main class="ur-main" id="usageMain"><header class="ur-topbar"><div><small>/stratex/usage-requests</small><h1>Usage requests</h1></div><div class="ur-actions"></div></header><section class="ur-content"><header class="ur-hero"><div><small>ScoutLink commercial controls</small><h2>Review extra allowance requests</h2><p>Approve usage free or send a payment link. Every outcome is permanently stamped.</p></div></header><section class="ur-metrics"><article class="ur-metric"><small>Pending review</small><b data-summary-pending>0</b><span>Awaiting Stratex Admin</span></article><article class="ur-metric"><small>Approved</small><b data-summary-approved>0</b><span>Allowance applied</span></article><article class="ur-metric"><small>Payment link sent</small><b data-summary-payment>0</b><span>Awaiting payment</span></article><article class="ur-metric"><small>Extra usage revenue</small><b data-summary-revenue>£0.00</b><span>Paid and applied</span></article></section><section class="ur-layout"><aside class="ur-card ur-list"><header class="ur-card-head"><div><h3>Request history</h3><p>Select a request to see the full update.</p></div></header><div data-request-list><div class="ur-empty">Loading requests…</div></div></aside><section class="ur-card ur-detail" data-request-detail><div class="ur-empty">Select a request to see its full timeline.</div></section></section></section></main></div><nav class="ur-mobile-nav"><a href="/stratex/dashboard">Home</a><a href="/stratex/users">Users</a><a class="active" href="/stratex/usage-requests">Requests</a><a href="/stratex/concerns">Concerns</a><a href="/stratex/settings">Settings</a></nav><script src="/frontend/js/main.js"></script><script src="/frontend/js/workspace-loading-v1.js"></script><script src="/frontend/js/usage-requests-v1.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Usage requests | Stratex Admin</title>
+  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/stratex-admin-complete-v2.css">
+  <link rel="stylesheet" href="/frontend/css/usage-requests-v1.css">
+</head>
+<body class="stxv4-admin usage-page admin-usage-page" data-usage-role="admin">
+  <a class="si4-screen-reader-only" href="#usageMain">Skip to usage requests</a>
+
+  <div class="stxv4-shell">
+    <aside class="stxv4-sidebar">
+      <a class="stxv4-brand" href="/admin">
+        <div class="stxv4-logo">SA</div>
+        <span>
+          <b>Stratex Admin</b>
+          <span>Internal company operations</span>
+        </span>
+      </a>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Overview</div>
+        <a class="stxv4-nav" href="/admin"><em>DB</em>Dashboard</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Operations</div>
+        <a class="stxv4-nav" href="/admin/registrations"><em>RG</em>Registrations</a>
+        <a class="stxv4-nav" href="/admin/contact-forms"><em>CF</em>Contact Forms</a>
+        <a class="stxv4-nav" href="/admin/crm"><em>CR</em>CRM</a>
+        <a class="stxv4-nav active" href="/admin/usage-requests" aria-current="page"><em>UR</em>Usage Requests</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Analytics</div>
+        <a class="stxv4-nav" href="/admin/website-activity"><em>WA</em>Website Activity</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Content</div>
+        <a class="stxv4-nav" href="/admin/blog"><em>BL</em>Blog / Learning Centre</a>
+        <a class="stxv4-nav" href="/admin/leadership"><em>LD</em>Leadership</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">People</div>
+        <a class="stxv4-nav" href="/admin/org-charts"><em>OC</em>Org Charts</a>
+        <a class="stxv4-nav" href="/admin/users/add" data-super-admin-only><em>AU</em>Add Stratex User</a>
+        <a class="stxv4-nav" href="/admin/permissions" data-super-admin-only><em>PM</em>Permissions</a>
+        <a class="stxv4-nav" href="/admin/my-profile"><em>MP</em>My Profile</a>
+        <a class="stxv4-nav" href="/admin/contracts-pay"><em>CP</em>Contracts &amp; Pay</a>
+        <a class="stxv4-nav" href="/admin/hiring"><em>HR</em>Hiring</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Trust</div>
+        <a class="stxv4-nav" href="/admin/trust-concerns"><em>TC</em>Trust &amp; Concerns</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Events</div>
+        <a class="stxv4-nav" href="/admin/showcase-event"><em>SE</em>Showcase Event</a>
+        <a class="stxv4-nav" href="/admin/award-ceremonies"><em>AC</em>Award Ceremonies</a>
+      </div>
+
+      <div class="stxv4-navgroup">
+        <div class="stxv4-navtitle">Company</div>
+        <a class="stxv4-nav" href="/admin/settings"><em>ST</em>Settings</a>
+      </div>
+
+      <div class="stxv4-userbox">
+        <div class="stxv4-avatar">SA</div>
+        <div>
+          <b data-current-user>Stratex Admin</b>
+          <span>Internal operations</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="stxv4-main" id="usageMain">
+      <header class="stxv4-top">
+        <div>
+          <h1>Usage requests</h1>
+          <p>/admin/usage-requests · Stratex internal administration</p>
+        </div>
+        <div class="stxv4-top-actions">
+          <a class="stxv4-btn" href="/admin">Dashboard</a>
+          <a class="stxv4-btn" href="/admin/my-profile">My Profile</a>
+        </div>
+      </header>
+
+      <section class="stxv4-content ur-content ur-admin-content">
+        <header class="ur-hero">
+          <div>
+            <small>ScoutLink commercial controls</small>
+            <h2>Review extra allowance requests</h2>
+            <p>Approve usage free or send a payment link. Every outcome is permanently stamped.</p>
+          </div>
+        </header>
+
+        <section class="ur-metrics ur-summary-metrics">
+          <article class="ur-metric">
+            <small>Pending review</small>
+            <b data-summary-pending>0</b>
+            <span>Awaiting Stratex Admin</span>
+          </article>
+          <article class="ur-metric">
+            <small>Approved</small>
+            <b data-summary-approved>0</b>
+            <span>Allowance applied</span>
+          </article>
+          <article class="ur-metric">
+            <small>Payment link sent</small>
+            <b data-summary-payment>0</b>
+            <span>Awaiting payment</span>
+          </article>
+          <article class="ur-metric">
+            <small>Extra usage revenue</small>
+            <b data-summary-revenue>£0.00</b>
+            <span>Paid and applied</span>
+          </article>
+        </section>
+
+        <section class="ur-layout">
+          <aside class="ur-card ur-list">
+            <header class="ur-card-head">
+              <div>
+                <h3>Request history</h3>
+                <p>Select a request to see the full update.</p>
+              </div>
+            </header>
+            <div data-request-list>
+              <div class="ur-empty">Loading requests…</div>
+            </div>
+          </aside>
+
+          <section class="ur-card ur-detail" data-request-detail>
+            <div class="ur-empty">Select a request to see its full timeline.</div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <nav class="ur-mobile-nav" aria-label="Stratex Admin mobile navigation">
+    <a href="/admin">Home</a>
+    <a href="/admin/registrations">Registrations</a>
+    <a class="active" href="/admin/usage-requests">Requests</a>
+    <a href="/admin/trust-concerns">Concerns</a>
+    <a href="/admin/settings">Settings</a>
+  </nav>
+
+  <script src="/frontend/js/main.js"></script>
+  <script>
+    (function () {
+      try {
+        var current = JSON.parse(localStorage.getItem('sl_user') || '{}');
+        var email = String(current.email || '').trim().toLowerCase();
+        if (email !== 'richdhin@stratexanalytics.co.uk') {
+          document.querySelectorAll('[data-super-admin-only]').forEach(function (node) {
+            node.remove();
+          });
+        }
+      }
+      catch (_) {
+        document.querySelectorAll('[data-super-admin-only]').forEach(function (node) {
+          node.remove();
+        });
+      }
+    })();
+  </script>
+  <script src="/frontend/js/workspace-loading-v1.js"></script>
+  <script src="/frontend/js/usage-requests-v1.js"></script>
+</body>
+</html>
