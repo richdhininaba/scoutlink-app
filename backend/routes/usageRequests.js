@@ -4,7 +4,8 @@ const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
-const { limitsForPlan, effectiveLimits } = require('../utils/scoutPlans');
+const { effectiveLimits } = require('../utils/scoutPlans');
+const { getScoutUsageSnapshot } = require('../utils/scoutUsage');
 
 const ALLOWANCE_TYPES = ['interests', 'predictions', 'exports'];
 const STATUSES = ['pending', 'approved_free', 'payment_link_sent', 'paid_and_applied', 'declined'];
@@ -56,36 +57,10 @@ async function scoutContext(userId) {
   return { scout, team };
 }
 
-async function coachContext(userId) {
-  const { data: coach, error } = await supabase
-    .from('coaches')
-    .select('id,first_name,last_name,team_id,team_name')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) throw error;
-  return coach ? { coach } : null;
-}
 
 async function usageForScout(context, type) {
-  const scout = context.scout;
-  const team = context.team || {};
-  const plan = team.subscription_plan || scout.subscription_plan || 'Core';
-  const limits = scout.scout_team_id
-    ? effectiveLimits(plan, team.limit_overrides || {})
-    : limitsForPlan(plan);
-  const table = type === 'predictions'
-    ? 'predictions_log'
-    : type === 'exports'
-      ? 'scout_exports'
-      : 'recruitment_pipeline';
-  let query = supabase.from(table).select('id', { count: 'exact', head: true });
-  if (type === 'interests') query = query.eq('is_active', true);
-  query = scout.scout_team_id
-    ? query.eq('scout_team_id', scout.scout_team_id)
-    : query.eq('scout_id', scout.id);
-  const { count, error } = await query;
-  if (error) throw error;
-  return { used: count || 0, limit: Number(limits[type]) || 0, plan };
+  const usage = await getScoutUsageSnapshot(context);
+  return { ...usage[type], plan: usage.plan, scope: usage.scope, resetAt: usage.resetAt };
 }
 
 async function addEvent(request, values) {
@@ -124,7 +99,7 @@ async function withEvents(rows) {
 
 router.use(requireAuth);
 
-router.get('/', requireRole('Scout', 'Coach', 'Stratex'), async (req, res) => {
+router.get('/', requireRole('Scout', 'Stratex'), async (req, res) => {
   try {
     let query = supabase.from('usage_requests').select('*').order('created_at', { ascending: false }).limit(250);
     if (req.user.accountType !== 'Stratex') {
@@ -147,18 +122,17 @@ router.get('/', requireRole('Scout', 'Coach', 'Stratex'), async (req, res) => {
     if (req.user.accountType === 'Scout') {
       const context = await scoutContext(req.user.id);
       if (context) {
-        allowances = {};
-        for (const type of ALLOWANCE_TYPES) allowances[type] = await usageForScout(context, type);
+        allowances = await getScoutUsageSnapshot(context);
       }
     }
-    res.json({ data: rows, total: rows.length, summary, allowances });
+    res.json({ data: rows, total: rows.length, summary, allowances, usage: allowances });
   } catch (error) {
     console.error('[Usage requests list]', error);
     res.status(500).json({ error: 'Usage requests could not be loaded.' });
   }
 });
 
-router.post('/', requireRole('Scout', 'Coach'), async (req, res) => {
+router.post('/', requireRole('Scout'), async (req, res) => {
   try {
     const allowanceType = text(req.body.allowanceType, 40).toLowerCase();
     const quantity = integer(req.body.quantity);
@@ -169,32 +143,23 @@ router.post('/', requireRole('Scout', 'Coach'), async (req, res) => {
     if (!quantity) return res.status(400).json({ error: 'Enter the additional quantity required.' });
     if (!reason) return res.status(400).json({ error: 'Explain why the extra allowance is required.' });
 
-    let scout = null;
-    let coach = null;
-    let team = null;
-    let usage = { used: integer(req.body.currentUsed), limit: integer(req.body.currentLimit) };
-    let organisationName = '';
+    const context = await scoutContext(req.user.id);
 
-    if (req.user.accountType === 'Scout') {
-      const context = await scoutContext(req.user.id);
-      if (!context) return res.status(404).json({ error: 'Scout account not found.' });
-      scout = context.scout;
-      team = context.team;
-      usage = await usageForScout(context, allowanceType);
-      organisationName = team?.team_name || team?.club_name || scout.club_name || 'Scout team';
-    } else {
-      const context = await coachContext(req.user.id);
-      if (!context) return res.status(404).json({ error: 'Coach account not found.' });
-      coach = context.coach;
-      organisationName = coach.team_name || 'Coach team';
+    if (!context) {
+      return res.status(404).json({ error: 'Scout account not found.' });
     }
+
+    const scout = context.scout;
+    const team = context.team;
+    const usage = await usageForScout(context, allowanceType);
+    const organisationName = team?.team_name || team?.club_name || scout.club_name || 'Scout team';
 
     const payload = {
       request_code: requestCode(),
       requester_account_type: req.user.accountType,
       requester_id: req.user.id,
       scout_id: scout?.id || null,
-      coach_id: coach?.id || null,
+      coach_id: null,
       scout_team_id: scout?.scout_team_id || null,
       organisation_name: organisationName,
       allowance_type: allowanceType,
