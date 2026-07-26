@@ -1394,3 +1394,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+CLEAN_ROUTES['scout-usage-requests.html']='/scout/usage-requests';
+CLEAN_ROUTES['coach-usage-requests.html']='/coach/usage-requests';
+CLEAN_ROUTES['stratex-usage-requests.html']='/stratex/usage-requests';
+
+(function loadSharedWorkspaceRuntime(){
+  if (document.querySelector('script[data-scoutlink-workspace-loading]')) return;
+  var script=document.createElement('script');
+  script.src='/frontend/js/workspace-loading-v1.js?v=1';
+  script.defer=true;
+  script.setAttribute('data-scoutlink-workspace-loading','1');
+  document.head.appendChild(script);
+})();
