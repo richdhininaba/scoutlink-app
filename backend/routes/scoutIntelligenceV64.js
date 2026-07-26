@@ -429,4 +429,82 @@ router.post('/compare', async (req, res) => {
   }
 });
 
+
+const CHAT_THREAD_SELECT = '*,players(id,first_name,last_name,team_name,specific_position,primary_position,age_group),coaches(id,first_name,last_name,team_name),scouts(id,first_name,last_name,club_name)';
+
+async function scoutChatThread(threadId, scoutId) {
+  const { data, error } = await supabase.from('chat_threads').select(CHAT_THREAD_SELECT).eq('id', threadId).eq('scout_id', scoutId).maybeSingle();
+  if (error) throw error;
+  if (!data) { const issue = new Error('Player conversation not found.'); issue.status = 404; throw issue; }
+  return data;
+}
+
+async function pipelinePlayerForChat(scoutId, playerId) {
+  const { data, error } = await supabase.from('recruitment_pipeline')
+    .select('id,player_id,scout_id,is_active,players(id,first_name,last_name,team_id,team_name,assigned_coach_id,specific_position,primary_position,age_group)')
+    .eq('scout_id', scoutId).eq('player_id', playerId).eq('is_active', true).maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
+async function coachForChatPlayer(player) {
+  if (player.assigned_coach_id) {
+    const direct = await supabase.from('coaches').select('id,first_name,last_name,team_name').eq('id', player.assigned_coach_id).maybeSingle();
+    if (direct.data) return direct.data;
+  }
+  let query = supabase.from('coaches').select('id,first_name,last_name,team_name,is_super_user').eq('is_active', true);
+  if (player.team_id) query = query.eq('team_id', player.team_id); else query = query.eq('team_name', player.team_name);
+  const result = await query.order('is_super_user', { ascending:false }).limit(1);
+  if (result.error) throw result.error;
+  return (result.data || [])[0] || null;
+}
+
+router.get('/chat/threads', async (req,res) => {
+  try {
+    const { data, error } = await supabase.from('chat_threads').select(CHAT_THREAD_SELECT).eq('scout_id', req.user.id).not('player_id','is',null).order('updated_at',{ascending:false}).limit(100);
+    if (error) throw error;
+    res.json({ data:data || [] });
+  } catch (error) { res.status(500).json({ error:'Player conversations could not be loaded.' }); }
+});
+
+router.post('/chat/threads', async (req,res) => {
+  try {
+    const playerId = req.body.playerId;
+    if (!playerId) return res.status(400).json({ error:'playerId required' });
+    const pipeline = await pipelinePlayerForChat(req.user.id, playerId);
+    if (!pipeline || !pipeline.players) return res.status(403).json({ error:'Register interest in this player before messaging their coach.' });
+    const coach = await coachForChatPlayer(pipeline.players);
+    if (!coach) return res.status(404).json({ error:'No authorised coach is assigned to this player.' });
+    const existing = await supabase.from('chat_threads').select(CHAT_THREAD_SELECT).eq('scout_id',req.user.id).eq('coach_id',coach.id).eq('player_id',playerId).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) return res.json({ thread:existing.data, coach });
+    const created = await supabase.from('chat_threads').insert({scout_id:req.user.id,coach_id:coach.id,player_id:playerId,pipeline_id:pipeline.id,last_message_at:new Date().toISOString()}).select(CHAT_THREAD_SELECT).single();
+    if (created.error) throw created.error;
+    res.status(201).json({ thread:created.data, coach });
+  } catch (error) { res.status(error.status||500).json({ error:error.message||'The player conversation could not be opened.' }); }
+});
+
+router.get('/chat/threads/:id/messages', async (req,res) => {
+  try {
+    await scoutChatThread(req.params.id, req.user.id);
+    const result = await supabase.from('chat_messages').select('*').eq('thread_id',req.params.id).order('created_at',{ascending:true});
+    if (result.error) throw result.error;
+    res.json({ data:result.data || [] });
+  } catch (error) { res.status(error.status||500).json({ error:error.message||'Messages could not be loaded.' }); }
+});
+
+router.post('/chat/threads/:id/messages', async (req,res) => {
+  try {
+    const thread = await scoutChatThread(req.params.id, req.user.id);
+    const body = text(req.body.body);
+    if (!body) return res.status(400).json({ error:'Write a message first.' });
+    if (body.length > 4000) return res.status(400).json({ error:'Messages must be 4,000 characters or fewer.' });
+    const created = await supabase.from('chat_messages').insert({thread_id:thread.id,sender_id:req.user.id,sender_type:'Scout',body,message_kind:'text',metadata:{playerId:thread.player_id}}).select().single();
+    if (created.error) throw created.error;
+    await supabase.from('chat_threads').update({last_message_at:created.data.created_at,updated_at:created.data.created_at}).eq('id',thread.id);
+    res.status(201).json({ message:created.data });
+  } catch (error) { res.status(error.status||500).json({ error:error.message||'The message could not be sent.' }); }
+});
+
 module.exports = router;
+
