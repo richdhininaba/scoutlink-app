@@ -1,571 +1,593 @@
 'use strict';
+
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 const { analysePlayer } = require('../engines/compatibility');
 const { limitsForPlan, effectiveLimits } = require('../utils/scoutPlans');
+const { isDemoSession } = require('../utils/demo');
 
-async function limitForScout(scout) {
-  if (scout.scout_team_id) {
-    const { data: team } = await supabase
-      .from('scout_teams')
-      .select('subscription_plan,limit_overrides')
-      .eq('id', scout.scout_team_id)
-      .maybeSingle();
-    if (team) return effectiveLimits(team.subscription_plan || scout.subscription_plan || 'Core', team.limit_overrides || {}).exports;
-  }
-  return limitsForPlan(scout.subscription_plan || 'Core').exports;
-}
+const ATTRIBUTES = [
+  ['pace','Pace'],['agility','Agility'],['strength','Strength'],['stamina','Stamina'],
+  ['jumping','Jumping'],['composure','Composure'],['shooting','Shooting'],['passing','Passing'],
+  ['dribbling','Dribbling'],['defending','Defending'],['crossing','Crossing'],['vision','Vision'],
+  ['positioning','Positioning'],['heading','Heading'],['tackling','Tackling'],
+  ['gk_diving','GK diving'],['gk_handling','GK handling'],['gk_kicking','GK kicking'],
+  ['gk_reflexes','GK reflexes'],['gk_positioning','GK positioning'],
+  ['gk_distribution','GK distribution'],['gk_communication','GK communication'],['gk_sweeping','GK sweeping']
+];
 
 function clean(value) {
-  return String(value == null ? '' : value).replace(/[<>]/g, '');
+  return String(value == null ? '' : value).replace(/[<>]/g, '').trim();
 }
-
-function htmlEscape(value) {
-  return clean(value)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function number(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
-
+function score(value) {
+  let n = number(value);
+  if (n > 0 && n <= 10) n *= 10;
+  return Math.round(Math.max(0, Math.min(100, n)) * 10) / 10;
+}
+function round(value, places = 2) {
+  const p = Math.pow(10, places);
+  return Math.round(number(value) * p) / p;
+}
 function money(value) {
-  return 'GBP ' + Math.round(Number(value) || 0).toLocaleString('en-GB');
+  return '£' + Math.round(number(value)).toLocaleString('en-GB');
 }
-
+function dateTime(value) {
+  const date = value ? new Date(value) : new Date();
+  return Number.isNaN(date.getTime()) ? clean(value) : date.toLocaleString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
+function dateOnly(value) {
+  const date = value ? new Date(value) : null;
+  return !date || Number.isNaN(date.getTime()) ? clean(value) : date.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+}
 function playerName(player) {
-  return [player.first_name, player.last_name].filter(Boolean).join(' ') || 'Player';
+  return [player?.first_name, player?.last_name].filter(Boolean).join(' ') || 'Player';
 }
-
+function playerPosition(player) {
+  return player?.specific_position || player?.primary_position || player?.position_group || 'Not recorded';
+}
+function xml(value) {
+  return clean(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
 function pdfEscape(value) {
-  return clean(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  return clean(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x20-\x7E]/g,' ');
 }
-
-function wrap(text, width) {
-  const words = clean(text).split(/\s+/).filter(Boolean);
+function wrap(value, width = 86) {
+  const words = clean(value).split(/\s+/).filter(Boolean);
   const lines = [];
   let line = '';
   words.forEach(word => {
-    if ((line + ' ' + word).trim().length > width && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = (line + ' ' + word).trim();
-    }
+    const next = (line + ' ' + word).trim();
+    if (line && next.length > width) { lines.push(line); line = word; }
+    else line = next;
   });
   if (line) lines.push(line);
   return lines.length ? lines : [''];
 }
 
-function rowValue(rows, label) {
-  const found = (rows || []).find(r => String(r[0] || '').toLowerCase() === String(label || '').toLowerCase());
-  return found ? found[1] : '';
+async function scoutContext(userId) {
+  const { data: scout, error } = await supabase
+    .from('scouts').select('id,scout_team_id,subscription_plan,scout_preferences')
+    .eq('id', userId).single();
+  if (error || !scout) {
+    const e = new Error('Scout account not found.'); e.status = 404; throw e;
+  }
+  let team = {};
+  if (scout.scout_team_id) {
+    const result = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
+    if (result.error) throw result.error;
+    team = result.data || {};
+  }
+  return { scout, team, prefs: scout.scout_preferences || {} };
 }
 
-function pdfRgb(hex) {
-  const safe = String(hex || '#ffffff').replace('#', '');
-  const n = parseInt(safe.length === 3 ? safe.split('').map(c => c + c).join('') : safe, 16);
-  const r = ((n >> 16) & 255) / 255;
-  const g = ((n >> 8) & 255) / 255;
-  const b = (n & 255) / 255;
-  return r.toFixed(3) + ' ' + g.toFixed(3) + ' ' + b.toFixed(3);
+async function exportAllowance(context) {
+  const plan = context.team.subscription_plan || context.scout.subscription_plan || 'Core';
+  const limits = context.scout.scout_team_id
+    ? effectiveLimits(plan, context.team.limit_overrides || {})
+    : limitsForPlan(plan);
+  let query = supabase.from('scout_exports').select('id', { count: 'exact', head: true });
+  query = context.scout.scout_team_id
+    ? query.eq('scout_team_id', context.scout.scout_team_id)
+    : query.eq('scout_id', context.scout.id);
+  const { count, error } = await query;
+  if (error) throw error;
+  const used = count || 0;
+  return { plan, used, limit: Number(limits.exports) || 0, remaining: Math.max(0, Number(limits.exports || 0) - used) };
 }
 
-function ratingPercent(text) {
-  const m = String(text || '').match(/([0-9]+(?:\.[0-9]+)?)/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n)) return null;
-  return Math.max(0, Math.min(100, n <= 10 ? n * 10 : n));
+async function ensureAllowance(context) {
+  const allowance = await exportAllowance(context);
+  if (allowance.remaining <= 0) {
+    const e = new Error('The export allowance has been used. Submit an export request from Usage requests.');
+    e.status = 402;
+    e.allowance = allowance;
+    throw e;
+  }
+  return allowance;
 }
 
-function ratingColor(pct) {
-  if (pct == null) return '#30363d';
-  if (pct >= 80) return '#1d9e75';
-  if (pct >= 65) return '#00BCD4';
-  if (pct >= 50) return '#FFC107';
-  return '#f85149';
+async function playerBundle(req, context, playerId) {
+  const { data: player, error } = await supabase.from('players').select('*').eq('id', playerId).maybeSingle();
+  if (error) throw error;
+  if (!player || (!!player.is_demo !== !!isDemoSession(req))) {
+    const e = new Error('Player not found.'); e.status = 404; throw e;
+  }
+  const [matchResult, videoResult] = await Promise.all([
+    supabase.from('match_facts').select('*').eq('player_id', playerId).order('match_date', { ascending: false }).limit(100),
+    supabase.from('player_videos').select('*').eq('player_id', playerId).order('created_at', { ascending: false }).limit(100)
+  ]);
+  if (matchResult.error) throw matchResult.error;
+  if (videoResult.error) throw videoResult.error;
+  let team = null;
+  let fixtures = [];
+  if (player.team_id) {
+    const [teamResult, fixtureResult] = await Promise.all([
+      supabase.from('school_academy_teams')
+        .select('id,team_name,city,county,country,address_line,postcode,league_name,league_fulltime_url,team_website_url')
+        .eq('id', player.team_id).maybeSingle(),
+      supabase.from('fixtures').select('*').eq('team_id', player.team_id)
+        .gte('fixture_date', new Date().toISOString().slice(0,10))
+        .order('fixture_date', { ascending: true }).limit(50)
+    ]);
+    if (teamResult.error) throw teamResult.error;
+    if (fixtureResult.error) throw fixtureResult.error;
+    team = teamResult.data || null;
+    fixtures = fixtureResult.data || [];
+  }
+  const matches = matchResult.data || [];
+  const analysis = analysePlayer(player, context.team, matches, context.prefs);
+  return { player, team, matches, videos: videoResult.data || [], fixtures, analysis };
+}
+
+function evidenceLabel(bundle) {
+  const count = bundle.matches.length || number(bundle.player.appearances);
+  return count >= 10 ? 'High' : count >= 5 ? 'Medium' : count ? 'Low' : 'Very low';
+}
+function detailedVerdict(bundle) {
+  const p = bundle.player;
+  const a = bundle.analysis || {};
+  const compatibility = score(a.compatibilityScore);
+  const overall = a.overallBreakdown || {};
+  const readiness = score(overall.currentReadiness || overall.finalScore || p.overall_rating);
+  const potential = score(overall.potentialRating || p.overall_rating);
+  const position = a.positionRatings?.bestCurrentPosition || playerPosition(p);
+  const strengths = ATTRIBUTES.filter(([key]) => number(p[key]) > 0)
+    .map(([key,label]) => ({ label, value: score(p[key]) }))
+    .sort((x,y) => y.value - x.value).slice(0,3);
+  const gaps = ATTRIBUTES.filter(([key]) => number(p[key]) > 0)
+    .map(([key,label]) => ({ label, value: score(p[key]) }))
+    .sort((x,y) => x.value - y.value).slice(0,2);
+  const label = compatibility >= 82 && readiness >= 72 ? 'Prioritise'
+    : compatibility >= 70 || potential >= 78 ? 'Monitor closely' : 'Do not progress yet';
+  return {
+    label,
+    paragraph: playerName(p) + ' is currently assessed as “' + label + '” for this recruitment brief. ' +
+      'The compatibility score is ' + compatibility + '/100 and current readiness is ' + readiness + '/100, ' +
+      'with ' + evidenceLabel(bundle).toLowerCase() + ' evidence confidence from ' + bundle.matches.length +
+      ' recorded Match Facts. The strongest present role is ' + position + '. ' +
+      (strengths.length ? 'The clearest strengths are ' + strengths.map(item => item.label + ' ' + item.value + '/100').join(', ') + '. ' : '') +
+      (gaps.length ? 'The next review should test ' + gaps.map(item => item.label.toLowerCase()).join(' and ') + ' under live pressure. ' : '') +
+      'This is decision support rather than a guarantee; the next action should be based on the evidence gap that could still change the recruitment decision.'
+  };
+}
+
+function profileSections(bundle) {
+  const p = bundle.player;
+  const a = bundle.analysis || {};
+  const verdict = detailedVerdict(bundle);
+  const overall = a.overallBreakdown || {};
+  const compatibility = a.compatibility || {};
+  const sections = [
+    { title: 'Player identity', rows: [
+      ['Name', playerName(p)], ['Age group', p.age_group], ['Position', playerPosition(p)],
+      ['Other positions', (p.positions || []).join(', ')], ['Team', p.team_name], ['Region', bundle.team?.city || bundle.team?.county],
+      ['Preferred foot', p.foot], ['Exported', dateTime(new Date())]
+    ]},
+    { title: 'ScoutLink verdict', lines: [verdict.label, verdict.paragraph] },
+    { title: 'Headline decision metrics', rows: [
+      ['Overall rating', score(p.overall_rating)], ['Compatibility', score(a.compatibilityScore)],
+      ['Current readiness', score(overall.currentReadiness || overall.finalScore || p.overall_rating)],
+      ['Potential rating', score(overall.potentialRating || p.overall_rating)],
+      ['Evidence confidence', evidenceLabel(bundle)], ['Estimated value', money(p.transfer_value)]
+    ]},
+    { title: 'Compatibility intelligence', rows: [
+      ['Need fit', score(compatibility.needFit || a.compatibilityBreakdown?.weaknessFit)],
+      ['Role fit', score(compatibility.roleFit || a.compatibilityBreakdown?.roleFit)],
+      ['Tactical style', score(compatibility.tacticalStyleFit || a.compatibilityBreakdown?.styleFit)],
+      ['Formation fit', score(compatibility.formationPositionFit || a.compatibilityBreakdown?.formationFit)],
+      ['Development pathway', score(compatibility.developmentPathwayFit || a.compatibilityBreakdown?.goalsFit)],
+      ['Financial fit', score(compatibility.financialFit)]
+    ]},
+    { title: 'Overall rating breakdown', rows: Object.entries(overall)
+      .filter(([,value]) => typeof value === 'number')
+      .map(([key,value]) => [key.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()), score(value)]) },
+    { title: 'All player attributes', rows: ATTRIBUTES
+      .filter(([key]) => p[key] !== null && p[key] !== undefined)
+      .map(([key,label]) => [label, number(p[key])]) },
+    { title: 'Match statistics', rows: [
+      ['Appearances', number(p.appearances)], ['Goals', number(p.goals)], ['Assists', number(p.assists)],
+      ['Clean sheets', number(p.clean_sheets)], ['Yellow cards', number(p.yellow_cards)], ['Red cards', number(p.red_cards)],
+      ['Goals per game', number(p.appearances) ? round(number(p.goals) / number(p.appearances), 2) : 0],
+      ['Assists per game', number(p.appearances) ? round(number(p.assists) / number(p.appearances), 2) : 0]
+    ]},
+    { title: 'Physical profile', rows: [
+      ['Height category', p.height_category], ['Height range', p.height_range_cm],
+      ['Build category', p.build_category], ['Weight range', p.weight_range_kg], ['Work rate', p.work_rate]
+    ]},
+    { title: 'All recorded matches', rows: bundle.matches.map(match => [
+      dateOnly(match.match_date), match.opponent_name || match.opponent || 'Opponent',
+      match.position_played || playerPosition(p), number(match.performance_score),
+      number(match.goals), number(match.assists), number(match.yellow_cards), number(match.red_cards)
+    ]), columns: ['Date','Opponent','Position','Performance','Goals','Assists','YC','RC'] },
+    { title: 'Upcoming fixtures', rows: bundle.fixtures.map(fixture => [
+      dateOnly(fixture.fixture_date), fixture.fixture_time || '', fixture.opponent_name || fixture.opponent || 'Opponent',
+      fixture.venue_name || fixture.venue || fixture.address || '', fixture.home_or_away || ''
+    ]), columns: ['Date','Time','Opponent','Venue','Home/Away'] },
+    { title: 'Video evidence index', rows: bundle.videos.map(video => [
+      video.title || 'Video evidence', video.category || '', dateOnly(video.created_at),
+      video.description || '', video.video_url || video.url || video.file_url ? 'Available' : 'Unavailable'
+    ]), columns: ['Title','Category','Added','Description','Status'] },
+    { title: 'Team and external football context', rows: [
+      ['Team', bundle.team?.team_name || p.team_name],
+      ['Training or match address', [bundle.team?.address_line,bundle.team?.city,bundle.team?.postcode].filter(Boolean).join(', ')],
+      ['League', bundle.team?.league_name], ['League page', bundle.team?.league_fulltime_url || 'Not supplied'],
+      ['Team website', bundle.team?.team_website_url || 'Not supplied']
+    ]},
+    { title: 'Decision-support notice', lines: [
+      'This export deliberately excludes coach personal contact details.',
+      'ScoutLink combines coach-managed ratings, player profile data, Match Facts, team context and the saved recruitment brief. It supports a football decision but does not replace live observation, safeguarding checks or club due diligence.'
+    ]}
+  ];
+  return sections;
+}
+
+function predictionSections(bundle, log) {
+  const result = log.result || {};
+  const input = log.input_params || {};
+  const evidence = Array.isArray(result.evidence) ? result.evidence : [];
+  return [
+    { title: 'Prediction identity', rows: [
+      ['Player', playerName(bundle.player)], ['Age group', bundle.player.age_group],
+      ['Position', playerPosition(bundle.player)], ['Team', bundle.player.team_name],
+      ['Prediction type', log.prediction_type], ['Run at', dateTime(log.run_at)], ['Exported', dateTime(new Date())]
+    ]},
+    { title: 'Prediction outcome', lines: [result.summary || result.recommendation || 'Prediction completed.', ...(result.paragraphs || [])] },
+    { title: 'Inputs used', rows: Object.entries(input).map(([key,value]) => [key, Array.isArray(value) ? value.join(', ') : JSON.stringify(value)]) },
+    { title: 'Metrics informing the prediction', rows: evidence.map(item => [item.attribute || item.label || 'Metric', item.score ?? item.value ?? '']) },
+    { title: 'Key output metrics', rows: Object.entries(result)
+      .filter(([key,value]) => typeof value === 'number' || typeof value === 'string')
+      .filter(([key]) => !['summary','disclaimer','predictedBehaviour','tacticalNote'].includes(key))
+      .map(([key,value]) => [key.replace(/([A-Z])/g,' $1'), value]) },
+    { title: 'Confidence, risk and safeguards', rows: [
+      ['Confidence', result.confidence?.label || result.confidence || evidenceLabel(bundle)],
+      ['Risk', result.risk || 'Review the detailed result'],
+      ['Recommendation', result.recommendation || 'Review alongside live evidence']
+    ], lines: [result.tacticalNote || '', result.disclaimer || 'This is a deterministic decision-support estimate, not a guarantee.'] },
+    ...profileSections(bundle)
+  ];
 }
 
 function buildPdf(title, sections) {
   const pages = [];
   let ops = [];
-  let y = 692;
+  let y = 765;
   let pageNo = 0;
-  const snapshotRows = (sections[0] && sections[0].rows) || [];
-  const heroCards = [
-    { label: 'Overall', value: rowValue(snapshotRows, 'Overall rating') || '--', hint: 'Coach-rated output' },
-    { label: 'Compatibility', value: rowValue(snapshotRows, 'Compatibility score') || '--', hint: 'ScoutLink team fit' },
-    { label: 'Value', value: rowValue(snapshotRows, 'Estimated value') || rowValue(snapshotRows, 'Recruitment Value Estimate') || rowValue(snapshotRows, 'Training Value Estimate') || rowValue(snapshotRows, 'Development Value Index') || rowValue(snapshotRows, 'Estimated transfer value') || '--', hint: 'Decision-support estimate' }
-  ];
-  function fill(hex, x, yy, w, h) {
-    ops.push(pdfRgb(hex) + ' rg ' + [x, yy, w, h].map(v => Number(v).toFixed(2)).join(' ') + ' re f');
-  }
-  function text(value, x, yy, size, bold, hex) {
-    ops.push(pdfRgb(hex || '#ffffff') + ' rg BT /' + (bold ? 'F2' : 'F1') + ' ' + size + ' Tf ' + Number(x).toFixed(2) + ' ' + Number(yy).toFixed(2) + ' Td (' + pdfEscape(value) + ') Tj ET');
-  }
+  const pageWidth = 595;
+  const left = 42;
+  const right = 553;
+  const text = (value,x,yy,size=9,bold=false) => ops.push('BT /' + (bold?'F2':'F1') + ' ' + size + ' Tf ' + x + ' ' + yy + ' Td (' + pdfEscape(value) + ') Tj ET');
+  const fill = (shade,x,yy,w,h) => ops.push(shade + ' g ' + x + ' ' + yy + ' ' + w + ' ' + h + ' re f 0 g');
+  const line = (x1,y1,x2,y2) => ops.push('0.82 G ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S 0 G');
   function startPage() {
-    pageNo += 1;
+    if (ops.length) pages.push(ops);
     ops = [];
-    pages.push(ops);
-    y = 690;
-    fill('#F6F8FA', 0, 0, 612, 792);
-    fill('#FFFFFF', 0, 718, 612, 74);
-    fill('#1d9e75', 0, 718, 8, 74);
-    text('Scout', 42, 760, 24, true, '#111827');
-    text('Link', 106, 760, 24, true, '#1d9e75');
-    text('STRATEX ANALYTICS PLAYER DOSSIER', 42, 744, 8, false, '#64748B');
-    text(pageNo === 1 ? title : title + ' - continued', 42, y, 16, true, '#111827');
-    y -= 26;
+    pageNo += 1;
+    fill('0.04',0,724,pageWidth,68);
+    fill('0.08',0,724,8,68);
+    text('Scout',left,760,22,true); text('Link',101,760,22,true);
+    text(title,left,739,12,true);
+    text('Generated ' + dateTime(new Date()),right-150,739,7,false);
+    y = 700;
   }
   function footer() {
-    text('Generated by ScoutLink. Personal contact information is intentionally excluded.', 42, 34, 8, false, '#64748B');
-    text('Page ' + pageNo, 532, 34, 8, false, '#64748B');
+    line(left,38,right,38);
+    text('ScoutLink decision-support export. Personal coach contact details are excluded.',left,22,7,false);
+    text('Page ' + pageNo,right-35,22,7,false);
   }
-  function ensure(space) {
-    if (y < space) {
-      footer();
-      startPage();
-    }
+  function ensure(height) {
+    if (y - height < 54) { footer(); startPage(); }
   }
-  function drawHero() {
-    fill('#FFFFFF', 42, y - 70, 528, 62);
-    fill('#1d9e75', 42, y - 70, 4, 62);
-    text('EXPORT SUMMARY', 56, y - 28, 8, true, '#64748B');
-    heroCards.forEach((card, idx) => {
-      const x = 56 + idx * 166;
-      fill('#F8FAFC', x, y - 62, 154, 42);
-      text(card.label.toUpperCase(), x + 10, y - 36, 7, true, '#64748B');
-      text(card.value, x + 10, y - 51, String(card.value).length > 18 ? 10 : 13, true, idx === 1 ? '#1d9e75' : '#111827');
-      text(card.hint, x + 10, y - 61, 6, false, '#64748B');
-    });
-    y -= 88;
-  }
-  function drawSectionHeader(heading) {
-    ensure(94);
-    fill('#FFFFFF', 42, y - 10, 528, 26);
-    fill('#1d9e75', 42, y - 10, 4, 26);
-    text(String(heading || '').toUpperCase(), 54, y, 11, true, '#111827');
-    y -= 32;
-  }
-  function drawInfoRows(rows) {
-    for (let i = 0; i < rows.length; i += 2) {
-      ensure(94);
-      [rows[i], rows[i + 1]].filter(Boolean).forEach((row, idx) => {
-        const x = idx === 0 ? 48 : 312;
-        fill('#FFFFFF', x, y - 38, 246, 42);
-        text(row[0], x + 10, y - 14, 7, true, '#64748B');
-        wrap(row[1], 32).slice(0, 2).forEach((line, lineIdx) => {
-          text(line, x + 10, y - 28 - (lineIdx * 10), lineIdx ? 8 : 9, true, '#111827');
-        });
-      });
-      y -= 50;
-    }
-  }
-  function drawRatingRows(rows) {
-    for (let i = 0; i < rows.length; i += 2) {
-      ensure(84);
-      [rows[i], rows[i + 1]].filter(Boolean).forEach((row, idx) => {
-        const x = idx === 0 ? 48 : 312;
-        const pct = ratingPercent(row[1]);
-        fill('#FFFFFF', x, y - 28, 246, 32);
-        text(row[0], x + 10, y - 11, 8, true, '#111827');
-        text(row[1], x + 198, y - 11, 8, true, ratingColor(pct));
-        fill('#E5E7EB', x + 10, y - 22, 184, 5);
-        if (pct != null) fill(ratingColor(pct), x + 10, y - 22, 184 * pct / 100, 5);
-      });
-      y -= 40;
-    }
-  }
-  function drawLines(lines) {
-    (lines || []).forEach(line => {
-      const wrapped = wrap(line, 82);
-      const h = Math.max(34, 16 + wrapped.length * 12);
-      ensure(h + 52);
-      fill('#FFFFFF', 48, y - h + 4, 510, h);
-      wrapped.forEach((txt, idx) => text(txt, 60, y - 16 - idx * 12, 8.5, idx === 0, '#111827'));
-      y -= h + 8;
-    });
+  function sectionTitle(value) {
+    ensure(42); fill('0.93',left,y-8,right-left,26); fill('0.08',left,y-8,4,26);
+    text(value.toUpperCase(),left+12,y,10,true); y -= 36;
   }
   startPage();
-  drawHero();
   sections.forEach(section => {
-    drawSectionHeader(section.heading);
+    sectionTitle(section.title);
+    (section.lines || []).filter(Boolean).forEach(paragraph => {
+      const lines = wrap(paragraph, 92);
+      ensure(lines.length * 13 + 16);
+      lines.forEach(lineText => { text(lineText,left+8,y,8.5,false); y -= 13; });
+      y -= 7;
+    });
     if (section.rows && section.rows.length) {
-      if (/attribute/i.test(section.heading)) drawRatingRows(section.rows);
-      else drawInfoRows(section.rows);
+      if (section.columns) {
+        const cols = section.columns.length;
+        const width = (right-left)/cols;
+        ensure(28); fill('0.91',left,y-5,right-left,22);
+        section.columns.forEach((column,index) => text(column,left+index*width+4,y,7,true)); y -= 24;
+        section.rows.forEach(row => {
+          const wrapped = row.map(cell => wrap(cell, Math.max(10,Math.floor(78/cols))).slice(0,2));
+          const height = Math.max(22,Math.max(...wrapped.map(lines => lines.length))*10+6);
+          ensure(height+4); line(left,y+5,right,y+5);
+          wrapped.forEach((lines,index) => lines.forEach((value,lineIndex) => text(value,left+index*width+4,y-lineIndex*10,7,false)));
+          y -= height;
+        });
+      } else {
+        section.rows.forEach(row => {
+          const label = row[0]; const value = row.slice(1).filter(v => v !== undefined && v !== null).join(' | ');
+          const lines = wrap(value, 62);
+          const height = Math.max(25, lines.length*11+8); ensure(height+2);
+          fill('0.97',left,y-height+7,right-left,height);
+          text(label,left+8,y,7,true);
+          lines.forEach((lineText,index) => text(lineText,left+185,y-index*11,8,false));
+          y -= height+3;
+        });
+      }
     }
-    drawLines(section.lines || []);
-    y -= 12;
+    y -= 9;
   });
-  footer();
-  const pageKids = [];
-  const objects = [
-    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj',
-    '',
-    '3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj',
-    '4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj'
-  ];
-  pages.forEach((pageOps, idx) => {
-    const pageObj = 5 + idx * 2;
-    const contentObj = pageObj + 1;
-    const content = pageOps.join('\n');
-    pageKids.push(pageObj + ' 0 R');
-    objects.push(pageObj + ' 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + contentObj + ' 0 R >> endobj');
-    objects.push(contentObj + ' 0 obj << /Length ' + Buffer.byteLength(content, 'utf8') + ' >> stream\n' + content + '\nendstream endobj');
-  });
-  objects[1] = '2 0 obj << /Type /Pages /Kids [' + pageKids.join(' ') + '] /Count ' + pages.length + ' >> endobj';
-  let pdf = '%PDF-1.4\n';
-  const offsets = [0];
-  objects.forEach(obj => {
-    offsets.push(Buffer.byteLength(pdf, 'utf8'));
-    pdf += obj + '\n';
-  });
-  const xref = Buffer.byteLength(pdf, 'utf8');
-  pdf += 'xref\n0 ' + (objects.length + 1) + '\n';
-  pdf += '0000000000 65535 f \n';
-  offsets.slice(1).forEach(offset => {
-    pdf += String(offset).padStart(10, '0') + ' 00000 n \n';
-  });
-  pdf += 'trailer << /Size ' + (objects.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
-  return Buffer.from(pdf, 'utf8');
-}
+  footer(); pages.push(ops);
 
-function excelSheetName(name, index) {
-  const cleaned = String(name || 'Sheet ' + (index + 1)).replace(/[\[\]\:\*\?\/\\]/g, ' ').replace(/\s+/g, ' ').trim();
-  return (cleaned || 'Sheet ' + (index + 1)).slice(0, 31);
+  const objects = [null,'<< /Type /Catalog /Pages 2 0 R >>',null,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'];
+  const kids = [];
+  pages.forEach((pageOps,index) => {
+    const pageId = 5 + index*2; const streamId = pageId+1; const stream = pageOps.join('\n');
+    kids.push(pageId+' 0 R');
+    objects[pageId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+streamId+' 0 R >>';
+    objects[streamId] = '<< /Length '+Buffer.byteLength(stream,'utf8')+' >>\nstream\n'+stream+'\nendstream';
+  });
+  objects[2] = '<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+pages.length+' >>';
+  let pdf = '%PDF-1.4\n'; const offsets=[0];
+  for(let i=1;i<objects.length;i++){ offsets[i]=Buffer.byteLength(pdf,'utf8'); pdf+=i+' 0 obj\n'+objects[i]+'\nendobj\n'; }
+  const xref=Buffer.byteLength(pdf,'utf8'); pdf+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';
+  for(let i=1;i<objects.length;i++) pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  pdf+='trailer << /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+  return Buffer.from(pdf,'utf8');
 }
 
 function excelCell(value) {
-  if (value === null || value === undefined || value === '') {
-    return '<Cell><Data ss:Type="String"></Data></Cell>';
-  }
-  const raw = String(value);
-  if (/^-?\d+(\.\d+)?$/.test(raw.replace(/,/g, ''))) {
-    return '<Cell><Data ss:Type="Number">' + raw.replace(/,/g, '') + '</Data></Cell>';
-  }
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-    return '<Cell><Data ss:Type="String">' + htmlEscape(raw.slice(0, 10)) + '</Data></Cell>';
-  }
-  return '<Cell><Data ss:Type="String">' + htmlEscape(raw) + '</Data></Cell>';
+  const raw = value == null ? '' : value;
+  const numeric = typeof raw === 'number' || /^-?\d+(\.\d+)?$/.test(String(raw));
+  return '<Cell><Data ss:Type="'+(numeric?'Number':'String')+'">'+xml(raw)+'</Data></Cell>';
 }
-
-function buildExcelHtml(title, sections) {
-  let xml = '<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n';
-  xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ';
-  xml += 'xmlns:o="urn:schemas-microsoft-com:office:office" ';
-  xml += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
-  xml += 'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ';
-  xml += 'xmlns:html="http://www.w3.org/TR/REC-html40">';
-  xml += '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Author>ScoutLink</Author><Title>' + htmlEscape(title) + '</Title></DocumentProperties>';
-  xml += '<Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#EAF7F2" ss:Pattern="Solid"/></Style><Style ss:ID="title"><Font ss:Bold="1" ss:Size="14"/></Style></Styles>';
-  sections.forEach((section, index) => {
-    xml += '<Worksheet ss:Name="' + htmlEscape(excelSheetName(section.heading, index)) + '"><Table>';
-    xml += '<Column ss:Width="180"/><Column ss:Width="420"/>';
-    xml += '<Row><Cell ss:StyleID="title"><Data ss:Type="String">' + htmlEscape(section.heading) + '</Data></Cell><Cell><Data ss:Type="String">Generated by ScoutLink. Personal contact information is excluded.</Data></Cell></Row>';
-    xml += '<Row><Cell ss:StyleID="header"><Data ss:Type="String">Field</Data></Cell><Cell ss:StyleID="header"><Data ss:Type="String">Value</Data></Cell></Row>';
-    (section.rows || []).forEach(row => {
-      xml += '<Row>' + excelCell(row[0]) + excelCell(row[1]) + '</Row>';
-    });
-    (section.lines || []).forEach((line, lineIndex) => {
-      xml += '<Row>' + excelCell(lineIndex === 0 && !(section.rows || []).length ? 'Detail' : '') + excelCell(line) + '</Row>';
-    });
-    xml += '</Table></Worksheet>';
+function buildExcel(title, sections) {
+  const sheets = sections.map((section,index) => {
+    const name = clean(section.title || 'Sheet '+(index+1)).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31) || 'Sheet '+(index+1);
+    const rows = [];
+    rows.push('<Row>'+excelCell(title)+'</Row>');
+    rows.push('<Row>'+excelCell('Exported')+excelCell(dateTime(new Date()))+'</Row>');
+    if (section.columns) rows.push('<Row>'+section.columns.map(excelCell).join('')+'</Row>');
+    (section.rows || []).forEach(row => rows.push('<Row>'+row.map(excelCell).join('')+'</Row>'));
+    (section.lines || []).filter(Boolean).forEach(line => rows.push('<Row>'+excelCell(line)+'</Row>'));
+    return '<Worksheet ss:Name="'+xml(name)+'"><Table>'+rows.join('')+'</Table></Worksheet>';
   });
-  xml += '</Workbook>';
-  return Buffer.from(xml, 'utf8');
+  const content = '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>'+
+    '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+sheets.join('')+'</Workbook>';
+  return Buffer.from(content,'utf8');
 }
 
-async function loadScout(userId) {
-  const { data: scout, error } = await supabase
-    .from('scouts')
-    .select('id,scout_team_id,subscription_plan,exports_remaining,scout_preferences')
-    .eq('id', userId)
-    .single();
-  if (error || !scout) {
-    const e = new Error('Scout not found');
-    e.status = 404;
-    throw e;
-  }
-  return scout;
-}
-
-async function countTeamExports(scout) {
-  let q = supabase.from('scout_exports').select('id', { count:'exact', head:true });
-  if (scout.scout_team_id) q = q.eq('scout_team_id', scout.scout_team_id);
-  else q = q.eq('scout_id', scout.id);
-  const { count, error } = await q;
+async function logExport(context, values) {
+  const payload = {
+    scout_id: context.scout.id,
+    scout_team_id: context.scout.scout_team_id || null,
+    player_id: values.playerId || null,
+    prediction_log_id: values.predictionLogId || null,
+    export_type: values.format,
+    source: values.source,
+    file_name: values.filename,
+    payload: values.payload || {}
+  };
+  const { data, error } = await supabase.from('scout_exports').insert(payload).select().single();
   if (error) throw error;
-  return count || 0;
+  return data;
 }
-
-async function updateRemaining(scout, remaining) {
-  if (scout.scout_team_id) {
-    await supabase.from('scouts').update({ exports_remaining: remaining }).eq('scout_team_id', scout.scout_team_id);
-  } else {
-    await supabase.from('scouts').update({ exports_remaining: remaining }).eq('id', scout.id);
-  }
-}
-
-async function loadScoutTeam(scout) {
-  if (!scout.scout_team_id) return { tier: 5 };
-  const { data } = await supabase.from('scout_teams').select('*').eq('id', scout.scout_team_id).maybeSingle();
-  const prefs = scout.scout_preferences || {};
-  const team = data || { tier: 5 };
-  if (prefs.teamWeaknesses?.length) team.team_weaknesses = prefs.teamWeaknesses;
-  if (prefs.roleExpectations?.length) team.role_expectations = prefs.roleExpectations;
-  if (prefs.longTermGoals?.length) team.long_term_goals = prefs.longTermGoals;
-  if (prefs.formation) team.formation = prefs.formation;
-  if (prefs.playingStyle) team.playing_style = prefs.playingStyle;
-  return team;
-}
-
-const EXPORT_ATTRS = [
-  ['pace','Pace'], ['agility','Agility'], ['strength','Strength'], ['stamina','Stamina'], ['jumping','Jumping'], ['composure','Composure'],
-  ['shooting','Shooting'], ['passing','Passing'], ['dribbling','Dribbling'], ['defending','Defending'], ['crossing','Crossing'], ['vision','Vision'],
-  ['positioning','Positioning'], ['heading','Heading'], ['tackling','Tackling'],
-  ['gk_diving','GK Diving'], ['gk_handling','GK Handling'], ['gk_kicking','GK Kicking'], ['gk_reflexes','GK Reflexes'], ['gk_positioning','GK Positioning'],
-  ['gk_distribution','GK Distribution'], ['gk_communication','GK Communication'], ['gk_sweeping','GK Sweeping']
-];
-
-function ratingText(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) return 'Not rated';
-  return (n > 10 ? n / 10 : n).toFixed(1) + ' / 10';
-}
-
-function matchScoreText(m) {
-  const home = m.home_score ?? m.team_score ?? m.team_goals ?? m.goals_for;
-  const away = m.away_score ?? m.opponent_score ?? m.opponent_goals ?? m.goals_against;
-  if (home == null || away == null) return 'Score not entered';
-  return String(home) + '-' + String(away);
-}
-
-function matchResultText(m) {
-  if (m.result) return clean(m.result).replace(/\b\w/g, c => c.toUpperCase());
-  const home = Number(m.home_score ?? m.team_score ?? m.team_goals ?? m.goals_for);
-  const away = Number(m.away_score ?? m.opponent_score ?? m.opponent_goals ?? m.goals_against);
-  if (!Number.isFinite(home) || !Number.isFinite(away)) return '';
-  return home > away ? 'Win' : home < away ? 'Loss' : 'Draw';
-}
-
-function predictionLines(prediction) {
-  if (!prediction) return [];
-  const result = prediction.result || {};
-  const lines = ['Prediction type: ' + (prediction.prediction_type || result.type || 'Prediction')];
-  (result.paragraphs || []).forEach(p => lines.push(p));
-  if (result.summary) lines.push('Summary: ' + result.summary);
-  if (result.seasons) result.seasons.forEach(s => lines.push('Year ' + s.year + ': overall ' + s.overall + '/100, value ' + (s.transferValueFormatted || money(s.transferValue)) + ', ' + s.rankingImpact));
-  if (result.projection) result.projection.forEach(s => lines.push(s.horizon + ': value ' + s.projectedValueFormatted + ', total cost ' + s.totalCostFormatted + ', ROI ' + s.roiPercent + '%'));
-  if (result.evidence) lines.push('Scenario score: ' + (result.scenarioScore || '--') + '/100. Recommendation: ' + (result.recommendation || '--') + '. Risk: ' + (result.risk || '--') + '.');
-  return lines;
-}
-
-function profileSections(player, matches, analysis, prediction, fixtures = [], videos = []) {
-  const name = playerName(player);
-  const position = player.specific_position || player.primary_position || player.position_group || '';
-  const isGk = String(player.position_group || position).toLowerCase().includes('goalkeeper') || String(position).toUpperCase() === 'GK';
-  const valueLabel = player.age && Number(player.age) <= 11 ? 'Development Value Index' :
-    player.age && Number(player.age) <= 14 ? 'Training Value Estimate' :
-    player.age && Number(player.age) <= 16 ? 'Recruitment Value Estimate' : 'Estimated value';
-  const rows = [
-    ['Name', name],
-    ['Club', player.team_name || ''],
-    ['Position', position],
-    ['Age group', player.age_group || ''],
-    ['Foot', player.foot || ''],
-    ['Overall rating', player.overall_rating || ''],
-    [valueLabel, money(player.transfer_value)],
-    ['Compatibility score', analysis ? analysis.compatibilityScore + '/100' : '']
-  ];
-  const matchLines = (matches || []).slice(0, 5).map(m => {
-    return [
-      m.match_date,
-      m.opponent_name || m.opponent,
-      matchScoreText(m),
-      matchResultText(m),
-      'Position ' + (m.position_played || m.specific_position || position || '--'),
-      'Perf ' + (m.performance_score || '--') + '/100',
-      'G ' + (m.goals || 0),
-      'A ' + (m.assists || 0),
-      'Cards ' + ((m.yellow_cards || 0) + (m.red_cards || 0))
-    ].filter(Boolean).join(' | ');
+function responseFile(res, log, allowance, filename, mime, buffer) {
+  res.json({
+    exportId: log.id, filename, mime, contentBase64: buffer.toString('base64'),
+    exportsRemaining: Math.max(0, allowance.remaining - 1), planLimit: allowance.limit
   });
-  const fixtureLines = (fixtures || []).slice(0, 5).map(f => [
-    f.fixture_date || f.date,
-    f.home_or_away || '',
-    f.opponent_name || f.opponent,
-    f.format || '',
-    f.venue_name || f.venue || f.address || ''
-  ].filter(Boolean).join(' | '));
-  const videoLines = (videos || []).slice(0, 8).map(v => [
-    v.title || 'Video evidence',
-    v.category || 'Highlight',
-    v.description || '',
-    v.created_at ? String(v.created_at).slice(0, 10) : ''
-  ].filter(Boolean).join(' | '));
-  const attrRows = EXPORT_ATTRS
-    .filter(([key]) => isGk || !key.startsWith('gk_'))
-    .map(([key, label]) => [label, ratingText(player[key])]);
-  const sections = [
-    { heading: 'Player Snapshot', rows },
-    { heading: 'Physical Profile', rows: [
-      ['Height band', player.height_category || ''],
-      ['Height range', player.height_range_cm ? player.height_range_cm + ' cm' : ''],
-      ['Feet/inches', player.height_range_ft || player.height_range_feet || 'See profile'],
-      ['Build', player.build_category || ''],
-      ['Weight range', player.weight_range_kg ? player.weight_range_kg + ' kg' : ''],
-      ['Profile type', [player.height_category, player.build_category].filter(Boolean).join(' height / ') || 'Not set']
-    ] },
-    { heading: 'Match Statistics', rows: [
-      ['Appearances', player.appearances || 0],
-      ['Goals', player.goals || 0],
-      ['Assists', player.assists || 0],
-      ['Clean sheets', player.clean_sheets || 0],
-      ['Yellow cards', player.yellow_cards || 0],
-      ['Red cards', player.red_cards || 0]
-    ] },
-    { heading: 'Coach Attribute Ratings', rows: attrRows },
-    { heading: 'Recent Match Facts', lines: matchLines.length ? matchLines : ['No recent match facts recorded.'] },
-    { heading: 'Compatibility Analysis', rows: analysis ? [
-      ['Compatibility', analysis.compatibilityScore + '/100'],
-      ['Match performance', analysis.matchPerformanceRating || 'Not available'],
-      ['Data confidence', analysis.dataConfidence?.label || analysis.compatibilityBreakdown?.dataConfidence || 'Not available'],
-      ['Technical profile', (analysis.compatibilityBreakdown?.technical || '--') + '/100'],
-      ['Tactical fit', (analysis.compatibilityBreakdown?.tacticalFit || '--') + '/100'],
-      ['Physical profile', (analysis.compatibilityBreakdown?.physicalProfile || '--') + '/100'],
-      ['Match impact', (analysis.compatibilityBreakdown?.matchImpact || '--') + '/100'],
-      ['Need fit', (analysis.compatibility?.needFit || '--') + '/100'],
-      ['Role fit', (analysis.compatibility?.roleFit || '--') + '/100'],
-      ['Tactical style', (analysis.compatibility?.tacticalStyleFit || '--') + '/100'],
-      ['Formation fit', (analysis.compatibility?.formationPositionFit || '--') + '/100'],
-      ['Development pathway', (analysis.compatibility?.developmentPathwayFit || '--') + '/100'],
-      ['Financial fit', (analysis.compatibility?.financialFit || '--') + '/100']
-    ] : [], lines: analysis ? [
-      'ScoutLink compatibility is a decision-support score using the player profile, coach ratings, match evidence and the saved scout setup.'
-    ] : ['Compatibility was not calculated.'] },
-    { heading: 'Position Fit', rows: analysis?.positionRatings ? [
-      ['Best current role', analysis.positionRatings.bestCurrentPosition || ''],
-      ['Best current score', analysis.positionRatings.bestCurrentScore ? analysis.positionRatings.bestCurrentScore + '/100' : ''],
-      ['Best future role', analysis.positionRatings.bestFuturePosition || ''],
-      ['Best future score', analysis.positionRatings.bestFutureScore ? analysis.positionRatings.bestFutureScore + '/100' : '']
-    ] : [], lines: (analysis?.positionRatings?.sorted || []).slice(0, 6).map(r => (r.role || '') + ': ' + (r.score || '--') + '/100') },
-    { heading: 'Upcoming Fixtures', lines: fixtureLines.length ? fixtureLines : ['No upcoming fixtures available for export.'] },
-    { heading: 'Videos / Evidence', lines: videoLines.length ? videoLines : ['No video evidence available for export.'] }
-  ];
-  if (prediction) {
-    sections.splice(1, 0, {
-      heading: 'Prediction',
-      lines: predictionLines(prediction)
-    });
-  }
-  return sections;
 }
 
-router.post('/player', requireAuth, requireRole('Scout'), async (req, res) => {
+router.use(requireAuth, requireRole('Scout'));
+
+router.post('/player', async (req,res) => {
   try {
-    const { playerId, format = 'PDF', source = 'profile', predictionLogId } = req.body;
-    if (!playerId) return res.status(400).json({ error: 'playerId required' });
-    const scout = await loadScout(req.user.id);
-    const limit = await limitForScout(scout);
-    const used = await countTeamExports(scout);
-    const remaining = Math.max(0, limit - used);
-    if (remaining <= 0) {
-      return res.status(402).json({ error: 'You have reached your export cap. Please contact info@scoutlink.app or your CS Manager to increase your cap.', exportsRemaining: 0, planLimit: limit });
+    const playerId = req.body.playerId;
+    const format = String(req.body.format || 'PDF').toUpperCase() === 'EXCEL' ? 'Excel' : 'PDF';
+    if (!playerId) return res.status(400).json({ error: 'playerId is required.' });
+    const context = await scoutContext(req.user.id);
+    const allowance = await ensureAllowance(context);
+    const bundle = await playerBundle(req, context, playerId);
+    let sections = profileSections(bundle);
+    let source = clean(req.body.source || 'profile');
+    let predictionLogId = req.body.predictionLogId || null;
+    if (source === 'prediction' || predictionLogId) {
+      const { data: log, error } = await supabase.from('predictions_log').select('*')
+        .eq('id', predictionLogId).eq('scout_id', req.user.id).maybeSingle();
+      if (error) throw error;
+      if (!log) return res.status(404).json({ error: 'Prediction not found.' });
+      sections = predictionSections(bundle, log);
+      source = 'prediction';
     }
-
-    const { data: player, error: playerErr } = await supabase.from('players').select('*').eq('id', playerId).single();
-    if (playerErr || !player) return res.status(404).json({ error: 'Player not found' });
-    const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', playerId).order('match_date', { ascending: false }).limit(10);
-    const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', playerId).order('created_at', { ascending: false }).limit(8);
-    let fixtures = [];
-    if (player.team_id) {
-      const { data: fx } = await supabase.from('fixtures').select('*').eq('team_id', player.team_id).order('fixture_date', { ascending: true }).limit(8);
-      fixtures = fx || [];
-    }
-    const team = await loadScoutTeam(scout);
-    const analysis = analysePlayer(player, team, matches || [], scout.scout_preferences || {});
-    let prediction = null;
-    if (predictionLogId) {
-      const { data } = await supabase.from('predictions_log').select('*').eq('id', predictionLogId).eq('scout_id', req.user.id).maybeSingle();
-      prediction = data || null;
-    }
-
-    const title = 'ScoutLink ' + (source === 'prediction' ? 'Prediction Export' : 'Player Profile') + ' - ' + playerName(player);
-    const sections = profileSections(player, matches || [], analysis, prediction, fixtures || [], videos || []);
-    const isExcel = String(format).toUpperCase() === 'EXCEL' || String(format).toUpperCase() === 'XLS';
-    const buffer = isExcel ? buildExcelHtml(title, sections) : buildPdf(title, sections);
-    const extension = isExcel ? 'xls' : 'pdf';
-    const filename = clean(playerName(player)).replace(/\s+/g, '-').toLowerCase() + '-' + source + '.' + extension;
-    const mime = isExcel ? 'application/vnd.ms-excel' : 'application/pdf';
-
-    const { data: log, error: logErr } = await supabase.from('scout_exports').insert({
-      scout_id: req.user.id,
-      scout_team_id: scout.scout_team_id || null,
-      player_id: playerId,
-      prediction_log_id: predictionLogId || null,
-      export_type: isExcel ? 'Excel' : 'PDF',
-      source,
-      file_name: filename,
-      payload: { title, player_id: playerId, source, prediction_log_id: predictionLogId || null }
-    }).select().single();
-    if (logErr) throw logErr;
-
-    const remainingAfter = Math.max(0, remaining - 1);
-    await updateRemaining(scout, remainingAfter);
-    res.json({
-      exportId: log?.id || null,
-      filename,
-      mime,
-      contentBase64: buffer.toString('base64'),
-      exportsRemaining: remainingAfter,
-      planLimit: limit,
-      teamUsed: used + 1
+    const base = playerName(bundle.player).replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase();
+    const extension = format === 'Excel' ? 'xls' : 'pdf';
+    const filename = base + '-' + source + '-' + new Date().toISOString().slice(0,10) + '.' + extension;
+    const title = 'ScoutLink ' + (source === 'prediction' ? 'Prediction Export' : 'Player Intelligence Export') + ' — ' + playerName(bundle.player);
+    const buffer = format === 'Excel' ? buildExcel(title, sections) : buildPdf(title, sections);
+    const mime = format === 'Excel' ? 'application/vnd.ms-excel' : 'application/pdf';
+    const log = await logExport(context, {
+      playerId, predictionLogId, format, source, filename,
+      payload: { playerId, predictionLogId, source, format, title }
     });
-  } catch(err) {
-    console.error('[Exports]', err);
-    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+    responseFile(res, log, allowance, filename, mime, buffer);
+  } catch(error) {
+    console.error('[Player export]', error);
+    res.status(error.status || 500).json({ error: error.message || 'The player export could not be created.', allowance: error.allowance });
   }
 });
 
-router.post('/:id/redownload', requireAuth, requireRole('Scout'), async (req, res) => {
+router.post('/comparison', async (req,res) => {
   try {
-    const scout = await loadScout(req.user.id);
-    let q = supabase.from('scout_exports').select('*').eq('id', req.params.id);
-    if (scout.scout_team_id) q = q.eq('scout_team_id', scout.scout_team_id);
-    else q = q.eq('scout_id', scout.id);
-    const { data: exp, error: expErr } = await q.maybeSingle();
-    if (expErr) throw expErr;
-    if (!exp) return res.status(404).json({ error: 'Export not found' });
+    const context = await scoutContext(req.user.id);
+    const allowance = await ensureAllowance(context);
+    const a = await playerBundle(req, context, req.body.playerAId);
+    const b = await playerBundle(req, context, req.body.playerBId);
+    const comparison = req.body.comparison || {};
+    const categoryRows = (comparison.categories || []).map(row => [
+      row.category || row.name || row.key, row.playerA ?? row.playerAScore ?? '',
+      row.playerB ?? row.playerBScore ?? '', row.winner || '', row.margin ?? '', row.weight ?? ''
+    ]);
+    const sections = [
+      { title: 'Comparison summary', rows: [
+        ['Exported', dateTime(new Date())], ['Decision context', comparison.context?.label || req.body.contextLabel || 'Immediate starter'],
+        ['Player A', playerName(a.player)], ['Player A decision score', comparison.playerA?.totalScore ?? ''],
+        ['Player B', playerName(b.player)], ['Player B decision score', comparison.playerB?.totalScore ?? ''],
+        ['Decision-score margin', comparison.decisionScoreMargin ?? ''], ['Recommendation', comparison.recommendation || '']
+      ]},
+      { title: 'Category comparison', columns: ['Category',playerName(a.player),playerName(b.player),'Winner','Margin','Weight'], rows: categoryRows },
+      { title: 'Player A attributes', rows: ATTRIBUTES.map(([key,label]) => [label,number(a.player[key])]) },
+      { title: 'Player B attributes', rows: ATTRIBUTES.map(([key,label]) => [label,number(b.player[key])]) },
+      { title: 'Player A statistics', rows: profileSections(a).find(section=>section.title==='Match statistics').rows },
+      { title: 'Player B statistics', rows: profileSections(b).find(section=>section.title==='Match statistics').rows },
+      { title: 'Decision-support notice', lines: ['The comparison context changes category weights. This spreadsheet retains the selected context, raw category scores, weights, winner and exact decision-score margin.'] }
+    ];
+    const filename = 'scoutlink-comparison-' + new Date().toISOString().slice(0,10) + '.xls';
+    const buffer = buildExcel('ScoutLink Player Comparison', sections);
+    const log = await logExport(context, {
+      format: 'Excel', source: 'comparison', filename,
+      payload: { playerAId: a.player.id, playerBId: b.player.id, comparison, format: 'Excel', source: 'comparison' }
+    });
+    responseFile(res, log, allowance, filename, 'application/vnd.ms-excel', buffer);
+  } catch(error) {
+    console.error('[Comparison export]', error);
+    res.status(error.status || 500).json({ error: error.message || 'The comparison export could not be created.', allowance: error.allowance });
+  }
+});
 
-    const { data: player, error: playerErr } = await supabase.from('players').select('*').eq('id', exp.player_id).single();
-    if (playerErr || !player) return res.status(404).json({ error: 'Player not found' });
-    const { data: matches } = await supabase.from('match_facts').select('*').eq('player_id', exp.player_id).order('match_date', { ascending: false }).limit(10);
-    const { data: videos } = await supabase.from('player_videos').select('*').eq('player_id', exp.player_id).order('created_at', { ascending: false }).limit(8);
-    let fixtures = [];
-    if (player.team_id) {
-      const { data: fx } = await supabase.from('fixtures').select('*').eq('team_id', player.team_id).order('fixture_date', { ascending: true }).limit(8);
-      fixtures = fx || [];
-    }
-    const team = await loadScoutTeam(scout);
-    const analysis = analysePlayer(player, team, matches || [], scout.scout_preferences || {});
-    let prediction = null;
-    if (exp.prediction_log_id) {
-      const { data } = await supabase.from('predictions_log').select('*').eq('id', exp.prediction_log_id).maybeSingle();
-      prediction = data || null;
-    }
+router.post('/pipeline', async (req,res) => {
+  try {
+    const context = await scoutContext(req.user.id);
+    const allowance = await ensureAllowance(context);
+    let query = supabase.from('recruitment_pipeline').select('*').eq('is_active', true).order('updated_at', { ascending: false });
+    query = context.scout.scout_team_id ? query.eq('scout_team_id', context.scout.scout_team_id) : query.eq('scout_id', context.scout.id);
+    const { data: pipeline, error } = await query;
+    if (error) throw error;
+    const bundles = [];
+    for (const row of pipeline || []) bundles.push({ row, bundle: await playerBundle(req, context, row.player_id) });
+    const rows = bundles.map(({row,bundle}) => [
+      playerName(bundle.player), bundle.player.age_group, playerPosition(bundle.player), bundle.player.team_name,
+      row.stage, row.interest_level || '', score(bundle.analysis.compatibilityScore), score(bundle.player.overall_rating),
+      evidenceLabel(bundle), row.next_action || '', dateOnly(row.next_action_due_at), dateOnly(row.updated_at)
+    ]);
+    const sections = [{
+      title: 'Recruitment pipeline',
+      columns: ['Player','Age group','Position','Team','Stage','Interest','Compatibility','Overall','Evidence','Next action','Due','Updated'],
+      rows
+    }, { title: 'Export details', rows: [['Exported',dateTime(new Date())],['Active pipeline players',rows.length],['Export usage','1 export']] }];
+    const format = String(req.body.format || 'Excel').toUpperCase() === 'PDF' ? 'PDF' : 'Excel';
+    const filename = 'scoutlink-pipeline-' + new Date().toISOString().slice(0,10) + '.' + (format==='PDF'?'pdf':'xls');
+    const buffer = format === 'PDF' ? buildPdf('ScoutLink Recruitment Pipeline', sections) : buildExcel('ScoutLink Recruitment Pipeline', sections);
+    const mime = format === 'PDF' ? 'application/pdf' : 'application/vnd.ms-excel';
+    const log = await logExport(context, { format, source:'pipeline', filename, payload:{source:'pipeline',format} });
+    responseFile(res, log, allowance, filename, mime, buffer);
+  } catch(error) {
+    console.error('[Pipeline export]', error);
+    res.status(error.status || 500).json({ error: error.message || 'The pipeline export could not be created.', allowance: error.allowance });
+  }
+});
 
-    const isExcel = String(exp.export_type).toUpperCase() === 'EXCEL' || String(exp.export_type).toUpperCase() === 'XLS';
-    const title = 'ScoutLink ' + (exp.source === 'prediction' ? 'Prediction Export' : 'Player Profile') + ' - ' + playerName(player);
-    const sections = profileSections(player, matches || [], analysis, prediction, fixtures || [], videos || []);
-    const buffer = isExcel ? buildExcelHtml(title, sections) : buildPdf(title, sections);
-    const extension = isExcel ? 'xls' : 'pdf';
-    const filename = exp.file_name || clean(playerName(player)).replace(/\s+/g, '-').toLowerCase() + '-' + (exp.source || 'profile') + '.' + extension;
-    const mime = isExcel ? 'application/vnd.ms-excel' : 'application/pdf';
-    res.json({ filename, mime, contentBase64: buffer.toString('base64'), redownload: true });
-  } catch(err) {
-    console.error('[Exports redownload]', err);
-    res.status(err.status || 500).json({ error: err.status ? err.message : 'Internal server error' });
+router.post('/history/:id/download', async (req,res) => {
+  try {
+    const context = await scoutContext(req.user.id);
+    let query = supabase.from('scout_exports').select('*').eq('id', req.params.id).eq('scout_id', req.user.id);
+    const { data: log, error } = await query.maybeSingle();
+    if (error) throw error;
+    if (!log) return res.status(404).json({ error: 'Export history item not found.' });
+    const payload = log.payload || {};
+    if (log.source === 'comparison') {
+      const a = await playerBundle(req, context, payload.playerAId);
+      const b = await playerBundle(req, context, payload.playerBId);
+      const comparison = payload.comparison || {};
+      const categoryRows = (comparison.categories || []).map(row => [
+        row.category || row.name || row.key, row.playerA ?? row.playerAScore ?? '',
+        row.playerB ?? row.playerBScore ?? '', row.winner || '', row.margin ?? '', row.weight ?? ''
+      ]);
+      const sections = [
+        { title: 'Comparison summary', rows: [
+          ['Exported again', dateTime(new Date())], ['Original export', dateTime(log.created_at)],
+          ['Decision context', comparison.context?.label || payload.contextLabel || 'Immediate starter'],
+          ['Player A', playerName(a.player)], ['Player A decision score', comparison.playerA?.totalScore ?? comparison.playerATotal ?? ''],
+          ['Player B', playerName(b.player)], ['Player B decision score', comparison.playerB?.totalScore ?? comparison.playerBTotal ?? ''],
+          ['Decision-score margin', comparison.decisionScoreMargin ?? ''], ['Recommendation', comparison.recommendation || '']
+        ]},
+        { title: 'Category comparison', columns: ['Category',playerName(a.player),playerName(b.player),'Winner','Margin','Weight'], rows: categoryRows },
+        { title: 'Player A attributes', rows: ATTRIBUTES.map(([key,label]) => [label,number(a.player[key])]) },
+        { title: 'Player B attributes', rows: ATTRIBUTES.map(([key,label]) => [label,number(b.player[key])]) },
+        { title: 'Player A statistics', rows: profileSections(a).find(section=>section.title==='Match statistics').rows },
+        { title: 'Player B statistics', rows: profileSections(b).find(section=>section.title==='Match statistics').rows },
+        { title: 'Decision-support notice', lines: ['This is a historical re-download. It does not consume another export. The comparison context, category weights and recorded decision-score margin are retained.'] }
+      ];
+      const buffer = buildExcel('ScoutLink Player Comparison', sections);
+      return res.json({ filename: log.file_name || 'scoutlink-comparison.xls', mime:'application/vnd.ms-excel', contentBase64:buffer.toString('base64'), historicalDownload:true });
+    }
+    if (log.source === 'pipeline') {
+      let pipelineQuery = supabase.from('recruitment_pipeline').select('*').eq('is_active', true).order('updated_at', { ascending: false });
+      pipelineQuery = context.scout.scout_team_id ? pipelineQuery.eq('scout_team_id', context.scout.scout_team_id) : pipelineQuery.eq('scout_id', context.scout.id);
+      const { data: pipeline, error: pipelineError } = await pipelineQuery;
+      if (pipelineError) throw pipelineError;
+      const rows = [];
+      for (const row of pipeline || []) {
+        const bundle = await playerBundle(req, context, row.player_id);
+        rows.push([
+          playerName(bundle.player), bundle.player.age_group, playerPosition(bundle.player), bundle.player.team_name,
+          row.stage, row.interest_level || '', score(bundle.analysis.compatibilityScore), score(bundle.player.overall_rating),
+          evidenceLabel(bundle), row.next_action || '', dateOnly(row.next_action_due_at), dateOnly(row.updated_at)
+        ]);
+      }
+      const sections = [
+        { title:'Recruitment pipeline', columns:['Player','Age group','Position','Team','Stage','Interest','Compatibility','Overall','Evidence','Next action','Due','Updated'], rows },
+        { title:'Export details', rows:[['Re-downloaded',dateTime(new Date())],['Original export',dateTime(log.created_at)],['Active pipeline players',rows.length],['Additional export usage','0']] }
+      ];
+      const format = String(log.export_type || payload.format || 'Excel').toUpperCase().includes('PDF') ? 'PDF' : 'Excel';
+      const buffer = format === 'PDF' ? buildPdf('ScoutLink Recruitment Pipeline', sections) : buildExcel('ScoutLink Recruitment Pipeline', sections);
+      return res.json({ filename:log.file_name, mime:format==='PDF'?'application/pdf':'application/vnd.ms-excel', contentBase64:buffer.toString('base64'), historicalDownload:true });
+    }
+    const bundle = await playerBundle(req, context, log.player_id || payload.playerId);
+    let sections = profileSections(bundle);
+    if (log.source === 'prediction' && (log.prediction_log_id || payload.predictionLogId)) {
+      const result = await supabase.from('predictions_log').select('*').eq('id', log.prediction_log_id || payload.predictionLogId).maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data) sections = predictionSections(bundle, result.data);
+    }
+    const format = String(log.export_type || payload.format || 'PDF').toUpperCase().includes('EXCEL') ? 'Excel' : 'PDF';
+    const title = 'ScoutLink ' + (log.source === 'prediction' ? 'Prediction Export' : 'Player Intelligence Export') + ' — ' + playerName(bundle.player);
+    const buffer = format === 'Excel' ? buildExcel(title, sections) : buildPdf(title, sections);
+    res.json({ filename: log.file_name, mime: format==='Excel'?'application/vnd.ms-excel':'application/pdf', contentBase64: buffer.toString('base64'), historicalDownload:true });
+  } catch(error) {
+    res.status(error.status || 500).json({ error: error.message || 'The saved export could not be downloaded.' });
   }
 });
 
