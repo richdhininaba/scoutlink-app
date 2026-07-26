@@ -16,6 +16,7 @@
     ['profile','/admin/my-profile','My Profile','People','MP'],
     ['contracts','/admin/contracts-pay','Contracts & Pay','People','CP'],
     ['hiring','/admin/hiring','Hiring','People','HR'],
+    ['usage-requests','/admin/usage-requests','Usage Requests','Operations','UR'],
     ['trust','/admin/trust-concerns','Trust & Concerns','Trust','TC'],
     ['showcase','/admin/showcase-event','Showcase Event','Events','SE'],
     ['awards','/admin/award-ceremonies','Award Ceremonies','Events','AC'],
@@ -143,7 +144,12 @@
     document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeMenu();closeModal();}});
   }
   function closeMenu(){document.body.classList.remove('stxv4-menu-open');var b=document.getElementById('stxv4Menu');if(b)b.setAttribute('aria-expanded','false');var d=document.getElementById('stxv4MobileBackdrop');if(d)d.hidden=true;}
-  function navigate(id,push){if(!ROUTE_BY_ID[id])id='dashboard';state.route=id;var r=route(id);if(push&&cleanPath()!==r[1])history.pushState({},'',r[1]);document.getElementById('stxv4TopTitle').textContent=r[2];document.getElementById('stxv4TopRoute').textContent=r[1]+' · Stratex internal administration';document.querySelectorAll('.stxv4-nav').forEach(function(n){var on=n.dataset.nav===id;n.classList.toggle('active',on);if(on)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');});renderPage(id);window.scrollTo({top:0,behavior:'auto'});}
+  function navigate(id,push){
+  if(id==='usage-requests'){
+    window.location.href='/admin/usage-requests';
+    return;
+  }
+  if(!ROUTE_BY_ID[id])id='dashboard'; state.route=id;var r=route(id);if(push&&cleanPath()!==r[1])history.pushState({},'',r[1]);document.getElementById('stxv4TopTitle').textContent=r[2];document.getElementById('stxv4TopRoute').textContent=r[1]+' · Stratex internal administration';document.querySelectorAll('.stxv4-nav').forEach(function(n){var on=n.dataset.nav===id;n.classList.toggle('active',on);if(on)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');});renderPage(id);window.scrollTo({top:0,behavior:'auto'});}
   function openCommand(){
     var items=ROUTES.filter(function(r){return(r[0]!=='add-user'&&r[0]!=='permissions')||isRichdhin();});
     openModal('Search Stratex Admin','<input class="stxv4-input" id="stxv4CommandSearch" type="search" placeholder="Search admin pages and actions" aria-label="Search admin pages"><div class="stxv4-command-list" id="stxv4CommandList">'+items.map(function(r){return'<button class="stxv4-command-item" type="button" data-command="'+esc(r[0])+'"><b>'+esc(r[2])+'</b><span>'+esc(r[1])+'</span></button>';}).join('')+'</div>','stxv4-command');
@@ -181,6 +187,7 @@
       ['blog','BL','Blog / Learning','Write and publish articles.'],['leadership','LD','Leadership','Manage public leadership profiles.'],
       ['org','OC','Org Charts','View reporting lines.'],['profile','MP','My Profile','See your internal profile.'],
       ['contracts','CP','Contracts & Pay','Private people records.'],['hiring','HR','Hiring','Roles first, then applicants.'],
+      ['usage-requests','UR','Usage Requests','Approve free allowances or send paid usage uplifts.'],
       ['trust','TC','Trust & Concerns','Private reports and actions.'],['settings','ST','Settings','Company settings only.'],
       ['showcase','SE','Showcase Event','Manage showcase events.'],['awards','AC','Award Ceremonies','Manage awards and notices.']
     ];
