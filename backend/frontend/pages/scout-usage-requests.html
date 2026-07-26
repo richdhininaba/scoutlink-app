@@ -29,18 +29,112 @@
         <a class="active" href="/scout/usage-requests" aria-current="page">Usage requests</a>
         <a href="/scout/settings">Settings</a>
       </nav>
-      <div class="ur-user"><span>SL</span><div><b data-current-user>Scout account</b><small>Scout workspace</small></div></div>
+      <div class="ur-user">
+        <span>SL</span>
+        <div>
+          <b data-current-user>Scout account</b>
+          <small>Scout workspace</small>
+        </div>
+      </div>
     </aside>
+
     <main class="ur-main" id="usageMain">
-      <header class="ur-topbar"><div><small>Scout workspace</small><h1>Usage requests</h1></div><button class="ur-btn primary" type="button" data-new-request>New request</button></header>
+      <header class="ur-topbar">
+        <div>
+          <small>Scout workspace</small>
+          <h1>Usage requests</h1>
+        </div>
+        <button class="ur-btn primary" type="button" data-new-request>New request</button>
+      </header>
+
       <section class="ur-content">
-        <header class="ur-hero"><div><small>Allowance tracking</small><h2>Request extra Scout allowances</h2><p>Request additional predictions, exports or pipeline interests and follow the Stratex Admin decision.</p></div><button class="ur-btn primary" type="button" data-new-request>New request</button></header>
-        <section class="ur-metrics"><article class="ur-metric"><small>Pending review</small><b data-summary-pending>0</b><span>Awaiting Stratex Admin</span></article><article class="ur-metric"><small>Approved</small><b data-summary-approved>0</b><span>Allowance applied</span></article><article class="ur-metric"><small>Payment link sent</small><b data-summary-payment>0</b><span>Awaiting payment</span></article><article class="ur-metric"><small>Declined</small><b data-summary-declined>0</b><span>No allowance added</span></article></section>
-        <section class="ur-layout"><aside class="ur-card ur-list"><header class="ur-card-head"><div><h3>Request history</h3><p>Select a request to see its full audit trail.</p></div></header><div data-request-list><div class="ur-empty">Loading requests…</div></div></aside><section class="ur-card ur-detail" data-request-detail><div class="ur-empty">Select a request to see its full timeline.</div></section></section>
+        <header class="ur-hero">
+          <div>
+            <small>Allowance tracking</small>
+            <h2>Request extra Scout allowances</h2>
+            <p>Review the current team totals, request additional predictions, exports or pipeline interests, and follow the Stratex Admin decision.</p>
+          </div>
+          <button class="ur-btn primary" type="button" data-new-request>New request</button>
+        </header>
+
+        <section class="ur-card ur-list">
+          <header class="ur-card-head">
+            <div>
+              <h3>Current plan and usage</h3>
+              <p>These are the same live totals shown on the Dashboard, Predictions and Exports pages.</p>
+            </div>
+          </header>
+          <p><b data-usage-plan>Loading plan</b> · Team allowance totals</p>
+          <div class="ur-metrics">
+            <article class="ur-metric">
+              <small>Prediction credits</small>
+              <b data-usage-predictions-used>0 of 0 used</b>
+              <span data-usage-predictions-remaining>0 remaining</span>
+            </article>
+            <article class="ur-metric">
+              <small>Exports</small>
+              <b data-usage-exports-used>0 of 0 used</b>
+              <span data-usage-exports-remaining>0 remaining</span>
+            </article>
+            <article class="ur-metric">
+              <small>Pipeline interests</small>
+              <b data-usage-interests-used>0 of 0 used</b>
+              <span data-usage-interests-remaining>0 remaining</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="ur-metrics">
+          <article class="ur-metric">
+            <small>Pending review</small>
+            <b data-summary-pending>0</b>
+            <span>Awaiting Stratex Admin</span>
+          </article>
+          <article class="ur-metric">
+            <small>Approved</small>
+            <b data-summary-approved>0</b>
+            <span>Allowance applied</span>
+          </article>
+          <article class="ur-metric">
+            <small>Payment link sent</small>
+            <b data-summary-payment>0</b>
+            <span>Awaiting payment</span>
+          </article>
+          <article class="ur-metric">
+            <small>Declined</small>
+            <b data-summary-declined>0</b>
+            <span>No allowance added</span>
+          </article>
+        </section>
+
+        <section class="ur-layout">
+          <aside class="ur-card ur-list">
+            <header class="ur-card-head">
+              <div>
+                <h3>Request history</h3>
+                <p>Select a request to see its full audit trail.</p>
+              </div>
+            </header>
+            <div data-request-list>
+              <div class="ur-empty">Loading requests…</div>
+            </div>
+          </aside>
+          <section class="ur-card ur-detail" data-request-detail>
+            <div class="ur-empty">Select a request to see its full timeline.</div>
+          </section>
+        </section>
       </section>
     </main>
   </div>
-  <nav class="ur-mobile-nav"><a href="/scout/dashboard">Home</a><a href="/scout/player-search">Search</a><a href="/scout/pipeline">Pipeline</a><a href="/scout/chat">Chat</a><a href="/scout/settings">More</a></nav>
+
+  <nav class="ur-mobile-nav">
+    <a href="/scout/dashboard">Home</a>
+    <a href="/scout/player-search">Search</a>
+    <a href="/scout/pipeline">Pipeline</a>
+    <a href="/scout/chat">Chat</a>
+    <a href="/scout/settings">More</a>
+  </nav>
+
   <script src="/frontend/js/main.js"></script>
   <script src="/frontend/js/usage-requests-v1.js"></script>
 </body>
