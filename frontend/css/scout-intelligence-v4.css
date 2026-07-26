@@ -1046,3 +1046,382 @@
  #scoutExperienceApp h3{font-size:13px !important}
 }
 
+
+
+/* ScoutLink V6.6 strict readability, brand and interaction corrections */
+.scout-experience-body #scoutExperienceApp .side-logo .logo,
+.scout-experience-body #scoutExperienceApp .mobile-logo,
+.scout-experience-body #scoutExperienceApp .workspace-logo {
+  font-size: 21px !important;
+  line-height: 1 !important;
+  letter-spacing: -1px !important;
+  font-weight: 950 !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+.scout-experience-body #scoutExperienceApp .side-logo .logo span,
+.scout-experience-body #scoutExperienceApp .mobile-logo span,
+.scout-experience-body #scoutExperienceApp .workspace-logo span {
+  font-size: inherit !important;
+  color: var(--green, #087a61) !important;
+}
+
+.scout-experience-body #scoutExperienceApp .side-link,
+.scout-experience-body #scoutExperienceApp .side-user b,
+.scout-experience-body #scoutExperienceApp .side-user span,
+.scout-experience-body #scoutExperienceApp .nav-label,
+.scout-experience-body #scoutExperienceApp .workspace-top button,
+.scout-experience-body #scoutExperienceApp .workspace-top a,
+.slv6-approved,
+.slv6-approved p,
+.slv6-approved span,
+.slv6-approved small,
+.slv6-approved label,
+.slv6-approved li,
+.slv6-approved td,
+.slv6-approved th,
+.slv6-approved button,
+.slv6-approved a,
+.slv6-approved input,
+.slv6-approved select,
+.slv6-approved option,
+.slv6-approved textarea,
+.slv6-approved time,
+.slv6-approved legend {
+  font-size: max(10px, 0.625rem) !important;
+  line-height: 1.45;
+}
+
+.slv6-approved h1 { font-size: 24px !important; }
+.slv6-approved h2 { font-size: 20px !important; }
+.slv6-approved h3 { font-size: 14px !important; }
+.slv6-approved h4 { font-size: 12px !important; }
+.slv6-approved .metric strong,
+.slv6-approved .score-card strong,
+.slv6-approved .decision-margin b { font-size: 20px !important; }
+.slv6-approved .initials { font-size: 10px !important; }
+
+.slv6-approved .btn.small,
+.slv6-approved .pill,
+.slv6-approved .field > span,
+.slv6-approved .player-cell b,
+.slv6-approved .player-cell span,
+.slv6-approved .row-sub {
+  font-size: 10px !important;
+}
+
+.slv6-approved select,
+.slv6-approved option,
+.slv6-approved input,
+.slv6-approved textarea {
+  min-height: 38px;
+}
+
+.slv6-approved button:not(:disabled):hover,
+.slv6-approved a:not(.disabled):hover {
+  border-color: var(--green, #087a61) !important;
+  box-shadow: 0 6px 16px rgba(8, 122, 97, 0.16) !important;
+  transform: translateY(-1px);
+}
+
+.slv6-approved .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 16px 0 4px;
+}
+
+.slv6-approved .pagination-gap {
+  min-width: 22px;
+  text-align: center;
+  color: var(--muted, #66788b);
+}
+
+.slv6-approved .rank-widget-grid:empty,
+.slv6-approved [data-search-results]:empty,
+.slv6-approved [data-ranking-results]:empty {
+  min-height: 80px;
+}
+
+.slv6-approved .comparison-results.is-hidden {
+  display: none !important;
+}
+
+.slv6-approved .prediction-result-scroll {
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.slv6-approved .prediction-input-summary {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line, #d9e3ec);
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.slv6-approved .player-context-chat-panel {
+  height: calc(100vh - 110px);
+  min-height: 620px;
+  margin-top: 0;
+}
+
+.slv6-approved .player-context-chat {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+}
+
+.slv6-approved .conversation-list {
+  min-width: 0;
+  border-right: 1px solid var(--line, #d9e3ec);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slv6-approved .conversation-head {
+  min-height: 72px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--line, #d9e3ec);
+}
+
+.slv6-approved .conversation-head h3,
+.slv6-approved .conversation-head p {
+  margin: 0;
+}
+
+.slv6-approved .chat-search {
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid var(--line, #d9e3ec);
+}
+
+.slv6-approved .chat-search input {
+  width: 100%;
+}
+
+.slv6-approved .conversation-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.slv6-approved .conversation {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink, #07111f);
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  text-align: left;
+}
+
+.slv6-approved .conversation.active {
+  border-color: #b8dfd5;
+  background: var(--green-soft, #e8f4f0);
+}
+
+.slv6-approved .conversation b,
+.slv6-approved .conversation span,
+.slv6-approved .conversation small {
+  display: block;
+}
+
+.slv6-approved .conversation time {
+  color: var(--muted, #66788b);
+  white-space: nowrap;
+}
+
+.slv6-approved .thread {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  background: #fff;
+}
+
+.slv6-approved .thread-head {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line, #d9e3ec);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.slv6-approved .thread-head small,
+.slv6-approved .thread-head b,
+.slv6-approved .thread-head span {
+  display: block;
+}
+
+.slv6-approved .chat-player-context {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line, #d9e3ec);
+  background: #f7faf9;
+}
+
+.slv6-approved .chat-context-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slv6-approved .messages {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.slv6-approved .msg {
+  width: fit-content;
+  max-width: min(72%, 650px);
+  padding: 10px 12px;
+  border: 1px solid var(--line, #d9e3ec);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.slv6-approved .msg.outgoing {
+  margin-left: auto;
+  border-color: #b8dfd5;
+  background: var(--green-soft, #e8f4f0);
+}
+
+.slv6-approved .msg p {
+  margin: 4px 0;
+  white-space: pre-wrap;
+}
+
+.slv6-approved .composer {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line, #d9e3ec);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.slv6-approved .composer textarea {
+  width: 100%;
+  min-height: 46px;
+  max-height: 130px;
+  resize: vertical;
+  padding: 10px 12px;
+}
+
+.slv6-approved .composer .send-btn {
+  min-width: 100px;
+  height: 46px;
+}
+
+@media (max-width: 767px) {
+  .slv6-approved .player-context-chat-panel {
+    min-height: calc(100vh - 120px);
+    height: auto;
+  }
+
+  .slv6-approved .player-context-chat {
+    grid-template-columns: 1fr;
+  }
+
+  .slv6-approved .conversation-list {
+    max-height: 330px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line, #d9e3ec);
+  }
+
+  .slv6-approved .thread {
+    min-height: 560px;
+  }
+
+  .slv6-approved .composer {
+    grid-template-columns: 1fr;
+  }
+
+  .slv6-approved .composer .send-btn {
+    width: 100%;
+  }
+}
+
+/* Final minimum text-size guarantee across the complete Scout shell. */
+.scout-experience-body #scoutExperienceApp :where(
+  p,
+  span,
+  small,
+  label,
+  li,
+  td,
+  th,
+  button,
+  a,
+  input,
+  select,
+  option,
+  textarea,
+  time,
+  legend,
+  b,
+  strong
+) {
+  font-size: max(10px, 0.625rem) !important;
+  line-height: 1.45;
+}
+
+.scout-experience-body #scoutExperienceApp h1,
+.scout-experience-body #scoutExperienceApp .workspace-top h1 {
+  font-size: 18px !important;
+  line-height: 1.2;
+}
+
+.scout-experience-body #scoutExperienceApp h2 {
+  font-size: 20px !important;
+  line-height: 1.2;
+}
+
+.scout-experience-body #scoutExperienceApp h3 {
+  font-size: 14px !important;
+  line-height: 1.3;
+}
+
+.scout-experience-body #scoutExperienceApp h4 {
+  font-size: 12px !important;
+  line-height: 1.35;
+}
+
+.scout-experience-body #scoutExperienceApp .metric strong,
+.scout-experience-body #scoutExperienceApp .decision-margin b,
+.scout-experience-body #scoutExperienceApp .profile-score b,
+.scout-experience-body #scoutExperienceApp .profile-score strong {
+  font-size: 20px !important;
+  line-height: 1.1;
+}
+
+.scout-experience-body #scoutExperienceApp .side-logo .logo,
+.scout-experience-body #scoutExperienceApp .side-logo .logo span,
+.scout-experience-body #scoutExperienceApp .mobile-logo,
+.scout-experience-body #scoutExperienceApp .mobile-logo span {
+  font-size: 21px !important;
+  line-height: 1 !important;
+}
