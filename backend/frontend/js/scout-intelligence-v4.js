@@ -1,4 +1,4 @@
-/* ScoutLink Scout Intelligence V6.4
+/* ScoutLink Scout Intelligence V6.7
    Approved desktop/mobile design with live workflows, consistent usage,
    U7-U16 data rules and refined overlays. */
 (function () {
@@ -236,16 +236,18 @@
   <article class="metric"><small>Current plan</small><strong data-compare-plan>Core</strong><span>Comparison does not use a prediction credit</span></article>
 </section>
 <section class="compare-setup">
-  <div class="compare-player-select"><label><span>Player A</span><input autocomplete="off" data-compare-side="a" list="comparePlayerOptions" placeholder="Type a player name"></label><div class="selected-player empty-selection" data-selected-a><span>Choose a player</span></div></div>
-  <div class="compare-player-select"><label><span>Player B</span><input autocomplete="off" data-compare-side="b" list="comparePlayerOptions" placeholder="Type a player name"></label><div class="selected-player empty-selection" data-selected-b><span>Choose a player</span></div></div>
+  <div class="compare-player-select"><label><span>Player A</span><input autocomplete="off" data-compare-side="a" list="comparePlayerOptionsA" placeholder="Type a player name"></label><div class="selected-player empty-selection" data-selected-a><span>Choose a player</span></div></div>
+  <div class="compare-player-select"><label><span>Player B</span><input autocomplete="off" data-compare-side="b" list="comparePlayerOptionsB" placeholder="Type a player name"></label><div class="selected-player empty-selection" data-selected-b><span>Choose a player</span></div></div>
   <div class="compare-context">
     <label class="field"><span>Decision context</span><select data-compare-context><option>Immediate starter</option><option>Development prospect</option><option>Specific tactical role</option><option>Low financial risk</option><option>Resale upside</option><option>Squad depth</option></select></label>
     <label class="field"><span>Target position</span><select data-compare-position><option>Current roles</option><option>GK</option><option>CB</option><option>BPD</option><option>RB</option><option>LB</option><option>CDM</option><option>CM</option><option>CAM</option><option>LW</option><option>RW</option><option>ST</option></select></label>
     <label class="field"><span>Budget</span><input data-compare-budget type="number" min="0" step="1000" placeholder="Optional"></label>
     <button class="btn primary" type="button" data-run-comparison>Compare and explain</button>
   </div>
-  <datalist id="comparePlayerOptions"></datalist>
+  <datalist id="comparePlayerOptionsA"></datalist>
+  <datalist id="comparePlayerOptionsB"></datalist>
 </section>
+<div class="comparison-inline-status empty structured" data-comparison-status hidden></div>
 <section class="comparison-results is-hidden" data-comparison-results>
   <section class="recommendation"><div><small data-comparison-context-copy>Recommendation</small><h3 data-comparison-winner>—</h3><p data-comparison-copy></p></div><div class="decision-margin"><b data-comparison-margin>0.0</b><span>decision-score margin</span></div></section>
   <section class="compare-head"><article data-compare-head-a></article><article data-compare-head-b></article></section>
@@ -325,7 +327,11 @@
         return {};
     } }
     function userName() { var u = currentUser(); return u.name || [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Noah Patel'; }
-    function isDemo() { var u = currentUser(); return sessionStorage.getItem('sl_public_demo') === '1' || localStorage.getItem('sl_demo_mode') === '1' || token() === 'public-demo-session' || !!(u.demoMode || u.demo_mode); }
+    function isPublicDemo() {
+        return sessionStorage.getItem('sl_public_demo') === '1' ||
+            token() === 'public-demo-session';
+    }
+    function isDemo() { var u = currentUser(); return isPublicDemo() || localStorage.getItem('sl_demo_mode') === '1' || !!(u.demoMode || u.demo_mode); }
     function apiBase() { return String(window.API || localStorage.getItem('sl_api_url') || API_FALLBACK).replace(/\/+$/, ''); }
     async function request(method, path, body) {
         var headers = { Accept: 'application/json' }, auth = token();
@@ -824,7 +830,9 @@
         var data = state.dashboardData || null;
         if (!data) {
             try {
-                data = await request('GET', '/api/scout-intelligence-v64/dashboard');
+                data = await request('GET', isPublicDemo()
+                    ? '/api/scout-intelligence-v64/public-demo/dashboard'
+                    : '/api/scout-intelligence-v64/dashboard');
             }
             catch (_) {
                 data = null;
@@ -846,7 +854,10 @@
         var actionCount = q(root, '[data-dashboard-action-count]');
         if (actionCount)
             actionCount.textContent = meaningful.length;
-        var pipelineUsed = data.usage && data.usage.interests && data.usage.interests.used || 0, pipelineCount = q(root, '[data-dashboard-pipeline-count]');
+        var pipelineUsed = data.activePipelineCount != null
+            ? num(data.activePipelineCount)
+            : data.usage && data.usage.interests && data.usage.interests.used || 0,
+            pipelineCount = q(root, '[data-dashboard-pipeline-count]');
         if (pipelineCount)
             pipelineCount.textContent = pipelineUsed;
         var plan = q(root, '[data-dashboard-plan]');
@@ -1731,68 +1742,173 @@
     }
     function bindCompare(root, overview) {
         hydrateUsage(root, overview);
+
         const inputs = qa(root, '.compare-player-select input');
         const selectedBoxes = qa(root, '.compare-player-select .selected-player');
         const contextSelect = q(root, '[data-compare-context]');
         const positionSelect = q(root, '[data-compare-position]');
         const budgetInput = q(root, '[data-compare-budget]');
         const resultWrap = q(root, '[data-comparison-results]');
-        const list = q(root, '#comparePlayerOptions');
+        const status = q(root, '[data-comparison-status]');
+        const listA = q(root, '#comparePlayerOptionsA');
+        const listB = q(root, '#comparePlayerOptionsB');
         const runButton = q(root, '[data-run-comparison]');
         const newButton = q(root, '[data-new-comparison]');
         const playerCount = q(root, '[data-compare-player-count]');
         const selectedCount = q(root, '[data-compare-selected-count]');
         const contextLabel = q(root, '[data-compare-context-label]');
         const plan = q(root, '[data-compare-plan]');
+
         let playerA = null;
         let playerB = null;
+
         playerCount.textContent = state.players.length;
         plan.textContent = overview?.usage?.plan || 'Core';
-        list.innerHTML = state.players.map(function (player) {
-            return '<option value="' + esc(playerName(player)) + '">' + esc(playerLine(player)) + '</option>';
-        }).join('');
+
+        function setStatus(message, error) {
+            if (!status) {
+                return;
+            }
+
+            status.hidden = !message;
+            status.classList.toggle('error', Boolean(error));
+            status.innerHTML = message
+                ? '<b>' +
+                    esc(error ? 'Comparison could not run' : 'Comparing players') +
+                    '</b><span>' +
+                    esc(message) +
+                    '</span>'
+                : '';
+        }
+
+        function optionLabel(player) {
+            return [
+                playerName(player),
+                player.age_group || '',
+                player.specific_position || player.primary_position || '',
+                player.team_name || player.team?.team_name || ''
+            ]
+                .filter(Boolean)
+                .join(' · ');
+        }
+
+        function availableOptions(excludedPlayer) {
+            return state.players
+                .filter(player => {
+                    return !excludedPlayer ||
+                        String(player.id) !== String(excludedPlayer.id);
+                })
+                .map(player => {
+                    return '<option value="' +
+                        esc(optionLabel(player)) +
+                        '"></option>';
+                })
+                .join('');
+        }
+
+        function refreshLists() {
+            listA.innerHTML = availableOptions(playerB);
+            listB.innerHTML = availableOptions(playerA);
+        }
+
         function draw(side, player) {
             const index = side === 'a' ? 0 : 1;
             const box = selectedBoxes[index];
+
             box.classList.toggle('empty-selection', !player);
-            box.innerHTML = player ? playerCell(player) : '<span>Choose a player</span>';
-            if (player)
+            box.innerHTML = player
+                ? playerCell(player)
+                : '<span>Choose a player</span>';
+
+            if (player) {
                 box.dataset.playerId = player.id;
-            else
+            }
+            else {
                 delete box.dataset.playerId;
-            selectedCount.textContent = (playerA ? 1 : 0) + (playerB ? 1 : 0) + ' / 2';
+            }
+
+            selectedCount.textContent =
+                (playerA ? 1 : 0) +
+                (playerB ? 1 : 0) +
+                ' / 2';
         }
+
+        function resolveTypedPlayer(input, excludedPlayer) {
+            const typed = String(input.value || '').trim().toLowerCase();
+
+            if (!typed) {
+                return null;
+            }
+
+            const available = state.players.filter(player => {
+                return !excludedPlayer ||
+                    String(player.id) !== String(excludedPlayer.id);
+            });
+
+            return available.find(player => {
+                return optionLabel(player).toLowerCase() === typed;
+            }) || available.find(player => {
+                return playerName(player).toLowerCase() === typed;
+            }) || null;
+        }
+
         function choose(side) {
             const index = side === 'a' ? 0 : 1;
-            const player = playerByTypedName(inputs[index].value);
-            if (side === 'a')
+            const other = side === 'a' ? playerB : playerA;
+            const player = resolveTypedPlayer(inputs[index], other);
+
+            if (side === 'a') {
                 playerA = player;
-            else
+            }
+            else {
                 playerB = player;
+            }
+
             draw(side, player);
+            refreshLists();
             resultWrap.classList.add('is-hidden');
+            resultWrap.hidden = true;
+            setStatus('', false);
         }
+
         inputs.forEach(function (input, index) {
             input.value = '';
-            input.oninput = function () { choose(index === 0 ? 'a' : 'b'); };
-            input.onchange = function () { choose(index === 0 ? 'a' : 'b'); };
+            input.oninput = function () {
+                choose(index === 0 ? 'a' : 'b');
+            };
+            input.onchange = function () {
+                choose(index === 0 ? 'a' : 'b');
+            };
         });
+
         draw('a', null);
         draw('b', null);
+        refreshLists();
         resultWrap.classList.add('is-hidden');
+        resultWrap.hidden = true;
+
         const params = new URLSearchParams(location.search);
         const playerAId = params.get('player');
         const playerBId = params.get('playerB');
+
         if (playerAId && state.byId[String(playerAId)]) {
             playerA = state.byId[String(playerAId)];
-            inputs[0].value = playerName(playerA);
+            inputs[0].value = optionLabel(playerA);
             draw('a', playerA);
         }
-        if (playerBId && state.byId[String(playerBId)]) {
+
+        if (
+            playerBId &&
+            state.byId[String(playerBId)] &&
+            String(playerBId) !== String(playerAId)
+        ) {
             playerB = state.byId[String(playerBId)];
-            inputs[1].value = playerName(playerB);
+            inputs[1].value = optionLabel(playerB);
             draw('b', playerB);
         }
+
+        refreshLists();
+
         const contextMap = {
             'Immediate starter': 'immediate_starter',
             'Development prospect': 'development_prospect',
@@ -1801,50 +1917,96 @@
             'Resale upside': 'resale_upside',
             'Squad depth': 'squad_depth'
         };
+
         contextSelect.onchange = function () {
             contextLabel.textContent = contextSelect.value;
             resultWrap.classList.add('is-hidden');
+            resultWrap.hidden = true;
+            setStatus('', false);
         };
+
         runButton.onclick = async function () {
             choose('a');
             choose('b');
-            if (!playerA || !playerB)
-                return toast('Choose two valid players from the Supabase player list.', true);
-            if (String(playerA.id) === String(playerB.id))
-                return toast('Choose two different players.', true);
+
+            if (!playerA || !playerB) {
+                setStatus('Choose two valid players from the Supabase player list.', true);
+                return;
+            }
+
+            if (String(playerA.id) === String(playerB.id)) {
+                setStatus('Choose two different players.', true);
+                return;
+            }
+
             const done = pending(runButton, 'Comparing…');
+            setStatus('Calculating the decision-context comparison…', false);
+
             try {
-                const response = await request('POST', '/api/scout-intelligence-v64/compare', {
+                const endpoint = isPublicDemo()
+                    ? '/api/scout-intelligence-v64/public-demo/compare'
+                    : '/api/scout-intelligence-v64/compare';
+
+                const response = await request('POST', endpoint, {
                     playerAId: playerA.id,
                     playerBId: playerB.id,
                     contextKey: contextMap[contextSelect.value] || 'immediate_starter',
-                    targetPosition: positionSelect.value === 'Current roles' ? null : positionSelect.value,
-                    budget: budgetInput.value ? num(budgetInput.value) : null
+                    targetPosition: positionSelect.value === 'Current roles'
+                        ? null
+                        : positionSelect.value,
+                    budget: budgetInput.value
+                        ? num(budgetInput.value)
+                        : null
                 });
-                state.activeComparison = { a: playerA, b: playerB, result: response.result };
+
+                if (!response?.result) {
+                    throw new Error('The comparison returned no result.');
+                }
+
+                state.activeComparison = {
+                    a: playerA,
+                    b: playerB,
+                    result: response.result
+                };
+
                 renderComparisonResult(root, state.activeComparison);
+                resultWrap.hidden = false;
                 resultWrap.classList.remove('is-hidden');
-                resultWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setStatus('', false);
+                resultWrap.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }
             catch (error) {
+                setStatus(error.message, true);
                 toast(error.message, true);
             }
             finally {
                 done();
             }
         };
+
         newButton.onclick = function () {
-            inputs.forEach(function (input) { input.value = ''; });
+            inputs.forEach(function (input) {
+                input.value = '';
+            });
+
             playerA = null;
             playerB = null;
             draw('a', null);
             draw('b', null);
+            refreshLists();
             resultWrap.classList.add('is-hidden');
+            resultWrap.hidden = true;
             state.activeComparison = null;
+            setStatus('', false);
             history.replaceState(null, '', location.pathname);
         };
+
         bindComparisonActions(root);
     }
+
     function bindComparisonActions(root) {
         const openButton = q(root, '[data-open-comparison-profile]');
         const exportButton = q(root, '[data-export-comparison]');
