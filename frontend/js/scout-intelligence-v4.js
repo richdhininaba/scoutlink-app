@@ -8,7 +8,7 @@
     var DEMO_USAGE_KEY = 'sl_scout_intelligence_demo_usage_v6_4';
     var templates = {
         "dashboard": `<section class="hero dashboard-hero-old"><div><small>Elite scout workspace</small><h2>Good morning.</h2><p>Your highest-fit players, real recruitment actions, team needs and plan usage are updated from the current ScoutLink records.</p></div><div class="hero-actions"><button class="btn primary" type="button">Review top matches</button><button class="btn" type="button">View next actions</button></div></section>
-<section class="metric-grid"><article class="metric accent"><small>Players in system</small><strong data-dashboard-player-count>0</strong><span data-dashboard-player-scope>Current accessible dataset</span></article><article class="metric"><small>Next actions</small><strong data-dashboard-action-count>0</strong><span>Evidence-led recruitment work</span></article><article class="metric"><small>Active pipeline</small><strong data-dashboard-pipeline-count>0</strong><span>Registered player interests</span></article><article class="metric"><small>Current plan</small><strong data-dashboard-plan>Core</strong><span data-dashboard-plan-copy>One source of truth for every allowance</span></article></section>
+<section class="metric-grid"><article class="metric accent"><small>Players in system</small><strong data-dashboard-player-count>0</strong><span data-dashboard-player-scope>Current accessible dataset</span></article><article class="metric"><small>Next actions</small><strong data-dashboard-action-count>0</strong><span>Evidence-led recruitment work</span></article><article class="metric"><small>Your active pipeline</small><strong data-dashboard-pipeline-count>0</strong><span>Your registered player interests</span></article><article class="metric"><small>Current plan</small><strong data-dashboard-plan>Core</strong><span data-dashboard-plan-copy>One source of truth for every allowance</span></article></section>
 <section class="panel dashboard-compatible-panel"><header class="panel-head"><div><h3>Top 5 most compatible players</h3><p>Highest current compatibility against the saved team brief</p></div><button class="btn small" type="button" data-view-all-compatible>View all players</button></header><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>Player</th><th>Compatibility</th><th>Evidence</th><th>Current rating</th><th></th></tr></thead><tbody data-dashboard-compatible></tbody></table></div></div></section>
 <section class="split"><section class="panel"><header class="panel-head"><div><h3>Next actions</h3><p>Only real actions that move a recruitment decision forward</p></div></header><div class="panel-body" data-dashboard-actions></div></section><section class="panel"><header class="panel-head"><div><h3>What the team needs</h3><p>Every saved need and the players currently matching it</p></div><button class="btn small" type="button">Edit setup</button></header><div class="panel-body" data-dashboard-needs></div></section></section>
 <section class="split thirds"><section class="panel"><header class="panel-head"><div><h3>Usage and limits</h3><p>The same allowance totals are used everywhere</p></div><button class="btn small" type="button" data-open-usage-requests>Usage requests</button></header><div class="panel-body" data-dashboard-usage></div></section><section class="panel dashboard-fit-panel"><header class="panel-head"><div><h3>Top current fit</h3><p>Strongest recommendation for the current brief</p></div></header><div class="panel-body" data-dashboard-top-fit></div></section><section class="panel upcoming-priority-panel"><header class="panel-head"><div><h3>Upcoming live-scouting priority</h3><p>The next fixture action connected to a pipeline player</p></div></header><div class="panel-body" data-dashboard-priority></div></section></section>`,
@@ -287,7 +287,7 @@
   <div><button class="btn primary small" type="button" data-refresh-notifications>Refresh</button></div>
 </section>
 <section class="notification-list" data-notification-list><div class="empty structured"><b>Loading notifications</b><span>Reading your Scout notifications from Supabase.</span></div></section>`,
-        "settings": `<section class="hero"><div><small>Scout account</small><h2>Settings and usage controls.</h2><p>Manage the account, team permissions, notifications, security, plan and recruitment setup without a cluttered side menu.</p></div><div class="hero-actions"><button class="btn primary">Save changes</button></div></section><section class="metric-grid compact"><article class="metric accent"><small>Prediction usage</small><strong>32 / 60</strong><span>28 remaining</span></article><article class="metric"><small>Export usage</small><strong>5 / 20</strong><span>15 remaining</span></article><article class="metric"><small>Pipeline usage</small><strong>7 / 30</strong><span>23 places remaining</span></article><article class="metric"><small>Reset date</small><strong>12 Jan 2027</strong><span>Managed by access date</span></article></section>
+        "settings": `<section class="hero"><div><small>Scout account</small><h2>Settings and usage controls.</h2><p>Manage the account, team permissions, notifications, security, plan and recruitment setup without a cluttered side menu.</p></div><div class="hero-actions"><button class="btn primary">Save changes</button></div></section><section class="metric-grid compact"><article class="metric accent"><small>Prediction usage</small><strong>Loading</strong><span>Reading live allowance</span></article><article class="metric"><small>Export usage</small><strong>Loading</strong><span>Reading live allowance</span></article><article class="metric"><small>Pipeline usage</small><strong>Loading</strong><span>Reading live allowance</span></article><article class="metric"><small>Reset date</small><strong>—</strong><span>Managed by the Scout plan</span></article></section>
 <nav class="settings-tabs"><button class="active">Account</button><button>Appearance</button><button>Notifications</button><button>Team</button><button>Security</button><button>Plan</button></nav>
 <section class="settings-layout">
 <div>
@@ -301,7 +301,7 @@
 </section>`
     };
     var state = {
-        route: '', players: [], byId: {}, overview: null, dashboardData: null, profile: null, profileDetail: null, fixtures: [], reports: [], activeComparison: null, teamMembers: [],
+        route: '', players: [], byId: {}, overview: null, dashboardData: null, usage: null, usageBase: null, profile: null, profileDetail: null, fixtures: [], reports: [], activeComparison: null, teamMembers: [],
         search: { position: '', age: '', region: '', evidence: '', sort: 'Best match', page: 1 },
         ranking: { type: 'Top goalscorers', position: '', age: '', region: '' },
         prediction: { type: '', playerId: '', step: 1 },
@@ -384,19 +384,106 @@
             onReady(back, close);
         return back;
     }
-    function demoUsage() {
-        var limits = { predictions: 900, exports: 300, interests: 300 }, saved = {};
+    function emptyUsage(plan) {
+        return {
+            plan: plan || 'Core',
+            resetAt: null,
+            predictions: { used: 0, limit: 0, remaining: 0, percent: 0 },
+            exports: { used: 0, limit: 0, remaining: 0, percent: 0 },
+            interests: { used: 0, limit: 0, remaining: 0, percent: 0 }
+        };
+    }
+    function publicDemoBaseUsage() {
+        return {
+            plan: 'Elite demo',
+            resetAt: null,
+            predictions: { used: 0, limit: 900, remaining: 900, percent: 0 },
+            exports: { used: 0, limit: 300, remaining: 300, percent: 0 },
+            interests: { used: 0, limit: 300, remaining: 300, percent: 0 }
+        };
+    }
+    function readDemoUsageDeltas() {
         try {
-            saved = JSON.parse(sessionStorage.getItem(DEMO_USAGE_KEY) || '{}');
+            return JSON.parse(sessionStorage.getItem(DEMO_USAGE_KEY) || '{}');
         }
-        catch (_) { }
-        var result = { plan: 'Elite demo', resetAt: null };
-        Object.keys(limits).forEach(function (key) { var used = Math.max(0, num(saved[key] && saved[key].used, saved[key])); result[key] = { used: used, limit: limits[key], remaining: Math.max(0, limits[key] - used) }; });
+        catch (_) {
+            return {};
+        }
+    }
+    function applyDemoUsageDeltas(baseUsage) {
+        var base = baseUsage || publicDemoBaseUsage();
+        var deltas = readDemoUsageDeltas();
+        var result = {
+            plan: base.plan || 'Elite demo',
+            resetAt: base.resetAt || null,
+            generatedAt: base.generatedAt || null
+        };
+        ['predictions', 'exports', 'interests'].forEach(function (key) {
+            var row = base[key] || {};
+            var limit = num(row.limit, 0);
+            var baseUsed = num(row.used, 0);
+            var delta = Math.max(0, num(deltas[key], 0));
+            var used = Math.min(limit || Number.MAX_SAFE_INTEGER, baseUsed + delta);
+            result[key] = {
+                used: used,
+                limit: limit,
+                remaining: Math.max(0, limit - used),
+                percent: limit ? Math.min(100, Math.round(used / limit * 100)) : 0
+            };
+        });
         return result;
     }
-    function incrementUsage(key) { if (!isDemo())
-        return; var usage = demoUsage(); usage[key].used = Math.min(usage[key].limit, usage[key].used + 1); sessionStorage.setItem(DEMO_USAGE_KEY, JSON.stringify({ predictions: { used: usage.predictions.used }, exports: { used: usage.exports.used }, interests: { used: usage.interests.used } })); if (state.overview)
-        state.overview.usage = usage; }
+    function demoUsage(baseUsage) {
+        return applyDemoUsageDeltas(baseUsage || publicDemoBaseUsage());
+    }
+    function incrementUsage(key) {
+        if (!isPublicDemo()) {
+            return;
+        }
+        var deltas = readDemoUsageDeltas();
+        deltas[key] = Math.max(0, num(deltas[key], 0)) + 1;
+        sessionStorage.setItem(DEMO_USAGE_KEY, JSON.stringify(deltas));
+        state.usage = applyDemoUsageDeltas(state.usageBase || publicDemoBaseUsage());
+        if (state.overview) {
+            state.overview.usage = state.usage;
+        }
+    }
+    async function loadUsage(force) {
+        if (state.usage && !force) {
+            return state.usage;
+        }
+        var path = isPublicDemo()
+            ? '/api/scout-intelligence-v64/public-demo/usage'
+            : '/api/scout-intelligence-v64/usage';
+        try {
+            var response = await request('GET', path);
+            var base = response.usage || response.data || response;
+            state.usageBase = base;
+            state.usage = isPublicDemo() ? applyDemoUsageDeltas(base) : base;
+        }
+        catch (error) {
+            if (!isPublicDemo()) {
+                throw error;
+            }
+            state.usageBase = publicDemoBaseUsage();
+            state.usage = applyDemoUsageDeltas(state.usageBase);
+        }
+        if (state.overview) {
+            state.overview.usage = state.usage;
+        }
+        return state.usage;
+    }
+    async function refreshUsage(root) {
+        state.usage = null;
+        var usage = await loadUsage(true);
+        if (state.overview) {
+            state.overview.usage = usage;
+        }
+        if (root) {
+            hydrateUsage(root, { usage: usage });
+        }
+        return usage;
+    }
     function normalizePlayer(player, index) {
         const row = Object.assign({}, player || {});
         row.id = row.id || row.player_id || '';
@@ -476,38 +563,47 @@
         return state.players;
     }
     async function loadOverview() {
-        if (state.overview)
+        if (state.overview) {
             return state.overview;
+        }
+        var dashboard = null;
+        var usage = null;
+        var dashboardPath = isPublicDemo()
+            ? '/api/scout-intelligence-v64/public-demo/dashboard'
+            : '/api/scout-intelligence-v64/dashboard';
         try {
-            const dashboard = await request('GET', '/api/scout-intelligence-v64/dashboard');
+            dashboard = await request('GET', dashboardPath);
             state.dashboardData = dashboard;
-            state.overview = {
-                brief: dashboard.brief || {},
-                usage: dashboard.usage || {},
-                tasks: dashboard.nextActions || dashboard.tasks || [],
-                activity: dashboard.activity || []
-            };
-            return state.overview;
+            if (dashboard.usage) {
+                state.usageBase = dashboard.usage;
+                state.usage = isPublicDemo()
+                    ? applyDemoUsageDeltas(dashboard.usage)
+                    : dashboard.usage;
+                dashboard.usage = state.usage;
+                usage = state.usage;
+            }
         }
         catch (error) {
-            const fallbackUsage = isDemo()
-                ? demoUsage()
-                : {
-                    plan: 'Core',
-                    predictions: { used: 0, limit: 0, remaining: 0 },
-                    exports: { used: 0, limit: 0, remaining: 0 },
-                    interests: { used: 0, limit: 0, remaining: 0 }
-                };
-            state.overview = {
-                brief: {},
-                usage: fallbackUsage,
-                tasks: [],
-                activity: []
-            };
-            return state.overview;
+            state.dashboardData = null;
         }
+        if (!usage) {
+            try {
+                usage = await loadUsage();
+            }
+            catch (_) {
+                usage = isPublicDemo() ? demoUsage() : emptyUsage('Unavailable');
+                state.usage = usage;
+            }
+        }
+        state.overview = {
+            brief: dashboard && dashboard.brief || {},
+            usage: usage,
+            tasks: dashboard && (dashboard.nextActions || dashboard.tasks) || [],
+            activity: dashboard && dashboard.activity || []
+        };
+        return state.overview;
     }
-    function usageValue(usage, key, limit) { var row = usage && usage[key] || {}, max = num(row.limit, limit), used = num(row.used, Math.max(0, max - num(row.remaining, max))); return { used: used, limit: max, remaining: row.remaining == null ? Math.max(0, max - used) : num(row.remaining), percent: max ? Math.round(used / max * 100) : 0 }; }
+    function usageValue(usage, key, limit) { var row = usage && usage[key] || {}, max = num(row.limit, limit == null ? 0 : limit), used = num(row.used, Math.max(0, max - num(row.remaining, max))); return { used: used, limit: max, remaining: row.remaining == null ? Math.max(0, max - used) : num(row.remaining), percent: max ? Math.round(used / max * 100) : 0 }; }
     function mount(content) {
         content.innerHTML = '<div class="slv6-approved" data-slv6-route="' + esc(state.route) + '">' + templates[state.route] + '</div>';
         var root = q(content, '.slv6-approved'), title = (state.route === 'search' ? 'Player Search' : state.route.charAt(0).toUpperCase() + state.route.slice(1));
@@ -564,7 +660,7 @@
     function workflowIntro(number, title, copy) { return '<article class="workflow-intro"><span>' + esc(number) + '</span><div><b>' + esc(title) + '</b><small>' + esc(copy) + '</small></div></article>'; }
     function demoPipeline() { return localRows('pipeline'); }
     function demoPipelineItem(playerId) { return demoPipeline().find(function (row) { return String(row.playerId) === String(playerId); }) || null; }
-    function profileInPipeline(bundle) { return !!(bundle.pipelineStatus || bundle.pipeline || demoPipelineItem(bundle.player.id)); }
+    function profileInPipeline(bundle) { return !!(bundle.pipelineStatus || bundle.pipeline || isPublicDemo() && demoPipelineItem(bundle.player.id)); }
     function setProfileInterestState(root, bundle) { var active = profileInPipeline(bundle); qa(root, 'button').forEach(function (btn) { var label = btn.textContent.trim().toLowerCase(); if (label === 'register interest' || label === 'interest registered') {
         btn.textContent = active ? 'Interest registered' : 'Register interest';
         btn.disabled = active;
@@ -575,7 +671,7 @@
         btn.setAttribute('aria-describedby', 'messageCoachRequirement');
     } }); }
     async function registerInterest(root, bundle, button) { var p = bundle.player, done = pending(button, 'Registering…'), success = false; try {
-        if (isDemo()) {
+        if (isPublicDemo()) {
             addLocalRow('pipeline', { id: 'demo-pipeline-' + Date.now(), playerId: p.id, playerName: playerName(p), stage: 'interested', createdAt: new Date().toISOString() });
             incrementUsage('interests');
             bundle.pipelineStatus = 'interested';
@@ -585,6 +681,7 @@
             bundle.pipelineStatus = response.stage || 'interested';
         }
         success = true;
+        await refreshUsage(root).catch(function () { });
         toast(playerName(p) + ' was added to the recruitment pipeline.');
     }
     catch (error) {
@@ -694,10 +791,11 @@
         incrementUsage('exports');
         var row = addLocalRow('reports', { id: 'demo-report-' + Date.now(), report_type: source === 'prediction' ? 'prediction_export' : 'player_profile_export', subject_type: 'player', subject_id: p.id, title: 'ScoutLink export · ' + playerName(p), player: p, format: upper, source: source, file_name: playerName(p).replace(/\s+/g, '-').toLowerCase() + '-' + source + '.' + (upper === 'EXCEL' ? 'csv' : 'pdf'), contentLines: storedReportLines(p, source), created_at: new Date().toISOString() });
         downloadStoredReport(row, p);
+        await refreshUsage().catch(function () { });
         toast('Export created and stored in Report history.');
         return row;
     } var exportResponse = await request('POST', '/api/exports/player', { playerId: p.id, format: upper, source: source, predictionLogId: predictionId }); if (exportResponse.contentBase64)
-        downloadBase64(exportResponse.filename, exportResponse.mime, exportResponse.contentBase64); toast('Export created, stored in history and downloaded.'); return exportResponse; }
+        downloadBase64(exportResponse.filename, exportResponse.mime, exportResponse.contentBase64); await refreshUsage().catch(function () { }); toast('Export created, stored in history and downloaded.'); return exportResponse; }
     function reportWorkflow(bundle, source, onDone) { var p = bundle.player, title = source === 'prediction' ? 'Export prediction' : 'Export player profile'; modal(title, '<div class="report-layout-v64"><section><div class="workflow-step-grid">' + workflowIntro('1', 'Choose format', 'PDF is a designed dossier. Excel is plain data.') + workflowIntro('2', 'Create export', 'One export is recorded against the team allowance.') + workflowIntro('3', 'Download', 'The file is available immediately and stored in history.') + '</div><section class="report-includes-v64"><h3>Complete export contents</h3><p>The player PDF includes identity, age group, every attribute, overall breakdown, compatibility intelligence, detailed verdict, evidence confidence, every recorded match, upcoming fixtures, video index, team links, export date and decision-support notice. Coach personal contact details are excluded.</p><ul><li>Full player and football profile</li><li>All ratings and attributes</li><li>Compatibility categories and detailed verdict</li><li>All Match Facts and upcoming fixtures</li><li>Prediction inputs, evidence and outcome when exporting a prediction</li></ul></section><div class="form-grid two">' + formField('Format', '<select id="reportFormat"><option>PDF</option><option>EXCEL</option></select>') + formField('Export type', '<input value="' + esc(source === 'prediction' ? 'Prediction export' : 'Player profile export') + '" readonly>') + '</div></section><aside class="report-summary-v64"><small>Player</small><h3>' + esc(playerName(p)) + '</h3><dl><div><dt>Overall</dt><dd>' + score(p.overall_rating) + '/100</dd></div><div><dt>Compatibility</dt><dd>' + score(p.compatibilityScore) + '/100</dd></div><div><dt>Evidence</dt><dd>' + esc(evidenceLabel(p)) + '</dd></div><div><dt>Usage</dt><dd>1 export</dd></div></dl></aside></div>' + actionFooter('Generate and download', 'data-generate-report'), function (m, close) { q(m, '[data-generate-report]').onclick = async function (e) { var done = pending(e.currentTarget, 'Generating…'); try {
         await createReport(bundle, q(m, '#reportFormat').value, source || 'profile');
         close();
@@ -768,19 +866,26 @@
         input.financialGoal = value; return input; }
     function demoPrediction(p, type, input) { var base = score(p.overall_rating), fit = type === 'Position fit' ? (input.targetPosition === position(p) ? base : Math.max(45, base - 12)) : type === 'Match scenario' ? Math.round((score(p.pace, base) + score(p.stamina, base) + score(p.composure, base)) / 3) : type === 'Development projection' ? Math.min(96, base + 7) : Math.round(p.compatibilityScore); return { type: predictionApiType(type), recommendation: fit >= 78 ? 'Strong decision-support signal' : fit >= 64 ? 'Proceed with defined safeguards' : 'More evidence required', summary: type + ' completed using the current player evidence and selected football context.', score: fit, targetScore: fit, scenarioScore: fit, confidence: { label: evidenceLabel(p) } }; }
     async function runPredictionFor(player, type, input) {
+        if (isPublicDemo()) {
+            incrementUsage('predictions');
+            var demoResult = demoPrediction(player, type, input);
+            await refreshUsage().catch(function () { });
+            return demoResult;
+        }
         const response = await request('POST', '/api/predictions/run', {
             playerId: player.id,
             predictionType: predictionApiType(type),
             inputParams: input
         });
+        await refreshUsage().catch(function () { });
         return response.result || response;
     }
     function predictionResultMarkup(result, p, type) { var value = result.targetScore || result.scenarioScore || result.score || result.projectedOverall || p.overall_rating; return '<section class="prediction-result-card"><div><small>' + esc(type) + '</small><h3>' + esc(result.recommendation || result.verdict || 'Prediction complete') + '</h3><p>' + esc(result.summary || 'The selected prediction has completed.') + '</p><span class="pill green">Confidence ' + esc(result.confidence && result.confidence.label || evidenceLabel(p)) + '</span></div><div class="prediction-result-metrics"><article><small>Player</small><b>' + esc(playerName(p)) + '</b></article><article><small>Prediction score</small><b>' + esc(value) + '/100</b></article><article><small>Current role</small><b>' + esc(position(p)) + '</b></article><article><small>Next action</small><b>Validate with football evidence</b></article></div></section>'; }
     function hydrateUsage(root, overview) {
-        var usage = overview && overview.usage || {};
-        var predictions = usageValue(usage, 'predictions', isDemo() ? 900 : 60);
-        var exports = usageValue(usage, 'exports', isDemo() ? 300 : 20);
-        var interests = usageValue(usage, 'interests', isDemo() ? 300 : 30);
+        var usage = state.usage || overview && overview.usage || emptyUsage('Unavailable');
+        var predictions = usageValue(usage, 'predictions', 0);
+        var exports = usageValue(usage, 'exports', 0);
+        var interests = usageValue(usage, 'interests', 0);
         var rows = qa(root, '.usage-row'), values = [predictions, exports, interests];
         rows.slice(0, 3).forEach(function (row, index) {
             var value = values[index], spans = qa(row, 'span'), bar = q(row, '.bar i'), strong = q(row, 'strong');
@@ -840,17 +945,43 @@
         }
         if (!data) {
             var fallbackTop = state.players.slice().sort(function (a, b) { return b.compatibilityScore - a.compatibilityScore; })[0];
-            data = { playerCount: state.players.length, usage: overview && overview.usage || demoUsage(), teamNeeds: [], nextActions: [{ kind: 'explore', priority: 1, title: 'No next steps right now', body: 'Explore the player database to identify the next recruitment target.', actionLabel: 'Explore player database', actionUrl: '/scout/player-search' }], topFit: fallbackTop ? { player: fallbackTop, score: fallbackTop.compatibilityScore, reason: 'Highest current compatibility against the saved recruitment brief.' } : null };
+            data = {
+                dashboardUnavailable: true,
+                playerCount: state.players.length,
+                activePipelineCount: 0,
+                usage: state.usage || overview && overview.usage || (isPublicDemo() ? demoUsage() : emptyUsage('Unavailable')),
+                teamNeeds: [],
+                nextActions: [{
+                    kind: 'load_error',
+                    priority: 100,
+                    title: 'Live dashboard actions could not load',
+                    body: 'ScoutLink could not verify the current pipeline actions. Reload the page rather than relying on a default recommendation.',
+                    actionLabel: 'Reload dashboard',
+                    actionUrl: '/scout/dashboard'
+                }],
+                topFit: fallbackTop ? {
+                    player: fallbackTop,
+                    score: fallbackTop.compatibilityScore,
+                    reason: 'Highest current compatibility in the loaded player dataset.'
+                } : null
+            };
         }
         state.dashboardData = data;
-        state.overview = Object.assign({}, overview || {}, { usage: data.usage });
+        state.usageBase = data.usage || state.usageBase || emptyUsage('Unavailable');
+        state.usage = isPublicDemo() ? applyDemoUsageDeltas(state.usageBase) : state.usageBase;
+        data.usage = state.usage;
+        state.overview = Object.assign({}, overview || {}, { usage: state.usage });
         var count = q(root, '[data-dashboard-player-count]');
         if (count)
             count.textContent = data.playerCount;
         var scope = q(root, '[data-dashboard-player-scope]');
         if (scope)
             scope.textContent = isDemo() ? 'Fictional demo players only' : 'Real players only';
-        var actions = data.nextActions || [], meaningful = actions.filter(function (action) { return action.kind !== 'explore'; });
+        var actions = data.nextActions || [];
+        if ((!actions.length || actions.every(function (action) { return action.kind === 'explore'; })) && num(data.activePipelineCount) > 0) {
+            actions = [{ kind: 'pipeline_review', priority: 20, title: 'Review the active recruitment pipeline', body: num(data.activePipelineCount) + ' active player interests need a confirmed next decision step.', actionLabel: 'Open pipeline', actionUrl: '/scout/pipeline' }];
+        }
+        var meaningful = actions.filter(function (action) { return action.kind !== 'explore'; });
         var actionCount = q(root, '[data-dashboard-action-count]');
         if (actionCount)
             actionCount.textContent = meaningful.length;
@@ -879,13 +1010,30 @@
         if (actionBody)
             actionBody.innerHTML = actions.map(function (action) { return '<article class="decision"><div><b>' + esc(action.title) + '</b><span>' + esc(action.body) + '</span></div><a class="btn small ' + (action.priority >= 80 ? 'primary' : '') + '" href="' + esc(action.actionUrl || '/scout/player-search') + '">' + esc(action.actionLabel || 'Open') + '</a></article>'; }).join('');
         var needs = q(root, '[data-dashboard-needs]'), needRows = data.teamNeeds || [];
-        if (needs)
-            needs.innerHTML = needRows.length ? ['weaknesses', 'roles', 'goals', 'positions', 'ages'].map(function (type) { var rows = needRows.filter(function (row) { return row.type === type; }); if (!rows.length)
-                return ''; var label = { weaknesses: 'Team weaknesses', roles: 'Role expectations', goals: 'Long-term goals', positions: 'Preferred positions', ages: 'Age groups' }[type]; return '<section class="need-group-v64"><h4>' + label + '</h4>' + rows.map(function (row) { var width = Math.min(100, Math.max(5, num(row.relevantPlayers) * 10)); return '<div class="coverage"><b>' + esc(row.need) + '</b><span>' + num(row.relevantPlayers) + ' matching player' + (num(row.relevantPlayers) === 1 ? '' : 's') + '</span><div class="bar"><i style="width:' + width + '%"></i></div></div>'; }).join('') + '</section>'; }).join('') : '<div class="empty structured"><b>No team needs saved</b><span>Complete Scout Setup to show each saved need and matching-player count.</span></div>';
+        if (needs) {
+            if (needRows.length) {
+                needs.innerHTML = ['weaknesses', 'roles', 'goals', 'positions', 'ages'].map(function (type) {
+                    var rows = needRows.filter(function (row) { return row.type === type; });
+                    if (!rows.length)
+                        return '';
+                    var label = { weaknesses: 'Team weaknesses', roles: 'Role expectations', goals: 'Long-term goals', positions: 'Preferred positions', ages: 'Age groups' }[type];
+                    return '<section class="need-group-v64"><h4>' + label + '</h4>' + rows.map(function (row) {
+                        var width = Math.min(100, Math.max(5, num(row.relevantPlayers) * 10));
+                        return '<div class="coverage"><b>' + esc(row.need) + '</b><span>' + num(row.relevantPlayers) + ' matching player' + (num(row.relevantPlayers) === 1 ? '' : 's') + '</span><div class="bar"><i style="width:' + width + '%"></i></div></div>';
+                    }).join('') + '</section>';
+                }).join('');
+            }
+            else if (data.dashboardUnavailable) {
+                needs.innerHTML = '<div class="empty structured"><b>Live team needs could not load</b><span>Reload the dashboard to read the saved Scout Setup and matching-player counts.</span></div>';
+            }
+            else {
+                needs.innerHTML = '<div class="empty structured"><b>No team needs saved</b><span>Complete Scout Setup to show each saved need and matching-player count.</span></div>';
+            }
+        }
         var usage = q(root, '[data-dashboard-usage]');
         if (usage) {
             var keys = [['predictions', 'Predictions'], ['exports', 'Exports'], ['interests', 'Pipeline interests']];
-            usage.innerHTML = keys.map(function (item) { var row = data.usage && data.usage[item[0]] || { used: 0, limit: 0, remaining: 0 }, pct = row.limit ? Math.round(row.used / row.limit * 100) : 0; return '<div class="usage-row"><div><b>' + item[1] + '</b><span>' + row.used + ' of ' + row.limit + ' used</span></div><div class="bar"><i style="width:' + pct + '%"></i></div><strong>' + row.remaining + ' left</strong></div>'; }).join('') + '<div class="usage-explainer"><b>One allowance source</b><span>Every Scout page reads these same totals.</span></div>';
+            usage.innerHTML = keys.map(function (item) { var row = data.usage && data.usage[item[0]] || { used: 0, limit: 0, remaining: 0 }, pct = row.limit ? Math.round(row.used / row.limit * 100) : 0; return '<div class="usage-row"><div><b>' + item[1] + '</b><span>' + row.used + ' of ' + row.limit + ' used</span></div><div class="bar"><i style="width:' + pct + '%"></i></div><strong>' + row.remaining + ' left</strong></div>'; }).join('') + '<div class="usage-explainer"><b>One ' + esc(data.usage && data.usage.scope === 'team' ? 'team' : 'Scout') + ' allowance source</b><span>The Dashboard, Predictions, Exports and Usage Requests pages read these exact totals.</span></div>';
         }
         var fit = q(root, '[data-dashboard-top-fit]');
         if (fit) {
@@ -1256,7 +1404,7 @@
         if (apiType === 'Attribute Development')
             input.focus = selects[3] && selects[3].value || 'Balanced growth';
         var result;
-        if (isDemo()) {
+        if (isPublicDemo()) {
             incrementUsage('predictions');
             result = { type: apiType, summary: apiType === 'Position Fit Projection' ? (input.targetPosition + ' fit scores ' + Math.max(45, p.overall_rating - 8) + '/100.') : 'Prediction completed from the current demo evidence.', recommendation: 'Validate the result through live observation.', confidence: { label: evidenceLabel(p) } };
         }
@@ -1639,7 +1787,7 @@
         });
     }
     function bindPredictions(root, overview) {
-        var usage = overview && overview.usage || {}, predictionUsage = usageValue(usage, 'predictions', isDemo() ? 900 : 60), metrics = qa(root, '.metric-grid .metric');
+        var usage = state.usage || overview && overview.usage || emptyUsage('Unavailable'), predictionUsage = usageValue(usage, 'predictions', 0), metrics = qa(root, '.metric-grid .metric');
         if (metrics[0]) {
             q(metrics[0], 'strong').textContent = predictionUsage.used + ' / ' + predictionUsage.limit;
             q(metrics[0], 'span').textContent = predictionUsage.remaining + ' remaining';
@@ -1691,6 +1839,7 @@
                     });
                     if (response.contentBase64)
                         downloadBase64(response.filename, response.mime, response.contentBase64);
+                    await refreshUsage(root).catch(function () { });
                     toast('Report downloaded.');
                 }
                 catch (error) {
@@ -2283,6 +2432,31 @@
     }
     function bindSettings(root, overview) {
         hydrateUsage(root, overview);
+        var usage = state.usage || overview && overview.usage || emptyUsage('Unavailable');
+        var settingMetrics = qa(root, '.metric-grid.compact .metric');
+        var settingRows = [
+            usageValue(usage, 'predictions', 0),
+            usageValue(usage, 'exports', 0),
+            usageValue(usage, 'interests', 0)
+        ];
+        settingRows.forEach(function (row, index) {
+            if (!settingMetrics[index])
+                return;
+            var strong = q(settingMetrics[index], 'strong');
+            var span = q(settingMetrics[index], 'span');
+            if (strong)
+                strong.textContent = row.used + ' / ' + row.limit;
+            if (span)
+                span.textContent = row.remaining + ' remaining';
+        });
+        if (settingMetrics[3]) {
+            var resetStrong = q(settingMetrics[3], 'strong');
+            var resetSpan = q(settingMetrics[3], 'span');
+            if (resetStrong)
+                resetStrong.textContent = usage.resetAt ? dateText(usage.resetAt) : 'Not scheduled';
+            if (resetSpan)
+                resetSpan.textContent = usage.scope === 'team' ? 'Team plan renewal' : 'Scout plan renewal';
+        }
         var tabs = qa(root, '.settings-tabs button'), layout = q(root, '.settings-layout'), accountHtml = layout.innerHTML;
         function row(title, copy, control) { return '<div class="settings-row"><div><b>' + esc(title) + '</b><span>' + esc(copy) + '</span></div>' + control + '</div>'; }
         function panelMarkup(title, body) { return '<section class="panel"><header class="panel-head"><div><h3>' + esc(title) + '</h3></div></header><div class="panel-body">' + body + '</div></section>'; }
@@ -2519,6 +2693,7 @@
         btn.onclick = async function () { var done = pending(btn, 'Exporting…'); try {
             var response = await request('POST', '/api/exports/pipeline', { format: 'Excel' });
             downloadBase64(response.filename, response.mime, response.contentBase64);
+            await refreshUsage().catch(function () { });
             toast('Pipeline exported with compatibility and counted as one export.');
         }
         catch (error) {
