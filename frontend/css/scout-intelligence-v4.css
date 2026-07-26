@@ -975,3 +975,74 @@
   .scout-live-modal-body,.si4-modal-body{padding:16px!important}
   .top-fit-actions{grid-template-columns:1fr}
 }
+
+
+/* ScoutLink V6.5 strict readability and requested corrections */
+#scoutExperienceApp,
+#scoutExperienceApp .slv6-approved,
+#scoutExperienceApp .slv6-approved * {
+  font-size:10px !important;
+}
+#scoutExperienceApp .workspace-top h1{font-size:16px !important}
+#scoutExperienceApp .logo{font-size:21px !important}
+#scoutExperienceApp h1{font-size:24px !important;line-height:1.15}
+#scoutExperienceApp h2{font-size:22px !important;line-height:1.2}
+#scoutExperienceApp h3{font-size:13px !important;line-height:1.25}
+#scoutExperienceApp h4{font-size:11px !important;line-height:1.3}
+#scoutExperienceApp .hero h2{font-size:23px !important}
+#scoutExperienceApp .metric strong{font-size:22px !important}
+#scoutExperienceApp .profile-person h2{font-size:20px !important}
+#scoutExperienceApp .profile-score b{font-size:24px !important}
+#scoutExperienceApp select,
+#scoutExperienceApp select option,
+#scoutExperienceApp input,
+#scoutExperienceApp textarea,
+#scoutExperienceApp button,
+#scoutExperienceApp a,
+#scoutExperienceApp table,
+#scoutExperienceApp th,
+#scoutExperienceApp td,
+#scoutExperienceApp small,
+#scoutExperienceApp label,
+#scoutExperienceApp p,
+#scoutExperienceApp span {font-size:10px !important}
+#scoutExperienceApp select option{font-size:10px !important}
+#scoutExperienceApp .side-link,
+#scoutExperienceApp .bottom-link,
+#scoutExperienceApp .nav-label{font-size:10px !important}
+#scoutExperienceApp .initials{font-size:10px !important}
+#scoutExperienceApp .dashboard-compatible-panel table td{vertical-align:middle}
+#scoutExperienceApp .dashboard-compatible-panel .player-cell span{font-size:10px !important}
+#scoutExperienceApp .need-group-v64{display:grid;gap:8px;margin-bottom:14px}
+#scoutExperienceApp .need-group-v64:last-child{margin-bottom:0}
+#scoutExperienceApp .need-group-v64 h4{margin:0;color:#52677b;text-transform:uppercase;letter-spacing:.45px}
+#scoutExperienceApp .coverage{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+#scoutExperienceApp .coverage .bar{grid-column:1/-1}
+#scoutExperienceApp .decision{min-height:62px}
+#scoutExperienceApp .upcoming-priority-panel .fixture-summary{display:grid;gap:7px}
+#scoutExperienceApp .upcoming-priority-panel .fixture-summary .btn{justify-self:start}
+#scoutExperienceApp .player-context-chat{height:calc(100vh - 125px);min-height:560px}
+#scoutExperienceApp .player-context-chat .conversation{grid-template-columns:34px minmax(0,1fr) auto}
+#scoutExperienceApp .player-context-chat .conversation small{display:block;margin-top:3px;color:#75879a}
+#scoutExperienceApp .chat-search{display:grid;gap:5px;padding:10px;border-bottom:1px solid var(--line)}
+#scoutExperienceApp .chat-search input{height:36px;padding:0 10px;border:1px solid var(--line);border-radius:9px}
+#scoutExperienceApp .chat-player-context{padding:12px;border-bottom:1px solid var(--line);background:#f7fbf9}
+#scoutExperienceApp .chat-context-player{display:grid;grid-template-columns:36px minmax(0,1fr);gap:9px;align-items:center}
+#scoutExperienceApp .chat-context-player small,
+#scoutExperienceApp .chat-context-player b,
+#scoutExperienceApp .chat-context-player span{display:block}
+#scoutExperienceApp .chat-player-context p{margin:8px 0 0;color:var(--muted);line-height:1.5}
+#scoutExperienceApp .msg{max-width:72%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+#scoutExperienceApp .msg.outgoing{margin-left:auto;background:#e8f7f1;border-color:#b9e3d5}
+#scoutExperienceApp .msg small,#scoutExperienceApp .msg p,#scoutExperienceApp .msg time{display:block;margin:0}
+#scoutExperienceApp .msg small{font-weight:900;color:#52677b}
+#scoutExperienceApp .msg p{margin-top:5px;line-height:1.5}
+#scoutExperienceApp .msg time{margin-top:5px;color:#75879a}
+#scoutExperienceApp .pagination,
+#scoutExperienceApp .search-pagination{justify-content:center !important}
+@media(max-width:767px){
+ #scoutExperienceApp .player-context-chat{height:calc(100dvh - 125px);min-height:0}
+ #scoutExperienceApp h2{font-size:20px !important}
+ #scoutExperienceApp h3{font-size:13px !important}
+}
+
