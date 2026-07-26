@@ -6,48 +6,68 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Usage requests | ScoutLink</title>
   <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/scout-experience-exact-v3.css">
+  <link rel="stylesheet" href="/frontend/css/scout-intelligence-v4.css">
   <link rel="stylesheet" href="/frontend/css/usage-requests-v1.css">
 </head>
-<body data-usage-role="scout">
+<body class="scout-experience-body usage-page scout-usage-page" data-usage-role="scout">
   <a class="si4-screen-reader-only" href="#usageMain">Skip to usage requests</a>
-  <div class="ur-shell">
-    <aside class="ur-sidebar">
-      <a class="ur-logo" href="/scout/dashboard">Scout<span>Link</span></a>
-      <nav class="ur-nav" aria-label="Scout workspace">
-        <a href="/scout/dashboard">Dashboard</a>
-        <a href="/scout/player-search">Player search</a>
-        <a href="/scout/pipeline">My pipeline</a>
-        <a href="/scout/rankings">Rankings</a>
-        <a href="/scout/fixtures">Fixtures</a>
-        <a href="/scout/predictions">Predictions</a>
-        <a href="/scout/exports">Exports</a>
-        <a href="/scout/compare-players">Compare players</a>
-        <a href="/scout/setup">Scout setup</a>
-        <a href="/scout/events">Events</a>
-        <a href="/scout/chat">Chat</a>
-        <a href="/scout/notifications">Notifications</a>
-        <a class="active" href="/scout/usage-requests" aria-current="page">Usage requests</a>
-        <a href="/scout/settings">Settings</a>
+
+  <div class="scout-page usage-shell">
+    <aside class="sidebar">
+      <div class="side-logo">
+        <a class="logo" href="/scout/dashboard">Scout<span>Link</span></a>
+      </div>
+
+      <nav class="side-nav" aria-label="Scout workspace">
+        <div class="nav-label">Core</div>
+        <a class="side-link" href="/scout/dashboard"><span class="side-icon">DB</span>Dashboard</a>
+        <a class="side-link" href="/scout/player-search"><span class="side-icon">PS</span>Player search</a>
+        <a class="side-link" href="/scout/pipeline"><span class="side-icon">MP</span>My pipeline</a>
+        <a class="side-link" href="/scout/rankings"><span class="side-icon">RK</span>Rankings</a>
+
+        <div class="nav-label">Scouting tools</div>
+        <a class="side-link" href="/scout/fixtures"><span class="side-icon">FX</span>Fixtures</a>
+        <a class="side-link" href="/scout/predictions"><span class="side-icon">PR</span>Predictions</a>
+        <a class="side-link" href="/scout/exports"><span class="side-icon">EX</span>Exports</a>
+        <a class="side-link" href="/scout/compare-players"><span class="side-icon">CP</span>Compare players</a>
+        <a class="side-link" href="/scout/setup"><span class="side-icon">SS</span>Scout setup</a>
+
+        <div class="nav-label">Network</div>
+        <a class="side-link" href="/scout/events"><span class="side-icon">EV</span>Events</a>
+        <a class="side-link" href="/scout/chat"><span class="side-icon">CH</span>Chat</a>
+        <a class="side-link" href="/scout/notifications"><span class="side-icon">NT</span>Notifications</a>
+        <a class="side-link" href="/scout/report-a-concern"><span class="side-icon">RC</span>Report a Concern</a>
+
+        <div class="nav-label">Account</div>
+        <a class="side-link active usage-request-link" href="/scout/usage-requests" aria-current="page" data-usage-request-nav="1"><span class="side-icon">UR</span>Usage requests</a>
+        <a class="side-link" href="/scout/settings"><span class="side-icon">ST</span>Settings</a>
       </nav>
-      <div class="ur-user">
-        <span>SL</span>
+
+      <div class="side-user">
+        <div class="user-avatar">SL</div>
         <div>
           <b data-current-user>Scout account</b>
-          <small>Scout workspace</small>
+          <span>Scout workspace</span>
         </div>
       </div>
     </aside>
 
-    <main class="ur-main" id="usageMain">
-      <header class="ur-topbar">
-        <div>
-          <small>Scout workspace</small>
-          <h1>Usage requests</h1>
+    <section class="workspace">
+      <header class="workspace-top">
+        <h1>Usage requests</h1>
+        <div class="top-actions">
+          <a class="btn sm" href="/scout/setup">Scout team</a>
+          <a class="btn sm" href="/scout/notifications">Notifications</a>
+          <button class="btn sm primary" type="button" data-new-request>New request</button>
         </div>
-        <button class="ur-btn primary" type="button" data-new-request>New request</button>
       </header>
 
-      <section class="ur-content">
+      <main class="content ur-content" id="usageMain">
         <header class="ur-hero">
           <div>
             <small>Allowance tracking</small>
@@ -57,15 +77,15 @@
           <button class="ur-btn primary" type="button" data-new-request>New request</button>
         </header>
 
-        <section class="ur-card ur-list">
+        <section class="ur-card ur-current-usage">
           <header class="ur-card-head">
             <div>
               <h3>Current plan and usage</h3>
               <p>These are the same live totals shown on the Dashboard, Predictions and Exports pages.</p>
             </div>
           </header>
-          <p><b data-usage-plan>Loading plan</b> · Team allowance totals</p>
-          <div class="ur-metrics">
+          <p class="ur-plan-line"><b data-usage-plan>Loading plan</b> · Team allowance totals</p>
+          <div class="ur-metrics ur-usage-metrics">
             <article class="ur-metric">
               <small>Prediction credits</small>
               <b data-usage-predictions-used>0 of 0 used</b>
@@ -84,7 +104,7 @@
           </div>
         </section>
 
-        <section class="ur-metrics">
+        <section class="ur-metrics ur-summary-metrics">
           <article class="ur-metric">
             <small>Pending review</small>
             <b data-summary-pending>0</b>
@@ -119,24 +139,25 @@
               <div class="ur-empty">Loading requests…</div>
             </div>
           </aside>
+
           <section class="ur-card ur-detail" data-request-detail>
             <div class="ur-empty">Select a request to see its full timeline.</div>
           </section>
         </section>
-      </section>
-    </main>
+      </main>
+    </section>
+
+    <nav class="mobile-bottom" aria-label="Scout mobile navigation">
+      <a class="bottom-link" href="/scout/dashboard"><i>⌂</i>Home</a>
+      <a class="bottom-link" href="/scout/player-search"><i>⌕</i>Search</a>
+      <a class="bottom-link" href="/scout/pipeline"><i>♡</i>Pipeline</a>
+      <a class="bottom-link" href="/scout/chat"><i>◫</i>Chat</a>
+      <a class="bottom-link active" href="/scout/usage-requests"><i>UR</i>Requests</a>
+    </nav>
   </div>
 
-  <nav class="ur-mobile-nav">
-    <a href="/scout/dashboard">Home</a>
-    <a href="/scout/player-search">Search</a>
-    <a href="/scout/pipeline">Pipeline</a>
-    <a href="/scout/chat">Chat</a>
-    <a href="/scout/settings">More</a>
-  </nav>
-
   <script src="/frontend/js/main.js"></script>
+  <script src="/frontend/js/workspace-loading-v1.js"></script>
   <script src="/frontend/js/usage-requests-v1.js"></script>
 </body>
 </html>
-
