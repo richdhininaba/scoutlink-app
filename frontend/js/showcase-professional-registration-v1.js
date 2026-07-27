@@ -9,8 +9,11 @@
     }
   }());
 
-  var STORAGE_KEY = 'stratex_showcase_professional_registration_v1';
+  var STORAGE_KEY = 'stratex_showcase_professional_registration_v2';
+  var MOBILE_BREAKPOINT = 760;
   var root = document.getElementById('showcaseApp');
+  var lastMobile = window.matchMedia('(max-width:' + MOBILE_BREAKPOINT + 'px)').matches;
+  var resizeTimer = null;
   var state = {
     step: 0,
     status: '',
@@ -43,23 +46,31 @@
 
   function saveState() {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step: state.step,
+        status: state.status,
+        event: state.event,
+        capacity: state.capacity,
+        data: state.data,
+        result: state.result
+      }));
     } catch (_) {
-      // Browser storage is optional.
+      // Registration continues when browser storage is unavailable.
     }
   }
 
   function restoreState() {
     try {
       var saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null');
-      if (saved && saved.data) {
-        state.step = Number(saved.step) || 0;
-        state.status = saved.status || '';
-        state.data = Object.assign(state.data, saved.data);
-        state.result = saved.result || null;
-      }
+      if (!saved || !saved.data) return;
+      state.step = Number(saved.step) || 0;
+      state.status = saved.status || '';
+      state.event = saved.event || null;
+      state.capacity = saved.capacity || null;
+      state.data = Object.assign(state.data, saved.data);
+      state.result = saved.result || null;
     } catch (_) {
-      // Ignore invalid browser state.
+      // Ignore invalid saved browser state.
     }
   }
 
@@ -68,13 +79,19 @@
     if (path.indexOf('/complete') >= 0) return 'complete';
     if (path.indexOf('/sold-out') >= 0) return 'sold-out';
     var step = Number(new URLSearchParams(window.location.search).get('step'));
-    return [1, 2].includes(step) ? step : 0;
+    return [1, 2].indexOf(step) >= 0 ? step : 0;
   }
 
   function updateUrl(value) {
     var base = '/showcase-event/coach-scout-registration';
-    if (value === 'complete') return history.pushState({}, '', base + '/complete');
-    if (value === 'sold-out') return history.pushState({}, '', base + '/sold-out');
+    if (value === 'complete') {
+      history.pushState({}, '', base + '/complete');
+      return;
+    }
+    if (value === 'sold-out') {
+      history.pushState({}, '', base + '/sold-out');
+      return;
+    }
     history.pushState({}, '', value ? base + '?step=' + value : base);
   }
 
@@ -97,9 +114,7 @@
   }
 
   function eventDateValue() {
-    return state.event && state.event.eventDate
-      ? state.event.eventDate
-      : '2026-09-12';
+    return state.event && state.event.eventDate ? state.event.eventDate : '2026-09-12';
   }
 
   function eventDateLabel() {
@@ -114,23 +129,11 @@
     });
   }
 
-  function eventDateShortLabel() {
-    var date = new Date(eventDateValue() + 'T12:00:00Z');
-    if (Number.isNaN(date.getTime())) return '12 September 2026';
-    return date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC'
-    });
-  }
-
   function formatTime(value, fallback) {
     var match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
     if (!match) return fallback;
     var hour = Number(match[1]);
-    var suffix = hour >= 12 ? 'PM' : 'AM';
-    return (hour % 12 || 12) + ':' + match[2] + ' ' + suffix;
+    return (hour % 12 || 12) + ':' + match[2] + ' ' + (hour >= 12 ? 'PM' : 'AM');
   }
 
   function professionalArrivalLabel() {
@@ -138,9 +141,7 @@
   }
 
   function professionalCapacity() {
-    return Number(state.capacity && state.capacity.limit) ||
-      Number(state.event && state.event.professionalCapacity) ||
-      30;
+    return Number(state.capacity && state.capacity.limit) || Number(state.event && state.event.professionalCapacity) || 30;
   }
 
   function publicHeader() {
@@ -202,18 +203,16 @@
   }
 
   function landingContent() {
-    var count = state.capacity ? state.capacity.confirmed : 0;
-    var limit = professionalCapacity();
     return '<header class="registration-intro"><span class="section-kicker">Coach and scout registration</span><h2>Find top talent live</h2><p>Watch players in person, meet grassroots coaches and discover players with structured ScoutLink context.</p></header>' +
       '<section class="professional-value"><article><span>01</span><div><b>Watch live</b><small>See players perform beyond a profile.</small></div></article><article><span>02</span><div><b>Meet coaches</b><small>Build direct grassroots relationships.</small></div></article><article><span>03</span><div><b>Register free</b><small>No ticket or platform payment required.</small></div></article></section>' +
-      '<section class="capacity-warning"><div><small>Professional capacity</small><b>' + count + ' of ' + limit + ' coach and scout spaces used</b></div><span>Limited</span></section>' +
+      '<section class="capacity-warning"><div><small>Professional capacity</small><b>Coach and Scout spaces are almost at capacity</b></div><span>Limited</span></section>' +
       '<div class="primary-cta-block"><button class="btn primary large" type="button" data-action="start">Register as a coach or scout</button><small>Please register only if you are confident you can attend.</small></div>';
   }
 
   function detailsContent() {
     return progress(1) +
       '<header class="form-heading"><span class="section-kicker">Step 1</span><h2>Your professional details</h2><p>Tell us who you are and which team or organisation you represent.</p></header>' +
-      '<form data-professional-form="details"><div class="two-col">' +
+      '<form data-professional-form="details" novalidate><div class="two-col">' +
         field('First name', 'firstName', 'text', state.data.firstName) +
         field('Last name', 'lastName', 'text', state.data.lastName) +
         field('Email address', 'email', 'email', state.data.email) +
@@ -230,137 +229,196 @@
 
   function attendanceContent() {
     return progress(2) +
-      '<header class="form-heading"><span class="section-kicker">Final step</span><h2>Confirm your attendance</h2><p>There are only ' + professionalCapacity() + ' combined spaces for coaches and scouts.</p></header>' +
-      '<form data-professional-form="attendance"><section class="attendance-card professional"><div class="date-block"><b>12</b><span>SEP</span></div><div><small>Coach and scout arrival</small><h3>' + escapeHtml(eventDateLabel()) + ' · ' + escapeHtml(professionalArrivalLabel()) + '</h3><p>' + escapeHtml(eventAddress()) + '</p></div></section>' +
-      '<section class="limited-space-message"><span>Limited spaces</span><p>Please only confirm if you are 100% sure you can attend. Once ' + professionalCapacity() + ' places are taken, new registrations move to the sold-out waitlist.</p></section>' +
+      '<header class="form-heading"><span class="section-kicker">Final step</span><h2>Confirm your attendance</h2><p>Coach and Scout spaces are almost at capacity, so please only confirm if you can attend.</p></header>' +
+      '<form data-professional-form="attendance" novalidate><section class="attendance-card professional"><div class="date-block"><b>12</b><span>SEP</span></div><div><small>Coach and scout arrival</small><h3>' + escapeHtml(eventDateLabel()) + ' · ' + escapeHtml(professionalArrivalLabel()) + '</h3><p>' + escapeHtml(eventAddress()) + '</p></div></section>' +
+      '<section class="limited-space-message"><span>Limited spaces</span><p>Please only confirm if you are 100% sure you can attend. Once the available places are taken, new registrations move to the waitlist.</p></section>' +
       '<section class="confirmation-list"><label class="check-row"><input type="checkbox" name="attendanceConfirmed" ' + (state.data.attendanceConfirmed ? 'checked' : '') + '><span><b>I am 100% sure I can attend Ballerz Air Dome at ' + escapeHtml(professionalArrivalLabel()) + ' on ' + escapeHtml(eventDateLabel()) + '.</b><small>Please check your travel before submitting.</small></span></label></section>' +
-      '<section class="review-summary"><header><span>Registration summary</span><button type="button" data-action="edit">Edit</button></header><dl><div><dt>Name</dt><dd>' + escapeHtml(state.data.firstName + ' ' + state.data.lastName) + '</dd></div><div><dt>Organisation</dt><dd>' + escapeHtml(state.data.teamName) + '</dd></div><div><dt>Role</dt><dd>' + escapeHtml(roleDisplay(state.data.role)) + '</dd></div><div><dt>Cost</dt><dd>Free</dd></div></dl></section><div class="form-message" data-form-message hidden></div></form>';
+      '<section class="review-summary"><header><span>Registration summary</span><button type="button" data-action="edit">Edit</button></header><dl><div><dt>Name</dt><dd>' + escapeHtml(state.data.firstName + ' ' + state.data.lastName) + '</dd></div><div><dt>Role</dt><dd>' + escapeHtml(roleDisplay(state.data.role)) + '</dd></div><div><dt>Team or organisation</dt><dd>' + escapeHtml(state.data.teamName) + '</dd></div><div><dt>Email</dt><dd>' + escapeHtml(state.data.email) + '</dd></div></dl></section>' +
+      '<div class="form-message" data-form-message hidden></div></form>';
   }
 
-  function soldOutContent() {
-    var count = state.capacity ? state.capacity.confirmed : 30;
-    var limit = professionalCapacity();
-    return '<header class="registration-intro"><span class="section-kicker danger">Professional spaces full</span><h2>This event is sold out</h2><p>All ' + limit + ' coach and scout spaces have been taken. Join the waitlist and we will contact you if a place opens or when the next showcase is available.</p></header>' +
-      '<section class="sold-out-count"><div><small>Current professional capacity</small><b>' + count + ' / ' + limit + '</b></div><span>Sold out</span></section>' +
-      '<form data-professional-form="waitlist"><section class="form-section"><span class="section-label">Join the waitlist</span><div class="two-col">' +
-        field('First name', 'firstName', 'text', state.data.firstName) +
-        field('Last name', 'lastName', 'text', state.data.lastName) +
-        field('Email address', 'email', 'email', state.data.email) +
-        field('Phone number', 'phone', 'tel', state.data.phone) +
-      '</div>' +
-      field('Team or organisation name', 'teamName', 'text', state.data.teamName) +
-      '<span class="section-label">Primary role</span><div class="choice-grid">' +
-        choiceCard('coach', 'C', 'Coach', 'Join the coach waitlist') +
-        choiceCard('scout', 'S', 'Scout', 'Join the scout waitlist') +
-        choiceCard('both', 'B', 'Both', 'You work across both roles') +
-      '</div></section><div class="form-message" data-form-message hidden></div></form>' +
-      '<button class="btn primary large" type="button" data-action="join-waitlist">Join the waitlist</button><small class="centred-note">Joining the waitlist is free and does not guarantee a place.</small>';
-  }
-
-  function successContent() {
+  function completeContent() {
     var result = state.result || {};
     var attendee = result.attendee || {};
-    if (result.status === 'waitlisted') {
-      return '<section class="success-mark">✓</section><header class="registration-intro centred"><span class="section-kicker">Waitlist received</span><h2>You are on the professional waitlist</h2><p>We will contact you if a place becomes available or when the next showcase opens.</p></header><section class="ticket-panel"><div><small>Attendee</small><b>' + escapeHtml((attendee.firstName || state.data.firstName) + ' ' + (attendee.lastName || state.data.lastName)) + '</b></div><div><small>Role</small><b>' + escapeHtml(attendee.role || roleDisplay(state.data.role)) + '</b></div><div><small>Reference</small><b>' + escapeHtml(result.registrationReference || 'Saved') + '</b></div><div><small>Status</small><b>Waitlisted</b></div></section><a class="btn primary large" href="/">Return to Stratex Analytics</a>';
-    }
-    return '<section class="success-mark">✓</section><header class="registration-intro centred"><span class="section-kicker">Registration received</span><h2>Your showcase place is recorded</h2><p>We have emailed your event details. Please tell us quickly if your availability changes.</p></header>' +
-      '<section class="ticket-panel"><div><small>Attendee</small><b>' + escapeHtml((attendee.firstName || state.data.firstName) + ' ' + (attendee.lastName || state.data.lastName) + ' · ' + (attendee.role || roleDisplay(state.data.role))) + '</b></div><div><small>Organisation</small><b>' + escapeHtml(attendee.teamName || state.data.teamName) + '</b></div><div><small>Arrival</small><b>' + escapeHtml(eventDateShortLabel()) + ' · ' + escapeHtml(professionalArrivalLabel()) + '</b></div><div><small>Cost</small><b>Free</b></div></section>' +
-      '<section class="next-steps"><b>Before the event</b><ol><li>Save the venue address.</li><li>Bring professional identification where appropriate.</li><li>Look out for event updates by email.</li></ol></section><a class="btn primary large" href="/">Return to Stratex Analytics</a>';
+    return '<section class="success-mark">✓</section>' +
+      '<header class="registration-intro centred"><span class="section-kicker">Registration confirmed</span><h2>You are registered for the ScoutLink showcase</h2><p>Keep the event details below and check your email for confirmation.</p></header>' +
+      '<section class="ticket-panel"><div><small>Attendee</small><b>' + escapeHtml((attendee.firstName || state.data.firstName) + ' ' + (attendee.lastName || state.data.lastName)) + '</b></div><div><small>Role</small><b>' + escapeHtml(attendee.role || roleDisplay(state.data.role)) + '</b></div><div><small>Reference</small><b>' + escapeHtml(result.registrationReference || 'Saved') + '</b></div><div><small>Arrival</small><b>' + escapeHtml(professionalArrivalLabel()) + '</b></div></section>' +
+      '<section class="next-steps"><b>Before the event</b><ol><li>Save the venue address and arrival time.</li><li>Bring identification connected to your registration.</li><li>Contact Stratex if your attendance changes.</li></ol></section>' +
+      '<a class="btn primary large" href="/">Return to Stratex Analytics</a>';
   }
 
-  function content() {
-    if (state.status === 'complete') return successContent();
-    if (state.status === 'sold-out') return soldOutContent();
+  function waitlistContent() {
+    var result = state.result || {};
+    return '<header class="registration-intro centred"><span class="section-kicker danger">Professional waitlist</span><h2>The confirmed coach and scout spaces are full</h2><p>Your details have been added to the waitlist. Stratex will contact you if a place becomes available.</p></header>' +
+      '<section class="sold-out-count"><div><small>Waitlist reference</small><b>' + escapeHtml(result.registrationReference || 'Saved') + '</b></div><span>Waitlist</span></section>' +
+      '<section class="support-panel"><b>Do not travel without confirmation</b><p>A waitlist registration is not an event place. Wait for an email or phone call from Stratex before attending.</p></section>' +
+      '<a class="btn primary large" href="/">Return to Stratex Analytics</a>';
+  }
+
+  function currentContent() {
+    if (state.status === 'complete') return completeContent();
+    if (state.status === 'sold-out') return waitlistContent();
     if (state.step === 1) return detailsContent();
     if (state.step === 2) return attendanceContent();
     return landingContent();
   }
 
-  function titlePair() {
-    if (state.status === 'sold-out') return ['Still looking for players?', 'Join the waitlist for this showcase and the next available event.'];
-    if (state.status === 'complete') return ['See the talent live.', 'Your free registration has been received.'];
-    if (state.step === 2) return ['Find top talent live.', 'Please confirm only if the date, time and travel work for you.'];
-    return ['Looking for players?', 'Find top talent live at a free ScoutLink showcase built for coaches and scouts.'];
+  function titles() {
+    if (state.status === 'complete') return ['See the next generation live.', 'Your free coach or scout registration is confirmed.'];
+    if (state.status === 'sold-out') return ['Stay close to the action.', 'Your registration is on the coach and scout waitlist.'];
+    if (state.step === 2) return ['One final confirmation.', 'Check the date, time and venue before submitting.'];
+    return ['Be there when talent gets noticed.', 'Watch live football, meet coaches and discover players with more context.'];
   }
 
-  function actionFooter() {
+  function actions() {
     if (state.status || state.step === 0) return '';
     var back = '<button class="btn secondary" type="button" data-action="back">Back</button>';
     if (state.step === 1) return back + '<button class="btn primary" type="button" data-action="continue">Continue to attendance</button>';
-    return back + '<button class="btn primary" type="button" data-action="submit" ' + (state.submitting ? 'disabled' : '') + '>' + (state.submitting ? 'Submitting…' : 'Submit free registration') + '</button>';
+    return back + '<button class="btn primary" type="button" data-action="submit" ' + (state.submitting ? 'disabled' : '') + '>' + (state.submitting ? 'Submitting…' : 'Confirm free registration') + '</button>';
   }
 
-  function render() {
-    var pair = titlePair();
-    var pageContent = content();
-    root.innerHTML = '<section class="showcase-desktop-only public-page desktop">' + publicHeader() + '<main class="public-main">' + campaignPanel(pair[0], pair[1]) + '<section class="registration-panel ' + ((state.step === 0 || state.status) ? 'compact' : '') + '">' + pageContent + (actionFooter() ? '<footer class="form-actions">' + actionFooter() + '</footer>' : '') + '</section></main>' + publicFooter() + '</section>' +
-      '<section class="showcase-mobile-only public-page mobile">' + mobileHeader() + '<main class="mobile-public-main">' + mobileCampaign(pair[0], state.step ? 'Step ' + state.step + ' of 2' : pair[1]) + '<section class="mobile-registration-content">' + pageContent + '</section></main>' +
-      (state.step === 0 && !state.status ? '<footer class="mobile-sticky-actions"><button class="btn primary" type="button" data-action="start">Register free</button></footer>' : actionFooter() ? '<footer class="mobile-sticky-actions">' + actionFooter() + '</footer>' : '') + '</section>';
+  function render(options) {
+    options = options || {};
+    var titlePair = titles();
+    var content = currentContent();
+    var footerActions = actions();
+    root.innerHTML =
+      '<section class="showcase-desktop-only public-page desktop">' + publicHeader() + '<main class="public-main">' + campaignPanel(titlePair[0], titlePair[1]) + '<section class="registration-panel ' + ((state.step === 0 || state.status) ? 'compact' : '') + '">' + content + (footerActions ? '<footer class="form-actions">' + footerActions + '</footer>' : '') + '</section></main>' + publicFooter() + '</section>' +
+      '<section class="showcase-mobile-only public-page mobile">' + mobileHeader() + '<main class="mobile-public-main">' + mobileCampaign(titlePair[0], state.step ? 'Step ' + state.step + ' of 2' : titlePair[1]) + '<section class="mobile-registration-content">' + content + '</section></main>' +
+        (state.step === 0 && !state.status ? '<footer class="mobile-sticky-actions"><button class="btn primary" type="button" data-action="start">Start registration</button></footer>' : footerActions ? '<footer class="mobile-sticky-actions">' + footerActions + '</footer>' : '') +
+      '</section>';
     bindEvents();
+    if (options.top) scrollCurrentContainerToTop();
   }
 
-  function collect() {
-    document.querySelectorAll('[name]').forEach(function (input) {
-      if (input.type === 'checkbox') state.data[input.name] = input.checked;
-      else if (input.type === 'radio') {
+  function activePage() {
+    var selector = window.matchMedia('(max-width:' + MOBILE_BREAKPOINT + 'px)').matches ? '.showcase-mobile-only' : '.showcase-desktop-only';
+    return root.querySelector(selector) || root;
+  }
+
+  function activeForm() {
+    var page = activePage();
+    return page.querySelector('form') || page;
+  }
+
+  function collectActiveInputs() {
+    var scope = activeForm();
+    scope.querySelectorAll('[name]').forEach(function (input) {
+      if (input.type === 'checkbox') {
+        state.data[input.name] = input.checked;
+      } else if (input.type === 'radio') {
         if (input.checked) state.data[input.name] = input.value;
-      } else state.data[input.name] = input.value;
+      } else {
+        state.data[input.name] = input.value;
+      }
     });
     saveState();
   }
 
-  function setMessage(message, success) {
-    document.querySelectorAll('[data-form-message]').forEach(function (node) {
-      node.hidden = !message;
-      node.textContent = message || '';
-      node.classList.toggle('success', !!success);
+  function syncRoleCards() {
+    var page = activePage();
+    page.querySelectorAll('[name="role"]').forEach(function (input) {
+      var card = input.closest('.choice-card');
+      if (card) card.classList.toggle('selected', input.checked);
     });
   }
 
+  function scrollCurrentContainerToTop() {
+    var page = activePage();
+    var scroller = page.querySelector('.mobile-public-main') || page.querySelector('.registration-panel');
+    if (scroller) scroller.scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setMessage(message, success) {
+    var node = activePage().querySelector('[data-form-message]');
+    if (!node) return;
+    node.hidden = !message;
+    node.textContent = message || '';
+    node.classList.toggle('success', !!success);
+    if (message) node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function validEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  }
+
   function validateDetails() {
-    collect();
-    if (!state.data.firstName || !state.data.lastName || !state.data.email || !state.data.phone || !state.data.teamName) return 'Complete every professional registration field.';
-    if (!state.data.role) return 'Choose Coach, Scout or Both.';
+    collectActiveInputs();
+    if (!String(state.data.firstName || '').trim() || !String(state.data.lastName || '').trim()) return 'Enter the first name and last name.';
+    if (!validEmail(state.data.email)) return 'Enter a valid email address.';
+    if (!String(state.data.phone || '').trim()) return 'Enter a phone number.';
+    if (!String(state.data.teamName || '').trim()) return 'Enter the team or organisation name.';
+    if (['coach', 'scout', 'both'].indexOf(state.data.role) < 0) return 'Choose Coach, Scout or Both.';
     return '';
   }
 
-  async function submit() {
-    collect();
-    if (!state.data.attendanceConfirmed) return setMessage('Only register if you are 100% sure you can attend at ' + professionalArrivalLabel() + '.', false);
+  function validateAttendance() {
+    collectActiveInputs();
+    if (!state.data.attendanceConfirmed) return 'Confirm that you are 100% sure you can attend at ' + professionalArrivalLabel() + '.';
+    return '';
+  }
+
+  async function fetchJson(url, options, fallbackMessage) {
+    var response;
+    try {
+      response = await fetch(url, options || {});
+    } catch (_) {
+      throw new Error(fallbackMessage || 'The registration service could not be reached. Check your connection and try again.');
+    }
+    var payload = await response.json().catch(function () { return {}; });
+    if (!response.ok) throw new Error(payload.error || payload.message || fallbackMessage || 'The request could not be completed.');
+    return payload;
+  }
+
+  async function submitRegistration() {
+    var detailsError = validateDetails();
+    if (detailsError) {
+      state.step = 1;
+      updateUrl(1);
+      render({ top: true });
+      setMessage(detailsError, false);
+      return;
+    }
+    var attendanceError = validateAttendance();
+    if (attendanceError) {
+      setMessage(attendanceError, false);
+      return;
+    }
+
     state.submitting = true;
     render();
     try {
-      var response = await fetch(API + '/api/showcase/registrations/professional', {
+      var payload = await fetchJson(API + '/api/showcase/registrations/professional', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state.data)
-      });
-      var payload = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(payload.error || 'The registration could not be submitted.');
+        body: JSON.stringify({
+          firstName: String(state.data.firstName || '').trim(),
+          lastName: String(state.data.lastName || '').trim(),
+          email: String(state.data.email || '').trim(),
+          phone: String(state.data.phone || '').trim(),
+          teamName: String(state.data.teamName || '').trim(),
+          role: state.data.role,
+          attendanceConfirmed: true
+        })
+      }, 'The registration service could not be reached. Check your connection and try again.');
+
       state.result = payload;
-      state.status = 'complete';
-      state.step = 0;
       state.submitting = false;
+      state.step = 0;
+      state.status = payload.status === 'waitlisted' ? 'sold-out' : 'complete';
+      updateUrl(state.status);
       saveState();
-      updateUrl('complete');
-      render();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render({ top: true });
     } catch (error) {
       state.submitting = false;
       render();
-      setMessage(error.message, false);
+      setMessage(error.message || 'The registration could not be saved. Please try again.', false);
     }
   }
 
-  async function joinWaitlist() {
-    var validationError = validateDetails();
-    if (validationError) return setMessage(validationError, false);
-    state.data.attendanceConfirmed = true;
-    await submit();
-  }
-
   function bindEvents() {
-    document.querySelectorAll('[data-mobile-menu]').forEach(function (button) {
+    root.querySelectorAll('[data-mobile-menu]').forEach(function (button) {
       button.addEventListener('click', function () {
         var panel = button.closest('.public-page').querySelector('[data-mobile-menu-panel]');
         var open = panel.classList.toggle('open');
@@ -368,45 +426,52 @@
       });
     });
 
-    document.querySelectorAll('[name]').forEach(function (input) {
-      input.addEventListener('input', collect);
+    var page = activePage();
+    page.querySelectorAll('input[type="text"],input[type="email"],input[type="tel"]').forEach(function (input) {
+      input.addEventListener('input', collectActiveInputs);
+      input.addEventListener('change', collectActiveInputs);
+    });
+    page.querySelectorAll('[name="role"]').forEach(function (input) {
       input.addEventListener('change', function () {
-        collect();
-        if (input.type === 'radio') render();
+        collectActiveInputs();
+        syncRoleCards();
       });
     });
+    page.querySelectorAll('[name="attendanceConfirmed"]').forEach(function (input) {
+      input.addEventListener('change', collectActiveInputs);
+    });
 
-    document.querySelectorAll('[data-action]').forEach(function (button) {
+    root.querySelectorAll('[data-action]').forEach(function (button) {
       button.addEventListener('click', function () {
-        var action = button.dataset.action;
+        var action = button.getAttribute('data-action');
         setMessage('', false);
         if (action === 'start') {
-          state.step = 1;
           state.status = '';
+          state.step = 1;
           updateUrl(1);
           saveState();
-          render();
+          render({ top: true });
         } else if (action === 'back') {
+          collectActiveInputs();
           state.step = Math.max(0, state.step - 1);
           updateUrl(state.step);
           saveState();
-          render();
+          render({ top: true });
         } else if (action === 'continue') {
           var error = validateDetails();
           if (error) return setMessage(error, false);
           state.step = 2;
           updateUrl(2);
           saveState();
-          render();
+          render({ top: true });
         } else if (action === 'edit') {
+          collectActiveInputs();
           state.step = 1;
           updateUrl(1);
           saveState();
-          render();
+          render({ top: true });
         } else if (action === 'submit') {
-          submit();
-        } else if (action === 'join-waitlist') {
-          joinWaitlist();
+          submitRegistration();
         }
       });
     });
@@ -415,36 +480,43 @@
   async function loadConfig() {
     root.innerHTML = '<div class="admin-loading">Loading showcase registration…</div>';
     try {
-      var response = await fetch(API + '/api/showcase/registrations/config');
-      var payload = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error(payload.error || 'The showcase event could not be loaded.');
+      var payload = await fetchJson(API + '/api/showcase/registrations/config', {}, 'The showcase event could not be loaded.');
       state.event = payload.event;
-      state.capacity = payload.capacity;
+      state.capacity = payload.professionalCapacity || payload.capacity || null;
       var route = routeState();
-      if (route === 'complete' && state.result) {
-        state.status = 'complete';
+      if ((route === 'complete' || route === 'sold-out') && state.result) {
+        state.status = route;
         state.step = 0;
-      } else if (payload.capacity.soldOut) {
-        state.status = 'sold-out';
-        state.step = 0;
-        if (route !== 'sold-out') updateUrl('sold-out');
       } else {
         state.status = '';
-        state.step = typeof route === 'number' ? route : 0;
-        if (route === 'sold-out') updateUrl(0);
+        state.step = Number(route) || state.step || 0;
       }
+      saveState();
       render();
     } catch (error) {
-      root.innerHTML = '<section class="support-panel" style="margin:30px"><b>Registration could not load</b><p>' + escapeHtml(error.message) + ' Contact people@stratexanalytics.co.uk if the problem continues.</p></section>';
+      root.innerHTML = '<section class="support-panel" style="margin:30px"><b>Registration could not load</b><p>' + escapeHtml(error.message || 'The showcase event could not be loaded.') + ' Contact people@stratexanalytics.co.uk if the problem continues.</p></section>';
     }
   }
 
   restoreState();
+
   window.addEventListener('popstate', function () {
     var route = routeState();
-    state.status = typeof route === 'string' ? route : '';
+    state.status = route === 'complete' || route === 'sold-out' ? route : '';
     state.step = typeof route === 'number' ? route : 0;
-    render();
+    render({ top: true });
   });
+
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      var mobile = window.matchMedia('(max-width:' + MOBILE_BREAKPOINT + 'px)').matches;
+      if (mobile !== lastMobile) {
+        lastMobile = mobile;
+        render();
+      }
+    }, 180);
+  });
+
   loadConfig();
 }());
