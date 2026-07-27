@@ -90,6 +90,30 @@ const TEMPLATES = {
     id: process.env.SENDGRID_CONCERN_CONFIRMATION_TEMPLATE_ID || 'd-1cd7761ae7684cb5b37e4230e905892e',
     required: ['firstName', 'submissionReference', 'submittedAt', 'submissionType', 'concernCategory', 'contactReason', 'role', 'organisation', 'playerOrTeamMentioned', 'safeguardingFlag', 'message', 'year'],
     optional: []
+  },
+  showcaseProfessionalConfirmation: {
+    name: 'Showcase Coach or Scout Confirmation',
+    id: 'd-01b0de87b8644e54aba0a44230441f69',
+    required: ['firstName', 'role', 'teamName', 'year'],
+    optional: []
+  },
+  showcasePlayerPersonalConfirmation: {
+    name: 'Showcase Player Personal Confirmation',
+    id: 'd-01b55cf4a1ce4241b5c58411c43bbb41',
+    required: ['playerFirstName', 'year'],
+    optional: []
+  },
+  showcaseGuardianConfirmation: {
+    name: 'Showcase Parent or Guardian Confirmation',
+    id: 'd-ad3c6d7caa634850b8babd59d55741d4',
+    required: ['playerFirstName', 'playerLastName', 'year'],
+    optional: []
+  },
+  showcaseInternalRegistrationAlert: {
+    name: 'Internal Showcase Registration Alert',
+    id: 'd-d7ed1217d67346709c3e26915f444800',
+    required: ['registrationType', 'fullName', 'detailLabel', 'detailValue', 'teamOrOrganisation', 'submittedAt', 'year'],
+    optional: []
   }
 };
 
@@ -101,7 +125,16 @@ function missingRequired(key, data) {
   const template = templateByKey(key);
   if (!template) return ['template'];
   const payload = data || {};
-  return template.required.filter(field => payload[field] === undefined || payload[field] === null || payload[field] === '');
+  return template.required.filter((field) => (
+    payload[field] === undefined ||
+    payload[field] === null ||
+    payload[field] === ''
+  ));
 }
 
-module.exports = { TEMPLATES, templateByKey, missingRequired };
+module.exports = {
+  TEMPLATES,
+  templateByKey,
+  missingRequired
+};
+
