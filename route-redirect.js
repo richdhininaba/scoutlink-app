@@ -1,4 +1,6 @@
 (function () {
+  'use strict';
+
   var routes = {
     '/login': '/frontend/pages/login.html',
     '/forgot-password': '/frontend/pages/forgot-password.html',
@@ -54,6 +56,12 @@
     '/company/admin': '/frontend/pages/stratex-company-admin.html',
     '/admin': '/frontend/pages/stratex-company-admin.html',
     '/admin/usage-requests': '/frontend/pages/stratex-usage-requests.html',
+    '/admin/showcase-event': '/frontend/pages/stratex-showcase-events.html',
+    '/showcase-event/player-registration': '/frontend/pages/showcase-player-registration.html',
+    '/showcase-event/player-registration/complete': '/frontend/pages/showcase-player-registration.html',
+    '/showcase-event/coach-scout-registration': '/frontend/pages/showcase-professional-registration.html',
+    '/showcase-event/coach-scout-registration/complete': '/frontend/pages/showcase-professional-registration.html',
+    '/showcase-event/coach-scout-registration/sold-out': '/frontend/pages/showcase-professional-registration.html',
     '/404': '/frontend/pages/404.html',
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
     '/stratex/company-site': '/frontend/pages/stratex-company-admin.html',
@@ -115,77 +123,66 @@
     '/careers/interview-availability': '/frontend/pages/interview-availability.html'
   };
 
-  var path = window.location.pathname.replace(/\/$/, '') || '/';
+  var currentPath = window.location.pathname.replace(/\/$/, '') || '/';
 
-  if (path === '/pricing') {
+  if (currentPath === '/pricing') {
     window.location.replace('/scoutlink/pricing' + window.location.search + window.location.hash);
     return;
   }
 
-  if (path === '/compatibility-score') {
+  if (currentPath === '/compatibility-score') {
     window.location.replace('/scoutlink/compatibility-score' + window.location.search + window.location.hash);
     return;
   }
 
   if (
-    (window.location.hostname === 'www.stratexanalytics.co.uk' ||
-      window.location.hostname === 'stratexanalytics.co.uk') &&
-    path === '/coaches'
+    /(^|\.)stratexanalytics\.co\.uk$/i.test(window.location.hostname) &&
+    currentPath === '/coaches'
   ) {
     window.location.replace('/scoutlink/coaches' + window.location.search + window.location.hash);
     return;
   }
 
   if (
-    (window.location.hostname === 'www.stratexanalytics.co.uk' ||
-      window.location.hostname === 'stratexanalytics.co.uk') &&
-    path === '/scouts'
+    /(^|\.)stratexanalytics\.co\.uk$/i.test(window.location.hostname) &&
+    currentPath === '/scouts'
   ) {
     window.location.replace('/scoutlink/scouts' + window.location.search + window.location.hash);
     return;
   }
 
-  if (path === '/company' || path.indexOf('/company/') === 0) {
-    var cleanPath = path.replace(/^\/company/, '') || '/';
+  if (currentPath === '/company' || currentPath.indexOf('/company/') === 0) {
+    var cleanPath = currentPath.replace(/^\/company/, '') || '/';
     window.location.replace(cleanPath + window.location.search + window.location.hash);
     return;
   }
 
-  var target = routes[path];
+  var target = routes[currentPath];
 
-  if (!target && path.indexOf('/admin/') === 0) {
+  if (!target && currentPath.indexOf('/admin/') === 0) {
     target = '/frontend/pages/stratex-company-admin.html';
   }
 
-  if (!target && path.indexOf('/careers/') === 0) {
-    var slug = path.split('/').filter(Boolean).slice(1).join('/');
-
+  if (!target && currentPath.indexOf('/careers/') === 0) {
+    var slug = currentPath.split('/').filter(Boolean).slice(1).join('/');
     if (slug) {
       target = '/frontend/pages/career-detail.html';
       var params = new URLSearchParams(window.location.search);
-
-      if (!params.get('slug')) {
-        params.set('slug', slug);
-      }
-
-      window.location.replace(
-        target + '?' + params.toString() + window.location.hash
-      );
+      if (!params.get('slug')) params.set('slug', slug);
+      window.location.replace(target + '?' + params.toString() + window.location.hash);
       return;
     }
   }
 
   if (
     !target &&
-    (path.indexOf('/company/careers/') === 0 ||
-      path.indexOf('/company/learning-centre/') === 0)
+    (currentPath.indexOf('/company/careers/') === 0 ||
+      currentPath.indexOf('/company/learning-centre/') === 0)
   ) {
     target = '/frontend/pages/stratex-site.html';
   }
 
   if (target) {
-    window.location.replace(
-      target + window.location.search + window.location.hash
-    );
+    window.location.replace(target + window.location.search + window.location.hash);
   }
-})();
+}());
