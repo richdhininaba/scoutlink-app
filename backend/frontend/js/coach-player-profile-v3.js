@@ -400,10 +400,6 @@
               '<div class="cp3-position-card"><small>Future role score</small><b><span class="cp3-blurred">' + futureScore + '/100</span></b></div>' +
             '</div>' +
             '<div class="cp3-position-help">Position Fit uses the current profile, attributes and match evidence. It supports decisions but does not replace coach or scout judgement.</div>' +
-            '<div class="cp3-position-controls">' +
-              '<select id="targetPosition" aria-label="Target position">' + positionOptions + '</select>' +
-              '<button class="cp3-btn is-primary pred-btn" type="button" data-pred-type="position_fit" id="cp3PositionFitBtn">Run position fit</button>' +
-            '</div>' +
             '<div id="predResultArea" aria-live="polite"></div>' +
           '</aside>' +
         '</div>' +
@@ -974,15 +970,6 @@
       });
     });
 
-    var positionButton = document.getElementById('cp3PositionFitBtn');
-    if (positionButton) {
-      positionButton.addEventListener('click', function () {
-        if (typeof window.runPrediction === 'function') {
-          window.runPrediction(record.id, 'position_fit');
-        }
-      });
-    }
-
     document.querySelectorAll('[data-profile-tab]').forEach(function (button) {
       button.addEventListener('click', function () {
         document.querySelectorAll('[data-profile-tab]').forEach(function (item) {
@@ -999,6 +986,278 @@
         if (event.key === 'Escape') closeEditModal();
       });
     }
+  }
+
+  function designMoney(value) {
+    var number = Number(value) || 0;
+    if (!number) return 'Calculating...';
+    return 'GBP ' + number.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+  }
+
+  function designMatchScore(match) {
+    if (match.home_score === null || match.home_score === undefined ||
+        match.away_score === null || match.away_score === undefined) {
+      return 'Score not entered';
+    }
+    return match.home_score + '-' + match.away_score;
+  }
+
+  function designScoreCard(label, value, note) {
+    return '<article><small>' + esc(label) + '</small><strong>' + value + '</strong><p>' + esc(note) + '</p></article>';
+  }
+
+  function designRatingBar(label, value, colour) {
+    var score = Number(value);
+    if (!Number.isFinite(score)) score = 0;
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    return '<div class="rating-row">' +
+      '<span>' + esc(label) + '</span>' +
+      '<div class="bar-track"><i class="bar-fill" style="width:' + score + '%;background:' + colour + '"></i></div>' +
+      '<b style="color:' + colour + '">' + score + '</b>' +
+    '</div>';
+  }
+
+  function designAttributeRows(record) {
+    var isGoalkeeper = String(record.position_group || '').toLowerCase() === 'goalkeeper';
+    var keys = isGoalkeeper ? GOALKEEPER_ATTRIBUTES : OUTFIELD_ATTRIBUTES;
+    return keys.map(function (key) {
+      var percentage = attributePct(record[key]);
+      var colour = percentage >= 70 ? '#0fa37f' : percentage >= 50 ? '#f4b400' : '#d94a5b';
+      var label = typeof window.attrLabel === 'function' ? window.attrLabel(key) : sentence(key);
+      return '<div class="attribute-row">' +
+        '<span>' + esc(label) + '</span>' +
+        '<div class="attribute-track"><i style="width:' + percentage + '%;background:' + colour + '"></i></div>' +
+        '<b style="color:' + colour + '">' + esc(attribute10(record[key])) + '</b>' +
+      '</div>';
+    }).join('');
+  }
+
+  function designPhysical(record) {
+    var heightCategory = sentence(record.height_category);
+    var buildCategory = sentence(record.build_category);
+    var heightRange = record.height_range_cm || (HEIGHTS[record.height_category] && HEIGHTS[record.height_category].range) || 'Not recorded';
+    var weightRange = record.weight_range_kg || (BUILDS[record.build_category] && BUILDS[record.build_category].range) || 'Not recorded';
+    var feet = typeof window.cmRangeToFeet === 'function' ? window.cmRangeToFeet(heightRange) : 'Not recorded';
+
+    return '<article class="profile-section physical-section" id="cp3Physical">' +
+      '<header class="subsection-heading"><h3>Physical profile</h3><button class="cp3-btn is-small" type="button" data-edit-profile data-edit-focus="height">Edit</button></header>' +
+      '<div class="profile-type"><small>Profile type</small><strong>' + esc(heightCategory) + ' height - ' + esc(buildCategory) + ' build</strong></div>' +
+      '<div class="physical-grid">' +
+        '<div><small>Height</small><b>' + esc(heightRange) + '</b></div>' +
+        '<div><small>Feet / inches</small><b>' + esc(feet) + '</b></div>' +
+        '<div><small>Build</small><b>' + esc(buildCategory) + '</b></div>' +
+        '<div><small>Weight range</small><b>' + esc(weightRange) + '</b></div>' +
+        '<div><small>Age group</small><b>' + esc(record.age_group || 'Not recorded') + '</b></div>' +
+        '<div><small>Profile owner</small><b>' + esc(profileOwnerName(record)) + '</b></div>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function designStatistics(record) {
+    var stats = [
+      ['Appearances', record.appearances || 0, ''],
+      ['Goals', record.goals || 0, ''],
+      ['Assists', record.assists || 0, ''],
+      ['Clean sheets', record.clean_sheets || 0, ''],
+      ['Yellow cards', record.yellow_cards || 0, 'is-gold'],
+      ['Red cards', record.red_cards || 0, 'is-red']
+    ];
+    return '<article class="profile-section match-statistics">' +
+      '<header class="subsection-heading"><h3>Match statistics</h3></header>' +
+      '<div class="stat-grid">' + stats.map(function (stat) {
+        return '<div class="' + stat[2] + '"><strong>' + esc(stat[1]) + '</strong><span>' + esc(stat[0]) + '</span></div>';
+      }).join('') + '</div>' +
+    '</article>';
+  }
+
+  function designMatchHistory(record) {
+    var rows = matches().slice(0, 5);
+    var html = rows.length ? '<div class="match-list">' + rows.map(function (match, index) {
+      var result = resultInfo(match);
+      var perf = performanceScore(match);
+      var goals = Number(match.goals) || 0;
+      var assists = Number(match.assists) || 0;
+      var cards = (Number(match.yellow_cards) || 0) + (Number(match.red_cards) || 0);
+      return '<button class="match-row" type="button" data-match-detail="' + index + '">' +
+        '<span class="result-pill ' + esc(result || 'draw') + '">' + esc(result ? result.toUpperCase() : 'MATCH') + '</span>' +
+        '<div class="match-main"><strong>' + esc(match.opponent || match.opposition || 'Opponent TBC') + '</strong><small>' + esc(match.format || 'Match') + ' - ' + esc(dateLabel(match.match_date || match.date, true)) + ' - ' + esc(designMatchScore(match)) + '</small></div>' +
+        '<div class="match-output"><span>Perf <b>' + perf + '/100</b></span><span>' + goals + 'G ' + assists + 'A</span><span>' + cards + ' cards</span></div>' +
+      '</button>';
+    }).join('') + '</div>' : '<div class="empty-video-state">No Match Facts recorded yet.</div>';
+
+    return '<article class="profile-section match-facts-section" id="cp3MatchHistory">' +
+      '<header class="subsection-heading"><h3>Last 5 match facts</h3><a class="cp3-btn is-small" href="' + esc(route('match-facts.html?playerId=' + encodeURIComponent(record.id))) + '">Add Match Facts</a></header>' +
+      html +
+    '</article>';
+  }
+
+  function designFixtures(record) {
+    var rows = fixtures().slice(0, 5);
+    var html = rows.length ? '<div class="match-list">' + rows.map(function (fixture, index) {
+      var homeAway = String(fixture.home_away || fixture.location_type || 'Home');
+      return '<button class="fixture-row" type="button" data-fixture-detail="' + index + '">' +
+        '<strong>' + esc(fixture.opponent || fixture.opposition || 'Opponent TBC') + '</strong>' +
+        '<span class="' + (homeAway.toLowerCase().indexOf('away') !== -1 ? 'away-badge' : 'home-badge') + '">' + esc(sentence(homeAway)) + '</span>' +
+        '<small>' + esc(dateLabel(fixture.fixture_date || fixture.date, false)) + (fixture.venue_name ? ' - ' + esc(fixture.venue_name) : '') + '</small>' +
+      '</button>';
+    }).join('') + '</div>' : '<div class="empty-video-state">No upcoming fixtures connected yet.</div>';
+
+    return '<article class="profile-section fixtures-section">' +
+      '<header class="subsection-heading"><h3>Upcoming fixtures</h3><a class="cp3-btn is-small" href="' + esc(route('coach-fixtures.html')) + '">Manage fixtures</a></header>' +
+      html +
+    '</article>';
+  }
+
+  function designVideo(record) {
+    var rows = videos();
+    var cards = rows.length ? '<div class="video-grid">' + rows.map(function (video, index) {
+      return '<article class="video-card">' +
+        '<button class="video-thumb" type="button" data-video-index="' + index + '" aria-label="Play ' + esc(video.title || 'video') + '">Play</button>' +
+        '<div><strong>' + esc(video.title || 'Video reel') + '</strong><p>' + esc(video.category || 'Highlight') + (video.description ? ' - ' + esc(video.description) : '') + '</p></div>' +
+        '<button class="cp3-btn is-small" type="button" data-video-index="' + index + '">Watch</button>' +
+      '</article>';
+    }).join('') + '</div>' : '<div class="empty-video-state">No video reels uploaded yet.</div>';
+
+    return '<section class="profile-section video-section" id="cp3Video">' +
+      '<header class="subsection-heading"><h3>Video reels</h3></header>' +
+      '<div class="upload-link-panel">' +
+        '<div><strong>Video upload link</strong><p>Generate a private upload link for this player. Copy it into an approved team communication channel; no ScoutLink account is needed to upload.</p></div>' +
+        '<button class="cp3-btn is-primary" id="btnGenerateVideoUploadLink" type="button">Generate upload link</button>' +
+      '</div>' +
+      '<div id="videoUploadLinkResult" style="display:none"></div>' +
+      cards +
+    '</section>';
+  }
+
+  function designRatingSection(record, profileAnalysis) {
+    var breakdown = profileAnalysis.overallBreakdown || record.overallBreakdown || {};
+    var positionRatings = profileAnalysis.positionRatings || record.positionRatings || {};
+    var overall = overall100(record.overall_rating);
+    var finalScore = Number.isFinite(Number(breakdown.finalScore)) ? Math.round(breakdown.finalScore) : overall;
+    var readiness = Number.isFinite(Number(breakdown.currentReadiness)) ? Math.round(breakdown.currentReadiness) : overall;
+    var potential = Number.isFinite(Number(breakdown.potentialRating)) ? Math.round(breakdown.potentialRating) : Math.min(100, overall + 7);
+    var confidence = confidenceInfo(matches().length);
+    var bestCurrent = positionRatings.bestCurrentPosition || record.specific_position || record.primary_position || 'ST';
+    var bestFuture = positionRatings.bestFuturePosition || bestCurrent;
+    var currentScore = Number.isFinite(Number(positionRatings.bestCurrentScore)) ? Math.round(positionRatings.bestCurrentScore) : overall;
+    var futureScore = Number.isFinite(Number(positionRatings.bestFutureScore)) ? Math.round(positionRatings.bestFutureScore) : Math.min(100, overall + 4);
+
+    var bars = [
+      ['Technical', breakdown.technicalScore, '#0fa37f'],
+      ['Tactical IQ', breakdown.tacticalIQScore, '#28b7d6'],
+      ['Physical profile', breakdown.physicalProfileScore, '#4f8df7'],
+      ['Mental / coachability', breakdown.mentalCoachabilityScore, '#8b5cf6'],
+      ['Match output', breakdown.matchOutputScore, '#f4b400'],
+      ['Discipline', breakdown.disciplineScore, '#f97316'],
+      ['Availability', breakdown.availabilityScore, '#24b865'],
+      ['Data confidence', breakdown.dataConfidenceScore, '#dd6ce9']
+    ].map(function (item) {
+      var fallback = item[0] === 'Data confidence' ? Math.min(100, matches().length * 12 + 34) : overall;
+      return designRatingBar(item[0], Number.isFinite(Number(item[1])) ? item[1] : fallback, item[2]);
+    }).join('');
+
+    var positionCards = [bestCurrent, bestFuture, record.specific_position || 'ST', record.primary_position || bestCurrent].map(function (role, index) {
+      var score = index === 0 ? currentScore : index === 1 ? futureScore : Math.max(0, Math.min(100, overall - index));
+      return '<article class="position-card"><small>' + esc(positionLabel(role)) + '</small><strong>' + score + '</strong><span>' + esc(record.position_group || 'Role fit') + '</span></article>';
+    }).join('');
+
+    return '<section class="profile-section rating-section" id="cp3Ratings">' +
+      '<header class="section-heading"><div><h2>Overall Rating Breakdown</h2><p>ScoutLink blends coach-rated attributes, age-band context, physical profile, allowed match facts, discipline and data confidence into a position-aware overall rating.</p></div><span>' + esc(record.age_group || 'Age TBC') + ' - ' + esc(record.position_group || 'Position TBC') + '</span></header>' +
+      '<div class="rating-snapshot">' +
+        designScoreCard('Final score', finalScore + '/100', 'Headline ScoutLink overall') +
+        designScoreCard('Current readiness', readiness + '/100', 'How ready the player is now') +
+        designScoreCard('Potential rating', potential + '/100', 'Age runway and development upside') +
+        designScoreCard('Data confidence', esc(confidence.label), confidence.note) +
+      '</div>' +
+      '<div class="role-summary">' +
+        '<article><small>Best current role</small><strong>' + esc(positionLabel(bestCurrent)) + '</strong><span>' + currentScore + '/100</span></article>' +
+        '<article><small>Best future role</small><strong>' + esc(positionLabel(bestFuture)) + '</strong><span>' + futureScore + '/100</span></article>' +
+      '</div>' +
+      '<div class="rating-analysis">' +
+        '<section class="breakdown-panel"><h3>Score components</h3>' + bars + '</section>' +
+        '<section class="position-panel"><h3>Position ratings</h3><div class="position-grid">' + positionCards + '</div><div class="position-action"><p>Position fit is shown from the saved ScoutLink analysis for this coach profile.</p></div></section>' +
+      '</div>' +
+      '<div class="evidence-note"><span>!</span><p>' + esc(confidence.note) + '</p></div>' +
+    '</section>';
+  }
+
+  function renderCoachProfile() {
+    if (!isCoach()) return;
+
+    var record = player();
+    var host = document.getElementById('profileContent');
+    if (!record || !host) return;
+
+    if (state.renderedPlayerId === String(record.id || '') && host.querySelector('.coach-profile-redesign')) return;
+    state.renderedPlayerId = String(record.id || '');
+
+    document.body.classList.add('coach-player-profile-v3');
+
+    var team = record.team || {};
+    var overall = overall100(record.overall_rating);
+    var band = scoreBand(overall);
+    var confidence = confidenceInfo(matches().length);
+    var completion = profileCompletion(record);
+    var profileAnalysis = analysis();
+    var apps = Number(record.appearances) || 0;
+    var goals = Number(record.goals) || 0;
+    var assists = Number(record.assists) || 0;
+    var cleanSheets = Number(record.clean_sheets) || 0;
+    var gpg = apps ? (goals / apps).toFixed(2) : '0.00';
+    var apg = apps ? (assists / apps).toFixed(2) : '0.00';
+    var cspg = apps ? (cleanSheets / apps).toFixed(2) : '0.00';
+    var ageWarning = String(record.age_group || '').toUpperCase() === 'U16'
+      ? '<div class="warning-strip"><span>!</span><p><strong>Final supported age group.</strong> U16 players are archived from active ScoutLink visibility at the 15 May seasonal rollover.</p></div>'
+      : '';
+
+    var profileMeta = [
+      positionLabel(record.specific_position || record.primary_position || record.position_group),
+      record.age_group || 'Age group TBC',
+      record.team_name || team.team_name || 'Team TBC'
+    ].join(' - ');
+
+    host.innerHTML =
+      '<article class="profile-page coach-profile-redesign">' +
+        '<header class="mobile-sticky-title"><strong>' + esc(nameOf(record)) + '</strong><span>' + esc(designMoney(record.transfer_value)) + '</span></header>' +
+        '<section class="player-hero">' +
+          '<div class="player-identity">' +
+            '<div class="player-avatar" aria-label="' + esc(nameOf(record)) + ' initials">' + esc(initialsOf(record)) + '</div>' +
+            '<div class="identity-copy">' +
+              '<h1>' + esc(nameOf(record)) + '</h1>' +
+              '<p>' + esc(profileMeta) + '</p>' +
+              '<div class="identity-tags"><span>Overall: ' + overall + '/100</span><span>' + esc(record.foot || 'Foot TBC') + ' foot</span><span>' + esc(band.label) + '</span></div>' +
+              '<div class="hero-actions"><button class="cp3-btn is-primary" type="button" data-edit-profile>Edit player profile</button><button class="cp3-btn" type="button" data-scroll-video>Generate upload link</button></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="transfer-value"><strong>' + esc(designMoney(record.transfer_value)) + '</strong><span>Est. transfer value</span></div>' +
+        '</section>' +
+        '<section class="profile-section overview-section">' +
+          '<div class="overview-grid">' +
+            '<article class="headline-score"><small>Overall match performance rating</small><div><strong>' + overall + '</strong><span>/100</span></div><b class="' + esc(band.className) + '">' + esc(band.label) + '</b></article>' +
+            '<article class="confidence-summary"><small>Data confidence</small><strong>' + esc(confidence.label) + '</strong><p>' + esc(confidence.note) + '</p></article>' +
+            '<article class="evidence-summary"><small>Evidence base</small><strong>' + matches().length + '</strong><p>Match fact records used for this profile.</p></article>' +
+          '</div>' +
+          '<div class="warning-strip"><span>!</span><p>Profile completion is ' + completion + '%. ' + esc(completionNote(completion)) + '</p></div>' +
+          ageWarning +
+        '</section>' +
+        designRatingSection(record, profileAnalysis) +
+        '<section class="per-game-row">' +
+          '<article><strong>' + esc(gpg) + '</strong><span>Goals per game</span></article>' +
+          '<article><strong>' + esc(apg) + '</strong><span>Assists per game</span></article>' +
+          '<article><strong>' + esc(cspg) + '</strong><span>Clean sheets pg</span></article>' +
+        '</section>' +
+        '<section class="detail-grid">' +
+          '<article class="profile-section attributes-section"><header class="subsection-heading"><h3>All attributes</h3><button class="cp3-btn is-small" type="button" data-edit-profile>Update</button></header><div class="attribute-list">' + designAttributeRows(record) + '</div></article>' +
+          designStatistics(record) +
+          designPhysical(record) +
+        '</section>' +
+        '<section class="history-grid">' + designMatchHistory(record) + designFixtures(record) + '</section>' +
+        designVideo(record) +
+        editModal(record) +
+      '</article>';
+
+    installProfileEvents(record);
+    resolveOwner(record);
   }
 
   function mobileNavMarkup() {
