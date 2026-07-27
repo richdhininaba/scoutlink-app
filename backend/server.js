@@ -175,6 +175,12 @@ const routeMap = {
   '/stratex/non-pro-academies': 'pages/stratex-school-teams.html',
   '/stratex/award-nominations': 'pages/stratex-award-nominations.html',
   '/stratex/showcase-events': 'pages/stratex-showcase-events.html',
+  '/admin/showcase-event': 'pages/stratex-showcase-events.html',
+  '/showcase-event/player-registration': 'pages/showcase-player-registration.html',
+  '/showcase-event/player-registration/complete': 'pages/showcase-player-registration.html',
+  '/showcase-event/coach-scout-registration': 'pages/showcase-professional-registration.html',
+  '/showcase-event/coach-scout-registration/complete': 'pages/showcase-professional-registration.html',
+  '/showcase-event/coach-scout-registration/sold-out': 'pages/showcase-professional-registration.html',
   '/stratex/notifications': 'pages/stratex-notifications.html',
   '/stratex/concerns': 'pages/stratex-concerns.html',
   '/stratex/settings': 'pages/stratex-settings.html',
@@ -437,6 +443,7 @@ if (frontendDir) {
   });
 
   app.get('/admin', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
+  app.get('/admin/showcase-event', (req, res) => sendFrontendFile(req, res, 'pages/stratex-showcase-events.html'));
   app.get('/admin/:module', (req, res) => sendFrontendFile(req, res, 'pages/stratex-company-admin.html'));
   app.get('/company/admin', (req, res, next) => {
     if (!isStratexHost(req)) return next();
