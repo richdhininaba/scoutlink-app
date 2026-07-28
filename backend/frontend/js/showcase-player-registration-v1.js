@@ -9,10 +9,10 @@
     }
   }());
 
-  var STORAGE_KEY = 'stratex_showcase_player_registration_v2';
+  var STORAGE_KEY = 'stratex_showcase_player_registration_v3';
   var MOBILE_BREAKPOINT = 760;
   var HIGHLIGHT_BUCKET = 'showcase-player-highlights';
-  var MAX_HIGHLIGHT_SIZE = 100 * 1024 * 1024;
+  var MAX_HIGHLIGHT_SIZE = 500 * 1024 * 1024;
   var ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
   var POSITIONS = [
     'Goalkeeper',
@@ -329,7 +329,7 @@
           choiceCard('preferredFoot', 'both', 'B', 'Both', 'Comfortable with both', state.data.preferredFoot === 'both') +
         '</div></section>' +
         '<section class="form-section"><span class="section-label">Highlight video <small>(Totally fine if you do not have one — leave this empty)</small></span>' +
-          '<label class="field"><span class="field-label">Upload your highlights</span><label class="upload-control"><input type="file" name="highlightVideo" accept="video/mp4,video/quicktime,video/webm"><span>Choose a video</span><small>MP4, MOV or WEBM · Maximum 100 MB</small></label><span class="upload-file-name" data-upload-file-name ' + (state.data.highlightFileName ? '' : 'hidden') + '>' + escapeHtml(state.data.highlightFileName) + '</span></label>' +
+          '<label class="field"><span class="field-label">Upload your highlights</span><label class="upload-control"><input type="file" name="highlightVideo" accept="video/mp4,video/quicktime,video/webm"><span>Choose a video</span><small>MP4, MOV or WEBM · Maximum 500 MB</small></label><span class="upload-file-name" data-upload-file-name ' + (state.data.highlightFileName ? '' : 'hidden') + '>' + escapeHtml(state.data.highlightFileName) + '</span></label>' +
         '</section>' +
         '<div class="form-message" data-form-message hidden></div>' +
       '</form>';
@@ -598,36 +598,187 @@
     return String(Date.now()) + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   }
 
-  async function uploadHighlight(registrationReference, file) {
-    if (!file) return null;
-    var config = publicSupabaseConfig();
-    if (!config.url || !config.key) throw new Error('The optional video upload service is not configured.');
-    if (ALLOWED_VIDEO_TYPES.indexOf(file.type) < 0) throw new Error('The optional video must be MP4, MOV or WEBM.');
-    if (file.size > MAX_HIGHLIGHT_SIZE) throw new Error('The optional video must be 100 MB or smaller.');
+  function directStorageUrl(projectUrl) {
+    return String(projectUrl || '').replace(
+      /^https:\/\/([a-z0-9-]+)\.supabase\.co$/i,
+      'https://$1.storage.supabase.co'
+    );
+  }
 
-    var folder = String(registrationReference || '').toLowerCase();
-    var path = folder + '/' + randomToken().slice(0, 32) + '.' + fileExtension(file);
-    var encodedPath = path.split('/').map(encodeURIComponent).join('/');
-    var uploadUrl = config.url + '/storage/v1/object/' + HIGHLIGHT_BUCKET + '/' + encodedPath;
-    var uploadResponse;
+  function base64Metadata(value) {
+    var text = unescape(encodeURIComponent(String(value == null ? '' : value)));
+    return btoa(text);
+  }
+
+  function tusMetadata(values) {
+    return Object.keys(values).map(function (key) {
+      return key + ' ' + base64Metadata(values[key]);
+    }).join(',');
+  }
+
+  function updateSubmittingLabel(label) {
+    root.querySelectorAll('[data-action="submit"]').forEach(function (button) {
+      button.textContent = label;
+    });
+  }
+
+  async function responseError(response, fallbackMessage) {
+    var payload = await response.json().catch(function () { return {}; });
+    var message = payload.message || payload.error || fallbackMessage;
+    if (/maximum allowed size|exceeded the maximum|file.*too large|payload too large/i.test(String(message || ''))) {
+      return 'The selected video is larger than the current upload limit. Your registration is still complete and the Stratex team can request the video separately.';
+    }
+    return message;
+  }
+
+  async function createTusUpload(config, path, file) {
+    var endpoint = directStorageUrl(config.url) + '/storage/v1/upload/resumable';
+    var response;
     try {
-      uploadResponse = await fetch(uploadUrl, {
+      response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           apikey: config.key,
           Authorization: 'Bearer ' + config.key,
-          'Content-Type': file.type,
+          'Tus-Resumable': '1.0.0',
+          'Upload-Length': String(file.size),
+          'Upload-Metadata': tusMetadata({
+            bucketName: HIGHLIGHT_BUCKET,
+            objectName: path,
+            contentType: file.type,
+            cacheControl: '3600'
+          }),
           'x-upsert': 'false'
-        },
-        body: file
+        }
       });
     } catch (_) {
-      throw new Error('The registration was saved, but the optional video upload lost its connection.');
+      throw new Error('The registration was saved, but the optional video upload could not start. Check the connection and try again later.');
     }
-    if (!uploadResponse.ok) {
-      var uploadPayload = await uploadResponse.json().catch(function () { return {}; });
-      throw new Error(uploadPayload.message || uploadPayload.error || 'The registration was saved, but the optional video could not be uploaded.');
+
+    if (!response.ok) {
+      throw new Error(await responseError(
+        response,
+        'The registration was saved, but the optional video upload could not start.'
+      ));
     }
+
+    var location = response.headers.get('Location');
+    if (!location) {
+      throw new Error('The registration was saved, but the optional video upload session was not created.');
+    }
+
+    try {
+      return new URL(location, endpoint).href;
+    } catch (_) {
+      return location;
+    }
+  }
+
+  async function readTusOffset(uploadUrl, config) {
+    var response = await fetch(uploadUrl, {
+      method: 'HEAD',
+      headers: {
+        apikey: config.key,
+        Authorization: 'Bearer ' + config.key,
+        'Tus-Resumable': '1.0.0'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(await responseError(
+        response,
+        'The optional video upload could not be resumed.'
+      ));
+    }
+
+    var offset = Number(response.headers.get('Upload-Offset'));
+    return Number.isFinite(offset) && offset >= 0 ? offset : 0;
+  }
+
+  async function uploadTusChunk(uploadUrl, config, chunk, offset) {
+    var retryDelays = [0, 1500, 3000, 6000];
+    var lastError = null;
+
+    for (var attempt = 0; attempt < retryDelays.length; attempt += 1) {
+      if (retryDelays[attempt]) {
+        await new Promise(function (resolve) {
+          setTimeout(resolve, retryDelays[attempt]);
+        });
+      }
+
+      try {
+        var response = await fetch(uploadUrl, {
+          method: 'PATCH',
+          headers: {
+            apikey: config.key,
+            Authorization: 'Bearer ' + config.key,
+            'Tus-Resumable': '1.0.0',
+            'Upload-Offset': String(offset),
+            'Content-Type': 'application/offset+octet-stream'
+          },
+          body: chunk
+        });
+
+        if (response.ok) {
+          var returnedOffset = Number(response.headers.get('Upload-Offset'));
+          return Number.isFinite(returnedOffset) && returnedOffset > offset
+            ? returnedOffset
+            : offset + chunk.size;
+        }
+
+        if (response.status === 409) {
+          var resumedOffset = await readTusOffset(uploadUrl, config);
+          if (resumedOffset > offset) return resumedOffset;
+        }
+
+        lastError = new Error(await responseError(
+          response,
+          'The registration was saved, but part of the optional video could not be uploaded.'
+        ));
+
+        if (response.status >= 400 && response.status < 500 && response.status !== 409) {
+          throw lastError;
+        }
+      } catch (error) {
+        lastError = error;
+        if (attempt === retryDelays.length - 1) break;
+      }
+    }
+
+    throw lastError || new Error('The registration was saved, but the optional video upload lost its connection.');
+  }
+
+  async function uploadHighlight(registrationReference, file) {
+    if (!file) return null;
+
+    var config = publicSupabaseConfig();
+    if (!config.url || !config.key) throw new Error('The optional video upload service is not configured.');
+    if (ALLOWED_VIDEO_TYPES.indexOf(file.type) < 0) throw new Error('The optional video must be MP4, MOV or WEBM.');
+    if (file.size > MAX_HIGHLIGHT_SIZE) throw new Error('The optional video must be 500 MB or smaller.');
+
+    var folder = String(registrationReference || '').toLowerCase();
+    var path = folder + '/' + randomToken().slice(0, 32) + '.' + fileExtension(file);
+    var uploadUrl = await createTusUpload(config, path, file);
+    var chunkSize = 6 * 1024 * 1024;
+    var offset = 0;
+
+    updateSubmittingLabel('Uploading video 0%…');
+
+    while (offset < file.size) {
+      var end = Math.min(file.size, offset + chunkSize);
+      offset = await uploadTusChunk(
+        uploadUrl,
+        config,
+        file.slice(offset, end),
+        offset
+      );
+
+      updateSubmittingLabel(
+        'Uploading video ' + Math.min(100, Math.round((offset / file.size) * 100)) + '%…'
+      );
+    }
+
+    updateSubmittingLabel('Finishing registration…');
 
     await fetchJson(config.url + '/rest/v1/rpc/attach_showcase_player_highlight', {
       method: 'POST',
@@ -791,7 +942,7 @@
           state.data.highlightVideo = null;
           state.data.highlightFileName = '';
           syncUploadName();
-          setMessage('The highlight video must be 100 MB or smaller.', false);
+          setMessage('The highlight video must be 500 MB or smaller.', false);
           return;
         }
         state.data.highlightVideo = file || null;
