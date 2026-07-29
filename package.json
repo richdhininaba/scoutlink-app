@@ -1,7 +1,0 @@
-{
-  "name": "scoutlink-app-routing",
-  "private": true,
-  "dependencies": {
-    "@vercel/functions": "3.7.6"
-  }
-}
