@@ -1,118 +1,31 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Reset Password - ScoutLink</title>
-<link rel="stylesheet" href="/frontend/css/variables.css">
-<link rel="stylesheet" href="/frontend/css/main.css">
+<title>Reset Password | ScoutLink</title>
+<meta name="description" content="Request a secure ScoutLink reset code and create a new password for an approved account.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://www.scoutlink.app/forgot-password">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Reset Password | ScoutLink">
+<meta property="og:description" content="Request a secure ScoutLink reset code and create a new password for an approved account.">
+<meta property="og:url" content="https://www.scoutlink.app/forgot-password">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#08785c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-.reset-actions{display:grid;grid-template-columns:1fr;gap:10px}
-.reset-code-input{text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:900}
-.reset-step{display:none}
-.reset-step.active{display:block}
-.reset-hint{color:var(--text3);font-size:13px;line-height:1.5;margin:-6px 0 16px}
-@media(max-width:767px){.form-container{padding:24px!important}.form-logo a{font-size:24px!important}}
-</style>
-<link rel="stylesheet" href="/frontend/css/phone-base.css">
-<link rel="stylesheet" href="/frontend/css/phone-shell.css">
-<link rel="stylesheet" href="/frontend/css/phone-pages.css">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
-</head><body class="form-page">
-<div class="form-page-inner"><div class="form-container">
-  <div class="form-logo"><a href="/" style="font-size:28px;font-weight:900;text-decoration:none;color:var(--text)">Scout<span style="color:#00E676">Link</span></a></div>
-  <h1 class="form-title">Reset Password</h1>
-  <p class="form-subtitle" id="pageSubtitle">Choose your account type and we will send a reset code.</p>
-  <div class="form-error" id="formError"></div>
-  <div class="form-success" id="formSuccess"></div>
-
-  <div class="reset-step active" id="requestStep">
-    <div class="form-group"><label>Account Type</label>
-      <select id="accountType"><option value="Player">Player</option><option value="Coach">Coach</option><option value="Scout">Scout</option><option value="Stratex">Stratex Admin</option></select>
-    </div>
-    <div class="form-group"><label>Email Address</label><input type="email" id="email" placeholder="your@email.com" autocomplete="email"></div>
-    <button class="btn btn-primary btn-full" onclick="sendReset()">Send Reset Code</button>
-  </div>
-
-  <div class="reset-step" id="resetStep">
-    <p class="reset-hint">Enter the reset code from your email and choose a new password.</p>
-    <div class="form-group"><label>Account Type</label>
-      <select id="resetAccountType"><option value="Player">Player</option><option value="Coach">Coach</option><option value="Scout">Scout</option><option value="Stratex">Stratex Admin</option></select>
-    </div>
-    <div class="form-group"><label>Email Address</label><input type="email" id="resetEmail" placeholder="your@email.com" autocomplete="email"></div>
-    <div class="form-group"><label>Reset Code</label><input type="text" id="resetCode" class="reset-code-input" maxlength="6" placeholder="ABC123" oninput="this.value=this.value.toUpperCase()"></div>
-    <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" autocomplete="new-password"></div>
-    <div class="form-group"><label>Confirm Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')resetPassword()"></div>
-    <div class="reset-actions">
-      <button class="btn btn-primary btn-full" onclick="resetPassword()">Reset Password</button>
-      <button class="btn btn-ghost btn-full" onclick="showRequestStep()" type="button">Send a New Code</button>
-    </div>
-  </div>
-
-  <div class="form-divider"></div>
-  <div class="form-link"><a href="/login">Back to Sign In</a></div>
-</div></div>
-<script src="/frontend/js/main.js"></script>
-<script src="/frontend/js/heap-analytics.js"></script>
+<link rel="stylesheet" href="/frontend/css/scoutlink-public-v4.css">
+</head>
+<body>
+<a class="public-skip" href="#resetMain">Skip to password recovery</a>
+<div class="product-page auth-page"><header class="site-header compact"><div class="site-shell header-inner"><a href="/" class="brand-link"><span class="sl-logo">Scout<span>Link</span></span></a><a href="/login" class="header-login desktop-only">Back to sign in</a></div></header><main class="auth-main" id="resetMain"><section class="auth-side"><div><span class="sl-logo">Scout<span>Link</span></span><span class="auth-kicker">Password recovery</span><h1>A short, secure reset.</h1><p>The same route supports Player, Coach, Scout and Stratex Admin accounts without mixing their workspaces.</p><div class="check-list"><div><span>✓</span><p>Reset code sent by email</p></div><div><span>✓</span><p>Minimum eight-character password</p></div><div><span>✓</span><p>Existing account permissions remain unchanged</p></div></div></div></section><section class="auth-form-wrap"><div class="auth-form-card"><span class="eyebrow">Password recovery</span><h2>Reset your password</h2><p id="pageSubtitle">Choose the account type and we will send a six-character reset code.</p><div class="form-message err" id="formError" role="alert"></div><div class="form-message ok" id="formSuccess" role="status"></div><div class="reset-step active" id="requestStep"><div class="form-stepper"><article class="active"><span>1</span><div><b>Request code</b><small>Step 1</small></div></article><article><span>2</span><div><b>Create password</b><small>Step 2</small></div></article></div><label class="form-field"><span>Account type<em>Required</em></span><select id="accountType"><option value="Player">Player</option><option value="Coach" selected>Coach</option><option value="Scout">Scout</option><option value="Stratex">Stratex Admin</option></select></label><label class="form-field"><span>Email address<em>Required</em></span><input type="email" id="email" placeholder="your@email.com" autocomplete="email"></label><button class="sl-btn" id="sendResetBtn" type="button">Send reset code</button></div><div class="reset-step" id="resetStep"><div class="form-stepper"><article class="done"><span>✓</span><div><b>Request code</b><small>Complete</small></div></article><article class="active"><span>2</span><div><b>Create password</b><small>Step 2</small></div></article></div><label class="form-field"><span>Account type<em>Required</em></span><select id="resetAccountType"><option value="Player">Player</option><option value="Coach">Coach</option><option value="Scout">Scout</option><option value="Stratex">Stratex Admin</option></select></label><label class="form-field"><span>Email address<em>Required</em></span><input type="email" id="resetEmail" autocomplete="email"></label><label class="form-field"><span>Reset code<em>Required</em></span><input type="text" id="resetCode" maxlength="6" autocomplete="one-time-code" placeholder="ABC123"></label><label class="form-field"><span>New password<em>Required</em></span><input type="password" id="newPassword" autocomplete="new-password" placeholder="Minimum 8 characters"></label><label class="form-field"><span>Confirm password<em>Required</em></span><input type="password" id="confirmPassword" autocomplete="new-password" placeholder="Repeat new password"></label><div class="two-button-row"><button class="sl-btn" id="resetPasswordBtn" type="button">Reset password</button><button class="sl-btn outline" id="newCodeBtn" type="button">Send a new code</button></div></div><div class="login-v4-new"><a href="/login">Back to sign in</a></div></div></section></main></div>
 <script>
-function byId(id){return document.getElementById(id);}
-function clearMessages(){byId('formError').classList.remove('show');byId('formSuccess').classList.remove('show');}
-function showError(msg){var el=byId('formError');el.textContent=msg;el.classList.add('show');}
-function showSuccess(msg){var el=byId('formSuccess');el.textContent=msg;el.classList.add('show');}
-function setSelectValue(id,val){var s=byId(id);if(!s||!val)return;for(var i=0;i<s.options.length;i++){if(s.options[i].value===val){s.selectedIndex=i;break;}}}
-function showRequestStep(){
-  clearMessages();
-  byId('requestStep').classList.add('active');
-  byId('resetStep').classList.remove('active');
-  byId('pageSubtitle').textContent='Choose your account type and we will send a reset code.';
-}
-function showResetStep(){
-  byId('requestStep').classList.remove('active');
-  byId('resetStep').classList.add('active');
-  byId('pageSubtitle').textContent='Set your new password with the code from your email.';
-}
-async function sendReset(){
-  clearMessages();
-  var em=byId('email').value.trim();
-  var at=byId('accountType').value;
-  if(!em){showError('Please enter your email address.');return;}
-  try{
-    var d=await api('POST','/api/auth/forgot-password',{email:em,accountType:at});
-    byId('resetEmail').value=em;
-    setSelectValue('resetAccountType',at);
-    showResetStep();
-    showSuccess(d.message || 'If that email exists, a reset code has been sent.');
-  }catch(e){showError(e.message);}
-}
-async function resetPassword(){
-  clearMessages();
-  var em=byId('resetEmail').value.trim();
-  var code=byId('resetCode').value.trim().toUpperCase();
-  var p=byId('newPassword').value;
-  var c=byId('confirmPassword').value;
-  var at=byId('resetAccountType').value;
-  if(!em||!code||!p||!c){showError('Please complete every field.');return;}
-  if(p.length<8){showError('Password must be at least 8 characters.');return;}
-  if(p!==c){showError('Passwords do not match.');return;}
-  try{
-    var d=await api('POST','/api/auth/reset-password',{email:em,code:code,newPassword:p,accountType:at});
-    showSuccess(d.message || 'Password updated successfully. You can now sign in.');
-    setTimeout(function(){window.location.href='/login';},1200);
-  }catch(e){showError(e.message);}
-}
-var params=new URLSearchParams(window.location.search);
-if(params.get('email')){byId('email').value=params.get('email');byId('resetEmail').value=params.get('email');}
-if(params.get('type')){setSelectValue('accountType',params.get('type'));setSelectValue('resetAccountType',params.get('type'));}
-if(params.get('code')){byId('resetCode').value=params.get('code').toUpperCase();showResetStep();}
+(function(){'use strict';var API=(function(){try{return localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}catch(_){return 'https://scoutlink-api.vercel.app';}})();function byId(id){return document.getElementById(id);}function clearMessages(){['formError','formSuccess'].forEach(function(id){byId(id).classList.remove('show');});}function show(id,msg){var el=byId(id);el.textContent=msg;el.classList.add('show');}function setSelect(id,val){var s=byId(id);if(!s||!val)return;Array.prototype.forEach.call(s.options,function(o,i){if(o.value===val)s.selectedIndex=i;});}function request(method,url,body){return fetch(API+url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return {};}).then(function(d){if(!r.ok)throw new Error(d.error||'Request failed');return d;});});}function showRequest(){clearMessages();byId('requestStep').classList.add('active');byId('resetStep').classList.remove('active');byId('pageSubtitle').textContent='Choose the account type and we will send a six-character reset code.';}function showReset(){byId('requestStep').classList.remove('active');byId('resetStep').classList.add('active');byId('pageSubtitle').textContent='Set your new password with the code from your email.';}byId('sendResetBtn').addEventListener('click',function(){clearMessages();var email=byId('email').value.trim(),type=byId('accountType').value;if(!email){show('formError','Please enter your email address.');return;}var btn=this;btn.disabled=true;btn.textContent='Sending…';request('POST','/api/auth/forgot-password',{email:email,accountType:type}).then(function(d){byId('resetEmail').value=email;setSelect('resetAccountType',type);showReset();show('formSuccess',d.message||'If that email exists, a reset code has been sent.');}).catch(function(e){show('formError',e.message);}).finally(function(){btn.disabled=false;btn.textContent='Send reset code';});});byId('resetPasswordBtn').addEventListener('click',function(){clearMessages();var email=byId('resetEmail').value.trim(),code=byId('resetCode').value.trim().toUpperCase(),p=byId('newPassword').value,c=byId('confirmPassword').value,type=byId('resetAccountType').value;if(!email||!code||!p||!c){show('formError','Please complete every field.');return;}if(p.length<8){show('formError','Password must be at least 8 characters.');return;}if(p!==c){show('formError','Passwords do not match.');return;}var btn=this;btn.disabled=true;btn.textContent='Updating…';request('POST','/api/auth/reset-password',{email:email,code:code,newPassword:p,accountType:type}).then(function(d){show('formSuccess',d.message||'Password updated successfully.');setTimeout(function(){location.href='/login';},1200);}).catch(function(e){show('formError',e.message);}).finally(function(){btn.disabled=false;btn.textContent='Reset password';});});byId('newCodeBtn').addEventListener('click',showRequest);byId('resetCode').addEventListener('input',function(){this.value=this.value.toUpperCase();});var params=new URLSearchParams(location.search);if(params.get('email')){byId('email').value=params.get('email');byId('resetEmail').value=params.get('email');}if(params.get('type')){setSelect('accountType',params.get('type'));setSelect('resetAccountType',params.get('type'));}if(params.get('code')){byId('resetCode').value=params.get('code').toUpperCase();showReset();}})();
 </script>
-<script src="/frontend/js/phone-routes.js"></script>
-<script src="/frontend/js/phone-shell.js"></script>
-<script src="/frontend/js/phone-pages.js"></script>
+<script src="/frontend/js/scoutlink-public-v4.js"></script><script src="/frontend/js/heap-analytics.js"></script>
 </body></html>
-
-
-
