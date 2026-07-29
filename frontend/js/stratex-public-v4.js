@@ -9,7 +9,7 @@
     }
   }());
   var SITE = 'https://www.stratexanalytics.co.uk';
-  var CONTENT_URL = '/assets/stratex-public-v4-pages.json?v=20260729';
+  var CONTENT_URL = '/assets/stratex-public-v4-pages.json?v=20260729-2';
   var root = document.getElementById('stratexPublicRoot');
   var route = resolveRoute();
   var pageStore = null;
