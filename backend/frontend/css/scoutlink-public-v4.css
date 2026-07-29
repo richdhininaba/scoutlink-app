@@ -1,3 +1,4 @@
+
 :root{
   --ink:#071525;
   --black:#071525;
@@ -828,3 +829,539 @@ body.public-site .product-page{width:100%;min-height:100vh}
   .activation-options{grid-template-columns:1fr}
   .complete-registration-page .auth-side{padding-bottom:25px}
 }
+
+/* ================================================================
+   ScoutLink V4 live production corrections — 2026-07-29
+   ================================================================ */
+
+/* The older public-core stylesheet also defines .hero as a two-column grid.
+   V4 hero sections contain their own .site-shell grid, so the outer section
+   must be reset to a normal full-width block. */
+body.public-site .product-page,
+body.public-site .product-page > main {
+  width: 100%;
+  max-width: none;
+}
+
+body.public-site .product-page > main > .hero {
+  display: block;
+  width: 100%;
+  max-width: none;
+  grid-template-columns: none;
+  gap: 0;
+  align-items: initial;
+  margin: 0;
+}
+
+body.public-site .product-page > main > .home-hero {
+  display: flex;
+  align-items: center;
+}
+
+body.public-site .site-header {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+body.public-site .site-footer {
+  width: 100%;
+  max-width: none;
+}
+
+/* Keep the authentication split at full viewport height beneath the header. */
+body.login-page-v4 .auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.login-page-v4 .auth-main {
+  flex: 1 0 auto;
+  min-height: calc(100vh - 64px);
+}
+
+body.login-page-v4 .auth-side,
+body.login-page-v4 .auth-form-wrap {
+  min-height: calc(100vh - 64px);
+}
+
+/* Workspace selector V4 */
+body.experience-page-v4 {
+  min-height: 100vh;
+  background: var(--soft);
+}
+
+body.experience-page-v4 .public-root,
+body.experience-page-v4 .experience-page-v4-shell {
+  min-height: 100vh;
+}
+
+.experience-page-v4-shell {
+  background: var(--soft);
+}
+
+.experience-page-v4-shell .site-header button.header-login {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.experience-page-v4-shell .experience-hero-v4 {
+  padding: 72px 0 48px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.experience-hero-grid-v4 {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 320px;
+  gap: 72px;
+  align-items: end;
+}
+
+.experience-hero-copy-v4 h1 {
+  max-width: 850px;
+  margin: 14px 0 0;
+  font-size: clamp(42px,5vw,64px);
+  line-height: .98;
+  letter-spacing: -2.2px;
+}
+
+.experience-hero-copy-v4 > p {
+  max-width: 760px;
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.experience-summary-v4 {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.experience-summary-v4 article {
+  min-height: 88px;
+  padding: 18px 18px 16px 0;
+  border-right: 1px solid var(--line);
+}
+
+.experience-summary-v4 article + article {
+  padding-left: 18px;
+}
+
+.experience-summary-v4 article:last-child {
+  border-right: 0;
+}
+
+.experience-summary-v4 b,
+.experience-summary-v4 span {
+  display: block;
+}
+
+.experience-summary-v4 b {
+  font-size: 20px;
+  letter-spacing: -.5px;
+}
+
+.experience-summary-v4 span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.experience-security-v4 {
+  padding: 26px;
+  background: var(--navy);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.experience-security-v4 > span {
+  color: #8fd9c3;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.experience-security-v4 h2 {
+  margin: 10px 0 0;
+  font-size: 25px;
+  line-height: 1.08;
+}
+
+.experience-security-v4 p {
+  margin: 12px 0 0;
+  color: #c7d6df;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.experience-security-v4 ul {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.experience-security-v4 li {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.14);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.experience-content-v4 {
+  padding: 34px 0 72px;
+}
+
+.experience-message-v4 {
+  display: none;
+  margin-bottom: 18px;
+  padding: 13px 15px;
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.experience-message-v4.show {
+  display: block;
+}
+
+.continue-panel-v4 {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 28px;
+  align-items: center;
+  background: var(--green);
+  color: #fff;
+}
+
+.continue-panel-v4 > div > span {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.continue-panel-v4 h2 {
+  margin: 7px 0 0;
+  font-size: 26px;
+  line-height: 1.08;
+}
+
+.continue-panel-v4 p {
+  margin: 7px 0 0;
+  color: #d9e8e3;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.continue-panel-v4 .sl-btn {
+  min-width: 210px;
+  min-height: 46px;
+  background: #fff;
+  border-color: #fff;
+  color: var(--green);
+}
+
+.workspace-heading-v4 {
+  margin: 36px 0 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+}
+
+.workspace-heading-v4 h2 {
+  margin: 6px 0 0;
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.workspace-heading-v4 p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.workspace-list-v4 {
+  display: grid;
+  gap: 12px;
+}
+
+.workspace-card-v4 {
+  min-height: 116px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: grid;
+  grid-template-columns: 52px minmax(0,1fr) minmax(180px,auto) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.workspace-card-v4.is-admin {
+  border-left: 5px solid var(--navy);
+}
+
+.workspace-card-v4.is-coach {
+  border-left: 5px solid var(--green);
+}
+
+.workspace-card-v4.is-scout {
+  border-left: 5px solid var(--blue);
+}
+
+.workspace-icon-v4 {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.workspace-card-v4.is-admin .workspace-icon-v4 {
+  background: var(--navy);
+  color: #fff;
+}
+
+.workspace-card-v4.is-scout .workspace-icon-v4 {
+  background: #e8effd;
+  color: var(--blue);
+}
+
+.workspace-copy-v4 small,
+.workspace-copy-v4 h3,
+.workspace-copy-v4 p {
+  display: block;
+}
+
+.workspace-copy-v4 small {
+  color: var(--green);
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.workspace-copy-v4 h3 {
+  margin: 5px 0 0;
+  font-size: 18px;
+}
+
+.workspace-copy-v4 p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.workspace-meta-v4 {
+  min-width: 180px;
+}
+
+.workspace-meta-v4 > b,
+.workspace-meta-v4 > span {
+  display: block;
+}
+
+.workspace-meta-v4 > b {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.workspace-meta-v4 > span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.demo-user-select-v4 {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 7px;
+  padding: 0 34px 0 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.workspace-card-v4 > .sl-btn {
+  min-width: 170px;
+  min-height: 46px;
+}
+
+.workspace-note-v4 {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.experience-loader-v4 {
+  min-height: calc(100vh - 64px);
+  padding: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+}
+
+.experience-loader-card-v4 {
+  width: min(520px,100%);
+  padding: 36px;
+  border: 1px solid var(--line);
+  background: #fff;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.experience-loader-card-v4 .sl-logo {
+  color: var(--ink);
+}
+
+.experience-loader-ball-v4 {
+  width: 48px;
+  height: 48px;
+  margin: 22px auto;
+  border: 3px solid var(--line);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: experienceLoaderSpin .8s linear infinite;
+}
+
+.experience-loader-card-v4 h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.experience-loader-card-v4 p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@keyframes experienceLoaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 900px) {
+  .experience-hero-grid-v4 {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .workspace-card-v4 {
+    grid-template-columns: 48px minmax(0,1fr) auto;
+  }
+
+  .workspace-meta-v4 {
+    grid-column: 2 / -1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  body.public-site .product-page > main > .hero {
+    display: block;
+  }
+
+  body.public-site .product-page > main > .home-hero {
+    display: flex;
+  }
+
+  body.login-page-v4 .auth-main,
+  body.login-page-v4 .auth-side,
+  body.login-page-v4 .auth-form-wrap {
+    min-height: auto;
+  }
+
+  .experience-page-v4-shell .experience-hero-v4 {
+    padding: 48px 0 34px;
+  }
+
+  .experience-hero-copy-v4 h1 {
+    font-size: 38px;
+    letter-spacing: -1.4px;
+  }
+
+  .experience-summary-v4 {
+    grid-template-columns: 1fr;
+  }
+
+  .experience-summary-v4 article,
+  .experience-summary-v4 article + article {
+    min-height: 68px;
+    padding: 14px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .experience-summary-v4 article:last-child {
+    border-bottom: 0;
+  }
+
+  .continue-panel-v4 {
+    grid-template-columns: 1fr;
+  }
+
+  .continue-panel-v4 .sl-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .workspace-heading-v4 {
+    display: block;
+  }
+
+  .workspace-heading-v4 p {
+    margin-top: 8px;
+  }
+
+  .workspace-card-v4 {
+    grid-template-columns: 44px minmax(0,1fr);
+    gap: 13px;
+  }
+
+  .workspace-icon-v4 {
+    width: 42px;
+    height: 42px;
+  }
+
+  .workspace-meta-v4,
+  .workspace-card-v4 > .sl-btn {
+    grid-column: 1 / -1;
+  }
+
+  .workspace-card-v4 > .sl-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-loader-ball-v4 {
+    animation: none;
+  }
+}
+
