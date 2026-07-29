@@ -1,16 +1,10 @@
 User-agent: *
 Allow: /
-
-# Restricted company administration, product app, API and file routes.
 Disallow: /admin
-Disallow: /admin/
+Disallow: /company/admin
 Disallow: /api/
-Disallow: /frontend/
 Disallow: /stratex/
-Disallow: /coach/
-Disallow: /scout/
-Disallow: /player/
-Disallow: /uploads/
-Disallow: /files/
+Disallow: /showcase-event/player-registration
+Disallow: /showcase-event/coach-scout-registration
 
 Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml
