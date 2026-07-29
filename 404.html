@@ -1,67 +1,134 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-  <title>Page Not Found - ScoutLink</title>
-<script src="/route-redirect.js"></script>
-  <link rel="stylesheet" href="../css/variables.css">
-  <link rel="stylesheet" href="../css/main.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#08785c">
+  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+  <title>Page Not Found | ScoutLink</title>
   <style>
-    body{min-height:100vh;background:linear-gradient(180deg,#ffffff,#f6f8fb);color:#0f172a;font-family:Inter,system-ui,sans-serif;display:grid;place-items:center;padding:24px}
-    .not-found{width:min(100%,840px);border:1px solid #e5e7eb;border-radius:24px;background:#fff;padding:34px;box-shadow:0 24px 70px rgba(15,23,42,.10)}
-    .brand-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:34px}
-    .brand{font-size:26px;font-weight:950;color:#0f172a}.brand span{color:#0f9f75}
-    .status-pill{border:1px solid rgba(15,159,117,.32);color:#047857;background:#ecfdf5;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
-    .code{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#047857;margin-bottom:12px}
-    h1{font-size:clamp(32px,6vw,56px);line-height:1.02;margin:0 0 12px;color:#0f172a}
-    p{color:#475569;font-size:16px;line-height:1.65;max-width:560px;margin:0 0 28px}
-    .actions{display:flex;flex-wrap:wrap;gap:12px}
-    .metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:28px 0 0}
-    .metric{background:#f8fafc;border:1px solid #edf1f5;border-radius:16px;padding:14px}
-    .metric strong{display:block;color:#0f172a;font-size:18px;margin-bottom:4px}.metric span{color:#64748b;font-size:11px;text-transform:uppercase;font-weight:900;letter-spacing:.06em}
-    .support{margin-top:22px;padding-top:18px;border-top:1px solid #edf1f5;color:#64748b;font-size:13px}.support a{color:#047857;text-decoration:none;font-weight:850}
-    @media(max-width:640px){body{padding:14px}.not-found{padding:22px;border-radius:20px}.brand-row{align-items:flex-start;flex-direction:column;margin-bottom:26px}.actions{display:grid}.metric-row{grid-template-columns:1fr}.btn{width:100%;justify-content:center}}
+    :root {
+      color-scheme: light;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f2f5f6;
+      color: #071525;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 80% 18%, rgba(8, 120, 92, 0.12), transparent 32%),
+        #f2f5f6;
+    }
+
+    main {
+      width: min(680px, 100%);
+      padding: clamp(30px, 7vw, 62px);
+      border: 1px solid #d8e1e7;
+      border-radius: 28px;
+      background: #ffffff;
+      box-shadow: 0 18px 50px rgba(7, 21, 37, 0.10);
+    }
+
+    .brand {
+      display: inline-block;
+      margin-bottom: 42px;
+      color: #071525;
+      font-size: 25px;
+      font-weight: 950;
+      letter-spacing: -1px;
+      text-decoration: none;
+    }
+
+    .brand span {
+      color: #08785c;
+    }
+
+    .eyebrow {
+      display: block;
+      color: #08785c;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 12px 0 0;
+      font-size: clamp(36px, 8vw, 62px);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    p {
+      max-width: 520px;
+      margin: 20px 0 0;
+      color: #526678;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #d8e1e7;
+    }
+
+    .action {
+      min-height: 46px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #08785c;
+      border-radius: 12px;
+      background: #08785c;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .action.secondary {
+      background: #ffffff;
+      color: #08785c;
+    }
+
+    @media (max-width: 560px) {
+      nav {
+        display: grid;
+      }
+
+      .action {
+        width: 100%;
+      }
+    }
   </style>
-<link rel="stylesheet" href="../css/phone-base.css">
-<link rel="stylesheet" href="../css/phone-shell.css">
-<link rel="stylesheet" href="../css/phone-pages.css">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
 </head>
 <body>
-  <main class="not-found">
-    <div class="brand-row">
-      <div class="brand">Scout<span>Link</span></div>
-      <div class="status-pill">Route unavailable</div>
-    </div>
-    <div class="code">404 - Page not found</div>
-    <h1>This page is out of play.</h1>
-    <p>The link may have moved, or the route may have been typed incorrectly. Head back to ScoutLink and pick up from the right account area.</p>
-    <div class="actions">
-      <a class="btn btn-outline" href="/">ScoutLink home</a>
-      <a class="btn btn-primary" href="/login">Sign in</a>
-      <a class="btn btn-ghost" href="mailto:info@scoutlink.app">Contact support</a>
-    </div>
-    <div class="metric-row">
-      <div class="metric"><strong>Scout</strong><span>Player intelligence</span></div>
-      <div class="metric"><strong>Coach</strong><span>Team development</span></div>
-      <div class="metric"><strong>Stratex</strong><span>Platform control</span></div>
-    </div>
-    <div class="support">Need help? Contact <a href="mailto:info@scoutlink.app">info@scoutlink.app</a>.</div>
+  <main>
+    <a class="brand" href="/">Scout<span>Link</span></a>
+    <span class="eyebrow">404 · Page removed</span>
+    <h1>This page is no longer available.</h1>
+    <p>The ScoutLink public website has been streamlined. Use one of the current pages below.</p>
+    <nav aria-label="Current ScoutLink pages">
+      <a class="action" href="/">ScoutLink home</a>
+      <a class="action secondary" href="/coaches">For coaches</a>
+      <a class="action secondary" href="/scouts">For scouts</a>
+    </nav>
   </main>
-<script src="../js/phone-routes.js"></script>
-<script src="../js/phone-shell.js"></script>
-<script src="../js/phone-pages.js"></script>
-<script src="../js/heap-analytics.js"></script>
 </body>
 </html>
-
-
-
