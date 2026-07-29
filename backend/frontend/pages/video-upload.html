@@ -1,76 +1,24 @@
 <!doctype html>
-<html lang="en">
-<head>
+<html lang="en"><head>
 <meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Upload Player Video - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css">
+<title>Upload Player Video | ScoutLink</title>
+<meta name="description" content="Use a secure ScoutLink upload link to attach approved video to a coach-managed player profile.">
+<meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="https://www.scoutlink.app/video-upload">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Upload Player Video | ScoutLink">
+<meta property="og:description" content="Use a secure ScoutLink upload link to attach approved video to a coach-managed player profile.">
+<meta property="og:url" content="https://www.scoutlink.app/video-upload">
+<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#08785c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;background:#f6f8fa;color:#111827}.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{width:min(620px,100%);background:#fff;border:1px solid #e5e7eb;border-radius:24px;box-shadow:0 24px 70px rgba(15,23,42,.12);overflow:hidden}.head{padding:28px 30px;border-bottom:1px solid #e5e7eb}.brand{font-weight:900;font-size:24px;margin-bottom:20px}.brand span{color:#0f9f75}.label{display:inline-flex;border:1px solid rgba(15,159,117,.28);background:rgba(15,159,117,.08);color:#047857;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.head h1{font-size:28px;line-height:1.1;margin:16px 0 8px}.head p{margin:0;color:#64748b;line-height:1.55}.body{padding:28px 30px}.field{margin-bottom:16px}.field label{display:block;font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px}input,select,textarea{width:100%;border:1px solid #dbe3ea;border-radius:13px;padding:12px 14px;font:inherit;color:#111827;background:#fff}textarea{min-height:96px;resize:vertical}.btn{width:100%;height:46px;border:0;border-radius:14px;background:#0f9f75;color:#fff;font-weight:900;font-size:15px;cursor:pointer}.btn:disabled{opacity:.55;cursor:not-allowed}.msg{margin-top:14px;border-radius:14px;padding:12px 14px;font-size:14px;display:none}.msg.ok{display:block;background:#ecfdf5;color:#047857;border:1px solid #bbf7d0}.msg.err{display:block;background:#fef2f2;color:#dc2626;border:1px solid #fecaca}.muted{font-size:12px;color:#64748b;margin-top:6px;line-height:1.4}
-@media(max-width:640px){.wrap{padding:16px;align-items:flex-start}.card{border-radius:20px}.head,.body{padding:22px}.head h1{font-size:24px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-<main class="card">
-<section class="head">
-<div class="brand">Scout<span>Link</span></div>
-<span class="label">Player video upload</span>
-<h1 id="title">Loading upload link...</h1>
-<p id="intro">This secure link lets you upload a video directly to a coach-managed player profile.</p>
-</section>
-<section class="body">
-<form id="uploadForm" style="display:none">
-<div class="field"><label for="videoTitle">Video title *</label><input id="videoTitle" name="title" required placeholder="e.g. Match highlights"></div>
-<div class="field"><label for="videoCategory">Category</label><select id="videoCategory" name="category"><option>Highlight</option><option>Match</option><option>Training</option><option>Skills</option><option>Goal</option></select></div>
-<div class="field"><label for="videoDescription">Description</label><textarea id="videoDescription" name="description" placeholder="Add any useful context for the coach."></textarea></div>
-<div class="field"><label for="videoFile">Video file *</label><input id="videoFile" name="file" type="file" accept="video/*" required><div class="muted">MP4, MOV, WEBM or AVI. Maximum 4MB.</div></div>
-<button class="btn" id="submitBtn" type="submit">Upload video</button>
-<div class="msg" id="message"></div>
-</form>
-<div class="msg err" id="loadError" style="display:none"></div>
-</section>
-</main>
-</div>
-<script src="../js/main.js"></script>
-<script>
-var params=new URLSearchParams(window.location.search);
-var token=params.get('token')||'';
-var form=document.getElementById('uploadForm');
-var message=document.getElementById('message');
-function showMessage(text,type){message.className='msg '+(type||'ok');message.textContent=text;}
-function loadLink(){
-if(!token){document.getElementById('loadError').textContent='This upload link is missing a token.';document.getElementById('loadError').style.display='block';return;}
-fetch(API+'/api/videos/upload-link/'+encodeURIComponent(token)).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload link unavailable');return d;});}).then(function(d){
-var p=d.player||{};
-document.getElementById('title').textContent='Upload video for '+(p.firstName||'this player')+' '+(p.lastName||'');
-document.getElementById('intro').textContent='Your video will attach directly to '+(p.firstName||'the player')+'\'s ScoutLink profile for '+(p.teamName||'their team')+'.';
-form.style.display='block';
-}).catch(function(e){document.getElementById('title').textContent='Upload link unavailable';document.getElementById('loadError').textContent=e.message;document.getElementById('loadError').style.display='block';});
-}
-form.addEventListener('submit',function(e){
-e.preventDefault();
-var file=document.getElementById('videoFile').files[0];
-if(!file){showMessage('Choose a video file first.','err');return;}
-var btn=document.getElementById('submitBtn');
-var fd=new FormData();
-fd.append('token',token);
-fd.append('title',document.getElementById('videoTitle').value.trim());
-fd.append('category',document.getElementById('videoCategory').value);
-fd.append('description',document.getElementById('videoDescription').value.trim());
-fd.append('file',file);
-btn.disabled=true;btn.textContent='Uploading...';
-fetch(API+'/api/videos/public-upload',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload failed');return d;});}).then(function(){
-showMessage('Video uploaded successfully. The coach can now view it in ScoutLink.','ok');
-form.reset();
-btn.textContent='Upload another video';btn.disabled=false;
-}).catch(function(e){showMessage(e.message,'err');btn.textContent='Upload video';btn.disabled=false;});
-});
-loadLink();
-</script>
-</body>
-</html>
+<link rel="stylesheet" href="/frontend/css/scoutlink-public-v4.css">
+</head><body><a class="public-skip" href="#uploadMain">Skip to video upload</a><div class="product-page upload-product-page"><main class="upload-page" id="uploadMain"><header class="upload-header"><a href="/" class="sl-logo">Scout<span>Link</span></a><span>Secure player video upload</span></header><section class="upload-layout"><aside class="upload-player"><span class="initials" id="playerInitials">SL</span><small>Video for</small><h1 id="playerName">Loading player…</h1><p id="playerTeam">Checking the secure upload link.</p><div class="secure-note"><b>Private upload link</b><span>The video attaches directly to the coach-managed player profile.</span></div><dl><div><dt>Link access</dt><dd>Token protected</dd></div><div><dt>Accepted</dt><dd>MP4, MOV, WEBM or AVI</dd></div><div><dt>Maximum</dt><dd>4MB</dd></div></dl></aside><section class="upload-form"><span class="eyebrow">Player video upload</span><h2>Add the video details.</h2><p>Use a clear title and enough context for the coach reviewing the file.</p><div class="form-message err" id="loadError" role="alert"></div><form id="uploadForm" hidden><label class="form-field"><span>Video title<em>Required</em></span><input id="videoTitle" name="title" required placeholder="Match highlights"></label><label class="form-field"><span>Category</span><select id="videoCategory" name="category"><option>Highlight</option><option>Match</option><option>Training</option><option>Skills</option><option>Goal</option></select></label><label class="form-field"><span>Description</span><textarea id="videoDescription" name="description" placeholder="Add useful context for the coach."></textarea></label><label class="form-field"><span>Video file<em>Required</em></span><input id="videoFile" name="file" type="file" accept="video/*" required><small>MP4, MOV, WEBM or AVI. Maximum 4MB.</small></label><button class="sl-btn" id="submitBtn" type="submit">Upload video</button><div class="form-message" id="message" role="status"></div><small class="legal-small">By uploading, you confirm you are authorised to share this video with the player’s coach-managed ScoutLink profile.</small></form></section></section></main></div><script>
+(function(){'use strict';var API=(function(){try{return localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}catch(_){return 'https://scoutlink-api.vercel.app';}})();var token=new URLSearchParams(location.search).get('token')||'',form=document.getElementById('uploadForm'),message=document.getElementById('message'),loadError=document.getElementById('loadError');function show(el,text,type){el.textContent=text;el.className='form-message '+(type||'ok')+' show';}function initials(first,last){return ((first||'').charAt(0)+(last||'').charAt(0)).toUpperCase()||'SL';}if(!token){show(loadError,'This upload link is missing a token.','err');}else{fetch(API+'/api/videos/upload-link/'+encodeURIComponent(token)).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload link unavailable');return d;});}).then(function(d){var p=d.player||{};document.getElementById('playerName').textContent=((p.firstName||'This')+' '+(p.lastName||'player')).trim();document.getElementById('playerTeam').textContent=p.teamName||'Coach-managed ScoutLink profile';document.getElementById('playerInitials').textContent=initials(p.firstName,p.lastName);form.hidden=false;}).catch(function(e){show(loadError,e.message,'err');document.getElementById('playerName').textContent='Upload link unavailable';});}form.addEventListener('submit',function(e){e.preventDefault();var file=document.getElementById('videoFile').files[0];if(!file){show(message,'Choose a video file first.','err');return;}if(file.size>4*1024*1024){show(message,'This video is larger than the 4MB limit for this secure player-profile upload.','err');return;}var btn=document.getElementById('submitBtn'),fd=new FormData();fd.append('token',token);fd.append('title',document.getElementById('videoTitle').value.trim());fd.append('category',document.getElementById('videoCategory').value);fd.append('description',document.getElementById('videoDescription').value.trim());fd.append('file',file);btn.disabled=true;btn.textContent='Uploading…';fetch(API+'/api/videos/public-upload',{method:'POST',body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload failed');return d;});}).then(function(){show(message,'Video uploaded successfully. The coach can now view it in ScoutLink.','ok');form.reset();btn.textContent='Upload another video';}).catch(function(err){show(message,err.message,'err');btn.textContent='Upload video';}).finally(function(){btn.disabled=false;});});})();
+</script><script src="/frontend/js/scoutlink-public-v4.js"></script></body></html>
