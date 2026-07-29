@@ -8,61 +8,26 @@
     '/demo': '/frontend/pages/demo.html',
     '/coaches': '/frontend/pages/coaches.html',
     '/scouts': '/frontend/pages/scouts.html',
-    '/parents-players': '/frontend/pages/parents-players.html',
-    '/parents-and-players': '/frontend/pages/parents-players.html',
-    '/about': '/frontend/pages/about.html',
     '/register': '/frontend/pages/register.html',
     '/register/scout': '/frontend/pages/register-scout.html',
     '/register/coach': '/frontend/pages/register-coach.html',
     '/data-policy': '/frontend/pages/data-policy.html',
     '/privacy-policy': '/frontend/pages/privacy-policy.html',
-    '/privacy': '/frontend/pages/privacy-policy.html',
     '/terms': '/frontend/pages/terms.html',
-    '/terms-of-use': '/frontend/pages/terms.html',
     '/cookie-policy': '/frontend/pages/cookie-policy.html',
-    '/cookies': '/frontend/pages/cookie-policy.html',
     '/safeguarding': '/frontend/pages/safeguarding.html',
     '/report-a-concern': '/frontend/pages/report-concern.html',
-    '/parent-guardian-notice': '/frontend/pages/parent-guardian-notice.html',
-    '/applicant-privacy-notice': '/frontend/pages/applicant-privacy-notice.html',
-    '/privacy-request': '/frontend/pages/privacy-request.html',
-    '/contact': '/frontend/pages/contact.html',
-    '/accessibility': '/frontend/pages/accessibility.html',
     '/complete-registration': '/frontend/pages/complete-registration.html',
+    '/confirm-password': '/frontend/pages/confirm-password.html',
     '/video-upload': '/frontend/pages/video-upload.html',
-    '/company': '/frontend/pages/stratex-site.html',
-    '/company/scoutlink': '/frontend/pages/stratex-site.html',
-    '/scoutlink': '/frontend/pages/stratex-site.html',
-    '/scoutlink/compatibility-score': '/frontend/pages/stratex-site.html',
     '/scoutlink/pricing': '/frontend/pages/stratex-site.html',
-    '/scoutlink/scouts': '/frontend/pages/stratex-site.html',
-    '/scoutlink/coaches': '/frontend/pages/stratex-site.html',
-    '/grassroots-football-scouting-tools': '/frontend/pages/stratex-site.html',
-    '/company/about': '/frontend/pages/stratex-site.html',
-    '/company/leadership': '/frontend/pages/stratex-site.html',
-    '/company/trust': '/frontend/pages/stratex-site.html',
-    '/company/scout-verification': '/frontend/pages/stratex-site.html',
-    '/company/parent-guardian-notice': '/frontend/pages/stratex-site.html',
-    '/company/careers': '/frontend/pages/stratex-site.html',
-    '/company/contact': '/frontend/pages/stratex-site.html',
-    '/company/report-a-concern': '/frontend/pages/stratex-site.html',
-    '/company/privacy-policy': '/frontend/pages/stratex-site.html',
-    '/company/terms': '/frontend/pages/stratex-site.html',
-    '/company/terms-of-use': '/frontend/pages/stratex-site.html',
-    '/company/cookie-policy': '/frontend/pages/stratex-site.html',
-    '/company/security': '/frontend/pages/stratex-site.html',
-    '/company/accessibility': '/frontend/pages/stratex-site.html',
-    '/company/learning-centre': '/frontend/pages/stratex-site.html',
+    '/404': '/frontend/pages/404.html',
+
     '/company/admin': '/frontend/pages/stratex-company-admin.html',
     '/admin': '/frontend/pages/stratex-company-admin.html',
     '/admin/usage-requests': '/frontend/pages/stratex-usage-requests.html',
     '/admin/showcase-event': '/frontend/pages/stratex-showcase-events.html',
-    '/showcase-event/player-registration': '/frontend/pages/showcase-player-registration.html',
-    '/showcase-event/player-registration/complete': '/frontend/pages/showcase-player-registration.html',
-    '/showcase-event/coach-scout-registration': '/frontend/pages/showcase-professional-registration.html',
-    '/showcase-event/coach-scout-registration/complete': '/frontend/pages/showcase-professional-registration.html',
-    '/showcase-event/coach-scout-registration/sold-out': '/frontend/pages/showcase-professional-registration.html',
-    '/404': '/frontend/pages/404.html',
+
     '/stratex/dashboard': '/frontend/pages/stratex-dashboard.html',
     '/stratex/company-site': '/frontend/pages/stratex-company-admin.html',
     '/stratex/registrations': '/frontend/pages/stratex-registrations.html',
@@ -85,9 +50,11 @@
     '/stratex/concerns': '/frontend/pages/stratex-concerns.html',
     '/stratex/settings': '/frontend/pages/stratex-settings.html',
     '/stratex/usage-requests': '/frontend/pages/stratex-usage-requests.html',
+
     '/coach/dashboard': '/frontend/pages/coach-dashboard.html',
     '/coach/onboarding': '/frontend/pages/coach-onboarding.html',
     '/coach/my-players': '/frontend/pages/coach-my-players.html',
+    '/coach/usage-requests': '/frontend/pages/coach-usage-requests.html',
     '/coach/add-player': '/frontend/pages/add-player.html',
     '/coach/bulk-add-players': '/frontend/pages/bulk-add-players.html',
     '/coach/match-facts': '/frontend/pages/match-facts.html',
@@ -97,6 +64,7 @@
     '/coach/notifications': '/frontend/pages/coach-notifications.html',
     '/coach/report-a-concern': '/frontend/pages/coach-report-concern.html',
     '/coach/settings': '/frontend/pages/coach-settings.html',
+
     '/scout/dashboard': '/frontend/pages/scout-dashboard.html',
     '/scout/onboarding': '/frontend/pages/scout-onboarding.html',
     '/scout/player-search': '/frontend/pages/player-search.html',
@@ -110,79 +78,29 @@
     '/scout/events': '/frontend/pages/scout-events.html',
     '/scout/chat': '/frontend/pages/scout-chat.html',
     '/scout/notifications': '/frontend/pages/scout-notifications.html',
+    '/scout/report-a-concern': '/frontend/pages/scout-report-concern.html',
     '/scout/settings': '/frontend/pages/scout-settings.html',
     '/scout/usage-requests': '/frontend/pages/scout-usage-requests.html',
     '/scout/preferences': '/frontend/pages/scout-preferences.html',
+
     '/player/dashboard': '/frontend/pages/player-dashboard.html',
     '/player/profile': '/frontend/pages/player-profile.html',
     '/player/edit-profile': '/frontend/pages/player-profile-edit.html',
     '/player/video-reels': '/frontend/pages/player-video-reels.html',
     '/player/notifications': '/frontend/pages/player-notifications.html',
-    '/player/settings': '/frontend/pages/player-settings.html',
-    '/careers': '/frontend/pages/careers.html',
-    '/careers/interview-availability': '/frontend/pages/interview-availability.html'
+    '/player/settings': '/frontend/pages/player-settings.html'
   };
 
-  var currentPath = window.location.pathname.replace(/\/$/, '') || '/';
-
-  if (currentPath === '/pricing') {
-    window.location.replace('/scoutlink/pricing' + window.location.search + window.location.hash);
-    return;
-  }
-
-  if (currentPath === '/compatibility-score') {
-    window.location.replace('/scoutlink/compatibility-score' + window.location.search + window.location.hash);
-    return;
-  }
-
-  if (
-    /(^|\.)stratexanalytics\.co\.uk$/i.test(window.location.hostname) &&
-    currentPath === '/coaches'
-  ) {
-    window.location.replace('/scoutlink/coaches' + window.location.search + window.location.hash);
-    return;
-  }
-
-  if (
-    /(^|\.)stratexanalytics\.co\.uk$/i.test(window.location.hostname) &&
-    currentPath === '/scouts'
-  ) {
-    window.location.replace('/scoutlink/scouts' + window.location.search + window.location.hash);
-    return;
-  }
-
-  if (currentPath === '/company' || currentPath.indexOf('/company/') === 0) {
-    var cleanPath = currentPath.replace(/^\/company/, '') || '/';
-    window.location.replace(cleanPath + window.location.search + window.location.hash);
-    return;
-  }
-
+  var currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
   var target = routes[currentPath];
 
   if (!target && currentPath.indexOf('/admin/') === 0) {
     target = '/frontend/pages/stratex-company-admin.html';
   }
 
-  if (!target && currentPath.indexOf('/careers/') === 0) {
-    var slug = currentPath.split('/').filter(Boolean).slice(1).join('/');
-    if (slug) {
-      target = '/frontend/pages/career-detail.html';
-      var params = new URLSearchParams(window.location.search);
-      if (!params.get('slug')) params.set('slug', slug);
-      window.location.replace(target + '?' + params.toString() + window.location.hash);
-      return;
-    }
-  }
-
-  if (
-    !target &&
-    (currentPath.indexOf('/company/careers/') === 0 ||
-      currentPath.indexOf('/company/learning-centre/') === 0)
-  ) {
-    target = '/frontend/pages/stratex-site.html';
-  }
-
   if (target) {
-    window.location.replace(target + window.location.search + window.location.hash);
+    window.location.replace(
+      target + window.location.search + window.location.hash
+    );
   }
 }());
