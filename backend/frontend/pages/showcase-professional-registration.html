@@ -4,19 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Coach and Scout Registration | ScoutLink Showcase Event</title>
-  <meta name="description" content="Register as a coach or scout for the free ScoutLink Showcase Event at Ballerz Air Dome, Bluewater on 12 September 2026.">
+  <title>Coach and Scout Registration | Stratex Analytics Showcase Event</title>
+  <meta name="description" content="Register as a coach or scout for the free ScoutLink Showcase Event operated by Stratex Analytics.">
+  <link rel="canonical" href="https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration">
   <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+  <meta name="theme-color" content="#075f48">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/frontend/css/showcase-event-v1.css?v=20260727-2">
+  <link rel="stylesheet" href="/css/stratex-showcase-v2.css?v=20260729">
+  <script>
+    (function () {
+      var path = window.location.pathname.replace(/\/+$/, "");
+      var title = "Coach and Scout Registration | Stratex Analytics Showcase Event";
+      if (path.endsWith("/complete")) title = "Coach and Scout Registration Complete | Stratex Analytics Showcase Event";
+      if (path.endsWith("/sold-out")) title = "Coach and Scout Registration Full | Stratex Analytics Showcase Event";
+      var canonical = "https://www.stratexanalytics.co.uk" + (path || "/showcase-event/coach-scout-registration");
+      document.title = title;
+      document.addEventListener("DOMContentLoaded", function () {
+        var link = document.querySelector('link[rel="canonical"]');
+        if (link) link.href = canonical;
+      });
+    }());
+  </script>
 </head>
 <body class="showcase-public-body" data-showcase-page="professional">
   <div id="showcaseApp" class="showcase-page-root" aria-live="polite"></div>
   <noscript>This registration requires JavaScript. Please enable it and reload the page.</noscript>
   <script src="/frontend/js/config.js"></script>
-  <script src="/frontend/js/showcase-professional-registration-v1.js?v=20260727-2"></script>
-  <script src="/frontend/js/heap-analytics.js"></script>
+  <script src="/js/showcase-professional-registration-v1.js?v=20260729"></script>
+  <script src="/js/heap-analytics.js"></script>
 </body>
 </html>
