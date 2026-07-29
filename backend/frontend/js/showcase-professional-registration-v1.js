@@ -9,7 +9,7 @@
     }
   }());
 
-  var STORAGE_KEY = 'stratex_showcase_professional_registration_v3';
+  var STORAGE_KEY = 'stratex_showcase_professional_registration_v2';
   var MOBILE_BREAKPOINT = 760;
   var root = document.getElementById('showcaseApp');
   var lastMobile = window.matchMedia('(max-width:' + MOBILE_BREAKPOINT + 'px)').matches;
@@ -147,8 +147,8 @@
   function publicHeader() {
     return '<header class="public-header">' +
       '<a class="brand" href="/">Stratex<span>Analytics</span></a>' +
-      '<nav><a href="/scoutlink">ScoutLink</a><a href="/about">About</a><a href="/trust">Trust</a><a href="/learning-centre">Learning Centre</a><a href="/contact">Contact</a></nav>' +
-      '<a class="header-link" href="/admin">Sign in</a>' +
+      '<nav><a href="/scoutlink">ScoutLink</a><a href="/about">About</a><a href="/leadership">Leadership</a><a href="/trust">Trust</a><a href="/learning-centre">Learning</a><a href="/careers">Careers</a><a href="/contact">Contact</a></nav>' +
+      '<a class="header-link" href="https://www.scoutlink.app/login">Sign in</a>' +
     '</header>';
   }
 
@@ -158,32 +158,16 @@
       '<button type="button" data-mobile-menu aria-label="Open menu" aria-expanded="false">☰</button>' +
     '</header>' +
     '<nav class="mobile-menu-panel" data-mobile-menu-panel>' +
-      '<a href="/scoutlink">ScoutLink</a><a href="/about">About</a><a href="/trust">Trust</a><a href="/learning-centre">Learning Centre</a><a href="/contact">Contact</a>' +
+      '<a href="/scoutlink">ScoutLink</a><a href="/about">About</a><a href="/leadership">Leadership</a><a href="/trust">Trust</a><a href="/learning-centre">Learning</a><a href="/careers">Careers</a><a href="/contact">Contact</a><a href="https://www.scoutlink.app/login">Sign in</a>' +
     '</nav>';
   }
 
   function publicFooter() {
     return '<footer class="public-footer">' +
-      '<div><div class="brand small">Stratex<span>Analytics</span></div><p>Data, evidence and responsible visibility for grassroots football.</p></div>' +
-      '<div><b>Showcase</b><a href="/showcase-event/player-registration">Player registration</a><a href="/showcase-event/coach-scout-registration">Coach and scout registration</a></div>' +
-      '<div><b>Trust</b><a href="/safeguarding">Safeguarding</a><a href="/privacy-policy">Privacy</a><a href="/contact">Contact</a></div>' +
+      '<div><div class="brand small">Stratex<span>Analytics</span></div><p>Data, technology and responsible football visibility for overlooked grassroots talent.</p></div>' +
+      '<div><b>Showcase</b><a href="/showcase-event">Event information</a><a href="/showcase-event/player-registration">Player registration</a><a href="/showcase-event/coach-scout-registration">Coach and scout registration</a></div>' +
+      '<div><b>Trust and legal</b><a href="/trust">Trust centre</a><a href="/report-a-concern">Report a concern</a><a href="/privacy-policy">Privacy</a><a href="/terms">Terms</a></div>' +
     '</footer>';
-  }
-
-  function campaignPanel(title, subtitle) {
-    return '<aside class="campaign-panel">' +
-      '<div class="campaign-copy"><span class="free-badge">100% free to attend</span><p class="campaign-kicker">ScoutLink Showcase Event</p><h1>' + escapeHtml(title) + '</h1><p class="campaign-subtitle">' + escapeHtml(subtitle) + '</p></div>' +
-      '<section class="event-meta"><div><small>Date</small><b>' + escapeHtml(eventDateLabel()) + '</b></div><div><small>Arrival time</small><b>' + escapeHtml(professionalArrivalLabel()) + '</b></div><div><small>Venue</small><b>' + escapeHtml(eventVenue()) + '</b></div><div><small>For</small><b>Coaches and scouts</b></div></section>' +
-      '<div class="venue-panel"><span class="venue-pin">⌖</span><div><small>Full venue address</small><b>Ballerz Air Dome</b><p>' + escapeHtml(eventAddress()) + '</p></div></div>' +
-      '<div class="campaign-proof"><span>✓ Free registration</span><span>✓ Live football showcase</span><span>✓ Responsible scout access</span></div>' +
-    '</aside>';
-  }
-
-  function mobileCampaign(title, subtitle) {
-    return '<section class="mobile-campaign-hero">' +
-      '<span class="free-badge">100% free to attend</span><p class="campaign-kicker">ScoutLink Showcase Event</p><h1>' + escapeHtml(title) + '</h1><p>' + escapeHtml(subtitle) + '</p>' +
-      '<section class="event-meta mobile"><div><small>Date</small><b>' + escapeHtml(eventDateLabel()) + '</b></div><div><small>Arrival time</small><b>' + escapeHtml(professionalArrivalLabel()) + '</b></div><div><small>Venue</small><b>' + escapeHtml(eventVenue()) + '</b></div><div><small>For</small><b>Coaches and scouts</b></div></section>' +
-    '</section>';
   }
 
   function progress(step) {
@@ -247,31 +231,17 @@
       '<a class="btn primary large" href="/">Return to Stratex Analytics</a>';
   }
 
-  function soldOutFormContent() {
-    return '<header class="registration-intro"><span class="section-kicker danger">This showcase is full</span><h2>Stay connected to future showcase opportunities</h2><p>Leave your contact details and a member of the Stratex team will contact you by email or phone to arrange a way for you to see more ScoutLink showcase events.</p></header>' +
-      '<form data-professional-form="sold-out" novalidate><div class="two-col">' +
-        field('First name', 'firstName', 'text', state.data.firstName) +
-        field('Last name', 'lastName', 'text', state.data.lastName) +
-        field('Email address', 'email', 'email', state.data.email) +
-        field('Phone number', 'phone', 'tel', state.data.phone) +
-      '</div>' +
-      '<section class="limited-space-message"><span>Future showcase access</span><p>This form does not confirm a place at the current event. Our team will contact you about future showcase viewing opportunities and other ways to see ScoutLink talent live.</p></section>' +
-      '<p class="privacy-copy">Your details are stored securely and used only to contact you about ScoutLink showcase opportunities.</p><div class="form-message" data-form-message hidden></div></form>';
-  }
-
-  function waitlistCompleteContent() {
+  function waitlistContent() {
     var result = state.result || {};
-    return '<section class="success-mark">✓</section>' +
-      '<header class="registration-intro centred"><span class="section-kicker">Details received</span><h2>Our team will contact you</h2><p>A member of the Stratex team will contact you by email or phone to arrange a way for you to see more ScoutLink showcase events.</p></header>' +
-      '<section class="ticket-panel"><div><small>Name</small><b>' + escapeHtml(state.data.firstName + ' ' + state.data.lastName) + '</b></div><div><small>Reference</small><b>' + escapeHtml(result.registrationReference || 'Saved') + '</b></div><div><small>Email</small><b>' + escapeHtml(state.data.email) + '</b></div><div><small>Phone</small><b>' + escapeHtml(state.data.phone) + '</b></div></section>' +
-      '<section class="support-panel"><b>This is not a confirmed place at the current event</b><p>Please wait for our team to contact you before travelling to any showcase.</p></section>' +
+    return '<header class="registration-intro centred"><span class="section-kicker danger">Professional waitlist</span><h2>The confirmed coach and scout spaces are full</h2><p>Your details have been added to the waitlist. Stratex will contact you if a place becomes available.</p></header>' +
+      '<section class="sold-out-count"><div><small>Waitlist reference</small><b>' + escapeHtml(result.registrationReference || 'Saved') + '</b></div><span>Waitlist</span></section>' +
+      '<section class="support-panel"><b>Do not travel without confirmation</b><p>A waitlist registration is not an event place. Wait for an email or phone call from Stratex before attending.</p></section>' +
       '<a class="btn primary large" href="/">Return to Stratex Analytics</a>';
   }
 
   function currentContent() {
     if (state.status === 'complete') return completeContent();
-    if (state.status === 'waitlist-complete') return waitlistCompleteContent();
-    if (state.status === 'sold-out') return soldOutFormContent();
+    if (state.status === 'sold-out') return waitlistContent();
     if (state.step === 1) return detailsContent();
     if (state.step === 2) return attendanceContent();
     return landingContent();
@@ -279,16 +249,12 @@
 
   function titles() {
     if (state.status === 'complete') return ['See the next generation live.', 'Your free coach or scout registration is confirmed.'];
-    if (state.status === 'waitlist-complete') return ['Stay close to the action.', 'Your contact details have been received by Stratex.'];
-    if (state.status === 'sold-out') return ['This showcase is full.', 'Leave your details and our team will contact you about more ScoutLink showcase events.'];
+    if (state.status === 'sold-out') return ['Stay close to the action.', 'Your registration is on the coach and scout waitlist.'];
     if (state.step === 2) return ['One final confirmation.', 'Check the date, time and venue before submitting.'];
     return ['Be there when talent gets noticed.', 'Watch live football, meet coaches and discover players with more context.'];
   }
 
   function actions() {
-    if (state.status === 'sold-out') {
-      return '<button class="btn primary" type="button" data-action="submit-sold-out" ' + (state.submitting ? 'disabled' : '') + '>' + (state.submitting ? 'Saving details…' : 'Ask the team to contact me') + '</button>';
-    }
     if (state.status || state.step === 0) return '';
     var back = '<button class="btn secondary" type="button" data-action="back">Back</button>';
     if (state.step === 1) return back + '<button class="btn primary" type="button" data-action="continue">Continue to attendance</button>';
@@ -361,22 +327,6 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
   }
 
-  function publicSupabaseConfig() {
-    var config = window.SL_CONFIG || {};
-    return {
-      url: String(config.SUPABASE_URL || '').replace(/\/$/, ''),
-      key: String(config.SUPABASE_ANON_KEY || '')
-    };
-  }
-
-  function validateSoldOutDetails() {
-    collectActiveInputs();
-    if (!String(state.data.firstName || '').trim() || !String(state.data.lastName || '').trim()) return 'Enter the first name and last name.';
-    if (!validEmail(state.data.email)) return 'Enter a valid email address.';
-    if (!String(state.data.phone || '').trim()) return 'Enter a phone number.';
-    return '';
-  }
-
   function validateDetails() {
     collectActiveInputs();
     if (!String(state.data.firstName || '').trim() || !String(state.data.lastName || '').trim()) return 'Enter the first name and last name.';
@@ -403,52 +353,6 @@
     var payload = await response.json().catch(function () { return {}; });
     if (!response.ok) throw new Error(payload.error || payload.message || fallbackMessage || 'The request could not be completed.');
     return payload;
-  }
-
-  async function submitSoldOutInterest() {
-    var validationError = validateSoldOutDetails();
-    if (validationError) {
-      setMessage(validationError, false);
-      return;
-    }
-
-    var config = publicSupabaseConfig();
-    if (!config.url || !config.key) {
-      setMessage('The contact form is not configured. Please email people@stratexanalytics.co.uk.', false);
-      return;
-    }
-
-    state.submitting = true;
-    render();
-    try {
-      var payload = await fetchJson(config.url + '/rest/v1/rpc/register_showcase_sold_out_interest', {
-        method: 'POST',
-        headers: {
-          apikey: config.key,
-          Authorization: 'Bearer ' + config.key,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          p_event_key: 'bluewater-2026-09-12',
-          p_first_name: String(state.data.firstName || '').trim(),
-          p_last_name: String(state.data.lastName || '').trim(),
-          p_email: String(state.data.email || '').trim(),
-          p_phone: String(state.data.phone || '').trim()
-        })
-      }, 'Your details could not be saved. Check your connection and try again.');
-
-      state.result = payload || {};
-      state.submitting = false;
-      state.step = 0;
-      state.status = 'waitlist-complete';
-      updateUrl('sold-out');
-      saveState();
-      render({ top: true });
-    } catch (error) {
-      state.submitting = false;
-      render();
-      setMessage(error.message || 'Your details could not be saved. Please try again.', false);
-    }
   }
 
   async function submitRegistration() {
@@ -486,8 +390,8 @@
       state.result = payload;
       state.submitting = false;
       state.step = 0;
-      state.status = payload.status === 'waitlisted' ? 'waitlist-complete' : 'complete';
-      updateUrl(state.status === 'waitlist-complete' ? 'sold-out' : 'complete');
+      state.status = payload.status === 'waitlisted' ? 'sold-out' : 'complete';
+      updateUrl(state.status);
       saveState();
       render({ top: true });
     } catch (error) {
@@ -552,8 +456,6 @@
           render({ top: true });
         } else if (action === 'submit') {
           submitRegistration();
-        } else if (action === 'submit-sold-out') {
-          submitSoldOutInterest();
         }
       });
     });
@@ -566,13 +468,8 @@
       state.event = payload.event;
       state.capacity = payload.professionalCapacity || payload.capacity || null;
       var route = routeState();
-      if (route === 'complete' && state.result) {
-        state.status = 'complete';
-        state.step = 0;
-      } else if (route === 'sold-out') {
-        state.status = state.status === 'waitlist-complete' && state.result
-          ? 'waitlist-complete'
-          : 'sold-out';
+      if ((route === 'complete' || route === 'sold-out') && state.result) {
+        state.status = route;
         state.step = 0;
       } else {
         state.status = '';
@@ -589,18 +486,8 @@
 
   window.addEventListener('popstate', function () {
     var route = routeState();
-    if (route === 'complete') {
-      state.status = state.result ? 'complete' : '';
-      state.step = 0;
-    } else if (route === 'sold-out') {
-      state.status = state.status === 'waitlist-complete' && state.result
-        ? 'waitlist-complete'
-        : 'sold-out';
-      state.step = 0;
-    } else {
-      state.status = '';
-      state.step = typeof route === 'number' ? route : 0;
-    }
+    state.status = route === 'complete' || route === 'sold-out' ? route : '';
+    state.step = typeof route === 'number' ? route : 0;
     render({ top: true });
   });
 
