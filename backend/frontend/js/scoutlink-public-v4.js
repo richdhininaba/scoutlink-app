@@ -24,9 +24,12 @@
 
   function routeForLabel(label){
     var n=String(label||'').replace(/\s+/g,' ').trim().toLowerCase();
+    var currentPath=path();
     if(!n)return null;
-    if(n.indexOf('coach demo')>=0||n.indexOf('start coach demo')>=0||n.indexOf('open coach demo')>=0)return {demo:'Coach'};
-    if(n.indexOf('scout demo')>=0||n.indexOf('start scout demo')>=0||n.indexOf('open scout demo')>=0)return {demo:'Scout'};
+    if(currentPath==='/demo'&&n.indexOf('coach demo')>=0)return {demo:'Coach'};
+    if(currentPath==='/demo'&&n.indexOf('scout demo')>=0)return {demo:'Scout'};
+    if(n.indexOf('coach demo')>=0)return {href:'/demo?experience=coach'};
+    if(n.indexOf('scout demo')>=0)return {href:'/demo?experience=scout'};
     if(n.indexOf('register')>=0&&n.indexOf('coach')>=0||n==='register free'||n.indexOf('£0')>=0)return {href:'/register/coach'};
     if(n.indexOf('request')>=0&&n.indexOf('access')>=0||n.indexOf('scout access')>=0)return {href:'/register/scout'};
     if(n.indexOf('pricing')>=0||n.indexOf('compare plans')>=0||n.indexOf('see pricing')>=0)return {href:'/scoutlink/pricing'};
@@ -78,18 +81,38 @@
   }
   function formatCounter(info,value){var s=info.decimals?value.toFixed(info.decimals):Math.round(value).toLocaleString('en-GB');return info.prefix+s+info.suffix;}
   function animateCounters(){
-    var nodes=Array.prototype.slice.call(document.querySelectorAll('.counter-grid strong,.scenario-results strong[data-animate-counter]')).filter(function(n){return n.dataset.counterDone!=='1';});
+    var nodes=Array.prototype.slice.call(document.querySelectorAll('.counter-grid strong,.scenario-results strong[data-animate-counter]')).filter(function(node){return !node.dataset.counterState;});
     if(!nodes.length)return;
-    var prepared=nodes.map(function(node){var info=parseCounter(node.textContent);if(!info)return null;node.dataset.counterFinal=info.final;node.setAttribute('aria-label',info.final);node.textContent=formatCounter(info,0);return {node:node,info:info};}).filter(Boolean);
+    var prepared=nodes.map(function(node){
+      var info=parseCounter(node.textContent);
+      if(!info)return null;
+      node.dataset.counterState='prepared';
+      node.dataset.counterFinal=info.final;
+      node.setAttribute('aria-label',info.final);
+      node.textContent=formatCounter(info,0);
+      return {node:node,info:info};
+    }).filter(Boolean);
     if(!prepared.length)return;
+    function finish(){prepared.forEach(function(item){item.node.textContent=item.info.final;item.node.dataset.counterState='done';});}
     function run(){
-      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){prepared.forEach(function(x){x.node.textContent=x.info.final;x.node.dataset.counterDone='1';});return;}
-      var start=performance.now(),duration=1500;
-      function frame(now){var p=Math.min(1,(now-start)/duration);var eased=1-Math.pow(1-p,3);prepared.forEach(function(x){x.node.textContent=formatCounter(x.info,x.info.value*eased);});if(p<1)requestAnimationFrame(frame);else prepared.forEach(function(x){x.node.textContent=x.info.final;x.node.dataset.counterDone='1';});}
+      prepared.forEach(function(item){item.node.dataset.counterState='running';});
+      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return;}
+      var start=performance.now(),duration=1650;
+      function frame(now){
+        var progress=Math.min(1,(now-start)/duration);
+        var eased=1-Math.pow(1-progress,3);
+        prepared.forEach(function(item){item.node.textContent=formatCounter(item.info,item.info.value*eased);});
+        if(progress<1)requestAnimationFrame(frame);else finish();
+      }
       requestAnimationFrame(frame);
     }
-    var target=document.querySelector('.counter-band')||prepared[0].node;
-    if('IntersectionObserver'in window){var io=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){io.disconnect();run();}},{threshold:.18});io.observe(target);}else run();
+    var target=prepared[0].node.closest('.counter-band,.scenario-results')||prepared[0].node;
+    if('IntersectionObserver'in window){
+      var io=new IntersectionObserver(function(entries){
+        if(entries.some(function(entry){return entry.isIntersecting;})){io.disconnect();run();}
+      },{threshold:.12});
+      io.observe(target);
+    }else run();
   }
   function equaliseButtons(){
     var selectors=['.hero-actions','.band-actions','.two-button-row','.mobile-bottom-cta','.legal-actions','.form-actions','.plans-grid','.role-choice-lines'];
@@ -124,6 +147,22 @@
     var main=document.querySelector('main');if(main)main.id='slv4PricingMain';
     document.documentElement.classList.remove('slv4-pricing-boot');document.body.style.visibility='visible';enhance();return true;
   }
-  function boot(){if(renderStandalonePricing())return;enhance();var root=document.getElementById('publicCoreRoot')||document.body;var observer=new MutationObserver(function(){window.requestAnimationFrame(enhance);});observer.observe(root,{childList:true,subtree:true});window.addEventListener('resize',function(){window.requestAnimationFrame(equaliseButtons);});document.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu();});}
+  function boot(){
+    if(renderStandalonePricing())return;
+    enhance();
+    var root=document.getElementById('publicCoreRoot')||document.body;
+    var queued=false;
+    var observer=new MutationObserver(function(mutations){
+      var structural=mutations.some(function(mutation){
+        return Array.prototype.some.call(mutation.addedNodes,function(node){return node&&node.nodeType===1;});
+      });
+      if(!structural||queued)return;
+      queued=true;
+      window.requestAnimationFrame(function(){queued=false;enhance();});
+    });
+    observer.observe(root,{childList:true,subtree:true});
+    window.addEventListener('resize',function(){window.requestAnimationFrame(equaliseButtons);});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu();});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
