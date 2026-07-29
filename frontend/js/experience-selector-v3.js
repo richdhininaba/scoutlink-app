@@ -1,176 +1,110 @@
-'use strict';
+"use strict";
 
 (function () {
-  var LAST_KEY = 'sl_last_experience_v3';
+  var LAST_KEY = "sl_last_experience_v4";
+  var experiences = [];
+  var selectedDemoUsers = {};
   var busy = false;
 
   function esc(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
       return {
-        '&':'&amp;',
-        '<':'&lt;',
-        '>':'&gt;',
-        '"':'&quot;',
-        "'":'&#39;'
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
       }[char];
     });
   }
 
   function visibleExperiences(list) {
     return (list || []).filter(function (experience) {
-      return experience && experience.accountType !== 'Player';
+      return experience && experience.accountType !== "Player";
     });
   }
 
-  function roleLabel(experience) {
-    if (!experience) return 'Workspace';
-    if (experience.admin || experience.accountType === 'Stratex') return 'Stratex Admin';
-    if (experience.accountType === 'Coach') return experience.demo ? 'Coach demo' : 'Coach workspace';
-    if (experience.accountType === 'Scout') return experience.demo ? 'Scout demo' : 'Scout workspace';
-    return experience.label || experience.accountType || 'Workspace';
+  function isAdmin(experience) {
+    return !!experience && (experience.admin || experience.accountType === "Stratex");
   }
 
-  function cardTitle(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') return 'Stratex Admin';
-    if (experience.accountType === 'Coach') return 'Coach workspace';
-    if (experience.accountType === 'Scout') return 'Scout workspace';
-    return experience.label || experience.accountType || 'ScoutLink workspace';
+  function roleHome(type) {
+    return {
+      Stratex: "stratex-dashboard.html",
+      Scout: "scout-dashboard.html",
+      Coach: "coach-dashboard.html"
+    }[type] || "login.html";
   }
 
-  function cardDescription(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') {
-      return 'Manage registrations, users, organisations, showcases, product access and platform operations.';
-    }
-    if (experience.accountType === 'Coach' && experience.demo) {
-      return 'Walk through squad management, player creation, fixtures, Match Facts, evidence and scout communication.';
-    }
-    if (experience.accountType === 'Coach') {
-      return 'Manage squad profiles, player creation, fixtures, Match Facts, evidence and scout communication.';
-    }
-    if (experience.accountType === 'Scout' && experience.demo) {
-      return 'Explore player search, comparison, compatibility, shortlists, pipelines and coach communication.';
-    }
-    if (experience.accountType === 'Scout') {
-      return 'Search reviewed players, compare compatibility, manage shortlists, pipelines and coach communication.';
-    }
-    return experience.description || 'Open this approved ScoutLink workspace.';
+  function roleTitle(experience) {
+    if (isAdmin(experience)) return "Stratex Admin";
+    if (experience.accountType === "Coach") return experience.demo ? "Coach Demo" : "Coach Workspace";
+    if (experience.accountType === "Scout") return experience.demo ? "Scout Demo" : "Scout Workspace";
+    return experience.label || experience.accountType || "ScoutLink Workspace";
   }
 
-  function badgeLabel(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') return 'Admin view';
-    if (experience.demo && experience.accountType === 'Coach') return 'Fictional coach demo';
-    if (experience.demo && experience.accountType === 'Scout') return 'Fictional scout demo';
-    return experience.current ? 'Current role' : 'Linked role';
+  function roleEyebrow(experience) {
+    if (isAdmin(experience)) return "Internal administration";
+    if (experience.demo) return "Isolated fictional demo";
+    return experience.current ? "Current approved role" : "Approved linked role";
   }
 
-  function buttonLabel(experience, prefix) {
-    var start = prefix || 'Enter';
-    if (experience.admin || experience.accountType === 'Stratex') return start + ' Stratex Admin';
-    if (experience.demo && experience.accountType === 'Coach') return start + ' Coach Demo';
-    if (experience.demo && experience.accountType === 'Scout') return start + ' Scout Demo';
-    if (experience.accountType === 'Coach') return start + ' Coach Workspace';
-    if (experience.accountType === 'Scout') return start + ' Scout Workspace';
-    return start + ' Workspace';
+  function roleDescription(experience) {
+    if (isAdmin(experience)) {
+      return "Manage registrations, organisations, users, showcase activity, product access and platform operations.";
+    }
+    if (experience.accountType === "Coach") {
+      return experience.demo
+        ? "Explore squad management, player creation, fixtures, Match Facts, evidence and scout communication using fictional records."
+        : "Manage squad profiles, fixtures, Match Facts, approved evidence and controlled scout communication.";
+    }
+    if (experience.accountType === "Scout") {
+      return experience.demo
+        ? "Explore player search, comparison, compatibility, shortlists, predictions and pipelines using fictional records."
+        : "Search reviewed players, compare compatibility and manage shortlists, visits and recruitment pipelines.";
+    }
+    return experience.description || "Open this approved ScoutLink workspace.";
   }
 
   function iconText(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') return 'ST';
-    if (experience.accountType === 'Coach') return 'CO';
-    if (experience.accountType === 'Scout') return 'SC';
-    return 'SL';
+    if (isAdmin(experience)) return "ST";
+    if (experience.accountType === "Coach") return "CO";
+    if (experience.accountType === "Scout") return "SC";
+    return "SL";
   }
 
-  function iconClass(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') return 'is-dark';
-    if (experience.accountType === 'Scout') return 'is-blue';
-    return '';
-  }
-
-  function pillClass(experience) {
-    if (experience.admin || experience.accountType === 'Stratex') return 'is-green';
-    if (experience.demo || experience.accountType === 'Scout') return 'is-blue';
-    return 'is-white';
-  }
-
-  function actionClass(experience) {
-    return experience.admin || experience.accountType === 'Stratex'
-      ? 'is-dark'
-      : 'is-primary';
+  function cardClass(experience) {
+    if (isAdmin(experience)) return "is-admin";
+    if (experience.accountType === "Scout") return "is-scout";
+    return "is-coach";
   }
 
   function userName(user) {
-    if (!user) return 'ScoutLink user';
+    if (!user) return "ScoutLink user";
     return user.label ||
-      [user.firstName,user.lastName].filter(Boolean).join(' ') ||
+      [user.firstName, user.lastName].filter(Boolean).join(" ") ||
       user.email ||
-      'ScoutLink user';
+      "ScoutLink user";
   }
 
   function userSubtitle(user, fallback) {
-    if (!user) return fallback || 'Approved access';
-    return user.teamName || user.email || fallback || 'Approved access';
+    if (!user) return fallback || "Approved access";
+    return user.teamName || user.email || fallback || "Approved access";
   }
 
   function realAccountUser(experience) {
-    var user = window.Auth && window.Auth.user || {};
+    var user = typeof Auth !== "undefined" && Auth.user ? Auth.user : {};
     return {
-      id:user.id || experience.userId || experience.accountType,
-      firstName:user.firstName || '',
-      lastName:user.lastName || '',
-      email:user.email || '',
-      teamName:user.teamName || '',
-      label:[user.firstName,user.lastName].filter(Boolean).join(' ') || user.email || experience.accountType
+      id: user.id || experience.userId || experience.accountType,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      teamName: user.teamName || "",
+      label: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email || experience.accountType
     };
   }
 
-  function storedPreference() {
-    try {
-      var raw = localStorage.getItem(LAST_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function matchesPreference(experience, preference) {
-    if (!experience || !preference) return false;
-    return String(experience.accountType) === String(preference.accountType) &&
-      !!experience.demo === !!preference.demo;
-  }
-
-  function findContinueIndex(list) {
-    var preference = storedPreference();
-    var storedIndex = list.findIndex(function (experience) {
-      return matchesPreference(experience,preference);
-    });
-
-    if (storedIndex >= 0) {
-      var storedExperience = list[storedIndex];
-      if (storedExperience.demo && preference.demoUserId) {
-        var hasUser = (storedExperience.demoUsers || []).some(function (user) {
-          return String(user.id) === String(preference.demoUserId);
-        });
-        if (hasUser) selectedDemoUsers[storedIndex] = preference.demoUserId;
-      }
-      return storedIndex;
-    }
-
-    var currentIndex = list.findIndex(function (experience) {
-      return experience.current && !experience.demo;
-    });
-    if (currentIndex >= 0) return currentIndex;
-
-    if (window.Auth && Auth.type === 'Stratex') {
-      var coachDemoIndex = list.findIndex(function (experience) {
-        return experience.demo && experience.accountType === 'Coach';
-      });
-      if (coachDemoIndex >= 0) return coachDemoIndex;
-    }
-
-    return list.length ? 0 : -1;
-  }
-
-  function selectedUserFor(experience,index) {
+  function selectedUserFor(experience, index) {
     if (!experience) return null;
 
     if (experience.demo) {
@@ -183,312 +117,332 @@
       }) || options[0] || null;
     }
 
-    if (experience.admin || experience.accountType === 'Stratex') {
+    if (isAdmin(experience)) {
       return {
-        id:'stratex-operations',
-        label:'Stratex operations',
-        teamName:'Internal administration'
+        id: "stratex-operations",
+        label: "Stratex operations",
+        teamName: "Internal administration"
       };
     }
 
     return realAccountUser(experience);
   }
 
-  function summaryMarkup(list) {
-    var demoCount = list.filter(function (experience) {
-      return !!experience.demo;
-    }).length;
-    var internalCount = list.filter(function (experience) {
-      return experience.admin || experience.accountType === 'Stratex';
-    }).length;
+  function storedPreference() {
+    try {
+      var raw = localStorage.getItem(LAST_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
 
-    return '<div class="es3-access-summary">' +
-      '<article><b>' + list.length + ' workspace' + (list.length === 1 ? '' : 's') +
-      '</b><span>Available to this account</span></article>' +
-      '<article><b>' + demoCount + ' fictional demo' + (demoCount === 1 ? '' : 's') +
-      '</b><span>No production changes</span></article>' +
-      '<article><b>' + internalCount + ' internal workspace' +
-      (internalCount === 1 ? '' : 's') +
-      '</b><span>Permission controlled</span></article>' +
+  function matchesPreference(experience, preference) {
+    return !!experience && !!preference &&
+      String(experience.accountType) === String(preference.accountType) &&
+      !!experience.demo === !!preference.demo;
+  }
+
+  function findContinueIndex(list) {
+    var preference = storedPreference();
+    var preferredIndex = list.findIndex(function (experience) {
+      return matchesPreference(experience, preference);
+    });
+
+    if (preferredIndex >= 0) {
+      var preferredExperience = list[preferredIndex];
+      if (preferredExperience.demo && preference.demoUserId) {
+        var valid = (preferredExperience.demoUsers || []).some(function (user) {
+          return String(user.id) === String(preference.demoUserId);
+        });
+        if (valid) selectedDemoUsers[preferredIndex] = preference.demoUserId;
+      }
+      return preferredIndex;
+    }
+
+    var currentIndex = list.findIndex(function (experience) {
+      return experience.current && !experience.demo;
+    });
+    if (currentIndex >= 0) return currentIndex;
+
+    if (typeof Auth !== "undefined" && Auth.type === "Stratex") {
+      var coachDemoIndex = list.findIndex(function (experience) {
+        return experience.demo && experience.accountType === "Coach";
+      });
+      if (coachDemoIndex >= 0) return coachDemoIndex;
+    }
+
+    return list.length ? 0 : -1;
+  }
+
+  function rememberExperience(experience, user) {
+    try {
+      localStorage.setItem(LAST_KEY, JSON.stringify({
+        accountType: experience.accountType,
+        demo: !!experience.demo,
+        demoUserId: experience.demo && user ? user.id : null,
+        savedAt: new Date().toISOString()
+      }));
+    } catch (_) {}
+  }
+
+  function headerMarkup() {
+    return '<header class="site-header compact">' +
+      '<div class="site-shell header-inner">' +
+        '<a href="/" class="brand-link"><span class="sl-logo">Scout<span>Link</span></span></a>' +
+        '<nav class="desktop-nav" aria-label="Workspace navigation">' +
+          '<a href="/demo">Public demo</a>' +
+          '<a href="/register/coach">Register Coach</a>' +
+          '<a href="/register/scout">Request Scout Access</a>' +
+        '</nav>' +
+        '<div class="desktop-actions"><button class="header-login" id="logoutBtn" type="button">Sign out</button></div>' +
+        '<button class="mobile-menu" type="button" data-public-menu-open aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>' +
+        '<div class="public-menu-panel" data-public-menu-backdrop aria-hidden="true">' +
+          '<div class="public-menu-drawer" role="dialog" aria-modal="true" aria-label="Workspace menu">' +
+            '<div class="public-menu-head"><a href="/" class="brand-link"><span class="sl-logo">Scout<span>Link</span></span></a><button class="public-menu-close" type="button" data-public-menu-close aria-label="Close menu">&times;</button></div>' +
+            '<nav class="public-menu-links"><a href="/demo">Public demo</a><a href="/register/coach">Register Coach</a><a href="/register/scout">Request Scout Access</a><button class="primary" id="logoutMobile" type="button">Sign out</button></nav>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</header>';
+  }
+
+  function summaryMarkup(list) {
+    var demoCount = list.filter(function (experience) { return !!experience.demo; }).length;
+    var liveCount = list.filter(function (experience) { return !experience.demo; }).length;
+    return '<div class="experience-summary-v4">' +
+      '<article><b>' + list.length + '</b><span>Available workspaces</span></article>' +
+      '<article><b>' + liveCount + '</b><span>Approved live or internal roles</span></article>' +
+      '<article><b>' + demoCount + '</b><span>Isolated fictional demos</span></article>' +
     '</div>';
   }
 
   function continueMarkup(list) {
     var index = findContinueIndex(list);
     if (index < 0) {
-      return '<aside class="es3-continue"><h2>No workspace available</h2>' +
-        '<p>This account does not currently have an approved workspace.</p>' +
-        '<div class="es3-status" id="selectorMsg" aria-live="polite">Contact Stratex support if you expected access.</div></aside>';
+      return '<section class="continue-panel-v4"><div><span>No workspace available</span><h2>This account has no approved workspace.</h2><p>Contact Stratex support if you expected access.</p></div><a class="sl-btn" href="mailto:info@scoutlink.app">Contact support</a></section>';
     }
 
     var experience = list[index];
-    var user = selectedUserFor(experience,index);
-    var label = roleLabel(experience);
-    var display = experience.demo && user
-      ? label + ' · ' + userName(user)
-      : label;
+    var user = selectedUserFor(experience, index);
+    var display = roleTitle(experience);
+    if (experience.demo && user) display += ' · ' + userName(user);
 
-    return '<aside class="es3-continue">' +
-      '<h2>Continue where you left off</h2>' +
-      '<p>Your most recent approved workspace is ready to open.</p>' +
-      '<div class="es3-continue-option">' +
-        '<div class="es3-icon ' + iconClass(experience) + '" aria-hidden="true">' +
-        esc(iconText(experience)) + '</div>' +
-        '<div class="es3-continue-copy"><b>' + esc(display) + '</b><span>' +
-        esc(userSubtitle(user,experience.description || 'Approved ScoutLink access')) +
-        '</span></div>' +
-      '</div>' +
-      '<button class="es3-btn is-primary is-block" type="button" data-es3-enter="' +
-      index + '">' + esc(buttonLabel(experience,'Continue')) + '</button>' +
-      '<div class="es3-status" id="selectorMsg" aria-live="polite">' +
-      'Demo sessions use isolated fictional records and do not affect live customer data.' +
-      '</div>' +
-    '</aside>';
-  }
-
-  function personRows(experience,index) {
-    if (experience.demo) {
-      var users = experience.demoUsers || [];
-      if (!users.length) {
-        return '<div class="es3-person-list"><div class="es3-person is-active">' +
-          '<div class="es3-person-copy"><b>Default demo account</b><span>Isolated fictional data</span></div>' +
-          '<span class="es3-check">✓</span></div></div>';
-      }
-
-      return '<div class="es3-person-list" aria-label="Choose demo user">' +
-        users.map(function (user) {
-          var active = String(selectedDemoUsers[index]) === String(user.id);
-          return '<button class="es3-person' + (active ? ' is-active' : '') +
-            '" type="button" aria-pressed="' + (active ? 'true' : 'false') +
-            '" data-es3-demo-card="' + index + '" data-es3-demo-user="' +
-            esc(user.id) + '">' +
-              '<span class="es3-person-copy"><b>' + esc(userName(user)) +
-              '</b><span>' + esc(userSubtitle(user,'Demo account')) + '</span></span>' +
-              '<span class="es3-check" aria-hidden="true">' + (active ? '✓' : '') + '</span>' +
-            '</button>';
-        }).join('') +
-      '</div>';
-    }
-
-    var user = selectedUserFor(experience,index);
-    return '<div class="es3-person-list"><div class="es3-person is-active">' +
-      '<div class="es3-person-copy"><b>' + esc(userName(user)) + '</b><span>' +
-      esc(userSubtitle(user,experience.current ? 'Current signed-in role' : 'Approved linked role')) +
-      '</span></div><span class="es3-check" aria-hidden="true">✓</span></div></div>';
-  }
-
-  function cardMarkup(experience,index) {
-    var featured = experience.admin || experience.accountType === 'Stratex';
-
-    return '<article class="es3-card' + (featured ? ' is-featured' : '') + '">' +
-      '<div class="es3-card-top">' +
-        '<div class="es3-card-icon ' + iconClass(experience) + '" aria-hidden="true">' +
-        esc(iconText(experience)) + '</div>' +
-        '<span class="es3-pill ' + pillClass(experience) + '">' +
-        esc(badgeLabel(experience)) + '</span>' +
-      '</div>' +
-      '<h2>' + esc(cardTitle(experience)) + '</h2>' +
-      '<p>' + esc(cardDescription(experience)) + '</p>' +
-      personRows(experience,index) +
-      '<button class="es3-btn ' + actionClass(experience) +
-      ' is-block" type="button" data-es3-enter="' + index + '">' +
-      esc(buttonLabel(experience,'Enter')) + '</button>' +
-    '</article>';
-  }
-
-  function notesMarkup() {
-    return '<section class="es3-notes">' +
-      '<article class="es3-note"><h3>Coach workspace</h3>' +
-      '<p>Player profiles, fixtures, Match Facts, video evidence and controlled scout interest.</p></article>' +
-      '<article class="es3-note"><h3>Scout workspace</h3>' +
-      '<p>Reviewed player search, compatibility, comparison and recruitment-pipeline workflows.</p></article>' +
-      '<article class="es3-note"><h3>Safe demo separation</h3>' +
-      '<p>All demo sessions use isolated fictional data and do not affect production records.</p></article>' +
+    return '<section class="continue-panel-v4">' +
+      '<div><span>Continue where you left off</span><h2>' + esc(display) + '</h2><p>' + esc(userSubtitle(user, roleDescription(experience))) + '</p></div>' +
+      '<button class="sl-btn" type="button" data-experience-enter="' + index + '">Continue</button>' +
     '</section>';
   }
 
-  function buildShell() {
-    document.body.classList.add('experience-selector-v3');
-    document.title = 'Choose Your ScoutLink Workspace | Coach, Scout and Internal Access';
-
-    var description = document.querySelector('meta[name="description"]');
-    if (description) {
-      description.setAttribute(
-        'content',
-        'Choose an approved ScoutLink coach, scout or Stratex internal workspace, including isolated fictional demo experiences.'
-      );
+  function demoSelectMarkup(experience, index) {
+    if (!experience.demo) {
+      var user = selectedUserFor(experience, index);
+      return '<div class="workspace-meta-v4"><b>' + esc(userName(user)) + '</b><span>' + esc(userSubtitle(user, experience.current ? 'Current signed-in role' : 'Approved access')) + '</span></div>';
     }
 
-    var main = document.getElementById('main');
-    if (!main || main.dataset.es3Built === '1') return;
-    main.dataset.es3Built = '1';
-    main.className = 'es3-main';
-    main.innerHTML =
-      '<section class="es3-hero">' +
-        '<div class="es3-copy">' +
-          '<span class="es3-pill is-dark">Product access</span>' +
-          '<h1>Choose the workspace you need today.</h1>' +
-          '<p>Your approved workspaces are grouped by purpose so it is clear when you are entering ScoutLink operations, a live role or an isolated fictional demo. Player Demo has been removed.</p>' +
-          '<div id="es3Summary">' +
-            '<div class="es3-access-summary">' +
-              '<article><b>Loading</b><span>Checking approved access</span></article>' +
-              '<article><b>Secure</b><span>Permission controlled</span></article>' +
-              '<article><b>Separated</b><span>Demo records stay isolated</span></article>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-        '<aside class="es3-continue" id="es3Continue">' +
-          '<h2>Loading workspaces</h2>' +
-          '<p>Checking the approved access connected to this account.</p>' +
-          '<div class="es3-continue-option">' +
-            '<div class="es3-icon" aria-hidden="true">SL</div>' +
-            '<div class="es3-continue-copy"><b>ScoutLink access</b><span>Please wait</span></div>' +
-          '</div>' +
-          '<div class="es3-status" id="selectorMsg" aria-live="polite">Loading experiences…</div>' +
-        '</aside>' +
-      '</section>' +
-      '<section class="es3-grid" id="experienceGrid" aria-live="polite">' +
-        '<div class="es3-loading-card"></div><div class="es3-loading-card"></div><div class="es3-loading-card"></div>' +
-      '</section>' +
-      notesMarkup();
+    var users = experience.demoUsers || [];
+    if (!users.length) {
+      return '<div class="workspace-meta-v4"><b>Default demo identity</b><span>Isolated fictional data</span></div>';
+    }
+
+    selectedUserFor(experience, index);
+    return '<label class="workspace-meta-v4"><b>Demo identity</b><select class="demo-user-select-v4" data-experience-demo-user="' + index + '">' +
+      users.map(function (user) {
+        var selected = String(selectedDemoUsers[index]) === String(user.id) ? ' selected' : '';
+        return '<option value="' + esc(user.id) + '"' + selected + '>' + esc(userName(user)) + ' · ' + esc(userSubtitle(user, 'Demo account')) + '</option>';
+      }).join('') +
+    '</select></label>';
   }
 
-  function bindRenderedActions() {
-    document.querySelectorAll('[data-es3-demo-user]').forEach(function (button) {
-      button.addEventListener('click',function () {
-        var index = Number(button.getAttribute('data-es3-demo-card'));
-        selectedDemoUsers[index] = button.getAttribute('data-es3-demo-user');
-        window.render();
-      });
-    });
+  function workspaceMarkup(experience, index) {
+    var buttonLabel = isAdmin(experience)
+      ? 'Enter Stratex Admin'
+      : experience.demo
+        ? 'Open ' + roleTitle(experience)
+        : 'Enter ' + roleTitle(experience);
 
-    document.querySelectorAll('[data-es3-enter]').forEach(function (button) {
-      button.addEventListener('click',function () {
-        window.enterExperience(Number(button.getAttribute('data-es3-enter')));
-      });
-    });
+    return '<article class="workspace-card-v4 ' + cardClass(experience) + '">' +
+      '<div class="workspace-icon-v4" aria-hidden="true">' + esc(iconText(experience)) + '</div>' +
+      '<div class="workspace-copy-v4"><small>' + esc(roleEyebrow(experience)) + '</small><h3>' + esc(roleTitle(experience)) + '</h3><p>' + esc(roleDescription(experience)) + '</p></div>' +
+      demoSelectMarkup(experience, index) +
+      '<button class="sl-btn ' + (isAdmin(experience) ? 'dark' : '') + '" type="button" data-experience-enter="' + index + '">' + esc(buttonLabel) + '</button>' +
+    '</article>';
   }
 
-  function setStatus(message,isError) {
-    var status = document.getElementById('selectorMsg');
-    if (!status) return;
-    status.textContent = message || '';
-    status.classList.toggle('is-error',!!isError);
+  function shellMarkup(list) {
+    return '<div class="product-page experience-page-v4-shell">' +
+      headerMarkup() +
+      '<main id="experienceRoot">' +
+        '<section class="experience-hero-v4"><div class="site-shell experience-hero-grid-v4">' +
+          '<div class="experience-hero-copy-v4"><span class="hero-kicker green">Product access</span><h1>CHOOSE THE WORKSPACE YOU NEED TODAY.</h1><p>Open the approved role or isolated fictional demo that matches the work you are doing. Player Demo has been removed.</p>' + summaryMarkup(list) + '</div>' +
+          '<aside class="experience-security-v4"><span>Controlled access</span><h2>Every workspace has a clear purpose.</h2><p>Live roles use approved permissions. Demo roles use fictional records and cannot change customer data.</p><ul><li>Role-based access</li><li>Demo and production separation</li><li>One sign-out route</li></ul></aside>' +
+        '</div></section>' +
+        '<section class="experience-content-v4"><div class="site-shell">' +
+          '<div class="experience-message-v4" id="selectorMsg" role="alert" aria-live="assertive"></div>' +
+          continueMarkup(list) +
+          '<div class="workspace-heading-v4"><div><span class="eyebrow">Available to this account</span><h2>Choose a workspace</h2></div><p>Select a fictional identity before opening a demo. Live and internal workspaces use the approved account identity.</p></div>' +
+          '<div class="workspace-list-v4">' + (list.length ? list.map(workspaceMarkup).join('') : '<div class="experience-loader-card-v4"><h1>No workspace available</h1><p>Contact Stratex support if you expected access.</p></div>') + '</div>' +
+          '<p class="workspace-note-v4">Demo sessions use isolated fictional records. They do not affect live players, teams, scouts, coaches or platform operations.</p>' +
+        '</div></section>' +
+      '</main>' +
+    '</div>';
+  }
+
+  function showMessage(message) {
+    var target = document.getElementById('selectorMsg');
+    if (!target) return;
+    target.textContent = message || '';
+    target.classList.toggle('show', !!message);
   }
 
   function setBusy(next) {
     busy = next;
-    document.querySelectorAll('[data-es3-enter]').forEach(function (button) {
+    document.querySelectorAll('[data-experience-enter]').forEach(function (button) {
       button.disabled = next;
     });
   }
 
-  function rememberExperience(experience,index,user) {
+  function closeMenu() {
+    document.body.classList.remove('public-menu-open');
+    var panel = document.querySelector('[data-public-menu-backdrop]');
+    var opener = document.querySelector('[data-public-menu-open]');
+    if (panel) panel.setAttribute('aria-hidden', 'true');
+    if (opener) opener.setAttribute('aria-expanded', 'false');
+  }
+
+  function bindActions() {
+    var logout = document.getElementById('logoutBtn');
+    var logoutMobile = document.getElementById('logoutMobile');
+
+    function signOut() {
+      if (typeof Auth !== 'undefined') Auth.clear();
+      navigateClean('login.html?logout=1');
+    }
+
+    if (logout) logout.addEventListener('click', signOut);
+    if (logoutMobile) logoutMobile.addEventListener('click', signOut);
+
+    document.querySelectorAll('[data-experience-enter]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        enterExperience(Number(button.getAttribute('data-experience-enter')));
+      });
+    });
+
+    document.querySelectorAll('[data-experience-demo-user]').forEach(function (select) {
+      select.addEventListener('change', function () {
+        var index = Number(select.getAttribute('data-experience-demo-user'));
+        selectedDemoUsers[index] = select.value;
+        render();
+      });
+    });
+
+    var opener = document.querySelector('[data-public-menu-open]');
+    var closer = document.querySelector('[data-public-menu-close]');
+    var panel = document.querySelector('[data-public-menu-backdrop]');
+    if (opener) opener.addEventListener('click', function () {
+      document.body.classList.add('public-menu-open');
+      opener.setAttribute('aria-expanded', 'true');
+      if (panel) panel.setAttribute('aria-hidden', 'false');
+    });
+    if (closer) closer.addEventListener('click', closeMenu);
+    if (panel) panel.addEventListener('click', function (event) {
+      if (event.target === panel) closeMenu();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeMenu();
+    }, { once: true });
+  }
+
+  function render() {
+    var root = document.getElementById('publicCoreRoot');
+    if (!root) return;
+    root.innerHTML = shellMarkup(experiences);
+    bindActions();
+  }
+
+  function storeAdminIfNeeded() {
+    if (typeof Auth === 'undefined') return;
+    if (Auth.type === 'Stratex' && !(typeof isDemoMode === 'function' && isDemoMode())) {
+      localStorage.setItem('sl_admin_token', Auth.token);
+      localStorage.setItem('sl_admin_user', JSON.stringify(Auth.user));
+      localStorage.setItem('sl_admin_type', 'Stratex');
+    }
+  }
+
+  function clearExperienceRoutingState() {
     try {
-      localStorage.setItem(LAST_KEY,JSON.stringify({
-        accountType:experience.accountType,
-        demo:!!experience.demo,
-        demoUserId:experience.demo && user ? user.id : null,
-        label:roleLabel(experience),
-        savedAt:new Date().toISOString()
-      }));
+      Object.keys(sessionStorage).forEach(function (key) {
+        if (/^sl_tour_|^sl_force_tour_|^sl_product_tour|product_tour|onboarding|redirect/i.test(key)) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      ['sl_redirect_after_login','sl_onboarding_step','sl_pending_route','sl_last_demo_route','sl_demo_tour','sl_force_tour'].forEach(function (key) {
+        localStorage.removeItem(key);
+      });
     } catch (_) {}
   }
 
-  window.render = function () {
-    buildShell();
-
-    experiences = visibleExperiences(experiences);
-    var list = experiences;
-    var summary = document.getElementById('es3Summary');
-    var continuePanel = document.getElementById('es3Continue');
-    var grid = document.getElementById('experienceGrid');
-
-    if (!summary || !continuePanel || !grid) return;
-
-    if (!list.length) {
-      summary.innerHTML = summaryMarkup([]);
-      continuePanel.outerHTML = continueMarkup([]);
-      document.getElementById('experienceGrid').innerHTML =
-        '<div class="es3-empty">No approved Coach, Scout or Stratex workspace is currently available for this account.</div>';
-      return;
-    }
-
-    list.forEach(function (experience,index) {
-      selectedUserFor(experience,index);
-    });
-
-    summary.innerHTML = summaryMarkup(list);
-    continuePanel.outerHTML = continueMarkup(list);
-    document.getElementById('experienceGrid').innerHTML =
-      list.map(cardMarkup).join('');
-    bindRenderedActions();
-  };
-
-  window.enterExperience = async function (index) {
+  async function enterExperience(index) {
     if (busy) return;
-
     var experience = experiences[index];
     if (!experience) return;
 
-    var selectedUser = selectedUserFor(experience,index);
+    var user = selectedUserFor(experience, index);
     setBusy(true);
-    setStatus('Opening ' + roleLabel(experience) + '…',false);
+    showMessage('Opening ' + roleTitle(experience) + '…');
+    clearExperienceRoutingState();
 
     try {
-      if (typeof clearExperienceRoutingState === 'function') {
-        clearExperienceRoutingState();
-      }
-
-      if (typeof storeAdminIfNeeded === 'function') {
-        storeAdminIfNeeded();
-      }
+      storeAdminIfNeeded();
 
       if (!experience.demo && experience.accountType === Auth.type) {
-        rememberExperience(experience,index,selectedUser);
+        rememberExperience(experience, user);
         navigateClean(roleHome(experience.accountType));
         return;
       }
 
-      var response = await api('POST','/api/auth/switch-experience',{
-        accountType:experience.accountType,
-        demo:!!experience.demo,
-        demoUserId:experience.demo && selectedUser ? selectedUser.id : null
+      var response = await api('POST', '/api/auth/switch-experience', {
+        accountType: experience.accountType,
+        demo: !!experience.demo,
+        demoUserId: experience.demo && user ? user.id : null
       });
 
-      if (experience.demo && typeof storeAdminIfNeeded === 'function') {
-        storeAdminIfNeeded();
-      }
-
-      Auth.set(response.token,response.user,response.accountType);
-      localStorage.setItem('sl_demo_mode',response.demoMode ? '1' : '0');
-      localStorage.setItem('sl_experience_switcher','1');
-      rememberExperience(experience,index,selectedUser);
+      if (experience.demo) storeAdminIfNeeded();
+      Auth.set(response.token, response.user, response.accountType);
+      localStorage.setItem('sl_demo_mode', response.demoMode ? '1' : '0');
+      localStorage.setItem('sl_experience_switcher', '1');
+      rememberExperience(experience, user);
       navigateClean(roleHome(response.accountType));
     } catch (error) {
       setBusy(false);
-      window.render();
-      setStatus(error.message || 'Could not open that experience.',true);
+      render();
+      showMessage(error.message || 'Could not open that workspace.');
     }
-  };
+  }
 
-  document.addEventListener('DOMContentLoaded',function () {
-    buildShell();
+  async function load() {
+    if (typeof isDemoMode === 'function' && isDemoMode() && typeof restoreAdminSessionForSelector === 'function') {
+      restoreAdminSessionForSelector();
+    }
 
-    var observer = new MutationObserver(function () {
-      if (document.getElementById('experienceGrid') &&
-          document.getElementById('experienceGrid').querySelector('.experience-card')) {
-        window.render();
-      }
-    });
+    if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+      navigateClean('login.html');
+      return;
+    }
 
-    observer.observe(document.getElementById('main'),{
-      childList:true,
-      subtree:true
-    });
+    try {
+      var response = await api('GET', '/api/auth/experiences');
+      experiences = visibleExperiences(response.data || []);
+      experiences.forEach(function (experience, index) {
+        selectedUserFor(experience, index);
+      });
+      render();
+    } catch (error) {
+      experiences = [];
+      render();
+      showMessage(error.message || 'Could not load the approved workspaces. Please sign in again.');
+    }
+  }
 
-    setTimeout(function () {
-      observer.disconnect();
-    },8000);
-  });
-})();
+  document.addEventListener('DOMContentLoaded', load);
+}());
