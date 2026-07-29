@@ -1,42 +1,33 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Choose Your ScoutLink Workspace | Coach, Scout and Internal Access</title>
-<meta name="description" content="Choose the approved ScoutLink workspace for your account, including Coach, Scout, Stratex internal and isolated demo experiences.">
-<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<link rel="stylesheet" href="/frontend/css/public-v2.css">
-<link rel="stylesheet" href="/frontend/css/experience-selector-v3.css">
-<link rel="stylesheet" href="/frontend/css/scoutlink-public-v4.css">
-<style>
-.pub-skip-link{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.pub-skip-link:focus{position:fixed!important;z-index:2147483647!important;top:12px!important;left:12px!important;width:auto!important;height:auto!important;margin:0!important;padding:11px 14px!important;clip:auto!important;overflow:visible!important;background:#07182c!important;color:#fff!important;font-size:14px!important;font-weight:800!important}
-.es3-initial-loader{min-height:calc(100vh - 68px);display:flex;align-items:center;justify-content:center;padding:28px;background:#f2f5f6;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.es3-initial-loader-card{width:min(520px,100%);padding:32px;border:1px solid #d8e1e7;background:#fff;text-align:center}.es3-initial-loader-brand{font-size:28px;font-weight:950;color:#071525}.es3-initial-loader-brand span{color:#08785c}.es3-initial-loader-ball{width:52px;height:52px;margin:18px auto;border:3px solid #d8e1e7;border-top-color:#08785c;border-radius:50%;animation:es3Spin .85s linear infinite}.es3-initial-loader h1{margin:0;font-size:22px}.es3-initial-loader p{margin:7px 0 0;color:#526678;font-size:12px}@keyframes es3Spin{to{transform:rotate(360deg)}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#08785c">
+  <title>Choose Your ScoutLink Workspace | Coach, Scout and Internal Access</title>
+  <meta name="description" content="Choose an approved ScoutLink Coach, Scout or Stratex workspace, including isolated fictional demo experiences.">
+  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/frontend/css/scoutlink-public-v4.css?v=4.1.0">
 </head>
-<body class="sl-public-v2">
-<a class="pub-skip-link" href="#main">Skip to workspaces</a>
-<div class="pub-page">
-<header class="pub-header"><div class="pub-header-inner"><a class="pub-brand" href="/">Scout<span>Link</span></a><nav class="pub-nav" aria-label="Workspace navigation"><a href="/demo">Public demo</a><a href="/register/coach">Register Coach</a><a href="/register/scout">Request Scout Access</a><button class="pub-btn pub-ghost" id="logoutBtn" type="button">Sign out</button></nav><button class="pub-menu-btn" type="button" data-public-menu-open aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button></div></header>
-<div class="pub-mobile-panel" aria-label="ScoutLink mobile menu"><div class="pub-mobile-drawer"><div class="pub-mobile-drawer-head"><a class="pub-brand" href="/">Scout<span>Link</span></a><button class="pub-mobile-close" type="button" data-public-menu-close aria-label="Close menu">&times;</button></div><nav class="pub-mobile-links"><a href="/demo">Public demo</a><a href="/register/coach">Register Coach</a><a href="/register/scout">Request Scout Access</a><a class="primary" href="/login?logout=1" id="logoutMobile">Sign out</a></nav></div></div>
-<main id="main" class="pub-main"><section class="es3-initial-loader" role="status" aria-live="polite"><div class="es3-initial-loader-card"><div class="es3-initial-loader-brand">Scout<span>Link</span></div><div class="es3-initial-loader-ball" aria-hidden="true"></div><h1>Loading ScoutLink experiences</h1><p>Preparing the authorised workspaces and isolated demo controls.</p></div></section></main>
-</div>
-<script src="/frontend/js/main.js"></script>
-<script src="/frontend/js/public-v2.js"></script>
-<script>
-var experiences=[];var selectedDemoUsers={};
-function roleHome(type){return {Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html'}[type]||'login.html';}
-function storeAdminIfNeeded(){if(Auth.type==='Stratex'&&!isDemoMode()){localStorage.setItem('sl_admin_token',Auth.token);localStorage.setItem('sl_admin_user',JSON.stringify(Auth.user));localStorage.setItem('sl_admin_type','Stratex');}}
-function clearExperienceRoutingState(){Object.keys(sessionStorage).forEach(function(k){if(/^sl_tour_|^sl_force_tour_|^sl_product_tour|product_tour|onboarding|redirect/i.test(k))sessionStorage.removeItem(k);});['sl_redirect_after_login','sl_onboarding_step','sl_pending_route','sl_last_demo_route','sl_demo_tour','sl_force_tour'].forEach(function(k){localStorage.removeItem(k);});}
-async function enterExperience(idx){var x=experiences[idx];if(!x)return;var msg=document.getElementById('selectorMsg');if(msg)msg.textContent='Opening '+(x.label||x.accountType)+'…';clearExperienceRoutingState();try{storeAdminIfNeeded();if(!x.demo&&x.accountType===Auth.type){navigateClean(roleHome(x.accountType));return;}var d=await api('POST','/api/auth/switch-experience',{accountType:x.accountType,demo:!!x.demo,demoUserId:x.demo?selectedDemoUsers[idx]:null});if(x.demo)storeAdminIfNeeded();Auth.set(d.token,d.user,d.accountType);localStorage.setItem('sl_demo_mode',d.demoMode?'1':'0');localStorage.setItem('sl_experience_switcher',Auth.type==='Stratex'||localStorage.getItem('sl_admin_token')?'1':'0');navigateClean(roleHome(d.accountType));}catch(e){if(msg){msg.textContent=e.message||'Could not open that experience.';msg.classList.add('is-error');}}}
-async function load(){if(isDemoMode()&&typeof restoreAdminSessionForSelector==='function')restoreAdminSessionForSelector();if(!Auth.isLoggedIn()){navigateClean('login.html');return;}try{var d=await api('GET','/api/auth/experiences');experiences=(d.data||[]).filter(function(x){return x&&x.accountType!=='Player';});if(typeof window.render==='function')window.render();}catch(e){var msg=document.getElementById('selectorMsg');if(msg){msg.textContent=e.message||'Could not load experiences.';msg.classList.add('is-error');}else{document.getElementById('main').innerHTML='<section class="es3-initial-loader"><div class="es3-initial-loader-card"><h1>Experiences could not be loaded</h1><p>'+String(e.message||'Please sign in again.').replace(/[<>]/g,'')+'</p></div></section>';}}}
-document.getElementById('logoutBtn').addEventListener('click',function(){Auth.clear();navigateClean('login.html?logout=1');});var mobileLogout=document.getElementById('logoutMobile');if(mobileLogout)mobileLogout.addEventListener('click',function(e){e.preventDefault();Auth.clear();navigateClean('login.html?logout=1');});
-</script>
-<script src="/frontend/js/experience-selector-v3.js"></script>
-<script src="/frontend/js/scoutlink-public-v4.js"></script>
-<script>document.addEventListener('DOMContentLoaded',load);</script>
-<script src="/frontend/js/heap-analytics.js"></script>
+<body class="public-site experience-page-v4">
+  <a class="public-skip" href="#experienceRoot">Skip to workspaces</a>
+  <div id="publicCoreRoot" class="public-root" aria-live="polite">
+    <main class="experience-loader-v4" role="status" aria-live="polite">
+      <div class="experience-loader-card-v4">
+        <span class="sl-logo">Scout<span>Link</span></span>
+        <div class="experience-loader-ball-v4" aria-hidden="true"></div>
+        <h1>Loading ScoutLink workspaces</h1>
+        <p>Checking the approved access connected to this account.</p>
+      </div>
+    </main>
+  </div>
+  <script src="/frontend/js/main.js"></script>
+  <script src="/frontend/js/experience-selector-v3.js?v=4.1.0"></script>
+  <script src="/frontend/js/heap-analytics.js"></script>
 </body>
 </html>
