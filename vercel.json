@@ -1,927 +1,237 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    {
-      "source": "/compatibility-score",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/compatibility-score",
-      "permanent": true
-    },
-    {
-      "source": "/compatibility-score",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/compatibility-score",
-      "permanent": true
-    },
-    {
-      "source": "/company/compatibility-score",
-      "destination": "/scoutlink/compatibility-score",
-      "permanent": true
-    },
-    {
-      "source": "/pricing",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/pricing",
-      "permanent": true
-    },
-    {
-      "source": "/pricing",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/pricing",
-      "permanent": true
-    },
-    {
-      "source": "/company/pricing",
-      "destination": "/scoutlink/pricing",
-      "permanent": true
-    },
-    {
-      "source": "/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/coaches",
-      "permanent": true
-    },
-    {
-      "source": "/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/coaches",
-      "permanent": true
-    },
-    {
-      "source": "/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/scouts",
-      "permanent": true
-    },
-    {
-      "source": "/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/scoutlink/scouts",
-      "permanent": true
-    },
-    {
-      "source": "/parents-and-players",
-      "destination": "/parents-players",
-      "permanent": true
-    },
-    {
-      "source": "/terms-of-use",
-      "destination": "/terms",
-      "permanent": true
-    },
-    {
-      "source": "/company/terms-of-use",
-      "destination": "/terms",
-      "permanent": true
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy-policy",
-      "permanent": true
-    },
-    {
-      "source": "/company/privacy",
-      "destination": "/privacy-policy",
-      "permanent": true
-    },
-    {
-      "source": "/cookies",
-      "destination": "/cookie-policy",
-      "permanent": true
-    },
-    {
-      "source": "/company/cookies",
-      "destination": "/cookie-policy",
-      "permanent": true
-    },
-    {
-      "source": "/company",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/company",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/company/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/company/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/:path*",
-      "permanent": true
-    }
-  ],
+  "redirects": [],
   "rewrites": [
     {
       "source": "/robots.txt",
+      "destination": "/frontend/stratex-robots.txt",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/stratex-robots.txt"
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/frontend/stratex-sitemap.xml",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "/frontend/stratex-llms.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
     },
     {
       "source": "/robots.txt",
+      "destination": "/frontend/robots.txt",
       "has": [
         {
           "type": "host",
-          "value": "stratexanalytics.co.uk"
+          "value": "(?:www\\.)?scoutlink\\.app"
         }
-      ],
-      "destination": "/frontend/stratex-robots.txt"
+      ]
     },
     {
       "source": "/sitemap.xml",
+      "destination": "/frontend/sitemap.xml",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?scoutlink\\.app"
         }
-      ],
-      "destination": "/frontend/stratex-sitemap.xml"
-    },
-    {
-      "source": "/sitemap.xml",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/stratex-sitemap.xml"
+      ]
     },
     {
       "source": "/llms.txt",
+      "destination": "/frontend/llms.txt",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?scoutlink\\.app"
         }
-      ],
-      "destination": "/frontend/stratex-llms.txt"
-    },
-    {
-      "source": "/llms.txt",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/stratex-llms.txt"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/frontend/robots.txt"
-    },
-    {
-      "source": "/sitemap.xml",
-      "destination": "/frontend/sitemap.xml"
-    },
-    {
-      "source": "/llms.txt",
-      "destination": "/frontend/llms.txt"
+      ]
     },
     {
       "source": "/",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/scoutlink",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/compatibility-score",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/compatibility-score",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/pricing",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/pricing",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scoutlink/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scouts",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/coaches",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/grassroots-football-scouting-tools",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/grassroots-football-scouting-tools",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/about",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/about",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/leadership",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/leadership",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/trust",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/trust",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scout-verification",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/scout-verification",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/parent-guardian-notice",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/parent-guardian-notice",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/careers",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/careers",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/careers/:slug",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/careers/:slug",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/contact",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/contact",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/report-a-concern",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/report-a-concern",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/privacy-policy",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/privacy-policy",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/terms",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/terms",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/terms-of-use",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/terms-of-use",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/cookie-policy",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/cookie-policy",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/security",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/security",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/accessibility",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/accessibility",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
       "source": "/learning-centre",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
     },
     {
-      "source": "/learning-centre",
+      "source": "/contact",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
+      ]
+    },
+    {
+      "source": "/report-a-concern",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/terms",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/cookie-policy",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/security",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/accessibility",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/showcase-event",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
+    },
+    {
+      "source": "/careers/:slug",
+      "destination": "/frontend/pages/stratex-public-v4.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
+        }
+      ]
     },
     {
       "source": "/learning-centre/:slug",
+      "destination": "/frontend/pages/stratex-public-v4.html",
       "has": [
         {
           "type": "host",
-          "value": "www.stratexanalytics.co.uk"
+          "value": "(?:www\\.)?stratexanalytics\\.co\\.uk"
         }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/learning-centre/:slug",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/admin",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-company-admin.html"
-    },
-    {
-      "source": "/admin",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-company-admin.html"
-    },
-    {
-      "source": "/admin/usage-requests",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-usage-requests.html"
-    },
-    {
-      "source": "/showcase-event/player-registration",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-player-registration.html"
-    },
-    {
-      "source": "/showcase-event/player-registration",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-player-registration.html"
-    },
-    {
-      "source": "/showcase-event/player-registration/complete",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-player-registration.html"
-    },
-    {
-      "source": "/showcase-event/player-registration/complete",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-player-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration/complete",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration/complete",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration/sold-out",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/showcase-event/coach-scout-registration/sold-out",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/admin/showcase-event",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-showcase-events.html"
-    },
-    {
-      "source": "/admin/showcase-event",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-showcase-events.html"
+      ]
     },
     {
       "source": "/showcase-event/player-registration",
@@ -942,264 +252,206 @@
     {
       "source": "/showcase-event/coach-scout-registration/sold-out",
       "destination": "/frontend/pages/showcase-professional-registration.html"
-    },
-    {
-      "source": "/admin/showcase-event",
-      "destination": "/frontend/pages/stratex-showcase-events.html"
-    },
-    {
-      "source": "/admin/:module",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-company-admin.html"
-    },
-    {
-      "source": "/admin/usage-requests",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-usage-requests.html"
-    },
-    {
-      "source": "/admin/:module",
-      "has": [
-        {
-          "type": "host",
-          "value": "stratexanalytics.co.uk"
-        }
-      ],
-      "destination": "/frontend/pages/stratex-company-admin.html"
     },
     {
       "source": "/",
-      "destination": "/frontend/index.html"
+      "destination": "/frontend/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/login",
-      "destination": "/frontend/pages/login.html"
+      "source": "/coaches",
+      "destination": "/frontend/pages/coaches.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/forgot-password",
-      "destination": "/frontend/pages/forgot-password.html"
-    },
-    {
-      "source": "/experience-select",
-      "destination": "/frontend/pages/experience-select.html"
+      "source": "/scouts",
+      "destination": "/frontend/pages/scouts.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/demo",
-      "destination": "/frontend/pages/demo.html"
+      "destination": "/frontend/pages/demo.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/coaches",
-      "destination": "/frontend/pages/coaches.html"
+      "source": "/scoutlink/pricing",
+      "destination": "/frontend/pages/stratex-site.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/scouts",
-      "destination": "/frontend/pages/scouts.html"
+      "source": "/login",
+      "destination": "/frontend/pages/login.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/parents-players",
-      "destination": "/frontend/pages/parents-players.html"
-    },
-    {
-      "source": "/about",
-      "destination": "/frontend/pages/about.html"
-    },
-    {
-      "source": "/404",
-      "destination": "/frontend/pages/404.html"
+      "source": "/forgot-password",
+      "destination": "/frontend/pages/forgot-password.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/register",
-      "destination": "/frontend/pages/register.html"
-    },
-    {
-      "source": "/register/scout",
-      "destination": "/frontend/pages/register-scout.html"
+      "destination": "/frontend/pages/register.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/register/coach",
-      "destination": "/frontend/pages/register-coach.html"
+      "destination": "/frontend/pages/register-coach.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/data-policy",
-      "destination": "/frontend/pages/data-policy.html"
-    },
-    {
-      "source": "/privacy-policy",
-      "destination": "/frontend/pages/privacy-policy.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/frontend/pages/privacy-policy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/frontend/pages/terms.html"
-    },
-    {
-      "source": "/terms-of-use",
-      "destination": "/frontend/pages/terms.html"
-    },
-    {
-      "source": "/cookie-policy",
-      "destination": "/frontend/pages/cookie-policy.html"
-    },
-    {
-      "source": "/cookies",
-      "destination": "/frontend/pages/cookie-policy.html"
-    },
-    {
-      "source": "/safeguarding",
-      "destination": "/frontend/pages/safeguarding.html"
-    },
-    {
-      "source": "/report-a-concern",
-      "destination": "/frontend/pages/report-concern.html"
-    },
-    {
-      "source": "/parent-guardian-notice",
-      "destination": "/frontend/pages/parent-guardian-notice.html"
-    },
-    {
-      "source": "/applicant-privacy-notice",
-      "destination": "/frontend/pages/applicant-privacy-notice.html"
-    },
-    {
-      "source": "/privacy-request",
-      "destination": "/frontend/pages/privacy-request.html"
-    },
-    {
-      "source": "/contact",
-      "destination": "/frontend/pages/contact.html"
-    },
-    {
-      "source": "/accessibility",
-      "destination": "/frontend/pages/accessibility.html"
+      "source": "/register/scout",
+      "destination": "/frontend/pages/register-scout.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/complete-registration",
-      "destination": "/frontend/pages/complete-registration.html"
+      "destination": "/frontend/pages/complete-registration.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/confirm-password",
-      "destination": "/frontend/pages/confirm-password.html"
+      "destination": "/frontend/pages/confirm-password.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
+    },
+    {
+      "source": "/safeguarding",
+      "destination": "/frontend/pages/safeguarding.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
+    },
+    {
+      "source": "/experience-select",
+      "destination": "/frontend/pages/experience-select.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/video-upload",
-      "destination": "/frontend/pages/video-upload.html"
+      "destination": "/frontend/pages/video-upload.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/company",
-      "destination": "/frontend/pages/stratex-site.html"
+      "source": "/report-a-concern",
+      "destination": "/frontend/pages/report-concern.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/company/scoutlink",
-      "destination": "/frontend/pages/stratex-site.html"
+      "source": "/data-policy",
+      "destination": "/frontend/pages/data-policy.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/company/scoutlink/compatibility-score",
-      "destination": "/frontend/pages/stratex-site.html"
+      "source": "/privacy-policy",
+      "destination": "/frontend/pages/privacy-policy.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/company/scoutlink/pricing",
-      "destination": "/frontend/pages/stratex-site.html"
+      "source": "/terms",
+      "destination": "/frontend/pages/terms.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
-      "source": "/company/scoutlink/scouts",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/scoutlink/coaches",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/pricing",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/grassroots-football-scouting-tools",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/about",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/leadership",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/trust",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/scout-verification",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/parent-guardian-notice",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/careers",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/careers/:slug",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/contact",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/report-a-concern",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/privacy-policy",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/terms",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/terms-of-use",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/cookie-policy",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/security",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/accessibility",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/learning-centre",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/learning-centre/:slug",
-      "destination": "/frontend/pages/stratex-site.html"
-    },
-    {
-      "source": "/company/admin",
-      "destination": "/frontend/pages/stratex-company-admin.html"
+      "source": "/cookie-policy",
+      "destination": "/frontend/pages/cookie-policy.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?scoutlink\\.app"
+        }
+      ]
     },
     {
       "source": "/admin",
@@ -1210,7 +462,11 @@
       "destination": "/frontend/pages/stratex-usage-requests.html"
     },
     {
-      "source": "/admin/:module",
+      "source": "/admin/showcase-event",
+      "destination": "/frontend/pages/stratex-showcase-events.html"
+    },
+    {
+      "source": "/company/admin",
       "destination": "/frontend/pages/stratex-company-admin.html"
     },
     {
@@ -1258,12 +514,12 @@
       "destination": "/frontend/pages/stratex-scouts.html"
     },
     {
-      "source": "/stratex/coaches",
-      "destination": "/frontend/pages/stratex-coaches.html"
+      "source": "/stratex/usage-requests",
+      "destination": "/frontend/pages/stratex-usage-requests.html"
     },
     {
-      "source": "/stratex/messages",
-      "destination": "/frontend/pages/stratex-messages.html"
+      "source": "/stratex/coaches",
+      "destination": "/frontend/pages/stratex-coaches.html"
     },
     {
       "source": "/stratex/scout-teams",
@@ -1298,10 +554,6 @@
       "destination": "/frontend/pages/stratex-settings.html"
     },
     {
-      "source": "/stratex/usage-requests",
-      "destination": "/frontend/pages/stratex-usage-requests.html"
-    },
-    {
       "source": "/coach/dashboard",
       "destination": "/frontend/pages/coach-dashboard.html"
     },
@@ -1312,6 +564,10 @@
     {
       "source": "/coach/my-players",
       "destination": "/frontend/pages/coach-my-players.html"
+    },
+    {
+      "source": "/coach/usage-requests",
+      "destination": "/frontend/pages/coach-usage-requests.html"
     },
     {
       "source": "/coach/add-player",
@@ -1378,6 +634,10 @@
       "destination": "/frontend/pages/scout-predictions.html"
     },
     {
+      "source": "/scout/usage-requests",
+      "destination": "/frontend/pages/scout-usage-requests.html"
+    },
+    {
       "source": "/scout/exports",
       "destination": "/frontend/pages/scout-exports.html"
     },
@@ -1410,10 +670,6 @@
       "destination": "/frontend/pages/scout-settings.html"
     },
     {
-      "source": "/scout/usage-requests",
-      "destination": "/frontend/pages/scout-usage-requests.html"
-    },
-    {
       "source": "/scout/preferences",
       "destination": "/frontend/pages/scout-preferences.html"
     },
@@ -1424,10 +680,6 @@
     {
       "source": "/player/profile",
       "destination": "/frontend/pages/player-profile.html"
-    },
-    {
-      "source": "/player/profile",
-      "destination": "/frontend/pages/scout-player-profile.html"
     },
     {
       "source": "/player/edit-profile",
@@ -1446,16 +698,8 @@
       "destination": "/frontend/pages/player-settings.html"
     },
     {
-      "source": "/careers",
-      "destination": "/frontend/pages/careers.html"
-    },
-    {
-      "source": "/careers/interview-availability",
-      "destination": "/frontend/pages/interview-availability.html"
-    },
-    {
-      "source": "/careers/:slug",
-      "destination": "/frontend/pages/career-detail.html"
+      "source": "/admin/:module",
+      "destination": "/frontend/pages/stratex-company-admin.html"
     },
     {
       "source": "/css/:path*",
@@ -1468,6 +712,10 @@
     {
       "source": "/assets/:path*",
       "destination": "/frontend/assets/:path*"
+    },
+    {
+      "source": "/images/:path*",
+      "destination": "/frontend/images/:path*"
     }
   ]
 }
