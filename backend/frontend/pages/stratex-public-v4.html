@@ -7,8 +7,8 @@
   <meta name="description" content="Stratex Analytics uses data and technology to improve how grassroots football players are developed, discovered and represented.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <link rel="canonical" href="https://www.stratexanalytics.co.uk/">
-  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260729-3">
-  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260729-3">
+  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260730-publishing-v1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260730-publishing-v1">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Stratex Analytics | Football Intelligence for Overlooked Talent">
   <meta property="og:description" content="Football intelligence for overlooked grassroots talent.">
@@ -23,7 +23,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var path = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
+      if (path === '/showcase-event' || path === '/award-ceremonies') {
+        document.documentElement.classList.add('stratex-publishing-route');
+      }
+    }());
+  </script>
   <link rel="stylesheet" href="/css/stratex-public-v4.css?v=20260729-3">
+  <link rel="stylesheet" href="/css/stratex-publishing-public-v1.css?v=20260730-1">
   <script type="application/ld+json" id="stratexJsonLd">{"@context":"https://schema.org","@type":"Organization","name":"Stratex Analytics","url":"https://www.stratexanalytics.co.uk"}</script>
 </head>
 <body>
@@ -31,6 +40,7 @@
   <div id="stratexPublicRoot" aria-live="polite"></div>
   <noscript><p style="padding:24px">JavaScript is required when this page is served from the static frontend. The production server also provides rendered page content.</p></noscript>
   <script src="/js/stratex-public-v4.js?v=20260729-2"></script>
+  <script src="/js/stratex-publishing-public-v1.js?v=20260730-1"></script>
   <script src="/js/heap-analytics.js"></script>
 </body>
 </html>
