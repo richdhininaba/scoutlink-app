@@ -13,108 +13,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/frontend/css/scout-experience-exact-v3.css">
 <link rel="stylesheet" href="/frontend/css/scout-intelligence-v4.css">
-<link rel="stylesheet" href="/frontend/css/usage-requests-v1.css">
-<link rel="stylesheet" href="/frontend/css/scout-experience-v8.css?v=20260729-8">
-<script type="text/javascript">
-window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};heap.load("3441720574");
-</script>
+<link rel="stylesheet" href="/frontend/css/scout-experience-v8.css?v=20260730-15">
 </head>
-<body class="scout-experience-body usage-page scout-usage-page" data-usage-role="scout" data-scout-route="usage">
-<a class="si4-screen-reader-only" href="#usageMain">Skip to usage requests</a>
-
-<div class="scout-page usage-shell">
-  <aside class="sidebar">
-    <div class="side-logo"><a class="logo" href="/scout/dashboard">Scout<span>Link</span></a></div>
-    <nav class="side-nav" aria-label="Scout workspace">
-      <div class="nav-label">Core</div>
-      <a class="side-link" href="/scout/dashboard"><span class="side-icon">DB</span>Dashboard</a>
-      <a class="side-link" href="/scout/player-search"><span class="side-icon">PS</span>Player search</a>
-      <a class="side-link" href="/scout/pipeline"><span class="side-icon">MP</span>My pipeline</a>
-      <a class="side-link" href="/scout/rankings"><span class="side-icon">RK</span>Rankings</a>
-
-      <div class="nav-label">Scouting tools</div>
-      <a class="side-link" href="/scout/fixtures"><span class="side-icon">FX</span>Fixtures</a>
-      <a class="side-link" href="/scout/predictions"><span class="side-icon">PR</span>Predictions</a>
-      <a class="side-link" href="/scout/exports"><span class="side-icon">EX</span>Exports</a>
-      <a class="side-link" href="/scout/compare-players"><span class="side-icon">CP</span>Compare players</a>
-      <a class="side-link" href="/scout/setup"><span class="side-icon">SS</span>Scout setup</a>
-
-      <div class="nav-label">Network</div>
-      <a class="side-link" href="/scout/events"><span class="side-icon">EV</span>Events</a>
-      <a class="side-link" href="/scout/chat"><span class="side-icon">CH</span>Chat</a>
-      <a class="side-link" href="/scout/notifications"><span class="side-icon">NT</span>Notifications</a>
-      <a class="side-link" href="/scout/report-a-concern"><span class="side-icon">RC</span>Report a concern</a>
-
-      <div class="nav-label">Account</div>
-      <a class="side-link active usage-request-link" href="/scout/usage-requests" aria-current="page" data-usage-request-nav="1"><span class="side-icon">UR</span>Usage requests</a>
-      <a class="side-link" href="/scout/settings"><span class="side-icon">ST</span>Settings</a>
-    </nav>
-    <div class="side-user">
-      <div class="user-avatar">SL</div>
-      <div><b data-current-user>Scout account</b><span>Reviewed Scout workspace</span></div>
-    </div>
-  </aside>
-
-  <section class="workspace">
-    <header class="workspace-top">
-      <h1>Usage requests</h1>
-      <div class="top-actions">
-        <a class="btn sm" href="/scout/setup">Scout team</a>
-        <a class="btn sm" href="/scout/notifications">Notifications</a>
-        <button class="btn sm primary" type="button" data-new-request>New request</button>
-      </div>
-    </header>
-
-    <main class="content ur-content" id="usageMain">
-      <header class="ur-hero">
-        <div><small>Allowance tracking</small><h2>Request extra Scout allowances.</h2>
-        <p>Review live team totals, request more predictions, exports or pipeline interests and follow the Stratex Admin decision.</p></div>
-        <button class="btn primary" type="button" data-new-request>New request</button>
-      </header>
-
-      <section class="usage-current ur-card ur-current-usage">
-        <span>Current plan and usage</span>
-        <h3 data-usage-plan>Loading plan</h3>
-        <p>The same live totals appear on Dashboard, Predictions, Exports and Pipeline.</p>
-        <div class="allowance-list">
-          <article class="allowance"><div><small>Prediction credits</small><b data-usage-predictions-used>0 of 0 used</b><span data-usage-predictions-remaining>0 remaining</span></div><i><em style="width:0%"></em></i></article>
-          <article class="allowance"><div><small>Exports</small><b data-usage-exports-used>0 of 0 used</b><span data-usage-exports-remaining>0 remaining</span></div><i><em style="width:0%"></em></i></article>
-          <article class="allowance"><div><small>Pipeline interests</small><b data-usage-interests-used>0 of 0 used</b><span data-usage-interests-remaining>0 remaining</span></div><i><em style="width:0%"></em></i></article>
-        </div>
-      </section>
-
-      <section class="ur-metrics ur-summary-metrics">
-        <article class="ur-metric"><small>Pending review</small><b data-summary-pending>0</b><span>Awaiting Stratex Admin</span></article>
-        <article class="ur-metric"><small>Approved</small><b data-summary-approved>0</b><span>Allowance applied</span></article>
-        <article class="ur-metric"><small>Payment link sent</small><b data-summary-payment>0</b><span>Awaiting payment</span></article>
-        <article class="ur-metric"><small>Declined</small><b data-summary-declined>0</b><span>No allowance added</span></article>
-      </section>
-
-      <section class="ur-layout">
-        <aside class="ur-card ur-list">
-          <header class="panel-head ur-card-head"><div><h3>Request history</h3><p>Select a request to see its audit trail.</p></div></header>
-          <div data-request-list><div class="ur-empty">Loading requests…</div></div>
-        </aside>
-        <section class="ur-card ur-detail" data-request-detail>
-          <div class="ur-empty">Select a request to see its full timeline.</div>
-        </section>
-      </section>
-    </main>
-  </section>
-
-  <nav class="mobile-bottom" aria-label="Scout mobile navigation">
-    <a class="bottom-link" href="/scout/dashboard"><i>HM</i>Home</a>
-    <a class="bottom-link" href="/scout/player-search"><i>PS</i>Search</a>
-    <a class="bottom-link" href="/scout/pipeline"><i>MP</i>Pipeline</a>
-    <a class="bottom-link" href="/scout/chat"><i>CH</i>Chat</a>
-    <button class="bottom-link active" type="button" data-global-menu><i>MR</i>More</button>
-  </nav>
-</div>
-
+<body class="scout-experience-body" data-scout-route="usage">
+<a class="si4-screen-reader-only" href="#scoutExperienceApp">Skip to ScoutLink workspace</a>
+<div id="scoutExperienceApp" aria-live="polite" aria-busy="false"></div>
 <script src="/frontend/js/main.js"></script>
-<script src="/frontend/js/workspace-loading-v1.js"></script>
-<script src="/frontend/js/usage-requests-v1.js"></script>
-<script src="/frontend/js/scout-experience-v8.js?v=20260729-8"></script>
-<script src="/frontend/js/heap-analytics.js"></script>
+<script src="/frontend/js/scout-experience-exact-v3.js"></script>
+<script src="/frontend/js/scout-intelligence-v4.js"></script>
+<script src="/frontend/js/scout-experience-v8.js?v=20260730-15"></script>
+<script src="/frontend/js/heap-analytics.js?v=20260730-4"></script>
 </body>
 </html>
