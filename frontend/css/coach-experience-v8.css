@@ -2669,3 +2669,373 @@ body.coach-v8 .assignment-toolbar select,body.coach-v8 .bulk-table input,body.co
 body.coach-v8 .step-progress article.active,body.coach-v8 .step-progress article.done,body.coach-v8 .ap3-step.is-active,body.coach-v8 .mf3-step.is-active{color:var(--ink)!important}
 body.coach-v8 .step-progress article.active b,body.coach-v8 .step-progress article.done b,body.coach-v8 .ap3-step.is-active b,body.coach-v8 .mf3-step.is-active b{color:var(--green-dark)!important}
 @media(max-width:760px){body.coach-v8.mobile-site .dashboard,body.coach-v8.mobile-site .coach-shell{display:block!important;width:100%!important;max-width:100%!important;margin:0!important}body.coach-v8.mobile-site .dashboard-main,body.coach-v8.mobile-site .coach-workspace,body.coach-v8.mobile-site .page-content,body.coach-v8.mobile-site .coach-content{width:100%!important;max-width:100%!important;margin:0!important;transform:none!important}}
+
+/* ============================================================
+   V8.2 CLEAN LAYOUT AND SINGLE-HERO GUARANTEES
+   These final rules normalise spacing and vertical alignment after
+   every route-specific stylesheet has loaded.
+   ============================================================ */
+body.coach-v8 .coach-v8-legacy-hero-bridge{display:none!important}
+
+body.coach-v8 .page-content,
+body.coach-v8 .coach-content{
+  padding-top:22px!important;
+  padding-bottom:52px!important;
+}
+
+body.coach-v8 .page-content>*,
+body.coach-v8 .coach-content>*{
+  margin-top:0!important;
+  margin-bottom:0!important;
+}
+
+body.coach-v8 .page-content>*+*,
+body.coach-v8 .coach-content>*+*{
+  margin-top:20px!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero{
+  min-height:158px!important;
+  padding:28px 30px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:28px!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero-copy{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-self:stretch!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero-copy>span{
+  margin:0!important;
+  line-height:1.25!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero h2{
+  margin:8px 0 0!important;
+  line-height:1.08!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero p{
+  margin:10px 0 0!important;
+  line-height:1.55!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero .hero-meta{
+  margin:11px 0 0!important;
+  line-height:1.35!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero .hero-actions{
+  margin:0!important;
+  align-self:center!important;
+  align-items:stretch!important;
+}
+
+body.coach-v8 .coach-v8-exact-hero .hero-actions .btn{
+  min-height:42px!important;
+  padding:10px 16px!important;
+  line-height:1.2!important;
+}
+
+body.coach-v8 .coach-dashboard-stat,
+body.coach-v8 .coach-players-stat,
+body.coach-v8 .kpi-card,
+body.coach-v8 .cf3-stat{
+  min-height:108px!important;
+  padding:18px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+}
+
+body.coach-v8 .coach-dashboard-stat-label,
+body.coach-v8 .coach-players-stat-label,
+body.coach-v8 .kpi-label,
+body.coach-v8 .cf3-stat small{
+  margin:0!important;
+  line-height:1.3!important;
+}
+
+body.coach-v8 .coach-dashboard-stat-value,
+body.coach-v8 .coach-players-stat-value,
+body.coach-v8 .kpi-value,
+body.coach-v8 .cf3-stat strong{
+  margin:8px 0 0!important;
+  line-height:1.05!important;
+}
+
+body.coach-v8 .coach-dashboard-stat-sub,
+body.coach-v8 .coach-players-stat-sub,
+body.coach-v8 .kpi-sub,
+body.coach-v8 .cf3-stat span{
+  margin:6px 0 0!important;
+  line-height:1.4!important;
+}
+
+body.coach-v8 .coach-dashboard-panel,
+body.coach-v8 .coach-players-panel,
+body.coach-v8 .section-card,
+body.coach-v8 .table-card,
+body.coach-v8 .card,
+body.coach-v8 .ap3-panel,
+body.coach-v8 .cb3-panel,
+body.coach-v8 .mf3-panel,
+body.coach-v8 .cf3-panel{
+  overflow:hidden!important;
+}
+
+body.coach-v8 .coach-dashboard-panel-head,
+body.coach-v8 .table-header,
+body.coach-v8 .card-header,
+body.coach-v8 .ap3-panel-head,
+body.coach-v8 .cb3-panel-head,
+body.coach-v8 .mf3-panel-head,
+body.coach-v8 .cf3-panel-head{
+  min-height:62px!important;
+  padding:14px 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+}
+
+body.coach-v8 .coach-dashboard-panel-head>div,
+body.coach-v8 .table-header>div,
+body.coach-v8 .card-header>div,
+body.coach-v8 .ap3-panel-head>div,
+body.coach-v8 .cb3-panel-head>div,
+body.coach-v8 .mf3-panel-head>div,
+body.coach-v8 .cf3-panel-head>div{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+}
+
+body.coach-v8 .coach-dashboard-panel-head h2,
+body.coach-v8 .coach-dashboard-panel-head h3,
+body.coach-v8 .table-header h2,
+body.coach-v8 .table-header h3,
+body.coach-v8 .card-header h2,
+body.coach-v8 .card-header h3,
+body.coach-v8 .ap3-panel-head h2,
+body.coach-v8 .ap3-panel-head h3,
+body.coach-v8 .cb3-panel-head h2,
+body.coach-v8 .cb3-panel-head h3,
+body.coach-v8 .mf3-panel-head h2,
+body.coach-v8 .mf3-panel-head h3,
+body.coach-v8 .cf3-panel-head h2,
+body.coach-v8 .cf3-panel-head h3{
+  margin:0!important;
+  line-height:1.25!important;
+}
+
+body.coach-v8 .coach-dashboard-panel-head p,
+body.coach-v8 .table-header p,
+body.coach-v8 .card-header p,
+body.coach-v8 .ap3-panel-head p,
+body.coach-v8 .cb3-panel-head p,
+body.coach-v8 .mf3-panel-head p,
+body.coach-v8 .cf3-panel-head p{
+  margin:5px 0 0!important;
+  line-height:1.4!important;
+}
+
+body.coach-v8 .coach-dashboard-panel-body,
+body.coach-v8 .section-body,
+body.coach-v8 .card-body,
+body.coach-v8 .ap3-panel-body,
+body.coach-v8 .cb3-panel-body,
+body.coach-v8 .mf3-panel-body,
+body.coach-v8 .cf3-panel-body{
+  padding:18px!important;
+}
+
+body.coach-v8 .dashboard-priority-grid,
+body.coach-v8 .coach-dashboard-lower,
+body.coach-v8 .two-column,
+body.coach-v8 .three-column,
+body.coach-v8 .cf3-grid{
+  gap:20px!important;
+}
+
+body.coach-v8 .coach-v8-priority-link{
+  min-height:74px!important;
+  padding:14px 0!important;
+  align-items:center!important;
+}
+
+body.coach-v8 .coach-v8-priority-link>div{
+  min-width:0!important;
+  align-self:center!important;
+}
+
+body.coach-v8 .coach-v8-priority-link b,
+body.coach-v8 .coach-v8-priority-link p,
+body.coach-v8 .coach-v8-priority-link em{
+  line-height:1.4!important;
+}
+
+body.coach-v8 .coach-v8-need{
+  margin-top:16px!important;
+}
+
+body.coach-v8 .coach-v8-need:first-child{
+  margin-top:0!important;
+}
+
+body.coach-v8 .coach-v8-need-head{
+  min-height:34px!important;
+  align-items:center!important;
+}
+
+body.coach-v8 .coach-v8-verdict{
+  margin-top:18px!important;
+  padding:14px!important;
+}
+
+body.coach-v8 .coach-players-filters,
+body.coach-v8 .cf3-toolbar{
+  padding:12px!important;
+  gap:10px!important;
+  align-items:center!important;
+}
+
+body.coach-v8 .coach-players-control,
+body.coach-v8 .coach-players-sort-button,
+body.coach-v8 .cf3-control,
+body.coach-v8 .cf3-input,
+body.coach-v8 .cf3-select,
+body.coach-v8 input:not([type="checkbox"]):not([type="radio"]),
+body.coach-v8 select{
+  min-height:42px!important;
+  line-height:1.25!important;
+}
+
+body.coach-v8 table th,
+body.coach-v8 table td{
+  vertical-align:middle!important;
+  line-height:1.35!important;
+}
+
+body.coach-v8 .coach-players-table tbody tr{
+  min-height:64px!important;
+}
+
+body.coach-v8 .ap3-stepper,
+body.coach-v8 .step-progress,
+body.coach-v8 .step-indicator{
+  gap:10px!important;
+}
+
+body.coach-v8 .ap3-step,
+body.coach-v8 .step-progress article,
+body.coach-v8 .step-indicator .step,
+body.coach-v8 .mf3-step{
+  min-height:62px!important;
+  padding:10px 12px!important;
+  display:flex!important;
+  align-items:center!important;
+}
+
+body.coach-v8 .ap3-step>div,
+body.coach-v8 .step-progress article>div,
+body.coach-v8 .step-indicator .step>div,
+body.coach-v8 .mf3-step>div{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+}
+
+body.coach-v8 .ap3-choice,
+body.coach-v8 .choice-card,
+body.coach-v8 .mf3-choice{
+  min-height:62px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+}
+
+body.coach-fixtures-v3.coach-v8 .cf3-root>*+*{
+  margin-top:16px!important;
+}
+
+body.coach-fixtures-v3.coach-v8 .cf3-stats,
+body.coach-fixtures-v3.coach-v8 .cf3-toolbar,
+body.coach-fixtures-v3.coach-v8 .cf3-grid{
+  margin-top:16px!important;
+}
+
+body.coach-fixtures-v3.coach-v8 .cf3-panel-head{
+  min-height:58px!important;
+}
+
+@media(max-width:760px){
+  body.coach-v8 .page-content,
+  body.coach-v8 .coach-content{
+    padding-top:16px!important;
+    padding-bottom:84px!important;
+  }
+
+  body.coach-v8 .page-content>*+*,
+  body.coach-v8 .coach-content>*+*{
+    margin-top:16px!important;
+  }
+
+  body.coach-v8 .coach-v8-exact-hero{
+    min-height:0!important;
+    padding:25px 18px!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:18px!important;
+  }
+
+  body.coach-v8 .coach-v8-exact-hero .hero-actions{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  body.coach-v8 .coach-v8-exact-hero .hero-actions .btn{
+    width:100%!important;
+    min-height:48px!important;
+  }
+
+  body.coach-v8 .coach-dashboard-panel-head,
+  body.coach-v8 .table-header,
+  body.coach-v8 .card-header,
+  body.coach-v8 .ap3-panel-head,
+  body.coach-v8 .cb3-panel-head,
+  body.coach-v8 .mf3-panel-head,
+  body.coach-v8 .cf3-panel-head{
+    min-height:0!important;
+    padding:16px!important;
+    gap:10px!important;
+  }
+
+  body.coach-v8 .coach-dashboard-panel-body,
+  body.coach-v8 .section-body,
+  body.coach-v8 .card-body,
+  body.coach-v8 .ap3-panel-body,
+  body.coach-v8 .cb3-panel-body,
+  body.coach-v8 .mf3-panel-body,
+  body.coach-v8 .cf3-panel-body{
+    padding:16px!important;
+  }
+
+  body.coach-v8 .dashboard-priority-grid,
+  body.coach-v8 .coach-dashboard-lower,
+  body.coach-v8 .two-column,
+  body.coach-v8 .three-column,
+  body.coach-v8 .cf3-grid{
+    gap:16px!important;
+  }
+}
+
