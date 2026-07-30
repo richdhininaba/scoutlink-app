@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '20260730.10.3-no-loading-gate';
+  var VERSION = '20260730.10.4-prepaint-safe';
   var CSS_URL = '/frontend/css/scout-experience-v8.css?v=' + encodeURIComponent(VERSION);
   var API_FALLBACK = 'https://scoutlink-api.vercel.app';
   var REQUEST_TIMEOUT_MS = 12000;
