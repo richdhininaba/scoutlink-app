@@ -13,8 +13,8 @@
  */
 (function () {
   var MOBILE_MAX = 760;
-  var GLOBAL_STYLE_ID = 'experienceShellV2GlobalStyle';
-  var SCOUT_STYLE_ID = 'experienceShellV2ScoutStyle';
+  var GLOBAL_STYLE_ID = 'experienceShellV4GlobalStyle';
+  var SCOUT_STYLE_ID = 'experienceShellV4ScoutStyle';
   var observer = null;
   var apiPoll = null;
 
@@ -24,10 +24,20 @@
 
   function storedRole() {
     try {
+      var publicDemo =
+        sessionStorage.getItem('sl_public_demo') === '1';
+
+      if (publicDemo) {
+        return String(
+          sessionStorage.getItem('sl_public_demo_role') ||
+          localStorage.getItem('sl_type') ||
+          ''
+        ).toLowerCase();
+      }
+
       return String(
         (window.Auth && window.Auth.type) ||
         localStorage.getItem('sl_type') ||
-        sessionStorage.getItem('sl_public_demo_role') ||
         sessionStorage.getItem('demoRole') ||
         ''
       ).toLowerCase();
@@ -38,8 +48,23 @@
 
   function experience() {
     var currentPath = path();
+    var role = storedRole();
 
-    /* Route identity takes priority over stale stored demo roles. */
+    /*
+     * /player/profile is intentionally shared by Coach, Scout and Player.
+     * Resolve it from the active experience before using the path prefix.
+     */
+    if (
+      currentPath === '/player/profile' ||
+      currentPath.indexOf('/player/profile?') === 0 ||
+      currentPath.indexOf('player-profile') >= 0
+    ) {
+      if (role === 'coach') return 'coach';
+      if (role === 'scout') return 'scout';
+      if (role === 'player') return 'player';
+    }
+
+    /* Route identity takes priority on non-shared routes. */
     if (
       currentPath.indexOf('/admin') === 0 ||
       currentPath.indexOf('/company/admin') === 0 ||
@@ -62,7 +87,6 @@
       currentPath.indexOf('player-') >= 0
     ) return 'player';
 
-    var role = storedRole();
     if (role === 'stratex') return 'stratex';
     if (role === 'coach') return 'coach';
     if (role === 'scout') return 'scout';
@@ -301,6 +325,56 @@
       '}',
 
       '@media (max-width:' + MOBILE_MAX + 'px){',
+
+      /*
+       * Coach mobile drawer: full viewport height, independently scrollable
+       * navigation and no clipped menu section on short phone screens.
+       */
+      'body.experience-shell-coach .sidebar,',
+      'body.experience-shell-coach .coach-sidebar{',
+      'position:fixed!important;',
+      'inset:0 auto 0 0!important;',
+      'top:0!important;',
+      'left:0!important;',
+      'bottom:0!important;',
+      'width:min(340px,92vw)!important;',
+      'height:100vh!important;',
+      'height:100dvh!important;',
+      'min-height:100dvh!important;',
+      'max-height:100dvh!important;',
+      'padding-bottom:calc(18px + env(safe-area-inset-bottom))!important;',
+      'display:flex!important;',
+      'flex-direction:column!important;',
+      'overflow-y:auto!important;',
+      'overflow-x:hidden!important;',
+      'overscroll-behavior:contain!important;',
+      'visibility:visible!important;',
+      'z-index:1000!important;',
+      '}',
+      'body.experience-shell-coach .sidebar-nav,',
+      'body.experience-shell-coach .coach-sidebar nav{',
+      'display:block!important;',
+      'flex:0 0 auto!important;',
+      'min-height:max-content!important;',
+      'height:auto!important;',
+      'max-height:none!important;',
+      'overflow:visible!important;',
+      '}',
+      'body.experience-shell-coach .sidebar-user{',
+      'flex:0 0 auto!important;',
+      'margin-top:auto!important;',
+      '}',
+      'body.experience-shell-coach.coach-v8-menu-open .sidebar,',
+      'body.experience-shell-coach.coach-v8-menu-open .coach-sidebar,',
+      'body.experience-shell-coach.coach-v2-menu-open .sidebar,',
+      'body.experience-shell-coach.coach-v2-menu-open .coach-sidebar,',
+      'body.experience-shell-coach.mobile-menu-open .sidebar,',
+      'body.experience-shell-coach.mobile-menu-open .coach-sidebar{',
+      'transform:translateX(0)!important;',
+      'opacity:1!important;',
+      'pointer-events:auto!important;',
+      '}',
+
       '.public-demo-banner.public-demo-banner-v2{',
       'width:auto!important;',
       'min-height:0!important;',
