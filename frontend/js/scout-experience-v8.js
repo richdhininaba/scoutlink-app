@@ -9,9 +9,11 @@
 (function () {
   'use strict';
 
-  var VERSION = '20260730.10.1-loading-gate';
+  var VERSION = '20260730.10.2-nonblocking-boot';
   var CSS_URL = '/frontend/css/scout-experience-v8.css?v=' + encodeURIComponent(VERSION);
   var API_FALLBACK = 'https://scoutlink-api.vercel.app';
+  var REQUEST_TIMEOUT_MS = 12000;
+  var BOOT_MAX_MS = 1600;
   var SEARCH_PAGE_SIZE = 20;
   var DEMO_CHAT_KEY = 'sl_scout_v10_exact_demo_chat';
   var DEMO_NOTIFICATION_KEY = 'sl_scout_v10_exact_demo_notifications';
@@ -264,20 +266,41 @@
   async function request(method, path, body, includeAuth) {
     var headers = { Accept: 'application/json' };
     var auth = token();
+    var controller = typeof AbortController === 'function'
+      ? new AbortController()
+      : null;
+    var timeout = null;
+
     if (includeAuth !== false && auth) headers.Authorization = 'Bearer ' + auth;
     if (body !== undefined && body !== null) headers['Content-Type'] = 'application/json';
 
-    var response = await fetch(apiBase() + path, {
-      method: method,
-      headers: headers,
-      credentials: 'include',
-      body: body === undefined || body === null ? undefined : JSON.stringify(body)
-    });
-    var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) {
-      throw new Error(payload.error || payload.message || 'The request could not be completed.');
+    if (controller) {
+      timeout = window.setTimeout(function () {
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
     }
-    return payload;
+
+    try {
+      var response = await fetch(apiBase() + path, {
+        method: method,
+        headers: headers,
+        credentials: 'include',
+        signal: controller ? controller.signal : undefined,
+        body: body === undefined || body === null ? undefined : JSON.stringify(body)
+      });
+      var payload = await response.json().catch(function () { return {}; });
+      if (!response.ok) {
+        throw new Error(payload.error || payload.message || 'The request could not be completed.');
+      }
+      return payload;
+    } catch (error) {
+      if (error && error.name === 'AbortError') {
+        throw new Error('The ScoutLink data request took too long. The page has opened and can be refreshed.');
+      }
+      throw error;
+    } finally {
+      if (timeout) window.clearTimeout(timeout);
+    }
   }
 
   function playerName(player) {
@@ -2368,6 +2391,37 @@
     return names[state.route] || 'Scout workspace';
   }
 
+  function exactCssFromDocument() {
+    var sheets = Array.prototype.slice.call(document.styleSheets || []);
+    for (var index = 0; index < sheets.length; index += 1) {
+      var sheet = sheets[index];
+      if (!sheet || !sheet.href || sheet.href.indexOf('scout-experience-v8.css') < 0) {
+        continue;
+      }
+      try {
+        return Array.prototype.slice.call(sheet.cssRules || [])
+          .map(function (rule) { return rule.cssText; })
+          .join('\n');
+      } catch (_) {
+        return '';
+      }
+    }
+    return '';
+  }
+
+  function wait(milliseconds) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, milliseconds);
+    });
+  }
+
+  function settle(promise) {
+    return Promise.resolve(promise).then(
+      function () { return { status: 'fulfilled' }; },
+      function (error) { return { status: 'rejected', error: error }; }
+    );
+  }
+
   function waitForShadowStyles(link) {
     return new Promise(function (resolve) {
       var settled = false;
@@ -2388,7 +2442,7 @@
       } catch (_) {}
       link.addEventListener('load', done, { once: true });
       link.addEventListener('error', done, { once: true });
-      window.setTimeout(done, 5000);
+      window.setTimeout(done, 1600);
     });
   }
 
@@ -2396,33 +2450,22 @@
     if (!state.host || !state.shadow) return;
     var boot = q(state.shadow, '.slv10-boot-screen');
 
-    if (error) {
-      state.host.classList.remove('is-loading');
-      state.host.setAttribute('aria-busy', 'false');
-      state.host.dataset.slv10Booting = '0';
-      if (boot) {
-        boot.classList.add('is-error');
-        boot.innerHTML =
-          '<div class="slv10-boot-card">' +
-            '<div class="slv10-boot-brand">Scout<span>Link</span></div>' +
-            '<h1>ScoutLink could not finish loading.</h1>' +
-            '<p>' + esc(error.message || 'The latest Scout workspace data could not be prepared.') + '</p>' +
-            '<button class="slv10-boot-retry" type="button">Try again</button>' +
-          '</div>';
-        var retry = q(boot, '.slv10-boot-retry');
-        if (retry) retry.addEventListener('click', function () { window.location.reload(); });
-      }
-      return;
-    }
+    if (state.exactRoot) state.exactRoot.style.visibility = 'visible';
+    if (boot) boot.hidden = true;
 
-    window.requestAnimationFrame(function () {
-      if (state.exactRoot) state.exactRoot.style.visibility = 'visible';
-      if (boot) boot.hidden = true;
-      state.host.dataset.slv10Ready = '1';
-      state.host.dataset.slv10Booting = '0';
-      state.host.classList.remove('is-loading', 'scout-v6-booting');
-      state.host.setAttribute('aria-busy', 'false');
-    });
+    state.host.dataset.slv10Ready = '1';
+    state.host.dataset.slv10Booting = '0';
+    state.host.classList.remove('is-loading', 'scout-v6-booting');
+    state.host.setAttribute('aria-busy', 'false');
+
+    if (error) {
+      window.setTimeout(function () {
+        showToast(
+          error.message || 'Some ScoutLink data is still loading. The workspace remains available.',
+          true
+        );
+      }, 80);
+    }
   }
 
   function mountExactExperience() {
@@ -2450,6 +2493,10 @@
     state.host.setAttribute('aria-busy', 'true');
 
     var shadow = state.host.shadowRoot || state.host.attachShadow({ mode: 'open' });
+    var documentCss = exactCssFromDocument();
+    var exactStyle = documentCss
+      ? '<style data-slv10-exact-css>' + documentCss + '</style>'
+      : '<link rel="stylesheet" href="' + CSS_URL + '">';
     state.shadow = shadow;
     shadow.innerHTML =
       '<style>' +
@@ -2467,7 +2514,7 @@
         '@keyframes slv10BootSpin{to{transform:rotate(360deg)}}' +
         '@media(prefers-reduced-motion:reduce){.slv10-boot-spinner{animation:none;border-top-color:#d8e2dd;background:#075f48}}' +
       '</style>' +
-      '<link rel="stylesheet" href="' + CSS_URL + '">' +
+      exactStyle +
       '<section class="slv10-boot-screen" role="status" aria-live="polite" aria-label="Loading ' + esc(routeDisplayName()) + '">' +
         '<div class="slv10-boot-card">' +
           '<div class="slv10-boot-brand">Scout<span>Link</span></div>' +
@@ -2483,17 +2530,48 @@
 
     state.exactRoot = q(shadow, '.slv10-exact-root');
     var link = q(shadow, 'link[rel="stylesheet"]');
+    var styleReady = documentCss
+      ? Promise.resolve()
+      : waitForShadowStyles(link);
+    var hydration = settle(
+      Promise.resolve().then(function () {
+        return hydrateRoute();
+      })
+    );
 
     /*
-     * Reveal once, only after both the exact stylesheet and the route's live
-     * data have finished. This prevents the design-board example values from
-     * flashing before they are replaced by real or isolated demo data.
+     * The exact page must never be held hostage by a slow or stalled API.
+     *
+     * Reveal after the exact stylesheet is ready and either hydration has
+     * completed or the short professional boot window has elapsed. Hydration
+     * continues in the background and updates the mounted V10 components when
+     * its data arrives.
      */
     Promise.all([
-      waitForShadowStyles(link),
-      hydrateRoute()
-    ]).then(function () {
-      finishBoot();
+      styleReady,
+      Promise.race([
+        hydration,
+        wait(BOOT_MAX_MS).then(function () {
+          return { status: 'timeout' };
+        })
+      ])
+    ]).then(function (values) {
+      var gateResult = values[1];
+      finishBoot(gateResult.status === 'rejected' ? gateResult.error : null);
+
+      if (gateResult.status === 'timeout') {
+        hydration.then(function (result) {
+          if (result.status === 'rejected') {
+            showToast(
+              result.error && result.error.message
+                ? result.error.message
+                : 'Some ScoutLink data could not be refreshed.',
+              true
+            );
+          }
+          addGenericActionBridge();
+        });
+      }
     }).catch(function (error) {
       finishBoot(error);
     });
