@@ -1,4 +1,16 @@
-/* Exact ScoutLink V10 source CSS, mechanically scoped to the Shadow DOM root. */
+/*
+ * Prevent the legacy V3/V4 light-DOM placeholder from painting while the
+ * exact V10 Shadow DOM renderer is downloading. The renderer marks the host
+ * ready synchronously when it mounts.
+ */
+#scoutExperienceApp:not([data-slv10-ready="1"]){
+  visibility:hidden!important;
+}
+#scoutExperienceApp[data-slv10-ready="1"]{
+  visibility:visible!important;
+}
+
+/* Exact ScoutLink V10 source CSS with a document-level pre-paint guard. */
 
 .slv10-exact-root{
   --ink:#07150f;
