@@ -354,6 +354,166 @@
     if (current) document.body.classList.add('experience-shell-' + current);
   }
 
+  function setImportant(node, property, value) {
+    if (!node || !node.style) return;
+    node.style.setProperty(property, value, 'important');
+  }
+
+  function clearImportant(node, properties) {
+    if (!node || !node.style) return;
+    (properties || []).forEach(function (property) {
+      node.style.removeProperty(property);
+    });
+  }
+
+  function firstNode(selectors, root) {
+    var scope = root && root.querySelector ? root : document;
+    var list = String(selectors || '').split(',');
+    for (var index = 0; index < list.length; index += 1) {
+      var node = scope.querySelector(list[index].trim());
+      if (node) return node;
+    }
+    return null;
+  }
+
+  function clearDesktopLayout() {
+    var nodes = [
+      firstNode('.dashboard,.coach-shell'),
+      firstNode('.sidebar,.coach-sidebar'),
+      firstNode('.dashboard-main,.coach-workspace'),
+      firstNode('.page-content,.coach-content'),
+      firstNode('.stx5-shell'),
+      firstNode('.stx5-sidebar'),
+      firstNode('.stx5-workspace')
+    ];
+
+    nodes.forEach(function (node) {
+      clearImportant(node, [
+        'display',
+        'position',
+        'inset',
+        'top',
+        'left',
+        'right',
+        'bottom',
+        'width',
+        'height',
+        'min-height',
+        'max-height',
+        'min-width',
+        'max-width',
+        'margin',
+        'margin-left',
+        'padding',
+        'padding-left',
+        'padding-right',
+        'box-sizing',
+        'overflow-y',
+        'overflow-x',
+        'overscroll-behavior',
+        'z-index'
+      ]);
+    });
+  }
+
+  function applyFixedLayout(root, sidebar, workspace, width) {
+    if (!root || !sidebar || !workspace) return false;
+
+    setImportant(root, 'display', 'block');
+    setImportant(root, 'position', 'relative');
+    setImportant(root, 'width', '100%');
+    setImportant(root, 'min-height', '100vh');
+    setImportant(root, 'margin', '0');
+    setImportant(root, 'padding', '0');
+    setImportant(root, 'box-sizing', 'border-box');
+
+    setImportant(sidebar, 'position', 'fixed');
+    setImportant(sidebar, 'inset', '0 auto 0 0');
+    setImportant(sidebar, 'top', '0');
+    setImportant(sidebar, 'left', '0');
+    setImportant(sidebar, 'right', 'auto');
+    setImportant(sidebar, 'bottom', '0');
+    setImportant(sidebar, 'width', width + 'px');
+    setImportant(sidebar, 'height', '100dvh');
+    setImportant(sidebar, 'min-height', '100vh');
+    setImportant(sidebar, 'max-height', '100dvh');
+    setImportant(sidebar, 'margin', '0');
+    setImportant(sidebar, 'overflow-y', 'auto');
+    setImportant(sidebar, 'overflow-x', 'hidden');
+    setImportant(sidebar, 'overscroll-behavior', 'contain');
+    setImportant(sidebar, 'z-index', '220');
+
+    /*
+     * Use inline !important values because coach-v2 loads its V8 stylesheet
+     * after this shared shell. That stylesheet otherwise resets the workspace
+     * to width:100% and margin:0, placing it underneath the fixed sidebar.
+     */
+    setImportant(workspace, 'display', 'block');
+    setImportant(workspace, 'position', 'relative');
+    setImportant(workspace, 'width', 'calc(100% - ' + width + 'px)');
+    setImportant(workspace, 'min-width', '0');
+    setImportant(workspace, 'max-width', 'none');
+    setImportant(workspace, 'min-height', '100vh');
+    setImportant(workspace, 'margin', '0 0 0 ' + width + 'px');
+    setImportant(workspace, 'padding', '0');
+    setImportant(workspace, 'box-sizing', 'border-box');
+
+    return true;
+  }
+
+  function applyDesktopLayout() {
+    if (window.innerWidth <= MOBILE_MAX) {
+      clearDesktopLayout();
+      return;
+    }
+
+    var current = experience();
+
+    if (current === 'coach') {
+      var coachRoot = firstNode('.dashboard,.coach-shell');
+      var coachSidebar = firstNode('.sidebar,.coach-sidebar', coachRoot || document);
+      var coachWorkspace = firstNode(
+        '.dashboard-main,.coach-workspace',
+        coachRoot || document
+      );
+
+      if (applyFixedLayout(coachRoot, coachSidebar, coachWorkspace, 230)) {
+        var coachContent = firstNode(
+          '.page-content,.coach-content',
+          coachWorkspace
+        );
+        if (coachContent) {
+          setImportant(coachContent, 'width', '100%');
+          setImportant(coachContent, 'max-width', 'none');
+          setImportant(coachContent, 'margin', '0');
+          setImportant(coachContent, 'padding-left', '18px');
+          setImportant(coachContent, 'padding-right', '18px');
+          setImportant(coachContent, 'box-sizing', 'border-box');
+        }
+      }
+      return;
+    }
+
+    if (current === 'player') {
+      applyFixedLayout(
+        firstNode('.dashboard'),
+        firstNode('.sidebar'),
+        firstNode('.dashboard-main'),
+        240
+      );
+      return;
+    }
+
+    if (current === 'stratex') {
+      applyFixedLayout(
+        firstNode('.stx5-shell'),
+        firstNode('.stx5-sidebar'),
+        firstNode('.stx5-workspace'),
+        236
+      );
+    }
+  }
+
   function removeCoachPlayerCardAvatars(root) {
     if (experience() !== 'coach') return;
     var scope = root && root.querySelectorAll ? root : document;
@@ -586,6 +746,7 @@
   function apply(root) {
     ensureGlobalStyle();
     setBodyClass();
+    applyDesktopLayout();
     removeCoachPlayerCardAvatars(root || document);
     removeCoachGeneratedAvatar(root || document);
     sanitiseStoredDraft();
@@ -608,6 +769,7 @@
       });
 
       setBodyClass();
+      applyDesktopLayout();
       installPlayerCreateSanitiser();
       installScoutShadowStyle();
       decoratePublicDemoBanner();
@@ -622,6 +784,17 @@
   function start() {
     apply(document);
     observe();
+
+    /*
+     * Reapply after the route-specific Coach design link has been appended and
+     * loaded. Inline !important layout values remain authoritative afterwards.
+     */
+    [0, 100, 350, 900, 1800].forEach(function (delay) {
+      window.setTimeout(function () {
+        setBodyClass();
+        applyDesktopLayout();
+      }, delay);
+    });
 
     var attempts = 0;
     apiPoll = window.setInterval(function () {
@@ -643,6 +816,7 @@
   window.addEventListener('popstate', function () { apply(document); });
   window.addEventListener('resize', function () {
     setBodyClass();
+    applyDesktopLayout();
     installScoutShadowStyle();
   });
 }());
