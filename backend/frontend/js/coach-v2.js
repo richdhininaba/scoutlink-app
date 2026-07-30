@@ -1,4 +1,4 @@
-/* ScoutLink Coach Experience V8 production runtime.
+/* ScoutLink Coach Experience V8.1 exact-source production runtime.
    This file changes presentation and navigation only.
    Existing route-specific data, API and submission scripts remain responsible
    for live behaviour. */
@@ -6,7 +6,7 @@
 
 (function () {
   var STYLE_ID = 'coachExperienceV8Style';
-  var STYLE_URL = '/frontend/css/coach-experience-v8.css?v=8.0.0';
+  var STYLE_URL = '/frontend/css/coach-experience-v8.css?v=8.1.0-exact-repair';
   var MOBILE_MAX = 760;
   var refreshQueued = false;
   var observer = null;
@@ -53,8 +53,8 @@
       title: 'Good morning, {first}.',
       copy: 'See what changed, what needs attention and where your squad evidence is strongest before the next match.',
       actions: [
-        ['Add player', '/coach/add-player', 'primary'],
-        ['Log Match Facts', '/coach/match-facts', 'secondary']
+        ['Add player', '/coach/add-player', 'white'],
+        ['Log Match Facts', '/coach/match-facts', 'ghost']
       ]
     },
     'my-players': {
@@ -63,8 +63,8 @@
       title: 'Your squad, clearly organised.',
       copy: 'Search, filter, compare and update player records without fighting oversized cards or a crowded table.',
       actions: [
-        ['Add player', '/coach/add-player', 'primary'],
-        ['Bulk import', '/coach/bulk-add-players', 'secondary']
+        ['Add player', '/coach/add-player', 'white'],
+        ['Bulk import', '/coach/bulk-add-players', 'ghost']
       ]
     },
     'add-player': {
@@ -72,21 +72,24 @@
       kicker: 'Player creation',
       title: 'Add a player without turning it into a data-entry project.',
       copy: 'Start with the essential football identity, then add physical and attribute evidence only where you are confident.',
-      actions: []
+      actions: [['Save draft', '#legacy-save-draft', 'ghost']]
     },
     'bulk-add-players': {
       tone: 'navy',
       kicker: 'Squad setup',
       title: 'Import a full squad without losing control of the data.',
       copy: 'Start from the ScoutLink template or an Excel/CSV file, review every row and submit only when the required football fields are ready.',
-      actions: []
+      actions: [
+        ['Download template', '#legacy-download-template', 'white'],
+        ['Import Excel / CSV', '#legacy-import-file', 'ghost']
+      ]
     },
     'match-facts': {
       tone: 'navy',
       kicker: 'Post-match evidence',
       title: 'Turn the match into evidence while it is still fresh.',
-      copy: 'Set up the match, confirm the formation, record events, rate the players and review everything before submission.',
-      actions: []
+      copy: 'Move through setup, formation, events, player ratings and one final review before the record is submitted.',
+      actions: [['Save draft', '#legacy-save-draft', 'ghost']]
     },
     fixtures: {
       tone: 'green',
@@ -563,13 +566,59 @@
     return (actions || []).map(function (action) {
       var label = action[0];
       var href = action[1];
-      var className = action[2] === 'primary' ? 'btn primary' : 'btn ghost';
+      var tone = action[2] || 'primary';
+      var className = 'btn ' + (
+        tone === 'white' ? 'white' :
+        tone === 'ghost' ? 'ghost' :
+        tone === 'secondary' ? 'secondary' :
+        'primary'
+      );
+
       if (href.charAt(0) === '#') {
-        return '<button type="button" class="' + className + '" data-coach-v8-scroll="' +
-          esc(href) + '">' + esc(label) + '</button>';
+        return '<button type="button" class="' + className +
+          '" data-coach-v8-scroll="' + esc(href) + '">' +
+          esc(label) + '</button>';
       }
-      return '<a class="' + className + '" href="' + esc(href) + '">' + esc(label) + '</a>';
+
+      return '<a class="' + className + '" href="' + esc(href) + '">' +
+        esc(label) + '</a>';
     }).join('');
+  }
+
+  function heroMeta(key) {
+    if (key === 'dashboard') return teamName() + ' · U16';
+    if (key === 'add-player') {
+      return 'Required information: name, age group and position group.';
+    }
+    if (key === 'match-facts') {
+      return 'Match Facts is post-match only. Live Mode is not used.';
+    }
+    return '';
+  }
+
+  function removeRepeatedHeroText(content, config) {
+    if (!content || !config || !document.createTreeWalker) return;
+    var walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
+    var removals = [];
+    var phrase = String(config.kicker || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var repeated = phrase ? new RegExp('^(?:' + phrase + '\\s*){2,}$', 'i') : null;
+    var node;
+
+    while ((node = walker.nextNode())) {
+      var value = String(node.nodeValue || '').replace(/\s+/g, ' ').trim();
+      if (!value) continue;
+      if (
+        (repeated && repeated.test(value)) ||
+        /^(?:squad setup\s*){2,}$/i.test(value) ||
+        /^(?:post-match evidence\s*){2,}$/i.test(value)
+      ) {
+        removals.push(node);
+      }
+    }
+
+    removals.forEach(function (textNode) {
+      if (textNode.parentNode) textNode.parentNode.removeChild(textNode);
+    });
   }
 
   function ensureHero() {
@@ -578,47 +627,46 @@
     var content = document.querySelector('.page-content');
     if (!content || !config || key === 'profile' || key === 'onboarding') return;
 
-    var hero = content.querySelector('.page-hero, .coach-v2-hero, .coach-dashboard-hero, .coach-players-hero, .ap3-hero, .cb3-hero, .mf3-hero');
-    if (!hero) {
-      hero = document.createElement('section');
-      content.insertBefore(hero, content.firstElementChild);
-    }
-    hero.classList.add('page-hero', config.tone);
+    removeRepeatedHeroText(content, config);
 
-    if (hero.classList.contains('ap3-hero') ||
-        hero.classList.contains('cb3-hero') ||
-        hero.classList.contains('mf3-hero')) {
-      return;
+    var exact = content.querySelector('[data-coach-v8-exact-hero]');
+    var legacyHeroes = Array.prototype.slice.call(content.querySelectorAll(
+      '.page-hero:not([data-coach-v8-exact-hero]),' +
+      '.coach-v2-hero:not([data-coach-v8-exact-hero]),' +
+      '.coach-dashboard-hero:not([data-coach-v8-exact-hero]),' +
+      '.coach-players-hero:not([data-coach-v8-exact-hero]),' +
+      '.ap3-hero:not([data-coach-v8-exact-hero]),' +
+      '.cb3-hero:not([data-coach-v8-exact-hero]),' +
+      '.mf3-hero:not([data-coach-v8-exact-hero])'
+    ));
+
+    legacyHeroes.forEach(function (legacy) {
+      legacy.classList.add('coach-v8-legacy-hero-bridge');
+      legacy.setAttribute('aria-hidden', 'true');
+    });
+
+    if (!exact) {
+      exact = document.createElement('section');
+      exact.dataset.coachV8ExactHero = '1';
+      content.insertBefore(exact, legacyHeroes[0] || content.firstElementChild);
     }
 
-    var title = hero.querySelector('h1,h2');
-    var copy = hero.querySelector('p');
-    var kicker = hero.querySelector('.coach-dashboard-chip,.coach-players-chip,.coach-v2-chip,.pill,small,div>span');
+    exact.className = 'page-hero coach-v8-exact-hero ' + config.tone;
 
-    if (!kicker) {
-      kicker = document.createElement('span');
-      var first = hero.firstElementChild || hero;
-      first.insertBefore(kicker, first.firstChild);
-    }
-    kicker.textContent = config.kicker;
-
-    if (title) {
-      var expectedTitle = config.title.replace('{first}', firstName());
-      if (key !== 'dashboard' || /welcome|good morning/i.test(title.textContent || '')) {
-        title.textContent = expectedTitle;
-      }
-    }
-    if (copy) copy.textContent = config.copy;
-
-    var actionHost = hero.querySelector('.coach-dashboard-hero-actions,.coach-players-hero-actions,.coach-v2-actions,.page-actions');
-    if (config.actions.length) {
-      if (!actionHost) {
-        actionHost = document.createElement('div');
-        actionHost.className = 'page-actions';
-        hero.appendChild(actionHost);
-      }
-      actionHost.innerHTML = heroActions(config.actions);
-    }
+    var title = config.title.replace('{first}', firstName());
+    var meta = heroMeta(key);
+    exact.innerHTML =
+      '<div>' +
+        '<span>' + esc(config.kicker) + '</span>' +
+        '<h2>' + esc(title) + '</h2>' +
+        '<p>' + esc(config.copy) + '</p>' +
+        (meta ? '<small class="hero-meta">' + esc(meta) + '</small>' : '') +
+      '</div>' +
+      (config.actions.length
+        ? '<div class="button-row hero-actions">' +
+            heroActions(config.actions) +
+          '</div>'
+        : '');
   }
 
   function bindScrollActions() {
@@ -628,6 +676,37 @@
       button.addEventListener('click', function () {
         var key = pageKey();
         var selector = button.getAttribute('data-coach-v8-scroll');
+
+        if (selector === '#legacy-save-draft') {
+          var save = document.querySelector(
+            '#saveDraftBtn,#saveDraft,#mf3SaveDraft,' +
+            '.coach-v8-legacy-hero-bridge button[data-save-draft]'
+          );
+          if (!save) {
+            save = Array.prototype.slice.call(
+              document.querySelectorAll(
+                '.coach-v8-legacy-hero-bridge button,' +
+                '.coach-v8-legacy-hero-bridge a'
+              )
+            ).find(function (node) {
+              return /save draft/i.test(node.textContent || '');
+            });
+          }
+          if (save) save.click();
+          return;
+        }
+
+        if (selector === '#legacy-download-template') {
+          var download = document.getElementById('downloadTemplateBtn');
+          if (download) download.click();
+          return;
+        }
+
+        if (selector === '#legacy-import-file') {
+          var importButton = document.getElementById('importFileBtn');
+          if (importButton) importButton.click();
+          return;
+        }
 
         if (key === 'fixtures') {
           var fixture = document.getElementById('addFixtureCard') ||
@@ -831,9 +910,11 @@
   function forceDesktopPlayerTable() {
     if (pageKey() !== 'my-players' || window.innerWidth <= MOBILE_MAX) return;
     var tableButton = document.querySelector('[data-view="table"]');
-    if (tableButton && !tableButton.classList.contains('is-active') &&
-        tableButton.dataset.coachV8Forced !== '1') {
-      tableButton.dataset.coachV8Forced = '1';
+    if (
+      tableButton &&
+      !tableButton.classList.contains('is-active') &&
+      tableButton.getAttribute('aria-pressed') !== 'true'
+    ) {
       tableButton.click();
     }
   }
