@@ -119,6 +119,7 @@ app.use('/api/onboarding', require('./routes/onboarding'));
 app.use('/api/careers', publicFormLimiter, require('./routes/careers'));
 app.use('/api/trust', publicFormLimiter, require('./routes/trust'));
 app.use('/api/stratex-website', publicFormLimiter, require('./routes/stratexWebsite'));
+app.use('/api/stratex-publishing', publicFormLimiter, require('./routes/stratexPublishing'));
 
 const frontendDir = [
   path.resolve(__dirname, 'frontend'),
@@ -169,7 +170,8 @@ const STRATEX_PUBLIC_ROUTES = [
   '/cookie-policy',
   '/security',
   '/accessibility',
-  '/showcase-event'
+  '/showcase-event',
+  '/award-ceremonies'
 ];
 
 const STRATEX_SHOWCASE_REGISTRATION_ROUTES = [
@@ -214,12 +216,41 @@ function renderSitemapXml(origin, routes) {
     '\n</urlset>\n';
 }
 
-app.get('/sitemap.xml', (req, res, next) => {
+app.get('/sitemap.xml', async (req, res, next) => {
   if (!isStratexHost(req)) return next();
+  const routes = STRATEX_SITEMAP_ROUTES.slice();
+  try {
+    const [posts, jobs] = await Promise.all([
+      supabase
+        .from('stratex_learning_posts')
+        .select('slug')
+        .eq('status', 'published')
+        .eq('index_when_published', true),
+      supabase
+        .from('job_posts')
+        .select('slug,status')
+        .in('status', ['published', 'open', 'live'])
+    ]);
+    if (!posts.error) {
+      (posts.data || []).forEach((post) => {
+        if (post.slug) routes.push('/learning-centre/' + encodeURIComponent(post.slug));
+      });
+    }
+    if (!jobs.error) {
+      (jobs.data || []).forEach((job) => {
+        if (job.slug) routes.push('/careers/' + encodeURIComponent(job.slug));
+      });
+    }
+  } catch (error) {
+    console.error('[Stratex sitemap]', { message: error && error.message });
+  }
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=300');
   return res.send(
-    renderSitemapXml('https://www.stratexanalytics.co.uk', STRATEX_SITEMAP_ROUTES)
+    renderSitemapXml(
+      'https://www.stratexanalytics.co.uk',
+      Array.from(new Set(routes))
+    )
   );
 });
 
@@ -261,7 +292,8 @@ app.get('/llms.txt', (req, res, next) => {
     '- Report a concern: https://www.stratexanalytics.co.uk/report-a-concern',
     '- Security: https://www.stratexanalytics.co.uk/security',
     '- Accessibility: https://www.stratexanalytics.co.uk/accessibility',
-    '- Showcase event: https://www.stratexanalytics.co.uk/showcase-event',
+    '- Showcase events: https://www.stratexanalytics.co.uk/showcase-event',
+    '- Award ceremonies: https://www.stratexanalytics.co.uk/award-ceremonies',
     '',
     '## Notes',
     'Removed legacy public routes should return 404 and must not be redirected.',
@@ -299,7 +331,7 @@ const routeMap = {
 
   '/company/admin': 'pages/stratex-company-admin.html',
   '/admin': 'pages/stratex-company-admin.html',
-  '/admin/usage-requests': 'pages/stratex-usage-requests.html',
+  '/admin/usage-requests': 'pages/stratex-company-admin.html',
   '/stratex/dashboard': 'pages/stratex-dashboard.html',
   '/stratex/company-site': 'pages/stratex-company-admin.html',
   '/stratex/registrations': 'pages/stratex-registrations.html',
@@ -318,7 +350,7 @@ const routeMap = {
   '/stratex/non-pro-academies': 'pages/stratex-school-teams.html',
   '/stratex/award-nominations': 'pages/stratex-award-nominations.html',
   '/stratex/showcase-events': 'pages/stratex-showcase-events.html',
-  '/admin/showcase-event': 'pages/stratex-showcase-events.html',
+  '/admin/showcase-event': 'pages/stratex-company-admin.html',
   '/stratex/notifications': 'pages/stratex-notifications.html',
   '/stratex/concerns': 'pages/stratex-concerns.html',
   '/stratex/settings': 'pages/stratex-settings.html',
@@ -409,6 +441,11 @@ if (frontendDir) {
 
   app.use(express.static(frontendDir, staticOptions));
   app.use('/frontend', express.static(frontendDir, staticOptions));
+
+  app.get('/award-ceremonies', (req, res, next) => {
+    if (!isStratexHost(req)) return next();
+    return sendFrontendFile(req, res, 'pages/stratex-public-v4.html');
+  });
 
   STRATEX_PUBLIC_ROUTES.forEach((route) => {
     app.get(route, (req, res, next) => {
