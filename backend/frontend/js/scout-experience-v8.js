@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '20260730.10.2-nonblocking-boot';
+  var VERSION = '20260730.10.3-no-loading-gate';
   var CSS_URL = '/frontend/css/scout-experience-v8.css?v=' + encodeURIComponent(VERSION);
   var API_FALLBACK = 'https://scoutlink-api.vercel.app';
   var REQUEST_TIMEOUT_MS = 12000;
@@ -2446,135 +2446,71 @@
     });
   }
 
-  function finishBoot(error) {
-    if (!state.host || !state.shadow) return;
-    var boot = q(state.shadow, '.slv10-boot-screen');
-
-    if (state.exactRoot) state.exactRoot.style.visibility = 'visible';
-    if (boot) boot.hidden = true;
-
-    state.host.dataset.slv10Ready = '1';
-    state.host.dataset.slv10Booting = '0';
-    state.host.classList.remove('is-loading', 'scout-v6-booting');
-    state.host.setAttribute('aria-busy', 'false');
-
-    if (error) {
-      window.setTimeout(function () {
-        showToast(
-          error.message || 'Some ScoutLink data is still loading. The workspace remains available.',
-          true
-        );
-      }, 80);
-    }
+  function reportHydrationError(error) {
+    window.setTimeout(function () {
+      showToast(
+        error && error.message
+          ? error.message
+          : 'Some ScoutLink data could not be refreshed. The workspace remains available.',
+        true
+      );
+    }, 80);
   }
 
   function mountExactExperience() {
     state.host = document.getElementById('scoutExperienceApp');
     if (!state.host || state.host.dataset.slv10ExactMounted === '1') return;
+
     state.route = routeId();
     var key = templateKey();
     var template = TEMPLATES[key];
     if (!template) return;
 
     /*
-     * Claim the host immediately, before DOMContentLoaded.
+     * Mount the exact V10 interface immediately.
      *
-     * Scout Experience V3 and Scout Intelligence V4 register their own
-     * DOMContentLoaded loaders. Attaching the shadow root now means their
-     * light-DOM bridge can still initialise, but it can never be painted as a
-     * temporary page before the exact V10 interface.
+     * The old V3/V4 light-DOM renderer can continue initialising as the data
+     * bridge, but the Shadow DOM becomes the visible interface straight away.
+     * There is deliberately no full-screen loading page and no reveal gate.
      */
     state.host.dataset.slv10ExactMounted = '1';
-    state.host.dataset.slv10Booting = '1';
-    state.host.removeAttribute('data-slv10-ready');
+    state.host.dataset.slv10Ready = '1';
+    state.host.dataset.slv10Booting = '0';
+    state.host.classList.remove('is-loading', 'scout-v6-booting');
     state.host.style.display = 'block';
     state.host.style.width = '100%';
     state.host.style.minHeight = '100vh';
-    state.host.setAttribute('aria-busy', 'true');
+    state.host.setAttribute('aria-busy', 'false');
 
     var shadow = state.host.shadowRoot || state.host.attachShadow({ mode: 'open' });
     var documentCss = exactCssFromDocument();
     var exactStyle = documentCss
       ? '<style data-slv10-exact-css>' + documentCss + '</style>'
       : '<link rel="stylesheet" href="' + CSS_URL + '">';
+
     state.shadow = shadow;
     shadow.innerHTML =
       '<style>' +
         ':host{display:block;width:100%;min-height:100vh;background:#f2f5f3}' +
-        '.slv10-exact-root{visibility:hidden}' +
-        '.slv10-boot-screen{min-height:100vh;min-height:100dvh;padding:24px;background:#f2f5f3;color:#07150f;display:grid;place-items:center;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}' +
-        '.slv10-boot-card{width:min(420px,100%);padding:34px;border:1px solid #d8e2dd;background:#fff;text-align:center;box-shadow:0 15px 40px rgba(7,21,15,.08)}' +
-        '.slv10-boot-brand{color:#071b2b;font-size:27px;font-weight:950;letter-spacing:-1px}' +
-        '.slv10-boot-brand span{color:#075f48}' +
-        '.slv10-boot-spinner{width:34px;height:34px;margin:22px auto 0;border:3px solid #d8e2dd;border-top-color:#075f48;border-radius:50%;animation:slv10BootSpin .75s linear infinite}' +
-        '.slv10-boot-card h1{margin:19px 0 0;font-size:18px;line-height:1.3}' +
-        '.slv10-boot-card p{margin:8px 0 0;color:#40584e;font-size:13px;line-height:1.55}' +
-        '.slv10-boot-retry{min-height:44px;margin-top:20px;padding:0 18px;border:1px solid #075f48;background:#075f48;color:#fff;font-weight:900;cursor:pointer}' +
-        '.slv10-boot-screen.is-error .slv10-boot-spinner{display:none}' +
-        '@keyframes slv10BootSpin{to{transform:rotate(360deg)}}' +
-        '@media(prefers-reduced-motion:reduce){.slv10-boot-spinner{animation:none;border-top-color:#d8e2dd;background:#075f48}}' +
+        '.slv10-exact-root{visibility:visible}' +
       '</style>' +
       exactStyle +
-      '<section class="slv10-boot-screen" role="status" aria-live="polite" aria-label="Loading ' + esc(routeDisplayName()) + '">' +
-        '<div class="slv10-boot-card">' +
-          '<div class="slv10-boot-brand">Scout<span>Link</span></div>' +
-          '<div class="slv10-boot-spinner" aria-hidden="true"></div>' +
-          '<h1>Loading ' + esc(routeDisplayName()) + '</h1>' +
-          '<p>Preparing the latest Scout workspace.</p>' +
-        '</div>' +
-      '</section>' +
       '<div class="slv10-exact-root slv10-stage" data-version="' + VERSION + '">' +
         '<div class="slv10-desktop-copy">' + template.desktop + '</div>' +
         '<div class="slv10-mobile-copy">' + template.mobile + '</div>' +
       '</div>';
 
     state.exactRoot = q(shadow, '.slv10-exact-root');
-    var link = q(shadow, 'link[rel="stylesheet"]');
-    var styleReady = documentCss
-      ? Promise.resolve()
-      : waitForShadowStyles(link);
-    var hydration = settle(
-      Promise.resolve().then(function () {
-        return hydrateRoute();
-      })
-    );
 
     /*
-     * The exact page must never be held hostage by a slow or stalled API.
-     *
-     * Reveal after the exact stylesheet is ready and either hydration has
-     * completed or the short professional boot window has elapsed. Hydration
-     * continues in the background and updates the mounted V10 components when
-     * its data arrives.
+     * Hydrate asynchronously after the exact page is already visible. A slow,
+     * rejected or unavailable API can update the page later or show a small
+     * toast, but it can never hide the workspace.
      */
-    Promise.all([
-      styleReady,
-      Promise.race([
-        hydration,
-        wait(BOOT_MAX_MS).then(function () {
-          return { status: 'timeout' };
-        })
-      ])
-    ]).then(function (values) {
-      var gateResult = values[1];
-      finishBoot(gateResult.status === 'rejected' ? gateResult.error : null);
-
-      if (gateResult.status === 'timeout') {
-        hydration.then(function (result) {
-          if (result.status === 'rejected') {
-            showToast(
-              result.error && result.error.message
-                ? result.error.message
-                : 'Some ScoutLink data could not be refreshed.',
-              true
-            );
-          }
-          addGenericActionBridge();
-        });
-      }
-    }).catch(function (error) {
-      finishBoot(error);
-    });
+    Promise.resolve()
+      .then(function () { return hydrateRoute(); })
+      .then(function () { addGenericActionBridge(); })
+      .catch(reportHydrationError);
   }
 
   function waitForHost() {
