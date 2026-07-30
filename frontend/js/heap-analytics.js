@@ -2,7 +2,7 @@
 
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV2Script';
+  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV3Script';
   var UNSAFE_IDS = {
     '': true,
     user: true,
@@ -175,12 +175,12 @@
     try {
       script.src = CURRENT_SCRIPT && CURRENT_SCRIPT.src
         ? new URL(
-            'experience-shell-v1.js?v=20260730-2',
+            'experience-shell-v1.js?v=20260730-3',
             CURRENT_SCRIPT.src
           ).href
-        : '/frontend/js/experience-shell-v1.js?v=20260730-2';
+        : '/frontend/js/experience-shell-v1.js?v=20260730-3';
     } catch (_) {
-      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-2';
+      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-3';
     }
 
     (document.head || document.documentElement).appendChild(script);
