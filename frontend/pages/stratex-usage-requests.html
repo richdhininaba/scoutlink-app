@@ -1,184 +1,58 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Usage requests | Stratex Admin</title>
-  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-  <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<script src="/frontend/js/stratex-host-favicon.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Stratex Admin Centre | Stratex Analytics</title>
+  <meta name="theme-color" content="#061625">
+  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260730-admin-v6">
+  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260730-admin-v6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/frontend/css/stratex-admin-complete-v2.css">
-  <link rel="stylesheet" href="/frontend/css/usage-requests-v1.css">
-</head>
-<body class="stxv4-admin usage-page admin-usage-page" data-usage-role="admin">
-  <a class="si4-screen-reader-only" href="#usageMain">Skip to usage requests</a>
-
-  <div class="stxv4-shell">
-    <aside class="stxv4-sidebar">
-      <a class="stxv4-brand" href="/admin">
-        <div class="stxv4-logo">SA</div>
-        <span>
-          <b>Stratex Admin</b>
-          <span>Internal company operations</span>
-        </span>
-      </a>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Overview</div>
-        <a class="stxv4-nav" href="/admin"><em>DB</em>Dashboard</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Operations</div>
-        <a class="stxv4-nav" href="/admin/registrations"><em>RG</em>Registrations</a>
-        <a class="stxv4-nav" href="/admin/contact-forms"><em>CF</em>Contact Forms</a>
-        <a class="stxv4-nav" href="/admin/crm"><em>CR</em>CRM</a>
-        <a class="stxv4-nav active" href="/admin/usage-requests" aria-current="page"><em>UR</em>Usage Requests</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Analytics</div>
-        <a class="stxv4-nav" href="/admin/website-activity"><em>WA</em>Website Activity</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Content</div>
-        <a class="stxv4-nav" href="/admin/blog"><em>BL</em>Blog / Learning Centre</a>
-        <a class="stxv4-nav" href="/admin/leadership"><em>LD</em>Leadership</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">People</div>
-        <a class="stxv4-nav" href="/admin/org-charts"><em>OC</em>Org Charts</a>
-        <a class="stxv4-nav" href="/admin/users/add" data-super-admin-only><em>AU</em>Add Stratex User</a>
-        <a class="stxv4-nav" href="/admin/permissions" data-super-admin-only><em>PM</em>Permissions</a>
-        <a class="stxv4-nav" href="/admin/my-profile"><em>MP</em>My Profile</a>
-        <a class="stxv4-nav" href="/admin/contracts-pay"><em>CP</em>Contracts &amp; Pay</a>
-        <a class="stxv4-nav" href="/admin/hiring"><em>HR</em>Hiring</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Trust</div>
-        <a class="stxv4-nav" href="/admin/trust-concerns"><em>TC</em>Trust &amp; Concerns</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Events</div>
-        <a class="stxv4-nav" href="/admin/showcase-event"><em>SE</em>Showcase Event</a>
-        <a class="stxv4-nav" href="/admin/award-ceremonies"><em>AC</em>Award Ceremonies</a>
-      </div>
-
-      <div class="stxv4-navgroup">
-        <div class="stxv4-navtitle">Company</div>
-        <a class="stxv4-nav" href="/admin/settings"><em>ST</em>Settings</a>
-      </div>
-
-      <div class="stxv4-userbox">
-        <div class="stxv4-avatar">SA</div>
-        <div>
-          <b data-current-user>Stratex Admin</b>
-          <span>Internal operations</span>
-        </div>
-      </div>
-    </aside>
-
-    <main class="stxv4-main" id="usageMain">
-      <header class="stxv4-top">
-        <div>
-          <h1>Usage requests</h1>
-          <p>/admin/usage-requests Â· Stratex internal administration</p>
-        </div>
-        <div class="stxv4-top-actions">
-          <a class="stxv4-btn" href="/admin">Dashboard</a>
-          <a class="stxv4-btn" href="/admin/my-profile">My Profile</a>
-        </div>
-      </header>
-
-      <section class="stxv4-content ur-content ur-admin-content">
-        <header class="ur-hero">
-          <div>
-            <small>ScoutLink commercial controls</small>
-            <h2>Review extra allowance requests</h2>
-            <p>Approve usage free or send a payment link. Every outcome is permanently stamped.</p>
-          </div>
-        </header>
-
-        <section class="ur-metrics ur-summary-metrics">
-          <article class="ur-metric">
-            <small>Pending review</small>
-            <b data-summary-pending>0</b>
-            <span>Awaiting Stratex Admin</span>
-          </article>
-          <article class="ur-metric">
-            <small>Approved</small>
-            <b data-summary-approved>0</b>
-            <span>Allowance applied</span>
-          </article>
-          <article class="ur-metric">
-            <small>Payment link sent</small>
-            <b data-summary-payment>0</b>
-            <span>Awaiting payment</span>
-          </article>
-          <article class="ur-metric">
-            <small>Extra usage revenue</small>
-            <b data-summary-revenue>Â£0.00</b>
-            <span>Paid and applied</span>
-          </article>
-        </section>
-
-        <section class="ur-layout">
-          <aside class="ur-card ur-list">
-            <header class="ur-card-head">
-              <div>
-                <h3>Request history</h3>
-                <p>Select a request to see the full update.</p>
-              </div>
-            </header>
-            <div data-request-list>
-              <div class="ur-empty">Loading requestsâ€¦</div>
-            </div>
-          </aside>
-
-          <section class="ur-card ur-detail" data-request-detail>
-            <div class="ur-empty">Select a request to see its full timeline.</div>
-          </section>
-        </section>
-      </section>
-    </main>
-  </div>
-
-  <nav class="ur-mobile-nav" aria-label="Stratex Admin mobile navigation">
-    <a href="/admin">Home</a>
-    <a href="/admin/registrations">Registrations</a>
-    <a class="active" href="/admin/usage-requests">Requests</a>
-    <a href="/admin/trust-concerns">Concerns</a>
-    <a href="/admin/settings">Settings</a>
-  </nav>
-
-  <script src="/frontend/js/main.js"></script>
+  <link rel="stylesheet" href="/frontend/css/variables.css">
+  <link rel="stylesheet" href="/frontend/css/main.css">
+  <link rel="stylesheet" href="/frontend/css/stratex-admin-v5.css?v=20260730-2">
+  <style>
+    html,body{min-height:100%;margin:0;background:#f2f5f4}
+    .stx-admin-boot{min-height:100vh;display:grid;place-items:center;padding:24px;background:#f2f5f4;color:#07150f;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    .stx-admin-boot-card{width:min(460px,100%);padding:31px;border:1px solid #d7e2dd;border-radius:15px;background:#fff;text-align:center;box-shadow:0 18px 50px rgba(6,22,37,.08)}
+    .stx-admin-boot-mark{width:54px;height:54px;margin:0 auto;border-radius:13px;background:linear-gradient(135deg,#08745b,#1fbbb2);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:950}
+    .stx-admin-boot-brand{display:block;margin-top:13px;color:#08745b;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+    .stx-admin-boot h1{margin:8px 0 0;font-size:24px;line-height:1.15}
+    .stx-admin-boot p{margin:9px 0 0;color:#536a61;font-size:12px;line-height:1.55}
+    .stx-admin-boot-line{height:5px;margin-top:19px;border-radius:99px;background:#e7f4ef;overflow:hidden}
+    .stx-admin-boot-line::after{content:"";display:block;width:42%;height:100%;border-radius:99px;background:#08745b;animation:stxAdminBoot 1.15s ease-in-out infinite alternate}
+    @keyframes stxAdminBoot{from{transform:translateX(-10%)}to{transform:translateX(150%)}}
+  </style>
   <script>
     (function () {
       try {
-        var current = JSON.parse(localStorage.getItem('sl_user') || '{}');
-        var email = String(current.email || '').trim().toLowerCase();
-        if (email !== 'richdhin@stratexanalytics.co.uk') {
-          document.querySelectorAll('[data-super-admin-only]').forEach(function (node) {
-            node.remove();
-          });
-        }
-      }
-      catch (_) {
-        document.querySelectorAll('[data-super-admin-only]').forEach(function (node) {
-          node.remove();
-        });
-      }
-    })();
+        ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_seed_players','sl_public_demo_started_at']
+          .forEach(function (key) { sessionStorage.removeItem(key); });
+      } catch (_) {}
+    }());
   </script>
-  <script src="/frontend/js/workspace-loading-v1.js"></script>
-  <script src="/frontend/js/usage-requests-v1.js"></script>
+</head>
+<body class="stx-admin-v5">
+  <div class="stx-admin-boot" id="stxAdminBoot" role="status" aria-live="polite">
+    <section class="stx-admin-boot-card">
+      <span class="stx-admin-boot-mark">SA</span>
+      <span class="stx-admin-boot-brand">Stratex Analytics</span>
+      <h1>Loading Stratex Admin Centre</h1>
+      <p>Opening the secure parent-company operations workspace.</p>
+      <div class="stx-admin-boot-line" aria-hidden="true"></div>
+    </section>
+  </div>
+  <noscript>
+    <p style="margin:0;padding:24px;background:#fff;color:#061625">
+      JavaScript is required to use the Stratex Admin Centre.
+    </p>
+  </noscript>
+  <script src="/frontend/js/main.js?v=20260730-2"></script>
+  <script src="/frontend/js/stratex-admin-route-guard-v1.js?v=20260730-1"></script>
+  <script src="/frontend/js/stratex-admin-v5.js?v=20260730-2"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260730-2"></script>
 </body>
 </html>
