@@ -109,6 +109,7 @@ app.use('/api/awards', require('./routes/awards'));
 app.use('/api/predictions', require('./routes/predictions'));
 app.use('/api/scout-intelligence', require('./routes/scoutIntelligence'));
 app.use('/api/scout-intelligence-v64', require('./routes/scoutIntelligenceV64'));
+app.use('/api/scout-workflow-actions', require('./routes/scoutWorkflowNotifications'));
 app.use('/api/usage-requests', require('./routes/usageRequests'));
 app.use('/api/exports', require('./routes/exports'));
 app.use('/api/chat', require('./routes/chat'));
