@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '20260729.10.0-exact-source';
+  var VERSION = '20260730.10.1-loading-gate';
   var CSS_URL = '/frontend/css/scout-experience-v8.css?v=' + encodeURIComponent(VERSION);
   var API_FALLBACK = 'https://scoutlink-api.vercel.app';
   var SEARCH_PAGE_SIZE = 20;
@@ -2343,8 +2343,86 @@
     if (state.route === 'onboarding') bindOnboarding();
 
     addGenericActionBridge();
-    state.host.classList.remove('is-loading');
-    state.host.setAttribute('aria-busy', 'false');
+  }
+
+  function routeDisplayName() {
+    var names = {
+      onboarding: 'Scout onboarding',
+      dashboard: 'Dashboard',
+      search: 'Player search',
+      profile: 'Player profile',
+      pipeline: 'My pipeline',
+      rankings: 'Rankings',
+      fixtures: 'Fixtures',
+      predictions: 'Predictions',
+      usage: 'Usage requests',
+      exports: 'Exports',
+      compare: 'Compare players',
+      setup: 'Scout setup',
+      events: 'Events',
+      chat: 'Chat',
+      notifications: 'Notifications',
+      concern: 'Report a concern',
+      settings: 'Settings'
+    };
+    return names[state.route] || 'Scout workspace';
+  }
+
+  function waitForShadowStyles(link) {
+    return new Promise(function (resolve) {
+      var settled = false;
+      function done() {
+        if (settled) return;
+        settled = true;
+        resolve();
+      }
+      if (!link) {
+        done();
+        return;
+      }
+      try {
+        if (link.sheet) {
+          window.requestAnimationFrame(done);
+          return;
+        }
+      } catch (_) {}
+      link.addEventListener('load', done, { once: true });
+      link.addEventListener('error', done, { once: true });
+      window.setTimeout(done, 5000);
+    });
+  }
+
+  function finishBoot(error) {
+    if (!state.host || !state.shadow) return;
+    var boot = q(state.shadow, '.slv10-boot-screen');
+
+    if (error) {
+      state.host.classList.remove('is-loading');
+      state.host.setAttribute('aria-busy', 'false');
+      state.host.dataset.slv10Booting = '0';
+      if (boot) {
+        boot.classList.add('is-error');
+        boot.innerHTML =
+          '<div class="slv10-boot-card">' +
+            '<div class="slv10-boot-brand">Scout<span>Link</span></div>' +
+            '<h1>ScoutLink could not finish loading.</h1>' +
+            '<p>' + esc(error.message || 'The latest Scout workspace data could not be prepared.') + '</p>' +
+            '<button class="slv10-boot-retry" type="button">Try again</button>' +
+          '</div>';
+        var retry = q(boot, '.slv10-boot-retry');
+        if (retry) retry.addEventListener('click', function () { window.location.reload(); });
+      }
+      return;
+    }
+
+    window.requestAnimationFrame(function () {
+      if (state.exactRoot) state.exactRoot.style.visibility = 'visible';
+      if (boot) boot.hidden = true;
+      state.host.dataset.slv10Ready = '1';
+      state.host.dataset.slv10Booting = '0';
+      state.host.classList.remove('is-loading', 'scout-v6-booting');
+      state.host.setAttribute('aria-busy', 'false');
+    });
   }
 
   function mountExactExperience() {
@@ -2355,16 +2433,49 @@
     var template = TEMPLATES[key];
     if (!template) return;
 
+    /*
+     * Claim the host immediately, before DOMContentLoaded.
+     *
+     * Scout Experience V3 and Scout Intelligence V4 register their own
+     * DOMContentLoaded loaders. Attaching the shadow root now means their
+     * light-DOM bridge can still initialise, but it can never be painted as a
+     * temporary page before the exact V10 interface.
+     */
     state.host.dataset.slv10ExactMounted = '1';
+    state.host.dataset.slv10Booting = '1';
+    state.host.removeAttribute('data-slv10-ready');
     state.host.style.display = 'block';
     state.host.style.width = '100%';
     state.host.style.minHeight = '100vh';
+    state.host.setAttribute('aria-busy', 'true');
 
     var shadow = state.host.shadowRoot || state.host.attachShadow({ mode: 'open' });
     state.shadow = shadow;
     shadow.innerHTML =
-      '<style>:host{display:block;width:100%;min-height:100vh}.slv10-exact-root{visibility:hidden}</style>' +
+      '<style>' +
+        ':host{display:block;width:100%;min-height:100vh;background:#f2f5f3}' +
+        '.slv10-exact-root{visibility:hidden}' +
+        '.slv10-boot-screen{min-height:100vh;min-height:100dvh;padding:24px;background:#f2f5f3;color:#07150f;display:grid;place-items:center;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}' +
+        '.slv10-boot-card{width:min(420px,100%);padding:34px;border:1px solid #d8e2dd;background:#fff;text-align:center;box-shadow:0 15px 40px rgba(7,21,15,.08)}' +
+        '.slv10-boot-brand{color:#071b2b;font-size:27px;font-weight:950;letter-spacing:-1px}' +
+        '.slv10-boot-brand span{color:#075f48}' +
+        '.slv10-boot-spinner{width:34px;height:34px;margin:22px auto 0;border:3px solid #d8e2dd;border-top-color:#075f48;border-radius:50%;animation:slv10BootSpin .75s linear infinite}' +
+        '.slv10-boot-card h1{margin:19px 0 0;font-size:18px;line-height:1.3}' +
+        '.slv10-boot-card p{margin:8px 0 0;color:#40584e;font-size:13px;line-height:1.55}' +
+        '.slv10-boot-retry{min-height:44px;margin-top:20px;padding:0 18px;border:1px solid #075f48;background:#075f48;color:#fff;font-weight:900;cursor:pointer}' +
+        '.slv10-boot-screen.is-error .slv10-boot-spinner{display:none}' +
+        '@keyframes slv10BootSpin{to{transform:rotate(360deg)}}' +
+        '@media(prefers-reduced-motion:reduce){.slv10-boot-spinner{animation:none;border-top-color:#d8e2dd;background:#075f48}}' +
+      '</style>' +
       '<link rel="stylesheet" href="' + CSS_URL + '">' +
+      '<section class="slv10-boot-screen" role="status" aria-live="polite" aria-label="Loading ' + esc(routeDisplayName()) + '">' +
+        '<div class="slv10-boot-card">' +
+          '<div class="slv10-boot-brand">Scout<span>Link</span></div>' +
+          '<div class="slv10-boot-spinner" aria-hidden="true"></div>' +
+          '<h1>Loading ' + esc(routeDisplayName()) + '</h1>' +
+          '<p>Preparing the latest Scout workspace.</p>' +
+        '</div>' +
+      '</section>' +
       '<div class="slv10-exact-root slv10-stage" data-version="' + VERSION + '">' +
         '<div class="slv10-desktop-copy">' + template.desktop + '</div>' +
         '<div class="slv10-mobile-copy">' + template.mobile + '</div>' +
@@ -2372,19 +2483,19 @@
 
     state.exactRoot = q(shadow, '.slv10-exact-root');
     var link = q(shadow, 'link[rel="stylesheet"]');
-    var reveal = function () {
-      if (state.exactRoot) state.exactRoot.style.visibility = 'visible';
-    };
-    if (link) {
-      link.addEventListener('load', reveal, { once: true });
-      link.addEventListener('error', reveal, { once: true });
-    }
-    window.setTimeout(reveal, 1200);
 
-    hydrateRoute().catch(function (error) {
-      reveal();
-      showToast(error.message || 'ScoutLink could not load the latest data.', true);
-      addGenericActionBridge();
+    /*
+     * Reveal once, only after both the exact stylesheet and the route's live
+     * data have finished. This prevents the design-board example values from
+     * flashing before they are replaced by real or isolated demo data.
+     */
+    Promise.all([
+      waitForShadowStyles(link),
+      hydrateRoute()
+    ]).then(function () {
+      finishBoot();
+    }).catch(function (error) {
+      finishBoot(error);
     });
   }
 
@@ -2394,23 +2505,23 @@
       attempts += 1;
       var host = document.getElementById('scoutExperienceApp');
       if (host) {
-        // Give the current Scout Intelligence runtime a short head start so it
-        // remains available in the light DOM as the functional bridge.
-        window.setTimeout(mountExactExperience, 120);
+        mountExactExperience();
         return;
       }
       if (attempts < 200) window.setTimeout(check, 25);
     })();
   }
 
+  /*
+   * This script is loaded after #scoutExperienceApp in every Scout route.
+   * Start synchronously instead of waiting for DOMContentLoaded, otherwise the
+   * older V3/V4 loading page wins the first paint.
+   */
+  waitForHost();
+
   window.addEventListener('resize', function () {
     var drawer = state.shadow && q(state.shadow, '.slv10-mobile-drawer');
     if (drawer && !window.matchMedia('(max-width: 767px)').matches) drawer.remove();
   });
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', waitForHost);
-  } else {
-    waitForHost();
-  }
 }());
