@@ -175,34 +175,14 @@
     try {
       script.src = CURRENT_SCRIPT && CURRENT_SCRIPT.src
         ? new URL(
-            'experience-shell-v1.js?v=20260730-3',
+            'experience-shell-v1.js?v=20260730-4',
             CURRENT_SCRIPT.src
           ).href
-        : '/frontend/js/experience-shell-v1.js?v=20260730-3';
+        : '/frontend/js/experience-shell-v1.js?v=20260730-4';
     } catch (_) {
-      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-3';
+      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-4';
     }
 
-    (document.head || document.documentElement).appendChild(script);
-  }
-
-
-  function loadFunctionalRepairs() {
-    var routePath = String(window.location.pathname || '').toLowerCase();
-    var relevant = routePath.indexOf('/scout') === 0 ||
-      routePath.indexOf('/player/profile') === 0 ||
-      routePath.indexOf('scout-') > -1;
-    if (!relevant || document.getElementById('scoutFunctionalRepairsV1')) return;
-    var script = document.createElement('script');
-    script.id = 'scoutFunctionalRepairsV1';
-    script.async = false;
-    try {
-      script.src = CURRENT_SCRIPT && CURRENT_SCRIPT.src
-        ? new URL('scout-functional-repairs-v1.js?v=20260730-1', CURRENT_SCRIPT.src).href
-        : '/frontend/js/scout-functional-repairs-v1.js?v=20260730-1';
-    } catch (_) {
-      script.src = '/frontend/js/scout-functional-repairs-v1.js?v=20260730-1';
-    }
     (document.head || document.documentElement).appendChild(script);
   }
 
@@ -228,7 +208,6 @@
   }
 
   loadExperienceShell();
-  loadFunctionalRepairs();
   window.applyScoutLinkHeapContext = applyHeapContext;
   document.addEventListener('DOMContentLoaded', function () {
     window.setTimeout(applyHeapContext, 0);
