@@ -1,4 +1,4 @@
-/* ScoutLink Coach Experience V8.1 exact-source production runtime.
+/* ScoutLink Coach Experience V8.2 clean-layout production runtime.
    This file changes presentation and navigation only.
    Existing route-specific data, API and submission scripts remain responsible
    for live behaviour. */
@@ -6,13 +6,18 @@
 
 (function () {
   var STYLE_ID = 'coachExperienceV8Style';
-  var STYLE_URL = '/frontend/css/coach-experience-v8.css?v=8.1.0-exact-repair';
+  var STYLE_URL = '/frontend/css/coach-experience-v8.css?v=8.2.0-clean-layout';
   var MOBILE_MAX = 760;
   var refreshQueued = false;
   var observer = null;
   var dashboardMetricsLoaded = false;
   var playerPage = 1;
   var PLAYER_PAGE_SIZE = 8;
+  var legacyActionBridge = {
+    saveDraft: null,
+    downloadTemplate: null,
+    importFile: null
+  };
 
   var ROUTES = {
     dashboard: '/coach/dashboard',
@@ -621,44 +626,117 @@
     });
   }
 
+  function bridgeCandidate(scope, selector, textPattern) {
+    if (!scope || !scope.querySelector) return null;
+
+    var direct = selector ? scope.querySelector(selector) : null;
+    if (direct && !direct.closest('[data-coach-v8-exact-hero]')) return direct;
+
+    if (!textPattern) return null;
+
+    return Array.prototype.slice.call(
+      scope.querySelectorAll('button,a,input[type="button"],input[type="submit"]')
+    ).find(function (node) {
+      if (node.closest('[data-coach-v8-exact-hero]')) return false;
+      var value = String(node.textContent || node.value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return textPattern.test(value);
+    }) || null;
+  }
+
+  function captureLegacyActions(scope) {
+    scope = scope || document;
+
+    var save = bridgeCandidate(
+      scope,
+      '#saveDraftBtn,#saveDraft,#mf3SaveDraft,[data-save-draft]',
+      /save\s+draft/i
+    );
+    var download = bridgeCandidate(
+      scope,
+      '#downloadTemplateBtn',
+      /download\s+template/i
+    );
+    var importButton = bridgeCandidate(
+      scope,
+      '#importFileBtn,#bulkFileInput',
+      /import\s+(excel|csv|file)|choose\s+file/i
+    );
+
+    if (save) legacyActionBridge.saveDraft = save;
+    if (download) legacyActionBridge.downloadTemplate = download;
+    if (importButton) legacyActionBridge.importFile = importButton;
+  }
+
+  function isLegacyHero(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.hasAttribute('data-coach-v8-exact-hero')) return false;
+
+    return Array.prototype.some.call(node.classList || [], function (className) {
+      return className === 'page-hero' || /-hero$/.test(className);
+    });
+  }
+
+  function removeLegacyHeroes(content) {
+    if (!content) return;
+
+    Array.prototype.slice.call(content.querySelectorAll('*')).forEach(function (node) {
+      if (!isLegacyHero(node)) return;
+      captureLegacyActions(node);
+      node.remove();
+    });
+  }
+
+  function exactHeroAnchor(content) {
+    var children = Array.prototype.slice.call(content.children || []);
+    var banner = children.find(function (child) {
+      return child.matches && child.matches(
+        '.public-demo-banner,.demo-banner,.demo-mode-banner,[data-public-demo-banner]'
+      );
+    });
+
+    return banner ? banner.nextElementSibling : content.firstElementChild;
+  }
+
   function ensureHero() {
     var key = pageKey();
     var config = HEROES[key];
     var content = document.querySelector('.page-content');
     if (!content || !config || key === 'profile' || key === 'onboarding') return;
 
+    captureLegacyActions(document);
     removeRepeatedHeroText(content, config);
+    removeLegacyHeroes(content);
 
-    var exact = content.querySelector('[data-coach-v8-exact-hero]');
-    var legacyHeroes = Array.prototype.slice.call(content.querySelectorAll(
-      '.page-hero:not([data-coach-v8-exact-hero]),' +
-      '.coach-v2-hero:not([data-coach-v8-exact-hero]),' +
-      '.coach-dashboard-hero:not([data-coach-v8-exact-hero]),' +
-      '.coach-players-hero:not([data-coach-v8-exact-hero]),' +
-      '.ap3-hero:not([data-coach-v8-exact-hero]),' +
-      '.cb3-hero:not([data-coach-v8-exact-hero]),' +
-      '.mf3-hero:not([data-coach-v8-exact-hero])'
-    ));
+    var exactHeroes = Array.prototype.slice.call(
+      content.querySelectorAll('[data-coach-v8-exact-hero]')
+    );
+    var exact = exactHeroes.shift() || null;
 
-    legacyHeroes.forEach(function (legacy) {
-      legacy.classList.add('coach-v8-legacy-hero-bridge');
-      legacy.setAttribute('aria-hidden', 'true');
+    exactHeroes.forEach(function (duplicate) {
+      duplicate.remove();
     });
 
     if (!exact) {
       exact = document.createElement('section');
       exact.dataset.coachV8ExactHero = '1';
-      content.insertBefore(exact, legacyHeroes[0] || content.firstElementChild);
+    }
+
+    var anchor = exactHeroAnchor(content);
+    if (anchor !== exact) {
+      content.insertBefore(exact, anchor || null);
     }
 
     exact.className = 'page-hero coach-v8-exact-hero ' + config.tone;
+    exact.setAttribute('aria-labelledby', 'coachV8ExactHeroTitle');
 
     var title = config.title.replace('{first}', firstName());
     var meta = heroMeta(key);
     exact.innerHTML =
-      '<div>' +
+      '<div class="coach-v8-exact-hero-copy">' +
         '<span>' + esc(config.kicker) + '</span>' +
-        '<h2>' + esc(title) + '</h2>' +
+        '<h2 id="coachV8ExactHeroTitle">' + esc(title) + '</h2>' +
         '<p>' + esc(config.copy) + '</p>' +
         (meta ? '<small class="hero-meta">' + esc(meta) + '</small>' : '') +
       '</div>' +
@@ -678,33 +756,33 @@
         var selector = button.getAttribute('data-coach-v8-scroll');
 
         if (selector === '#legacy-save-draft') {
-          var save = document.querySelector(
-            '#saveDraftBtn,#saveDraft,#mf3SaveDraft,' +
-            '.coach-v8-legacy-hero-bridge button[data-save-draft]'
-          );
-          if (!save) {
-            save = Array.prototype.slice.call(
-              document.querySelectorAll(
-                '.coach-v8-legacy-hero-bridge button,' +
-                '.coach-v8-legacy-hero-bridge a'
-              )
-            ).find(function (node) {
-              return /save draft/i.test(node.textContent || '');
-            });
-          }
+          captureLegacyActions(document);
+          var save = bridgeCandidate(
+            document,
+            '#saveDraftBtn,#saveDraft,#mf3SaveDraft,[data-save-draft]',
+            /save\s+draft/i
+          ) || legacyActionBridge.saveDraft;
           if (save) save.click();
+          else toast('The draft action is not available on this step.');
           return;
         }
 
         if (selector === '#legacy-download-template') {
-          var download = document.getElementById('downloadTemplateBtn');
+          captureLegacyActions(document);
+          var download = document.getElementById('downloadTemplateBtn') ||
+            legacyActionBridge.downloadTemplate;
           if (download) download.click();
+          else toast('The template is not available yet.');
           return;
         }
 
         if (selector === '#legacy-import-file') {
-          var importButton = document.getElementById('importFileBtn');
+          captureLegacyActions(document);
+          var importButton = document.getElementById('importFileBtn') ||
+            document.getElementById('bulkFileInput') ||
+            legacyActionBridge.importFile;
           if (importButton) importButton.click();
+          else toast('The file importer is not available yet.');
           return;
         }
 
@@ -1203,7 +1281,7 @@
     installPublicApi();
     refresh();
     observe();
-    [100, 350, 900, 1800].forEach(function (delay) {
+    [100, 350, 900, 1800, 3200].forEach(function (delay) {
       setTimeout(refresh, delay);
     });
   }
