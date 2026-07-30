@@ -10,6 +10,14 @@ const PUBLIC_SHOWCASE_STATUSES = ['published', 'confirmed'];
 const PUBLIC_AWARD_STATUSES = ['published', 'confirmed', 'live'];
 const SETTINGS_KEY = 'public_site';
 
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
+
 function text(value, max = 5000) {
   return String(value == null ? '' : value).replace(/[<>]/g, '').trim().slice(0, max);
 }
@@ -489,10 +497,15 @@ router.patch('/admin/showcase-events/:id', async (req, res) => {
       .select('*')
       .single();
     if (error) throw error;
-    await ensureRegistrationConfig(data, data.featured === true);
+    const settings = await getSettingsRow();
+    const activeId = settings.values && settings.values.active_showcase_event_id;
+    const controlsRegistrationPages = data.featured === true || String(activeId || '') === String(data.id);
+    await ensureRegistrationConfig(data, controlsRegistrationPages);
     let output = data;
-    if (payload.featured) output = (await promoteRegistrationEvent(data)).event;
-    res.json({ data: output, message: payload.public_visible ? 'Event saved and the public Showcase page was updated.' : 'Event saved privately.' });
+    if (payload.featured || controlsRegistrationPages) {
+      output = (await promoteRegistrationEvent(data)).event;
+    }
+    res.json({ data: output, publicUpdatedAt: new Date().toISOString(), message: payload.public_visible ? 'Event saved and the public Showcase and registration pages were updated.' : 'Event saved privately.' });
   } catch (error) {
     console.error('[Admin showcase update]', error);
     if (String(error.code) === '23505') return res.status(409).json({ error: 'Use a unique public slug.' });
