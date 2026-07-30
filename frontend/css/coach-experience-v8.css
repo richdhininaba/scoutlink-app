@@ -1,5 +1,6 @@
-/* ScoutLink Coach Experience V8 production design.
-   Visual source: supplied V8 desktop and mobile design board. */
+/* ScoutLink Coach Experience V8.1 production design.
+   Literal visual source: ScoutLink Coach Experience V8 Final Mobile and Match Fixes.
+   The complete source CSS is preserved before the production adapters below. */
 
 :root{--ink:#07141f;--black:#07141f;--muted:#5b6f7d;--line:#dbe4e9;--soft:#f3f6f7;--white:#fff;--navy:#071b2b;--navy2:#0c3047;--green:#08775e;--green-dark:#05624d;--green-soft:#e8f4ef;--gold:#b78316;--gold-soft:#fff6df;--red:#b43149;--red-soft:#fff0f3;--blue:#2768a8;--shadow:0 14px 38px rgba(7,20,31,.08)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#dde6ea;color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}button,a{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}
@@ -2639,3 +2640,32 @@ body.coach-v8 .coach-v2-bottom-nav{display:none}
 @media(min-width:761px){
   body.coach-v8 .coach-v8-mobile-pagination{display:none!important}
 }
+
+
+/* ============================================================
+   V8.1 FINAL PRODUCTION GUARDS
+   These rules deliberately sit last. They prevent legacy Coach
+   page CSS from moving, recolouring or duplicating the V8 layer.
+   ============================================================ */
+body.coach-v8{--bg:var(--soft)!important;--card:var(--white)!important;--text:var(--ink)!important;--text-secondary:var(--muted)!important;--border:var(--line)!important;background:var(--soft)!important;color:var(--ink)!important}
+body.coach-v8.desktop-site .dashboard,body.coach-v8.desktop-site .coach-shell{width:100%!important;max-width:none!important;margin:0!important;padding:0!important;grid-template-columns:230px minmax(0,1fr)!important}
+body.coach-v8.desktop-site .dashboard-main,body.coach-v8.desktop-site .coach-workspace{grid-column:2!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:0!important;transform:none!important}
+body.coach-v8.desktop-site .page-content,body.coach-v8.desktop-site .coach-content,body.coach-v8.desktop-site .bulk-import-shell{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;transform:none!important}
+body.coach-v8.desktop-site .sidebar,body.coach-v8.desktop-site .coach-sidebar{grid-column:1!important;left:auto!important;right:auto!important;margin:0!important;transform:none!important}
+body.coach-v8 .coach-v8-legacy-hero-bridge{display:none!important}
+body.coach-v8 .coach-v8-exact-hero{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;isolation:isolate}
+body.coach-v8 .coach-v8-exact-hero>div:first-child{min-width:0}
+body.coach-v8 .coach-v8-exact-hero h2,body.coach-v8 .coach-v8-exact-hero p,body.coach-v8 .coach-v8-exact-hero .hero-meta{opacity:1!important;visibility:visible!important}
+body.coach-v8 .coach-v8-exact-hero.green,body.coach-v8 .coach-v8-exact-hero.navy,body.coach-v8 .coach-v8-exact-hero.green h2,body.coach-v8 .coach-v8-exact-hero.navy h2{color:#fff!important}
+body.coach-v8 .coach-v8-exact-hero.green p,body.coach-v8 .coach-v8-exact-hero.navy p{color:#d7e7e1!important}
+body.coach-v8 .coach-v8-exact-hero.green>div>span,body.coach-v8 .coach-v8-exact-hero.navy>div>span{color:#a9ddcb!important}
+body.coach-v8 .coach-v8-exact-hero .btn.white{background:#fff!important;border-color:#fff!important;color:var(--green)!important}
+body.coach-v8 .coach-v8-exact-hero .btn.ghost{background:transparent!important;border-color:rgba(255,255,255,.32)!important;color:#fff!important}
+body.coach-v8 .coach-dashboard-quick-grid{display:none!important}
+body.coach-v8 .assignment-toolbar,body.coach-v8 .table-card,body.coach-v8 .bulk-scroll-tools,body.coach-v8 .bulk-bottom-actions{background:#fff!important;color:var(--ink)!important;border-color:var(--line)!important}
+body.coach-v8 .assignment-toolbar label,body.coach-v8 .assignment-toolbar span,body.coach-v8 .bulk-import-note,body.coach-v8 .bulk-scroll-tools,body.coach-v8 .bulk-bottom-actions .hint{color:var(--muted)!important}
+body.coach-v8 .assignment-toolbar b,body.coach-v8 #teamNameLabel{color:var(--ink)!important}
+body.coach-v8 .assignment-toolbar select,body.coach-v8 .bulk-table input,body.coach-v8 .bulk-table select{background:#fff!important;color:var(--ink)!important;border-color:#c8d4da!important}
+body.coach-v8 .step-progress article.active,body.coach-v8 .step-progress article.done,body.coach-v8 .ap3-step.is-active,body.coach-v8 .mf3-step.is-active{color:var(--ink)!important}
+body.coach-v8 .step-progress article.active b,body.coach-v8 .step-progress article.done b,body.coach-v8 .ap3-step.is-active b,body.coach-v8 .mf3-step.is-active b{color:var(--green-dark)!important}
+@media(max-width:760px){body.coach-v8.mobile-site .dashboard,body.coach-v8.mobile-site .coach-shell{display:block!important;width:100%!important;max-width:100%!important;margin:0!important}body.coach-v8.mobile-site .dashboard-main,body.coach-v8.mobile-site .coach-workspace,body.coach-v8.mobile-site .page-content,body.coach-v8.mobile-site .coach-content{width:100%!important;max-width:100%!important;margin:0!important;transform:none!important}}
