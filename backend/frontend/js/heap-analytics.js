@@ -1,6 +1,8 @@
 'use strict';
 
 (function () {
+  var CURRENT_SCRIPT = document.currentScript;
+  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV1Script';
   var UNSAFE_IDS = {
     '': true,
     user: true,
@@ -52,7 +54,7 @@
     if (path.indexOf('/coach') === 0 || path.indexOf('coach-') > -1) return 'Coach';
     if (path.indexOf('/scout') === 0 || path.indexOf('scout-') > -1) return 'Scout';
     if (path.indexOf('/player') === 0 || path.indexOf('player-') > -1) return 'Player';
-    if (path.indexOf('/stratex') === 0 || path.indexOf('stratex-') > -1) return 'Stratex';
+    if (path.indexOf('/admin') === 0 || path.indexOf('/company/admin') === 0 || path.indexOf('/stratex') === 0 || path.indexOf('stratex-') > -1) return 'Stratex';
     return null;
   }
 
@@ -107,6 +109,50 @@
     return out;
   }
 
+  function isExperienceRoute() {
+    var path = String(window.location.pathname || '').toLowerCase();
+    var role = '';
+    try {
+      role = String(
+        (window.Auth && window.Auth.type) ||
+        localStorage.getItem('sl_type') ||
+        sessionStorage.getItem('sl_public_demo_role') ||
+        sessionStorage.getItem('demoRole') ||
+        ''
+      ).toLowerCase();
+    } catch (_) {}
+
+    return path.indexOf('/coach') === 0 ||
+      path.indexOf('/scout') === 0 ||
+      path.indexOf('/player') === 0 ||
+      path.indexOf('/admin') === 0 ||
+      path.indexOf('/company/admin') === 0 ||
+      path.indexOf('/stratex') === 0 ||
+      path.indexOf('coach-') > -1 ||
+      path.indexOf('scout-') > -1 ||
+      path.indexOf('player-') > -1 ||
+      path.indexOf('stratex-') > -1 ||
+      ['coach', 'scout', 'player', 'stratex'].indexOf(role) >= 0;
+  }
+
+  function loadExperienceShell() {
+    if (!isExperienceRoute() || document.getElementById(EXPERIENCE_SHELL_SCRIPT_ID)) return;
+
+    var script = document.createElement('script');
+    script.id = EXPERIENCE_SHELL_SCRIPT_ID;
+    script.async = false;
+
+    try {
+      script.src = CURRENT_SCRIPT && CURRENT_SCRIPT.src
+        ? new URL('experience-shell-v1.js?v=20260730-1', CURRENT_SCRIPT.src).href
+        : '/frontend/js/experience-shell-v1.js?v=20260730-1';
+    } catch (_) {
+      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-1';
+    }
+
+    (document.head || document.documentElement).appendChild(script);
+  }
+
   function applyHeapContext() {
     if (!hasHeap()) return;
     var ctx = authContext();
@@ -120,6 +166,7 @@
     }
   }
 
+  loadExperienceShell();
   window.applyScoutLinkHeapContext = applyHeapContext;
   document.addEventListener('DOMContentLoaded', function () { setTimeout(applyHeapContext, 0); });
   window.addEventListener('pageshow', function () { setTimeout(applyHeapContext, 0); });
