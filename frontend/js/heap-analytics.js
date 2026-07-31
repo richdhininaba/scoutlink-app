@@ -2,10 +2,12 @@
 
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260731-6';
-  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV6Script';
+  var ASSET_VERSION = '20260731-10';
+  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV5Script';
   var PLAYER_INITIALS_SCRIPT_ID = 'playerInitialsV1Script';
-  var COACH_LAYOUT_CSS_ID = 'coachLayoutCoreV1Css';
+  var SCORING_V4_SCRIPT_ID = 'scoringV4ClientScript';
+  var DEMO_SCORING_V4_SCRIPT_ID = 'demoScoringV4Script';
+  var SCOUT_SCORING_V4_SCRIPT_ID = 'scoutScoringV4Script';
   var SCOUT_CORE_CSS_ID = 'scoutExperienceCoreV2Css';
   var SCOUT_CORE_SCRIPT_ID = 'scoutExperienceCoreV2Script';
   var PREDICTION_CSS_ID = 'scoutPredictionOverlaysV2Css';
@@ -262,30 +264,6 @@
     );
   }
 
-
-  function isCoachRuntimeRoute() {
-    var routePath = String(
-      window.location.pathname || ''
-    ).toLowerCase();
-    var role = experienceRole();
-
-    return (
-      routePath.indexOf('/coach') === 0 ||
-      routePath.indexOf('coach-') > -1 ||
-      (
-        (
-          routePath.indexOf('/player/profile') === 0 ||
-          routePath.indexOf('player-profile') > -1 ||
-          routePath.indexOf('/admin') === 0 ||
-          routePath.indexOf('/company/admin') === 0 ||
-          routePath.indexOf('/stratex') === 0 ||
-          routePath.indexOf('stratex-') > -1
-        ) &&
-        role === 'coach'
-      )
-    );
-  }
-
   function isScoutRuntimeRoute() {
     var routePath = String(
       window.location.pathname || ''
@@ -352,6 +330,32 @@
     ).appendChild(stylesheet);
   }
 
+  function loadScoringV4() {
+    loadScript(
+      SCORING_V4_SCRIPT_ID,
+      'scoring-v4-client.js',
+      '/frontend/js/scoring-v4-client.js'
+    );
+  }
+
+  function loadDemoScoringV4() {
+    if (!isDemo()) return;
+    loadScript(
+      DEMO_SCORING_V4_SCRIPT_ID,
+      'demo-scoring-v4.js',
+      '/frontend/js/demo-scoring-v4.js'
+    );
+  }
+
+  function loadScoutScoringV4() {
+    if (!isScoutRuntimeRoute()) return;
+    loadScript(
+      SCOUT_SCORING_V4_SCRIPT_ID,
+      'scout-scoring-v4.js',
+      '/frontend/js/scout-scoring-v4.js'
+    );
+  }
+
   function loadPlayerInitials() {
     loadScript(
       PLAYER_INITIALS_SCRIPT_ID,
@@ -367,17 +371,6 @@
       EXPERIENCE_SHELL_SCRIPT_ID,
       'experience-shell-v1.js',
       '/frontend/js/experience-shell-v1.js'
-    );
-  }
-
-
-  function loadCoachLayout() {
-    if (!isCoachRuntimeRoute()) return;
-
-    loadStylesheet(
-      COACH_LAYOUT_CSS_ID,
-      '../css/coach-layout-core-v1.css',
-      '/frontend/css/coach-layout-core-v1.css'
     );
   }
 
@@ -435,10 +428,12 @@
   }
 
   function loadAll() {
+    loadScoringV4();
     loadPlayerInitials();
     loadExperienceShell();
-    loadCoachLayout();
     loadScoutRuntime();
+    loadScoutScoringV4();
+    loadDemoScoringV4();
   }
 
   loadAll();
