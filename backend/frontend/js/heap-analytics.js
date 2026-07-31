@@ -3,6 +3,8 @@
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
   var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV3Script';
+  var SCOUT_WORKFLOW_CSS_ID = 'scoutWorkflowFixesV1Css';
+  var SCOUT_WORKFLOW_SCRIPT_ID = 'scoutWorkflowFixesV1Script';
   var UNSAFE_IDS = {
     '': true,
     user: true,
@@ -135,8 +137,7 @@
     return out;
   }
 
-  function isExperienceRoute() {
-    var routePath = String(window.location.pathname || '').toLowerCase();
+  function experienceRole() {
     var role = '';
 
     try {
@@ -148,6 +149,13 @@
         ''
       ).toLowerCase();
     } catch (_) {}
+
+    return role;
+  }
+
+  function isExperienceRoute() {
+    var routePath = String(window.location.pathname || '').toLowerCase();
+    var role = experienceRole();
 
     return routePath.indexOf('/coach') === 0 ||
       routePath.indexOf('/scout') === 0 ||
@@ -162,6 +170,28 @@
       ['coach', 'scout', 'player', 'stratex'].indexOf(role) >= 0;
   }
 
+  function isScoutWorkflowRoute() {
+    var routePath = String(window.location.pathname || '').toLowerCase();
+    var role = experienceRole();
+
+    if (role !== 'scout') return false;
+
+    return routePath.indexOf('/scout') === 0 ||
+      routePath.indexOf('scout-') > -1 ||
+      routePath.indexOf('/player/profile') === 0 ||
+      routePath.indexOf('player-profile') > -1;
+  }
+
+  function resolveFromCurrent(relativePath, fallback) {
+    try {
+      return CURRENT_SCRIPT && CURRENT_SCRIPT.src
+        ? new URL(relativePath, CURRENT_SCRIPT.src).href
+        : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   function loadExperienceShell() {
     if (
       !isExperienceRoute() ||
@@ -171,19 +201,38 @@
     var script = document.createElement('script');
     script.id = EXPERIENCE_SHELL_SCRIPT_ID;
     script.async = false;
-
-    try {
-      script.src = CURRENT_SCRIPT && CURRENT_SCRIPT.src
-        ? new URL(
-            'experience-shell-v1.js?v=20260730-4',
-            CURRENT_SCRIPT.src
-          ).href
-        : '/frontend/js/experience-shell-v1.js?v=20260730-4';
-    } catch (_) {
-      script.src = '/frontend/js/experience-shell-v1.js?v=20260730-4';
-    }
+    script.src = resolveFromCurrent(
+      'experience-shell-v1.js?v=20260730-4',
+      '/frontend/js/experience-shell-v1.js?v=20260730-4'
+    );
 
     (document.head || document.documentElement).appendChild(script);
+  }
+
+  function loadScoutWorkflowCorrection() {
+    if (!isScoutWorkflowRoute()) return;
+
+    if (!document.getElementById(SCOUT_WORKFLOW_CSS_ID)) {
+      var stylesheet = document.createElement('link');
+      stylesheet.id = SCOUT_WORKFLOW_CSS_ID;
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = resolveFromCurrent(
+        '../css/scout-workflow-fixes-v1.css?v=20260731-1',
+        '/frontend/css/scout-workflow-fixes-v1.css?v=20260731-1'
+      );
+      (document.head || document.documentElement).appendChild(stylesheet);
+    }
+
+    if (!document.getElementById(SCOUT_WORKFLOW_SCRIPT_ID)) {
+      var script = document.createElement('script');
+      script.id = SCOUT_WORKFLOW_SCRIPT_ID;
+      script.async = false;
+      script.src = resolveFromCurrent(
+        'scout-workflow-fixes-v1.js?v=20260731-1',
+        '/frontend/js/scout-workflow-fixes-v1.js?v=20260731-1'
+      );
+      (document.head || document.documentElement).appendChild(script);
+    }
   }
 
   function applyHeapContext() {
@@ -208,11 +257,14 @@
   }
 
   loadExperienceShell();
+  loadScoutWorkflowCorrection();
   window.applyScoutLinkHeapContext = applyHeapContext;
   document.addEventListener('DOMContentLoaded', function () {
+    loadScoutWorkflowCorrection();
     window.setTimeout(applyHeapContext, 0);
   });
   window.addEventListener('pageshow', function () {
+    loadScoutWorkflowCorrection();
     window.setTimeout(applyHeapContext, 0);
   });
 }());
