@@ -1,6 +1,7 @@
 -- ============================================================
--- ScoutLink Database Schema v2.0
--- Run in Supabase SQL Editor: Project scoutlink (fwxnggklfsgrydcoeiuh)
+-- ScoutLink Database Schema v2.1
+-- Run in Supabase SQL Editor: Project scoutlink
+-- Player identity uses initials; generated avatar data is not stored.
 -- ============================================================
 
 -- ENUMS
@@ -90,8 +91,6 @@ CREATE TABLE IF NOT EXISTS players (
   predicted_salary_weekly NUMERIC(10,2),
   -- Videos
   video_urls TEXT[],
-  -- Avatar
-  avatar_config JSONB,
   -- Auth
   password_hash TEXT, login_code TEXT, login_code_expires TIMESTAMPTZ,
   last_login TIMESTAMPTZ, is_active BOOLEAN DEFAULT TRUE,
