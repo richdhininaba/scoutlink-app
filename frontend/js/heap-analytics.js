@@ -2,9 +2,13 @@
 
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV3Script';
-  var SCOUT_WORKFLOW_CSS_ID = 'scoutWorkflowFixesV1Css';
-  var SCOUT_WORKFLOW_SCRIPT_ID = 'scoutWorkflowFixesV1Script';
+  var ASSET_VERSION = '20260731-5';
+  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV5Script';
+  var PLAYER_INITIALS_SCRIPT_ID = 'playerInitialsV1Script';
+  var SCOUT_CORE_CSS_ID = 'scoutExperienceCoreV2Css';
+  var SCOUT_CORE_SCRIPT_ID = 'scoutExperienceCoreV2Script';
+  var PREDICTION_CSS_ID = 'scoutPredictionOverlaysV2Css';
+  var PREDICTION_SCRIPT_ID = 'scoutPredictionOverlaysV2Script';
   var UNSAFE_IDS = {
     '': true,
     user: true,
@@ -18,7 +22,10 @@
   };
 
   function hasHeap() {
-    return !!(window.heap && typeof window.heap.addUserProperties === 'function');
+    return !!(
+      window.heap &&
+      typeof window.heap.addUserProperties === 'function'
+    );
   }
 
   function safe(value) {
@@ -27,19 +34,28 @@
     return value;
   }
 
-  function pick(obj, keys) {
-    if (!obj) return null;
-    for (var i = 0; i < keys.length; i++) {
-      var value = obj[keys[i]];
-      if (value !== undefined && value !== null && String(value).trim() !== '') {
+  function pick(object, keys) {
+    if (!object) return null;
+
+    for (var index = 0; index < keys.length; index += 1) {
+      var value = object[keys[index]];
+      if (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ''
+      ) {
         return value;
       }
     }
+
     return null;
   }
 
   function isPublicDemo() {
-    if (typeof window.isPublicDemoMode === 'function') return window.isPublicDemoMode();
+    if (typeof window.isPublicDemoMode === 'function') {
+      return window.isPublicDemoMode();
+    }
+
     try {
       return sessionStorage.getItem('sl_public_demo') === '1';
     } catch (_) {
@@ -48,9 +64,15 @@
   }
 
   function isDemo() {
-    if (typeof window.isDemoMode === 'function') return window.isDemoMode();
+    if (typeof window.isDemoMode === 'function') {
+      return window.isDemoMode();
+    }
+
     try {
-      return localStorage.getItem('sl_demo_mode') === '1' || isPublicDemo();
+      return (
+        localStorage.getItem('sl_demo_mode') === '1' ||
+        isPublicDemo()
+      );
     } catch (_) {
       return isPublicDemo();
     }
@@ -66,16 +88,41 @@
 
   function selectedExperience(role) {
     if (role) return String(role);
-    var path = String(window.location.pathname || '').toLowerCase();
+
+    var routePath = String(
+      window.location.pathname || ''
+    ).toLowerCase();
+
     if (
-      path.indexOf('/admin') === 0 ||
-      path.indexOf('/company/admin') === 0 ||
-      path.indexOf('/stratex') === 0 ||
-      path.indexOf('stratex-') > -1
-    ) return 'Stratex';
-    if (path.indexOf('/coach') === 0 || path.indexOf('coach-') > -1) return 'Coach';
-    if (path.indexOf('/scout') === 0 || path.indexOf('scout-') > -1) return 'Scout';
-    if (path.indexOf('/player') === 0 || path.indexOf('player-') > -1) return 'Player';
+      routePath.indexOf('/admin') === 0 ||
+      routePath.indexOf('/company/admin') === 0 ||
+      routePath.indexOf('/stratex') === 0 ||
+      routePath.indexOf('stratex-') > -1
+    ) {
+      return 'Stratex';
+    }
+
+    if (
+      routePath.indexOf('/coach') === 0 ||
+      routePath.indexOf('coach-') > -1
+    ) {
+      return 'Coach';
+    }
+
+    if (
+      routePath.indexOf('/scout') === 0 ||
+      routePath.indexOf('scout-') > -1
+    ) {
+      return 'Scout';
+    }
+
+    if (
+      routePath.indexOf('/player') === 0 ||
+      routePath.indexOf('player-') > -1
+    ) {
+      return 'Player';
+    }
+
     return null;
   }
 
@@ -86,7 +133,9 @@
 
     if (!user) {
       try {
-        user = JSON.parse(localStorage.getItem('sl_user') || 'null');
+        user = JSON.parse(
+          localStorage.getItem('sl_user') || 'null'
+        );
       } catch (_) {}
     }
 
@@ -96,68 +145,108 @@
       } catch (_) {}
     }
 
-    return { user: user || {}, role: role || null };
+    return {
+      user: user || {},
+      role: role || null
+    };
   }
 
   function stableUserId(context) {
     if (isPublicDemo()) return null;
+
     var candidate = pick(
       context.user,
-      ['id', 'userId', 'user_id', 'auth_id', 'supabase_id']
+      [
+        'id',
+        'userId',
+        'user_id',
+        'auth_id',
+        'supabase_id'
+      ]
     );
-    candidate = candidate == null ? '' : String(candidate).trim();
-    if (!candidate || UNSAFE_IDS[candidate.toLowerCase()]) return null;
+
+    candidate =
+      candidate == null
+        ? ''
+        : String(candidate).trim();
+
+    if (
+      !candidate ||
+      UNSAFE_IDS[candidate.toLowerCase()]
+    ) {
+      return null;
+    }
+
     return candidate;
   }
 
-  function userProps(context) {
+  function userProperties(context) {
     var user = context.user || {};
     var role = safe(context.role);
 
     return {
       Role: role,
-      AccountType: safe(pick(user, ['accountType', 'account_type'])) || role,
+      AccountType:
+        safe(
+          pick(user, ['accountType', 'account_type'])
+        ) || role,
       SelectedExperience: selectedExperience(role),
       DemoMode: !!isDemo(),
       PublicDemo: !!isPublicDemo(),
       PublicDemoRole: safe(publicDemoRole()),
-      TeamId: safe(pick(user, ['team_id', 'scout_team_id'])),
-      ApprovalStatus: safe(pick(user, ['approval_status', 'status'])),
-      IsSuperUser: !!pick(user, ['is_super_user', 'isSuper'])
+      TeamId: safe(
+        pick(user, ['team_id', 'scout_team_id'])
+      ),
+      ApprovalStatus: safe(
+        pick(user, ['approval_status', 'status'])
+      ),
+      IsSuperUser: !!pick(
+        user,
+        ['is_super_user', 'isSuper']
+      )
     };
   }
 
-  function compact(obj) {
-    var out = {};
-    Object.keys(obj || {}).forEach(function (key) {
-      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
-        out[key] = obj[key];
+  function compact(object) {
+    var output = {};
+
+    Object.keys(object || {}).forEach(function (key) {
+      if (
+        object[key] !== undefined &&
+        object[key] !== null &&
+        object[key] !== ''
+      ) {
+        output[key] = object[key];
       }
     });
-    return out;
+
+    return output;
   }
 
   function experienceRole() {
-    var role = '';
-
     try {
-      role = String(
+      return String(
+        sessionStorage.getItem('sl_public_demo_role') ||
+        sessionStorage.getItem('sl_admin_demo_role') ||
+        sessionStorage.getItem('sl_preview_role') ||
+        sessionStorage.getItem('demoRole') ||
         (window.Auth && window.Auth.type) ||
         localStorage.getItem('sl_type') ||
-        sessionStorage.getItem('sl_public_demo_role') ||
-        sessionStorage.getItem('demoRole') ||
         ''
       ).toLowerCase();
-    } catch (_) {}
-
-    return role;
+    } catch (_) {
+      return '';
+    }
   }
 
   function isExperienceRoute() {
-    var routePath = String(window.location.pathname || '').toLowerCase();
+    var routePath = String(
+      window.location.pathname || ''
+    ).toLowerCase();
     var role = experienceRole();
 
-    return routePath.indexOf('/coach') === 0 ||
+    return (
+      routePath.indexOf('/coach') === 0 ||
       routePath.indexOf('/scout') === 0 ||
       routePath.indexOf('/player') === 0 ||
       routePath.indexOf('/admin') === 0 ||
@@ -167,20 +256,19 @@
       routePath.indexOf('scout-') > -1 ||
       routePath.indexOf('player-') > -1 ||
       routePath.indexOf('stratex-') > -1 ||
-      ['coach', 'scout', 'player', 'stratex'].indexOf(role) >= 0;
+      ['coach', 'scout', 'player', 'stratex']
+        .indexOf(role) >= 0
+    );
   }
 
-  function isScoutWorkflowRoute() {
-    var routePath = String(window.location.pathname || '').toLowerCase();
+  function isScoutRuntimeRoute() {
+    var routePath = String(
+      window.location.pathname || ''
+    ).toLowerCase();
     var role = experienceRole();
 
-    /*
-     * The Scout V10 renderer is also mounted by the public demo and by the
-     * Stratex Admin demo while those pages retain a non-Scout URL and role.
-     * Loading the correction broadly is safe because the runtime only acts
-     * when it finds the Scout V10 Shadow Root.
-     */
-    return isPublicDemo() ||
+    return (
+      isPublicDemo() ||
       routePath.indexOf('/scout') === 0 ||
       routePath.indexOf('scout-') > -1 ||
       routePath.indexOf('/player/profile') === 0 ||
@@ -191,7 +279,8 @@
       routePath.indexOf('stratex-') > -1 ||
       routePath.indexOf('/experience-select') === 0 ||
       role === 'scout' ||
-      role === 'stratex';
+      role === 'stratex'
+    );
   }
 
   function resolveFromCurrent(relativePath, fallback) {
@@ -204,51 +293,86 @@
     }
   }
 
-  function loadExperienceShell() {
-    if (
-      !isExperienceRoute() ||
-      document.getElementById(EXPERIENCE_SHELL_SCRIPT_ID)
-    ) return;
+  function loadScript(id, relativePath, fallback) {
+    if (document.getElementById(id)) return;
 
     var script = document.createElement('script');
-    script.id = EXPERIENCE_SHELL_SCRIPT_ID;
+    script.id = id;
     script.async = false;
     script.src = resolveFromCurrent(
-      'experience-shell-v1.js?v=20260730-4',
-      '/frontend/js/experience-shell-v1.js?v=20260730-4'
+      relativePath + '?v=' + ASSET_VERSION,
+      fallback + '?v=' + ASSET_VERSION
     );
 
-    (document.head || document.documentElement).appendChild(script);
+    (
+      document.head ||
+      document.documentElement
+    ).appendChild(script);
   }
 
-  function loadScoutWorkflowCorrection() {
-    if (!isScoutWorkflowRoute()) return;
+  function loadStylesheet(id, relativePath, fallback) {
+    if (document.getElementById(id)) return;
 
-    if (!document.getElementById(SCOUT_WORKFLOW_CSS_ID)) {
-      var stylesheet = document.createElement('link');
-      stylesheet.id = SCOUT_WORKFLOW_CSS_ID;
-      stylesheet.rel = 'stylesheet';
-      stylesheet.href = resolveFromCurrent(
-        '../css/scout-workflow-fixes-v1.css?v=20260731-3',
-        '/frontend/css/scout-workflow-fixes-v1.css?v=20260731-3'
-      );
-      (document.head || document.documentElement).appendChild(stylesheet);
-    }
+    var stylesheet = document.createElement('link');
+    stylesheet.id = id;
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = resolveFromCurrent(
+      relativePath + '?v=' + ASSET_VERSION,
+      fallback + '?v=' + ASSET_VERSION
+    );
 
-    if (!document.getElementById(SCOUT_WORKFLOW_SCRIPT_ID)) {
-      var script = document.createElement('script');
-      script.id = SCOUT_WORKFLOW_SCRIPT_ID;
-      script.async = false;
-      script.src = resolveFromCurrent(
-        'scout-workflow-fixes-v1.js?v=20260731-3',
-        '/frontend/js/scout-workflow-fixes-v1.js?v=20260731-3'
-      );
-      (document.head || document.documentElement).appendChild(script);
-    }
+    (
+      document.head ||
+      document.documentElement
+    ).appendChild(stylesheet);
+  }
+
+  function loadPlayerInitials() {
+    loadScript(
+      PLAYER_INITIALS_SCRIPT_ID,
+      'player-initials-v1.js',
+      '/frontend/js/player-initials-v1.js'
+    );
+  }
+
+  function loadExperienceShell() {
+    if (!isExperienceRoute()) return;
+
+    loadScript(
+      EXPERIENCE_SHELL_SCRIPT_ID,
+      'experience-shell-v1.js',
+      '/frontend/js/experience-shell-v1.js'
+    );
+  }
+
+  function loadScoutRuntime() {
+    if (!isScoutRuntimeRoute()) return;
+
+    loadStylesheet(
+      PREDICTION_CSS_ID,
+      '../css/scout-prediction-overlays-v2.css',
+      '/frontend/css/scout-prediction-overlays-v2.css'
+    );
+    loadScript(
+      PREDICTION_SCRIPT_ID,
+      'scout-prediction-overlays-v2.js',
+      '/frontend/js/scout-prediction-overlays-v2.js'
+    );
+    loadStylesheet(
+      SCOUT_CORE_CSS_ID,
+      '../css/scout-experience-core-v2.css',
+      '/frontend/css/scout-experience-core-v2.css'
+    );
+    loadScript(
+      SCOUT_CORE_SCRIPT_ID,
+      'scout-experience-core-v2.js',
+      '/frontend/js/scout-experience-core-v2.js'
+    );
   }
 
   function applyHeapContext() {
     if (!hasHeap()) return;
+
     var context = authContext();
     var id = stableUserId(context);
     if (!id) return;
@@ -257,9 +381,15 @@
       if (typeof window.heap.identify === 'function') {
         window.heap.identify(id);
       }
-      window.heap.addUserProperties(compact(userProps(context)));
+
+      window.heap.addUserProperties(
+        compact(userProperties(context))
+      );
     } catch (error) {
-      if (window.console && console.warn) {
+      if (
+        window.console &&
+        console.warn
+      ) {
         console.warn(
           '[ScoutLink Heap] user context skipped:',
           error.message || error
@@ -268,18 +398,32 @@
     }
   }
 
-  loadExperienceShell();
-  loadScoutWorkflowCorrection();
-  window.applyScoutLinkHeapContext = applyHeapContext;
-  document.addEventListener('DOMContentLoaded', function () {
-    loadScoutWorkflowCorrection();
-    window.setTimeout(applyHeapContext, 0);
-  });
-  window.addEventListener('pageshow', function () {
-    loadScoutWorkflowCorrection();
-    window.setTimeout(applyHeapContext, 0);
-  });
-  window.addEventListener('storage', function () {
-    loadScoutWorkflowCorrection();
-  });
+  function loadAll() {
+    loadPlayerInitials();
+    loadExperienceShell();
+    loadScoutRuntime();
+  }
+
+  loadAll();
+
+  window.applyScoutLinkHeapContext =
+    applyHeapContext;
+
+  document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+      loadAll();
+      window.setTimeout(applyHeapContext, 0);
+    }
+  );
+
+  window.addEventListener(
+    'pageshow',
+    function () {
+      loadAll();
+      window.setTimeout(applyHeapContext, 0);
+    }
+  );
+
+  window.addEventListener('storage', loadAll);
 }());
