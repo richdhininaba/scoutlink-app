@@ -16,28 +16,27 @@
 
   var POSITION_GROUPS = {
     Goalkeeper: ['GK'],
-    Defender: ['CB', 'BPD', 'RB', 'LB', 'RWB', 'LWB'],
-    Midfielder: ['CDM', 'CM', 'B2B', 'CAM'],
-    Forward: ['LW', 'RW', 'CF', 'ST', 'SS']
+    Defender: ['RB', 'CB', 'LB', 'RWB', 'LWB'],
+    Midfielder: ['DM', 'CM', 'AM', 'RM', 'LM'],
+    Attacker: ['RW', 'LW', 'CF', 'ST']
   };
 
   var POSITION_LABELS = {
     GK: 'Goalkeeper',
-    CB: 'Centre Back',
-    BPD: 'Ball-playing Defender',
-    RB: 'Right Back',
-    LB: 'Left Back',
-    RWB: 'Right Wing Back',
-    LWB: 'Left Wing Back',
-    CDM: 'Defensive Midfielder',
-    CM: 'Central Midfielder',
-    B2B: 'Box-to-box Midfielder',
-    CAM: 'Attacking Midfielder',
-    LW: 'Left Winger',
-    RW: 'Right Winger',
-    CF: 'Centre Forward',
-    ST: 'Striker',
-    SS: 'Second Striker'
+    RB: 'Right-back',
+    CB: 'Centre-back',
+    LB: 'Left-back',
+    RWB: 'Right wing-back',
+    LWB: 'Left wing-back',
+    DM: 'Defensive midfielder',
+    CM: 'Central midfielder',
+    AM: 'Attacking midfielder',
+    RM: 'Right midfielder',
+    LM: 'Left midfielder',
+    RW: 'Right winger',
+    LW: 'Left winger',
+    CF: 'Centre-forward',
+    ST: 'Striker'
   };
 
   var HEIGHTS = {
@@ -58,43 +57,149 @@
     very_powerful: { label: 'Very powerful', range: '96+ kg', min: 96, max: 120 }
   };
 
-  var OUTFIELD_ATTRIBUTES = [
-    'pace', 'agility', 'strength', 'stamina', 'shooting', 'passing',
-    'dribbling', 'defending', 'composure', 'crossing', 'vision',
-    'positioning', 'heading', 'tackling', 'jumping'
+  var GENERAL_ATTRIBUTES = [
+    'first_touch','passing','dribbling','weak_foot','awareness',
+    'decision_making','pace','agility_balance','strength','stamina',
+    'composure','coachability','response_to_mistakes'
   ];
 
   var GOALKEEPER_ATTRIBUTES = [
-    'pace', 'agility', 'strength', 'stamina', 'jumping', 'composure',
-    'gk_diving', 'gk_reflexes', 'gk_handling', 'gk_positioning',
-    'gk_kicking', 'gk_distribution', 'gk_communication', 'gk_sweeping'
+    'gk_positioning','gk_shot_stopping','gk_reflexes','gk_handling',
+    'gk_one_v_one','gk_aerial_command','gk_sweeping','gk_distribution',
+    'gk_communication','gk_decision_making','gk_composure',
+    'gk_agility_explosiveness'
+  ];
+
+  var DEFENDER_ATTRIBUTES = [
+    'one_v_one_defending','tackling','defensive_positioning',
+    'marking_covering','anticipation_interceptions','aerial_defending',
+    'recovery_defending','pressing_defensive_transition',
+    'communication_organisation','progression_from_defence',
+    'crossing_attacking_support'
+  ];
+
+  var MIDFIELDER_ATTRIBUTES = [
+    'receiving_under_pressure','ball_retention','progressive_passing',
+    'long_passing_switching','tempo_control','chance_creation',
+    'anticipation_interceptions','defensive_positioning_covering',
+    'pressing_counter_pressing','off_ball_movement_box_arrivals'
+  ];
+
+  var ATTACKER_ATTRIBUTES = [
+    'finishing','shooting','attacking_movement','one_v_one_attacking',
+    'runs_in_behind','chance_creation','crossing','link_up_play',
+    'hold_up_play','aerial_ability','pressing_from_front'
   ];
 
   var ATTRIBUTE_LABELS = {
-    pace: 'Pace',
-    agility: 'Agility',
-    strength: 'Strength',
-    stamina: 'Stamina',
-    shooting: 'Shooting',
-    passing: 'Passing',
-    dribbling: 'Dribbling',
-    defending: 'Defending',
-    composure: 'Composure',
-    crossing: 'Crossing',
-    vision: 'Vision',
-    positioning: 'Positioning',
-    heading: 'Heading',
-    tackling: 'Tackling',
-    jumping: 'Jumping',
-    gk_diving: 'Diving',
-    gk_reflexes: 'Reflexes',
-    gk_handling: 'Handling',
-    gk_positioning: 'GK positioning',
-    gk_kicking: 'Kicking',
-    gk_distribution: 'Distribution',
-    gk_communication: 'Communication',
-    gk_sweeping: 'Sweeping'
+    first_touch:'First touch and ball control',
+    passing:'Passing',
+    dribbling:'Dribbling and ball carrying',
+    weak_foot:'Weak-foot ability',
+    awareness:'Awareness',
+    decision_making:'Decision-making',
+    pace:'Pace',
+    agility_balance:'Agility and balance',
+    strength:'Strength',
+    stamina:'Stamina',
+    composure:'Composure',
+    coachability:'Coachability',
+    response_to_mistakes:'Response to mistakes',
+    gk_positioning:'Positioning',
+    gk_shot_stopping:'Shot-stopping',
+    gk_reflexes:'Reflexes',
+    gk_handling:'Handling',
+    gk_one_v_one:'One-vers-one goalkeeping',
+    gk_aerial_command:'Aerial command',
+    gk_sweeping:'Sweeping',
+    gk_distribution:'Distribution',
+    gk_communication:'Communication and organisation',
+    gk_decision_making:'Decision-making',
+    gk_composure:'Composure',
+    gk_agility_explosiveness:'Agility and explosiveness',
+    one_v_one_defending:'One-vers-one defending',
+    tackling:'Tackling',
+    defensive_positioning:'Defensive positioning',
+    marking_covering:'Marking and covering',
+    anticipation_interceptions:'Anticipation and interceptions',
+    aerial_defending:'Aerial defending',
+    recovery_defending:'Recovery defending',
+    pressing_defensive_transition:'Pressing and defensive transitions',
+    communication_organisation:'Communication and organisation',
+    progression_from_defence:'Progression from defence',
+    crossing_attacking_support:'Crossing and attacking support',
+    receiving_under_pressure:'Receiving under pressure',
+    ball_retention:'Ball retention',
+    progressive_passing:'Progressive passing',
+    long_passing_switching:'Long passing and switching play',
+    tempo_control:'Tempo control',
+    chance_creation:'Chance creation and final pass',
+    defensive_positioning_covering:'Defensive positioning and covering',
+    pressing_counter_pressing:'Pressing and counter-pressing',
+    off_ball_movement_box_arrivals:'Off-ball movement and box arrivals',
+    finishing:'Finishing',
+    shooting:'Shooting technique and range',
+    attacking_movement:'Attacking movement',
+    one_v_one_attacking:'One-vers-one attacking',
+    runs_in_behind:'Runs in behind',
+    crossing:'Crossing',
+    link_up_play:'Link-up play',
+    hold_up_play:'Hold-up play',
+    aerial_ability:'Aerial ability',
+    pressing_from_front:'Pressing from the front'
   };
+
+  function flattenAttributeRatings(value, target) {
+    target = target || {};
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return target;
+    Object.keys(value).forEach(function (key) {
+      var child = value[key];
+      if (child && typeof child === 'object' && !Array.isArray(child)) {
+        flattenAttributeRatings(child, target);
+      } else {
+        target[key] = child;
+      }
+    });
+    return target;
+  }
+
+  function attributeKeysForGroup(group) {
+    if (group === 'Goalkeeper') return GOALKEEPER_ATTRIBUTES.slice();
+    if (group === 'Defender') return GENERAL_ATTRIBUTES.concat(DEFENDER_ATTRIBUTES);
+    if (group === 'Midfielder') return GENERAL_ATTRIBUTES.concat(MIDFIELDER_ATTRIBUTES);
+    if (group === 'Attacker') return GENERAL_ATTRIBUTES.concat(ATTACKER_ATTRIBUTES);
+    return [];
+  }
+
+  function attributeKeysForRecord(record) {
+    return attributeKeysForGroup(record.position_group || (
+      (record.primary_position || record.specific_position) === 'GK' ? 'Goalkeeper' : ''
+    ));
+  }
+
+  function attributeValue(record, key) {
+    var nested = flattenAttributeRatings(record.attribute_ratings || record.attributeRatings || {});
+    if (Object.prototype.hasOwnProperty.call(nested, key)) return nested[key];
+    return record[key];
+  }
+
+  function nestedAttributePayload(group, flat) {
+    if (group === 'Goalkeeper') return { goalkeeper: flat };
+    var specific = group.toLowerCase();
+    var general = {};
+    var positionSpecific = {};
+    GENERAL_ATTRIBUTES.forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(flat, key)) general[key] = flat[key];
+    });
+    attributeKeysForGroup(group).filter(function (key) {
+      return GENERAL_ATTRIBUTES.indexOf(key) < 0;
+    }).forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(flat, key)) positionSpecific[key] = flat[key];
+    });
+    var output = { general: general };
+    output[specific] = positionSpecific;
+    return output;
+  }
 
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
@@ -202,6 +307,12 @@
 
   function positionLabel(value) {
     var key = String(value || '').trim().toUpperCase();
+    var aliases = {
+      CDM:'DM', CAM:'AM', B2B:'CM', RCM:'CM', LCM:'CM', RDM:'DM', LDM:'DM',
+      RAM:'AM', LAM:'AM', LS:'ST', RS:'ST', SS:'CF', BPD:'CB', RCB:'CB',
+      LCB:'CB', SW:'CB'
+    };
+    key = aliases[key] || key;
     return POSITION_LABELS[key] || String(value || 'Position TBC');
   }
 
@@ -296,11 +407,10 @@
       'overall_rating', 'transfer_value'
     ];
     var completeCore = core.filter(function (key) {
-      return record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== '';
+      var value = attributeValue(record, key);
+      return value !== null && value !== undefined && String(value).trim() !== '';
     }).length;
-    var keys = String(record.position_group || '').toLowerCase() === 'goalkeeper'
-      ? GOALKEEPER_ATTRIBUTES
-      : OUTFIELD_ATTRIBUTES;
+    var keys = attributeKeysForRecord(record);
     var completeAttributes = keys.filter(function (key) {
       return record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== '';
     }).length;
@@ -511,11 +621,9 @@
   }
 
   function attributeRows(record) {
-    var keys = String(record.position_group || '').toLowerCase() === 'goalkeeper'
-      ? GOALKEEPER_ATTRIBUTES
-      : OUTFIELD_ATTRIBUTES;
+    var keys = attributeKeysForRecord(record);
     var available = keys.filter(function (key) {
-      return Number.isFinite(Number(record[key]));
+      return Number.isFinite(Number(attributeValue(record, key)));
     });
 
     if (!available.length) {
@@ -523,7 +631,7 @@
     }
 
     return available.map(function (key) {
-      var value = Number(record[key]);
+      var value = Number(attributeValue(record, key));
       var percentage = Math.max(0, Math.min(100, Math.round(value > 10 ? value : value * 10)));
       return '<div class="attribute-row"><span>' + esc(ATTRIBUTE_LABELS[key] || sentence(key)) +
         '</span><i><em style="width:' + percentage + '%"></em></i><b>' +
@@ -683,14 +791,12 @@
       return '<option value="' + key + '"' + (key === record.build_category ? ' selected' : '') + '>' +
         BUILDS[key].label + ' · ' + BUILDS[key].range + '</option>';
     }).join('');
-    var keys = String(record.position_group || '').toLowerCase() === 'goalkeeper'
-      ? GOALKEEPER_ATTRIBUTES
-      : OUTFIELD_ATTRIBUTES;
+    var keys = attributeKeysForRecord(record);
     var fields = keys.map(function (key) {
-      var raw = Number(record[key]);
+      var raw = Number(attributeValue(record, key));
       var value = Number.isFinite(raw) ? (raw > 10 ? raw / 10 : raw) : '';
       return '<label><span>' + esc(ATTRIBUTE_LABELS[key] || sentence(key)) + ' / 10</span>' +
-        '<input id="cpv8-' + key + '" type="number" min="0" max="10" step="0.1" value="' +
+        '<input id="cpv8-' + key + '" type="number" min="1" max="10" step="1" value="' +
         esc(value) + '"></label>';
     }).join('');
 
@@ -941,13 +1047,20 @@
       weight_min_kg: build.min || null,
       weight_max_kg: build.max || null
     };
-    var keys = String(group || '').toLowerCase() === 'goalkeeper'
-      ? GOALKEEPER_ATTRIBUTES
-      : OUTFIELD_ATTRIBUTES;
+    var keys = attributeKeysForGroup(group);
+    var flatRatings = {};
     keys.forEach(function (key) {
       var raw = getValue('cpv8-' + key);
-      payload[key] = raw === '' ? null : Number(raw);
+      if (raw === '') return;
+      var value = Number(raw);
+      if (!Number.isInteger(value) || value < 1 || value > 10) {
+        throw new Error('Every observed attribute must be a whole number from 1 to 10.');
+      }
+      flatRatings[key] = value;
     });
+    payload.attributeRatings = nestedAttributePayload(group, flatRatings);
+    payload.attribute_ratings = payload.attributeRatings;
+    payload.attribute_rating_scale = 'ten';
     return payload;
   }
 
