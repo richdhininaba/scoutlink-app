@@ -174,12 +174,24 @@
     var routePath = String(window.location.pathname || '').toLowerCase();
     var role = experienceRole();
 
-    if (role !== 'scout') return false;
-
-    return routePath.indexOf('/scout') === 0 ||
+    /*
+     * The Scout V10 renderer is also mounted by the public demo and by the
+     * Stratex Admin demo while those pages retain a non-Scout URL and role.
+     * Loading the correction broadly is safe because the runtime only acts
+     * when it finds the Scout V10 Shadow Root.
+     */
+    return isPublicDemo() ||
+      routePath.indexOf('/scout') === 0 ||
       routePath.indexOf('scout-') > -1 ||
       routePath.indexOf('/player/profile') === 0 ||
-      routePath.indexOf('player-profile') > -1;
+      routePath.indexOf('player-profile') > -1 ||
+      routePath.indexOf('/admin') === 0 ||
+      routePath.indexOf('/company/admin') === 0 ||
+      routePath.indexOf('/stratex') === 0 ||
+      routePath.indexOf('stratex-') > -1 ||
+      routePath.indexOf('/experience-select') === 0 ||
+      role === 'scout' ||
+      role === 'stratex';
   }
 
   function resolveFromCurrent(relativePath, fallback) {
@@ -217,8 +229,8 @@
       stylesheet.id = SCOUT_WORKFLOW_CSS_ID;
       stylesheet.rel = 'stylesheet';
       stylesheet.href = resolveFromCurrent(
-        '../css/scout-workflow-fixes-v1.css?v=20260731-1',
-        '/frontend/css/scout-workflow-fixes-v1.css?v=20260731-1'
+        '../css/scout-workflow-fixes-v1.css?v=20260731-3',
+        '/frontend/css/scout-workflow-fixes-v1.css?v=20260731-3'
       );
       (document.head || document.documentElement).appendChild(stylesheet);
     }
@@ -228,8 +240,8 @@
       script.id = SCOUT_WORKFLOW_SCRIPT_ID;
       script.async = false;
       script.src = resolveFromCurrent(
-        'scout-workflow-fixes-v1.js?v=20260731-1',
-        '/frontend/js/scout-workflow-fixes-v1.js?v=20260731-1'
+        'scout-workflow-fixes-v1.js?v=20260731-3',
+        '/frontend/js/scout-workflow-fixes-v1.js?v=20260731-3'
       );
       (document.head || document.documentElement).appendChild(script);
     }
@@ -266,5 +278,8 @@
   window.addEventListener('pageshow', function () {
     loadScoutWorkflowCorrection();
     window.setTimeout(applyHeapContext, 0);
+  });
+  window.addEventListener('storage', function () {
+    loadScoutWorkflowCorrection();
   });
 }());
