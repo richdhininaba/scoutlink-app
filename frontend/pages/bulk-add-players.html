@@ -1,582 +1,318 @@
-﻿<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Bulk Add Players - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css">
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d;}
-body{background:var(--bg);color:var(--text);}
-.dashboard-main{min-width:0;overflow:hidden;}
-.page-content{max-width:100%;overflow:hidden;}
-.bulk-import-shell{max-width:100%;overflow:hidden;}
-.bulk-import-card{max-width:calc(100vw - 238px);overflow:hidden;}
-.bulk-table-wrap{
-  overflow:auto;
-  width:100%;
-  max-width:100%;
-  max-height:calc(100vh - 392px);
-  -webkit-overflow-scrolling:touch;
-  position:relative;
-  scrollbar-width:auto;
-  scrollbar-color:#1d9e75 #30363d;
-}
-.bulk-table-wrap::-webkit-scrollbar{height:10px;width:10px;}
-.bulk-table-wrap::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
-.bulk-table-wrap::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
-.bulk-table-wrap table th,.bulk-table-wrap table td{white-space:nowrap;}
-.bulk-table{border-collapse:collapse;white-space:nowrap;min-width:2720px;width:max-content;}
-.bulk-table th,.bulk-table td{padding:6px 8px;border:1px solid var(--border);font-size:12px;}
-.bulk-table th{background:#f8fafc;color:#475569;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:0.04em;position:sticky;top:0;z-index:1;}
-.bulk-table input,.bulk-table select{width:100%;min-width:80px;padding:4px 6px;background:#fff;border:1px solid #dbe3ea;color:#111827;border-radius:4px;font-size:12px;}
-.bulk-table input[type=number]{min-width:55px;}
-.bulk-table input[type=date]{min-width:120px;}
-.bulk-row-num{color:var(--text-secondary);text-align:center;font-weight:600;}
-.bulk-remove{background:none;border:none;color:#f85149;cursor:pointer;font-size:16px;padding:2px 6px;}
-.bulk-file-input{display:none;}
-.bulk-row-status{min-width:180px;max-width:240px;white-space:normal;font-size:11px;line-height:1.35;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 9px;font-weight:700;}
-.bulk-row-status.is-ok{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
-.bulk-row-status.is-error{color:#b91c1c;background:#fef2f2;border-color:#fecaca;}
-.bulk-row-status.is-warn{color:#92400e;background:#fffbeb;border-color:#fde68a;}
-.bulk-import-note{color:var(--text-secondary);font-size:13px;line-height:1.55;margin-top:6px;max-width:760px;}
-.bulk-table th:last-child,.bulk-table td:last-child{position:sticky;right:0;background:#fff;z-index:2;box-shadow:-8px 0 12px rgba(15,23,42,.10);}
-.bulk-table th:last-child{background:#f8fafc;z-index:3;}
-body:not(.super-user) .coach-col{display:none;}
-.assignment-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;}
-.bulk-action-group{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.assignment-toolbar label{display:block;margin-bottom:6px;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;}
-.assignment-toolbar select{background:#0d1117;border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:6px;min-width:220px;}
-.bulk-scroll-tools{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#10151d;border-bottom:1px solid var(--border);}
-.bulk-top-scroll{height:16px;overflow-x:auto;overflow-y:hidden;flex:1;scrollbar-width:auto;scrollbar-color:#1d9e75 #30363d;}
-.bulk-top-scroll::-webkit-scrollbar{height:10px;}
-.bulk-top-scroll::-webkit-scrollbar-track{background:#30363d;border-radius:4px;}
-.bulk-top-scroll::-webkit-scrollbar-thumb{background:#1d9e75;border-radius:4px;}
-.bulk-top-scroll-inner{height:1px;}
-.bulk-bottom-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px;background:#10151d;border-top:1px solid var(--border);position:sticky;bottom:0;left:0;z-index:12;}
-.bulk-bottom-actions .hint{font-size:12px;color:var(--text-secondary);}
-.btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-primary:hover{background:#17856a;}
-.btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent);}
-.btn-sm{padding:6px 12px;font-size:13px;}
-.table-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
-.form-error{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:#f85149;padding:10px 14px;border-radius:6px;display:none;}
-.form-error.show{display:block;}
-.form-success{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);color:var(--accent);padding:10px 14px;border-radius:6px;display:none;}
-.form-success.show{display:block;}
-@media(max-width:767px){
-  .bulk-table th,.bulk-table td{display:table-cell!important;}
-  .bulk-table{min-width:2720px;}
-  .bulk-import-card{max-width:calc(100vw - 24px);}
-  .bulk-action-group{width:100%;}
-  .bulk-action-group .btn{flex:1;justify-content:center;}
-  .bulk-bottom-actions{align-items:stretch;flex-direction:column;}
-}
-</style>
-<link rel="stylesheet" href="../css/coach-v2.css">
-<link rel="stylesheet" href="../css/coach-bulk-import-v3.css">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">ScoutLink</a></div>
-  <div class="sidebar-nav" id="sidebarNav"></div>
-  <div class="sidebar-user" id="sidebarUser"></div>
-</nav>
-<div class="dashboard-main">
-<div class="topbar">
-  <span class="topbar-title">Bulk Add Players</span>
-  <div class="topbar-right">
-    <button class="notif-btn" id="notifToggle">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
-    </button>
-    <button class="btn btn-sm btn-outline" id="logoutBtn">Sign Out</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bulk Add Players - ScoutLink</title>
+  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="stylesheet" href="/frontend/css/variables.css">
+  <link rel="stylesheet" href="/frontend/css/main.css">
+  <link rel="stylesheet" href="/frontend/css/coach-v2.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .bulk-v4{max-width:1240px;margin:0 auto}
+    .bulk-hero{padding:22px 24px;background:#071d2d;color:#fff;margin-bottom:16px}
+    .bulk-hero h1{margin:6px 0 5px;font-size:26px}.bulk-hero p{margin:0;color:#cfddd9;font-size:13px}
+    .bulk-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px;border:1px solid #dce5e9;background:#fff;margin-bottom:14px}
+    .bulk-buttons{display:flex;gap:8px;flex-wrap:wrap}
+    .bulk-btn{min-height:40px;padding:0 13px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;font:inherit;font-weight:850;cursor:pointer}
+    .bulk-btn.primary{border-color:#0f9f75;background:#0f9f75;color:#fff}
+    .bulk-btn.danger{color:#b42335}.bulk-btn:disabled{opacity:.55}
+    .bulk-table-wrap{overflow:auto;border:1px solid #dce5e9;background:#fff}
+    .bulk-table{width:100%;border-collapse:collapse;min-width:1050px}
+    .bulk-table th{padding:10px;background:#f8fafc;border-bottom:1px solid #dce5e9;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+    .bulk-table td{padding:8px;border-bottom:1px solid #edf2f4;vertical-align:top}
+    .bulk-table input,.bulk-table select{width:100%;min-height:38px;padding:0 9px;border:1px solid #cbd5e1;background:#fff;font:inherit;font-size:12px}
+    .bulk-status{font-size:11px;font-weight:800;white-space:nowrap}
+    .bulk-status.complete{color:#08775e}.bulk-status.missing{color:#b54708}
+    .bulk-message{padding:12px;margin-top:12px;border-left:4px solid #0f9f75;background:#eefbf7;color:#31534a;font-size:12px;display:none}
+    .bulk-message.error{display:block;border-color:#b42335;background:#fff1f3;color:#7f2635}
+    .bulk-message.success{display:block}
+    .bulk-modal{position:fixed;inset:0;z-index:12000;display:none;place-items:center;padding:18px;background:rgba(7,20,31,.72)}
+    .bulk-modal.open{display:grid}
+    .bulk-dialog{width:min(1050px,100%);max-height:calc(100vh - 36px);overflow:auto;background:#f5f7f8;border:1px solid #dce5e9}
+    .bulk-dialog>header{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid #dce5e9}
+    .bulk-dialog h2{margin:0;font-size:17px}.bulk-modal-body{padding:16px}
+    .bulk-dialog>footer{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;background:#fff;border-top:1px solid #dce5e9}
+    @media(max-width:760px){.bulk-toolbar{align-items:stretch;flex-direction:column}.bulk-buttons{display:grid;grid-template-columns:1fr}.bulk-btn{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-logo"><a href="/coach/dashboard">Scout<span style="color:#1d9e75">Link</span></a></div>
+      <div class="sidebar-nav" id="sidebarNav"></div>
+      <div class="sidebar-user" id="sidebarUser"></div>
+    </nav>
+    <div class="dashboard-main">
+      <header class="topbar"><span class="topbar-title">Bulk Add Players</span></header>
+      <main class="page-content">
+        <div class="bulk-v4">
+          <section class="bulk-hero">
+            <small>Coach workspace</small>
+            <h1>Bulk add players</h1>
+            <p>Add up to 50 players. Every row uses one of the 15 canonical positions and the matching whole-number 1–10 assessment.</p>
+          </section>
+
+          <section class="bulk-toolbar">
+            <div><b id="rowCount">0 players</b><div style="font-size:11px;color:#64748b;margin-top:3px">Complete the position-specific assessment before import.</div></div>
+            <div class="bulk-buttons">
+              <button class="bulk-btn" id="addRow" type="button">Add row</button>
+              <button class="bulk-btn" id="addFive" type="button">Add 5 rows</button>
+              <button class="bulk-btn danger" id="clearRows" type="button">Clear</button>
+              <button class="bulk-btn primary" id="importPlayers" type="button">Import valid players</button>
+            </div>
+          </section>
+
+          <div class="bulk-table-wrap">
+            <table class="bulk-table">
+              <thead>
+                <tr>
+                  <th style="width:46px">#</th>
+                  <th>First name</th>
+                  <th>Last name</th>
+                  <th style="width:90px">Age group</th>
+                  <th style="width:180px">Position</th>
+                  <th style="width:90px">Foot</th>
+                  <th style="width:140px">Assessment</th>
+                  <th style="width:70px"></th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div id="message" class="bulk-message" aria-live="polite"></div>
+        </div>
+      </main>
+    </div>
   </div>
-</div>
-<div class="page-content bulk-import-shell">
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-  <div>
-    <h2 style="font-size:22px;font-weight:700">Bulk Player Import</h2>
-    <p class="bulk-import-note">Import a workbook, review and edit rows in the table, then submit. The template only contains the football profile fields shown below.</p>
+
+  <div class="bulk-modal" id="assessmentModal" aria-hidden="true">
+    <section class="bulk-dialog" role="dialog" aria-modal="true" aria-labelledby="assessmentTitle">
+      <header>
+        <div><h2 id="assessmentTitle">Player assessment</h2><div id="assessmentSubtitle" style="font-size:11px;color:#64748b;margin-top:4px"></div></div>
+        <button class="bulk-btn" id="closeAssessment" type="button">Close</button>
+      </header>
+      <div class="bulk-modal-body" id="assessmentBody"></div>
+      <footer>
+        <button class="bulk-btn" id="cancelAssessment" type="button">Cancel</button>
+        <button class="bulk-btn primary" id="saveAssessment" type="button">Save assessment</button>
+      </footer>
+    </section>
   </div>
-</div>
-<div class="assignment-toolbar" id="assignmentToolbar">
-  <div>
-    <label>Team</label>
-    <div id="teamNameLabel" style="font-size:15px;font-weight:800;color:#fff">Loading team...</div>
-    <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Players will be added to this team automatically.</div>
-  </div>
-  <div id="defaultCoachGroup" style="display:none">
-    <label>Default Assigned Coach</label>
-    <select id="defaultCoachSelect"><option value="">Loading coaches...</option></select>
-  </div>
-  <div class="bulk-action-group">
-    <input class="bulk-file-input" id="bulkFileInput" type="file" accept=".xlsx,.xls,.csv">
-    <button class="btn btn-outline btn-sm" id="downloadTemplateBtn" type="button">Download Template</button>
-    <button class="btn btn-outline btn-sm" id="importFileBtn" type="button">Import Excel/CSV</button>
-    <button class="btn btn-outline btn-sm" id="addRowBtn">+ Add Row</button>
-    <button class="btn btn-primary" id="submitAllBtn">Submit All Players</button>
-  </div>
-</div>
-<div class="form-error" id="formError" style="margin-bottom:12px"></div>
-<div class="form-success" id="formSuccess" style="margin-bottom:12px"></div>
-<div class="table-card bulk-import-card">
-  <div style="padding:10px 16px;background:rgba(29,158,117,0.05);border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)">
-    Scroll right to see all columns. Ratings are 1-10. Required fields marked *.
-  </div>
-  <div class="bulk-scroll-tools">
-    <button class="btn btn-outline btn-sm" id="scrollBulkLeft" type="button">&lt;</button>
-    <div class="bulk-top-scroll" id="bulkTopScroll"><div class="bulk-top-scroll-inner" id="bulkTopScrollInner"></div></div>
-    <button class="btn btn-outline btn-sm" id="scrollBulkRight" type="button">&gt;</button>
-  </div>
-  <div class="bulk-table-wrap">
-    <table class="bulk-table" id="bulkTable">
-      <thead><tr>
-        <th>#</th>
-        <th>First Name *</th><th>Last Name *</th><th>Age Group *</th>
-        <th>Position Group *</th><th>Specific Position</th>
-        <th class="coach-col">Assigned Coach</th>
-        <th>Foot</th><th>Height</th><th>Build</th>
-        <th>Pace (1-10)</th><th>Agility (1-10)</th><th>Strength (1-10)</th>
-        <th>Stamina (1-10)</th><th>Jumping (1-10)</th><th>Composure (1-10)</th>
-        <th>Shooting (1-10)</th><th>Passing (1-10)</th><th>Dribbling (1-10)</th>
-        <th>Defending (1-10)</th><th>Crossing (1-10)</th><th>Vision (1-10)</th>
-        <th>Positioning (1-10)</th><th>Heading (1-10)</th><th>Tackling (1-10)</th>
-        <th>Row Status</th>
-        <th></th>
-      </tr></thead>
-      <tbody id="bulkBody"></tbody>
-    </table>
-  </div>
-  <div class="bulk-bottom-actions"><button class="btn btn-outline btn-sm" id="addRowBtn2">+ Add Another Player</button><span class="hint">Use the scroll bar or arrow buttons to reach every attribute column.</span></div>
-</div>
-<div id="resultsBox" style="display:none;margin-top:20px"></div>
-</div>
-</div>
-</div>
-<div class="notif-panel" id="notifPanel">
-  <div class="notif-panel-header">
-    <h3>Notifications</h3>
-    <button id="closeNotifBtn" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer">x</button>
-  </div>
-  <div class="notif-list" id="notifList"></div>
-</div>
-<script src="../js/scout-nav.js"></script>
-<script src="../js/main.js"></script>
-<script src="../js/heap-analytics.js"></script>
-<script src="../js/coach-v2.js"></script>
-<script>
-function toggleNotifPanel(){document.getElementById("notifPanel").classList.toggle("open");}
-function logout(){logoutToLogin();}
 
-function initNav(){
-  if(typeof Auth==="undefined"||!Auth.isLoggedIn()){navigateClean("login.html");return;}
-  var t=Auth.type;
-  if(t!=="Coach"){navigateClean("login.html");return;}
-  var nav=document.getElementById("sidebarNav");
-  if(nav&&typeof buildScoutNav==="function"){
-    buildScoutNav("sidebarNav","Coach");
-    var nb=document.getElementById("navNotifBtn");
-    if(nb)nb.addEventListener("click",function(e){e.preventDefault();toggleNotifPanel();});
-  }
-  var u=Auth.user;
-  var uel=document.getElementById("sidebarUser");
-  if(uel&&u){
-    var ini=(u.firstName||"?")[0]+(u.lastName||"?")[0];
-    uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:var(--accent);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">'+ini.toUpperCase()+'</div><div><div class="user-name">'+u.firstName+" "+u.lastName+'</div><div class="user-role" style="color:var(--text-secondary);font-size:12px">Coach</div></div></div>';
-  }
-  if(typeof updateNotifBadge==="function")updateNotifBadge();
-}
-</script>
-<script>
-var POS_BY_GROUP={Goalkeeper:["GK"],Defender:["CB","LCB","RCB","LB","RB","LWB","RWB","SW"],Midfielder:["CDM","CM","LCM","RCM","CAM","LM","RM","B2B"],Forward:["ST","LS","RS","LW","RW","CF","SS"]};
-var HEIGHT_OPTS=["very_short","short","average","tall","very_tall"];
-var HEIGHT_LABELS={very_short:"Very Short (155-163cm)",short:"Short (163-170cm)",average:"Average (170-178cm)",tall:"Tall (178-185cm)",very_tall:"Very Tall (185cm+)"};
-var BUILD_OPTS=["very_slight","slight","lean","athletic","stocky","powerful","very_powerful"];
-var BUILD_LABELS={very_slight:"Very Slight (50-58kg)",slight:"Slight (58-65kg)",lean:"Lean (65-72kg)",athletic:"Athletic (72-80kg)",stocky:"Stocky (80-88kg)",powerful:"Powerful (88-96kg)",very_powerful:"Very Powerful (96kg+)"};
-var rowCount=0;
-var _coachProfile=null,_teamCoaches=[],_isSuperUser=false;
+  <script src="/frontend/js/scout-nav.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script src="/frontend/js/scoring-v4-client.js?v=20260731-10"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260731-10"></script>
+  <script src="/frontend/js/coach-v2.js"></script>
+  <script>
+    'use strict';
 
-function posOpts(g){
-  return(POS_BY_GROUP[g]||[]).map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
-}
-function coachOpts(selected){
-  return _teamCoaches.map(function(c){return'<option value="'+c.id+'"'+(selected===c.id?' selected':'')+'>'+(c.first_name||'')+' '+(c.last_name||'')+(c.is_super_user?' (Super user)':'')+'</option>';}).join("");
-}
-function ageGroupOpts(selected){
-  var groups=["U7","U8","U9","U10","U11","U12","U13","U14","U15","U16"];
-  return '<option value="">Select</option>'+groups.map(function(g){return'<option value="'+g+'"'+(selected===g?' selected':'')+'>'+g+'</option>';}).join("");
-}
+    (async function () {
+      if (!window.Auth || !Auth.isLoggedIn() || (Auth.type !== 'Coach' && Auth.type !== 'Stratex')) {
+        window.location.href = '/login';
+        return;
+      }
+      if (typeof window.buildScoutNav === 'function') buildScoutNav('sidebarNav', 'Coach');
 
-function addRow(prefill){
-  prefill=prefill||null;
-  rowCount++;
-  var n=rowCount;
-  var tr=document.createElement("tr");
-  tr.id="row-"+n;
-  tr.dataset.rowId=n;
-  var hn=HEIGHT_OPTS.map(function(h){return'<option value="'+h+'"'+(h==="average"?" selected":"")+'>'+HEIGHT_LABELS[h]+'</option>';}).join("");
-  var bn=BUILD_OPTS.map(function(b){return'<option value="'+b+'"'+(b==="athletic"?" selected":"")+'>'+BUILD_LABELS[b]+'</option>';}).join("");
-  var defaultCoach=document.getElementById("defaultCoachSelect");
-  var selectedCoach=defaultCoach&&defaultCoach.value?defaultCoach.value:(_coachProfile&&_coachProfile.id?_coachProfile.id:"");
-  tr.innerHTML='<td class="bulk-row-num">'+n+'</td>'+
-    '<td><input placeholder="First" data-f="firstName"></td>'+
-    '<td><input placeholder="Last" data-f="lastName"></td>'+
-    '<td><select data-f="ageGroup">'+ageGroupOpts()+'</select></td>'+
-    '<td><select data-f="positionGroup" data-row="'+n+'"><option value="">Select</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></td>'+
-    '<td><select data-f="specificPosition" id="specPos-'+n+'"><option value="">--</option></select></td>'+
-    '<td class="coach-col"><select data-f="assignedCoachId" class="row-coach-select">'+coachOpts(selectedCoach)+'</select></td>'+
-    '<td><select data-f="foot"><option>Right</option><option>Left</option><option>Both</option></select></td>'+
-    '<td><select data-f="heightCategory">'+hn+'</select></td>'+
-    '<td><select data-f="buildCategory">'+bn+'</select></td>'+
-    '<td><input type="number" data-f="pace" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="agility" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="strength" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="stamina" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="jumping" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="composure" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="shooting" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="passing" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="dribbling" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="defending" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="crossing" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="vision" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="positioning" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="heading" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><input type="number" data-f="tackling" min="1" max="10" step="0.5" placeholder="--"></td>'+
-    '<td><div class="bulk-row-status" data-row-status>Ready to edit</div></td>'+
-    '<td><button class="bulk-remove" data-remove="'+n+'">X</button></td>';
-  document.getElementById("bulkBody").appendChild(tr);
-  if(prefill)setRowData(tr,prefill);
-  validateRow(tr);
-  syncBulkScroll();
-}
+      var options = await ScoutLinkScoringV4.loadOptions();
+      var rows = [];
+      var editingId = null;
+      var counter = 0;
+      var tbody = document.getElementById('rows');
+      var modal = document.getElementById('assessmentModal');
+      var assessmentBody = document.getElementById('assessmentBody');
+      var message = document.getElementById('message');
 
-function syncBulkScroll(){
-  var wrap=document.querySelector(".bulk-table-wrap");
-  var top=document.getElementById("bulkTopScroll");
-  var inner=document.getElementById("bulkTopScrollInner");
-  var table=document.getElementById("bulkTable");
-  if(!wrap||!top||!inner||!table)return;
-  inner.style.width=table.scrollWidth+"px";
-}
+      function blankRow() {
+        counter += 1;
+        return {
+          id:'bulk-row-' + counter,
+          firstName:'',
+          lastName:'',
+          ageGroup:'',
+          position:'',
+          foot:'Right',
+          attributeRatings:{}
+        };
+      }
 
-function setStatus(tr,message,type){
-  var el=tr&&tr.querySelector("[data-row-status]");
-  if(!el)return;
-  el.textContent=message||"Ready to edit";
-  el.className="bulk-row-status"+(type?" is-"+type:"");
-}
+      function optionHtml(items, selected, placeholder) {
+        return '<option value="">' + placeholder + '</option>' +
+          items.map(function (item) {
+            var value = typeof item === 'string' ? item : item.code;
+            var label = typeof item === 'string' ? item : item.label + ' (' + item.code + ')';
+            return '<option value="' + value + '"' + (value === selected ? ' selected' : '') + '>' + label + '</option>';
+          }).join('');
+      }
 
-function setRowData(tr,data){
-  if(!tr||!data)return;
-  Object.keys(data).forEach(function(key){
-    var el=tr.querySelector('[data-f="'+key+'"]');
-    if(!el||data[key]===undefined||data[key]===null)return;
-    el.value=String(data[key]);
-    if(key==="positionGroup"){
-      var rowId=tr.dataset.rowId;
-      var sp=document.getElementById("specPos-"+rowId);
-      if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(data[key]);
-    }
-  });
-  if(data.specificPosition){
-    var pos=tr.querySelector('[data-f="specificPosition"]');
-    if(pos)pos.value=String(data.specificPosition).toUpperCase();
-  }
-}
+      function flatCount(row) {
+        return Object.keys(ScoutLinkScoringV4.flattenRatings(row.attributeRatings || {})).length;
+      }
 
-function normaliseHeader(value){
-  return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();
-}
+      function expectedCount(row) {
+        return row.position ? ScoutLinkScoringV4.attributesForPosition(row.position, options).length : 0;
+      }
 
-var BULK_FIELDS=[
-  "firstName","lastName","ageGroup","positionGroup","specificPosition","assignedCoachId","foot","heightCategory","buildCategory",
-  "pace","agility","strength","stamina","jumping","composure","shooting","passing","dribbling","defending","crossing","vision","positioning","heading","tackling"
-];
-var IMPORT_HEADER_MAP={
-  firstname:"firstName",first:"firstName",forename:"firstName",
-  lastname:"lastName",last:"lastName",surname:"lastName",
-  agegroup:"ageGroup",squadage:"ageGroup",
-  positiongroup:"positionGroup",group:"positionGroup",
-  specificposition:"specificPosition",position:"specificPosition",
-  assignedcoach:"assignedCoachId",coach:"assignedCoachId",assignedcoachid:"assignedCoachId",
-  foot:"foot",preferredfoot:"foot",
-  height:"heightCategory",heightcategory:"heightCategory",
-  build:"buildCategory",buildcategory:"buildCategory",
-  pace:"pace",agility:"agility",strength:"strength",stamina:"stamina",jumping:"jumping",composure:"composure",
-  shooting:"shooting",passing:"passing",dribbling:"dribbling",defending:"defending",crossing:"crossing",vision:"vision",positioning:"positioning",heading:"heading",tackling:"tackling"
-};
+      function syncInput(target) {
+        var row = rows.find(function (item) { return item.id === target.dataset.row; });
+        if (!row) return;
+        row[target.dataset.field] = target.value;
+        if (target.dataset.field === 'position') {
+          row.attributeRatings = {};
+        }
+        render();
+      }
 
-function normaliseImportValue(key,value){
-  var v=String(value==null?"":value).trim();
-  if(!v)return "";
-  if(key==="ageGroup"){
-    v=v.toUpperCase().replace(/\s+/g,"");
-    if(/^\d+$/.test(v))v="U"+v;
-  }
-  if(key==="positionGroup")v=v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
-  if(key==="specificPosition")v=v.toUpperCase();
-  if(key==="foot")v=v.charAt(0).toUpperCase()+v.slice(1).toLowerCase();
-  if(key==="heightCategory"){
-    var hv=v.toLowerCase();
-    var hm=HEIGHT_OPTS.find(function(opt){return hv.indexOf(opt.replace(/_/g," "))>=0||hv.indexOf(opt)>=0;});
-    return hm||hv.replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
-  }
-  if(key==="buildCategory"){
-    var bv=v.toLowerCase();
-    var bm=BUILD_OPTS.find(function(opt){return bv.indexOf(opt.replace(/_/g," "))>=0||bv.indexOf(opt)>=0;});
-    return bm||bv.replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
-  }
-  if(["pace","agility","strength","stamina","jumping","composure","shooting","passing","dribbling","defending","crossing","vision","positioning","heading","tackling"].indexOf(key)>=0){
-    var n=Number(v);
-    return isNaN(n)?"":Math.max(1,Math.min(10,n));
-  }
-  return v;
-}
+      function render() {
+        tbody.innerHTML = rows.map(function (row, index) {
+          var count = flatCount(row);
+          var expected = expectedCount(row);
+          var complete = expected > 0 && count === expected;
+          return '<tr>' +
+            '<td>' + (index + 1) + '</td>' +
+            '<td><input data-row="' + row.id + '" data-field="firstName" value="' + ScoutLinkScoringV4.esc(row.firstName) + '"></td>' +
+            '<td><input data-row="' + row.id + '" data-field="lastName" value="' + ScoutLinkScoringV4.esc(row.lastName) + '"></td>' +
+            '<td><select data-row="' + row.id + '" data-field="ageGroup">' + optionHtml(options.ageGroups, row.ageGroup, 'Age') + '</select></td>' +
+            '<td><select data-row="' + row.id + '" data-field="position">' + optionHtml(options.positions, row.position, 'Position') + '</select></td>' +
+            '<td><select data-row="' + row.id + '" data-field="foot">' +
+              ['Right','Left','Both'].map(function (foot) { return '<option' + (foot === row.foot ? ' selected' : '') + '>' + foot + '</option>'; }).join('') +
+            '</select></td>' +
+            '<td><button class="bulk-btn" type="button" data-assess="' + row.id + '"' + (!row.position ? ' disabled' : '') + '>Rate attributes</button>' +
+              '<div class="bulk-status ' + (complete ? 'complete' : 'missing') + '">' +
+                (row.position ? count + '/' + expected + (complete ? ' complete' : ' rated') : 'Select position') +
+              '</div></td>' +
+            '<td><button class="bulk-btn danger" type="button" data-remove="' + row.id + '">Remove</button></td>' +
+          '</tr>';
+        }).join('');
 
-function cleanImportRecord(raw){
-  var cleaned={};
-  Object.keys(raw||{}).forEach(function(header){
-    var key=IMPORT_HEADER_MAP[normaliseHeader(header)];
-    if(!key||BULK_FIELDS.indexOf(key)<0)return;
-    var val=normaliseImportValue(key,raw[header]);
-    if(val!==""&&val!==null&&val!==undefined)cleaned[key]=val;
-  });
-  return cleaned;
-}
+        tbody.querySelectorAll('[data-field]').forEach(function (input) {
+          input.addEventListener('change', function () { syncInput(input); });
+          input.addEventListener('input', function () {
+            if (input.tagName === 'INPUT') {
+              var row = rows.find(function (item) { return item.id === input.dataset.row; });
+              if (row) row[input.dataset.field] = input.value;
+            }
+          });
+        });
+        tbody.querySelectorAll('[data-remove]').forEach(function (button) {
+          button.addEventListener('click', function () {
+            rows = rows.filter(function (row) { return row.id !== button.dataset.remove; });
+            render();
+          });
+        });
+        tbody.querySelectorAll('[data-assess]').forEach(function (button) {
+          button.addEventListener('click', function () { openAssessment(button.dataset.assess); });
+        });
 
-function parseCsv(text){
-  var rows=String(text||"").split(/\r?\n/).filter(function(line){return line.trim();}).map(function(line){
-    var out=[],cur="",quoted=false;
-    for(var i=0;i<line.length;i++){
-      var ch=line[i];
-      if(ch==='"'&&line[i+1]==='"'){cur+='"';i++;continue;}
-      if(ch==='"'){quoted=!quoted;continue;}
-      if(ch===","&&!quoted){out.push(cur);cur="";continue;}
-      cur+=ch;
-    }
-    out.push(cur);
-    return out;
-  });
-  if(rows.length<2)return [];
-  var headers=rows.shift();
-  return rows.map(function(row){
-    var obj={};
-    headers.forEach(function(h,i){obj[h]=row[i]||"";});
-    return cleanImportRecord(obj);
-  }).filter(function(r){return Object.keys(r).length;});
-}
+        document.getElementById('rowCount').textContent = rows.length + ' player' + (rows.length === 1 ? '' : 's');
+      }
 
-function parseWorkbookRows(buffer,fileName){
-  if(/\.csv$/i.test(fileName||""))return parseCsv(buffer);
-  if(!window.XLSX)throw new Error("Excel parser is still loading. Please try again in a moment.");
-  var wb=window.XLSX.read(buffer,{type:"array"});
-  var sheet=wb.Sheets[wb.SheetNames[0]];
-  var rows=window.XLSX.utils.sheet_to_json(sheet,{defval:""});
-  return rows.map(cleanImportRecord).filter(function(r){return Object.keys(r).length;});
-}
+      function openAssessment(id) {
+        var row = rows.find(function (item) { return item.id === id; });
+        if (!row || !row.position) return;
+        editingId = id;
+        document.getElementById('assessmentTitle').textContent =
+          (row.firstName || 'New') + ' ' + (row.lastName || 'player');
+        document.getElementById('assessmentSubtitle').textContent =
+          ScoutLinkScoringV4.positionLabel(row.position, options) + ' · whole numbers 1–10';
+        ScoutLinkScoringV4.renderAssessment(assessmentBody, row.position, row.attributeRatings, options);
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
 
-function downloadTemplate(){
-  var headers=["First Name","Last Name","Age Group","Position Group","Specific Position","Foot","Height","Build","Pace","Agility","Strength","Stamina","Jumping","Composure","Shooting","Passing","Dribbling","Defending","Crossing","Vision","Positioning","Heading","Tackling"];
-  var sample=["Ethan","Cole","U16","Forward","ST","Right","average","athletic",8,8,7,8,7,8,8,7,8,5,6,7,8,7,5];
-  var csv=headers.join(",")+"\n"+sample.join(",")+"\n";
-  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");
-  a.href=url;
-  a.download="scoutlink-bulk-player-template.csv";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
+      function closeAssessment() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        editingId = null;
+      }
 
-function importRowsFromFile(file){
-  var err=document.getElementById("formError"),suc=document.getElementById("formSuccess");
-  err.classList.remove("show");suc.classList.remove("show");
-  if(!file)return;
-  var reader=new FileReader();
-  reader.onload=function(){
-    try{
-      var rows=/\.csv$/i.test(file.name)?parseWorkbookRows(String(reader.result||""),file.name):parseWorkbookRows(reader.result,file.name);
-      if(!rows.length){throw new Error("No usable player rows were found. Use the template columns and try again.");}
-      document.getElementById("bulkBody").innerHTML="";
-      rowCount=0;
-      rows.slice(0,50).forEach(function(row){addRow(row);});
-      suc.textContent=rows.length+" row"+(rows.length===1?"":"s")+" imported. Review the row status column, edit anything highlighted, then submit.";
-      suc.classList.add("show");
-      syncBulkScroll();
-    }catch(e){
-      err.textContent=e.message||"Could not import that file.";
-      err.classList.add("show");
-    }
-  };
-  reader.onerror=function(){
-    err.textContent="Could not read that file.";
-    err.classList.add("show");
-  };
-  if(/\.csv$/i.test(file.name))reader.readAsText(file);
-  else reader.readAsArrayBuffer(file);
-}
-
-function validateRow(tr){
-  var data=getRowData(tr);
-  var missing=[];
-  if(!data.firstName)missing.push("first name");
-  if(!data.lastName)missing.push("last name");
-  if(!data.ageGroup)missing.push("age group");
-  if(!data.positionGroup)missing.push("position group");
-  if(data.ageGroup&&!/^U(7|8|9|10|11|12|13|14|15|16)$/i.test(data.ageGroup))missing.push("valid U7-U16 age group");
-  if(data.positionGroup&&["Goalkeeper","Defender","Midfielder","Forward"].indexOf(data.positionGroup)<0)missing.push("valid position group");
-  if(missing.length){
-    setStatus(tr,"Check: "+missing.join(", "),"error");
-    return false;
-  }
-  setStatus(tr,"Ready to submit","ok");
-  return true;
-}
-</script>
-<script>
-function getRowData(tr){
-  var data={};
-  tr.querySelectorAll("[data-f]").forEach(function(el){
-    var v=el.value.trim();
-    if(v){
-      if(el.type==="number"){var n=Number(v);if(n>=1&&n<=10)data[el.dataset.f]=n;}
-      else{data[el.dataset.f]=v;}
-    }
-  });
-  if(data.positionGroup){
-    var sp=tr.querySelector("[data-f=specificPosition]");
-    data.positions=sp&&sp.value?[sp.value]:[];
-  }
-  return data;
-}
-
-function submitAll(){
-  var err=document.getElementById("formError"),suc=document.getElementById("formSuccess");
-  err.classList.remove("show");suc.classList.remove("show");
-  var rows=Array.from(document.getElementById("bulkBody").querySelectorAll("tr"));
-  if(!rows.length){err.textContent="Add at least one player.";err.classList.add("show");return;}
-  var invalidRows=rows.filter(function(row){return !validateRow(row);});
-  if(invalidRows.length){err.textContent="Fix the highlighted row status issues before submitting.";err.classList.add("show");return;}
-  var players=rows.map(getRowData);
-  if(!players.length){err.textContent="Fill in at least one player row.";err.classList.add("show");return;}
-  players.forEach(function(p){p.ageGroup=String(p.ageGroup||"").toUpperCase();});
-  var invalidAge=players.find(function(p){return !/^U(7|8|9|10|11|12|13|14|15|16)$/.test(p.ageGroup);});
-  if(invalidAge){err.textContent="Every player must have an Age Group from U7 to U16.";err.classList.add("show");return;}
-  if(_isSuperUser){
-    var defaultCoach=document.getElementById("defaultCoachSelect").value;
-    players=players.map(function(p){if(!p.assignedCoachId&&defaultCoach)p.assignedCoachId=defaultCoach;return p;});
-  }
-  var btn=document.getElementById("submitAllBtn");
-  btn.textContent="Submitting...";btn.disabled=true;
-  if(typeof api==="function"){
-    api("POST","/api/players/bulk",{players:players,assignedCoachId:_isSuperUser?document.getElementById("defaultCoachSelect").value:null}).then(function(res){
-      suc.textContent=res.message||"Import complete.";suc.classList.add("show");
-      rows.forEach(function(row){setStatus(row,"Submitted","ok");});
-      var rb=document.getElementById("resultsBox");rb.style.display="block";
-      rb.innerHTML='<div class="table-card"><div style="padding:20px">'+
-        '<p style="color:var(--accent);margin-bottom:12px;font-weight:600">'+(res.created?res.created.length:0)+' players added successfully.</p>'+
-        (res.errors&&res.errors.length?'<p style="color:#f85149">'+res.errors.length+' errors: '+res.errors.map(function(e){return(e.player||"Row")+"("+e.error+")";}).join(", ")+"</p>":"")+
-        '<a href="coach-my-players.html" class="btn btn-primary" style="margin-top:16px;display:inline-flex">View All Players</a></div></div>';
-      btn.textContent="Submit All Players";btn.disabled=false;
-    }).catch(function(e){
-      err.textContent=e.message||"Failed to submit.";err.classList.add("show");
-      btn.textContent="Submit All Players";btn.disabled=false;
-    });
-  }
-}
-
-function renderCoachSelectors(){
-  var def=document.getElementById("defaultCoachSelect");
-  if(def)def.innerHTML=coachOpts(def.value||(_coachProfile&&_coachProfile.id));
-  document.querySelectorAll(".row-coach-select").forEach(function(sel){
-    var selected=sel.value||def&&def.value||(_coachProfile&&_coachProfile.id);
-    sel.innerHTML=coachOpts(selected);
-  });
-}
-
-function loadCoachContext(){
-  if(typeof api!=="function")return Promise.resolve();
-  if(Auth.type!=="Coach"){
-    document.getElementById("teamNameLabel").textContent="Selected by Stratex";
-    return Promise.resolve();
-  }
-  return api("GET","/api/coaches/profile").then(function(d){
-    _coachProfile=d.coach||{};
-    _isSuperUser=!!_coachProfile.is_super_user;
-    document.body.classList.toggle("super-user",_isSuperUser);
-    document.getElementById("teamNameLabel").textContent=_coachProfile.team_name||"My Team";
-    _teamCoaches=[_coachProfile].filter(function(c){return c&&c.id;});
-    if(!_isSuperUser){
-      document.getElementById("defaultCoachGroup").style.display="none";
-      renderCoachSelectors();
-      return;
-    }
-    document.getElementById("defaultCoachGroup").style.display="block";
-    return api("GET","/api/coaches/team-coaches").then(function(r){
-      var seen={};
-      _teamCoaches=[_coachProfile].concat(r.coaches||r.data||[]).filter(function(c){
-        if(!c||!c.id||seen[c.id])return false;
-        seen[c.id]=true;
-        return true;
+      document.getElementById('saveAssessment').addEventListener('click', function () {
+        var row = rows.find(function (item) { return item.id === editingId; });
+        if (!row) return;
+        try {
+          row.attributeRatings = ScoutLinkScoringV4.collectAssessment(assessmentBody, row.position, options);
+          closeAssessment();
+          render();
+        } catch (error) {
+          window.alert(error.message);
+        }
       });
-      renderCoachSelectors();
-    }).catch(function(){
-      renderCoachSelectors();
-    });
-  }).catch(function(){
-    document.getElementById("teamNameLabel").textContent="My Team";
-  });
-}
+      document.getElementById('closeAssessment').addEventListener('click', closeAssessment);
+      document.getElementById('cancelAssessment').addEventListener('click', closeAssessment);
+      modal.addEventListener('click', function (event) { if (event.target === modal) closeAssessment(); });
 
-document.addEventListener("DOMContentLoaded",function(){
-  initNav();
-  loadCoachContext().finally(function(){addRow();addRow();addRow();});
-  document.getElementById("addRowBtn").addEventListener("click",function(){addRow();});
-  document.getElementById("addRowBtn2").addEventListener("click",function(){addRow();});
-  document.getElementById("submitAllBtn").addEventListener("click",submitAll);
-  document.getElementById("downloadTemplateBtn").addEventListener("click",downloadTemplate);
-  document.getElementById("importFileBtn").addEventListener("click",function(){document.getElementById("bulkFileInput").click();});
-  document.getElementById("bulkFileInput").addEventListener("change",function(e){importRowsFromFile(e.target.files&&e.target.files[0]);e.target.value="";});
-  var wrap=document.querySelector(".bulk-table-wrap");
-  var top=document.getElementById("bulkTopScroll");
-  if(wrap&&top){
-    var syncing=false;
-    top.addEventListener("scroll",function(){if(syncing)return;syncing=true;wrap.scrollLeft=top.scrollLeft;syncing=false;});
-    wrap.addEventListener("scroll",function(){if(syncing)return;syncing=true;top.scrollLeft=wrap.scrollLeft;syncing=false;});
-    document.getElementById("scrollBulkLeft").addEventListener("click",function(){wrap.scrollBy({left:-360,behavior:"smooth"});});
-    document.getElementById("scrollBulkRight").addEventListener("click",function(){wrap.scrollBy({left:360,behavior:"smooth"});});
-    window.addEventListener("resize",syncBulkScroll);
-  }
-  document.getElementById("notifToggle").addEventListener("click",toggleNotifPanel);
-  document.getElementById("closeNotifBtn").addEventListener("click",toggleNotifPanel);
-  document.getElementById("logoutBtn").addEventListener("click",logout);
-  document.getElementById("bulkBody").addEventListener("change",function(e){
-    if(e.target.dataset.f==="positionGroup"){
-      var row=e.target.closest("tr");
-      var rowId=row?row.dataset.rowId:null;
-      if(rowId){var sp=document.getElementById("specPos-"+rowId);if(sp)sp.innerHTML='<option value="">--</option>'+posOpts(e.target.value);}
-    }
-    if(e.target.closest("tr"))validateRow(e.target.closest("tr"));
-  });
-  document.getElementById("bulkBody").addEventListener("click",function(e){
-    if(e.target.dataset.remove){var row=document.getElementById("row-"+e.target.dataset.remove);if(row)row.remove();}
-  });
-});
-</script>
-<script src="../js/coach-bulk-import-v3.js"></script>
-</body></html>
+      document.getElementById('addRow').addEventListener('click', function () {
+        if (rows.length < 50) rows.push(blankRow());
+        render();
+      });
+      document.getElementById('addFive').addEventListener('click', function () {
+        for (var index = 0; index < 5 && rows.length < 50; index += 1) rows.push(blankRow());
+        render();
+      });
+      document.getElementById('clearRows').addEventListener('click', function () {
+        if (window.confirm('Clear every bulk-import row?')) {
+          rows = [];
+          render();
+        }
+      });
 
+      document.getElementById('importPlayers').addEventListener('click', async function () {
+        message.className = 'bulk-message';
+        message.style.display = 'none';
 
+        var valid = [];
+        var invalid = [];
+        rows.forEach(function (row, index) {
+          var complete = flatCount(row) === expectedCount(row) && expectedCount(row) > 0;
+          if (!row.firstName.trim() || !row.lastName.trim() || !row.ageGroup || !row.position || !complete) {
+            invalid.push(index + 1);
+            return;
+          }
+          valid.push({
+            firstName:row.firstName.trim(),
+            lastName:row.lastName.trim(),
+            ageGroup:row.ageGroup,
+            positionGroup:ScoutLinkScoringV4.groupForPosition(row.position),
+            specificPosition:row.position,
+            primaryPosition:row.position,
+            positions:[row.position],
+            foot:row.foot,
+            attributeRatings:row.attributeRatings,
+            attribute_rating_scale:'ten'
+          });
+        });
 
+        if (!valid.length) {
+          message.className = 'bulk-message error';
+          message.textContent = 'Complete at least one row, including every required position-specific attribute.';
+          return;
+        }
+
+        var button = document.getElementById('importPlayers');
+        button.disabled = true;
+        button.textContent = 'Importing…';
+        try {
+          var response = await window.api('POST', '/api/players/bulk', { players:valid });
+          message.className = response.errors && response.errors.length ? 'bulk-message error' : 'bulk-message success';
+          message.textContent = response.message +
+            (invalid.length ? ' Rows not submitted: ' + invalid.join(', ') + '.' : '');
+          rows = [];
+          render();
+        } catch (error) {
+          message.className = 'bulk-message error';
+          message.textContent = error.message || 'The bulk import failed.';
+        } finally {
+          button.disabled = false;
+          button.textContent = 'Import valid players';
+        }
+      });
+
+      for (var index = 0; index < 5; index += 1) rows.push(blankRow());
+      render();
+    }());
+  </script>
+</body>
+</html>
