@@ -1,4 +1,4 @@
-/* ScoutLink Scout workflow correction v1
+/* ScoutLink Scout workflow correction v1.3
    Functional UI for detailed predictions, player actions, pipeline decisions,
    comparison setup, exports and Scout setup. */
 
@@ -1311,3 +1311,194 @@
     width: calc(100vw - 24px);
   }
 }
+
+/* Exact Scout V10 interaction repair — 20260731.2 */
+#scoutExperienceApp {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.slwf-exact-select-control,
+.slwf-exact-input-control {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  min-height: 42px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  background: #fff !important;
+}
+
+.slwf-exact-select-control select,
+.slwf-exact-input-control input,
+.slwf-exact-field select,
+.slwf-exact-field input {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 38px 0 12px !important;
+  border: 1px solid #c8d6d0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #07150f !important;
+  font: inherit !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  appearance: auto !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.slwf-exact-input-control input,
+.slwf-exact-field input {
+  padding-right: 12px !important;
+  cursor: text !important;
+}
+
+.slwf-exact-select-control > i {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 1 !important;
+  color: #527065 !important;
+  font-style: normal !important;
+  pointer-events: none !important;
+}
+
+.slwf-exact-select-control select:focus,
+.slwf-exact-input-control input:focus,
+.slwf-exact-field select:focus,
+.slwf-exact-field input:focus {
+  outline: 3px solid rgba(8, 116, 91, .18) !important;
+  outline-offset: 1px !important;
+  border-color: #08745b !important;
+}
+
+.slwf-role-protected {
+  filter: blur(6px) !important;
+  opacity: .68 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+}
+
+.slwf-exact-prediction-fields,
+.slwf-exact-runner-grid,
+.slwf-exact-runner-fields {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.slwf-exact-runner-fields {
+  margin-top: 12px !important;
+}
+
+.slwf-exact-field {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  color: #3d554c !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+}
+
+.slwf-exact-prediction-runner {
+  margin-bottom: 16px !important;
+}
+
+.slwf-mobile-pipeline-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 9px !important;
+  align-items: end !important;
+  margin: -1px 0 12px !important;
+  padding: 12px !important;
+  border: 1px solid #d5e0dc !important;
+  border-top: 0 !important;
+  background: #f7faf8 !important;
+}
+
+.slwf-mobile-pipeline-actions label {
+  display: grid !important;
+  gap: 5px !important;
+  color: #466057 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+}
+
+.slwf-mobile-pipeline-actions select {
+  width: 100% !important;
+  min-height: 42px !important;
+  border: 1px solid #c8d6d0 !important;
+  background: #fff !important;
+  color: #07150f !important;
+  font: inherit !important;
+  pointer-events: auto !important;
+}
+
+.slv10-exact-root [hidden] {
+  display: none !important;
+}
+
+.slv10-exact-root .bar-row em {
+  max-width: 100% !important;
+  transition: width .18s ease !important;
+}
+
+@media (max-width: 767px) {
+  .slwf-exact-prediction-fields,
+  .slwf-exact-runner-grid,
+  .slwf-exact-runner-fields,
+  .slwf-mobile-pipeline-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .slwf-exact-select-control select,
+  .slwf-exact-input-control input,
+  .slwf-exact-field select,
+  .slwf-exact-field input {
+    min-height: 48px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* V1.3 exact Scout host and 1–10 attribute safeguards. */
+#scoutExperienceApp,
+[data-scout-experience-app] {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:host {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.slv10-exact-root .bar-row > i {
+  overflow: hidden !important;
+}
+
+.slv10-exact-root .bar-row > i > em {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.slv10-exact-root select,
+.slv10-exact-root input,
+.slv10-exact-root textarea,
+.slv10-exact-root button {
+  pointer-events: auto;
+}
+
