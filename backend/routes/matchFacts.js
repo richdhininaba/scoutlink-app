@@ -1,260 +1,322 @@
 'use strict';
+
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
-const { computeOverall, grassrootsTransferValue, calculateOverallBreakdown, calculatePositionRatings, calculateValueAnalysis } = require('../engines/compatibility');
+const engines = require('../engines');
+const scoringService = require('../services/playerScoringService');
 
-// Helper: determine position group from formation slot key
-function posGroupFromSlot(key) {
-  const k = (key || '').toUpperCase();
-  if (k === 'GK') return 'Goalkeeper';
-  if (k.includes('CB') || k.includes('LB') || k.includes('RB') || k.includes('WB')) return 'Defender';
-  if (k.includes('CM') || k.includes('DM') || k.includes('AM') || k.includes('LM') || k.includes('RM')) return 'Midfielder';
-  return 'Forward';
+function requestError(message, status = 400) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
-// Helper: recalculate and save overall_rating and transfer_value
-async function recalcPlayer(playerId) {
-  try {
-    const { data: p } = await supabase.from('players').select('*').eq('id', playerId).single();
-    if (!p) return;
-    const { data: facts } = await supabase.from('match_facts').select('*').eq('player_id', playerId).order('match_date', { ascending: false }).limit(20);
-    const overallBreakdown = calculateOverallBreakdown(p, facts || []);
-    const positionRatings = calculatePositionRatings(p, facts || []);
-    const valueAnalysis = calculateValueAnalysis(p, facts || []);
-    const overall100 = computeOverall(p, facts || []);
-    const tvData = grassrootsTransferValue ? grassrootsTransferValue({ ...p, overall_rating: overall100 }, facts || []) : { value: valueAnalysis.value };
-    await supabase.from('players').update({
-      overall_rating: Math.round(overall100),
-      transfer_value: tvData.value || valueAnalysis.value || 0,
-      overall_breakdown: overallBreakdown,
-      position_ratings: positionRatings,
-      value_analysis: valueAnalysis,
-      scoring_version: 'v3'
-    }).eq('id', playerId);
-  } catch(e) { console.error('[recalcPlayer]', playerId, e.message); }
+function wholeRating(value, label) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 1 || number > 10) {
+    throw requestError(`${label} must be a whole number from 1 to 10 or Not observed.`);
+  }
+  return number;
 }
 
-// Helper: update aggregate stats for a player from all their match facts
+function flattenRatings(value, output = {}) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return output;
+  Object.entries(value).forEach(([key, child]) => {
+    if (child && typeof child === 'object' && !Array.isArray(child)) {
+      flattenRatings(child, output);
+    } else {
+      output[key] = child;
+    }
+  });
+  return output;
+}
+
+function normaliseMatchRatings(player, raw) {
+  const position = engines.utils.getPrimaryPosition(player);
+  const group = engines.utils.getPositionGroup(position);
+  const allowed = new Set(engines.utils.attributesForGroup(group));
+  const flat = flattenRatings(raw || {});
+  const output = {};
+
+  Object.entries(flat).forEach(([key, value]) => {
+    if (!allowed.has(key)) {
+      throw requestError(`${key} is not valid for ${group || 'this player'}.`);
+    }
+    const rating = wholeRating(value, key);
+    if (rating !== null) output[key] = rating;
+  });
+  return output;
+}
+
+function formatName(value) {
+  const raw = String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+  const match = raw.match(/^(3|5|7|9|11)(?:v|x|-a-side)?(3|5|7|9|11)?$/);
+  if (!match) return null;
+  const first = match[1];
+  const second = match[2] || first;
+  return first === second ? `${first}v${second}` : null;
+}
+
+function positionFromSlot(key) {
+  const raw = String(key || '').toUpperCase().replace(/\d+$/g, '');
+  const aliases = { LAM:'AM', RAM:'AM', CAM:'AM' };
+  return engines.utils.normalisePosition(aliases[raw] || raw);
+}
+
+async function playerMap(ids) {
+  const unique = engines.utils.unique(ids.filter(Boolean));
+  if (!unique.length) return {};
+  const { data, error } = await supabase
+    .from('players')
+    .select('id,age_group,position_group,specific_position,primary_position,positions,attribute_ratings')
+    .in('id', unique);
+  if (error) throw error;
+  return Object.fromEntries((data || []).map(player => [String(player.id), player]));
+}
+
 async function updatePlayerStats(playerId) {
-  try {
-    const { data: facts } = await supabase.from('match_facts')
-      .select('goals,assists,yellow_cards,red_cards,clean_sheet')
-      .eq('player_id', playerId);
-    if (!facts || !facts.length) return;
-    const totals = facts.reduce((acc, f) => ({
-      appearances: acc.appearances + 1,
-      goals: acc.goals + (Number(f.goals) || 0),
-      assists: acc.assists + (Number(f.assists) || 0),
-      yellow_cards: acc.yellow_cards + (Number(f.yellow_cards) || 0),
-      red_cards: acc.red_cards + (Number(f.red_cards) || 0),
-      clean_sheets: acc.clean_sheets + (f.clean_sheet ? 1 : 0)
-    }), { appearances: 0, goals: 0, assists: 0, yellow_cards: 0, red_cards: 0, clean_sheets: 0 });
-    await supabase.from('players').update(totals).eq('id', playerId);
-  } catch(e) { console.error('[updatePlayerStats]', e.message); }
+  const { data: facts, error } = await supabase
+    .from('match_facts')
+    .select('goals,assists,yellow_cards,red_cards,clean_sheet')
+    .eq('player_id', playerId);
+  if (error) throw error;
+
+  const totals = (facts || []).reduce((result, fact) => ({
+    appearances: result.appearances + 1,
+    goals: result.goals + (Number(fact.goals) || 0),
+    assists: result.assists + (Number(fact.assists) || 0),
+    yellow_cards: result.yellow_cards + (Number(fact.yellow_cards) || 0),
+    red_cards: result.red_cards + (Number(fact.red_cards) || 0),
+    clean_sheets: result.clean_sheets + (fact.clean_sheet ? 1 : 0)
+  }), {
+    appearances:0,
+    goals:0,
+    assists:0,
+    yellow_cards:0,
+    red_cards:0,
+    clean_sheets:0
+  });
+
+  const { error: updateError } = await supabase
+    .from('players')
+    .update(totals)
+    .eq('id', playerId);
+  if (updateError) throw updateError;
 }
 
-// GET /api/match-facts
+async function coachTeam(req, requestedTeamId) {
+  if (req.user.accountType !== 'Coach') return requestedTeamId || null;
+  const { data, error } = await supabase
+    .from('coaches')
+    .select('team_id')
+    .eq('id', req.user.id)
+    .single();
+  if (error || !data) throw requestError('Coach not found.', 404);
+  if (requestedTeamId && data.team_id && requestedTeamId !== data.team_id) {
+    throw requestError('The match must belong to your team.', 403);
+  }
+  return data.team_id || requestedTeamId || null;
+}
+
+async function fixtureContext(fixtureId, teamId) {
+  if (!fixtureId) return null;
+  const { data, error } = await supabase
+    .from('fixtures')
+    .select('*')
+    .eq('id', fixtureId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw requestError('Fixture not found.', 404);
+  if (teamId && data.team_id && data.team_id !== teamId) {
+    throw requestError('Fixture is not linked to your team.', 403);
+  }
+  return data;
+}
+
+function matchResult(homeScore, awayScore) {
+  if (homeScore === undefined || awayScore === undefined) return null;
+  const home = Number(homeScore);
+  const away = Number(awayScore);
+  return home > away ? 'win' : home < away ? 'loss' : 'draw';
+}
+
+function cleanSheetFor(player, requested, awayScore, playerPositions) {
+  if (requested !== undefined) return Boolean(requested);
+  if (Number(awayScore) !== 0) return false;
+
+  const slot = Object.keys(playerPositions || {}).find(key => {
+    return String(playerPositions[key]) === String(player.id);
+  });
+  const position = positionFromSlot(slot) || engines.utils.getPrimaryPosition(player);
+  const group = engines.utils.getPositionGroup(position);
+  return group === 'Goalkeeper' || group === 'Defender';
+}
+
+function playerRecord(input, player, context) {
+  const ratingsSource = input.attributeRatings || input.attribute_ratings ||
+    input.ratings || {};
+  const ratings = normaliseMatchRatings(player, ratingsSource);
+  const performance = wholeRating(
+    input.performanceScore ?? input.overallPerformance ?? input.overall_performance,
+    'Overall match performance'
+  );
+  const slot = Object.keys(context.playerPositions || {}).find(key => {
+    return String(context.playerPositions[key]) === String(player.id);
+  });
+  const played = engines.utils.normalisePosition(
+    input.positionPlayed || input.position_played || positionFromSlot(slot) ||
+    engines.utils.getPrimaryPosition(player)
+  );
+
+  return {
+    player_id: player.id,
+    team_id: context.teamId,
+    coach_id: context.coachId,
+    fixture_id: context.fixtureId,
+    match_date: context.matchDate,
+    opponent: context.opponent,
+    format: context.formatValue,
+    match_format: context.matchFormat,
+    formation: context.formation,
+    formation_played: context.formation,
+    mode: context.mode,
+    home_score: context.homeScore,
+    away_score: context.awayScore,
+    result: context.result,
+    goals: Number(input.goals || 0),
+    assists: Number(input.assists || 0),
+    yellow_cards: Number(input.yellowCards ?? input.yellow_cards ?? 0),
+    red_cards: Number(input.redCards ?? input.red_cards ?? 0),
+    clean_sheet: cleanSheetFor(player, input.cleanSheet ?? input.clean_sheet, context.awayScore, context.playerPositions),
+    minutes_played: input.minutesPlayed ?? input.minutes_played ?? null,
+    performance_score: performance,
+    coach_notes: input.notes || context.coachNotes || null,
+    events: context.events,
+    player_positions: context.playerPositions,
+    position_played: played,
+    attribute_ratings: ratings,
+    ratings,
+    rating_scale: 'ten',
+    assessment_version: engines.config.ATTRIBUTE_RUBRIC_VERSION,
+    rubric_version: engines.config.ATTRIBUTE_RUBRIC_VERSION,
+    source_type: 'coach_match_fact',
+    evidence_source: 'coach_match_fact',
+    confirmed: context.confirmed,
+    scoring_version: engines.config.SCORING_VERSION
+  };
+}
+
 router.get('/', requireAuth, requireRole('Coach','Stratex','Scout','Player'), async (req, res) => {
   try {
     const { playerId, coachId, teamId, limit = 20 } = req.query;
-    let q = supabase.from('match_facts').select('*', { count: 'exact' });
-    if (playerId) q = q.eq('player_id', playerId);
-    else if (coachId) q = q.eq('coach_id', coachId);
-    else if (teamId) q = q.eq('team_id', teamId);
-    else if (req.user.accountType === 'Player') q = q.eq('player_id', req.user.id);
-    else if (req.user.accountType === 'Coach') q = q.eq('coach_id', req.user.id);
-    q = q.order('match_date', { ascending: false }).limit(Number(limit));
-    const { data, error, count } = await q;
+    let query = supabase.from('match_facts').select('*', { count:'exact' });
+
+    if (playerId) query = query.eq('player_id', playerId);
+    else if (coachId) query = query.eq('coach_id', coachId);
+    else if (teamId) query = query.eq('team_id', teamId);
+    else if (req.user.accountType === 'Player') query = query.eq('player_id', req.user.id);
+    else if (req.user.accountType === 'Coach') query = query.eq('coach_id', req.user.id);
+
+    const { data, error, count } = await query
+      .order('match_date', { ascending:false })
+      .limit(Math.max(1, Math.min(Number(limit) || 20, 100)));
     if (error) throw error;
-    res.json({ data: data || [], total: count || 0 });
-  } catch(err) { console.error('[MatchFacts GET]', err); res.status(500).json({ error: 'Internal server error' }); }
+    res.json({ data:data || [], total:count || 0 });
+  } catch (error) {
+    console.error('[Match facts GET]', error);
+    res.status(500).json({ error:'Internal server error' });
+  }
 });
 
-// POST /api/match-facts — supports multi-player submission (live and post-game)
 router.post('/', requireAuth, requireRole('Coach','Stratex'), async (req, res) => {
   try {
-    const {
-      teamId, coachId, fixtureId, matchDate, opponent, format, formation, mode,
-      homeScore, awayScore,
-      // Single-player legacy fields
-      playerId,
-      goals = 0, assists = 0, yellowCards = 0, redCards = 0, cleanSheet = false,
-      coachNotes, positionPlayed,
-      pace, agility, strength, stamina, jumping, composure,
-      shooting, passing, dribbling, defending, crossing,
-      vision, positioning, heading, tackling,
-      // Multi-player
-      players: playersList,
-      // Live mode
-      events, playerPositions, confirmed = false
-    } = req.body;
+    const body = req.body || {};
+    const teamId = await coachTeam(req, body.teamId || body.team_id || null);
+    const fixture = await fixtureContext(body.fixtureId || body.fixture_id || null, teamId);
+    const playersInput = Array.isArray(body.players) && body.players.length
+      ? body.players
+      : body.playerId || body.player_id
+        ? [{ ...body, playerId:body.playerId || body.player_id }]
+        : [];
 
-    // Determine result
-    let result = null;
-    if (homeScore !== undefined && awayScore !== undefined) {
-      const home = Number(homeScore), away = Number(awayScore);
-      result = home > away ? 'win' : home < away ? 'loss' : 'draw';
-    }
+    if (!playersInput.length) throw requestError('At least one player is required.');
 
-    const effectiveCoachId = coachId || (req.user.accountType === 'Coach' ? req.user.id : null);
-    let effectiveTeamId = teamId || null;
-    let fixture = null;
+    const byId = await playerMap(playersInput.map(item => item.playerId || item.player_id));
+    const finalDate = body.matchDate || body.match_date ||
+      fixture?.fixture_date || new Date().toISOString().slice(0,10);
+    const finalOpponent = body.opponent || fixture?.opponent || null;
+    const rawFormat = body.format || body.matchFormat || body.match_format || fixture?.format || null;
+    const matchFormat = formatName(rawFormat) || (rawFormat ? `${String(rawFormat).replace(/\D/g, '')}v${String(rawFormat).replace(/\D/g, '')}` : null);
 
-    if (req.user.accountType === 'Coach') {
-      const { data: coach } = await supabase.from('coaches').select('team_id,team_name').eq('id', req.user.id).single();
-      if (!coach) return res.status(404).json({ error: 'Coach not found' });
-      if (!effectiveTeamId) effectiveTeamId = coach.team_id || null;
-    }
-
-    if (fixtureId) {
-      const { data: fx, error: fxErr } = await supabase.from('fixtures').select('*').eq('id', fixtureId).maybeSingle();
-      if (fxErr) throw fxErr;
-      if (!fx) return res.status(404).json({ error: 'Fixture not found' });
-      if (effectiveTeamId && fx.team_id && fx.team_id !== effectiveTeamId) return res.status(403).json({ error: 'Fixture is not linked to your team' });
-      fixture = fx;
-      if (!effectiveTeamId) effectiveTeamId = fx.team_id || null;
-    }
-
-    const finalMatchDate = matchDate || fixture?.fixture_date || new Date().toISOString().split('T')[0];
-    const finalOpponent = opponent || fixture?.opponent || null;
-    const finalFormat = format || fixture?.format || null;
-
-    const ratingKeys = ['pace','agility','strength','stamina','jumping','composure','shooting','passing','dribbling','defending','crossing','vision','positioning','heading','tackling'];
-    const perf100 = (value) => {
-      const n = Number(value);
-      if (!Number.isFinite(n)) return null;
-      return Math.max(0, Math.min(100, Math.round(n <= 10 ? n * 10 : n)));
+    const context = {
+      teamId,
+      coachId: body.coachId || body.coach_id ||
+        (req.user.accountType === 'Coach' ? req.user.id : null),
+      fixtureId: body.fixtureId || body.fixture_id || null,
+      matchDate: finalDate,
+      opponent: finalOpponent,
+      formatValue: rawFormat,
+      matchFormat,
+      formation: body.formation || null,
+      mode: body.mode || 'post',
+      homeScore: body.homeScore === undefined ? null : Number(body.homeScore),
+      awayScore: body.awayScore === undefined ? null : Number(body.awayScore),
+      result: matchResult(body.homeScore, body.awayScore),
+      events: Array.isArray(body.events) ? body.events : [],
+      playerPositions: body.playerPositions && typeof body.playerPositions === 'object'
+        ? body.playerPositions
+        : {},
+      coachNotes: body.coachNotes || body.coach_notes || null,
+      confirmed: Boolean(body.confirmed)
     };
 
-    // Parse playerPositions for clean sheet detection in live mode
-    const positionsMap = (playerPositions && typeof playerPositions === 'object') ? playerPositions : {};
+    const saved = [];
+    const errors = [];
 
-    // ---- MULTI-PLAYER SUBMISSION ----
-    if (Array.isArray(playersList) && playersList.length > 0) {
-      const results = [];
-      const errors = [];
-      for (const pp of playersList) {
-        if (!pp.playerId) continue;
-
-        // Extract ratings from player object
-        const ratings = {};
-        const ratingsObj = (pp.ratings && typeof pp.ratings === 'object') ? pp.ratings : {};
-        ratingKeys.forEach(k => {
-          if (pp[k] !== undefined && pp[k] !== null) ratings[k] = Number(pp[k]);
-          else if (ratingsObj[k] !== undefined) ratings[k] = Number(ratingsObj[k]);
-        });
-        const performanceScore = perf100(pp.performanceScore || pp.overallPerformance || pp.overall_performance || ratingsObj.overallPerformance || ratingsObj.overall_performance);
-
-        // Determine clean sheet
-        let cs = pp.cleanSheet !== undefined ? !!pp.cleanSheet : false;
-        if (!cs && awayScore !== undefined && Number(awayScore) === 0) {
-          // Check via player_positions slot key first
-          const slotKey = Object.keys(positionsMap).find(k => positionsMap[k] === pp.playerId);
-          if (slotKey) {
-            const pg = posGroupFromSlot(slotKey);
-            cs = (pg === 'Goalkeeper' || pg === 'Defender');
-          } else {
-            // Fall back to players table position_group
-            const { data: pl } = await supabase.from('players').select('position_group').eq('id', pp.playerId).maybeSingle();
-            if (pl && (pl.position_group === 'Goalkeeper' || pl.position_group === 'Defender')) cs = true;
-          }
-        }
-
-        const { data: mf, error: mfErr } = await supabase.from('match_facts').insert({
-          player_id: pp.playerId,
-          team_id: effectiveTeamId,
-          coach_id: effectiveCoachId,
-          fixture_id: fixtureId || null,
-          match_date: finalMatchDate,
-          opponent: finalOpponent,
-          format: finalFormat,
-          formation: formation || null,
-          mode: mode || 'post',
-          home_score: homeScore !== undefined ? Number(homeScore) : null,
-          away_score: awayScore !== undefined ? Number(awayScore) : null,
-          result,
-          goals: Number(pp.goals || 0),
-          assists: Number(pp.assists || 0),
-          yellow_cards: Number(pp.yellowCards || 0),
-          red_cards: Number(pp.redCards || 0),
-          clean_sheet: cs,
-          performance_score: performanceScore,
-          coach_notes: pp.notes || coachNotes || null,
-          events: events || [],
-          player_positions: playerPositions || {},
-          ratings: Object.keys(ratings).length ? ratings : {},
-          confirmed: !!confirmed,
-          ...ratings
-        }).select().single();
-
-        if (mfErr) {
-          console.error('[MatchFacts multi]', mfErr.message);
-          errors.push({ playerId: pp.playerId, error: mfErr.message });
-          continue;
-        }
-        await updatePlayerStats(pp.playerId);
-        if (Object.keys(ratings).length > 0) await recalcPlayer(pp.playerId);
-        results.push(mf);
+    for (const item of playersInput) {
+      const id = String(item.playerId || item.player_id || '');
+      const player = byId[id];
+      if (!player) {
+        errors.push({ playerId:id, error:'Player not found' });
+        continue;
       }
-      if (!results.length && errors.length) {
-        return res.status(400).json({ error: 'Could not save match facts', details: errors });
+
+      try {
+        const payload = playerRecord(item, player, context);
+        const { data, error } = await supabase
+          .from('match_facts')
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+
+        await updatePlayerStats(player.id);
+        const analysis = await scoringService.recalculatePlayer(player.id);
+        saved.push({ ...data, analysis });
+      } catch (error) {
+        errors.push({ playerId:player.id, error:error.message });
       }
-      return res.status(201).json({ message: 'Match facts saved for ' + results.length + ' players', matchFacts: results, errors });
     }
 
-    // ---- SINGLE PLAYER SUBMISSION (legacy) ----
-    if (!playerId) return res.status(400).json({ error: 'playerId required' });
+    if (!saved.length && errors.length) {
+      return res.status(400).json({ error:'Could not save match facts.', details:errors });
+    }
 
-    const ratings = {};
-    const body = req.body;
-    const ratingsObj = (body.ratings && typeof body.ratings === 'object') ? body.ratings : {};
-    ratingKeys.forEach(k => {
-      if (body[k] !== undefined && body[k] !== null) ratings[k] = Number(body[k]);
-      else if (ratingsObj[k] !== undefined) ratings[k] = Number(ratingsObj[k]);
+    res.status(201).json({
+      message:`Match facts saved for ${saved.length} player${saved.length === 1 ? '' : 's'}.`,
+      matchFacts:saved,
+      errors
     });
-    const performanceScore = perf100(body.performanceScore || body.overallPerformance || body.overall_performance || ratingsObj.overallPerformance || ratingsObj.overall_performance);
-
-    let cs = !!cleanSheet;
-    if (!cs && awayScore !== undefined && Number(awayScore) === 0) {
-      const { data: pl } = await supabase.from('players').select('position_group').eq('id', playerId).maybeSingle();
-      if (pl && (pl.position_group === 'Goalkeeper' || pl.position_group === 'Defender')) cs = true;
-    }
-
-    const { data, error } = await supabase.from('match_facts').insert({
-      player_id: playerId,
-      team_id: effectiveTeamId,
-      coach_id: effectiveCoachId,
-      fixture_id: fixtureId || null,
-      match_date: finalMatchDate,
-      opponent: finalOpponent,
-      format: finalFormat,
-      formation: formation || null,
-      mode: mode || 'post',
-      home_score: homeScore !== undefined ? Number(homeScore) : null,
-      away_score: awayScore !== undefined ? Number(awayScore) : null,
-      result,
-      goals: Number(goals),
-      assists: Number(assists),
-      yellow_cards: Number(yellowCards),
-      red_cards: Number(redCards),
-      clean_sheet: cs,
-      performance_score: performanceScore,
-      coach_notes: coachNotes || null,
-      events: events || [],
-      player_positions: playerPositions || {},
-      ratings: Object.keys(ratings).length ? ratings : {},
-      confirmed: !!confirmed,
-      ...ratings
-    }).select().single();
-    if (error) throw error;
-
-    await updatePlayerStats(playerId);
-    if (Object.keys(ratings).length > 0) await recalcPlayer(playerId);
-
-    res.status(201).json({ message: 'Match facts saved', matchFact: data });
-  } catch(err) { console.error('[MatchFacts POST]', err); res.status(500).json({ error: 'Internal server error' }); }
+  } catch (error) {
+    console.error('[Match facts POST]', error);
+    res.status(error.status || 500).json({
+      error:error.status ? error.message : 'Internal server error'
+    });
+  }
 });
 
 module.exports = router;
+module.exports.normaliseMatchRatings = normaliseMatchRatings;
