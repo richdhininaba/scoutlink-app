@@ -2,9 +2,10 @@
 
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260731-5';
-  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV5Script';
+  var ASSET_VERSION = '20260731-6';
+  var EXPERIENCE_SHELL_SCRIPT_ID = 'experienceShellV6Script';
   var PLAYER_INITIALS_SCRIPT_ID = 'playerInitialsV1Script';
+  var COACH_LAYOUT_CSS_ID = 'coachLayoutCoreV1Css';
   var SCOUT_CORE_CSS_ID = 'scoutExperienceCoreV2Css';
   var SCOUT_CORE_SCRIPT_ID = 'scoutExperienceCoreV2Script';
   var PREDICTION_CSS_ID = 'scoutPredictionOverlaysV2Css';
@@ -261,6 +262,30 @@
     );
   }
 
+
+  function isCoachRuntimeRoute() {
+    var routePath = String(
+      window.location.pathname || ''
+    ).toLowerCase();
+    var role = experienceRole();
+
+    return (
+      routePath.indexOf('/coach') === 0 ||
+      routePath.indexOf('coach-') > -1 ||
+      (
+        (
+          routePath.indexOf('/player/profile') === 0 ||
+          routePath.indexOf('player-profile') > -1 ||
+          routePath.indexOf('/admin') === 0 ||
+          routePath.indexOf('/company/admin') === 0 ||
+          routePath.indexOf('/stratex') === 0 ||
+          routePath.indexOf('stratex-') > -1
+        ) &&
+        role === 'coach'
+      )
+    );
+  }
+
   function isScoutRuntimeRoute() {
     var routePath = String(
       window.location.pathname || ''
@@ -345,6 +370,17 @@
     );
   }
 
+
+  function loadCoachLayout() {
+    if (!isCoachRuntimeRoute()) return;
+
+    loadStylesheet(
+      COACH_LAYOUT_CSS_ID,
+      '../css/coach-layout-core-v1.css',
+      '/frontend/css/coach-layout-core-v1.css'
+    );
+  }
+
   function loadScoutRuntime() {
     if (!isScoutRuntimeRoute()) return;
 
@@ -401,6 +437,7 @@
   function loadAll() {
     loadPlayerInitials();
     loadExperienceShell();
+    loadCoachLayout();
     loadScoutRuntime();
   }
 
