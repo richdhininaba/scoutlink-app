@@ -1,295 +1,230 @@
-﻿<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Add Player - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css">
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-.form-group{margin-bottom:14px}
-.form-group label{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#ffffff;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box}
-.form-group input:focus,.form-group select:focus{border-color:#1d9e75}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.form-row.cols-3{grid-template-columns:repeat(3,1fr)}
-.rating-input{text-align:center}
-.range-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
-.range-option{background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 8px 20px rgba(15,23,42,.04)}
-.range-option:hover,.range-option.active{border-color:#1d9e75;background:#ecfdf5}
-.range-label{font-size:12px;font-weight:700;color:#0f172a;margin-bottom:2px}
-.range-value{font-size:10px;color:#64748b}
-.required{color:#f44336}
-.form-error{color:#f44336;font-size:13px;padding:10px 14px;background:rgba(244,67,54,.1);border-radius:8px;display:none;margin-bottom:14px}
-.form-error.show{display:block}
-.form-success{color:#1d9e75;font-size:13px;padding:10px 14px;background:rgba(29,158,117,.1);border-radius:8px;display:none;margin-bottom:14px}
-.form-success.show{display:block}
-.info-btn{background:none;border:none;color:#8b949e;cursor:pointer;font-size:11px;padding:0 2px}
-@media(max-width:600px){.form-row,.form-row.cols-3{grid-template-columns:1fr}.range-grid{grid-template-columns:repeat(3,1fr)}}
-</style>
-<link rel="stylesheet" href="../css/coach-v2.css">
-<link rel="stylesheet" href="../css/coach-add-player-v3.css">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar">
-<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
-<div class="sidebar-nav" id="sidebarNav"></div>
-<div class="sidebar-user" id="sidebarUser"></div>
-</nav>
-<div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Add Player</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div style="max-width:800px">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Add Player - ScoutLink</title>
+  <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+  <link rel="stylesheet" href="/frontend/css/variables.css">
+  <link rel="stylesheet" href="/frontend/css/main.css">
+  <link rel="stylesheet" href="/frontend/css/coach-v2.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .v4-page{max-width:1080px;margin:0 auto}
+    .v4-hero{padding:22px 24px;background:#071d2d;color:#fff;margin-bottom:18px}
+    .v4-hero small{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#8bd8c2}
+    .v4-hero h1{margin:7px 0 4px;font-size:26px}
+    .v4-hero p{margin:0;color:#cfddd9;font-size:13px}
+    .v4-card{background:#fff;border:1px solid #dce5e9;margin-bottom:16px}
+    .v4-card>header{padding:15px 18px;border-bottom:1px solid #dce5e9}
+    .v4-card h2{margin:0;font-size:16px;color:#07141f}
+    .v4-card header p{margin:5px 0 0;color:#64748b;font-size:12px}
+    .v4-card-body{padding:18px}
+    .v4-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .v4-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .v4-field{display:grid;gap:6px}
+    .v4-field.full{grid-column:1/-1}
+    .v4-field span{font-size:11px;font-weight:800;color:#475569}
+    .v4-field input,.v4-field select{width:100%;min-height:44px;padding:0 12px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;font:inherit}
+    .v4-field input:focus,.v4-field select:focus{outline:3px solid rgba(15,159,117,.15);border-color:#0f9f75}
+    .v4-help{font-size:11px;color:#64748b}
+    .v4-actions{position:sticky;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border:1px solid #dce5e9;background:#fff}
+    .v4-message{font-size:13px;font-weight:700}
+    .v4-message.error{color:#b42335}
+    .v4-message.success{color:#08775e}
+    .v4-button{min-height:44px;padding:0 17px;border:1px solid #0f9f75;background:#0f9f75;color:#fff;font:inherit;font-weight:900;cursor:pointer}
+    .v4-button:disabled{opacity:.55;cursor:not-allowed}
+    .v4-button.secondary{background:#fff;color:#0f172a;border-color:#cbd5e1;text-decoration:none;display:inline-flex;align-items:center}
+    .v4-team-note{padding:12px;border-left:4px solid #0f9f75;background:#eefbf7;color:#31534a;font-size:12px}
+    @media(max-width:760px){.v4-grid,.v4-grid.three{grid-template-columns:1fr}.v4-actions{align-items:stretch;flex-direction:column}.v4-actions>div,.v4-button{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-logo"><a href="/coach/dashboard">Scout<span style="color:#1d9e75">Link</span></a></div>
+      <div class="sidebar-nav" id="sidebarNav"></div>
+      <div class="sidebar-user" id="sidebarUser"></div>
+    </nav>
 
-<div class="table-card" style="padding:24px;margin-bottom:20px">
-<h3 style="font-size:16px;font-weight:700;margin-bottom:18px">Personal Details</h3>
-<div class="form-row">
-<div class="form-group"><label>First Name <span class="required">*</span></label><input type="text" id="firstName" placeholder="First name"></div>
-<div class="form-group"><label>Last Name <span class="required">*</span></label><input type="text" id="lastName" placeholder="Last name"></div>
-</div>
-<div class="form-group"><label>Age Group <span class="required">*</span></label>
-<select id="ageGroup">
-<option value="">Select age group</option>
-<option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option>
-<option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option>
-</select>
-</div>
-</div>
+    <div class="dashboard-main">
+      <header class="topbar">
+        <span class="topbar-title">Add Player</span>
+        <div class="topbar-right">
+          <button class="notif-btn" type="button" onclick="window.location.href='/coach/notifications'">Notifications</button>
+        </div>
+      </header>
 
-<div class="table-card" style="padding:24px;margin-bottom:20px">
-<h3 style="font-size:16px;font-weight:700;margin-bottom:18px">Position</h3>
-<div class="form-row">
-<div class="form-group"><label>Position Group <span class="required">*</span></label>
-<select id="positionGroup"><option value="">Select group</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select>
-</div>
-<div class="form-group"><label>Specific Position</label><select id="specificPosition"><option value="">--</option></select></div>
-<div class="form-group"><label>Preferred Foot</label><select id="foot"><option>Right</option><option>Left</option><option>Both</option></select></div>
-</div>
-<div id="teamAssignmentInfo" style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;color:#8b949e;font-size:13px">Loading team assignment...</div>
-</div>
+      <main class="page-content">
+        <div class="v4-page">
+          <section class="v4-hero">
+            <small>Coach workspace</small>
+            <h1>Add a player</h1>
+            <p>Select the player’s exact position first. ScoutLink will then show only the attributes required for that position.</p>
+          </section>
 
-<div class="table-card" id="coachAssignmentCard" style="padding:24px;margin-bottom:20px;display:none">
-<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">Team Coach Assignment</h3>
-<div class="form-row">
-<div class="form-group"><label>Assigned Coach</label><select id="assignedCoachId"><option value="">Loading coaches...</option></select></div>
-<div class="form-group"><label>Team Coaches</label><a class="btn btn-outline" href="coach-settings.html#teamCoaches" style="width:100%;justify-content:center;text-decoration:none">Manage coaches</a></div>
-</div>
-</div>
+          <form id="addPlayerForm" novalidate>
+            <section class="v4-card">
+              <header><h2>Player details</h2><p>Player identity remains Coach-managed and uses initials across ScoutLink.</p></header>
+              <div class="v4-card-body">
+                <div class="v4-grid">
+                  <label class="v4-field"><span>First name *</span><input id="firstName" autocomplete="off" required></label>
+                  <label class="v4-field"><span>Last name *</span><input id="lastName" autocomplete="off" required></label>
+                  <label class="v4-field"><span>Age group *</span><select id="ageGroup" required></select></label>
+                  <label class="v4-field"><span>Preferred foot</span>
+                    <select id="foot"><option>Right</option><option>Left</option><option>Both</option></select>
+                  </label>
+                </div>
+              </div>
+            </section>
 
-<div class="table-card" style="padding:24px;margin-bottom:20px">
-<h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Physical Profile</h3>
-<p style="color:#8b949e;font-size:13px;margin-bottom:18px">Select ranges that best describe the player.</p>
-<div class="form-group"><label>Height</label>
-<div class="range-grid">
-<div class="range-option" data-value="very_short"><div class="range-label">Very Short</div><div class="range-value">155-163 cm</div></div>
-<div class="range-option" data-value="short"><div class="range-label">Short</div><div class="range-value">163-170 cm</div></div>
-<div class="range-option active" data-value="average"><div class="range-label">Average</div><div class="range-value">170-178 cm</div></div>
-<div class="range-option" data-value="tall"><div class="range-label">Tall</div><div class="range-value">178-185 cm</div></div>
-<div class="range-option" data-value="very_tall"><div class="range-label">Very Tall</div><div class="range-value">185+ cm</div></div>
-</div><input type="hidden" id="heightCategory" value="average">
-</div>
-<div class="form-group" style="margin-top:12px"><label>Build</label>
-<div class="range-grid" style="grid-template-columns:repeat(4,1fr)">
-<div class="range-option" data-value="very_slight"><div class="range-label">Very Slight</div><div class="range-value">50-58 kg</div></div>
-<div class="range-option" data-value="slight"><div class="range-label">Slight</div><div class="range-value">58-65 kg</div></div>
-<div class="range-option" data-value="lean"><div class="range-label">Lean</div><div class="range-value">65-72 kg</div></div>
-<div class="range-option active" data-value="athletic"><div class="range-label">Athletic</div><div class="range-value">72-80 kg</div></div>
-<div class="range-option" data-value="stocky"><div class="range-label">Stocky</div><div class="range-value">80-88 kg</div></div>
-<div class="range-option" data-value="powerful"><div class="range-label">Powerful</div><div class="range-value">88-96 kg</div></div>
-<div class="range-option" data-value="very_powerful"><div class="range-label">Very Powerful</div><div class="range-value">96+ kg</div></div>
-</div><input type="hidden" id="buildCategory" value="athletic">
-</div>
-</div>
+            <section class="v4-card">
+              <header><h2>Position</h2><p>Only the canonical 15 ScoutLink positions are available.</p></header>
+              <div class="v4-card-body">
+                <div class="v4-grid">
+                  <label class="v4-field"><span>Position group *</span><select id="positionGroup" required></select></label>
+                  <label class="v4-field"><span>Exact position *</span><select id="specificPosition" required disabled><option value="">Select group first</option></select></label>
+                </div>
+              </div>
+            </section>
 
-<div class="table-card" style="padding:24px;margin-bottom:20px">
-<h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Attribute Ratings <span style="font-size:13px;font-weight:400;color:#8b949e">/ 10</span></h3>
-<p style="color:#8b949e;font-size:13px;margin-bottom:18px">Rate 1-10. Leave blank if unknown. 1=very poor, 5=average, 10=exceptional.</p>
-<div id="universalMetrics">
-<div class="form-row cols-3">
-<div class="form-group"><label>Pace</label><input type="number" id="pace" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Agility</label><input type="number" id="agility" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Strength</label><input type="number" id="strength" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Stamina</label><input type="number" id="stamina" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Jumping</label><input type="number" id="jumping" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Composure</label><input type="number" id="composure" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-</div>
-</div>
-<div id="outfieldMetrics">
-<div class="form-row cols-3">
-<div class="form-group"><label>Shooting</label><input type="number" id="shooting" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Passing</label><input type="number" id="passing" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Dribbling</label><input type="number" id="dribbling" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Defending</label><input type="number" id="defending" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Crossing</label><input type="number" id="crossing" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Vision</label><input type="number" id="vision" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Positioning</label><input type="number" id="positioning" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Heading</label><input type="number" id="heading" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Tackling</label><input type="number" id="tackling" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-</div>
-</div>
-<div id="gkMetrics" style="display:none">
-<p style="color:#1d9e75;font-size:13px;font-weight:700;margin-bottom:14px">Goalkeeper Specific Ratings</p>
-<div class="form-row cols-3">
-<div class="form-group"><label>Diving</label><input type="number" id="gkDiving" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Reflexes</label><input type="number" id="gkReflexes" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Handling</label><input type="number" id="gkHandling" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Kicking</label><input type="number" id="gkKicking" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>GK Positioning</label><input type="number" id="gkPositioning" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Distribution</label><input type="number" id="gkDistribution" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Communication</label><input type="number" id="gkCommunication" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-<div class="form-group"><label>Sweeping</label><input type="number" id="gkSweeping" min="1" max="10" step="0.5" placeholder="--" class="rating-input"></div>
-</div>
-</div>
-</div>
+            <section class="v4-card">
+              <header><h2>Physical profile</h2><p>Use ranges rather than exact measurements.</p></header>
+              <div class="v4-card-body">
+                <div class="v4-grid">
+                  <label class="v4-field"><span>Height profile</span>
+                    <select id="heightCategory">
+                      <option value="very_short">Very short · 155–163 cm</option>
+                      <option value="short">Short · 163–170 cm</option>
+                      <option value="average" selected>Average · 170–178 cm</option>
+                      <option value="tall">Tall · 178–185 cm</option>
+                      <option value="very_tall">Very tall · 185+ cm</option>
+                    </select>
+                  </label>
+                  <label class="v4-field"><span>Build profile</span>
+                    <select id="buildCategory">
+                      <option value="very_slight">Very slight · 50–58 kg</option>
+                      <option value="slight">Slight · 58–65 kg</option>
+                      <option value="lean">Lean · 65–72 kg</option>
+                      <option value="athletic" selected>Athletic · 72–80 kg</option>
+                      <option value="stocky">Stocky · 80–88 kg</option>
+                      <option value="powerful">Powerful · 88–96 kg</option>
+                      <option value="very_powerful">Very powerful · 96+ kg</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </section>
 
-<div class="form-error" id="formError"></div>
-<div class="form-success" id="formSuccess"></div>
-<button class="btn btn-primary" style="width:100%;padding:14px;font-size:16px" id="submitBtn">Add Player &amp; Calculate Rating</button>
-</div>
-</div>
-</div>
-</div>
+            <section class="v4-card">
+              <header><h2>Position-specific assessment</h2><p>Ratings must be whole numbers from 1 to 10. Leave an attribute as Not observed rather than guessing.</p></header>
+              <div class="v4-card-body" id="attributeAssessment">
+                <div class="sl-v4-empty">Select the player position to load the correct attributes.</div>
+              </div>
+            </section>
 
-<script src="../js/scout-nav.js"></script>
-<script src="../js/main.js"></script>
-<script src="../js/heap-analytics.js"></script>
-<script src="../js/coach-v2.js"></script>
-<script>
-var POS_BY_GROUP={
-  Goalkeeper:['GK'],
-  Defender:['CB','LCB','RCB','LB','RB','LWB','RWB','SW'],
-  Midfielder:['CDM','CM','LCM','RCM','LDM','RDM','LM','RM','CAM','LAM','RAM','B2B'],
-  Forward:['ST','LS','RS','LW','RW','CF','SS']
-};
-var coachContext={coach:null,teamCoaches:[]};
+            <div class="v4-actions">
+              <div id="formMessage" class="v4-message" aria-live="polite"></div>
+              <div style="display:flex;gap:9px">
+                <a class="v4-button secondary" href="/coach/my-players">Cancel</a>
+                <button class="v4-button" id="submitButton" type="submit">Add player and calculate rating</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
 
-function initNav(){
-  if(!Auth.isLoggedIn()){navigateClean('login.html');return;}
-  var t=Auth.type;
-  if(t!=='Coach'&&t!=='Stratex'){navigateClean('login.html');return;}
-  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav',t);
-  var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">'+t+'</div></div></div>';
-  updateNotifBadge();
-}
-function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+  <script src="/frontend/js/scout-nav.js"></script>
+  <script src="/frontend/js/main.js"></script>
+  <script src="/frontend/js/scoring-v4-client.js?v=20260731-10"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260731-10"></script>
+  <script src="/frontend/js/coach-v2.js"></script>
+  <script>
+    'use strict';
 
-async function loadCoachContext(){
-  if(Auth.type!=='Coach')return;
-  try{
-    var profile=await api('GET','/api/coaches/profile');
-    coachContext.coach=profile.coach||null;
-    var teamName=coachContext.coach&&coachContext.coach.team_name?coachContext.coach.team_name:'your team';
-    document.getElementById('teamAssignmentInfo').innerHTML='Players you add will be assigned to <b style="color:#e6edf3">'+teamName+'</b>.';
-    if(coachContext.coach&&coachContext.coach.is_super_user){
-      var teamRes=await api('GET','/api/coaches/team-coaches');
-      coachContext.teamCoaches=[coachContext.coach].concat(teamRes.coaches||teamRes.data||[]);
-      renderCoachDropdown();
-      document.getElementById('coachAssignmentCard').style.display='block';
-    }
-  }catch(e){
-    document.getElementById('teamAssignmentInfo').textContent='Could not load your team assignment: '+e.message;
-  }
-}
+    (async function () {
+      if (!window.Auth || !Auth.isLoggedIn() || (Auth.type !== 'Coach' && Auth.type !== 'Stratex')) {
+        window.location.href = '/login';
+        return;
+      }
 
-function renderCoachDropdown(){
-  var sel=document.getElementById('assignedCoachId');
-  sel.innerHTML=coachContext.teamCoaches.map(function(c){
-    return '<option value="'+c.id+'"'+(coachContext.coach&&c.id===coachContext.coach.id?' selected':'')+'>'+(c.first_name||'')+' '+(c.last_name||'')+(c.is_super_user?' (Super user)':'')+'</option>';
-  }).join('');
-}
+      if (typeof window.buildScoutNav === 'function') {
+        buildScoutNav('sidebarNav', 'Coach');
+      }
 
-function selectRange(el,hiddenId){
-  var parent=el.closest('.range-grid');
-  parent.querySelectorAll('.range-option').forEach(function(o){o.classList.remove('active');});
-  el.classList.add('active');
-  document.getElementById(hiddenId).value=el.getAttribute('data-value');
-}
+      var options = await ScoutLinkScoringV4.loadOptions();
+      var group = document.getElementById('positionGroup');
+      var position = document.getElementById('specificPosition');
+      var age = document.getElementById('ageGroup');
+      var assessment = document.getElementById('attributeAssessment');
+      var message = document.getElementById('formMessage');
+      var submit = document.getElementById('submitButton');
 
-function updateSpecPos(){
-  var g=document.getElementById('positionGroup').value;
-  var sp=document.getElementById('specificPosition');
-  sp.innerHTML='<option value="">--</option>'+(POS_BY_GROUP[g]||[]).map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join('');
-  document.getElementById('gkMetrics').style.display=g==='Goalkeeper'?'block':'none';
-  document.getElementById('outfieldMetrics').style.display=g==='Goalkeeper'?'none':'block';
-}
+      age.innerHTML = '<option value="">Select age group</option>' +
+        options.ageGroups.map(function (item) {
+          return '<option value="' + item + '">' + item + '</option>';
+        }).join('');
 
-function gv(id){var el=document.getElementById(id);return el?el.value:'';}
-function nv(id){var v=gv(id);return(v&&v!=='')?Number(v):null;}
+      ScoutLinkScoringV4.renderGroupOptions(group, '');
 
-function submitPlayer(){
-  var err=document.getElementById('formError');
-  var suc=document.getElementById('formSuccess');
-  err.className='form-error';suc.className='form-success';
-  if(!gv('firstName')||!gv('lastName')){err.textContent='First Name and Last Name required.';err.className='form-error show';return;}
-  if(!gv('ageGroup')){err.textContent='Please select an Age Group from U7 to U16.';err.className='form-error show';return;}
-  if(!gv('positionGroup')){err.textContent='Please select a position group.';err.className='form-error show';return;}
-  var pg=gv('positionGroup');
-  var sp=gv('specificPosition')||null;
-  var body={
-    firstName:gv('firstName').trim(),lastName:gv('lastName').trim(),
-    ageGroup:gv('ageGroup'),
-    positionGroup:pg,specificPosition:sp,
-    positions:sp?[sp]:[],foot:gv('foot'),
-    heightCategory:gv('heightCategory'),buildCategory:gv('buildCategory'),
-    assignedCoachId:gv('assignedCoachId')||null,
-    pace:nv('pace'),agility:nv('agility'),strength:nv('strength'),
-    stamina:nv('stamina'),jumping:nv('jumping'),composure:nv('composure'),
-  };
-  if(pg!=='Goalkeeper'){
-    Object.assign(body,{
-      shooting:nv('shooting'),passing:nv('passing'),dribbling:nv('dribbling'),
-      defending:nv('defending'),crossing:nv('crossing'),vision:nv('vision'),
-      positioning:nv('positioning'),heading:nv('heading'),tackling:nv('tackling')
-    });
-  } else {
-    Object.assign(body,{
-      gkDiving:nv('gkDiving'),gkReflexes:nv('gkReflexes'),gkHandling:nv('gkHandling'),
-      gkKicking:nv('gkKicking'),gkPositioning:nv('gkPositioning'),
-      gkDistribution:nv('gkDistribution'),gkCommunication:nv('gkCommunication'),gkSweeping:nv('gkSweeping')
-    });
-  }
-  var btn=document.getElementById('submitBtn');
-  btn.textContent='Adding...';btn.disabled=true;
-  api('POST','/api/players',body).then(function(d){
-    var p=d.player;
-    suc.innerHTML='<strong>Added: '+(p.first_name||'')+' '+(p.last_name||'')+'</strong><br>Age group: '+(p.age_group||gv('ageGroup'))+'<br>Overall: '+ratingDisplay(p.overall_rating)+' / 100 - Value: '+formatValue(p.transfer_value||0);
-    suc.className='form-success show';
-    btn.textContent='Add Another Player';btn.disabled=false;
-    document.querySelectorAll('input[type=text],input[type=number]').forEach(function(i){i.value='';});
-    document.getElementById('ageGroup').value='';
-  }).catch(function(e){
-    err.textContent=e.message;err.className='form-error show';
-    btn.textContent='Add Player & Calculate Rating';btn.disabled=false;
-  });
-}
+      group.addEventListener('change', function () {
+        ScoutLinkScoringV4.renderPositionOptions(position, group.value, '', options);
+        position.disabled = !group.value;
+        assessment.innerHTML = '<div class="sl-v4-empty">Select the exact player position to load the correct attributes.</div>';
+      });
 
-document.addEventListener('DOMContentLoaded',function(){
-  initNav();
-  loadCoachContext();
+      position.addEventListener('change', function () {
+        ScoutLinkScoringV4.renderAssessment(assessment, position.value, {}, options);
+      });
 
-  // Range option click handlers
-  document.querySelectorAll('.range-option[data-value]').forEach(function(el){
-    el.addEventListener('click',function(){
-      var hiddenId=this.closest('.form-group').querySelector('input[type=hidden]').id;
-      selectRange(this,hiddenId);
-    });
-  });
+      document.getElementById('addPlayerForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        message.className = 'v4-message';
+        message.textContent = '';
 
-  // Position group change
-  document.getElementById('positionGroup').addEventListener('change',updateSpecPos);
+        try {
+          if (!event.currentTarget.reportValidity()) return;
+          var attributeRatings = ScoutLinkScoringV4.collectAssessment(
+            assessment,
+            position.value,
+            options
+          );
 
-  // Submit
-  document.getElementById('submitBtn').addEventListener('click',submitPlayer);
-});
-</script>
-<script src="../js/coach-add-player-v3.js"></script>
-</body></html>
+          var payload = {
+            firstName:document.getElementById('firstName').value.trim(),
+            lastName:document.getElementById('lastName').value.trim(),
+            ageGroup:age.value,
+            positionGroup:group.value,
+            specificPosition:position.value,
+            primaryPosition:position.value,
+            positions:[position.value],
+            foot:document.getElementById('foot').value,
+            heightCategory:document.getElementById('heightCategory').value,
+            buildCategory:document.getElementById('buildCategory').value,
+            attributeRatings:attributeRatings,
+            attribute_rating_scale:'ten'
+          };
 
-
-
+          submit.disabled = true;
+          submit.textContent = 'Saving and calculating…';
+          var response = await window.api('POST', '/api/players', payload);
+          message.className = 'v4-message success';
+          message.textContent = 'Player added successfully.';
+          window.setTimeout(function () {
+            window.location.href = '/player/profile?id=' + encodeURIComponent(response.player.id);
+          }, 500);
+        } catch (error) {
+          message.className = 'v4-message error';
+          message.textContent = error.message || 'The player could not be added.';
+        } finally {
+          submit.disabled = false;
+          submit.textContent = 'Add player and calculate rating';
+        }
+      });
+    }());
+  </script>
+</body>
+</html>
