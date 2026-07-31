@@ -11,41 +11,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="/frontend/css/variables.css">
   <link rel="stylesheet" href="/frontend/css/main.css">
   <link rel="stylesheet" href="/frontend/css/coach-v2.css">
   <link rel="stylesheet" href="/frontend/css/scout-v1.css">
-  <link rel="stylesheet" href="/frontend/css/coach-player-profile-v3.css?v=20260730-2">
   <link rel="stylesheet" href="/frontend/css/scout-experience-exact-v3.css">
   <link rel="stylesheet" href="/frontend/css/scout-intelligence-v4.css">
-  <link rel="stylesheet" href="/frontend/css/scout-experience-v8.css?v=20260730-14">
+  <link rel="stylesheet" href="/frontend/css/scout-experience-v8.css?v=20260731-3">
+  <link rel="stylesheet" href="/frontend/css/coach-player-profile-v4.css?v=20260731-4">
+
   <style>
     html,body{min-height:100%;margin:0}
-    .profile-route-loading{min-height:240px;display:grid;place-items:center;padding:30px;color:#637487;text-align:center}
-    .profile-route-loading strong{display:block;color:#07111f;font-size:16px;margin-bottom:7px}
-    .profile-route-error{max-width:720px;margin:40px auto;padding:18px;border:1px solid #efc1c8;border-left:4px solid #d94a5b;border-radius:12px;background:#fff3f5;color:#7f2635}
-    .profile-route-error h2{margin:0 0 7px;font-size:20px}
-    .profile-route-error p{margin:0;line-height:1.55}
-    .profile-simple-modal{position:fixed;z-index:10000;inset:0;display:none;place-items:center;padding:20px;background:rgba(7,17,31,.68)}
+    .profile-simple-modal{position:fixed;z-index:13000;inset:0;display:none;place-items:center;padding:20px;background:rgba(7,17,31,.68)}
     .profile-simple-modal.open{display:grid}
-    .profile-simple-modal-box{width:min(700px,100%);max-height:calc(100vh - 40px);overflow:auto;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(7,17,31,.28)}
-    .profile-simple-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #dce5ee}
+    .profile-simple-modal-box{width:min(700px,100%);max-height:calc(100vh - 40px);overflow:auto;border:1px solid #dbe4e9;background:#fff;box-shadow:0 24px 70px rgba(7,17,31,.28)}
+    .profile-simple-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #dbe4e9}
     .profile-simple-modal-head h2{margin:0;font-size:18px}
     .profile-simple-modal-body{padding:18px;color:#33475b;font-size:13px;line-height:1.55}
-    .profile-simple-modal-close{min-height:34px;padding:0 11px;border:1px solid #dce5ee;border-radius:9px;background:#fff;font-weight:800}
+    .profile-simple-modal-close{min-height:36px;padding:0 12px;border:1px solid #dbe4e9;background:#fff;font-weight:800}
     body.player-own-profile{margin:0;background:#f2f5f9;color:#07111f;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body.player-own-profile .player-own-shell{max-width:1180px;margin:0 auto;padding:24px}
     body.player-own-profile .player-own-topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
     body.player-own-profile .player-own-brand{font-size:22px;font-weight:950}
     body.player-own-profile .player-own-brand span{color:#0fa37f}
     body.player-own-profile .player-own-actions{display:flex;gap:8px;flex-wrap:wrap}
-    body.player-own-profile .player-own-actions a,
-    body.player-own-profile .player-own-actions button{min-height:38px;padding:0 13px;border:1px solid #dce5ee;border-radius:10px;background:#fff;color:#193046;font-weight:850;text-decoration:none}
-    @media(max-width:760px){
-      body.player-own-profile .player-own-shell{padding:12px}
-      body.player-own-profile .player-own-topbar{align-items:flex-start!important}
-      body.player-own-profile .player-own-actions{justify-content:flex-end}
-    }
+    body.player-own-profile .player-own-actions a{min-height:38px;padding:0 13px;border:1px solid #dce5ee;background:#fff;color:#193046;display:inline-flex;align-items:center;font-weight:850;text-decoration:none}
+    @media(max-width:760px){body.player-own-profile .player-own-shell{padding:12px}}
   </style>
 </head>
 <body>
@@ -66,15 +58,15 @@
     </div>
   </div>
 
-  <script src="/frontend/js/main.js?v=20260730-5"></script>
+  <script src="/frontend/js/main.js?v=20260731-4"></script>
   <script src="/frontend/js/scout-nav.js?v=20260730-2"></script>
-  <script src="/frontend/js/player-profile-router-v1.js?v=20260730-1"></script>
-  <script src="/frontend/js/coach-v2.js?v=20260730-4"></script>
+  <script src="/frontend/js/coach-v2.js?v=8.2.0-clean-layout"></script>
+  <script src="/frontend/js/player-profile-router-v2.js?v=20260731-4"></script>
+  <script src="/frontend/js/coach-player-profile-v4.js?v=20260731-4"></script>
   <script src="/frontend/js/scout-v1.js"></script>
-  <script src="/frontend/js/coach-player-profile-v3.js?v=20260730-2"></script>
   <script src="/frontend/js/scout-experience-exact-v3.js"></script>
   <script src="/frontend/js/scout-intelligence-v4.js?v=20260730-2"></script>
-  <script src="/frontend/js/scout-experience-v8.js?v=20260730-14"></script>
-  <script src="/frontend/js/heap-analytics.js?v=20260730-4"></script>
+  <script src="/frontend/js/scout-experience-v8.js?v=20260731-3"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260731-3"></script>
 </body>
 </html>
