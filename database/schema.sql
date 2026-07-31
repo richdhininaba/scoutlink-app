@@ -1,14 +1,17 @@
 -- ============================================================
--- ScoutLink Database Schema v2.1
+-- ScoutLink Database Schema V4.0
 -- Run in Supabase SQL Editor: Project scoutlink
 -- Player identity uses initials; generated avatar data is not stored.
+-- Coach attribute inputs use whole integers from 1 to 10 in attribute_ratings.
+-- Goalkeepers use goalkeeper attributes only. Outfield players use General plus
+-- the complete primary position-group assessment.
 -- ============================================================
 
 -- ENUMS
 DO $$ BEGIN CREATE TYPE account_type AS ENUM ('Player','Coach','Scout','Stratex'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE reg_status AS ENUM ('pending','approved','declined'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE notif_type AS ENUM ('scout_interest','match_fact','recruitment','system','chat_started','chat_message','fixture_attendance','admin_message','showcase_event'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE position_group AS ENUM ('Goalkeeper','Defender','Midfielder','Forward'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE position_group AS ENUM ('Goalkeeper','Defender','Midfielder','Attacker'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE build_category AS ENUM ('very_slight','slight','lean','athletic','stocky','powerful','very_powerful'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE height_category AS ENUM ('very_short','short','average','tall','very_tall'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
@@ -25,6 +28,8 @@ CREATE TABLE IF NOT EXISTS scout_teams (
   team_name TEXT NOT NULL, league TEXT,
   tier INTEGER DEFAULT 5, country TEXT DEFAULT 'England',
   formation TEXT, playing_style TEXT,
+  scoring_setup JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scoring_setup_version TEXT NOT NULL DEFAULT 'v4.0.0',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -58,8 +63,15 @@ CREATE TABLE IF NOT EXISTS players (
   position_group position_group,
   specific_position TEXT,
   positions TEXT[],
+  alternative_positions TEXT[] NOT NULL DEFAULT '{}'::text[],
   primary_position TEXT,
   foot TEXT DEFAULT 'Right',
+  -- V4 position-aware Coach assessment
+  attribute_ratings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  attribute_rating_scale TEXT NOT NULL DEFAULT 'ten',
+  attribute_assessment_version TEXT,
+  attribute_assessed_at TIMESTAMPTZ,
+  attribute_assessed_by UUID,
   -- Physical (ranges)
   height_category height_category DEFAULT 'average',
   height_range_cm TEXT DEFAULT '170-175',
@@ -89,6 +101,15 @@ CREATE TABLE IF NOT EXISTS players (
   -- Calculated
   overall_rating NUMERIC(5,2), transfer_value NUMERIC(12,2),
   predicted_salary_weekly NUMERIC(10,2),
+  evidence_confidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+  overall_breakdown JSONB NOT NULL DEFAULT '{}'::jsonb,
+  position_ratings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  prediction_analysis JSONB NOT NULL DEFAULT '{}'::jsonb,
+  value_analysis JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scoring_input_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scoring_result JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scoring_version TEXT NOT NULL DEFAULT 'v4.0.0',
+  scored_at TIMESTAMPTZ,
   -- Videos
   video_urls TEXT[],
   -- Auth
@@ -157,6 +178,22 @@ CREATE TABLE IF NOT EXISTS match_facts (
   clean_sheet BOOLEAN DEFAULT FALSE, high_claims INTEGER DEFAULT 0,
   punches INTEGER DEFAULT 0,
   performance_score NUMERIC(5,2),
+  position_played TEXT,
+  side_played TEXT,
+  role_played TEXT,
+  match_format TEXT,
+  formation_played TEXT,
+  competition_level TEXT,
+  opposition_level TEXT,
+  source_type TEXT,
+  evidence_source TEXT,
+  rubric_version TEXT,
+  assessment_version TEXT,
+  rating_scale TEXT NOT NULL DEFAULT 'ten',
+  attribute_ratings JSONB NOT NULL DEFAULT '{}'::jsonb,
+  role_evidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+  benchmark_context JSONB NOT NULL DEFAULT '{}'::jsonb,
+  scoring_version TEXT NOT NULL DEFAULT 'v4.0.0',
   created_by UUID, created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -167,6 +204,16 @@ CREATE TABLE IF NOT EXISTS compatibility_scores (
   scout_team_id UUID REFERENCES scout_teams(id) ON DELETE CASCADE,
   compatibility_score NUMERIC(5,2), transfer_value NUMERIC(12,2),
   prediction_score NUMERIC(5,2), breakdown JSONB,
+  conservative_score NUMERIC(5,2),
+  estimated_score NUMERIC(5,2),
+  likely_range JSONB NOT NULL DEFAULT '{}'::jsonb,
+  position_status TEXT,
+  score_ceiling NUMERIC(5,2),
+  evidence_confidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+  calculation_setup JSONB NOT NULL DEFAULT '{}'::jsonb,
+  calculation_breakdown JSONB NOT NULL DEFAULT '{}'::jsonb,
+  input_fingerprint TEXT,
+  scoring_version TEXT NOT NULL DEFAULT 'v4.0.0',
   calculated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(player_id, scout_team_id)
 );
@@ -211,6 +258,30 @@ CREATE TABLE IF NOT EXISTS player_videos (
   uploaded_by UUID, uploaded_by_type account_type,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+
+-- V4 canonical position and input checks.
+ALTER TABLE players
+  ADD CONSTRAINT players_v4_primary_position_check
+  CHECK (primary_position IS NULL OR primary_position IN (
+    'GK','RB','CB','LB','RWB','LWB','DM','CM','AM','RM','LM','RW','LW','CF','ST'
+  ));
+
+ALTER TABLE players
+  ADD CONSTRAINT players_v4_specific_position_check
+  CHECK (specific_position IS NULL OR specific_position IN (
+    'GK','RB','CB','LB','RWB','LWB','DM','CM','AM','RM','LM','RW','LW','CF','ST'
+  ));
+
+ALTER TABLE players
+  ADD CONSTRAINT players_v4_rating_scale_check
+  CHECK (attribute_rating_scale = 'ten');
+
+ALTER TABLE match_facts
+  ADD CONSTRAINT match_facts_v4_position_check
+  CHECK (position_played IS NULL OR position_played IN (
+    'GK','RB','CB','LB','RWB','LWB','DM','CM','AM','RM','LM','RW','LW','CF','ST'
+  ));
 
 -- INDEXES
 CREATE INDEX IF NOT EXISTS idx_players_team ON players(team_id);
