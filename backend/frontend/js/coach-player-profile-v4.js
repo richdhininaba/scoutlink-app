@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * ScoutLink Coach player profile V8 literal production renderer.
+ * ScoutLink Coach player profile V8 literal production renderer with initials-only identity.
  *
  * The markup follows page 17 of the supplied Coach Experience V8 design.
  * One renderer is shared by the real Coach experience, public Coach demo and
@@ -434,11 +434,8 @@
   }
 
   function avatarMarkup(record) {
-    if (typeof window.playerAvatarMarkup === 'function') {
-      return window.playerAvatarMarkup(record, 64);
-    }
-    return esc(initials(record));
-  }
+  return esc(initials(record));
+}
 
   function playableVideos() {
     return videos().filter(function (video) {
