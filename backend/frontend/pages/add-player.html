@@ -9,222 +9,29 @@
   <link rel="stylesheet" href="/frontend/css/variables.css">
   <link rel="stylesheet" href="/frontend/css/main.css">
   <link rel="stylesheet" href="/frontend/css/coach-v2.css">
+  <link rel="stylesheet" href="/frontend/css/coach-add-player-v3.css?v=20260801-1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    .v4-page{max-width:1080px;margin:0 auto}
-    .v4-hero{padding:22px 24px;background:#071d2d;color:#fff;margin-bottom:18px}
-    .v4-hero small{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#8bd8c2}
-    .v4-hero h1{margin:7px 0 4px;font-size:26px}
-    .v4-hero p{margin:0;color:#cfddd9;font-size:13px}
-    .v4-card{background:#fff;border:1px solid #dce5e9;margin-bottom:16px}
-    .v4-card>header{padding:15px 18px;border-bottom:1px solid #dce5e9}
-    .v4-card h2{margin:0;font-size:16px;color:#07141f}
-    .v4-card header p{margin:5px 0 0;color:#64748b;font-size:12px}
-    .v4-card-body{padding:18px}
-    .v4-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .v4-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-    .v4-field{display:grid;gap:6px}
-    .v4-field.full{grid-column:1/-1}
-    .v4-field span{font-size:11px;font-weight:800;color:#475569}
-    .v4-field input,.v4-field select{width:100%;min-height:44px;padding:0 12px;border:1px solid #cbd5e1;background:#fff;color:#0f172a;font:inherit}
-    .v4-field input:focus,.v4-field select:focus{outline:3px solid rgba(15,159,117,.15);border-color:#0f9f75}
-    .v4-help{font-size:11px;color:#64748b}
-    .v4-actions{position:sticky;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border:1px solid #dce5e9;background:#fff}
-    .v4-message{font-size:13px;font-weight:700}
-    .v4-message.error{color:#b42335}
-    .v4-message.success{color:#08775e}
-    .v4-button{min-height:44px;padding:0 17px;border:1px solid #0f9f75;background:#0f9f75;color:#fff;font:inherit;font-weight:900;cursor:pointer}
-    .v4-button:disabled{opacity:.55;cursor:not-allowed}
-    .v4-button.secondary{background:#fff;color:#0f172a;border-color:#cbd5e1;text-decoration:none;display:inline-flex;align-items:center}
-    .v4-team-note{padding:12px;border-left:4px solid #0f9f75;background:#eefbf7;color:#31534a;font-size:12px}
-    @media(max-width:760px){.v4-grid,.v4-grid.three{grid-template-columns:1fr}.v4-actions{align-items:stretch;flex-direction:column}.v4-actions>div,.v4-button{width:100%}}
-  </style>
 </head>
-<body>
+<body class="coach-add-player-v3">
   <div class="dashboard">
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-logo"><a href="/coach/dashboard">Scout<span style="color:#1d9e75">Link</span></a></div>
       <div class="sidebar-nav" id="sidebarNav"></div>
       <div class="sidebar-user" id="sidebarUser"></div>
     </nav>
-
     <div class="dashboard-main">
       <header class="topbar">
-        <span class="topbar-title">Add Player</span>
-        <div class="topbar-right">
-          <button class="notif-btn" type="button" onclick="window.location.href='/coach/notifications'">Notifications</button>
-        </div>
+        <span class="topbar-title">Add player</span>
+        <div class="topbar-right"><button class="notif-btn" type="button" onclick="window.location.href='/coach/notifications'">Notifications</button></div>
       </header>
-
-      <main class="page-content">
-        <div class="v4-page">
-          <section class="v4-hero">
-            <small>Coach workspace</small>
-            <h1>Add a player</h1>
-            <p>Select the player’s exact position first. ScoutLink will then show only the attributes required for that position.</p>
-          </section>
-
-          <form id="addPlayerForm" novalidate>
-            <section class="v4-card">
-              <header><h2>Player details</h2><p>Player identity remains Coach-managed and uses initials across ScoutLink.</p></header>
-              <div class="v4-card-body">
-                <div class="v4-grid">
-                  <label class="v4-field"><span>First name *</span><input id="firstName" autocomplete="off" required></label>
-                  <label class="v4-field"><span>Last name *</span><input id="lastName" autocomplete="off" required></label>
-                  <label class="v4-field"><span>Age group *</span><select id="ageGroup" required></select></label>
-                  <label class="v4-field"><span>Preferred foot</span>
-                    <select id="foot"><option>Right</option><option>Left</option><option>Both</option></select>
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <section class="v4-card">
-              <header><h2>Position</h2><p>Only the canonical 15 ScoutLink positions are available.</p></header>
-              <div class="v4-card-body">
-                <div class="v4-grid">
-                  <label class="v4-field"><span>Position group *</span><select id="positionGroup" required></select></label>
-                  <label class="v4-field"><span>Exact position *</span><select id="specificPosition" required disabled><option value="">Select group first</option></select></label>
-                </div>
-              </div>
-            </section>
-
-            <section class="v4-card">
-              <header><h2>Physical profile</h2><p>Use ranges rather than exact measurements.</p></header>
-              <div class="v4-card-body">
-                <div class="v4-grid">
-                  <label class="v4-field"><span>Height profile</span>
-                    <select id="heightCategory">
-                      <option value="very_short">Very short · 155–163 cm</option>
-                      <option value="short">Short · 163–170 cm</option>
-                      <option value="average" selected>Average · 170–178 cm</option>
-                      <option value="tall">Tall · 178–185 cm</option>
-                      <option value="very_tall">Very tall · 185+ cm</option>
-                    </select>
-                  </label>
-                  <label class="v4-field"><span>Build profile</span>
-                    <select id="buildCategory">
-                      <option value="very_slight">Very slight · 50–58 kg</option>
-                      <option value="slight">Slight · 58–65 kg</option>
-                      <option value="lean">Lean · 65–72 kg</option>
-                      <option value="athletic" selected>Athletic · 72–80 kg</option>
-                      <option value="stocky">Stocky · 80–88 kg</option>
-                      <option value="powerful">Powerful · 88–96 kg</option>
-                      <option value="very_powerful">Very powerful · 96+ kg</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <section class="v4-card">
-              <header><h2>Position-specific assessment</h2><p>Ratings must be whole numbers from 1 to 10. Leave an attribute as Not observed rather than guessing.</p></header>
-              <div class="v4-card-body" id="attributeAssessment">
-                <div class="sl-v4-empty">Select the player position to load the correct attributes.</div>
-              </div>
-            </section>
-
-            <div class="v4-actions">
-              <div id="formMessage" class="v4-message" aria-live="polite"></div>
-              <div style="display:flex;gap:9px">
-                <a class="v4-button secondary" href="/coach/my-players">Cancel</a>
-                <button class="v4-button" id="submitButton" type="submit">Add player and calculate rating</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </main>
+      <main class="page-content"></main>
     </div>
   </div>
-
   <script src="/frontend/js/scout-nav.js"></script>
   <script src="/frontend/js/main.js"></script>
-  <script src="/frontend/js/scoring-v4-client.js?v=20260731-10"></script>
-  <script src="/frontend/js/heap-analytics.js?v=20260731-10"></script>
+  <script id="scoringV4ClientScript" src="/frontend/js/scoring-v4-client.js?v=20260801-1"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260801-1"></script>
   <script src="/frontend/js/coach-v2.js"></script>
-  <script>
-    'use strict';
-
-    (async function () {
-      if (!window.Auth || !Auth.isLoggedIn() || (Auth.type !== 'Coach' && Auth.type !== 'Stratex')) {
-        window.location.href = '/login';
-        return;
-      }
-
-      if (typeof window.buildScoutNav === 'function') {
-        buildScoutNav('sidebarNav', 'Coach');
-      }
-
-      var options = await ScoutLinkScoringV4.loadOptions();
-      var group = document.getElementById('positionGroup');
-      var position = document.getElementById('specificPosition');
-      var age = document.getElementById('ageGroup');
-      var assessment = document.getElementById('attributeAssessment');
-      var message = document.getElementById('formMessage');
-      var submit = document.getElementById('submitButton');
-
-      age.innerHTML = '<option value="">Select age group</option>' +
-        options.ageGroups.map(function (item) {
-          return '<option value="' + item + '">' + item + '</option>';
-        }).join('');
-
-      ScoutLinkScoringV4.renderGroupOptions(group, '');
-
-      group.addEventListener('change', function () {
-        ScoutLinkScoringV4.renderPositionOptions(position, group.value, '', options);
-        position.disabled = !group.value;
-        assessment.innerHTML = '<div class="sl-v4-empty">Select the exact player position to load the correct attributes.</div>';
-      });
-
-      position.addEventListener('change', function () {
-        ScoutLinkScoringV4.renderAssessment(assessment, position.value, {}, options);
-      });
-
-      document.getElementById('addPlayerForm').addEventListener('submit', async function (event) {
-        event.preventDefault();
-        message.className = 'v4-message';
-        message.textContent = '';
-
-        try {
-          if (!event.currentTarget.reportValidity()) return;
-          var attributeRatings = ScoutLinkScoringV4.collectAssessment(
-            assessment,
-            position.value,
-            options
-          );
-
-          var payload = {
-            firstName:document.getElementById('firstName').value.trim(),
-            lastName:document.getElementById('lastName').value.trim(),
-            ageGroup:age.value,
-            positionGroup:group.value,
-            specificPosition:position.value,
-            primaryPosition:position.value,
-            positions:[position.value],
-            foot:document.getElementById('foot').value,
-            heightCategory:document.getElementById('heightCategory').value,
-            buildCategory:document.getElementById('buildCategory').value,
-            attributeRatings:attributeRatings,
-            attribute_rating_scale:'ten'
-          };
-
-          submit.disabled = true;
-          submit.textContent = 'Saving and calculating…';
-          var response = await window.api('POST', '/api/players', payload);
-          message.className = 'v4-message success';
-          message.textContent = 'Player added successfully.';
-          window.setTimeout(function () {
-            window.location.href = '/player/profile?id=' + encodeURIComponent(response.player.id);
-          }, 500);
-        } catch (error) {
-          message.className = 'v4-message error';
-          message.textContent = error.message || 'The player could not be added.';
-        } finally {
-          submit.disabled = false;
-          submit.textContent = 'Add player and calculate rating';
-        }
-      });
-    }());
-  </script>
+  <script src="/frontend/js/coach-add-player-v4.js?v=20260801-1"></script>
 </body>
 </html>
