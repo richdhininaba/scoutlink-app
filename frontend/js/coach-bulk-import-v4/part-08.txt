@@ -1,0 +1,50 @@
+      var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) importFile(file);
+    });
+    drop.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); el('cb4FileInput').click(); }
+    });
+    el('defaultCoachSelect').addEventListener('change', function () {
+      defaultCoachId = el('defaultCoachSelect').value;
+      rows.forEach(function (row) { if (!row.assignedCoachId) row.assignedCoachId = defaultCoachId; });
+      render();
+    });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeEdit(); });
+  }
+
+  function fillSelect(select, values, selected, placeholder) {
+    select.innerHTML = '<option value="">' + esc(placeholder) + '</option>' + values.map(function (row) {
+      var value = typeof row === 'string' ? row : row.value;
+      var label = typeof row === 'string' ? row : row.label;
+      return '<option value="' + esc(value) + '"' + (String(value) === String(selected || '') ? ' selected' : '') + '>' + esc(label) + '</option>';
+    }).join('');
+  }
+
+  function openEdit(id) {
+    var row = rows.find(function (item) { return item.id === id; });
+    if (!row) return;
+    selectedId = id;
+    el('cb4EditTitle').textContent = playerName(row);
+    el('cb4EditSubtitle').textContent = 'Correct this player before submitting.';
+    el('cb4FirstName').value = row.firstName;
+    el('cb4LastName').value = row.lastName;
+    fillSelect(el('cb4AgeGroup'), options.ageGroups, row.ageGroup, 'Select age group');
+    window.ScoutLinkScoringV4.renderGroupOptions(el('cb4PositionGroup'), window.ScoutLinkScoringV4.groupForPosition(row.position) || '');
+    window.ScoutLinkScoringV4.renderPositionOptions(el('cb4Position'), el('cb4PositionGroup').value, row.position, options);
+    el('cb4Position').disabled = !el('cb4PositionGroup').value;
+    el('cb4Foot').value = row.foot || 'Right';
+    el('cb4Height').value = row.heightCategory || 'average';
+    el('cb4Build').value = row.buildCategory || 'athletic';
+    if (coaches.length) {
+      el('cb4Coach').innerHTML = coaches.map(function (coach) {
+        return '<option value="' + esc(coach.id) + '"' + (String(coach.id) === String(row.assignedCoachId || defaultCoachId) ? ' selected' : '') + '>' +
+          esc([coach.first_name,coach.last_name].filter(Boolean).join(' ')) + '</option>';
+      }).join('');
+      el('cb4CoachField').style.display = '';
+    } else {
+      el('cb4CoachField').style.display = 'none';
+    }
+    renderModalAssessment(row.attributeRatings);
+    el('cb4EditStatus').textContent = status(row).text;
+    el('cb4ModalError').textContent = '';
+    el('cb4ModalError').classList.remove('is-visible');

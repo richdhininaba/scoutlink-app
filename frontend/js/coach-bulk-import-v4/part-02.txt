@@ -1,0 +1,32 @@
+      text:errors.length ? 'Add ' + errors.join(', ') : observed + ' of ' + expected + ' attributes observed',
+      observed:observed,
+      expected:expected
+    };
+  }
+
+  function shellMarkup() {
+    return '<div class="bulk-import-shell">' +
+      '<section class="cb3-hero" id="cb3Hero"><div class="cb3-hero-copy">' +
+        '<span class="cb3-hero-label">Coach workspace</span><h1>Add a squad without repetitive data entry.</h1>' +
+        '<p>Download the ScoutLink template, upload a CSV or spreadsheet, review each player and correct only the rows that need attention before submitting.</p>' +
+      '</div><div class="cb3-hero-actions"><button class="cb3-btn" type="button" data-bulk-download>Download template</button>' +
+        '<button class="cb3-btn is-primary" type="button" data-bulk-choose>Choose file</button></div></section>' +
+
+      '<section class="coach-v2-bulk-toolbar" id="assignmentToolbar"><div><b>Team assignment</b>' +
+        '<span id="teamNameLabel">Loading team…</span></div><label id="defaultCoachField" style="display:none">' +
+        '<span>Default Coach</span><select id="defaultCoachSelect"></select></label></section>' +
+
+      '<section class="cb3-upload-panel" id="cb3UploadPanel"><header class="cb3-panel-head">' +
+        '<div class="cb3-panel-title"><h2>Upload player file</h2><p>Use the current ScoutLink CSV or spreadsheet template.</p></div>' +
+        '<span class="cb3-pill">CSV or spreadsheet</span></header><div class="cb3-panel-body">' +
+        '<div class="cb3-drop-zone" id="cb3DropZone" tabindex="0" role="button" aria-label="Choose or drop a player import file">' +
+          '<div class="cb3-upload-icon" aria-hidden="true">↑</div><h3>Drop your completed ScoutLink template here</h3>' +
+          '<p>Accepted file types are CSV, XLS and XLSX. A maximum of 50 player rows can be imported at once.</p>' +
+          '<div class="cb3-drop-actions"><button class="cb3-btn is-primary" type="button" data-bulk-choose>Choose file</button>' +
+            '<button class="cb3-btn" type="button" data-bulk-download>Download template</button></div>' +
+          '<div class="cb3-file-name" id="cb3FileName" aria-live="polite"></div>' +
+        '</div></div></section>' +
+
+      '<section class="cb3-summary-grid" id="cb3SummaryGrid">' +
+        '<article class="cb3-summary-card"><small>Total rows</small><strong id="cb3TotalRows">0</strong><p>Player records currently in this import.</p></article>' +
+        '<article class="cb3-summary-card"><small>Ready to submit</small><strong class="is-green" id="cb3ReadyRows">0</strong><p>Rows that pass V4 validation.</p></article>' +

@@ -1,0 +1,54 @@
+          '<button class="cb3-btn" type="button" data-close-cb4>Cancel</button>' +
+          '<button class="cb3-btn is-primary" type="submit">Save row</button></footer></form></section></div>';
+  }
+
+  function installStyles() {
+    if (el('cb4Styles')) return;
+    var style = document.createElement('style');
+    style.id = 'cb4Styles';
+    style.textContent =
+      '.cb4-help{margin:0 0 12px;color:#62748a;font-size:8px}' +
+      '#cb4Assessment .cb3-edit-section{margin:0 0 12px;padding:12px;border:1px solid #dbe4ee;border-radius:12px;background:#fff}' +
+      '#cb4Assessment .cb3-edit-section h4{margin:0 0 9px;font-size:10px;color:#101828}' +
+      '#cb4Assessment .cb3-form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}' +
+      '#cb4Assessment select{width:100%}' +
+      'body.coach-bulk-import-v3 .ap3-message{display:none;margin:0 0 10px;padding:10px 12px;border-radius:11px;font-size:8px;font-weight:800}' +
+      'body.coach-bulk-import-v3 .ap3-message.show{display:block}' +
+      'body.coach-bulk-import-v3 .ap3-message.is-error{border:1px solid #f0c2c8;background:#fff2f4;color:#9d2634}' +
+      'body.coach-bulk-import-v3 .ap3-message.is-success{border:1px solid #b7e1d4;background:#eaf9f3;color:#075f4c}' +
+      '@media(max-width:760px){#cb4Assessment .cb3-form-grid{grid-template-columns:1fr}}';
+    document.head.appendChild(style);
+  }
+
+  function buildPage() {
+    document.body.classList.add('coach-bulk-import-v3');
+    var page = document.querySelector('.page-content');
+    if (!page) return;
+    var banner = page.querySelector('.public-demo-banner');
+    page.innerHTML = shellMarkup();
+    if (banner) page.insertBefore(banner, page.firstChild);
+    document.body.insertAdjacentHTML('beforeend', modalMarkup());
+    installStyles();
+
+    var title = document.querySelector('.topbar-title');
+    if (title) title.textContent = 'Bulk import';
+    var mobileTitle = document.querySelector('.coach-v2-mobile-title');
+    if (mobileTitle) mobileTitle.textContent = 'Bulk import';
+
+    bindActions();
+    render();
+    loadCoachContext();
+  }
+
+  function coachName(id) {
+    var row = coaches.find(function (coach) { return String(coach.id) === String(id); });
+    return row ? [row.first_name,row.last_name].filter(Boolean).join(' ') : 'Current Coach';
+  }
+  function teamName() { return el('teamNameLabel') ? el('teamNameLabel').textContent : 'My team'; }
+
+  function previewRow(row, index) {
+    var info = status(row);
+    var position = row.position
+      ? window.ScoutLinkScoringV4.positionLabel(row.position, options) + ' (' + row.position + ')'
+      : 'Missing';
+    return '<tr><td data-label="Row">' + (index + 1) + '</td>' +

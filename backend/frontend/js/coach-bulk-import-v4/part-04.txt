@@ -1,0 +1,23 @@
+        '<button class="cb3-btn is-small" type="button" data-close-cb4>Close</button></header>' +
+      '<form id="cb4EditForm"><div class="cb3-modal-body"><div class="cb3-modal-error" id="cb4ModalError"></div>' +
+        '<section class="cb3-edit-section"><h3>Player and football details</h3><div class="cb3-form-grid">' +
+          '<div class="cb3-form-field"><label for="cb4FirstName">First name</label><input id="cb4FirstName" required></div>' +
+          '<div class="cb3-form-field"><label for="cb4LastName">Last name</label><input id="cb4LastName" required></div>' +
+          '<div class="cb3-form-field"><label for="cb4AgeGroup">Age group</label><select id="cb4AgeGroup"></select></div>' +
+          '<div class="cb3-form-field"><label for="cb4PositionGroup">Position group</label><select id="cb4PositionGroup"></select></div>' +
+          '<div class="cb3-form-field"><label for="cb4Position">Specific position</label><select id="cb4Position"></select></div>' +
+          '<div class="cb3-form-field"><label for="cb4Foot">Preferred foot</label><select id="cb4Foot"><option>Right</option><option>Left</option><option>Both</option></select></div>' +
+          '<div class="cb3-form-field"><label for="cb4Height">Height profile</label><select id="cb4Height">' +
+            '<option value="very_short">Very short · 155–163 cm</option><option value="short">Short · 163–170 cm</option>' +
+            '<option value="average">Average · 170–178 cm</option><option value="tall">Tall · 178–185 cm</option>' +
+            '<option value="very_tall">Very tall · 185+ cm</option></select></div>' +
+          '<div class="cb3-form-field"><label for="cb4Build">Build profile</label><select id="cb4Build">' +
+            '<option value="very_slight">Very slight · 50–58 kg</option><option value="slight">Slight · 58–65 kg</option>' +
+            '<option value="lean">Lean · 65–72 kg</option><option value="athletic">Athletic · 72–80 kg</option>' +
+            '<option value="stocky">Stocky · 80–88 kg</option><option value="powerful">Powerful · 88–96 kg</option>' +
+            '<option value="very_powerful">Very powerful · 96+ kg</option></select></div>' +
+          '<div class="cb3-form-field" id="cb4CoachField" style="display:none"><label for="cb4Coach">Assigned Coach</label><select id="cb4Coach"></select></div>' +
+        '</div></section><section class="cb3-edit-section"><h3>Coach-rated attributes</h3>' +
+          '<p class="cb4-help">Whole numbers from 1 to 10. Leave Not observed where evidence is unavailable.</p>' +
+          '<div id="cb4Assessment"></div></section></div>' +
+        '<footer class="cb3-modal-actions"><span class="cb3-edit-status" id="cb4EditStatus" aria-live="polite"></span>' +

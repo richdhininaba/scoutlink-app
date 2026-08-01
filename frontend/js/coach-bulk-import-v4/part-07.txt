@@ -1,0 +1,51 @@
+      button.addEventListener('click', function () { openEdit(button.dataset.editRow); });
+    });
+    document.querySelectorAll('[data-remove-row]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var row = rows.find(function (item) { return item.id === button.dataset.removeRow; });
+        if (row && window.confirm('Remove ' + playerName(row) + ' from this import?')) {
+          rows = rows.filter(function (item) { return item.id !== row.id; });
+          render();
+        }
+      });
+    });
+  }
+
+  function bindActions() {
+    document.querySelectorAll('[data-bulk-add]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (rows.length >= MAX_ROWS) return showError('A maximum of 50 players can be imported at once.');
+        var row = blankRow(); rows.push(row); render(); openEdit(row.id);
+      });
+    });
+    document.querySelectorAll('[data-bulk-choose]').forEach(function (button) {
+      button.addEventListener('click', function () { el('cb4FileInput').click(); });
+    });
+    document.querySelectorAll('[data-bulk-download]').forEach(function (button) {
+      button.addEventListener('click', downloadTemplate);
+    });
+    document.querySelectorAll('[data-bulk-submit]').forEach(function (button) {
+      button.addEventListener('click', submitAll);
+    });
+    document.querySelectorAll('[data-close-cb4]').forEach(function (button) { button.addEventListener('click', closeEdit); });
+    el('cb4EditForm').addEventListener('submit', saveEdit);
+    el('cb4PositionGroup').addEventListener('change', function () {
+      window.ScoutLinkScoringV4.renderPositionOptions(el('cb4Position'), el('cb4PositionGroup').value, '', options);
+      el('cb4Position').disabled = !el('cb4PositionGroup').value;
+      renderModalAssessment({});
+    });
+    el('cb4Position').addEventListener('change', function () { renderModalAssessment({}); });
+    el('cb4EditModal').addEventListener('click', function (event) { if (event.target === el('cb4EditModal')) closeEdit(); });
+    el('cb4FileInput').addEventListener('change', function () {
+      var file = el('cb4FileInput').files && el('cb4FileInput').files[0];
+      if (file) importFile(file);
+      el('cb4FileInput').value = '';
+    });
+    var drop = el('cb3DropZone');
+    ['dragenter','dragover'].forEach(function (name) {
+      drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.add('is-dragging'); });
+    });
+    ['dragleave','drop'].forEach(function (name) {
+      drop.addEventListener(name, function (event) { event.preventDefault(); drop.classList.remove('is-dragging'); });
+    });
+    drop.addEventListener('drop', function (event) {

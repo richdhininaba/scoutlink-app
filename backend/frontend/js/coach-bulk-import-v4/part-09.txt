@@ -1,0 +1,54 @@
+    el('cb4EditModal').setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function () { el('cb4FirstName').focus(); }, 20);
+  }
+
+  function renderModalAssessment(currentRatings) {
+    var position = el('cb4Position').value;
+    var group = window.ScoutLinkScoringV4.groupForPosition(position);
+    if (!position || !group) {
+      el('cb4Assessment').innerHTML = '<div class="cb3-preview-empty">Select the exact position to load the correct attributes.</div>';
+      return;
+    }
+    var flat = window.ScoutLinkScoringV4.flattenRatings(currentRatings || {});
+    var sections = group === 'Goalkeeper'
+      ? [{label:'Goalkeeper attributes',rows:options.attributes.goalkeeper}]
+      : [{label:'General attributes',rows:options.attributes.general},{label:group + ' attributes',rows:options.attributes[group.toLowerCase()] || []}];
+    el('cb4Assessment').innerHTML = sections.map(function (section) {
+      return '<section class="cb3-edit-section"><h4>' + esc(section.label) + '</h4><div class="cb3-form-grid">' +
+        section.rows.map(function (attribute) {
+          var selected = flat[attribute[0]] == null ? '' : String(flat[attribute[0]]);
+          return '<div class="cb3-form-field"><label>' + esc(attribute[1]) + ' / 10</label><select data-cb4-rating="' + esc(attribute[0]) + '">' +
+            '<option value="">Not observed</option>' + options.ratingOptions.filter(function (option) { return option.value !== null; }).map(function (option) {
+              return '<option value="' + option.value + '"' + (String(option.value) === selected ? ' selected' : '') + '>' + esc(option.label) + '</option>';
+            }).join('') + '</select></div>';
+        }).join('') + '</div></section>';
+    }).join('');
+  }
+
+  function closeEdit() {
+    el('cb4EditModal').setAttribute('aria-hidden','true');
+    document.body.style.overflow = '';
+    selectedId = null;
+  }
+
+  function modalRatings() {
+    var position = el('cb4Position').value;
+    var group = window.ScoutLinkScoringV4.groupForPosition(position);
+    if (!group) throw new Error('Select a supported exact position.');
+    var flat = {};
+    el('cb4Assessment').querySelectorAll('[data-cb4-rating]').forEach(function (select) {
+      var rating = window.ScoutLinkScoringV4.validateRating(select.value);
+      if (rating !== null) flat[select.dataset.cb4Rating] = rating;
+    });
+    return window.ScoutLinkScoringV4.nestRatings(flat, group, options);
+  }
+
+  function saveEdit(event) {
+    event.preventDefault();
+    var row = rows.find(function (item) { return item.id === selectedId; });
+    if (!row) return;
+    try {
+      var firstName = el('cb4FirstName').value.trim();
+      var lastName = el('cb4LastName').value.trim();
+      var ageGroup = el('cb4AgeGroup').value;

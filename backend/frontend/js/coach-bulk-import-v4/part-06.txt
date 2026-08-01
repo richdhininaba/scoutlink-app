@@ -1,0 +1,39 @@
+      '<td data-label="Player"><b>' + esc(playerName(row)) + '</b><small>' + esc(row.foot || 'Foot TBC') + ' foot</small></td>' +
+      '<td data-label="Age group">' + esc(row.ageGroup || 'Missing') + '</td>' +
+      '<td data-label="Position">' + esc(position) + '</td>' +
+      '<td data-label="Team">' + esc(teamName()) + '</td>' +
+      '<td data-label="Assigned Coach">' + esc(row.assignedCoachId ? coachName(row.assignedCoachId) : 'Current Coach') + '</td>' +
+      '<td data-label="Status"><span class="cb3-pill ' + (info.ready ? 'is-green' : 'is-orange') + '">' +
+        (info.ready ? 'Ready' : 'Review') + '</span><small>' + esc(info.text) + '</small></td>' +
+      '<td data-label="Action"><div class="cb3-row-actions"><button class="cb3-btn is-small ' +
+        (info.ready ? '' : 'is-primary') + '" type="button" data-edit-row="' + esc(row.id) + '">' +
+        (info.ready ? 'Edit row' : 'Fix row') + '</button><button class="cb3-btn is-small is-danger" type="button" data-remove-row="' +
+        esc(row.id) + '">Remove</button></div></td></tr>';
+  }
+
+  function render() {
+    var ready = rows.filter(function (row) { return status(row).ready; }).length;
+    var review = rows.length - ready;
+    [['cb3TotalRows',rows.length],['cb3ReadyRows',ready],['cb3ReviewRows',review],['cb3ReadyPill',ready],['cb3ReviewPill',review]].forEach(function (pair) {
+      if (el(pair[0])) el(pair[0]).textContent = pair[1];
+    });
+    if (el('cb3FileName')) el('cb3FileName').textContent = fileName ? 'Selected file: ' + fileName : '';
+    el('cb3PreviewBody').innerHTML = rows.map(previewRow).join('');
+    el('cb3PreviewEmpty').style.display = rows.length ? 'none' : 'grid';
+    var issues = rows.filter(function (row) { return !status(row).ready; });
+    if (issues.length) {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-issue-list">' + issues.map(function (row) {
+        return '<article class="cb3-issue"><div><b>' + esc(playerName(row)) + '</b><p>' + esc(status(row).text) +
+          '</p></div><button class="cb3-btn is-primary is-small" type="button" data-edit-row="' + esc(row.id) + '">Fix row</button></article>';
+      }).join('') + '</div>';
+    } else if (rows.length) {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-all-ready"><span class="cb3-pill is-green">Ready</span>' +
+        '<div><strong>Every row passes the current validation.</strong><p>Review the compact preview once more, then submit all players.</p></div></div>';
+    } else {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-preview-empty">No rows have been added yet.</div>';
+    }
+    bindDynamicActions();
+  }
+
+  function bindDynamicActions() {
+    document.querySelectorAll('[data-edit-row]').forEach(function (button) {

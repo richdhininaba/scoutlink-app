@@ -1,0 +1,79 @@
+'use strict';
+
+/*
+ * Coach Bulk Import V4.
+ *
+ * Keeps the existing CB3 hero, upload, summary, preview, issue and modal design
+ * while using the canonical V4 position and position-aware attribute contract.
+ */
+(function () {
+  var MAX_ROWS = 50;
+  var options = null;
+  var rows = [];
+  var selectedId = null;
+  var nextId = 1;
+  var coaches = [];
+  var defaultCoachId = '';
+  var fileName = '';
+
+  function el(id) { return document.getElementById(id); }
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
+    });
+  }
+  function route(href) {
+    return typeof window.cleanRouteFor === 'function' ? window.cleanRouteFor(href) : href;
+  }
+  function isPublicDemo() {
+    try {
+      return (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) ||
+        sessionStorage.getItem('sl_public_demo') === '1';
+    } catch (_) { return false; }
+  }
+  function demoRole() {
+    try {
+      return String(sessionStorage.getItem('sl_public_demo_role') ||
+        sessionStorage.getItem('sl_admin_demo_role') || '').toLowerCase();
+    } catch (_) { return ''; }
+  }
+  function allowedContext() {
+    var role = window.Auth && window.Auth.type;
+    return role === 'Coach' || role === 'Stratex' ||
+      (isPublicDemo() && (!demoRole() || demoRole() === 'coach'));
+  }
+  function unique(values) {
+    return Array.from(new Set((values || []).filter(Boolean)));
+  }
+
+  function blankRow() {
+    return {
+      id:'bulk-v4-' + nextId++,
+      firstName:'', lastName:'', ageGroup:'', position:'', foot:'Right',
+      heightCategory:'average', buildCategory:'athletic', assignedCoachId:defaultCoachId,
+      attributeRatings:{}, sourceRow:null
+    };
+  }
+  function playerName(row) {
+    return [row.firstName,row.lastName].filter(Boolean).join(' ') || 'Unnamed player';
+  }
+  function flatRatings(row) {
+    return window.ScoutLinkScoringV4.flattenRatings(row.attributeRatings || {});
+  }
+  function expectedAttributes(row) {
+    return row.position ? window.ScoutLinkScoringV4.attributesForPosition(row.position, options) : [];
+  }
+  function coreErrors(row) {
+    var errors = [];
+    if (!String(row.firstName || '').trim()) errors.push('first name');
+    if (!String(row.lastName || '').trim()) errors.push('last name');
+    if (!options.ageGroups.includes(row.ageGroup)) errors.push('age group');
+    if (!window.ScoutLinkScoringV4.normalisePosition(row.position)) errors.push('supported position');
+    return errors;
+  }
+  function status(row) {
+    var errors = coreErrors(row);
+    var expected = expectedAttributes(row).length;
+    var observed = Object.keys(flatRatings(row)).length;
+    return {
+      ready:errors.length === 0,

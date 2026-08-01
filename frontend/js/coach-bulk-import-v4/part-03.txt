@@ -1,0 +1,33 @@
+        '<article class="cb3-summary-card"><small>Need review</small><strong class="is-orange" id="cb3ReviewRows">0</strong><p>Rows that still require a correction.</p></article>' +
+      '</section>' +
+
+      '<div class="ap3-message is-error" id="formError" role="alert"></div>' +
+      '<div class="ap3-message is-success" id="formSuccess" aria-live="polite"></div>' +
+
+      '<section class="cb3-preview-panel" id="cb3PreviewPanel"><header class="cb3-panel-head">' +
+        '<div class="cb3-panel-title"><h2>Import preview</h2><p>Review the compact summary and open only the rows that need changing.</p></div>' +
+        '<div class="cb3-status-pills"><span class="cb3-pill is-green"><span id="cb3ReadyPill">0</span>&nbsp;ready</span>' +
+          '<span class="cb3-pill is-orange"><span id="cb3ReviewPill">0</span>&nbsp;need review</span></div></header>' +
+        '<div class="cb3-preview-scroll"><table class="cb3-preview-table"><thead><tr>' +
+          '<th>Row</th><th>Player</th><th>Age group</th><th>Position</th><th>Team</th><th>Assigned Coach</th><th>Status</th><th>Action</th>' +
+        '</tr></thead><tbody id="cb3PreviewBody"></tbody></table>' +
+        '<div class="cb3-preview-empty" id="cb3PreviewEmpty">Add a row or upload the completed template to begin.</div></div>' +
+        '<footer class="cb3-preview-footer"><p>Rows may keep attributes as Not observed; the evidence-confidence output will reflect missing evidence.</p>' +
+          '<div class="cb3-preview-footer-actions"><button class="cb3-btn" type="button" data-bulk-add>+ Add row</button>' +
+            '<button class="cb3-btn" type="button" data-bulk-choose>Choose another file</button>' +
+            '<button class="cb3-btn is-primary" type="button" data-bulk-submit>Submit all players</button></div></footer></section>' +
+
+      '<section class="cb3-issues-panel" id="cb3IssuesPanel"><header class="cb3-panel-head">' +
+        '<div class="cb3-panel-title"><h2>Resolve issues</h2><p>Only rows needing attention appear here.</p></div>' +
+        '<button class="cb3-btn is-small" type="button" data-bulk-add>+ Add player row</button></header>' +
+        '<div class="cb3-panel-body" id="cb3IssueBody"></div></section>' +
+
+      '<section id="resultsBox"></section>' +
+      '<input type="file" id="cb4FileInput" accept=".csv,.xls,.xlsx" hidden>' +
+    '</div>';
+  }
+
+  function modalMarkup() {
+    return '<div class="cb3-modal" id="cb4EditModal" aria-hidden="true"><section class="cb3-modal-card" role="dialog" aria-modal="true" aria-labelledby="cb4EditTitle">' +
+      '<header class="cb3-modal-head"><div><h2 id="cb4EditTitle">Edit import row</h2>' +
+        '<p id="cb4EditSubtitle">Correct the player information before submitting.</p></div>' +
