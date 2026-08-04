@@ -3,7 +3,7 @@
 /* Shared ScoutLink runtime loader and Heap identity bridge. */
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260801-1';
+  var ASSET_VERSION = '20260804-2';
   var UNSAFE_IDS = {'':true,user:true,guest:true,coach:true,scout:true,player:true,stratex:true,'marcus reed':true,'noah patel':true};
 
   function safe(value) {
@@ -82,6 +82,7 @@
   }
 
   function loadAll() {
+    loadScript('dataMediaGuardV1Script','data-media-guard-v1.js','/frontend/js/data-media-guard-v1.js');
     loadScript('scoringV4ClientScript','scoring-v4-client.js','/frontend/js/scoring-v4-client.js');
     loadScript('playerInitialsV1Script','player-initials-v1.js','/frontend/js/player-initials-v1.js');
 
@@ -103,6 +104,7 @@
       loadScript('demoScoringV4Script','demo-scoring-v4.js','/frontend/js/demo-scoring-v4.js');
     }
     if (isProfileRoute()) {
+      loadScript('scoutProfileRuntimeV1Script','scout-profile-runtime-v1.js','/frontend/js/scout-profile-runtime-v1.js');
       loadScript('coachProfileV4OutputFixesScript','coach-profile-v4-output-fixes.js','/frontend/js/coach-profile-v4-output-fixes.js');
     }
   }
