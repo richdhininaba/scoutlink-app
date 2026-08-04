@@ -43,6 +43,11 @@
     return String(window.location.pathname || '/').replace(/\/+$/, '').toLowerCase();
   }
 
+  function isPotentialScoutRoute() {
+    var path = pathName();
+    return path.indexOf('/scout') === 0 || path === '/player/profile';
+  }
+
   function isScoutRoute() {
     var path = pathName();
     return path.indexOf('/scout') === 0 ||
@@ -201,9 +206,14 @@
   }
 
   function start() {
-    if (!isScoutRoute()) return;
-    document.documentElement.classList.add('sl-scout-hydration-pending');
-    if (document.body) document.body.dataset.slHydrationState = 'pending';
+    /* Observe the shared profile route before role resolution completes. The
+       gate is only activated by check() after the router confirms Scout. */
+    if (!isPotentialScoutRoute()) return;
+
+    if (isScoutRoute()) {
+      document.documentElement.classList.add('sl-scout-hydration-pending');
+      if (document.body) document.body.dataset.slHydrationState = 'pending';
+    }
 
     observer = new MutationObserver(check);
     observer.observe(document.documentElement, {
