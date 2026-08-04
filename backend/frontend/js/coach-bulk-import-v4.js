@@ -1,8 +1,8 @@
 'use strict';
 
 (function () {
-  var TOTAL_PARTS = 13;
-  var VERSION = '20260801-1';
+  var TOTAL_PARTS = 10;
+  var VERSION = '20260804-1';
   var base = '/frontend/js/coach-bulk-import-v4/';
 
   Promise.all(Array.from({ length: TOTAL_PARTS }, function (_, index) {
