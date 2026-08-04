@@ -35,6 +35,30 @@ const PLAYER_AVATAR_FIELDS = new Set([
   'avatarStyle'
 ]);
 
+/*
+ * Older Scout routes still use explicit player select lists. Keep those routes
+ * on the authoritative V4 scoring contract until every legacy select has been
+ * removed. This only appends saved evidence/output columns; it never exposes
+ * proprietary scoring weights or formulas.
+ */
+const PLAYER_V4_READ_COLUMNS = Object.freeze([
+  'alternative_positions',
+  'attribute_ratings',
+  'attribute_rating_scale',
+  'attribute_assessment_version',
+  'attribute_assessed_at',
+  'attribute_assessed_by',
+  'overall_breakdown',
+  'position_ratings',
+  'evidence_confidence',
+  'prediction_analysis',
+  'value_analysis',
+  'scoring_input_snapshot',
+  'scoring_result',
+  'scoring_version',
+  'scored_at'
+]);
+
 function stripAvatarFields(value) {
   if (Array.isArray(value)) {
     return value.map(stripAvatarFields);
@@ -74,6 +98,26 @@ function stripAvatarColumns(columns) {
     .join(',');
 }
 
+function ensurePlayerV4ReadColumns(columns) {
+  if (typeof columns !== 'string') return columns;
+
+  const cleaned = stripAvatarColumns(columns);
+  if (!cleaned || cleaned.trim() === '*' || cleaned.includes('*')) {
+    return cleaned;
+  }
+
+  const selected = new Set(
+    cleaned
+      .split(',')
+      .map((column) => column.trim())
+      .filter(Boolean)
+      .map((column) => column.replace(/^[^:]+:/, '').trim())
+  );
+
+  const additions = PLAYER_V4_READ_COLUMNS.filter((column) => !selected.has(column));
+  return additions.length ? [cleaned, ...additions].filter(Boolean).join(',') : cleaned;
+}
+
 function wrapPlayerBuilder(builder) {
   if (!builder || typeof builder !== 'object') return builder;
 
@@ -85,9 +129,9 @@ function wrapPlayerBuilder(builder) {
         return value;
       }
 
-      return function avatarSafeBuilderMethod(...args) {
+      return function playerSafeBuilderMethod(...args) {
         if (property === 'select' && args.length) {
-          args[0] = stripAvatarColumns(args[0]);
+          args[0] = ensurePlayerV4ReadColumns(args[0]);
         }
 
         if (
@@ -149,5 +193,6 @@ module.exports = {
   supabase,
   supabaseAnon,
   stripPlayerAvatarFields: stripAvatarFields,
-  stripPlayerAvatarColumns: stripAvatarColumns
+  stripPlayerAvatarColumns: stripAvatarColumns,
+  ensurePlayerV4ReadColumns
 };
