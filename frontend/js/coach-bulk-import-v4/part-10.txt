@@ -1,57 +1,90 @@
-      var position = window.ScoutLinkScoringV4.normalisePosition(el('cb4Position').value);
-      if (!firstName || !lastName || !ageGroup || !position) throw new Error('First name, last name, age group and exact position are required.');
-      row.firstName = firstName;
-      row.lastName = lastName;
-      row.ageGroup = ageGroup;
-      row.position = position;
-      row.foot = el('cb4Foot').value;
-      row.heightCategory = el('cb4Height').value;
-      row.buildCategory = el('cb4Build').value;
-      row.assignedCoachId = coaches.length ? el('cb4Coach').value : defaultCoachId;
-      row.attributeRatings = modalRatings();
-      closeEdit();
+  }
+
+  async function importFile(file) {
+    clearMessages();
+    fileName = file.name;
+    try {
+      var records;
+      if (/\.csv$/i.test(file.name)) {
+        records = parseCsv(await file.text());
+      } else {
+        if (!window.XLSX) {
+          throw new Error('Spreadsheet support did not load. Save the file as CSV or refresh and try again.');
+        }
+        var buffer = await file.arrayBuffer();
+        var workbook = window.XLSX.read(buffer, { type: 'array' });
+        records = window.XLSX.utils.sheet_to_json(
+          workbook.Sheets[workbook.SheetNames[0]],
+          { defval: '' }
+        );
+      }
+
+      if (!records.length) throw new Error('The file does not contain player rows.');
+      validateImportHeaders(records[0]);
+      rows = records.slice(0, MAX_ROWS).map(rowFromRecord);
       render();
+      showSuccess(
+        rows.length + ' player row' + (rows.length === 1 ? '' : 's') +
+        ' imported. Complete the position-specific attributes directly in the table.'
+      );
     } catch (error) {
-      el('cb4ModalError').textContent = error.message;
-      el('cb4ModalError').classList.add('is-visible');
+      showError(error.message || 'The file could not be imported.');
     }
   }
 
-  function clearMessages() {
-    if (el('formError')) { el('formError').textContent = ''; el('formError').className = 'ap3-message is-error'; }
-    if (el('formSuccess')) { el('formSuccess').textContent = ''; el('formSuccess').className = 'ap3-message is-success'; }
-  }
-  function showError(message) {
-    clearMessages(); el('formError').textContent = message; el('formError').className = 'ap3-message is-error show';
-  }
-  function showSuccess(message) {
-    clearMessages(); el('formSuccess').textContent = message; el('formSuccess').className = 'ap3-message is-success show';
-  }
+  async function loadCoachContext() {
+    if (isPublicDemo()) {
+      el('teamNameLabel').textContent = 'Public demo session';
+      return;
+    }
+    if (!window.Auth || window.Auth.type !== 'Coach') {
+      el('teamNameLabel').textContent = 'Stratex managed import';
+      return;
+    }
 
-  function payloadFor(row) {
-    return {
-      firstName:row.firstName.trim(), lastName:row.lastName.trim(), ageGroup:row.ageGroup,
-      positionGroup:window.ScoutLinkScoringV4.groupForPosition(row.position),
-      specificPosition:row.position, primaryPosition:row.position, positions:[row.position],
-      foot:row.foot || 'Right', heightCategory:row.heightCategory || 'average',
-      buildCategory:row.buildCategory || 'athletic', assignedCoachId:row.assignedCoachId || null,
-      attributeRatings:row.attributeRatings || {}, attribute_rating_scale:'ten'
-    };
-  }
-
-  async function submitAll() {
-    clearMessages();
-    if (!rows.length) return showError('Add or import at least one player.');
-    var invalid = rows.filter(function (row) { return !status(row).ready; });
-    if (invalid.length) return showError('Correct every row marked Review before submitting.');
-    var buttons = document.querySelectorAll('[data-bulk-submit]');
-    buttons.forEach(function (button) { button.disabled = true; button.textContent = 'Submitting…'; });
     try {
-      var response;
-      if (isPublicDemo()) {
-        var created = [];
-        for (var index = 0; index < rows.length; index += 1) {
-          created.push(await window.api('POST','/api/players',payloadFor(rows[index])));
-        }
-        response = {created:created, errors:[]};
-      } else {
+      var profile = await window.api('GET', '/api/coaches/profile');
+      var coach = profile.coach || {};
+      el('teamNameLabel').textContent = coach.team_name || 'My team';
+      defaultCoachId = coach.id || '';
+
+      if (coach.is_super_user) {
+        var response = await window.api('GET', '/api/coaches/team-coaches');
+        coaches = [coach].concat(response.coaches || response.data || []).filter(function (row, index, all) {
+          return row && row.id && all.findIndex(function (other) {
+            return other && other.id === row.id;
+          }) === index;
+        });
+        el('defaultCoachSelect').innerHTML = coachOptionsMarkup(defaultCoachId);
+        el('defaultCoachField').style.display = '';
+      }
+    } catch (error) {
+      el('teamNameLabel').textContent = 'Team unavailable';
+      showError('Team assignment could not be loaded: ' + error.message);
+    }
+    render();
+  }
+
+  async function init() {
+    if (!allowedContext()) {
+      window.location.href = '/login';
+      return;
+    }
+    if (!window.ScoutLinkScoringV4) {
+      window.setTimeout(init, 40);
+      return;
+    }
+
+    options = await window.ScoutLinkScoringV4.loadOptions();
+    if (typeof window.buildScoutNav === 'function') {
+      window.buildScoutNav('sidebarNav', 'Coach');
+    }
+    buildPage();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+}());
