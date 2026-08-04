@@ -1,23 +1,99 @@
-        '<button class="cb3-btn is-small" type="button" data-close-cb4>Close</button></header>' +
-      '<form id="cb4EditForm"><div class="cb3-modal-body"><div class="cb3-modal-error" id="cb4ModalError"></div>' +
-        '<section class="cb3-edit-section"><h3>Player and football details</h3><div class="cb3-form-grid">' +
-          '<div class="cb3-form-field"><label for="cb4FirstName">First name</label><input id="cb4FirstName" required></div>' +
-          '<div class="cb3-form-field"><label for="cb4LastName">Last name</label><input id="cb4LastName" required></div>' +
-          '<div class="cb3-form-field"><label for="cb4AgeGroup">Age group</label><select id="cb4AgeGroup"></select></div>' +
-          '<div class="cb3-form-field"><label for="cb4PositionGroup">Position group</label><select id="cb4PositionGroup"></select></div>' +
-          '<div class="cb3-form-field"><label for="cb4Position">Specific position</label><select id="cb4Position"></select></div>' +
-          '<div class="cb3-form-field"><label for="cb4Foot">Preferred foot</label><select id="cb4Foot"><option>Right</option><option>Left</option><option>Both</option></select></div>' +
-          '<div class="cb3-form-field"><label for="cb4Height">Height profile</label><select id="cb4Height">' +
-            '<option value="very_short">Very short · 155–163 cm</option><option value="short">Short · 163–170 cm</option>' +
-            '<option value="average">Average · 170–178 cm</option><option value="tall">Tall · 178–185 cm</option>' +
-            '<option value="very_tall">Very tall · 185+ cm</option></select></div>' +
-          '<div class="cb3-form-field"><label for="cb4Build">Build profile</label><select id="cb4Build">' +
-            '<option value="very_slight">Very slight · 50–58 kg</option><option value="slight">Slight · 58–65 kg</option>' +
-            '<option value="lean">Lean · 65–72 kg</option><option value="athletic">Athletic · 72–80 kg</option>' +
-            '<option value="stocky">Stocky · 80–88 kg</option><option value="powerful">Powerful · 88–96 kg</option>' +
-            '<option value="very_powerful">Very powerful · 96+ kg</option></select></div>' +
-          '<div class="cb3-form-field" id="cb4CoachField" style="display:none"><label for="cb4Coach">Assigned Coach</label><select id="cb4Coach"></select></div>' +
-        '</div></section><section class="cb3-edit-section"><h3>Coach-rated attributes</h3>' +
-          '<p class="cb4-help">Whole numbers from 1 to 10. Leave Not observed where evidence is unavailable.</p>' +
-          '<div id="cb4Assessment"></div></section></div>' +
-        '<footer class="cb3-modal-actions"><span class="cb3-edit-status" id="cb4EditStatus" aria-live="polite"></span>' +
+      'body.coach-bulk-import-v3 .ap3-message.show{display:block}' +
+      'body.coach-bulk-import-v3 .ap3-message.is-error{border:1px solid #f0c2c8;background:#fff2f4;color:#9d2634}' +
+      'body.coach-bulk-import-v3 .ap3-message.is-success{border:1px solid #b7e1d4;background:#eaf9f3;color:#075f4c}' +
+      'body.coach-bulk-import-v3 .cb4-inline-table{min-width:1500px}' +
+      'body.coach-bulk-import-v3 .cb4-inline-table td{vertical-align:top}' +
+      'body.coach-bulk-import-v3 .cb4-inline-input,body.coach-bulk-import-v3 .cb4-inline-select{' +
+        'width:100%;min-width:110px;height:34px;padding:0 8px;border:1px solid var(--cb3-line);border-radius:8px;' +
+        'background:#fff;color:var(--cb3-text);font:inherit;font-size:9px;box-sizing:border-box}' +
+      'body.coach-bulk-import-v3 .cb4-inline-input:focus,body.coach-bulk-import-v3 .cb4-inline-select:focus{' +
+        'outline:3px solid rgba(15,163,127,.13);border-color:var(--cb3-green)}' +
+      'body.coach-bulk-import-v3 .cb4-inline-name{min-width:135px}' +
+      'body.coach-bulk-import-v3 .cb4-inline-position{min-width:180px}' +
+      'body.coach-bulk-import-v3 .cb4-inline-profile{min-width:160px}' +
+      'body.coach-bulk-import-v3 .cb4-attribute-row td{padding:0 11px 13px;background:#fbfcfe}' +
+      'body.coach-bulk-import-v3 .cb4-inline-assessment{padding:12px;border:1px solid var(--cb3-line);border-radius:12px;background:#fff}' +
+      'body.coach-bulk-import-v3 .cb4-assessment-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}' +
+      'body.coach-bulk-import-v3 .cb4-assessment-head strong{color:var(--cb3-text);font-size:10px}' +
+      'body.coach-bulk-import-v3 .cb4-assessment-head span{color:var(--cb3-muted);font-size:8px}' +
+      'body.coach-bulk-import-v3 .cb4-attribute-section+ .cb4-attribute-section{margin-top:12px;padding-top:12px;border-top:1px solid #edf1f5}' +
+      'body.coach-bulk-import-v3 .cb4-attribute-section h4{margin:0 0 8px;color:var(--cb3-text);font-size:9px}' +
+      'body.coach-bulk-import-v3 .cb4-rating-grid{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:8px}' +
+      'body.coach-bulk-import-v3 .cb4-rating-field{display:grid;gap:5px}' +
+      'body.coach-bulk-import-v3 .cb4-rating-field label{color:var(--cb3-muted);font-size:8px;font-weight:800;line-height:1.25}' +
+      'body.coach-bulk-import-v3 .cb4-rating-field select{width:100%;height:34px;padding:0 8px;border:1px solid var(--cb3-line);border-radius:8px;background:#fff;color:var(--cb3-text);font-size:9px}' +
+      'body.coach-bulk-import-v3 .cb4-attribute-prompt{padding:14px;border:1px dashed var(--cb3-line-strong);border-radius:10px;color:var(--cb3-muted);font-size:9px;text-align:center}' +
+      'body.coach-bulk-import-v3 .cb4-status-cell{min-width:120px}' +
+      'body.coach-bulk-import-v3 .cb4-row-actions{display:flex;gap:5px;align-items:center;white-space:nowrap}' +
+      '@media(max-width:1100px){body.coach-bulk-import-v3 .cb4-rating-grid{grid-template-columns:repeat(3,minmax(170px,1fr))}}' +
+      '@media(max-width:760px){body.coach-bulk-import-v3 .cb4-rating-grid{grid-template-columns:1fr 1fr}}' +
+      '@media(max-width:520px){body.coach-bulk-import-v3 .cb4-rating-grid{grid-template-columns:1fr}}';
+    document.head.appendChild(style);
+  }
+
+  function buildPage() {
+    document.body.classList.add('coach-bulk-import-v3');
+    var page = document.querySelector('.page-content');
+    if (!page) return;
+    var banner = page.querySelector('.public-demo-banner');
+    page.innerHTML = shellMarkup();
+    if (banner) page.insertBefore(banner, page.firstChild);
+    installStyles();
+
+    var title = document.querySelector('.topbar-title');
+    if (title) title.textContent = 'Bulk import';
+    var mobileTitle = document.querySelector('.coach-v2-mobile-title');
+    if (mobileTitle) mobileTitle.textContent = 'Bulk import';
+
+    bindActions();
+    render();
+    loadCoachContext();
+  }
+
+  function teamName() {
+    return el('teamNameLabel') ? el('teamNameLabel').textContent : 'My team';
+  }
+
+  function coachName(id) {
+    var coach = coaches.find(function (item) {
+      return String(item.id) === String(id);
+    });
+    return coach
+      ? [coach.first_name, coach.last_name].filter(Boolean).join(' ')
+      : 'Current Coach';
+  }
+
+  function attributesMarkup(row) {
+    if (!row.attributesExpanded) return '';
+
+    if (!row.position) {
+      return '<tr class="cb4-attribute-row" data-row-id="' + esc(row.id) + '"><td colspan="11">' +
+        '<div class="cb4-attribute-prompt">Select the player’s exact position to load the correct assessment metrics.</div>' +
+      '</td></tr>';
+    }
+
+    var group = window.ScoutLinkScoringV4.groupForPosition(row.position);
+    var flat = flatRatings(row);
+    var sections = group === 'Goalkeeper'
+      ? [{ label: 'Goalkeeper attributes', rows: options.attributes.goalkeeper }]
+      : [
+          { label: 'General attributes', rows: options.attributes.general },
+          { label: group + ' attributes', rows: options.attributes[group.toLowerCase()] || [] }
+        ];
+    var info = status(row);
+
+    return '<tr class="cb4-attribute-row" data-row-id="' + esc(row.id) + '"><td colspan="11">' +
+      '<div class="cb4-inline-assessment"><div class="cb4-assessment-head"><div>' +
+        '<strong>' + esc(playerName(row)) + ' · ' + esc(window.ScoutLinkScoringV4.positionLabel(row.position, options)) + '</strong>' +
+        '<span>Choose the descriptive level for each observed metric. Values are saved internally as whole numbers from 1 to 10.</span>' +
+      '</div><span data-row-attribute-count="' + esc(row.id) + '">' + info.observed + ' of ' + info.expected + ' observed</span></div>' +
+      sections.map(function (section) {
+        return '<section class="cb4-attribute-section"><h4>' + esc(section.label) + '</h4><div class="cb4-rating-grid">' +
+          section.rows.map(function (attribute) {
+            var selected = flat[attribute[0]] == null ? '' : String(flat[attribute[0]]);
+            return '<div class="cb4-rating-field"><label for="' + esc(row.id + '-' + attribute[0]) + '">' + esc(attribute[1]) + '</label>' +
+              '<select class="cb4-inline-select" id="' + esc(row.id + '-' + attribute[0]) + '" ' +
+              'data-rating-key="' + esc(attribute[0]) + '" data-row-id="' + esc(row.id) + '">' +
+                '<option value="">Not observed</option>' +
+                options.ratingOptions.filter(function (option) {
+                  return option.value !== null;
