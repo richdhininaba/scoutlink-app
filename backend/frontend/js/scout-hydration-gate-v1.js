@@ -92,10 +92,19 @@
 
   function loadingNow() {
     var app = appHost();
+    var path = pathName();
     if (!app) return true;
-    if (app.classList.contains('is-loading')) return true;
     if (deepQuery('.si64-loading')) return true;
-    if (pathName() === '/player/profile' && deepQuery('.profile-route-loading')) return true;
+    if (path === '/player/profile' && deepQuery('.profile-route-loading')) return true;
+    if (app.classList.contains('is-loading')) {
+      /* Pipeline keeps its historical class even after the exact runtime has
+         finished. The exact runtime flag is the authoritative completion
+         signal for that route. */
+      if (path.indexOf('/scout/pipeline') === 0 && window.__slc2ExactReady && Date.now() - startedAt > 800) {
+        return false;
+      }
+      return true;
+    }
     return false;
   }
 
