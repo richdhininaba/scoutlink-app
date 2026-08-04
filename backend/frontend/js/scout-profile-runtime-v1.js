@@ -38,9 +38,12 @@
     return '';
   }
 
+  function profilePath() {
+    return String(window.location.pathname || '').replace(/\/+$/, '').toLowerCase() === '/player/profile';
+  }
+
   function isScoutProfile() {
-    var path = String(window.location.pathname || '').replace(/\/+$/, '').toLowerCase();
-    return path === '/player/profile' && (
+    return profilePath() && (
       activeRole() === 'scout' ||
       (document.body && document.body.classList.contains('scout-profile-route'))
     );
@@ -117,7 +120,9 @@
   }
 
   function start() {
-    if (!isScoutProfile()) return;
+    /* Start observing the route before role resolution finishes. The check
+       remains Scout-only, so Coach and Player profiles are never modified. */
+    if (!profilePath()) return;
 
     observer = new MutationObserver(check);
     observer.observe(document.documentElement, {
