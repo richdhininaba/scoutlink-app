@@ -20,6 +20,23 @@
   <link rel="stylesheet" href="/frontend/css/scout-intelligence-v4.css">
   <link rel="stylesheet" href="/frontend/css/scout-experience-v8.css?v=20260731-4">
   <link rel="stylesheet" href="/frontend/css/coach-player-profile-v4.css?v=20260731-5">
+  <link rel="stylesheet" href="/frontend/css/scout-hydration-gate-v1.css?v=20260804-3">
+
+  <script>
+    (function () {
+      try {
+        var role = String(
+          sessionStorage.getItem('sl_public_demo_role') ||
+          sessionStorage.getItem('sl_admin_demo_role') ||
+          sessionStorage.getItem('sl_preview_role') ||
+          sessionStorage.getItem('demoRole') ||
+          localStorage.getItem('sl_type') ||
+          ''
+        ).toLowerCase();
+        if (role === 'scout') document.documentElement.classList.add('sl-scout-hydration-pending');
+      } catch (_) {}
+    }());
+  </script>
 
   <style>
     html,body{min-height:100%;margin:0}
@@ -58,6 +75,7 @@
     </div>
   </div>
 
+  <script id="scoutHydrationGateV1Script" src="/frontend/js/scout-hydration-gate-v1.js?v=20260804-3"></script>
   <script src="/frontend/js/main.js?v=20260731-5"></script>
   <script id="dataMediaGuardV1Script" src="/frontend/js/data-media-guard-v1.js?v=20260804-2"></script>
   <script src="/frontend/js/player-initials-v1.js?v=20260731-5"></script>
@@ -67,9 +85,9 @@
   <script src="/frontend/js/coach-player-profile-v4.js?v=20260731-5"></script>
   <script src="/frontend/js/scout-v1.js"></script>
   <script src="/frontend/js/scout-experience-exact-v3.js"></script>
-  <script id="scoutProfileRuntimeV1Script" src="/frontend/js/scout-profile-runtime-v1.js?v=20260804-2"></script>
-  <script src="/frontend/js/scout-intelligence-v4.js?v=20260804-2"></script>
+  <script id="scoutProfileRuntimeV1Script" src="/frontend/js/scout-profile-runtime-v1.js?v=20260804-3"></script>
+  <script src="/frontend/js/scout-intelligence-v4.js?v=20260804-3"></script>
   <script src="/frontend/js/scout-experience-v8.js?v=20260731-4"></script>
-  <script src="/frontend/js/heap-analytics.js?v=20260804-2"></script>
+  <script src="/frontend/js/heap-analytics.js?v=20260804-3"></script>
 </body>
 </html>
