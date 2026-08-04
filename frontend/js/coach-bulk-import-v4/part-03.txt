@@ -1,24 +1,88 @@
-        '<article class="cb3-summary-card"><small>Need review</small><strong class="is-orange" id="cb3ReviewRows">0</strong><p>Rows that still require a correction.</p></article>' +
+  function positionOptionsMarkup(selected) {
+    return '<option value="">Select position</option>' + options.positionGroups.map(function (group) {
+      var positions = options.positions.filter(function (position) {
+        return position.group === group.key;
+      });
+      return '<optgroup label="' + esc(group.label) + '">' + positions.map(function (position) {
+        return '<option value="' + esc(position.code) + '"' +
+          (position.code === selected ? ' selected' : '') + '>' +
+          esc(position.label + ' (' + position.code + ')') + '</option>';
+      }).join('') + '</optgroup>';
+    }).join('');
+  }
+
+  function coachOptionsMarkup(selected) {
+    return coaches.map(function (coach) {
+      var name = [coach.first_name, coach.last_name].filter(Boolean).join(' ');
+      return '<option value="' + esc(coach.id) + '"' +
+        (String(coach.id) === String(selected || defaultCoachId) ? ' selected' : '') +
+        '>' + esc(name) + '</option>';
+    }).join('');
+  }
+
+  function shellMarkup() {
+    return '<div class="bulk-import-shell">' +
+      '<section class="cb3-hero" id="cb3Hero"><div class="cb3-hero-copy">' +
+        '<span class="cb3-hero-label">Coach workspace</span>' +
+        '<h1>Add a squad without repetitive data entry.</h1>' +
+        '<p>Add players directly in the table, or import a short file containing only player details. ' +
+        'ScoutLink then shows the correct attributes for each player’s position.</p>' +
+      '</div><div class="cb3-hero-actions">' +
+        '<button class="cb3-btn" type="button" data-bulk-download>Download player-details template</button>' +
+        '<button class="cb3-btn is-primary" type="button" data-bulk-add>+ Add player row</button>' +
+      '</div></section>' +
+
+      '<section class="coach-v2-bulk-toolbar" id="assignmentToolbar"><div><b>Team assignment</b>' +
+        '<span id="teamNameLabel">Loading team…</span></div>' +
+        '<label id="defaultCoachField" style="display:none"><span>Default Coach</span>' +
+        '<select id="defaultCoachSelect"></select></label></section>' +
+
+      '<section class="cb3-upload-panel" id="cb3UploadPanel"><header class="cb3-panel-head">' +
+        '<div class="cb3-panel-title"><h2>Optional player-details upload</h2>' +
+        '<p>The file contains only first name, last name, age group, position, foot, height profile and build profile.</p></div>' +
+        '<span class="cb3-pill">CSV or spreadsheet</span></header><div class="cb3-panel-body">' +
+        '<div class="cb3-drop-zone" id="cb3DropZone" tabindex="0" role="button" ' +
+        'aria-label="Choose or drop a player details file">' +
+          '<div class="cb3-upload-icon" aria-hidden="true">↑</div>' +
+          '<h3>Drop a player-details file here</h3>' +
+          '<p>Attributes are deliberately excluded from the file. After upload, each row displays only the metrics required for that position.</p>' +
+          '<div class="cb3-drop-actions">' +
+            '<button class="cb3-btn is-primary" type="button" data-bulk-choose>Choose file</button>' +
+            '<button class="cb3-btn" type="button" data-bulk-download>Download template</button>' +
+          '</div><div class="cb3-file-name" id="cb3FileName" aria-live="polite"></div>' +
+        '</div></div></section>' +
+
+      '<section class="cb3-summary-grid" id="cb3SummaryGrid">' +
+        '<article class="cb3-summary-card"><small>Total rows</small><strong id="cb3TotalRows">0</strong>' +
+        '<p>Player records currently in this import.</p></article>' +
+        '<article class="cb3-summary-card"><small>Ready to submit</small><strong class="is-green" id="cb3ReadyRows">0</strong>' +
+        '<p>Rows with the required player details.</p></article>' +
+        '<article class="cb3-summary-card"><small>Need review</small><strong class="is-orange" id="cb3ReviewRows">0</strong>' +
+        '<p>Rows still missing a required detail.</p></article>' +
       '</section>' +
 
       '<div class="ap3-message is-error" id="formError" role="alert"></div>' +
       '<div class="ap3-message is-success" id="formSuccess" aria-live="polite"></div>' +
 
       '<section class="cb3-preview-panel" id="cb3PreviewPanel"><header class="cb3-panel-head">' +
-        '<div class="cb3-panel-title"><h2>Import preview</h2><p>Review the compact summary and open only the rows that need changing.</p></div>' +
+        '<div class="cb3-panel-title"><h2>Player import table</h2>' +
+        '<p>Fill in player details here. Selecting a position immediately loads only that player’s relevant attributes.</p></div>' +
         '<div class="cb3-status-pills"><span class="cb3-pill is-green"><span id="cb3ReadyPill">0</span>&nbsp;ready</span>' +
-          '<span class="cb3-pill is-orange"><span id="cb3ReviewPill">0</span>&nbsp;need review</span></div></header>' +
-        '<div class="cb3-preview-scroll"><table class="cb3-preview-table"><thead><tr>' +
-          '<th>Row</th><th>Player</th><th>Age group</th><th>Position</th><th>Team</th><th>Assigned Coach</th><th>Status</th><th>Action</th>' +
+        '<span class="cb3-pill is-orange"><span id="cb3ReviewPill">0</span>&nbsp;need review</span></div></header>' +
+        '<div class="cb3-preview-scroll"><table class="cb3-preview-table cb4-inline-table"><thead><tr>' +
+          '<th>Row</th><th>First name</th><th>Last name</th><th>Age group</th><th>Position</th>' +
+          '<th>Foot</th><th>Height profile</th><th>Build profile</th><th>Assigned Coach</th><th>Status</th><th>Action</th>' +
         '</tr></thead><tbody id="cb3PreviewBody"></tbody></table>' +
-        '<div class="cb3-preview-empty" id="cb3PreviewEmpty">Add a row or upload the completed template to begin.</div></div>' +
-        '<footer class="cb3-preview-footer"><p>Rows may keep attributes as Not observed; the evidence-confidence output will reflect missing evidence.</p>' +
-          '<div class="cb3-preview-footer-actions"><button class="cb3-btn" type="button" data-bulk-add>+ Add row</button>' +
-            '<button class="cb3-btn" type="button" data-bulk-choose>Choose another file</button>' +
-            '<button class="cb3-btn is-primary" type="button" data-bulk-submit>Submit all players</button></div></footer></section>' +
+        '<div class="cb3-preview-empty" id="cb3PreviewEmpty">Select “Add player row” to enter players directly, or upload the short player-details file.</div></div>' +
+        '<footer class="cb3-preview-footer"><p>Not observed is allowed. Missing attributes reduce evidence confidence rather than counting as zero.</p>' +
+          '<div class="cb3-preview-footer-actions">' +
+            '<button class="cb3-btn" type="button" data-bulk-add>+ Add player row</button>' +
+            '<button class="cb3-btn" type="button" data-bulk-choose>Import player details</button>' +
+            '<button class="cb3-btn is-primary" type="button" data-bulk-submit>Submit all players</button>' +
+          '</div></footer></section>' +
 
       '<section class="cb3-issues-panel" id="cb3IssuesPanel"><header class="cb3-panel-head">' +
-        '<div class="cb3-panel-title"><h2>Resolve issues</h2><p>Only rows needing attention appear here.</p></div>' +
+        '<div class="cb3-panel-title"><h2>Resolve issues</h2><p>Only rows missing required player details appear here.</p></div>' +
         '<button class="cb3-btn is-small" type="button" data-bulk-add>+ Add player row</button></header>' +
         '<div class="cb3-panel-body" id="cb3IssueBody"></div></section>' +
 
@@ -27,7 +91,9 @@
     '</div>';
   }
 
-  function modalMarkup() {
-    return '<div class="cb3-modal" id="cb4EditModal" aria-hidden="true"><section class="cb3-modal-card" role="dialog" aria-modal="true" aria-labelledby="cb4EditTitle">' +
-      '<header class="cb3-modal-head"><div><h2 id="cb4EditTitle">Edit import row</h2>' +
-        '<p id="cb4EditSubtitle">Correct the player information before submitting.</p></div>' +
+  function installStyles() {
+    if (el('cb4InlineStyles')) return;
+    var style = document.createElement('style');
+    style.id = 'cb4InlineStyles';
+    style.textContent =
+      'body.coach-bulk-import-v3 .ap3-message{display:none;margin:0 0 10px;padding:10px 12px;border-radius:11px;font-size:8px;font-weight:800}' +
