@@ -99,15 +99,14 @@
     var app = appHost();
     var path = pathName();
     if (!app) return true;
+
+    /* The visible loading panel is authoritative. Some older route shells
+       leave is-loading on the host permanently, so the completed exact runtime
+       can safely override that stale class once no loader remains. */
     if (deepQuery('.si64-loading')) return true;
     if (path === '/player/profile' && deepQuery('.profile-route-loading')) return true;
     if (app.classList.contains('is-loading')) {
-      /* Pipeline keeps its historical class even after the exact runtime has
-         finished. The exact runtime flag is the authoritative completion
-         signal for that route. */
-      if (path.indexOf('/scout/pipeline') === 0 && window.__slc2ExactReady && Date.now() - startedAt > 800) {
-        return false;
-      }
+      if (window.__slc2ExactReady && Date.now() - startedAt > 800) return false;
       return true;
     }
     return false;
