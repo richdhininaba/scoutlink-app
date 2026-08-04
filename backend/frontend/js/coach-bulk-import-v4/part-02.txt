@@ -1,32 +1,99 @@
-      text:errors.length ? 'Add ' + errors.join(', ') : observed + ' of ' + expected + ' attributes observed',
-      observed:observed,
-      expected:expected
+    );
+  }
+
+
+  function normaliseFoot(value) {
+    var foot = String(value || '').trim().toLowerCase();
+    if (foot === 'left') return 'Left';
+    if (foot === 'both' || foot === 'two-footed' || foot === 'two footed') return 'Both';
+    return 'Right';
+  }
+
+  function normaliseProfile(value, allowed, fallback) {
+    var candidate = String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    return allowed.some(function (option) { return option[0] === candidate; }) ? candidate : fallback;
+  }
+
+  function blankRow() {
+    return {
+      id: 'bulk-v4-' + nextId++,
+      firstName: '',
+      lastName: '',
+      ageGroup: '',
+      position: '',
+      foot: 'Right',
+      heightCategory: 'average',
+      buildCategory: 'athletic',
+      assignedCoachId: defaultCoachId,
+      attributeRatings: {},
+      attributesExpanded: true,
+      sourceRow: null
     };
   }
 
-  function shellMarkup() {
-    return '<div class="bulk-import-shell">' +
-      '<section class="cb3-hero" id="cb3Hero"><div class="cb3-hero-copy">' +
-        '<span class="cb3-hero-label">Coach workspace</span><h1>Add a squad without repetitive data entry.</h1>' +
-        '<p>Download the ScoutLink template, upload a CSV or spreadsheet, review each player and correct only the rows that need attention before submitting.</p>' +
-      '</div><div class="cb3-hero-actions"><button class="cb3-btn" type="button" data-bulk-download>Download template</button>' +
-        '<button class="cb3-btn is-primary" type="button" data-bulk-choose>Choose file</button></div></section>' +
+  function playerName(row) {
+    return [row.firstName, row.lastName].filter(Boolean).join(' ') || 'Unnamed player';
+  }
 
-      '<section class="coach-v2-bulk-toolbar" id="assignmentToolbar"><div><b>Team assignment</b>' +
-        '<span id="teamNameLabel">Loading team…</span></div><label id="defaultCoachField" style="display:none">' +
-        '<span>Default Coach</span><select id="defaultCoachSelect"></select></label></section>' +
+  function flatRatings(row) {
+    return window.ScoutLinkScoringV4.flattenRatings(row.attributeRatings || {});
+  }
 
-      '<section class="cb3-upload-panel" id="cb3UploadPanel"><header class="cb3-panel-head">' +
-        '<div class="cb3-panel-title"><h2>Upload player file</h2><p>Use the current ScoutLink CSV or spreadsheet template.</p></div>' +
-        '<span class="cb3-pill">CSV or spreadsheet</span></header><div class="cb3-panel-body">' +
-        '<div class="cb3-drop-zone" id="cb3DropZone" tabindex="0" role="button" aria-label="Choose or drop a player import file">' +
-          '<div class="cb3-upload-icon" aria-hidden="true">↑</div><h3>Drop your completed ScoutLink template here</h3>' +
-          '<p>Accepted file types are CSV, XLS and XLSX. A maximum of 50 player rows can be imported at once.</p>' +
-          '<div class="cb3-drop-actions"><button class="cb3-btn is-primary" type="button" data-bulk-choose>Choose file</button>' +
-            '<button class="cb3-btn" type="button" data-bulk-download>Download template</button></div>' +
-          '<div class="cb3-file-name" id="cb3FileName" aria-live="polite"></div>' +
-        '</div></div></section>' +
+  function expectedAttributes(row) {
+    return row.position
+      ? window.ScoutLinkScoringV4.attributesForPosition(row.position, options)
+      : [];
+  }
 
-      '<section class="cb3-summary-grid" id="cb3SummaryGrid">' +
-        '<article class="cb3-summary-card"><small>Total rows</small><strong id="cb3TotalRows">0</strong><p>Player records currently in this import.</p></article>' +
-        '<article class="cb3-summary-card"><small>Ready to submit</small><strong class="is-green" id="cb3ReadyRows">0</strong><p>Rows that pass V4 validation.</p></article>' +
+  function coreErrors(row) {
+    var errors = [];
+    if (!String(row.firstName || '').trim()) errors.push('first name');
+    if (!String(row.lastName || '').trim()) errors.push('last name');
+    if (!options.ageGroups.includes(row.ageGroup)) errors.push('age group');
+    if (!window.ScoutLinkScoringV4.normalisePosition(row.position)) errors.push('supported position');
+    return errors;
+  }
+
+  function status(row) {
+    var errors = coreErrors(row);
+    var expected = expectedAttributes(row).length;
+    var observed = Object.keys(flatRatings(row)).filter(function (key) {
+      return expectedAttributes(row).some(function (attribute) {
+        return attribute[0] === key;
+      });
+    }).length;
+
+    return {
+      ready: errors.length === 0,
+      text: errors.length
+        ? 'Add ' + errors.join(', ')
+        : observed + ' of ' + expected + ' attributes observed',
+      observed: observed,
+      expected: expected
+    };
+  }
+
+  function ratingLabel(option) {
+    return String(option.label || '').replace(/^\s*\d+\s*[—–-]\s*/, '');
+  }
+
+  function optionMarkup(values, selected, placeholder) {
+    var html = placeholder == null
+      ? ''
+      : '<option value="">' + esc(placeholder) + '</option>';
+
+    html += values.map(function (item) {
+      var value = Array.isArray(item) ? item[0] : item.value;
+      var label = Array.isArray(item) ? item[1] : item.label;
+      if (typeof item === 'string') {
+        value = item;
+        label = item;
+      }
+      return '<option value="' + esc(value) + '"' +
+        (String(value) === String(selected == null ? '' : selected) ? ' selected' : '') +
+        '>' + esc(label) + '</option>';
+    }).join('');
+
+    return html;
+  }
+
