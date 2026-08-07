@@ -2,6 +2,20 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [],
+  "functions": {
+    "api/stratex-render.js": {
+      "includeFiles": [
+        "assets/stratex-public-v4-pages.json",
+        "pages/stratex-public-v4.html",
+        "pages/404.html"
+      ]
+    },
+    "api/stratex-sitemap.js": {
+      "includeFiles": [
+        "assets/stratex-public-v4-pages.json"
+      ]
+    }
+  },
   "rewrites": [
     {
       "source": "/frontend/css/:path*",

@@ -92,13 +92,31 @@ function schemaFor(page, canonical) {
   };
 }
 
+function findBundlePath(...segments) {
+  const bases = [
+    process.cwd(),
+    path.join(__dirname, '..'),
+    path.join(process.cwd(), 'apps', 'stratex-web'),
+    path.join(__dirname, '..', '..', 'apps', 'stratex-web')
+  ];
+
+  for (const base of bases) {
+    const candidate = path.join(base, ...segments);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
+}
+
 function readBundleFile(...segments) {
-  return fs.readFileSync(path.join(process.cwd(), ...segments), 'utf8');
+  const bundlePath = findBundlePath(...segments);
+  if (!bundlePath) throw new Error('Missing Stratex bundle file: ' + segments.join('/'));
+  return fs.readFileSync(bundlePath, 'utf8');
 }
 
 module.exports = function handler(req, res) {
-  const shellPath = path.join(process.cwd(), 'pages', 'stratex-public-v4.html');
-  const contentPath = path.join(process.cwd(), 'assets', 'stratex-public-v4-pages.json');
+  const shellPath = findBundlePath('pages', 'stratex-public-v4.html');
+  const contentPath = findBundlePath('assets', 'stratex-public-v4-pages.json');
 
   if (!fs.existsSync(shellPath) || !fs.existsSync(contentPath)) {
     res.statusCode = 500;
@@ -112,10 +130,10 @@ module.exports = function handler(req, res) {
   const page = store.pages && store.pages[route.key];
 
   if (!page) {
-    const notFoundPath = path.join(process.cwd(), 'pages', '404.html');
+    const notFoundPath = findBundlePath('pages', '404.html');
     res.statusCode = 404;
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.end(fs.existsSync(notFoundPath) ? fs.readFileSync(notFoundPath, 'utf8') : 'Not found');
+    res.end(notFoundPath ? fs.readFileSync(notFoundPath, 'utf8') : 'Not found');
     return;
   }
 

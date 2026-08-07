@@ -29,9 +29,25 @@ function renderSitemapXml(routes) {
     '\n</urlset>\n';
 }
 
+function findBundlePath(...segments) {
+  const bases = [
+    process.cwd(),
+    path.join(__dirname, '..'),
+    path.join(process.cwd(), 'apps', 'stratex-web'),
+    path.join(__dirname, '..', '..', 'apps', 'stratex-web')
+  ];
+
+  for (const base of bases) {
+    const candidate = path.join(base, ...segments);
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
+}
+
 function getBundledRoutes() {
-  const contentPath = path.join(process.cwd(), 'assets', 'stratex-public-v4-pages.json');
-  if (!fs.existsSync(contentPath)) return STATIC_PUBLIC_ROUTES.slice();
+  const contentPath = findBundlePath('assets', 'stratex-public-v4-pages.json');
+  if (!contentPath) return STATIC_PUBLIC_ROUTES.slice();
 
   const store = JSON.parse(fs.readFileSync(contentPath, 'utf8'));
   const pageKeys = Object.keys(store.pages || {})
