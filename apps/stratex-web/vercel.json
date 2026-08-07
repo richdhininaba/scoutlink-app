@@ -28,72 +28,76 @@
       "destination": "/pages/:path*"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/stratex-sitemap"
+    },
+    {
       "source": "/",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/"
     },
     {
       "source": "/scoutlink",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/scoutlink"
     },
     {
       "source": "/about",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/about"
     },
     {
       "source": "/leadership",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/leadership"
     },
     {
       "source": "/trust",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/trust"
     },
     {
       "source": "/careers",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/careers"
     },
     {
       "source": "/careers/:slug",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/careers/:slug"
     },
     {
       "source": "/learning-centre",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/learning-centre"
     },
     {
       "source": "/learning-centre/:slug",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/learning-centre/:slug"
     },
     {
       "source": "/contact",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/contact"
     },
     {
       "source": "/report-a-concern",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/report-a-concern"
     },
     {
       "source": "/privacy-policy",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/privacy-policy"
     },
     {
       "source": "/terms",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/terms"
     },
     {
       "source": "/cookie-policy",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/cookie-policy"
     },
     {
       "source": "/security",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/security"
     },
     {
       "source": "/accessibility",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/accessibility"
     },
     {
       "source": "/showcase-event",
-      "destination": "/pages/stratex-public-v4"
+      "destination": "/api/stratex-render?path=/showcase-event"
     },
     {
       "source": "/award-ceremonies",
