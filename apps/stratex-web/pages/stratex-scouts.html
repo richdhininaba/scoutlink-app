@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+<script src="/frontend/js/stratex-host-favicon.js"></script>
+<title>Scouts - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.detail-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;overflow:auto;padding:32px 16px}
+.detail-box{background:#162032;border:1px solid #2d3f55;border-radius:10px;max-width:760px;margin:0 auto;padding:24px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px}
+.detail-stat{background:#0d1117;border:1px solid #243447;border-radius:8px;padding:14px}
+.detail-label{color:#90A4AE;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.detail-value{color:#E0E0E0;font-size:16px;font-weight:800}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
+<div class="dashboard-main">
+<div class="topbar"><span class="topbar-title">Scouts</span><div class="topbar-right"><button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button><button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button></div></div>
+<div class="page-content">
+<div class="table-card">
+  <div class="table-header"><h3>All Scouts</h3><span id="scoutCount" style="color:#546E7A;font-size:13px"></span></div>
+  <div id="scoutsTable"><div class="loading-state"><div class="spinner"></div></div></div>
+</div>
+</div></div></div>
+
+<div class="detail-modal" id="scoutModal">
+  <div class="detail-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div><h3 id="modalTitle" style="margin:0;color:#E0E0E0">Scout details</h3><p id="modalSubtitle" style="margin:6px 0 0;color:#90A4AE"></p></div>
+      <button onclick="closeScoutModal()" style="background:none;border:none;color:#90A4AE;font-size:24px;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div id="scoutDetailBody"><div class="loading-state"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<script src="../js/stratex-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
+<script>
+var allScouts=[];
+function safe(v, fallback){return (v===null||v===undefined||v==='')?(fallback||'--'):String(v);}
+function dateFmt(v){return v?new Date(v).toLocaleDateString('en-GB'):'--';}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+function closeScoutModal(){document.getElementById('scoutModal').style.display='none';}
+
+async function loadPage() {
+  try {
+    var d = await api('GET', '/api/stratex/scouts');
+    allScouts = d.data || [];
+    document.getElementById('scoutCount').textContent = (d.total || allScouts.length) + ' scouts';
+    renderScouts(allScouts);
+  } catch(e) { document.getElementById('scoutsTable').innerHTML = '<div style="padding:16px;color:#ff6666">Error: ' + e.message + '</div>'; }
+}
+
+function renderScouts(scouts){
+  if (!scouts.length) { document.getElementById('scoutsTable').innerHTML = '<div style="text-align:center;padding:48px;color:#546E7A">No scouts yet</div>'; return; }
+  document.getElementById('scoutsTable').innerHTML = '<table class="sl-table"><thead><tr><th>Name</th><th>Email</th><th>Club</th><th>Scout Team</th><th>Plan</th><th>Renewal</th><th>Super user</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead><tbody>' +
+    scouts.map(function(s) {
+      var team=s.scout_team?s.scout_team.team_name:'--';
+      return '<tr><td><b>'+safe(s.first_name)+' '+safe(s.last_name,'')+'</b></td><td>'+safe(s.email)+'</td><td>'+safe(s.club_name)+'</td><td>'+team+'</td><td><span class="badge badge-blue">'+safe(s.subscription_plan,'Core')+'</span></td><td>'+dateFmt(s.plan_end)+'</td><td><span class="badge '+(s.is_super_user?'badge-green':'badge-blue')+'">'+(s.is_super_user?'Yes':'No')+'</span></td><td><span class="badge '+(s.is_active?'badge-green':'badge-red')+'">'+(s.is_active?'Active':'Inactive')+'</span></td><td style="text-align:right"><button class="btn btn-sm btn-outline" onclick="viewScout(\''+s.id+'\')">View profile</button></td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function stat(label,value){return '<div class="detail-stat"><div class="detail-label">'+label+'</div><div class="detail-value">'+safe(value)+'</div></div>';}
+
+async function viewScout(id){
+  document.getElementById('scoutModal').style.display='block';
+  document.getElementById('scoutDetailBody').innerHTML='<div class="loading-state"><div class="spinner"></div></div>';
+  try{
+    var d=await api('GET','/api/stratex/scouts/'+id);
+    var s=d.scout||{}, team=d.scoutTeam||{}, u=d.usage||{};
+    document.getElementById('modalTitle').textContent=safe(s.first_name)+' '+safe(s.last_name,'');
+    document.getElementById('modalSubtitle').textContent=safe(s.email);
+    document.getElementById('scoutDetailBody').innerHTML='<div class="modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn btn-sm btn-outline" onclick="toggleScoutSuperUser(\''+s.id+'\','+(!s.is_super_user)+')">'+(s.is_super_user?'Remove super-user access':'Make scout super user')+'</button><button class="btn btn-sm" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" onclick="deleteScout(\''+s.id+'\')">Delete scout</button></div><div class="detail-grid">'+
+      stat('Scout team', safe(team.team_name,'Unassigned'))+
+      stat('Club', safe(s.club_name))+
+      stat('Subscription', safe(s.subscription_plan,'Core'))+
+      stat('Super user', s.is_super_user?'Yes':'No')+
+      stat('Renews', dateFmt(s.plan_end))+
+      stat('Exports', safe(u.exportsUsed,0)+' used / '+safe(u.exportsRemaining,0)+' left')+
+      stat('Predictions', safe(u.predictionsUsed,0)+' used / '+safe(u.predictionsRemaining,0)+' left')+
+      stat('Interests shown', safe(u.interestsShown,0)+' shown / '+safe(u.interestsRemaining,0)+' left')+
+      stat('Showcase replies', safe(u.showcaseResponses,0))+
+      stat('Joined', dateFmt(s.created_at))+
+      stat('Last active', dateFmt(s.last_login))+
+      '</div>';
+  }catch(e){document.getElementById('scoutDetailBody').innerHTML='<div style="padding:16px;color:#ff6666">Error: '+e.message+'</div>';}
+}
+
+async function toggleScoutSuperUser(id,next){
+  var scout=allScouts.find(function(s){return s.id===id;});
+  var name=scout?(safe(scout.first_name)+' '+safe(scout.last_name,'')):'this scout';
+  var action=next?'make '+name+' a super user':'remove super-user access from '+name;
+  if(!confirm('Are you sure you want to '+action+'?')) return;
+  try{
+    var d=await api('POST','/api/stratex/scouts/'+id+'/super-user',{isSuperUser:!!next});
+    allScouts=allScouts.map(function(s){return s.id===id?Object.assign({},s,{is_super_user:!!next}):s;});
+    renderScouts(allScouts);
+    if(document.getElementById('scoutModal').style.display==='block') viewScout(id);
+  }catch(e){alert('Could not update super-user access: '+e.message);}
+}
+
+async function deleteScout(id){
+  var scout=allScouts.find(function(s){return s.id===id;});
+  var name=scout?(safe(scout.first_name)+' '+safe(scout.last_name,'')):'this scout';
+  if(!confirm('Delete '+name+' and their linked scout records?')) return;
+  try{
+    await api('DELETE','/api/stratex/scouts/'+id);
+    allScouts=allScouts.filter(function(s){return s.id!==id;});
+    document.getElementById('scoutCount').textContent=allScouts.length+' scouts';
+    closeScoutModal();
+    renderScouts(allScouts);
+  }catch(e){alert('Could not delete scout: '+e.message);}
+}
+
+document.addEventListener('DOMContentLoaded',function(){initStratexPage();loadPage();});
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
+
+

@@ -1,0 +1,36 @@
+# Stratex Analytics
+
+Stratex Analytics is a sports technology company building football intelligence products for overlooked grassroots talent. ScoutLink is its flagship platform.
+
+## Retained public pages
+- Homepage: https://www.stratexanalytics.co.uk/
+- ScoutLink: https://www.stratexanalytics.co.uk/scoutlink
+- About: https://www.stratexanalytics.co.uk/about
+- Leadership: https://www.stratexanalytics.co.uk/leadership
+- Trust: https://www.stratexanalytics.co.uk/trust
+- Careers: https://www.stratexanalytics.co.uk/careers
+- Career detail: https://www.stratexanalytics.co.uk/careers/{job-slug}
+- Learning Centre: https://www.stratexanalytics.co.uk/learning-centre
+- Learning article: https://www.stratexanalytics.co.uk/learning-centre/{article-slug}
+- Contact: https://www.stratexanalytics.co.uk/contact
+- Report a concern: https://www.stratexanalytics.co.uk/report-a-concern
+- Privacy Policy: https://www.stratexanalytics.co.uk/privacy-policy
+- Terms: https://www.stratexanalytics.co.uk/terms
+- Cookie Policy: https://www.stratexanalytics.co.uk/cookie-policy
+- Security: https://www.stratexanalytics.co.uk/security
+- Accessibility: https://www.stratexanalytics.co.uk/accessibility
+- Showcase event: https://www.stratexanalytics.co.uk/showcase-event
+
+## Public operational showcase routes
+The following routes remain available for event registration but should not be indexed:
+- https://www.stratexanalytics.co.uk/showcase-event/player-registration
+- https://www.stratexanalytics.co.uk/showcase-event/player-registration/complete
+- https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration
+- https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration/complete
+- https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration/sold-out
+
+## Private routes
+Do not index or summarize restricted administration paths under /admin and /stratex, application API routes under /api, or logged-in ScoutLink product routes.
+
+## Route policy
+Legacy public URLs that are not listed above are removed and should return 404. They are not redirected to another page.

@@ -1,0 +1,363 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+<title>Video Reels - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.video-card{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:16px;margin-bottom:12px;}
+.upload-zone{border:2px dashed #30363d;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover{border-color:#1d9e75;background:rgba(29,158,117,.04);}
+.form-input{width:100%;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#ffffff;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;}
+.form-input:focus{border-color:#1d9e75;}
+.tab-btn{padding:8px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid #30363d;background:#0d1117;color:#8b949e;transition:all .2s;}
+.tab-btn.active{border-color:#1d9e75;background:rgba(29,158,117,.1);color:#1d9e75;}
+#fileSection{display:block!important;}
+.video-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.video-modal.open{display:flex;}
+.video-modal-box{width:min(860px,100%);background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.5);}
+.video-modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid #30363d;}
+.video-frame{background:#000;aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;}
+.video-frame iframe,.video-frame video{width:100%;height:100%;border:0;}
+.video-fallback{color:#8b949e;text-align:center;padding:24px;}
+</style>
+<link rel="stylesheet" href="../css/coach-v2.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">Scout<span style="color:#1d9e75">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Video Reels</span>
+<div class="topbar-right">
+<button class="notif-btn" onclick="toggleNotifPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost desktop-signout" onclick="logout()">Sign Out</button>
+</div>
+</div>
+<div class="page-content">
+
+<!-- Upload Form -->
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Upload Video Reel</h3></div>
+<div style="padding:20px">
+<div style="display:flex;gap:12px;margin-bottom:20px">
+<button class="tab-btn active" id="tabFile">Upload File</button>
+</div>
+
+<div id="fileSection">
+<div style="margin-bottom:14px">
+<label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Video File</label>
+<div class="upload-zone" id="uploadZone"><div style="font-size:32px;margin-bottom:8px">&#9654;</div><p style="color:#8b949e;margin-bottom:8px">Click to choose a video file</p><p style="font-size:11px;color:#8b949e">MP4, MOV, AVI (max 100MB)</p><input type="file" id="videoFile" accept="video/*" style="display:none">
+<div id="fileNameDisplay" style="font-size:12px;color:#8b949e;margin-top:6px"></div></div>
+<div id="fileStatus" style="font-size:12px;color:#1d9e75;margin-top:6px;display:none"></div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Title *</label><input type="text" id="videoTitle" class="form-input" placeholder="e.g. Match Highlights vs Arsenal"></div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Category</label>
+<select id="videoCategory" class="form-input"><option value="Highlight">Highlight</option><option value="Training">Training</option><option value="Match">Match</option><option value="Skills">Skills</option><option value="Goal">Goal</option></select>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Assign to Player</label>
+<select id="playerAssign" class="form-input"><option value="">No player (team video)</option></select>
+</div>
+<div><label style="font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px">Description (optional)</label><input type="text" id="videoDesc" class="form-input" placeholder="Short description..."></div>
+</div>
+<div style="display:flex;gap:12px;align-items:center">
+<button class="btn btn-primary" id="uploadBtn">Upload Video</button>
+<span id="uploadMsg" style="font-size:13px;color:#1d9e75"></span>
+</div>
+</div>
+</div>
+
+<!-- Player Upload Link -->
+<div class="table-card coach-v2-upload-link-card" style="margin-bottom:20px">
+<div class="table-header"><h3>Player Upload Link</h3></div>
+<div style="padding:20px">
+<p style="color:#8b949e;margin:0 0 14px;font-size:13px">Generate a private upload link for a player and share it through an approved team communication channel.</p>
+<div class="coach-v2-upload-link-grid">
+<select id="uploadLinkPlayer" class="form-input"><option value="">Select player...</option></select>
+<button class="btn btn-outline" id="generateUploadLinkBtn" type="button">Generate Link</button>
+</div>
+<div id="uploadLinkResult" class="coach-v2-upload-link-result" aria-live="polite"></div>
+</div>
+</div>
+
+<!-- Video List -->
+<div class="table-card">
+<div class="table-header"><h3>All Videos</h3><button class="btn btn-sm btn-outline" id="refreshBtn">Refresh</button></div>
+<div id="videoList"><div class="loading-state"><div class="spinner"></div><span style="margin-left:10px">Loading videos...</span></div></div>
+</div>
+
+</div>
+</div>
+</div>
+<div class="video-modal" id="videoModal">
+<div class="video-modal-box">
+<div class="video-modal-head">
+<div><div id="videoModalTitle" style="font-weight:800;font-size:16px">Video reel</div><div id="videoModalDesc" style="font-size:12px;color:#8b949e;margin-top:4px"></div></div>
+<button class="btn btn-sm btn-outline" onclick="closeVideoModal()">Close</button>
+</div>
+<div class="video-frame" id="videoModalFrame"></div>
+</div>
+</div>
+<script src="../js/config.js"></script>
+<script src="../js/scout-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
+<script src="../js/coach-v2.js"></script>
+<script>
+function initNav(){
+  if(!Auth.isLoggedIn()||Auth.type!=='Coach'){navigateClean('login.html');return;}
+  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
+  var u=Auth.user,uel=document.getElementById('sidebarUser');
+  if(uel&&u) uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
+  updateNotifBadge();
+}
+function logout(){logoutToLogin();}
+function toggleNotifPanel(){}
+
+var _uploadMode = 'file';
+var _videos = [];
+
+function streamableUrl(url){
+  if(!url)return '';
+  var u=String(url);
+  if(u.indexOf('www.dropbox.com')>-1)u=u.replace('www.dropbox.com','dl.dropboxusercontent.com').replace('?dl=0','').replace('?dl=1','');
+  return u;
+}
+function embedVideo(url){
+  var u=streamableUrl(url);
+  var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]+)/);
+  if(yt)return '<iframe src="https://www.youtube.com/embed/'+yt[1]+'" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  var vm=u.match(/vimeo\.com\/(\d+)/);
+  if(vm)return '<iframe src="https://player.vimeo.com/video/'+vm[1]+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+  if(/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u)||u.indexOf('supabase.co/storage')>-1||u.indexOf('dl.dropboxusercontent.com')>-1)return '<video src="'+u+'" controls playsinline></video>';
+  return '<div class="video-fallback"><p style="margin-bottom:12px">This video provider cannot be embedded here.</p><a class="btn btn-outline" href="'+u+'" target="_blank" rel="noopener">Open video</a></div>';
+}
+function openVideoModal(idx){
+  var v=_videos[idx];if(!v)return;
+  document.getElementById('videoModalTitle').textContent=v.title||'Video reel';
+  document.getElementById('videoModalDesc').textContent=(v.category||'Highlight')+(v.description?' - '+v.description:'');
+  document.getElementById('videoModalFrame').innerHTML=embedVideo(v.video_url||v.url||'');
+  document.getElementById('videoModal').classList.add('open');
+}
+function closeVideoModal(){
+  document.getElementById('videoModalFrame').innerHTML='';
+  document.getElementById('videoModal').classList.remove('open');
+}
+
+function loadVideos(){
+  api('GET','/api/videos?type=player').then(function(d){
+    _videos = d.data||[];
+    renderVideoList();
+  }).catch(function(e){
+    document.getElementById('videoList').innerHTML='<div style="padding:32px;text-align:center;color:#8b949e">Could not load videos: '+e.message+'</div>';
+  });
+}
+
+function renderVideoList(){
+  if(!_videos.length){
+    document.getElementById('videoList').innerHTML='<div style="padding:48px;text-align:center;color:#8b949e"><div style="font-size:48px;margin-bottom:12px">&#9654;</div><h3 style="color:#ffffff;margin-bottom:8px">No videos yet</h3><p>Upload your first player video above.</p></div>';
+    return;
+  }
+  var html='<div style="padding:16px">';
+  _videos.forEach(function(v,idx){
+    var url=v.video_url||v.url||'#';
+    var player=v.players||(v.player_id?{first_name:'Player',last_name:''}:null);
+    html+='<div class="video-card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">'+
+      '<div style="flex:1;min-width:0">'+
+      '<div style="font-size:15px;font-weight:700;margin-bottom:4px">'+(v.title||'Video')+'</div>'+
+      '<div style="font-size:12px;color:#8b949e;margin-bottom:4px">'+
+      '<span style="background:rgba(0,188,212,.1);color:#00BCD4;padding:2px 8px;border-radius:4px;font-weight:700">'+(v.category||'Highlight')+'</span>'+
+      (player?' &bull; <span style="color:#8b949e">'+(player.first_name||'')+' '+(player.last_name||'')+'</span>':'<span style="color:#8b949e"> &bull; Team video</span>')+
+      '</div>'+
+      (v.description?'<div style="font-size:12px;color:#8b949e">'+v.description+'</div>':'')+
+      '</div>'+
+      '<div style="display:flex;gap:8px;flex-shrink:0">'+
+      '<button class="btn btn-sm btn-outline" data-action="watch" data-idx="'+idx+'" style="min-height:36px">&#9654; Watch</button>'+
+      '<button class="btn btn-sm btn-danger" data-vid="'+v.id+'" data-action="delete" style="min-height:36px">Delete</button>'+
+      '</div></div></div>';
+  });
+  html+='</div>';
+  document.getElementById('videoList').innerHTML=html;
+
+  document.getElementById('videoList').onclick=function(e){
+    var watch=e.target.closest('[data-action="watch"]');
+    if(watch){openVideoModal(parseInt(watch.getAttribute('data-idx')));return;}
+    var btn=e.target.closest('[data-action="delete"]');
+    if(btn&&confirm('Delete this video?')){
+      api('DELETE','/api/videos/'+btn.getAttribute('data-vid'),{}).then(function(){loadVideos();}).catch(function(e){alert('Error: '+e.message);});
+    }
+  };
+}
+
+function loadPlayers(){
+  api('GET','/api/coaches/my-players').then(function(d){
+    var sel=document.getElementById('playerAssign');
+    var linkSel=document.getElementById('uploadLinkPlayer');
+    var players=[];
+    if(Array.isArray(d.players))players=d.players;
+    else if(Array.isArray(d.data))players=d.data;
+    else if(d.data&&Array.isArray(d.data.players))players=d.data.players;
+    else if(d.data&&d.data.data&&Array.isArray(d.data.data.players))players=d.data.data.players;
+    if(sel)sel.innerHTML='<option value="">Select player...</option>';
+    if(linkSel)linkSel.innerHTML='<option value="">Select player...</option>';
+    players.forEach(function(p){
+      var opt=document.createElement('option');
+      opt.value=p.id;
+      opt.textContent=(p.first_name||'')+' '+(p.last_name||'')+' ('+(p.specific_position||p.position_group||'--')+')';
+      if(sel)sel.appendChild(opt);
+      if(linkSel){
+        var linkOpt=opt.cloneNode(true);
+        linkSel.appendChild(linkOpt);
+      }
+    });
+  }).catch(function(){});
+}
+
+function generatePlayerUploadLink(){
+  var select=document.getElementById('uploadLinkPlayer');
+  var result=document.getElementById('uploadLinkResult');
+  var btn=document.getElementById('generateUploadLinkBtn');
+  if(!select||!result||!btn)return;
+  var playerId=select.value;
+  if(!playerId){result.innerHTML='<div class="alert alert-error">Choose a player first.</div>';return;}
+  btn.disabled=true;
+  btn.textContent='Generating...';
+  result.innerHTML='';
+  api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(d){
+    var payload=(d&&d.data)?d.data:d;
+    var url=payload.uploadUrl||payload.url||'';
+    if(!url)throw new Error('Upload link was not returned.');
+    result.innerHTML='<div class="coach-v2-copy-row"><input class="form-input" id="generatedUploadLink" readonly value="'+url.replace(/"/g,'&quot;')+'"><button class="btn btn-primary" type="button" id="copyUploadLinkBtn">Copy Link</button></div><p>Expires '+(payload.expiresAt?new Date(payload.expiresAt).toLocaleDateString():'in 14 days')+'.</p>';
+    var copy=document.getElementById('copyUploadLinkBtn');
+    if(copy){
+      copy.addEventListener('click',function(){
+        var input=document.getElementById('generatedUploadLink');
+        if(input){
+          input.select();
+          navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(input.value) : document.execCommand('copy');
+          copy.textContent='Copied';
+          setTimeout(function(){copy.textContent='Copy Link';},1500);
+        }
+      });
+    }
+  }).catch(function(e){
+    result.innerHTML='<div class="alert alert-error">Could not generate link: '+e.message+'</div>';
+  }).finally(function(){
+    btn.disabled=false;
+    btn.textContent='Generate Link';
+  });
+}
+
+function doUpload(){
+  var MAX_VIDEO_UPLOAD_BYTES=4*1024*1024;
+  var VIDEO_TOO_LARGE_MESSAGE='This video is too large to upload. Please choose a smaller file.';
+  var title=document.getElementById('videoTitle').value.trim();
+  if(!title){alert('Please enter a video title.');return;}
+  var btn=document.getElementById('uploadBtn');
+  var msg=document.getElementById('uploadMsg');
+  btn.disabled=true;btn.textContent='Uploading...';
+  msg.textContent='';
+
+  var payload={
+    title:title,
+    category:document.getElementById('videoCategory').value,
+    playerId:document.getElementById('playerAssign').value||null,
+    description:document.getElementById('videoDesc').value.trim()||null,
+  };
+
+  var file=document.getElementById('videoFile').files[0];
+  if(!file){alert('Please select a video file.');btn.disabled=false;btn.textContent='Upload Video';return;}
+  if(file.size>MAX_VIDEO_UPLOAD_BYTES){msg.textContent=VIDEO_TOO_LARGE_MESSAGE;msg.style.color='#f44336';btn.disabled=false;btn.textContent='Upload Video';return;}
+  uploadFileViaBackend(file,payload,btn,msg);
+}
+
+function safeFileName(name){
+  var base=String(name||'video.mov').toLowerCase().replace(/[^a-z0-9.\-_]+/g,'-').replace(/-+/g,'-');
+  return base || 'video.mov';
+}
+
+function encodeStoragePath(path){
+  return String(path).split('/').map(encodeURIComponent).join('/');
+}
+
+function uploadFileViaBackend(file,payload,btn,msg){
+  var fd=new FormData();
+  fd.append('file',file);
+  fd.append('title',payload.title);
+  fd.append('category',payload.category||'Highlight');
+  if(payload.playerId)fd.append('playerId',payload.playerId);
+  if(payload.description)fd.append('description',payload.description);
+  msg.textContent='Uploading file...';
+  fetch(API+'/api/videos/upload',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+Auth.token},
+    body:fd
+  }).then(function(r){
+    return r.json().catch(function(){return {};}).then(function(d){
+      if(!r.ok)throw new Error(d.error||d.detail||'Video upload failed');
+      return d;
+    });
+  }).then(function(){
+    msg.textContent='Video uploaded!';msg.style.color='#1d9e75';
+    resetForm(btn);loadVideos();
+  }).catch(function(e){
+    msg.textContent='Error: '+e.message;
+    msg.style.color='#f44336';
+    btn.disabled=false;btn.textContent='Upload Video';
+  });
+}
+
+function resetForm(btn){
+  btn.disabled=false;btn.textContent='Upload Video';
+  document.getElementById('videoTitle').value='';
+  document.getElementById('videoDesc').value='';
+  document.getElementById('videoFile').value='';
+  document.getElementById('fileStatus').style.display='none';
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initNav();
+  loadPlayers();
+  loadVideos();
+
+  _uploadMode='file';
+
+  // Upload zone click
+  document.getElementById('uploadZone').addEventListener('click',function(){
+    document.getElementById('videoFile').click();
+  });
+  document.getElementById('videoFile').addEventListener('change',function(){
+    var file=this.files[0];
+    if(file){
+      var status=document.getElementById('fileStatus');
+      status.textContent='Selected: '+file.name+' ('+Math.round(file.size/1024/1024*10)/10+' MB)';
+      status.style.display='block';
+    }
+  });
+
+  document.getElementById('uploadBtn').addEventListener('click',doUpload);
+  document.getElementById('refreshBtn').addEventListener('click',loadVideos);
+  var linkBtn=document.getElementById('generateUploadLinkBtn');
+  if(linkBtn)linkBtn.addEventListener('click',generatePlayerUploadLink);
+});
+</script>
+</body></html>
+
+
+

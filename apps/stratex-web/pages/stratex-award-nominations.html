@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+<script src="/frontend/js/stratex-host-favicon.js"></script>
+<title>Award nominations - ScoutLink</title>
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/main.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px;}
+.form-input{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;outline:none;}
+.form-input:focus{border-color:#1d9e75;}
+.nom-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;}
+.nom-pending{background:rgba(255,193,7,.15);color:#FFC107;}
+.nom-confirmed{background:rgba(29,158,117,.15);color:#1d9e75;}
+.nom-withdrawn{background:rgba(244,67,54,.15);color:#f44336;}
+</style>
+<link rel="stylesheet" href="../css/phone-base.css">
+<link rel="stylesheet" href="../css/phone-shell.css">
+<link rel="stylesheet" href="../css/phone-pages.css">
+<script type="text/javascript">
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
+  heap.load("3441720574");
+</script>
+</head><body>
+<div class="dashboard">
+<nav class="sidebar" id="sidebar">
+<div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none">Scout<span style="color:var(--accent,#1d9e75)">Link</span></a></div>
+<div class="sidebar-nav" id="sidebarNav"></div>
+<div class="sidebar-user" id="sidebarUser"></div>
+</nav>
+<div class="dashboard-main">
+<div class="topbar">
+<span class="topbar-title">Award nominations</span>
+<div class="topbar-right">
+<button class="notif-btn" id="notifToggleBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:middle"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+<button class="btn btn-sm btn-ghost" id="logoutBtn">Sign out</button>
+</div>
+</div>
+<div class="page-content">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+<h2 id="pageHeading" style="font-size:20px;font-weight:800">Stratex Football Honours - Award nominations</h2>
+<select id="yearFilter" class="form-input" style="width:auto;max-width:140px"></select>
+</div>
+<p style="font-size:13px;color:#8b949e;margin-bottom:20px">Nominate outstanding players for recognition at the annual Stratex Football Honours.</p>
+
+<div class="table-card" style="margin-bottom:24px">
+<div class="table-header"><h3>All players</h3></div>
+<div id="playerTableWrap">
+<div style="overflow-x:auto">
+<table class="sl-table" id="playersTable">
+<thead><tr><th>Player</th><th>Age group</th><th>Team</th><th>Overall</th><th>Position</th><th>Appearances</th><th>Est. value</th><th>Action</th></tr></thead>
+<tbody id="playersBody"><tr><td colspan="8" style="text-align:center;padding:30px;color:#8b949e"><div class="spinner" style="display:inline-block;margin-right:8px"></div>Loading players...</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div class="table-card">
+<div class="table-header"><h3 id="nominationsSectionTitle">Current year nominations</h3></div>
+<div id="nominationsList"><div style="padding:20px;color:#8b949e">Loading nominations...</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Nominate Modal -->
+<div class="modal-overlay" id="nominateModal" style="display:none">
+<div class="modal-box">
+<h3 style="margin-bottom:4px">Nominate player</h3>
+<p id="nominatePlayerName" style="font-size:15px;font-weight:700;color:#1d9e75;margin-bottom:16px"></p>
+<div class="form-group">
+<label class="form-label">Award *</label>
+<select class="form-input" id="awardSelect">
+<option value="">Select award...</option>
+<option>Stratex Young Player of the Year</option>
+<option>Breakthrough Player of the Year</option>
+<option>Most Improved Player</option>
+<option>Leadership Award</option>
+<option>Resilience Award</option>
+<option>Best Forward</option>
+<option>Best Midfielder</option>
+<option>Best Defender</option>
+<option>Best U6-U7 Player</option>
+<option>Best U8-U9 Player</option>
+<option>Best U10-U11 Player</option>
+<option>Best U12-U13 Player</option>
+<option>Best U14-U15 Player</option>
+<option>Best U16 Player</option>
+<option>Scout's Choice Award</option>
+<option>Player to Watch</option>
+</select>
+</div>
+<div id="nominateError" style="display:none;color:#f44336;font-size:13px;margin-bottom:12px"></div>
+<div style="display:flex;gap:10px">
+<button class="btn btn-primary" id="confirmNominateBtn">Confirm nomination</button>
+<button class="btn btn-ghost" id="cancelNominateBtn">Cancel</button>
+</div>
+</div>
+</div>
+
+<script src="../js/stratex-nav.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/heap-analytics.js"></script>
+<script>
+'use strict';
+var currentYear = new Date().getFullYear();
+var selectedPlayerId = null;
+var selectedPlayerName = '';
+
+function safe(v,fb){return(v!==undefined&&v!==null&&v!=='')?String(v):(fb||'N/A');}
+function fmtVal(v){if(!v||isNaN(v))return 'Calculating...';return '\xA3'+Number(v).toLocaleString('en-GB',{maximumFractionDigits:0});}
+function logout(){Auth.clear();navigateClean('login.html?logout=1');}
+
+document.addEventListener('DOMContentLoaded',function(){
+  if(!initStratexPage()) return;
+  document.getElementById('logoutBtn').addEventListener('click',logout);
+  document.getElementById('notifToggleBtn').addEventListener('click',function(){if(typeof toggleNotifPanel==='function')toggleNotifPanel();});
+  
+  // Year filter
+  var ys = document.getElementById('yearFilter');
+  for(var y=currentYear; y>=currentYear-5; y--){
+    var opt = document.createElement('option');
+    opt.value = y; opt.textContent = y; if(y===currentYear) opt.selected=true;
+    ys.appendChild(opt);
+  }
+  document.getElementById('pageHeading').textContent = 'Stratex Football Honours '+currentYear+' - Award nominations';
+  document.getElementById('nominationsSectionTitle').textContent = currentYear+' nominations';
+  ys.addEventListener('change',function(){
+    currentYear = parseInt(this.value);
+    document.getElementById('pageHeading').textContent='Stratex Football Honours '+currentYear+' - Award nominations';
+    document.getElementById('nominationsSectionTitle').textContent=currentYear+' nominations';
+    loadNominations();
+  });
+  
+  document.getElementById('cancelNominateBtn').addEventListener('click',function(){var _nm2=document.getElementById('nominateModal');_nm2.style.display='none';_nm2.classList.remove('open');});
+  document.getElementById('confirmNominateBtn').addEventListener('click',submitNomination);
+  
+  loadPlayers();
+  loadNominations();
+});
+
+async function loadPlayers(){
+  var tbody = document.getElementById('playersBody');
+  try{
+    var d = await api('GET','/api/awards/players');
+    var players = d.players||d.data||[];
+    if(!players.length){
+      tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:#8b949e">No players found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = players.map(function(p){
+      var ageGroup = safe(p.age_group, 'N/A');
+      var ov = p.overall_rating ? (parseFloat(p.overall_rating)>10?parseFloat(p.overall_rating):parseFloat(p.overall_rating)*10).toFixed(0) : 'N/A';
+      var ovColor = ov>80?'#1d9e75':ov>65?'#FFC107':'#FF9800';
+      return '<tr>'+
+      '<td><b>'+safe(p.first_name,'')+' '+safe(p.last_name,'')+'</b></td>'+
+      '<td>'+ageGroup+'</td>'+
+      '<td>'+safe(p.team_name,'N/A')+'</td>'+
+      '<td style="font-weight:800;color:'+ovColor+'">'+ov+'</td>'+
+      '<td>'+safe(p.specific_position||p.primary_position,'N/A')+'</td>'+
+      '<td>'+safe(p.appearances,'0')+'</td>'+
+      '<td>'+fmtVal(p.transfer_value)+'</td>'+
+      '<td><button class="btn btn-sm btn-outline" data-pid="'+p.id+'" data-pname="'+safe(p.first_name,'')+' '+safe(p.last_name,'')+'" data-action="nominate">Nominate</button></td>'+
+      '</tr>';
+    }).join('');
+    
+    document.getElementById('playersBody').addEventListener('click',function(e){
+      var btn = e.target.closest('[data-action="nominate"]');
+      if(!btn) return;
+      selectedPlayerId = btn.getAttribute('data-pid');
+      selectedPlayerName = btn.getAttribute('data-pname');
+      document.getElementById('nominatePlayerName').textContent = selectedPlayerName;
+      document.getElementById('awardSelect').value = '';
+      document.getElementById('nominateError').style.display='none';
+      var _nm=document.getElementById('nominateModal');_nm.style.display='flex';_nm.classList.add('open');
+    });
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="8" style="color:#f44336;padding:20px">Could not load players: '+safe(e.message)+'</td></tr>';
+  }
+}
+
+async function loadNominations(){
+  var el = document.getElementById('nominationsList');
+  el.innerHTML = '<div style="padding:20px;color:#8b949e">Loading...</div>';
+  try{
+    var d = await api('GET','/api/awards?year='+currentYear);
+    var noms = d.nominations||d.data||[];
+    if(!noms.length){
+      el.innerHTML='<div style="padding:20px;text-align:center;color:#8b949e">No nominations for '+currentYear+' yet.</div>';
+      return;
+    }
+    el.innerHTML='<div style="overflow-x:auto"><table class="sl-table"><thead><tr><th>Player</th><th>Award</th><th>Nominated at</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+    noms.map(function(n){
+      var sc = n.status==='confirmed'?'nom-confirmed':n.status==='withdrawn'?'nom-withdrawn':'nom-pending';
+      var pName = n.players?(safe(n.players.first_name,'')+' '+safe(n.players.last_name,'')).trim():safe(n.player_id,'Unknown');
+      var ts = n.nominated_at?new Date(n.nominated_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'N/A';
+      return '<tr>'+
+      '<td><b>'+pName+'</b></td>'+
+      '<td>'+safe(n.award_name,'N/A')+'</td>'+
+      '<td style="font-size:12px;color:#8b949e">'+ts+'</td>'+
+      '<td><span class="nom-badge '+sc+'">'+safe(n.status,'pending')+'</span></td>'+
+      '<td>'+(n.status!=='withdrawn'?'<button class="btn btn-sm btn-danger" style="font-size:11px;padding:4px 8px" data-nid="'+n.id+'" data-action="withdraw">Withdraw</button>':'&mdash;')+'</td>'+
+      '</tr>';
+    }).join('')+'</tbody></table></div>';
+    
+    el.addEventListener('click',function(e){
+      var btn = e.target.closest('[data-action="withdraw"]');
+      if(!btn) return;
+      withdrawNomination(btn.getAttribute('data-nid'));
+    });
+  }catch(e){
+    el.innerHTML='<div style="padding:20px;color:#f44336">Could not load nominations: '+safe(e.message)+'</div>';
+  }
+}
+
+async function submitNomination(){
+  var award = document.getElementById('awardSelect').value;
+  var errEl = document.getElementById('nominateError');
+  if(!selectedPlayerId){errEl.style.display='block';errEl.textContent='No player selected.';return;}
+  if(!award){errEl.style.display='block';errEl.textContent='Please select an award.';return;}
+  errEl.style.display='none';
+  var btn = document.getElementById('confirmNominateBtn');
+  btn.disabled=true;btn.textContent='Nominating...';
+  try{
+    await api('POST','/api/awards/nominate',{
+      playerId:selectedPlayerId, awardName:award, year:currentYear,
+      nominatedBy:Auth.user?Auth.user.email||'admin':'admin'
+    });
+    document.getElementById('nominateModal').style.display='none';
+    loadNominations();
+  }catch(e){
+    errEl.style.display='block';
+    errEl.textContent='Error: '+safe(e.message,'Could not save nomination.');
+  }finally{
+    btn.disabled=false;btn.textContent='Confirm nomination';
+  }
+}
+
+async function withdrawNomination(id){
+  if(!id){alert('Nomination ID missing.');return;}
+  if(!confirm('Withdraw this nomination? This will set the status to withdrawn.')) return;
+  try{
+    await api('PATCH','/api/awards/'+id+'/withdraw',{});
+    loadNominations();
+  }catch(e){alert('Could not withdraw: '+safe(e.message));}
+}
+</script>
+<script src="../js/phone-routes.js"></script>
+<script src="../js/phone-shell.js"></script>
+<script src="../js/phone-pages.js"></script>
+</body></html>
+
+
