@@ -12,16 +12,20 @@ or shared package before there is a clear need.
 
 ## API Folder
 
-`backend` remains the API deployment root for now. It owns:
+`backend` is the intentional API deployment root. It owns:
 
 - Express route registration.
 - Supabase service-role writes.
 - SendGrid server-side email sends.
 - Storage and privileged backend workflows.
 
-Do not move this folder to `services/scoutlink-api` until the Vercel project
-root directory has been updated to that target and verified. Until then,
-`backend` is the production API root.
+Only introduce a future `services/` directory if multiple independently deployed
+backend services justify grouping them.
+
+## Branch Hygiene
+
+`main` is Production. Feature and chore branches are temporary and should be
+deleted after their work reaches `main`.
 
 ## Removed Legacy Fallbacks
 

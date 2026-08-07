@@ -25,6 +25,6 @@ There are no root GitHub Pages route wrappers, root static frontend mirrors, or
 mixed root Vercel frontend config left in the repository. The public domains
 should stay attached to the dedicated web projects listed above.
 
-The `scoutlink-api` project remains rooted at `backend`. Moving it to a future
-`services/scoutlink-api` folder is blocked until the Vercel project root
-directory can be updated and verified.
+The `scoutlink-api` project intentionally remains rooted at `backend`. A
+`services/` directory should be introduced only if multiple independently
+deployed backend services justify that layout.

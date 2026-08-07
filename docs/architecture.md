@@ -20,8 +20,8 @@ API service.
 - Legacy root and mirrored frontend files have been removed and should not be
   reintroduced.
 
-## Future Target
+## Backend Service Layout
 
-The API can later move from `backend` to `services/scoutlink-api`, but only after
-the Vercel project root directory is updated and verified. That move should be a
-separate reversible change.
+`backend/` is the intentional current API deployment root. A future `services/`
+directory should be introduced only if the platform grows into multiple
+independently deployed backend services.
