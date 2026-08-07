@@ -1,0 +1,99 @@
+                }).map(function (option) {
+                  return '<option value="' + esc(option.value) + '"' +
+                    (String(option.value) === selected ? ' selected' : '') + '>' +
+                    esc(ratingLabel(option)) + '</option>';
+                }).join('') +
+              '</select></div>';
+          }).join('') +
+        '</div></section>';
+      }).join('') +
+      '</div></td></tr>';
+  }
+
+  function previewRow(row, index) {
+    var info = status(row);
+    var coachCell = coaches.length
+      ? '<select class="cb4-inline-select" data-row-field="assignedCoachId" data-row-id="' + esc(row.id) + '">' +
+          coachOptionsMarkup(row.assignedCoachId) + '</select>'
+      : '<span>' + esc(row.assignedCoachId ? coachName(row.assignedCoachId) : 'Current Coach') + '</span>';
+
+    var core = '<tr data-core-row="' + esc(row.id) + '">' +
+      '<td data-label="Row">' + (index + 1) + '</td>' +
+      '<td data-label="First name"><input class="cb4-inline-input cb4-inline-name" data-row-field="firstName" data-row-id="' + esc(row.id) + '" value="' + esc(row.firstName) + '" aria-label="First name for row ' + (index + 1) + '"></td>' +
+      '<td data-label="Last name"><input class="cb4-inline-input cb4-inline-name" data-row-field="lastName" data-row-id="' + esc(row.id) + '" value="' + esc(row.lastName) + '" aria-label="Last name for row ' + (index + 1) + '"></td>' +
+      '<td data-label="Age group"><select class="cb4-inline-select" data-row-field="ageGroup" data-row-id="' + esc(row.id) + '">' +
+        optionMarkup(options.ageGroups, row.ageGroup, 'Select age') + '</select></td>' +
+      '<td data-label="Position"><select class="cb4-inline-select cb4-inline-position" data-row-field="position" data-row-id="' + esc(row.id) + '">' +
+        positionOptionsMarkup(row.position) + '</select></td>' +
+      '<td data-label="Foot"><select class="cb4-inline-select" data-row-field="foot" data-row-id="' + esc(row.id) + '">' +
+        optionMarkup(['Right', 'Left', 'Both'], row.foot, null) + '</select></td>' +
+      '<td data-label="Height profile"><select class="cb4-inline-select cb4-inline-profile" data-row-field="heightCategory" data-row-id="' + esc(row.id) + '">' +
+        optionMarkup(HEIGHT_OPTIONS, row.heightCategory, null) + '</select></td>' +
+      '<td data-label="Build profile"><select class="cb4-inline-select cb4-inline-profile" data-row-field="buildCategory" data-row-id="' + esc(row.id) + '">' +
+        optionMarkup(BUILD_OPTIONS, row.buildCategory, null) + '</select></td>' +
+      '<td data-label="Assigned Coach">' + coachCell + '</td>' +
+      '<td data-label="Status" class="cb4-status-cell"><span class="cb3-pill ' + (info.ready ? 'is-green' : 'is-orange') + '" data-row-status-pill="' + esc(row.id) + '">' +
+        (info.ready ? 'Ready' : 'Review') + '</span><small data-row-status-text="' + esc(row.id) + '">' + esc(info.text) + '</small></td>' +
+      '<td data-label="Action"><div class="cb4-row-actions">' +
+        '<button class="cb3-btn is-small" type="button" data-toggle-attributes="' + esc(row.id) + '">' +
+          (row.attributesExpanded ? 'Hide attributes' : 'Show attributes') + '</button>' +
+        '<button class="cb3-btn is-small is-danger" type="button" data-remove-row="' + esc(row.id) + '">Remove</button>' +
+      '</div></td></tr>';
+
+    return core + attributesMarkup(row);
+  }
+
+  function render() {
+    var ready = rows.filter(function (row) {
+      return status(row).ready;
+    }).length;
+    var review = rows.length - ready;
+
+    [
+      ['cb3TotalRows', rows.length],
+      ['cb3ReadyRows', ready],
+      ['cb3ReviewRows', review],
+      ['cb3ReadyPill', ready],
+      ['cb3ReviewPill', review]
+    ].forEach(function (pair) {
+      if (el(pair[0])) el(pair[0]).textContent = pair[1];
+    });
+
+    if (el('cb3FileName')) {
+      el('cb3FileName').textContent = fileName ? 'Selected file: ' + fileName : '';
+    }
+
+    el('cb3PreviewBody').innerHTML = rows.map(previewRow).join('');
+    el('cb3PreviewEmpty').style.display = rows.length ? 'none' : 'grid';
+
+    renderIssues();
+    bindDynamicActions();
+  }
+
+  function renderIssues() {
+    var issues = rows.filter(function (row) {
+      return !status(row).ready;
+    });
+
+    if (issues.length) {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-issue-list">' + issues.map(function (row) {
+        return '<article class="cb3-issue"><div><b>' + esc(playerName(row)) + '</b><p>' +
+          esc(status(row).text) + '</p></div>' +
+          '<button class="cb3-btn is-primary is-small" type="button" data-focus-row="' + esc(row.id) + '">Go to row</button></article>';
+      }).join('') + '</div>';
+    } else if (rows.length) {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-all-ready"><span class="cb3-pill is-green">Ready</span>' +
+        '<div><strong>Every row has the required player details.</strong>' +
+        '<p>Complete as many position-specific attributes as your evidence supports, then submit all players.</p></div></div>';
+    } else {
+      el('cb3IssueBody').innerHTML = '<div class="cb3-preview-empty">No rows have been added yet.</div>';
+    }
+
+    document.querySelectorAll('[data-focus-row]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var target = document.querySelector('[data-core-row="' + button.dataset.focusRow + '"]');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          var first = target.querySelector('input,select');
+          if (first) first.focus();
+        }

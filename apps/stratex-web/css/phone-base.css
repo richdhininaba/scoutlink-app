@@ -1,0 +1,405 @@
+@media (max-width: 950px), ((hover: none) and (pointer: coarse) and (max-width: 1024px)) {
+  :root {
+    --phone-bg: #f6f8fa;
+    --phone-card: #ffffff;
+    --phone-text: #111827;
+    --phone-muted: #64748b;
+    --phone-border: #e5e7eb;
+    --phone-soft: #eef2f6;
+    --phone-green: #0f9f75;
+    --phone-green-dark: #047857;
+    --phone-red: #dc2626;
+    --bg: var(--phone-bg);
+    --bg0: var(--phone-bg);
+    --bg1: var(--phone-bg);
+    --bg2: var(--phone-card);
+    --card: var(--phone-card);
+    --card2: var(--phone-card);
+    --text: var(--phone-text);
+    --text2: var(--phone-text);
+    --text3: var(--phone-muted);
+    --border: var(--phone-border);
+    --accent: var(--phone-green);
+    --green: var(--phone-green);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    overflow-x: hidden;
+    background: var(--phone-bg);
+    color: var(--phone-text);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body,
+  body.theme-dark,
+  body.theme-light {
+    width: 100%;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    background: var(--phone-bg) !important;
+    color: var(--phone-text) !important;
+    font-size: 14px;
+    line-height: 1.42;
+  }
+
+  body.phone-menu-open {
+    overflow: hidden !important;
+  }
+
+  .dashboard {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100dvh !important;
+    background: var(--phone-bg) !important;
+    color: var(--phone-text) !important;
+  }
+
+  .dashboard > .sidebar,
+  nav.sidebar,
+  #sidebar {
+    display: none !important;
+  }
+
+  .dashboard-main {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 66px 0 20px !important;
+    background: var(--phone-bg) !important;
+    color: var(--phone-text) !important;
+  }
+
+  .topbar {
+    display: none !important;
+  }
+
+  .page-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 16px !important;
+    overflow-x: hidden !important;
+    background: var(--phone-bg) !important;
+  }
+
+  .page-content > div,
+  .page-content > section,
+  .page-content > form,
+  .dashboard-main > div {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+
+  h1 {
+    font-size: 20px !important;
+    line-height: 1.18 !important;
+    letter-spacing: 0 !important;
+  }
+
+  h2 {
+    font-size: 18px !important;
+    line-height: 1.22 !important;
+  }
+
+  h3 {
+    font-size: 16px !important;
+    line-height: 1.25 !important;
+  }
+
+  h4 {
+    font-size: 15px !important;
+    line-height: 1.28 !important;
+  }
+
+  p,
+  li,
+  td,
+  th,
+  label,
+  input,
+  select,
+  textarea,
+  button,
+  a {
+    font-size: 14px;
+  }
+
+  small,
+  .kpi-label,
+  .stat-lbl,
+  .section-heading,
+  .muted,
+  .thread-meta,
+  .form-group label {
+    font-size: 12px !important;
+  }
+
+  .table-card,
+  .kpi-card,
+  .scout-kpi,
+  .profile-card,
+  .performance-panel,
+  .filter-card,
+  .job-main,
+  .apply-card,
+  .org-board,
+  .contract-card,
+  .mobile-list-card,
+  .phone-card {
+    background: var(--phone-card) !important;
+    color: var(--phone-text) !important;
+    border: 1px solid var(--phone-border) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .06) !important;
+  }
+
+  .table-card {
+    margin-bottom: 14px !important;
+    overflow: hidden !important;
+  }
+
+  .table-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid var(--phone-border) !important;
+    background: var(--phone-card) !important;
+    color: var(--phone-text) !important;
+  }
+
+  .table-header h3 {
+    margin: 0 !important;
+    color: var(--phone-text) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+  }
+
+  .table-header p,
+  .kpi-sub,
+  .scout-kpi-sub,
+  .stat-lbl,
+  .form-help {
+    color: var(--phone-muted) !important;
+  }
+
+  .kpi-grid,
+  .coach-players-kpis,
+  #kpiRow {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .kpi-card,
+  .scout-kpi {
+    min-height: 86px !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .kpi-value,
+  .scout-kpi-val {
+    font-size: 24px !important;
+    line-height: 1 !important;
+    color: var(--phone-text) !important;
+  }
+
+  .kpi-value.green,
+  .scout-kpi-val,
+  .green {
+    color: var(--phone-green) !important;
+  }
+
+  [data-mobile-hide="true"] {
+    display: none !important;
+  }
+
+  .btn,
+  button,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 42px;
+    border-radius: 12px !important;
+    padding: 9px 14px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .btn-sm {
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  .btn-primary {
+    background: var(--phone-green) !important;
+    border-color: var(--phone-green) !important;
+    color: #ffffff !important;
+  }
+
+  .btn-outline,
+  .btn-ghost {
+    background: #ffffff !important;
+    border: 1px solid var(--phone-border) !important;
+    color: var(--phone-green-dark) !important;
+  }
+
+  .btn-danger,
+  .danger,
+  .destructive {
+    color: var(--phone-red) !important;
+    border-color: rgba(220, 38, 38, .25) !important;
+    background: #fff5f5 !important;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: 1px solid var(--phone-border) !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: var(--phone-text) !important;
+    padding: 10px 12px !important;
+    box-shadow: none !important;
+  }
+
+  textarea {
+    min-height: 96px !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  .form-row,
+  .form-row.cols-3,
+  .two,
+  .three {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-group {
+    margin-bottom: 12px !important;
+  }
+
+  .form-group label {
+    display: block !important;
+    color: var(--phone-muted) !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 6px !important;
+    font-weight: 800 !important;
+  }
+
+  .sl-table,
+  table {
+    max-width: 100%;
+  }
+
+  .phone-hide-table table.sl-table,
+  .phone-hide-table .sl-table,
+  body:not(.phone-allow-table) .page-content table.sl-table {
+    display: none !important;
+  }
+
+  .phone-table-cards {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .phone-table-card {
+    background: #ffffff;
+    border: 1px solid var(--phone-border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+  }
+
+  .phone-table-card-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: var(--phone-text);
+    margin-bottom: 8px;
+  }
+
+  .phone-table-card-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid #f1f5f9;
+    padding: 8px 0;
+  }
+
+  .phone-table-card-row:first-of-type {
+    border-top: 0;
+  }
+
+  .phone-table-card-row span {
+    color: var(--phone-muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .phone-table-card-row b {
+    color: var(--phone-text);
+    font-size: 13px;
+    font-weight: 800;
+    text-align: right;
+    max-width: 58%;
+    overflow-wrap: anywhere;
+  }
+
+  .badge,
+  .badge-green,
+  .badge-blue,
+  .stage-chip,
+  .pill {
+    border-radius: 999px !important;
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+  }
+
+  .loading-state {
+    color: var(--phone-muted) !important;
+    padding: 18px !important;
+  }
+
+  .spinner {
+    border-color: #dbe4ee !important;
+    border-top-color: var(--phone-green) !important;
+  }
+}

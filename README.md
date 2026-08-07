@@ -1,61 +1,27 @@
 # Stratex Platform
 
-This repository is the working platform monorepo for Stratex Analytics products.
-It currently contains the ScoutLink product, the Stratex Analytics public/admin
-web experience, the shared backend API, database migrations and operational
-documentation.
+This repository contains the ScoutLink product, the Stratex Analytics public and
+admin web experience, the shared ScoutLink API, and Supabase database history.
 
-## Applications
+## Structure
 
-- `apps/scoutlink-web` - ScoutLink public website and logged-in Coach, Scout and
-  Player frontend routes.
-- `apps/stratex-web` - Stratex Analytics public website, Stratex Admin Centre,
-  careers, showcase and company routes.
-
-The legacy root static routes and `frontend/` mirrors are intentionally still in
-place during this migration. They must not be deleted until the new app folders
-have been verified in production and are the active Vercel project roots.
-
-## Backend
-
-- `backend` - Node/Express API used by ScoutLink and Stratex Admin workflows.
-
-The backend is deliberately unchanged in the first web separation phase. A later
-phase may rename it to `services/scoutlink-api` after the web projects and
-production domains are stable.
-
-## Database
-
+- `apps/scoutlink-web` - standalone ScoutLink web app for public pages and
+  logged-in Coach, Scout and Player routes.
+- `apps/stratex-web` - standalone Stratex Analytics web app for public company,
+  admin, careers and showcase routes.
+- `backend` - current Node/Express API service.
 - `database` - Supabase schema and ordered migrations.
+- `docs` - architecture, deployment, domain and repository notes.
 
-Keep this folder at the repository root. Do not reorder or reorganise historical
-migrations during the web app split.
+Legacy root pages, `frontend/`, `backend/frontend/`, and the mixed root
+`vercel.json` are still intentionally retained as production fallbacks. Do not
+delete them until the dedicated web Vercel projects and domains are proven live.
 
-## Production Services
+## Deployment Targets
 
-Target long-term Vercel ownership:
+- `scoutlink-web` uses root directory `apps/scoutlink-web`.
+- `stratex-web` uses root directory `apps/stratex-web`.
+- `scoutlink-api` currently uses root directory `backend`.
 
-- `scoutlink-web` -> `apps/scoutlink-web` -> `scoutlink.app` and
-  `www.scoutlink.app`
-- `stratex-web` -> `apps/stratex-web` -> `stratexanalytics.co.uk` and
-  `www.stratexanalytics.co.uk`
-- `scoutlink-api` -> `backend` -> API routes and backend services
-
-The current production setup may still use the legacy mixed root while this
-branch is reviewed. Move production domains only after each new app project has
-been preview-tested.
-
-## Branch Model
-
-- `main` is the production branch.
-- `agent/*`, `feature/*` and `chore/*` branches are preview/development work.
-- Structural migrations should be reviewed on a branch before merging to `main`.
-
-## Migration Safety Rules
-
-- Do not combine repository transfer, Vercel project splitting, production-domain
-  movement and legacy deletion in one change.
-- Keep every phase reversible.
-- Do not delete `frontend/`, `backend/frontend/`, root clean-route wrappers or the
-  mixed root `vercel.json` until the new app projects are serving production.
-- Do not create shared packages until there is a genuine build or runtime need.
+See [docs/deployment.md](docs/deployment.md) and
+[docs/domains.md](docs/domains.md) before changing project roots or domains.

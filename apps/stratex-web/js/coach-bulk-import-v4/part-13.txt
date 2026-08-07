@@ -1,0 +1,48 @@
+      showSuccess(rows.length + ' player row' + (rows.length === 1 ? '' : 's') + ' imported for review.');
+    } catch (error) {
+      showError(error.message || 'The file could not be imported.');
+    }
+  }
+
+  async function loadCoachContext() {
+    if (isPublicDemo()) {
+      el('teamNameLabel').textContent = 'Public demo session';
+      return;
+    }
+    if (!window.Auth || window.Auth.type !== 'Coach') {
+      el('teamNameLabel').textContent = 'Stratex managed import';
+      return;
+    }
+    try {
+      var profile = await window.api('GET','/api/coaches/profile');
+      var coach = profile.coach || {};
+      el('teamNameLabel').textContent = coach.team_name || 'My team';
+      defaultCoachId = coach.id || '';
+      if (coach.is_super_user) {
+        var response = await window.api('GET','/api/coaches/team-coaches');
+        coaches = [coach].concat(response.coaches || response.data || []).filter(function (row, index, all) {
+          return row && row.id && all.findIndex(function (other) { return other && other.id === row.id; }) === index;
+        });
+        el('defaultCoachSelect').innerHTML = coaches.map(function (row) {
+          return '<option value="' + esc(row.id) + '">' + esc([row.first_name,row.last_name].filter(Boolean).join(' ')) + '</option>';
+        }).join('');
+        el('defaultCoachField').style.display = '';
+      }
+    } catch (error) {
+      el('teamNameLabel').textContent = 'Team unavailable';
+      showError('Team assignment could not be loaded: ' + error.message);
+    }
+    render();
+  }
+
+  async function init() {
+    if (!allowedContext()) { window.location.href = '/login'; return; }
+    if (!window.ScoutLinkScoringV4) { setTimeout(init, 40); return; }
+    options = await window.ScoutLinkScoringV4.loadOptions();
+    if (typeof window.buildScoutNav === 'function') window.buildScoutNav('sidebarNav','Coach');
+    buildPage();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
+  else init();
+}());

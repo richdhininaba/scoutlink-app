@@ -1,0 +1,379 @@
+{
+  "version": "1.0.0",
+  "generated_for": "ScoutLink / Stratex Admin team creation league dropdown",
+  "generated_at": "2026-07-02T13:24:10Z",
+  "notes": [
+    "Use league_fulltime_url as the default league URL when a team is created.",
+    "All URL fields must remain editable in Stratex Admin.",
+    "If fulltime_url is null, Stratex Admin must allow the admin to add it manually from the frontend.",
+    "Team website is separate from league Full-Time URL and should be editable per team.",
+    "Do not show empty or broken CTAs on player profiles."
+  ],
+  "team_url_fields": {
+    "league_name": "string required",
+    "league_fulltime_url": "string nullable admin-editable",
+    "team_website_url": "string nullable admin-editable"
+  },
+  "leagues": [
+    {
+      "name": "Camden & Islington Youth Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=331847893",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Camden Youth League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=163194129",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Central Youth League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "East London & Essex Junior League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Hackney Marshes Saturday Youth Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=152519117",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "London County Saturday Youth Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=1428060",
+      "url_status": "unverified_existing_candidate",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Candidate from prior lookup. Admin must be able to edit."
+    },
+    {
+      "name": "Maccabi Junior Youth Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=310704552",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: Maccabi GB Junior (Youth) Football League."
+    },
+    {
+      "name": "Regents Park Youth League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=843990453",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "South East London & Kent Youth League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Tandridge Youth Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Standalone official site exists, but no Full-Time URL confirmed here."
+    },
+    {
+      "name": "North London Youth Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "London Youth League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Girls Super League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=512367957",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: Girls Super League LDN."
+    },
+    {
+      "name": "London Inclusion Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Next Generation Super League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=1524517",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Community Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Name too generic to safely map without admin check."
+    },
+    {
+      "name": "Harrow Youth Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=1144601",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Harrow Soccer Combination",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Middlesex Youth Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Capital Girls League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=5730235",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Greater London Women's Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=652739866",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Watford Friendly League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=861969338",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Hertfordshire Girls Football Partnership League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Herts Youth League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "West Herts Youth League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Manchester Youth Super League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "East Manchester Junior Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=8335132",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: East Manchester Junior Football League (Charter Standard League)."
+    },
+    {
+      "name": "North Bury Junior Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=2323685",
+      "url_status": "verified_fulltime",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Exact Full-Time page verified."
+    },
+    {
+      "name": "Bolton Bury & District Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=760017",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: Bolton, Bury and District Football League."
+    },
+    {
+      "name": "Timperley and District Junior Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Stockport Metropolitan Junior Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "South Manchester Girls League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Salford and Districts Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=8880379",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: SDFL - Salford & Districts Football League."
+    },
+    {
+      "name": "North Manchester Girls Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Manchester Youth & Mini Soccer League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Wigan & District Junior Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Oldham Youth Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Rochdale & District Junior Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    },
+    {
+      "name": "Tameside Junior Football League",
+      "fulltime_url": "https://fulltime.thefa.com/index.html?league=9327683",
+      "url_status": "verified_fulltime_name_variant",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "Full-Time listing name variant: TAMESIDE FOOTBALL LEAGUE."
+    },
+    {
+      "name": "Leigh & District Junior Football League",
+      "fulltime_url": null,
+      "url_status": "needs_admin_entry",
+      "admin_editable": true,
+      "team_website_url": null,
+      "team_website_admin_editable": true,
+      "notes": "No Full-Time URL confirmed in this pass."
+    }
+  ]
+}

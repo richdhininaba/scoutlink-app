@@ -1,0 +1,99 @@
+      el('formSuccess').textContent = '';
+      el('formSuccess').className = 'ap3-message is-success';
+    }
+  }
+
+  function showError(message) {
+    clearMessages();
+    el('formError').textContent = message;
+    el('formError').className = 'ap3-message is-error show';
+  }
+
+  function showSuccess(message) {
+    clearMessages();
+    el('formSuccess').textContent = message;
+    el('formSuccess').className = 'ap3-message is-success show';
+  }
+
+  function payloadFor(row) {
+    return {
+      firstName: row.firstName.trim(),
+      lastName: row.lastName.trim(),
+      ageGroup: row.ageGroup,
+      positionGroup: window.ScoutLinkScoringV4.groupForPosition(row.position),
+      specificPosition: row.position,
+      primaryPosition: row.position,
+      positions: [row.position],
+      foot: row.foot || 'Right',
+      heightCategory: row.heightCategory || 'average',
+      buildCategory: row.buildCategory || 'athletic',
+      assignedCoachId: row.assignedCoachId || null,
+      attributeRatings: row.attributeRatings || {},
+      attribute_rating_scale: 'ten'
+    };
+  }
+
+  async function submitAll() {
+    clearMessages();
+    if (!rows.length) {
+      showError('Add or import at least one player.');
+      return;
+    }
+    var invalid = rows.filter(function (row) {
+      return !status(row).ready;
+    });
+    if (invalid.length) {
+      showError('Complete the required player details in every row marked Review before submitting.');
+      return;
+    }
+
+    var buttons = document.querySelectorAll('[data-bulk-submit]');
+    buttons.forEach(function (button) {
+      button.disabled = true;
+      button.textContent = 'Submitting…';
+    });
+
+    try {
+      var response;
+      if (isPublicDemo()) {
+        var created = [];
+        for (var index = 0; index < rows.length; index += 1) {
+          created.push(await window.api('POST', '/api/players', payloadFor(rows[index])));
+        }
+        response = { created: created, errors: [] };
+      } else {
+        response = await window.api('POST', '/api/players/bulk', {
+          players: rows.map(payloadFor)
+        });
+      }
+
+      var body = response.data || response;
+      var createdCount = Array.isArray(body.created) ? body.created.length : rows.length;
+      var errorCount = Array.isArray(body.errors) ? body.errors.length : 0;
+      el('resultsBox').innerHTML = '<div class="cb3-all-ready"><span class="cb3-pill is-green">Complete</span><div>' +
+        '<strong>' + createdCount + ' player' + (createdCount === 1 ? '' : 's') + ' added.</strong>' +
+        '<p>' + (errorCount
+          ? errorCount + ' row(s) returned an error.'
+          : 'Every submitted player now uses the position-aware V4 assessment structure.') + '</p></div></div>';
+      showSuccess(createdCount + ' player' + (createdCount === 1 ? '' : 's') + ' added successfully.');
+      rows = [];
+      fileName = '';
+      render();
+    } catch (error) {
+      showError(error.message || 'The players could not be submitted.');
+    } finally {
+      buttons.forEach(function (button) {
+        button.disabled = false;
+        button.textContent = 'Submit all players';
+      });
+    }
+  }
+
+  function downloadTemplate() {
+    var csv = TEMPLATE_HEADERS.join(',') + '\n';
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'scoutlink-player-details-import-template.csv';
+    document.body.appendChild(link);

@@ -1,12 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<script src="/frontend/js/stratex-host-favicon.js"></script>
+<script src="/js/stratex-host-favicon.js"></script>
 <title>Concerns Reported - ScoutLink admin</title>
-<link rel="stylesheet" href="/frontend/css/variables.css">
-<link rel="stylesheet" href="/frontend/css/main.css">
+<link rel="stylesheet" href="/css/variables.css">
+<link rel="stylesheet" href="/css/main.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d1117;--card:#161b22;--accent:#1d9e75;--text:#ffffff;--text-secondary:#8b949e;--border:#30363d}
@@ -35,9 +35,9 @@
 @media(max-width:900px){.concerns-filters{grid-template-columns:1fr 1fr}.concerns-table{display:block;overflow-x:auto}.detail-grid{grid-template-columns:1fr}}
 @media(max-width:767px){.concerns-card{background:#fff;border-color:#e5e7eb}.concerns-head,.concerns-filters{padding:14px;background:#fff}.concerns-head h3{color:#111827}.concerns-head p{color:#64748b}.concerns-filters{grid-template-columns:1fr}.concerns-table,.concerns-table tbody,.concerns-table tr,.concerns-table td{display:block;width:100%}.concerns-table thead{display:none}.concerns-table tr{border:1px solid #e5e7eb;border-radius:16px;margin:12px 14px;padding:12px;background:#fff}.concerns-table td{border:0;color:#111827;padding:7px 0}.concerns-table td::before{content:attr(data-label);display:block;color:#64748b;font-size:10px;text-transform:uppercase;font-weight:950;letter-spacing:.06em;margin-bottom:3px}.drawer-panel{width:100%;background:#fff}.drawer-head,.drawer-actions{background:#fff;border-color:#e5e7eb}.drawer-body{background:#f6f8fa}.detail-item,.message-box,.notes-box{background:#fff;border-color:#e5e7eb;color:#111827}.detail-item b{color:#111827}}
 </style>
-<link rel="stylesheet" href="/frontend/css/phone-base.css">
-<link rel="stylesheet" href="/frontend/css/phone-shell.css">
-<link rel="stylesheet" href="/frontend/css/phone-pages.css">
+<link rel="stylesheet" href="/css/phone-base.css">
+<link rel="stylesheet" href="/css/phone-shell.css">
+<link rel="stylesheet" href="/css/phone-pages.css">
 <script type="text/javascript">
   window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
   heap.load("3441720574");
@@ -83,9 +83,9 @@
     </div>
   </aside>
 </div>
-<script src="/frontend/js/stratex-nav.js"></script>
-<script src="/frontend/js/main.js"></script>
-<script src="/frontend/js/heap-analytics.js"></script>
+<script src="/js/stratex-nav.js"></script>
+<script src="/js/main.js"></script>
+<script src="/js/heap-analytics.js"></script>
 <script>
 var submissions=[],statuses=['new','investigating','awaiting_more_information','outcome_being_prepared','outcome_sent','resolved','closed'],selected=null;
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded',function(){
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 });
 </script>
-<script src="/frontend/js/phone-routes.js"></script>
-<script src="/frontend/js/phone-shell.js"></script>
-<script src="/frontend/js/phone-pages.js"></script>
+<script src="/js/phone-routes.js"></script>
+<script src="/js/phone-shell.js"></script>
+<script src="/js/phone-pages.js"></script>
 </body></html>
