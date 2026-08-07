@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /showcase-event/player-registration
+Disallow: /showcase-event/coach-scout-registration
+
+Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml

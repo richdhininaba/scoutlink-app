@@ -1,62 +1,61 @@
-# ScoutLink - Football Player Intelligence Platform
+# Stratex Platform
 
-Built by **Stratex Analytics**
+This repository is the working platform monorepo for Stratex Analytics products.
+It currently contains the ScoutLink product, the Stratex Analytics public/admin
+web experience, the shared backend API, database migrations and operational
+documentation.
 
-Live: https://richdhininaba.github.io/scoutlink-app/frontend/index.html
+## Applications
 
-API: https://scoutlink-api.vercel.app
+- `apps/scoutlink-web` - ScoutLink public website and logged-in Coach, Scout and
+  Player frontend routes.
+- `apps/stratex-web` - Stratex Analytics public website, Stratex Admin Centre,
+  careers, showcase and company routes.
 
-## Architecture
+The legacy root static routes and `frontend/` mirrors are intentionally still in
+place during this migration. They must not be deleted until the new app folders
+have been verified in production and are the active Vercel project roots.
 
-- **Frontend**: Static HTML/CSS/JS on GitHub Pages
-- **Backend API**: Node.js/Express on Vercel
-- **Database**: Supabase PostgreSQL (fwxnggklfsgrydcoeiuh)
-- **Emails**: SendGrid
+## Backend
 
-## Environment Variables (set in Vercel)
+- `backend` - Node/Express API used by ScoutLink and Stratex Admin workflows.
 
-```
-SUPABASE_URL=https://fwxnggklfsgrydcoeiuh.supabase.co
-SUPABASE_ANON_KEY=<from Supabase>
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase>
-SUPABASE_JWT_SECRET=<Supabase JWT secret from Project Settings > API > JWT Settings>
-SENDGRID_API_KEY=<your SendGrid API key>
-JWT_SECRET=<long random string>
-```
+The backend is deliberately unchanged in the first web separation phase. A later
+phase may rename it to `services/scoutlink-api` after the web projects and
+production domains are stable.
 
-## Database Setup
+## Database
 
-1. Run `database/schema.sql` in Supabase SQL Editor
-2. Run `database/migration_v2.1.sql` to add subscription columns and RLS policies
+- `database` - Supabase schema and ordered migrations.
 
-## Bug Fixes (v2.1)
+Keep this folder at the repository root. Do not reorder or reorganise historical
+migrations during the web app split.
 
-### Bug 1: Admin Login Loop Fixed
-- Login page clears storage on logout param
-- Only auto-redirects if BOTH valid session AND role type exist
-- No more loop between login and dashboard
+## Production Services
 
-### Bug 2: Side Navigation Fixed
-- Stratex: Dashboard, Registrations, Users, Players, Scouts, Coaches, Scout Teams, School Teams, Notifications, Settings
-- Scout: Dashboard, Player Search, My Pipeline, Rankings, Fixtures, Predictions, Exports, Notifications, Settings
-- Coach: Dashboard, My Players, Add Players, Bulk Add Players, Match Facts, Fixtures, Video Reels, Notifications, Settings
-- Player: Dashboard, My Profile, Video Reels, Notifications, Settings
+Target long-term Vercel ownership:
 
-### Bug 3: Registrations Now Load
-- Backend auth middleware now accepts Supabase JWTs
-- RLS policies updated to allow service role full access
-- Registration endpoint returns proper error details
+- `scoutlink-web` -> `apps/scoutlink-web` -> `scoutlink.app` and
+  `www.scoutlink.app`
+- `stratex-web` -> `apps/stratex-web` -> `stratexanalytics.co.uk` and
+  `www.stratexanalytics.co.uk`
+- `scoutlink-api` -> `backend` -> API routes and backend services
 
-### Bug 4: Approve/Decline Flow
-- Email failures no longer block approve/decline
-- User records created in correct tables on approval
-- Login codes generated and included in response
+The current production setup may still use the legacy mixed root while this
+branch is reviewed. Move production domains only after each new app project has
+been preview-tested.
 
-### Bug 5: All Data Loads
-- Fixed column names across all routes
-- Notifications works for all roles
-- Videos endpoint uses correct column names
-- Match facts correctly maps all fields
+## Branch Model
 
-### Bug 6: All Pages Reachable
-- 21 new pages created to cover all nav links
+- `main` is the production branch.
+- `agent/*`, `feature/*` and `chore/*` branches are preview/development work.
+- Structural migrations should be reviewed on a branch before merging to `main`.
+
+## Migration Safety Rules
+
+- Do not combine repository transfer, Vercel project splitting, production-domain
+  movement and legacy deletion in one change.
+- Keep every phase reversible.
+- Do not delete `frontend/`, `backend/frontend/`, root clean-route wrappers or the
+  mixed root `vercel.json` until the new app projects are serving production.
+- Do not create shared packages until there is a genuine build or runtime need.
