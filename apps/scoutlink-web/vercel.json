@@ -29,231 +29,231 @@
     },
     {
       "source": "/",
-      "destination": "/index.html"
+      "destination": "/index"
     },
     {
       "source": "/coaches",
-      "destination": "/pages/coaches.html"
+      "destination": "/pages/coaches"
     },
     {
       "source": "/scouts",
-      "destination": "/pages/scouts.html"
+      "destination": "/pages/scouts"
     },
     {
       "source": "/demo",
-      "destination": "/pages/demo.html"
+      "destination": "/pages/demo"
     },
     {
       "source": "/scoutlink/pricing",
-      "destination": "/pages/stratex-site.html"
+      "destination": "/pages/stratex-site"
     },
     {
       "source": "/login",
-      "destination": "/pages/login.html"
+      "destination": "/pages/login"
     },
     {
       "source": "/forgot-password",
-      "destination": "/pages/forgot-password.html"
+      "destination": "/pages/forgot-password"
     },
     {
       "source": "/register",
-      "destination": "/pages/register.html"
+      "destination": "/pages/register"
     },
     {
       "source": "/register/coach",
-      "destination": "/pages/register-coach.html"
+      "destination": "/pages/register-coach"
     },
     {
       "source": "/register/scout",
-      "destination": "/pages/register-scout.html"
+      "destination": "/pages/register-scout"
     },
     {
       "source": "/complete-registration",
-      "destination": "/pages/complete-registration.html"
+      "destination": "/pages/complete-registration"
     },
     {
       "source": "/confirm-password",
-      "destination": "/pages/confirm-password.html"
+      "destination": "/pages/confirm-password"
     },
     {
       "source": "/experience-select",
-      "destination": "/pages/experience-select.html"
+      "destination": "/pages/experience-select"
     },
     {
       "source": "/video-upload",
-      "destination": "/pages/video-upload.html"
+      "destination": "/pages/video-upload"
     },
     {
       "source": "/safeguarding",
-      "destination": "/pages/safeguarding.html"
+      "destination": "/pages/safeguarding"
     },
     {
       "source": "/report-a-concern",
-      "destination": "/pages/report-concern.html"
+      "destination": "/pages/report-concern"
     },
     {
       "source": "/data-policy",
-      "destination": "/pages/data-policy.html"
+      "destination": "/pages/data-policy"
     },
     {
       "source": "/privacy-policy",
-      "destination": "/pages/privacy-policy.html"
+      "destination": "/pages/privacy-policy"
     },
     {
       "source": "/terms",
-      "destination": "/pages/terms.html"
+      "destination": "/pages/terms"
     },
     {
       "source": "/cookie-policy",
-      "destination": "/pages/cookie-policy.html"
+      "destination": "/pages/cookie-policy"
     },
     {
       "source": "/coach/dashboard",
-      "destination": "/pages/coach-dashboard.html"
+      "destination": "/pages/coach-dashboard"
     },
     {
       "source": "/coach/onboarding",
-      "destination": "/pages/coach-onboarding.html"
+      "destination": "/pages/coach-onboarding"
     },
     {
       "source": "/coach/my-players",
-      "destination": "/pages/coach-my-players.html"
+      "destination": "/pages/coach-my-players"
     },
     {
       "source": "/coach/usage-requests",
-      "destination": "/pages/coach-usage-requests.html"
+      "destination": "/pages/coach-usage-requests"
     },
     {
       "source": "/coach/add-player",
-      "destination": "/pages/add-player.html"
+      "destination": "/pages/add-player"
     },
     {
       "source": "/coach/bulk-add-players",
-      "destination": "/pages/bulk-add-players.html"
+      "destination": "/pages/bulk-add-players"
     },
     {
       "source": "/coach/match-facts",
-      "destination": "/pages/match-facts.html"
+      "destination": "/pages/match-facts"
     },
     {
       "source": "/coach/fixtures",
-      "destination": "/pages/coach-fixtures.html"
+      "destination": "/pages/coach-fixtures"
     },
     {
       "source": "/coach/video-reels",
-      "destination": "/pages/coach-video-reels.html"
+      "destination": "/pages/coach-video-reels"
     },
     {
       "source": "/coach/chat",
-      "destination": "/pages/coach-chat.html"
+      "destination": "/pages/coach-chat"
     },
     {
       "source": "/coach/notifications",
-      "destination": "/pages/coach-notifications.html"
+      "destination": "/pages/coach-notifications"
     },
     {
       "source": "/coach/report-a-concern",
-      "destination": "/pages/coach-report-concern.html"
+      "destination": "/pages/coach-report-concern"
     },
     {
       "source": "/coach/settings",
-      "destination": "/pages/coach-settings.html"
+      "destination": "/pages/coach-settings"
     },
     {
       "source": "/scout/dashboard",
-      "destination": "/pages/scout-dashboard.html"
+      "destination": "/pages/scout-dashboard"
     },
     {
       "source": "/scout/onboarding",
-      "destination": "/pages/scout-onboarding.html"
+      "destination": "/pages/scout-onboarding"
     },
     {
       "source": "/scout/player-search",
-      "destination": "/pages/player-search.html"
+      "destination": "/pages/player-search"
     },
     {
       "source": "/scout/pipeline",
-      "destination": "/pages/scout-pipeline.html"
+      "destination": "/pages/scout-pipeline"
     },
     {
       "source": "/scout/rankings",
-      "destination": "/pages/scout-rankings.html"
+      "destination": "/pages/scout-rankings"
     },
     {
       "source": "/scout/fixtures",
-      "destination": "/pages/scout-fixtures.html"
+      "destination": "/pages/scout-fixtures"
     },
     {
       "source": "/scout/predictions",
-      "destination": "/pages/scout-predictions.html"
+      "destination": "/pages/scout-predictions"
     },
     {
       "source": "/scout/usage-requests",
-      "destination": "/pages/scout-usage-requests.html"
+      "destination": "/pages/scout-usage-requests"
     },
     {
       "source": "/scout/exports",
-      "destination": "/pages/scout-exports.html"
+      "destination": "/pages/scout-exports"
     },
     {
       "source": "/scout/compare-players",
-      "destination": "/pages/compare-players.html"
+      "destination": "/pages/compare-players"
     },
     {
       "source": "/scout/setup",
-      "destination": "/pages/scout-setup.html"
+      "destination": "/pages/scout-setup"
     },
     {
       "source": "/scout/events",
-      "destination": "/pages/scout-events.html"
+      "destination": "/pages/scout-events"
     },
     {
       "source": "/scout/chat",
-      "destination": "/pages/scout-chat.html"
+      "destination": "/pages/scout-chat"
     },
     {
       "source": "/scout/notifications",
-      "destination": "/pages/scout-notifications.html"
+      "destination": "/pages/scout-notifications"
     },
     {
       "source": "/scout/report-a-concern",
-      "destination": "/pages/scout-report-concern.html"
+      "destination": "/pages/scout-report-concern"
     },
     {
       "source": "/scout/settings",
-      "destination": "/pages/scout-settings.html"
+      "destination": "/pages/scout-settings"
     },
     {
       "source": "/scout/preferences",
-      "destination": "/pages/scout-preferences.html"
+      "destination": "/pages/scout-preferences"
     },
     {
       "source": "/player/dashboard",
-      "destination": "/pages/player-dashboard.html"
+      "destination": "/pages/player-dashboard"
     },
     {
       "source": "/player/profile",
-      "destination": "/pages/player-profile.html"
+      "destination": "/pages/player-profile"
     },
     {
       "source": "/player/edit-profile",
-      "destination": "/pages/player-profile-edit.html"
+      "destination": "/pages/player-profile-edit"
     },
     {
       "source": "/player/video-reels",
-      "destination": "/pages/player-video-reels.html"
+      "destination": "/pages/player-video-reels"
     },
     {
       "source": "/player/notifications",
-      "destination": "/pages/player-notifications.html"
+      "destination": "/pages/player-notifications"
     },
     {
       "source": "/player/settings",
-      "destination": "/pages/player-settings.html"
+      "destination": "/pages/player-settings"
     },
     {
       "source": "/404",
-      "destination": "/pages/404.html"
+      "destination": "/pages/404"
     }
   ]
 }

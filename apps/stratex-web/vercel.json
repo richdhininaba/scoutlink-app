@@ -29,207 +29,207 @@
     },
     {
       "source": "/",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/scoutlink",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/about",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/leadership",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/trust",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/careers",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/careers/:slug",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/learning-centre",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/learning-centre/:slug",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/contact",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/report-a-concern",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/privacy-policy",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/terms",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/cookie-policy",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/security",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/accessibility",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/showcase-event",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/award-ceremonies",
-      "destination": "/pages/stratex-public-v4.html"
+      "destination": "/pages/stratex-public-v4"
     },
     {
       "source": "/showcase-event/player-registration",
-      "destination": "/pages/showcase-player-registration.html"
+      "destination": "/pages/showcase-player-registration"
     },
     {
       "source": "/showcase-event/player-registration/complete",
-      "destination": "/pages/showcase-player-registration.html"
+      "destination": "/pages/showcase-player-registration"
     },
     {
       "source": "/showcase-event/coach-scout-registration",
-      "destination": "/pages/showcase-professional-registration.html"
+      "destination": "/pages/showcase-professional-registration"
     },
     {
       "source": "/showcase-event/coach-scout-registration/complete",
-      "destination": "/pages/showcase-professional-registration.html"
+      "destination": "/pages/showcase-professional-registration"
     },
     {
       "source": "/showcase-event/coach-scout-registration/sold-out",
-      "destination": "/pages/showcase-professional-registration.html"
+      "destination": "/pages/showcase-professional-registration"
     },
     {
       "source": "/admin",
-      "destination": "/pages/stratex-company-admin.html"
+      "destination": "/pages/stratex-company-admin"
     },
     {
       "source": "/admin/usage-requests",
-      "destination": "/pages/stratex-usage-requests.html"
+      "destination": "/pages/stratex-usage-requests"
     },
     {
       "source": "/admin/showcase-event",
-      "destination": "/pages/stratex-showcase-events.html"
+      "destination": "/pages/stratex-showcase-events"
     },
     {
       "source": "/admin/:module",
-      "destination": "/pages/stratex-company-admin.html"
+      "destination": "/pages/stratex-company-admin"
     },
     {
       "source": "/company/admin",
-      "destination": "/pages/stratex-company-admin.html"
+      "destination": "/pages/stratex-company-admin"
     },
     {
       "source": "/stratex/dashboard",
-      "destination": "/pages/stratex-dashboard.html"
+      "destination": "/pages/stratex-dashboard"
     },
     {
       "source": "/stratex/company-site",
-      "destination": "/pages/stratex-company-admin.html"
+      "destination": "/pages/stratex-company-admin"
     },
     {
       "source": "/stratex/registrations",
-      "destination": "/pages/stratex-registrations.html"
+      "destination": "/pages/stratex-registrations"
     },
     {
       "source": "/stratex/users",
-      "destination": "/pages/stratex-users.html"
+      "destination": "/pages/stratex-users"
     },
     {
       "source": "/stratex/org",
-      "destination": "/pages/stratex-org.html"
+      "destination": "/pages/stratex-org"
     },
     {
       "source": "/stratex/hiring",
-      "destination": "/pages/stratex-hiring.html"
+      "destination": "/pages/stratex-hiring"
     },
     {
       "source": "/stratex/leave",
-      "destination": "/pages/stratex-leave.html"
+      "destination": "/pages/stratex-leave"
     },
     {
       "source": "/stratex/meetings",
-      "destination": "/pages/stratex-meetings.html"
+      "destination": "/pages/stratex-meetings"
     },
     {
       "source": "/stratex/contracts-pay",
-      "destination": "/pages/stratex-contracts-pay.html"
+      "destination": "/pages/stratex-contracts-pay"
     },
     {
       "source": "/stratex/players",
-      "destination": "/pages/stratex-players.html"
+      "destination": "/pages/stratex-players"
     },
     {
       "source": "/stratex/scouts",
-      "destination": "/pages/stratex-scouts.html"
+      "destination": "/pages/stratex-scouts"
     },
     {
       "source": "/stratex/usage-requests",
-      "destination": "/pages/stratex-usage-requests.html"
+      "destination": "/pages/stratex-usage-requests"
     },
     {
       "source": "/stratex/coaches",
-      "destination": "/pages/stratex-coaches.html"
+      "destination": "/pages/stratex-coaches"
     },
     {
       "source": "/stratex/messages",
-      "destination": "/pages/stratex-messages.html"
+      "destination": "/pages/stratex-messages"
     },
     {
       "source": "/stratex/scout-teams",
-      "destination": "/pages/stratex-scout-teams.html"
+      "destination": "/pages/stratex-scout-teams"
     },
     {
       "source": "/stratex/school-teams",
-      "destination": "/pages/stratex-school-teams.html"
+      "destination": "/pages/stratex-school-teams"
     },
     {
       "source": "/stratex/non-pro-academies",
-      "destination": "/pages/stratex-school-teams.html"
+      "destination": "/pages/stratex-school-teams"
     },
     {
       "source": "/stratex/award-nominations",
-      "destination": "/pages/stratex-award-nominations.html"
+      "destination": "/pages/stratex-award-nominations"
     },
     {
       "source": "/stratex/showcase-events",
-      "destination": "/pages/stratex-showcase-events.html"
+      "destination": "/pages/stratex-showcase-events"
     },
     {
       "source": "/stratex/notifications",
-      "destination": "/pages/stratex-notifications.html"
+      "destination": "/pages/stratex-notifications"
     },
     {
       "source": "/stratex/concerns",
-      "destination": "/pages/stratex-concerns.html"
+      "destination": "/pages/stratex-concerns"
     },
     {
       "source": "/stratex/settings",
-      "destination": "/pages/stratex-settings.html"
+      "destination": "/pages/stratex-settings"
     },
     {
       "source": "/404",
-      "destination": "/pages/404.html"
+      "destination": "/pages/404"
     }
   ]
 }
