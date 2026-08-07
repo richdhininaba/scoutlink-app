@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/frontend/css/public-v2.css">
-<link rel="stylesheet" href="/frontend/css/scoutlink-public-v4.css">
+<link rel="stylesheet" href="/css/public-v2.css">
+<link rel="stylesheet" href="/css/scoutlink-public-v4.css">
 </head>
 <body class="sl-public-v2 complete-registration-page">
 <a class="public-skip" href="#activationForm">Skip to account activation</a>
@@ -103,7 +103,7 @@ function skipToCoachDash(){goToDash();}
 function goToDash(){showStep('stepDone');setTimeout(function(){var map={Stratex:'stratex-dashboard.html',Scout:'scout-dashboard.html',Coach:'coach-dashboard.html',Player:'player-dashboard.html'};window.location.href=cleanRouteFor(map[accountType]||'login.html');},1400);}
 document.getElementById('s1Code').addEventListener('input',function(){this.value=this.value.toUpperCase();});
 </script>
-<script src="/frontend/js/scoutlink-public-v4.js"></script>
-<script src="/frontend/js/heap-analytics.js"></script>
+<script src="/js/scoutlink-public-v4.js"></script>
+<script src="/js/heap-analytics.js"></script>
 </body>
 </html>

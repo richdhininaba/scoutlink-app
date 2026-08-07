@@ -1,0 +1,1062 @@
+/* ScoutLink Coach Add Player V3
+   Four-step player creation experience for desktop and mobile. */
+
+body.coach-add-player-v3 {
+  --ap3-ink:#07111f;
+  --ap3-navy:#0b2139;
+  --ap3-navy-2:#123d64;
+  --ap3-green:#0fa37f;
+  --ap3-green-dark:#087a61;
+  --ap3-green-soft:#e3f8f1;
+  --ap3-blue:#2563eb;
+  --ap3-blue-soft:#e9f0ff;
+  --ap3-gold:#f4bd19;
+  --ap3-orange:#f97316;
+  --ap3-red:#dc4b58;
+  --ap3-page:#f2f5f9;
+  --ap3-surface:#fff;
+  --ap3-surface-2:#f8fafc;
+  --ap3-line:#dbe4ee;
+  --ap3-line-strong:#c6d4e2;
+  --ap3-text:#101828;
+  --ap3-muted:#62748a;
+  --ap3-muted-2:#8fa0b5;
+  --ap3-shadow:0 18px 46px rgba(7,17,31,.10);
+  --ap3-shadow-sm:0 8px 22px rgba(7,17,31,.07);
+  background:var(--ap3-page)!important;
+  color:var(--ap3-text)!important;
+}
+
+body.coach-add-player-v3 .dashboard,
+body.coach-add-player-v3 .dashboard-main {
+  min-height:100dvh!important;
+  background:var(--ap3-page)!important;
+}
+
+body.coach-add-player-v3 .dashboard-main {
+  min-width:0!important;
+  overflow-x:hidden!important;
+}
+
+body.coach-add-player-v3 .topbar {
+  height:64px!important;
+  min-height:64px!important;
+  padding:0 20px!important;
+  border-bottom:1px solid var(--ap3-line)!important;
+  background:#fff!important;
+}
+
+body.coach-add-player-v3 .topbar-title {
+  color:var(--ap3-text)!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  letter-spacing:-.02em!important;
+}
+
+body.coach-add-player-v3 .topbar-right {
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+}
+
+body.coach-add-player-v3 .topbar .btn {
+  min-height:34px!important;
+  height:34px!important;
+  padding:0 11px!important;
+  border:1px solid var(--ap3-line)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  color:#31465d!important;
+  font-size:10px!important;
+}
+
+body.coach-add-player-v3 .page-content {
+  width:100%!important;
+  max-width:none!important;
+  padding:18px 20px 30px!important;
+  overflow:visible!important;
+}
+
+body.coach-add-player-v3 .coach-v2-hero {
+  display:none!important;
+}
+
+body.coach-add-player-v3 .ap3-root,
+body.coach-add-player-v3 .ap3-root * {
+  box-sizing:border-box;
+}
+
+body.coach-add-player-v3 .ap3-hero {
+  min-height:126px;
+  padding:20px;
+  border-radius:18px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 95% 0,rgba(56,189,248,.17),transparent 34%),
+    linear-gradient(135deg,#07111f,#123d64 68%,#087a61 130%);
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:20px;
+  box-shadow:var(--ap3-shadow-sm);
+}
+
+body.coach-add-player-v3 .ap3-hero h1 {
+  margin:8px 0 4px;
+  color:#fff;
+  font-size:22px;
+  line-height:1.15;
+  font-weight:950;
+  letter-spacing:-.7px;
+}
+
+body.coach-add-player-v3 .ap3-hero p {
+  max-width:760px;
+  margin:0;
+  color:#c8d5e2;
+  font-size:8.5px;
+  line-height:1.55;
+}
+
+body.coach-add-player-v3 .ap3-hero-actions {
+  display:flex;
+  gap:7px;
+}
+
+body.coach-add-player-v3 .ap3-btn {
+  min-height:38px;
+  padding:0 14px;
+  border:1px solid var(--ap3-line);
+  border-radius:10px;
+  background:#fff;
+  color:#31465d;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font:inherit;
+  font-size:9px;
+  line-height:1;
+  font-weight:900;
+  text-decoration:none;
+  white-space:nowrap;
+  cursor:pointer;
+}
+
+body.coach-add-player-v3 .ap3-btn:hover {
+  border-color:#b7c7d7;
+  background:#f8fafc;
+}
+
+body.coach-add-player-v3 .ap3-btn:disabled {
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+body.coach-add-player-v3 .ap3-btn.is-primary {
+  border-color:var(--ap3-green);
+  background:var(--ap3-green);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(15,163,127,.18);
+}
+
+body.coach-add-player-v3 .ap3-btn.is-primary:hover {
+  border-color:var(--ap3-green-dark);
+  background:var(--ap3-green-dark);
+}
+
+body.coach-add-player-v3 .ap3-btn.is-dark {
+  border-color:var(--ap3-ink);
+  background:var(--ap3-ink);
+  color:#fff;
+}
+
+body.coach-add-player-v3 .ap3-btn.is-danger {
+  border-color:#efc3c9;
+  background:#fff3f4;
+  color:#b42335;
+}
+
+body.coach-add-player-v3 .ap3-btn.is-small {
+  min-height:31px;
+  height:31px;
+  padding:0 10px;
+  border-radius:9px;
+  font-size:8px;
+}
+
+body.coach-add-player-v3 .ap3-btn.is-block {
+  width:100%;
+}
+
+body.coach-add-player-v3 .ap3-pill {
+  min-height:25px;
+  padding:0 9px;
+  border-radius:999px;
+  background:#edf2f7;
+  color:#516378;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font-size:8px;
+  line-height:1;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+body.coach-add-player-v3 .ap3-pill.is-green {
+  background:#dff7ef;
+  color:var(--ap3-green-dark);
+}
+
+body.coach-add-player-v3 .ap3-pill.is-blue {
+  background:#e5edff;
+  color:#1d4ed8;
+}
+
+body.coach-add-player-v3 .ap3-pill.is-orange {
+  background:#fff0e5;
+  color:#c2410c;
+}
+
+body.coach-add-player-v3 .ap3-stepper {
+  margin:12px 0;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:7px;
+}
+
+body.coach-add-player-v3 .ap3-step {
+  min-width:0;
+  min-height:48px;
+  padding:8px 10px;
+  border:1px solid var(--ap3-line-strong);
+  border-radius:12px;
+  background:#fff;
+  color:#607189;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+
+body.coach-add-player-v3 .ap3-step-number {
+  width:25px;
+  height:25px;
+  flex:0 0 25px;
+  border-radius:8px;
+  background:#edf2f7;
+  color:#52657b;
+  display:grid;
+  place-items:center;
+  font-size:8px;
+  font-weight:950;
+}
+
+body.coach-add-player-v3 .ap3-step b {
+  display:block;
+  color:inherit;
+  font-size:8px;
+  line-height:1.25;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-step span {
+  display:block;
+  margin-top:2px;
+  color:var(--ap3-muted-2);
+  font-size:6.5px;
+  line-height:1.2;
+}
+
+body.coach-add-player-v3 .ap3-step.is-active {
+  border-color:var(--ap3-green);
+  background:var(--ap3-green);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(15,163,127,.18);
+}
+
+body.coach-add-player-v3 .ap3-step.is-active .ap3-step-number {
+  background:#fff;
+  color:var(--ap3-green-dark);
+}
+
+body.coach-add-player-v3 .ap3-step.is-active span {
+  color:#d9fff2;
+}
+
+body.coach-add-player-v3 .ap3-step.is-done {
+  border-color:#9ddfce;
+  background:#effbf7;
+  color:var(--ap3-green-dark);
+}
+
+body.coach-add-player-v3 .ap3-step.is-done .ap3-step-number {
+  background:var(--ap3-green);
+  color:#fff;
+}
+
+body.coach-add-player-v3 .ap3-message {
+  display:none;
+  margin:0 0 10px;
+  padding:10px 12px;
+  border-radius:11px;
+  font-size:8px;
+  line-height:1.5;
+  font-weight:800;
+}
+
+body.coach-add-player-v3 .ap3-message.show {
+  display:block;
+}
+
+body.coach-add-player-v3 .ap3-message.is-error {
+  border:1px solid #f0c2c8;
+  background:#fff2f4;
+  color:#9d2634;
+}
+
+body.coach-add-player-v3 .ap3-message.is-success {
+  border:1px solid #b7e1d4;
+  background:#eaf9f3;
+  color:#075f4c;
+}
+
+body.coach-add-player-v3 .ap3-panel {
+  overflow:hidden;
+  border:1px solid var(--ap3-line);
+  border-radius:17px;
+  background:#fff;
+  box-shadow:var(--ap3-shadow-sm);
+}
+
+body.coach-add-player-v3 .ap3-panel + .ap3-panel {
+  margin-top:12px;
+}
+
+body.coach-add-player-v3 .ap3-panel-head {
+  min-height:54px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--ap3-line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+body.coach-add-player-v3 .ap3-panel-title h2,
+body.coach-add-player-v3 .ap3-panel-title h3 {
+  margin:0;
+  color:var(--ap3-text);
+  font-size:11px;
+  line-height:1.3;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-panel-title p {
+  margin:3px 0 0;
+  color:var(--ap3-muted);
+  font-size:7px;
+  line-height:1.4;
+}
+
+body.coach-add-player-v3 .ap3-panel-body {
+  padding:14px;
+}
+
+body.coach-add-player-v3 .ap3-view {
+  display:none;
+}
+
+body.coach-add-player-v3 .ap3-view.is-active {
+  display:block;
+}
+
+body.coach-add-player-v3 .ap3-form-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+}
+
+body.coach-add-player-v3 .ap3-form-grid.is-three {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+body.coach-add-player-v3 .ap3-field.is-full {
+  grid-column:1/-1;
+}
+
+body.coach-add-player-v3 .ap3-field label {
+  display:block;
+  margin-bottom:5px;
+  color:#53677c;
+  font-size:7px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+
+body.coach-add-player-v3 .ap3-required {
+  color:#c73545;
+}
+
+body.coach-add-player-v3 .ap3-field small {
+  display:block;
+  margin-top:4px;
+  color:var(--ap3-muted);
+  font-size:6.5px;
+  line-height:1.4;
+}
+
+body.coach-add-player-v3 .ap3-input,
+body.coach-add-player-v3 .ap3-select,
+body.coach-add-player-v3 .ap3-textarea {
+  width:100%;
+  border:1px solid var(--ap3-line);
+  border-radius:10px;
+  background:#fff;
+  color:#17273a;
+  font:inherit;
+  font-size:8px;
+  outline:none;
+}
+
+body.coach-add-player-v3 .ap3-input,
+body.coach-add-player-v3 .ap3-select {
+  height:39px;
+  padding:0 11px;
+}
+
+body.coach-add-player-v3 .ap3-textarea {
+  min-height:82px;
+  padding:10px 11px;
+  resize:vertical;
+}
+
+body.coach-add-player-v3 .ap3-input:focus,
+body.coach-add-player-v3 .ap3-select:focus,
+body.coach-add-player-v3 .ap3-textarea:focus {
+  border-color:var(--ap3-green);
+  box-shadow:0 0 0 3px rgba(15,163,127,.12);
+}
+
+body.coach-add-player-v3 .ap3-context-card {
+  min-height:68px;
+  padding:12px;
+  border:1px solid #cfe0f2;
+  border-radius:12px;
+  background:#f2f8fd;
+  color:#40586f;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:8px;
+  line-height:1.45;
+}
+
+body.coach-add-player-v3 .ap3-context-icon {
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  border-radius:10px;
+  background:#dff7ef;
+  color:var(--ap3-green-dark);
+  display:grid;
+  place-items:center;
+  font-size:8px;
+  font-weight:950;
+}
+
+body.coach-add-player-v3 .ap3-section {
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid #edf1f5;
+}
+
+body.coach-add-player-v3 .ap3-section:first-child {
+  margin-top:0;
+  padding-top:0;
+  border-top:0;
+}
+
+body.coach-add-player-v3 .ap3-section-head {
+  margin-bottom:9px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+body.coach-add-player-v3 .ap3-section-head h3 {
+  margin:0;
+  color:var(--ap3-text);
+  font-size:10px;
+  line-height:1.35;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-section-head p {
+  margin:3px 0 0;
+  color:var(--ap3-muted);
+  font-size:7px;
+  line-height:1.4;
+}
+
+body.coach-add-player-v3 .ap3-choice-grid {
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:7px;
+}
+
+body.coach-add-player-v3 .ap3-choice-grid.is-build {
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+body.coach-add-player-v3 .ap3-choice {
+  min-height:55px;
+  padding:8px 6px;
+  border:1px solid var(--ap3-line);
+  border-radius:11px;
+  background:#fff;
+  color:var(--ap3-text);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  font:inherit;
+  text-align:center;
+  cursor:pointer;
+}
+
+body.coach-add-player-v3 .ap3-choice:hover,
+body.coach-add-player-v3 .ap3-choice.active {
+  border-color:var(--ap3-green);
+  background:#effbf7;
+}
+
+body.coach-add-player-v3 .ap3-choice b {
+  font-size:7.5px;
+  line-height:1.2;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-choice span {
+  color:var(--ap3-muted);
+  font-size:6px;
+  line-height:1.25;
+}
+
+body.coach-add-player-v3 .ap3-avatar-layout {
+  display:grid;
+  grid-template-columns:150px minmax(0,1fr);
+  gap:14px;
+  align-items:start;
+}
+
+body.coach-add-player-v3 .ap3-avatar-preview {
+  min-height:174px;
+  padding:12px;
+  border:1px solid var(--ap3-line);
+  border-radius:14px;
+  background:
+    radial-gradient(circle at 50% 16%,rgba(56,189,248,.14),transparent 38%),
+    linear-gradient(145deg,#f7fafc,#eef3f8);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+body.coach-add-player-v3 .ap3-avatar {
+  position:relative;
+  width:92px;
+  height:92px;
+  border-radius:29px;
+  background:linear-gradient(180deg,#e4edf5,#cbd8e4);
+  overflow:hidden;
+  box-shadow:0 12px 25px rgba(7,17,31,.12);
+}
+
+body.coach-add-player-v3 .ap3-avatar-head {
+  position:absolute;
+  left:26px;
+  top:15px;
+  width:40px;
+  height:44px;
+  border-radius:48% 48% 44% 44%;
+  background:#b8784b;
+  z-index:2;
+}
+
+body.coach-add-player-v3 .ap3-avatar-hair {
+  position:absolute;
+  left:24px;
+  top:10px;
+  width:44px;
+  height:24px;
+  border-radius:22px 22px 12px 12px;
+  background:#1d2630;
+  z-index:3;
+}
+
+body.coach-add-player-v3 .ap3-avatar-kit {
+  position:absolute;
+  left:13px;
+  right:13px;
+  bottom:-8px;
+  height:48px;
+  border-radius:22px 22px 0 0;
+  background:#0fa37f;
+  z-index:1;
+}
+
+body.coach-add-player-v3 .ap3-avatar-initials {
+  position:absolute;
+  inset:auto 0 7px;
+  z-index:4;
+  color:#fff;
+  font-size:11px;
+  font-weight:950;
+  text-align:center;
+}
+
+body.coach-add-player-v3 .ap3-avatar-preview b {
+  margin-top:9px;
+  color:var(--ap3-text);
+  font-size:8px;
+}
+
+body.coach-add-player-v3 .ap3-avatar-preview span {
+  margin-top:3px;
+  color:var(--ap3-muted);
+  font-size:6.5px;
+}
+
+body.coach-add-player-v3 .ap3-avatar-controls {
+  display:grid;
+  gap:10px;
+}
+
+body.coach-add-player-v3 .ap3-avatar-group label {
+  display:block;
+  margin-bottom:5px;
+  color:#53677c;
+  font-size:7px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+
+body.coach-add-player-v3 .ap3-chip-row {
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+body.coach-add-player-v3 .ap3-chip {
+  min-height:31px;
+  padding:0 10px;
+  border:1px solid var(--ap3-line);
+  border-radius:9px;
+  background:#fff;
+  color:#41566d;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font:inherit;
+  font-size:7px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+body.coach-add-player-v3 .ap3-chip.is-active {
+  border-color:var(--ap3-green);
+  background:#effbf7;
+  color:var(--ap3-green-dark);
+}
+
+body.coach-add-player-v3 .ap3-colour-dot {
+  width:14px;
+  height:14px;
+  border:2px solid #fff;
+  border-radius:50%;
+  box-shadow:0 0 0 1px #b7c5d3;
+}
+
+body.coach-add-player-v3 .ap3-rating-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+
+body.coach-add-player-v3 .ap3-rating {
+  min-width:0;
+  padding:9px;
+  border:1px solid var(--ap3-line);
+  border-radius:11px;
+  background:#f9fbfd;
+}
+
+body.coach-add-player-v3 .ap3-rating label {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  color:#53677c;
+  font-size:7px;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-rating input {
+  width:100%;
+  height:34px;
+  margin-top:6px;
+  padding:0 9px;
+  border:1px solid var(--ap3-line);
+  border-radius:9px;
+  background:#fff;
+  color:var(--ap3-text);
+  font:inherit;
+  font-size:8px;
+  font-weight:850;
+  text-align:center;
+}
+
+body.coach-add-player-v3 .ap3-rating input:focus {
+  border-color:var(--ap3-green);
+  outline:none;
+  box-shadow:0 0 0 3px rgba(15,163,127,.11);
+}
+
+body.coach-add-player-v3 .ap3-actions {
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid #edf1f5;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+body.coach-add-player-v3 .ap3-actions .ap3-secondary-copy {
+  margin-right:auto;
+  color:var(--ap3-muted);
+  font-size:7px;
+  line-height:1.4;
+}
+
+body.coach-add-player-v3 .ap3-review-grid {
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:12px;
+}
+
+body.coach-add-player-v3 .ap3-review-card {
+  padding:13px;
+  border:1px solid var(--ap3-line);
+  border-radius:13px;
+  background:#fff;
+}
+
+body.coach-add-player-v3 .ap3-review-card h3 {
+  margin:0 0 9px;
+  color:var(--ap3-text);
+  font-size:10px;
+  font-weight:900;
+}
+
+body.coach-add-player-v3 .ap3-review-list {
+  display:grid;
+  gap:0;
+}
+
+body.coach-add-player-v3 .ap3-review-row {
+  min-height:42px;
+  padding:8px 0;
+  border-top:1px solid #edf1f5;
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:center;
+}
+
+body.coach-add-player-v3 .ap3-review-row:first-child {
+  border-top:0;
+}
+
+body.coach-add-player-v3 .ap3-review-row span {
+  color:var(--ap3-muted);
+  font-size:7px;
+}
+
+body.coach-add-player-v3 .ap3-review-row b {
+  color:var(--ap3-text);
+  font-size:8px;
+  text-align:right;
+}
+
+body.coach-add-player-v3 .ap3-confirm {
+  margin-top:12px;
+  padding:11px;
+  border:1px solid #a4dfce;
+  border-radius:12px;
+  background:#effbf7;
+  color:var(--ap3-green-dark);
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:7.5px;
+  line-height:1.5;
+  font-weight:800;
+}
+
+body.coach-add-player-v3 .ap3-confirm input {
+  width:16px;
+  height:16px;
+  margin:0;
+  accent-color:var(--ap3-green);
+}
+
+body.coach-add-player-v3 .ap3-created {
+  display:none;
+  margin-top:12px;
+  padding:14px;
+  border:1px solid #a4dfce;
+  border-radius:13px;
+  background:#effbf7;
+  color:#075f4c;
+}
+
+body.coach-add-player-v3 .ap3-created.is-visible {
+  display:block;
+}
+
+body.coach-add-player-v3 .ap3-created h3 {
+  margin:0;
+  font-size:11px;
+  font-weight:950;
+}
+
+body.coach-add-player-v3 .ap3-created p {
+  margin:5px 0 0;
+  font-size:7.5px;
+  line-height:1.5;
+}
+
+body.coach-add-player-v3 .ap3-created-actions {
+  margin-top:10px;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+body.coach-add-player-v3 :focus-visible {
+  outline:3px solid rgba(15,163,127,.25)!important;
+  outline-offset:2px!important;
+}
+
+@media (max-width:950px), ((hover:none) and (pointer:coarse) and (max-width:1024px)) {
+  body.coach-add-player-v3 .dashboard-main {
+    width:100%!important;
+    margin-left:0!important;
+  }
+
+  body.coach-add-player-v3 .topbar {
+    display:none!important;
+  }
+
+  body.coach-add-player-v3 .coach-v2-mobile-top {
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    z-index:9000!important;
+    height:60px!important;
+    padding:0 13px!important;
+    border-bottom:1px solid var(--ap3-line)!important;
+    background:#fff!important;
+    display:grid!important;
+    grid-template-columns:minmax(80px,1fr) auto minmax(80px,1fr)!important;
+    align-items:center!important;
+    gap:10px!important;
+    box-shadow:0 8px 20px rgba(15,23,42,.06)!important;
+  }
+
+  body.coach-add-player-v3 .coach-v2-mobile-top::before {
+    content:"Scout";
+    justify-self:start;
+    color:var(--ap3-ink);
+    font-size:18px;
+    line-height:1;
+    font-weight:950;
+    letter-spacing:-1px;
+  }
+
+  body.coach-add-player-v3 .coach-v2-mobile-top::after {
+    content:"Link";
+    position:absolute;
+    left:54px;
+    top:22px;
+    color:var(--ap3-green);
+    font-size:18px;
+    line-height:1;
+    font-weight:950;
+    letter-spacing:-1px;
+    pointer-events:none;
+  }
+
+  body.coach-add-player-v3 .coach-v2-menu-button {
+    justify-self:end!important;
+    order:3;
+    width:auto!important;
+    min-width:58px!important;
+    height:36px!important;
+    min-height:36px!important;
+    padding:0 10px!important;
+    border:1px solid var(--ap3-line)!important;
+    border-radius:10px!important;
+    background:#fff!important;
+    color:#31465d!important;
+    font-size:0!important;
+    box-shadow:none!important;
+  }
+
+  body.coach-add-player-v3 .coach-v2-menu-button::after {
+    content:"Menu";
+    font-size:10px;
+    font-weight:900;
+  }
+
+  body.coach-add-player-v3 .coach-v2-menu-button span {
+    display:none!important;
+  }
+
+  body.coach-add-player-v3 .coach-v2-mobile-title {
+    grid-column:2;
+    grid-row:1;
+    justify-self:center;
+    color:var(--ap3-text)!important;
+    font-size:12px!important;
+    font-weight:900!important;
+    white-space:nowrap;
+  }
+
+  body.coach-add-player-v3 .coach-v2-bell {
+    display:none!important;
+  }
+
+  body.coach-add-player-v3 .page-content {
+    padding:74px 14px 82px!important;
+  }
+
+  body.coach-add-player-v3 .public-demo-banner {
+    margin-top:60px!important;
+  }
+
+  body.coach-add-player-v3.public-demo-mode .page-content {
+    padding-top:12px!important;
+  }
+
+  body.coach-add-player-v3 .ap3-hero {
+    min-height:0;
+    padding:16px;
+    display:block;
+  }
+
+  body.coach-add-player-v3 .ap3-hero h1 {
+    font-size:20px;
+  }
+
+  body.coach-add-player-v3 .ap3-hero-actions {
+    margin-top:13px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+
+  body.coach-add-player-v3 .ap3-hero-actions .ap3-btn.is-primary {
+    grid-column:1/-1;
+    grid-row:1;
+  }
+
+  body.coach-add-player-v3 .ap3-stepper {
+    display:flex;
+    overflow-x:auto;
+    padding-bottom:3px;
+    scrollbar-width:none;
+  }
+
+  body.coach-add-player-v3 .ap3-stepper::-webkit-scrollbar {
+    display:none;
+  }
+
+  body.coach-add-player-v3 .ap3-step {
+    flex:0 0 150px;
+  }
+
+  body.coach-add-player-v3 .ap3-form-grid,
+  body.coach-add-player-v3 .ap3-form-grid.is-three,
+  body.coach-add-player-v3 .ap3-review-grid {
+    grid-template-columns:1fr;
+  }
+
+  body.coach-add-player-v3 .ap3-field.is-full {
+    grid-column:auto;
+  }
+
+  body.coach-add-player-v3 .ap3-choice-grid,
+  body.coach-add-player-v3 .ap3-choice-grid.is-build {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  body.coach-add-player-v3 .ap3-avatar-layout {
+    grid-template-columns:1fr;
+  }
+
+  body.coach-add-player-v3 .ap3-avatar-preview {
+    min-height:150px;
+  }
+
+  body.coach-add-player-v3 .ap3-rating-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  body.coach-add-player-v3 .ap3-actions {
+    position:sticky;
+    bottom:64px;
+    z-index:20;
+    margin:14px -14px -14px;
+    padding:10px 14px max(10px,env(safe-area-inset-bottom));
+    border-top:1px solid var(--ap3-line);
+    background:rgba(255,255,255,.97);
+    backdrop-filter:blur(14px);
+  }
+
+  body.coach-add-player-v3 .ap3-actions .ap3-secondary-copy {
+    width:100%;
+    margin:0 0 2px;
+  }
+}
+
+@media (max-width:390px) {
+  body.coach-add-player-v3 .ap3-rating-grid {
+    grid-template-columns:1fr;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  body.coach-add-player-v3 *,
+  body.coach-add-player-v3 *::before,
+  body.coach-add-player-v3 *::after {
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
