@@ -1,0 +1,58 @@
+    row.lastName = String(firstValue(normalised,['last_name','lastname','surname','last'])).trim();
+    row.ageGroup = String(firstValue(normalised,['age_group','agegroup'])).toUpperCase();
+    row.position = position || '';
+    row.foot = String(firstValue(normalised,['foot','preferred_foot']) || 'Right');
+    row.heightCategory = String(firstValue(normalised,['height_category','height_profile']) || 'average');
+    row.buildCategory = String(firstValue(normalised,['build_category','build_profile']) || 'athletic');
+    var flat = {};
+    if (position) {
+      window.ScoutLinkScoringV4.attributesForPosition(position, options).forEach(function (attribute) {
+        var raw = normalised[attribute[0]];
+        if (raw === undefined || raw === null || raw === '') return;
+        var rating = Number(raw);
+        if (Number.isInteger(rating) && rating >= 1 && rating <= 10) flat[attribute[0]] = rating;
+      });
+      row.attributeRatings = window.ScoutLinkScoringV4.nestRatings(flat, window.ScoutLinkScoringV4.groupForPosition(position), options);
+    }
+    return row;
+  }
+
+  function parseCsv(text) {
+    var lines = String(text || '').replace(/^\uFEFF/,'').split(/\r?\n/).filter(function (line) { return line.trim(); });
+    if (!lines.length) return [];
+    function parseLine(line) {
+      var values = [], current = '', quoted = false;
+      for (var index = 0; index < line.length; index += 1) {
+        var char = line[index];
+        if (char === '"' && quoted && line[index + 1] === '"') { current += '"'; index += 1; }
+        else if (char === '"') quoted = !quoted;
+        else if (char === ',' && !quoted) { values.push(current); current = ''; }
+        else current += char;
+      }
+      values.push(current);
+      return values;
+    }
+    var headers = parseLine(lines[0]);
+    return lines.slice(1).map(function (line) {
+      var values = parseLine(line), record = {};
+      headers.forEach(function (header, index) { record[header] = values[index] == null ? '' : values[index]; });
+      return record;
+    });
+  }
+
+  async function importFile(file) {
+    clearMessages();
+    fileName = file.name;
+    try {
+      var records;
+      if (/\.csv$/i.test(file.name)) {
+        records = parseCsv(await file.text());
+      } else {
+        if (!window.XLSX) throw new Error('Spreadsheet support did not load. Save the file as CSV or refresh and try again.');
+        var buffer = await file.arrayBuffer();
+        var workbook = window.XLSX.read(buffer, {type:'array'});
+        records = window.XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval:''});
+      }
+      if (!records.length) throw new Error('The file does not contain player rows.');
+      rows = records.slice(0, MAX_ROWS).map(rowFromRecord);
+      render();

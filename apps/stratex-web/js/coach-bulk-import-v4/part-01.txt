@@ -1,0 +1,99 @@
+'use strict';
+
+/*
+ * Coach Bulk Import V4.
+ *
+ * Keeps the existing CB3 page design while allowing coaches to:
+ *  - download/import only the seven core player fields;
+ *  - add and edit players directly in the import table;
+ *  - complete only the attributes relevant to each player's position group.
+ */
+(function () {
+  var MAX_ROWS = 50;
+  var TEMPLATE_HEADERS = [
+    'first_name',
+    'last_name',
+    'age_group',
+    'position',
+    'foot',
+    'height_category',
+    'build_category'
+  ];
+  var REQUIRED_IMPORT_HEADERS = [
+    'first_name',
+    'last_name',
+    'age_group',
+    'position',
+    'foot',
+    'height_category',
+    'build_category'
+  ];
+  var HEIGHT_OPTIONS = [
+    ['very_short', 'Very short · 155–163 cm'],
+    ['short', 'Short · 163–170 cm'],
+    ['average', 'Average · 170–178 cm'],
+    ['tall', 'Tall · 178–185 cm'],
+    ['very_tall', 'Very tall · 185+ cm']
+  ];
+  var BUILD_OPTIONS = [
+    ['very_slight', 'Very slight · 50–58 kg'],
+    ['slight', 'Slight · 58–65 kg'],
+    ['lean', 'Lean · 65–72 kg'],
+    ['athletic', 'Athletic · 72–80 kg'],
+    ['stocky', 'Stocky · 80–88 kg'],
+    ['powerful', 'Powerful · 88–96 kg'],
+    ['very_powerful', 'Very powerful · 96+ kg']
+  ];
+
+  var options = null;
+  var rows = [];
+  var nextId = 1;
+  var coaches = [];
+  var defaultCoachId = '';
+  var fileName = '';
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character];
+    });
+  }
+
+  function isPublicDemo() {
+    try {
+      return (
+        (typeof window.isPublicDemoMode === 'function' && window.isPublicDemoMode()) ||
+        sessionStorage.getItem('sl_public_demo') === '1'
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function demoRole() {
+    try {
+      return String(
+        sessionStorage.getItem('sl_public_demo_role') ||
+        sessionStorage.getItem('sl_admin_demo_role') ||
+        ''
+      ).toLowerCase();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function allowedContext() {
+    var role = window.Auth && window.Auth.type;
+    return (
+      role === 'Coach' ||
+      role === 'Stratex' ||
+      (isPublicDemo() && (!demoRole() || demoRole() === 'coach'))

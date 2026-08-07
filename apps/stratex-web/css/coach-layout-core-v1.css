@@ -1,0 +1,157 @@
+/*
+ * ScoutLink Coach Layout Core V1
+ *
+ * This is the only cross-page geometry layer for the Coach experience.
+ * It does not style Scout, Player or Stratex pages.
+ *
+ * Page-specific Coach styles keep their approved visual widths:
+ * - Dashboard and My players: 165px sidebar.
+ * - Remaining Coach pages and Coach player profile: 230px sidebar.
+ *
+ * The workspace always starts after the fixed sidebar. No grid column,
+ * negative margin, translateX or 100vw width is allowed to create a second
+ * offset or place content underneath the navigation.
+ */
+
+@media (min-width: 761px) {
+  body.coach-v8.coach-v2 {
+    --sl-coach-sidebar-width: 230px;
+  }
+
+  body.coach-v8.coach-v2.coach-page-dashboard,
+  body.coach-v8.coach-v2.coach-page-my-players {
+    --sl-coach-sidebar-width: 165px;
+  }
+
+  html body.coach-v8.coach-v2 .dashboard,
+  html body.coach-v8.coach-v2 .dashboard.coach-shell,
+  html body.coach-v8.coach-v2 .coach-shell {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body.coach-v8.coach-v2 .sidebar,
+  html body.coach-v8.coach-v2 .sidebar.coach-sidebar,
+  html body.coach-v8.coach-v2 .coach-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    top: 0 !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: var(--sl-coach-sidebar-width) !important;
+    min-width: var(--sl-coach-sidebar-width) !important;
+    max-width: var(--sl-coach-sidebar-width) !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    transform: none !important;
+    z-index: 220 !important;
+  }
+
+  html body.coach-v8.coach-v2 .dashboard-main,
+  html body.coach-v8.coach-v2 .dashboard-main.coach-workspace,
+  html body.coach-v8.coach-v2 .coach-workspace {
+    display: block !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    width: calc(100% - var(--sl-coach-sidebar-width)) !important;
+    min-width: 0 !important;
+    max-width: calc(100% - var(--sl-coach-sidebar-width)) !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    margin: 0 0 0 var(--sl-coach-sidebar-width) !important;
+    padding: 0 !important;
+    overflow-x: clip !important;
+    transform: none !important;
+  }
+
+  html body.coach-v8.coach-v2 .topbar,
+  html body.coach-v8.coach-v2 .coach-topbar,
+  html body.coach-v8.coach-v2 .page-content,
+  html body.coach-v8.coach-v2 .coach-content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+  }
+
+  html body.coach-v8.coach-v2 .page-content > *,
+  html body.coach-v8.coach-v2 .coach-content > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body.coach-v8.coach-v2 .dashboard,
+  html body.coach-v8.coach-v2 .dashboard.coach-shell,
+  html body.coach-v8.coach-v2 .coach-shell {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body.coach-v8.coach-v2 .dashboard-main,
+  html body.coach-v8.coach-v2 .dashboard-main.coach-workspace,
+  html body.coach-v8.coach-v2 .coach-workspace {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    overflow-x: clip !important;
+  }
+
+  html body.coach-v8.coach-v2 .sidebar,
+  html body.coach-v8.coach-v2 .sidebar.coach-sidebar,
+  html body.coach-v8.coach-v2 .coach-sidebar {
+    position: fixed !important;
+    inset: 0 auto 0 0 !important;
+    width: min(340px, 92vw) !important;
+    min-width: 0 !important;
+    max-width: 92vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    transform: translateX(-105%) !important;
+    transition: transform 180ms ease !important;
+    z-index: 1200 !important;
+  }
+
+  html body.coach-v8.coach-v2.coach-v8-menu-open .sidebar,
+  html body.coach-v8.coach-v2.coach-v8-menu-open .coach-sidebar,
+  html body.coach-v8.coach-v2.coach-v2-menu-open .sidebar,
+  html body.coach-v8.coach-v2.coach-v2-menu-open .coach-sidebar,
+  html body.coach-v8.coach-v2.mobile-menu-open .sidebar,
+  html body.coach-v8.coach-v2.mobile-menu-open .coach-sidebar {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}

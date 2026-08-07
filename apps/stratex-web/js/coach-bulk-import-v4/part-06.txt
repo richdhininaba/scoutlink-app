@@ -1,0 +1,99 @@
+      });
+    });
+  }
+
+  function refreshRowStatus(row) {
+    var info = status(row);
+    var pill = document.querySelector('[data-row-status-pill="' + row.id + '"]');
+    var text = document.querySelector('[data-row-status-text="' + row.id + '"]');
+    var count = document.querySelector('[data-row-attribute-count="' + row.id + '"]');
+    if (pill) {
+      pill.className = 'cb3-pill ' + (info.ready ? 'is-green' : 'is-orange');
+      pill.textContent = info.ready ? 'Ready' : 'Review';
+    }
+    if (text) text.textContent = info.text;
+    if (count) count.textContent = info.observed + ' of ' + info.expected + ' observed';
+
+    var ready = rows.filter(function (item) { return status(item).ready; }).length;
+    var review = rows.length - ready;
+    if (el('cb3ReadyRows')) el('cb3ReadyRows').textContent = ready;
+    if (el('cb3ReviewRows')) el('cb3ReviewRows').textContent = review;
+    if (el('cb3ReadyPill')) el('cb3ReadyPill').textContent = ready;
+    if (el('cb3ReviewPill')) el('cb3ReviewPill').textContent = review;
+    renderIssues();
+  }
+
+  function preserveRelevantRatings(row, newPosition) {
+    var group = window.ScoutLinkScoringV4.groupForPosition(newPosition);
+    if (!group) {
+      row.attributeRatings = {};
+      return;
+    }
+    var allowed = new Set(
+      window.ScoutLinkScoringV4.attributesForPosition(newPosition, options).map(function (attribute) {
+        return attribute[0];
+      })
+    );
+    var kept = {};
+    var current = flatRatings(row);
+    Object.keys(current).forEach(function (key) {
+      if (allowed.has(key)) kept[key] = current[key];
+    });
+    row.attributeRatings = window.ScoutLinkScoringV4.nestRatings(kept, group, options);
+  }
+
+  function bindDynamicActions() {
+    document.querySelectorAll('[data-toggle-attributes]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var row = rows.find(function (item) { return item.id === button.dataset.toggleAttributes; });
+        if (!row) return;
+        row.attributesExpanded = !row.attributesExpanded;
+        render();
+      });
+    });
+
+    document.querySelectorAll('[data-remove-row]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var row = rows.find(function (item) { return item.id === button.dataset.removeRow; });
+        if (row && window.confirm('Remove ' + playerName(row) + ' from this import?')) {
+          rows = rows.filter(function (item) { return item.id !== row.id; });
+          render();
+        }
+      });
+    });
+  }
+
+  function bindTableEditing() {
+    var body = el('cb3PreviewBody');
+
+    body.addEventListener('input', function (event) {
+      var field = event.target.closest('[data-row-field]');
+      if (!field || field.tagName === 'SELECT') return;
+      var row = rows.find(function (item) { return item.id === field.dataset.rowId; });
+      if (!row) return;
+      row[field.dataset.rowField] = field.value;
+      refreshRowStatus(row);
+    });
+
+    body.addEventListener('change', function (event) {
+      var field = event.target.closest('[data-row-field]');
+      if (field) {
+        var row = rows.find(function (item) { return item.id === field.dataset.rowId; });
+        if (!row) return;
+        var property = field.dataset.rowField;
+        if (property === 'position') {
+          var position = window.ScoutLinkScoringV4.normalisePosition(field.value) || '';
+          preserveRelevantRatings(row, position);
+          row.position = position;
+          row.attributesExpanded = true;
+          render();
+          return;
+        }
+        row[property] = field.value;
+        refreshRowStatus(row);
+        return;
+      }
+
+      var ratingField = event.target.closest('[data-rating-key]');
+      if (!ratingField) return;
+      var ratingRow = rows.find(function (item) { return item.id === ratingField.dataset.rowId; });
