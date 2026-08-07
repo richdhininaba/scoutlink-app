@@ -217,7 +217,7 @@ router.post('/upload-link', requireAuth, requireRole('Coach','Stratex','Stratex 
     }
     const base = (config.brandUrl || 'https://www.scoutlink.app').replace(/\/$/, '');
     const cleanPath = '/video-upload?token=' + encodeURIComponent(uploadToken);
-    const staticPath = '/frontend/pages/video-upload.html?token=' + encodeURIComponent(uploadToken);
+    const staticPath = '/video-upload?token=' + encodeURIComponent(uploadToken);
     res.status(201).json({
       uploadLinkId,
       uploadUrl: base + cleanPath,

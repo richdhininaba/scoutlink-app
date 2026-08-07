@@ -2,8 +2,8 @@
 
 ## App Folders
 
-`apps/scoutlink-web` and `apps/stratex-web` are the intended frontend deployment
-roots. Each app contains its own pages, route wrappers, static assets and
+`apps/scoutlink-web` and `apps/stratex-web` are the frontend deployment roots.
+Each app contains its own pages, route wrappers, static assets and
 `vercel.json` routing file.
 
 The current split intentionally mirrors some shared runtime files into both app
@@ -19,12 +19,14 @@ or shared package before there is a clear need.
 - SendGrid server-side email sends.
 - Storage and privileged backend workflows.
 
-Do not move this folder to `services/scoutlink-api` until the web domains have
-already been separated and verified.
+Do not move this folder to `services/scoutlink-api` until the Vercel project
+root directory has been updated to that target and verified. Until then,
+`backend` is the production API root.
 
-## Legacy Fallbacks
+## Removed Legacy Fallbacks
 
-These paths are intentionally still present:
+These paths were removed after production moved to dedicated Vercel web
+projects:
 
 - Root clean-route folders such as `coach`, `scout`, `admin`, `login` and
   `register`.
@@ -33,5 +35,5 @@ These paths are intentionally still present:
 - Root `vercel.json`.
 - Root `CNAME` and GitHub Pages files.
 
-They should be removed only in a later cleanup commit after production has moved
-to the dedicated Vercel web projects.
+Do not reintroduce these mirrors. Add or update web assets inside
+`apps/scoutlink-web` or `apps/stratex-web` instead.
