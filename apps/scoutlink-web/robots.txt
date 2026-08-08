@@ -1,7 +1,9 @@
 User-agent: *
-Allow: /
+Allow: /demo
+Allow: /register
+Allow: /register/coach
+Allow: /register/scout
 
-# Private platform, account, API and file routes.
 Disallow: /api/
 Disallow: /admin
 Disallow: /admin/
@@ -19,5 +21,11 @@ Disallow: /applications/
 Disallow: /job-applications/
 Disallow: /uploads/
 Disallow: /files/
+Disallow: /experience-select
+Disallow: /complete-registration
+Disallow: /confirm-password
+Disallow: /scout-verification
+Disallow: /video-upload
+Disallow: /login
 
 Sitemap: https://www.scoutlink.app/sitemap.xml

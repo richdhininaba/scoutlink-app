@@ -1,32 +1,41 @@
 # ScoutLink
 
-ScoutLink is a football intelligence product operated by Stratex Analytics. It helps grassroots coaches maintain structured U7–U16 player evidence and gives reviewed professional and semi-professional scouts controlled tools to search, compare and shortlist players.
+ScoutLink is a football intelligence product operated by Stratex Analytics. It helps grassroots coaches maintain structured U7–U16 player evidence and gives reviewed scouts controlled tools to search, compare and shortlist players.
 
-## Canonical public pages
-- Homepage: https://www.scoutlink.app/
-- Coaches: https://www.scoutlink.app/coaches
-- Scouts: https://www.scoutlink.app/scouts
-- Demo: https://www.scoutlink.app/demo
-- Pricing: https://www.scoutlink.app/scoutlink/pricing
-- Login: https://www.scoutlink.app/login
-- Register: https://www.scoutlink.app/register
+## Canonical public information pages
+
+- Product demo: https://www.scoutlink.app/demo
+- Registration entry and Scout plans: https://www.scoutlink.app/register
 - Coach registration: https://www.scoutlink.app/register/coach
 - Scout access application: https://www.scoutlink.app/register/scout
-- Safeguarding: https://www.scoutlink.app/safeguarding
-- Report a concern: https://www.scoutlink.app/report-a-concern
-- Data policy: https://www.scoutlink.app/data-policy
-- Privacy policy: https://www.scoutlink.app/privacy-policy
-- Terms: https://www.scoutlink.app/terms
-- Cookie policy: https://www.scoutlink.app/cookie-policy
 
-## Action-specific routes
-Password recovery, account completion, password confirmation, experience selection and tokenised video upload routes are functional account actions. They should not be treated as general public-information pages.
+## Account and secure action routes
 
-## Removed routes
-Routes not included in the canonical public-page list are not alternative ScoutLink pages. They return a not-found response on the ScoutLink domain rather than redirecting elsewhere.
+These are functional account routes, not brochure pages and should not be indexed as general public information:
+
+- Sign in: https://www.scoutlink.app/login
+- Experience selector: https://www.scoutlink.app/experience-select
+- Complete registration: https://www.scoutlink.app/complete-registration
+- Scout verification: https://www.scoutlink.app/scout-verification
+- Confirm Scout password: https://www.scoutlink.app/confirm-password
+- Tokenised video upload: https://www.scoutlink.app/video-upload
+
+## Redirected routes
+
+- https://www.scoutlink.app/ redirects to /login.
+- /coaches and /scouts redirect to /register.
+- /scoutlink/pricing redirects to /register#plans.
+- /forgot-password redirects to /login#reset.
+- Safeguarding, concerns and legal-policy routes redirect to the equivalent Stratex Analytics parent-company pages.
+
+## Public demo boundary
+
+The public demo chooser offers Coach and Scout demos only. Those buttons open the existing isolated fictional Coach and Scout demo experiences. Demo data must never change live customer records.
 
 ## Private routes
+
 Do not index or summarise logged-in product routes under /coach, /scout, /player, /stratex or /admin.
 
 ## Product wording
+
 ScoutLink provides structured evidence and explainable decision support. It does not guarantee a trial, academy place, contract, signing or professional football outcome.

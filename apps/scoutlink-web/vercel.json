@@ -1,35 +1,71 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [],
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
-      "destination": "/index"
+      "destination": "/login",
+      "permanent": true
     },
     {
       "source": "/coaches",
-      "destination": "/pages/coaches"
+      "destination": "/register",
+      "permanent": true
     },
     {
       "source": "/scouts",
-      "destination": "/pages/scouts"
+      "destination": "/register",
+      "permanent": true
     },
+    {
+      "source": "/scoutlink/pricing",
+      "destination": "/register#plans",
+      "permanent": true
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/login#reset",
+      "permanent": true
+    },
+    {
+      "source": "/safeguarding",
+      "destination": "https://www.stratexanalytics.co.uk/trust",
+      "permanent": true
+    },
+    {
+      "source": "/report-a-concern",
+      "destination": "https://www.stratexanalytics.co.uk/report-a-concern",
+      "permanent": true
+    },
+    {
+      "source": "/data-policy",
+      "destination": "https://www.stratexanalytics.co.uk/privacy-policy",
+      "permanent": true
+    },
+    {
+      "source": "/privacy-policy",
+      "destination": "https://www.stratexanalytics.co.uk/privacy-policy",
+      "permanent": true
+    },
+    {
+      "source": "/terms",
+      "destination": "https://www.stratexanalytics.co.uk/terms",
+      "permanent": true
+    },
+    {
+      "source": "/cookie-policy",
+      "destination": "https://www.stratexanalytics.co.uk/cookie-policy",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
     {
       "source": "/demo",
       "destination": "/pages/demo"
     },
     {
-      "source": "/scoutlink/pricing",
-      "destination": "/pages/pricing"
-    },
-    {
       "source": "/login",
       "destination": "/pages/login"
-    },
-    {
-      "source": "/forgot-password",
-      "destination": "/pages/forgot-password"
     },
     {
       "source": "/register",
@@ -56,32 +92,12 @@
       "destination": "/pages/experience-select"
     },
     {
+      "source": "/scout-verification",
+      "destination": "/pages/scout-verification"
+    },
+    {
       "source": "/video-upload",
       "destination": "/pages/video-upload"
-    },
-    {
-      "source": "/safeguarding",
-      "destination": "/pages/safeguarding"
-    },
-    {
-      "source": "/report-a-concern",
-      "destination": "/pages/report-concern"
-    },
-    {
-      "source": "/data-policy",
-      "destination": "/pages/data-policy"
-    },
-    {
-      "source": "/privacy-policy",
-      "destination": "/pages/privacy-policy"
-    },
-    {
-      "source": "/terms",
-      "destination": "/pages/terms"
-    },
-    {
-      "source": "/cookie-policy",
-      "destination": "/pages/cookie-policy"
     },
     {
       "source": "/coach/dashboard",
@@ -226,10 +242,6 @@
     {
       "source": "/player/settings",
       "destination": "/pages/player-settings"
-    },
-    {
-      "source": "/404",
-      "destination": "/pages/404"
     }
   ]
 }
