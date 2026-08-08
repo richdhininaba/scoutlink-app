@@ -5,35 +5,97 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>ScoutLink Demo | Explore Coach and Scout Workflows</title>
+<title>ScoutLink Demo | Coach and Scout Workflows</title>
 <meta name="description" content="Explore fictional ScoutLink coach and scout workflows using isolated sample data.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <link rel="canonical" href="https://www.scoutlink.app/demo">
 <meta property="og:type" content="website">
-<meta property="og:title" content="ScoutLink Demo | Explore Coach and Scout Workflows">
+<meta property="og:title" content="ScoutLink Demo | Coach and Scout Workflows">
 <meta property="og:description" content="Explore fictional ScoutLink coach and scout workflows using isolated sample data.">
 <meta property="og:url" content="https://www.scoutlink.app/demo">
 <meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
-<meta property="og:image:alt" content="ScoutLink by Stratex Analytics">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ScoutLink Demo | Explore Coach and Scout Workflows">
-<meta name="twitter:description" content="Explore fictional ScoutLink coach and scout workflows using isolated sample data.">
-<meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
-<meta name="theme-color" content="#08785c">
+<meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/scoutlink-public-v4.css?v=4.2.0">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"ScoutLink Demo | Explore Coach and Scout Workflows","url":"https://www.scoutlink.app/demo","description":"Explore fictional ScoutLink coach and scout workflows using isolated sample data.","publisher":{"@type":"Organization","name":"Stratex Analytics","url":"https://www.stratexanalytics.co.uk"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
 </head>
-<body class="public-site" data-public-page="demo">
-<a class="public-skip" href="#publicCoreRoot">Skip to content</a>
-<div id="publicCoreRoot" class="public-root" aria-live="polite"></div>
+<body>
+<a class="slv5-skip" href="#demoMain">Skip to demo choices</a>
+<div class="site">
+  <header class="slv5-demo-head">
+    <a class="sl-mark" href="/login">ScoutLink<small>by Stratex Analytics</small></a>
+    <div class="actions">
+      <a href="/register#plans">Plans</a>
+      <a href="/login">Sign in</a>
+      <a class="sl-btn chalk sm" href="/register">Register</a>
+    </div>
+  </header>
+  <main id="demoMain">
+    <section class="demo-hero">
+      <span class="sl-eb">Fictional product demo</span>
+      <h1 class="sl-h">See the product.<br>Skip the sales speech.</h1>
+      <p class="sl-sub">Use isolated fictional data to explore the coach and scout workflows. Nothing changes a live customer record.</p>
+    </section>
+
+    <section class="demo-band coach">
+      <div>
+        <span class="sl-eb" style="color:rgba(247,246,240,.6)">Coach demo</span>
+        <h2>Build the evidence.</h2>
+        <p>Manage a fictional squad, add players, create fixtures, record Match Facts and review scout interest.</p>
+      </div>
+      <div class="demo-chips">
+        <span>Player profiles</span><span>Fixtures</span><span>Match Facts</span>
+        <span>Video evidence</span><span>Scout communication</span>
+      </div>
+      <button class="sl-btn chalk" type="button" data-start-demo="Coach">Start coach demo</button>
+    </section>
+
+    <section class="demo-band scout">
+      <div>
+        <span class="sl-eb" style="color:rgba(247,246,240,.6)">Scout demo</span>
+        <h2>Find the fit.</h2>
+        <p>Search and compare fictional players, review compatibility and move decisions through a recruitment pipeline.</p>
+      </div>
+      <div class="demo-chips">
+        <span>Player search</span><span>Comparison</span><span>Compatibility</span>
+        <span>Predictions</span><span>Pipeline</span>
+      </div>
+      <button class="sl-btn chalk" type="button" data-start-demo="Scout">Start scout demo</button>
+    </section>
+  </main>
+  <footer class="sl-foot">
+    <a class="sl-mark" href="/login">ScoutLink</a>
+    <div class="links">
+      <a href="/register">Register</a>
+      <a href="https://www.stratexanalytics.co.uk/trust">Safeguarding</a>
+      <a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a>
+    </div>
+    <span>A Stratex Analytics product</span>
+  </footer>
+</div>
 <script src="/js/demo-session-boundary-v1.js?v=20260730-1"></script>
 <script src="/js/main.js?v=20260730-5"></script>
-<script src="/js/public-core.js"></script>
-<script src="/js/public-core-runtime.js?v=20260730-2"></script>
-<script src="/js/scoutlink-public-v4.js?v=4.2.0"></script>
-<script src="/js/heap-analytics.js?v=20260730-4"></script>
+<script>
+(function () {
+  document.querySelectorAll('[data-start-demo]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var role = button.getAttribute('data-start-demo');
+      if (typeof window.startPublicDemo !== 'function') {
+        alert('The demo could not be started. Please reload the page.');
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Opening ' + role.toLowerCase() + ' demo…';
+      Promise.resolve(window.startPublicDemo(role)).catch(function () {
+        button.disabled = false;
+        button.textContent = role === 'Scout' ? 'Start scout demo' : 'Start coach demo';
+      });
+    });
+  });
+}());
+</script>
+<script src="/js/heap-analytics.js"></script>
 </body>
 </html>
