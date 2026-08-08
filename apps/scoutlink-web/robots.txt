@@ -17,7 +17,6 @@ Disallow: /notifications/
 Disallow: /pipeline/
 Disallow: /applications/
 Disallow: /job-applications/
-Disallow: /frontend/
 Disallow: /uploads/
 Disallow: /files/
 

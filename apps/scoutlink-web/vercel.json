@@ -4,30 +4,6 @@
   "redirects": [],
   "rewrites": [
     {
-      "source": "/frontend/css/:path*",
-      "destination": "/css/:path*"
-    },
-    {
-      "source": "/frontend/js/:path*",
-      "destination": "/js/:path*"
-    },
-    {
-      "source": "/frontend/assets/:path*",
-      "destination": "/assets/:path*"
-    },
-    {
-      "source": "/frontend/images/:path*",
-      "destination": "/images/:path*"
-    },
-    {
-      "source": "/frontend/data/:path*",
-      "destination": "/data/:path*"
-    },
-    {
-      "source": "/frontend/pages/:path*",
-      "destination": "/pages/:path*"
-    },
-    {
       "source": "/",
       "destination": "/index"
     },

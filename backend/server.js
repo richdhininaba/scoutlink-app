@@ -34,7 +34,6 @@ app.use(cors({
     'https://www.scoutlink.app',
     'https://stratexanalytics.co.uk',
     'https://www.stratexanalytics.co.uk',
-    'https://richdhininaba.github.io',
     'http://localhost:5500',
     'http://localhost:3000',
     'http://localhost:8080'
