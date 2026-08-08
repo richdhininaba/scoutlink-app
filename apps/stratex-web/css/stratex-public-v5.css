@@ -567,3 +567,38 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
+
+/* v5.1 public action/layout repairs */
+.s-contact-layout{grid-template-columns:1fr 340px}
+.s-concern-layout{grid-template-columns:1fr 320px}
+.s-showcase-route-grid{grid-template-columns:1fr 1fr}
+.s-fluid-title{font-size:clamp(31px,7vw,46px)}
+.s-fluid-title.xl{font-size:clamp(36px,8vw,64px)}
+.s-anchor{display:block;position:relative;top:-80px;visibility:hidden}
+button.s-tog{appearance:none;-webkit-appearance:none;border:0;cursor:pointer;font:inherit}
+button.s-tog:focus-visible{outline:2px solid var(--pitch);outline-offset:3px}
+
+@media(max-width:760px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .site{width:100%!important;max-width:100%!important;min-height:100vh;overflow-x:hidden;background:var(--chalk);font-size:13px}
+  main,.s-sec,.s-hero,.s-foot{width:100%;max-width:100%;overflow-x:hidden}
+  .s-contact-layout,.s-concern-layout,.s-showcase-route-grid{grid-template-columns:1fr!important}
+  .s-grid2,.s-grid3,.s-grid4,.s-routes,.s-split,.s-jobwrap,.job-hero-grid,.ui{grid-template-columns:1fr!important}
+  .s-grid4.keep2,.s-grid2.keep2{grid-template-columns:1fr 1fr!important}
+  .s-card,.s-aside,.s-route,.ui,.ui-pane,.s-jobwrap,.s-split,.s-feature,.s-legal,.s-lead,.s-pillar,.s-artcard,.s-togrow{min-width:0;max-width:100%}
+  .s-btn{max-width:100%;white-space:normal;text-align:center}
+  .s-cta-row{max-width:100%;flex-wrap:wrap}
+  .s-fix{max-width:100%;flex-wrap:wrap;white-space:normal}
+  .s-bigtel,a[href^="mailto:"]{overflow-wrap:anywhere}
+  input,select,textarea,.s-in{width:100%;min-width:0;max-width:100%}
+  textarea{resize:vertical}
+  .s-sec,.s-hero{padding-left:20px;padding-right:20px}
+  .s-h1.s-fluid-title{font-size:clamp(31px,8vw,46px)}
+  .s-h1.s-fluid-title.xl{font-size:clamp(34px,9vw,64px)}
+}
+
+@media(max-width:430px){
+  .s-grid4.keep2,.s-grid2.keep2,.s-foot-grid{grid-template-columns:1fr!important}
+  .s-cta-row .s-btn{width:100%}
+  .s-nav-r{min-width:0}
+}
