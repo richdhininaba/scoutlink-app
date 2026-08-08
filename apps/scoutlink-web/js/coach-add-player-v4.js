@@ -2,9 +2,8 @@
 
 /*
  * Coach Add Player V4.
- * Keeps the existing AP3 visual language and four-step page design while
- * replacing the football data contract with canonical V4 positions,
- * position-aware attributes and whole-number 1-10 assessments.
+ * Keeps the existing V4 player data contract while presenting the Coach V2
+ * four-stage Add Player journey: identity, attributes, team assignment, review.
  */
 (function () {
   var DRAFT_KEY = 'scoutlink.coach.addPlayer.v4';
@@ -18,7 +17,7 @@
   function value(id) { var node = el(id); return node ? String(node.value || '') : ''; }
   function esc(input) {
     return String(input == null ? '' : input).replace(/[&<>"']/g, function (character) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[character];
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character];
     });
   }
   function route(href) {
@@ -63,7 +62,7 @@
   }
   function panelEnd() { return '</div></article></section>'; }
   function reviewRow(label, id) {
-    return '<div class="ap3-review-row"><span>' + esc(label) + '</span><b id="' + id + '">—</b></div>';
+    return '<div class="ap3-review-row"><span>' + esc(label) + '</span><b id="' + id + '">&mdash;</b></div>';
   }
   function rangeChoice(group, valueKey, label, range, active) {
     return '<button class="ap3-choice range-option' + (active ? ' active' : '') +
@@ -71,100 +70,107 @@
       '"><b>' + esc(label) + '</b><span>' + esc(range) + '</span></button>';
   }
 
-  function personalStep() {
-    return panelStart(1, 'Personal details', 'Add the player identity and supported ScoutLink age group.', 'Step 1 of 4') +
-      '<div class="ap3-form-grid">' +
-        '<div class="ap3-field"><label for="firstName">First name <span class="ap3-required">*</span></label>' +
-          '<input class="ap3-input" id="firstName" autocomplete="given-name" placeholder="Player first name"></div>' +
-        '<div class="ap3-field"><label for="lastName">Last name <span class="ap3-required">*</span></label>' +
-          '<input class="ap3-input" id="lastName" autocomplete="family-name" placeholder="Player last name"></div>' +
-        '<div class="ap3-field is-full"><label for="ageGroup">Age group <span class="ap3-required">*</span></label>' +
-          '<select class="ap3-select" id="ageGroup"><option value="">Select age group</option>' +
-            options.ageGroups.map(function (group) { return '<option>' + esc(group) + '</option>'; }).join('') +
-          '</select><small>ScoutLink currently supports U7 to U16 player profiles.</small></div>' +
+  function identityStep() {
+    return panelStart(1, 'Football identity', 'Start with the essentials the profile cannot exist without.', 'Stage 1 of 4') +
+      '<div class="ap3-two-col">' +
+        '<div>' +
+          '<div class="ap3-form-grid">' +
+            '<div class="ap3-field"><label for="firstName">First name <span class="ap3-required">*</span></label>' +
+              '<input class="ap3-input" id="firstName" autocomplete="given-name" placeholder="Player first name"></div>' +
+            '<div class="ap3-field"><label for="lastName">Last name <span class="ap3-required">*</span></label>' +
+              '<input class="ap3-input" id="lastName" autocomplete="family-name" placeholder="Player last name"></div>' +
+            '<div class="ap3-field"><label for="ageGroup">Age group <span class="ap3-required">*</span></label>' +
+              '<select class="ap3-select" id="ageGroup"><option value="">Select age group</option>' +
+                options.ageGroups.map(function (group) { return '<option>' + esc(group) + '</option>'; }).join('') +
+              '</select><small>ScoutLink supports U7 to U16 player profiles.</small></div>' +
+            '<div class="ap3-field"><label for="foot">Preferred foot</label><select class="ap3-select" id="foot">' +
+              '<option>Right</option><option>Left</option><option>Both</option></select></div>' +
+          '</div>' +
+          '<div class="ap3-form-grid">' +
+            '<div class="ap3-field"><label for="positionGroup">Position group <span class="ap3-required">*</span></label>' +
+              '<select class="ap3-select" id="positionGroup"></select></div>' +
+            '<div class="ap3-field"><label for="specificPosition">Specific position <span class="ap3-required">*</span></label>' +
+              '<select class="ap3-select" id="specificPosition" disabled><option value="">Select position group first</option></select></div>' +
+          '</div>' +
+        '</div>' +
+        '<aside class="ap3-aside"><b>How ScoutLink uses this</b><p>Position group decides which attribute set appears next. Pick Goalkeeper and the goalkeeper-specific inputs appear. Everything else can be refined later.</p></aside>' +
       '</div>' +
-      '<div class="ap3-section"><div class="ap3-section-head"><div><h3>Team assignment</h3>' +
-        '<p>The player is automatically added to the signed-in Coach team.</p></div></div>' +
-        '<div class="ap3-context-card" id="teamAssignmentInfo"><span class="ap3-context-icon">TM</span>' +
-          '<span>Loading team assignment…</span></div></div>' +
-      '<div class="ap3-section" id="coachAssignmentCard" style="display:none"><div class="ap3-section-head"><div>' +
-        '<h3>Assigned Coach</h3><p>Super users can choose another active Coach from the same team.</p></div>' +
-        '<a class="ap3-btn is-small" href="' + esc(route('/coach/settings#teamCoaches')) + '">Manage Coaches</a></div>' +
-        '<div class="ap3-field"><label for="assignedCoachId">Profile owner</label>' +
-          '<select class="ap3-select" id="assignedCoachId"><option value="">Loading Coaches…</option></select></div></div>' +
-      '<div class="ap3-actions"><span class="ap3-secondary-copy">Required fields are marked with an asterisk.</span>' +
-        '<button class="ap3-btn is-primary" type="button" data-next-step="2">Continue to football profile</button></div>' +
-    panelEnd();
-  }
-
-  function footballStep() {
-    return panelStart(2, 'Football profile', 'Choose the exact position and preferred foot that best describe the player.', 'Step 2 of 4') +
-      '<div class="ap3-form-grid is-three">' +
-        '<div class="ap3-field"><label for="positionGroup">Position group <span class="ap3-required">*</span></label>' +
-          '<select class="ap3-select" id="positionGroup"></select></div>' +
-        '<div class="ap3-field"><label for="specificPosition">Specific position <span class="ap3-required">*</span></label>' +
-          '<select class="ap3-select" id="specificPosition" disabled><option value="">Select position group first</option></select></div>' +
-        '<div class="ap3-field"><label for="foot">Preferred foot</label><select class="ap3-select" id="foot">' +
-          '<option>Right</option><option>Left</option><option>Both</option></select></div>' +
-      '</div>' +
-      '<div class="ap3-section"><div class="ap3-section-head"><div><h3>How ScoutLink uses this</h3>' +
-        '<p>The exact position controls the assessment, overall rating, role analysis and position ratings.</p></div></div>' +
-        '<div class="ap3-context-card"><span class="ap3-context-icon">FT</span><span>' +
-          'Goalkeepers complete goalkeeper attributes only. Outfield players complete General attributes plus their position-group attributes.' +
-        '</span></div></div>' +
-      '<div class="ap3-actions"><button class="ap3-btn" type="button" data-prev-step="1">Back</button>' +
-        '<button class="ap3-btn is-primary" type="button" data-next-step="3">Continue to physical profile</button></div>' +
+      '<div class="ap3-actions"><button class="ap3-btn" type="button" id="ap3CancelInline">Cancel</button>' +
+        '<button class="ap3-btn is-primary" type="button" data-next-step="2">Continue to physical &amp; attributes</button></div>' +
     panelEnd();
   }
 
   function physicalStep() {
-    return panelStart(3, 'Physical profile and attributes', 'Use the existing profile ranges and whole-number 1–10 ratings.', 'Step 3 of 4') +
+    return panelStart(2, 'Physical & attributes', 'Use the existing profile ranges and whole-number 1-10 ratings.', 'Stage 2 of 4') +
       '<div class="ap3-section"><div class="ap3-section-head"><div><h3>Height range</h3><p>Select the closest current range.</p></div></div>' +
         '<div class="ap3-choice-grid" data-range-group="heightCategory">' +
-          rangeChoice('heightCategory','very_short','Very short','155–163 cm') +
-          rangeChoice('heightCategory','short','Short','163–170 cm') +
-          rangeChoice('heightCategory','average','Average','170–178 cm',true) +
-          rangeChoice('heightCategory','tall','Tall','178–185 cm') +
+          rangeChoice('heightCategory','very_short','Very short','155-163 cm') +
+          rangeChoice('heightCategory','short','Short','163-170 cm') +
+          rangeChoice('heightCategory','average','Average','170-178 cm',true) +
+          rangeChoice('heightCategory','tall','Tall','178-185 cm') +
           rangeChoice('heightCategory','very_tall','Very tall','185+ cm') +
         '</div><input type="hidden" id="heightCategory" value="average"></div>' +
       '<div class="ap3-section"><div class="ap3-section-head"><div><h3>Build range</h3><p>Select the closest current range.</p></div></div>' +
         '<div class="ap3-choice-grid is-build" data-range-group="buildCategory">' +
-          rangeChoice('buildCategory','very_slight','Very slight','50–58 kg') +
-          rangeChoice('buildCategory','slight','Slight','58–65 kg') +
-          rangeChoice('buildCategory','lean','Lean','65–72 kg') +
-          rangeChoice('buildCategory','athletic','Athletic','72–80 kg',true) +
-          rangeChoice('buildCategory','stocky','Stocky','80–88 kg') +
-          rangeChoice('buildCategory','powerful','Powerful','88–96 kg') +
+          rangeChoice('buildCategory','very_slight','Very slight','50-58 kg') +
+          rangeChoice('buildCategory','slight','Slight','58-65 kg') +
+          rangeChoice('buildCategory','lean','Lean','65-72 kg') +
+          rangeChoice('buildCategory','athletic','Athletic','72-80 kg',true) +
+          rangeChoice('buildCategory','stocky','Stocky','80-88 kg') +
+          rangeChoice('buildCategory','powerful','Powerful','88-96 kg') +
           rangeChoice('buildCategory','very_powerful','Very powerful','96+ kg') +
         '</div><input type="hidden" id="buildCategory" value="athletic"></div>' +
       '<div id="ap4AttributeSections"><div class="ap3-section"><div class="ap3-section-head"><div>' +
         '<h3>Position-specific assessment</h3><p>Select the exact position first. Use Not observed rather than guessing.</p>' +
-        '</div></div><div class="ap3-context-card"><span class="ap3-context-icon">10</span>' +
-        '<span>Every observed attribute must be a whole number from 1 to 10.</span></div></div></div>' +
+        '</div><span class="ap3-pill is-green">Rate only what you are sure of</span></div><div class="ap3-context-card"><span class="ap3-context-icon">10</span>' +
+        '<span>Every observed attribute must be a whole number from 1 to 10. Leave gaps as Not observed.</span></div></div></div>' +
+      '<div class="ap3-actions"><button class="ap3-btn" type="button" data-prev-step="1">Back</button>' +
+        '<button class="ap3-btn is-primary" type="button" data-next-step="3">Continue to team assignment</button></div>' +
+    panelEnd();
+  }
+
+  function teamStep() {
+    return panelStart(3, 'Team assignment', 'Confirm where this profile sits before it is created.', 'Stage 3 of 4') +
+      '<div class="ap3-two-col">' +
+        '<div>' +
+          '<div class="ap3-section"><div class="ap3-section-head"><div><h3>Team</h3>' +
+            '<p>The player is automatically added to the signed-in Coach team.</p></div></div>' +
+            '<div class="ap3-context-card" id="teamAssignmentInfo"><span class="ap3-context-icon">TM</span>' +
+              '<span>Loading team assignment...</span></div></div>' +
+          '<div class="ap3-section" id="coachAssignmentCard" style="display:none"><div class="ap3-section-head"><div>' +
+            '<h3>Assigned Coach</h3><p>Super users can choose another active Coach from the same team.</p></div>' +
+            '<a class="ap3-btn is-small" href="' + esc(route('/coach/settings#teamCoaches')) + '">Manage Coaches</a></div>' +
+            '<div class="ap3-field"><label for="assignedCoachId">Profile owner</label>' +
+              '<select class="ap3-select" id="assignedCoachId"><option value="">Loading Coaches...</option></select></div></div>' +
+        '</div>' +
+        '<aside class="ap3-aside"><b>Authorisation check</b><p>Coach access is validated before creation. This keeps the existing permission flow intact while making the assignment visible before review.</p></aside>' +
+      '</div>' +
       '<div class="ap3-actions"><button class="ap3-btn" type="button" data-prev-step="2">Back</button>' +
         '<button class="ap3-btn is-primary" type="button" data-next-step="4">Review player</button></div>' +
     panelEnd();
   }
 
   function reviewStep() {
-    return panelStart(4, 'Review and create', 'Check the profile before creating the player and calculating the ScoutLink rating.', 'Step 4 of 4') +
-      '<div class="ap3-review-grid"><div class="ap3-review-card"><h3>Player profile</h3><div class="ap3-review-list">' +
+    return panelStart(4, 'Review & create', 'Check the profile before creating the player and calculating the ScoutLink rating.', 'Stage 4 of 4') +
+      '<div class="ap3-review-grid"><div class="ap3-review-card"><header><h3>Player profile</h3><button class="ap3-btn is-small" type="button" data-edit-step="1">Edit</button></header><div class="ap3-review-list">' +
         reviewRow('Name','ap3ReviewName') + reviewRow('Age group','ap3ReviewAge') +
         reviewRow('Position','ap3ReviewPosition') + reviewRow('Preferred foot','ap3ReviewFoot') +
-        reviewRow('Team','ap3ReviewTeam') + reviewRow('Assigned Coach','ap3ReviewCoach') +
-      '</div></div><div class="ap3-review-card"><h3>Profile evidence</h3><div class="ap3-review-list">' +
+      '</div></div><div class="ap3-review-card"><header><h3>Physical & attributes</h3><button class="ap3-btn is-small" type="button" data-edit-step="2">Edit</button></header><div class="ap3-review-list">' +
         reviewRow('Height range','ap3ReviewHeight') + reviewRow('Build range','ap3ReviewBuild') +
         reviewRow('Ratings entered','ap3ReviewRatings') + reviewRow('Player identity','ap3ReviewIdentity') +
+      '</div></div><div class="ap3-review-card"><header><h3>Team assignment</h3><button class="ap3-btn is-small" type="button" data-edit-step="3">Edit</button></header><div class="ap3-review-list">' +
+        reviewRow('Team','ap3ReviewTeam') + reviewRow('Assigned Coach','ap3ReviewCoach') +
       '</div></div></div>' +
       '<label class="ap3-confirm"><input type="checkbox" id="ap3Confirm"><span>' +
         'I confirm the player information is accurate and that the correct permissions or notices are in place.</span></label>' +
       '<div class="ap3-created" id="ap3Created"><h3 id="ap3CreatedTitle">Player created</h3>' +
         '<p id="ap3CreatedCopy"></p><div class="ap3-created-actions">' +
+          '<button class="ap3-btn is-dark" type="button" id="ap3OpenProfile">Open profile</button>' +
           '<button class="ap3-btn is-primary" type="button" id="ap3AddAnother">Add another player</button>' +
           '<button class="ap3-btn" type="button" id="ap3ViewSquad">View My Players</button>' +
         '</div></div>' +
       '<div class="ap3-actions"><button class="ap3-btn" type="button" data-prev-step="3">Back</button>' +
-        '<button class="ap3-btn is-primary" type="button" id="submitBtn">Create player profile</button></div>' +
+        '<button class="ap3-btn is-primary" type="button" id="submitBtn">Create player</button></div>' +
     panelEnd();
   }
 
@@ -172,7 +178,7 @@
     if (el('ap4Styles')) return;
     var style = document.createElement('style');
     style.id = 'ap4Styles';
-    style.textContent = 'body.coach-add-player-v3 .ap3-rating select{width:100%;height:34px;margin-top:6px;padding:0 9px;border:1px solid var(--ap3-line);border-radius:9px;background:#fff;color:#17273a;font:inherit;font-size:8px;outline:none}' +
+    style.textContent = 'body.coach-add-player-v3 .ap3-rating select{width:100%;height:34px;margin-top:6px;padding:0 9px;border:1px solid var(--ap3-line);border-radius:9px;background:#fff;color:#17273a;font:inherit;font-size:11px;outline:none}' +
       'body.coach-add-player-v3 .ap3-rating select:focus{border-color:var(--ap3-green);box-shadow:0 0 0 3px rgba(15,163,127,.12)}';
     document.head.appendChild(style);
   }
@@ -185,17 +191,21 @@
     var banner = page.querySelector('.public-demo-banner');
     page.innerHTML = '<div class="ap3-root" id="ap3Root">' +
       '<section class="ap3-hero"><div><span class="ap3-pill is-green">Coach workspace</span>' +
-        '<h1>Add a player profile.</h1><p>Create one complete player record using ScoutLink’s position-aware V4 assessment.</p></div>' +
-        '<div class="ap3-hero-actions"><button class="ap3-btn" type="button" id="ap3SaveDraftTop">Save draft</button>' +
+        '<h1>Add a player profile.</h1><p>Create one complete player record using ScoutLink position-aware V4 assessment.</p></div>' +
+        '<div class="ap3-hero-actions"><button class="ap3-btn" type="button" id="ap3CancelTop">Cancel</button>' +
+          '<button class="ap3-btn" type="button" id="ap3SaveDraftTop">Save draft</button>' +
           '<button class="ap3-btn is-primary" type="button" id="ap3CreateTop">Review player</button></div></section>' +
+      '<div class="ap3-draft-strip" id="ap3DraftStrip" hidden><span id="ap3DraftCopy">Saved draft available.</span>' +
+        '<div><button class="ap3-btn is-small" type="button" id="ap3ContinueDraft">Continue draft</button>' +
+        '<button class="ap3-btn is-small is-danger" type="button" id="ap3DiscardDraft">Discard</button></div></div>' +
       '<nav class="ap3-stepper" aria-label="Add player progress">' +
-        stepButton(1,'Personal details','Identity and age group') +
-        stepButton(2,'Football profile','Position and team') +
-        stepButton(3,'Physical and attributes','Profile and ratings') +
+        stepButton(1,'Football identity','Name, age and position') +
+        stepButton(2,'Physical & attributes','Profile and ratings') +
+        stepButton(3,'Team assignment','Team and owner') +
         stepButton(4,'Review','Confirm and create') +
       '</nav><div class="ap3-message is-error" id="formError" role="alert"></div>' +
       '<div class="ap3-message is-success" id="formSuccess" aria-live="polite"></div>' +
-      personalStep() + footballStep() + physicalStep() + reviewStep() + '</div>';
+      identityStep() + physicalStep() + teamStep() + reviewStep() + '</div>';
     if (banner) page.insertBefore(banner, page.firstChild);
 
     var title = document.querySelector('.topbar-title');
@@ -262,6 +272,44 @@
     );
   }
 
+  function hasDraftContent() {
+    return ['firstName','lastName','ageGroup','positionGroup','specificPosition'].some(function (id) {
+      return value(id).trim();
+    }) || (el('ap4AttributeSections') && Array.from(el('ap4AttributeSections').querySelectorAll('[data-v4-rating]')).some(function (field) {
+      return field.value !== '';
+    }));
+  }
+
+  function cancelToSquad() {
+    if (hasDraftContent() && !createdPlayer) {
+      var leave = window.confirm('Leave Add Player? Your local draft will remain on this device.');
+      if (!leave) return;
+      saveDraft(false);
+    }
+    window.location.href = route('/coach/my-players');
+  }
+
+  function openCreatedProfile() {
+    var id = createdPlayer && (createdPlayer.id || createdPlayer.player_id || createdPlayer.uuid);
+    if (!id) {
+      window.location.href = route('/coach/my-players');
+      return;
+    }
+    window.location.href = route('/player/profile?id=' + encodeURIComponent(id));
+  }
+
+  function showDraftStrip(message) {
+    var strip = el('ap3DraftStrip');
+    if (!strip) return;
+    if (message && el('ap3DraftCopy')) el('ap3DraftCopy').textContent = message;
+    strip.hidden = false;
+  }
+
+  function hideDraftStrip() {
+    var strip = el('ap3DraftStrip');
+    if (strip) strip.hidden = true;
+  }
+
   function bindEvents() {
     document.querySelectorAll('[data-ap3-step]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -279,6 +327,9 @@
     });
     document.querySelectorAll('[data-prev-step]').forEach(function (button) {
       button.addEventListener('click', function () { showStep(Number(button.dataset.prevStep), true); });
+    });
+    document.querySelectorAll('[data-edit-step]').forEach(function (button) {
+      button.addEventListener('click', function () { showStep(Number(button.dataset.editStep), true); });
     });
     document.querySelectorAll('[data-range-target]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -305,11 +356,25 @@
       node.addEventListener('input', function () { scheduleDraftSave(); refreshReview(); });
       node.addEventListener('change', function () { scheduleDraftSave(); refreshReview(); });
     });
+    var cancelTop = el('ap3CancelTop');
+    var cancelInline = el('ap3CancelInline');
+    if (cancelTop) cancelTop.addEventListener('click', cancelToSquad);
+    if (cancelInline) cancelInline.addEventListener('click', cancelToSquad);
     el('ap3SaveDraftTop').addEventListener('click', function () { saveDraft(true); });
     el('ap3CreateTop').addEventListener('click', function () {
       if (validateThrough(3)) showStep(4, true);
     });
+    el('ap3ContinueDraft').addEventListener('click', function () {
+      hideDraftStrip();
+      showStep(currentStep, true);
+    });
+    el('ap3DiscardDraft').addEventListener('click', function () {
+      try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+      hideDraftStrip();
+      resetForAnother();
+    });
     el('submitBtn').addEventListener('click', submitPlayer);
+    el('ap3OpenProfile').addEventListener('click', openCreatedProfile);
     el('ap3AddAnother').addEventListener('click', resetForAnother);
     el('ap3ViewSquad').addEventListener('click', function () { window.location.href = route('/coach/my-players'); });
   }
@@ -352,12 +417,12 @@
     if (step >= 1 && !value('ageGroup')) {
       showError('Select an age group from U7 to U16.'); showStep(1, true); return false;
     }
-    if (step >= 2 && (!value('positionGroup') || !value('specificPosition'))) {
-      showError('Select the player position group and exact position.'); showStep(2, true); return false;
+    if (step >= 1 && (!value('positionGroup') || !value('specificPosition'))) {
+      showError('Select the player position group and exact position.'); showStep(1, true); return false;
     }
-    if (step >= 3) {
+    if (step >= 2) {
       try { collectRatings(); } catch (error) {
-        showError(error.message); showStep(3, true); return false;
+        showError(error.message); showStep(2, true); return false;
       }
     }
     return true;
@@ -376,7 +441,7 @@
   function displayRange(group, key) {
     var button = document.querySelector('[data-range-target="' + group + '"][data-value="' + key + '"]');
     if (!button) return key || 'Not selected';
-    return Array.from(button.querySelectorAll('b,span')).map(function (part) { return part.textContent; }).join(' · ');
+    return Array.from(button.querySelectorAll('b,span')).map(function (part) { return part.textContent; }).join(' - ');
   }
 
   function refreshReview() {
@@ -432,7 +497,7 @@
     if (analysis.transferValueFormatted || player.transfer_value_formatted) {
       parts.push('Anchored value ' + (analysis.transferValueFormatted || player.transfer_value_formatted));
     }
-    return parts.join(' · ') + '.';
+    return parts.join(' - ') + '.';
   }
 
   async function submitPlayer() {
@@ -445,7 +510,7 @@
     }
     var button = el('submitBtn');
     button.disabled = true;
-    button.textContent = 'Creating player…';
+    button.textContent = 'Creating player...';
     try {
       var response = await window.api('POST', '/api/players', payload());
       createdPlayer = response.player || null;
@@ -462,7 +527,7 @@
     } catch (error) {
       showError(error.message || 'The player could not be created.');
       button.disabled = false;
-      button.textContent = 'Create player profile';
+      button.textContent = 'Create player';
     }
   }
 
@@ -480,7 +545,10 @@
   }
   function saveDraft(showMessage) {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData())); } catch (_) {}
-    if (showMessage) showSuccess('Player draft saved on this device.');
+    if (showMessage) {
+      showSuccess('Player draft saved on this device.');
+      showDraftStrip('Draft saved on this device.');
+    }
   }
   function scheduleDraftSave() {
     clearTimeout(saveTimer);
@@ -505,7 +573,7 @@
       pendingCoachId = draft.values.assignedCoachId || '';
       setRangeVisual('heightCategory', value('heightCategory') || 'average');
       setRangeVisual('buildCategory', value('buildCategory') || 'athletic');
-      showSuccess('Your saved player draft has been restored.');
+      showDraftStrip('Saved draft restored from this device.');
     } catch (_) {
       try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
     }
@@ -519,6 +587,7 @@
   function resetForAnother() {
     createdPlayer = null;
     clearMessages();
+    hideDraftStrip();
     el('ap3Created').classList.remove('is-visible');
     el('ap3Confirm').checked = false;
     ['firstName','lastName'].forEach(function (id) { el(id).value = ''; });
@@ -534,7 +603,7 @@
     renderAssessment();
     var button = el('submitBtn');
     button.disabled = false;
-    button.textContent = 'Create player profile';
+    button.textContent = 'Create player';
     try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
     showStep(1, true);
     el('firstName').focus();

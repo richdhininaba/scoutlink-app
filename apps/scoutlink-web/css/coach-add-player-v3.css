@@ -857,6 +857,105 @@ body.coach-add-player-v3 .ap3-created-actions {
   flex-wrap:wrap;
 }
 
+body.coach-add-player-v3 .ap3-root {
+  display:grid;
+  gap:14px;
+  font-size:12px;
+}
+
+body.coach-add-player-v3 .ap3-two-col {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(240px,320px);
+  gap:14px;
+  align-items:start;
+}
+
+body.coach-add-player-v3 .ap3-aside {
+  min-width:0;
+  padding:15px;
+  border:1px solid #c9eee3;
+  border-radius:14px;
+  background:linear-gradient(180deg,#f3fff9,#fff);
+  color:#42576d;
+  box-shadow:var(--ap3-shadow-sm);
+}
+
+body.coach-add-player-v3 .ap3-aside b {
+  display:block;
+  color:var(--ap3-green-dark);
+  font-size:12px;
+  line-height:1.25;
+  font-weight:950;
+}
+
+body.coach-add-player-v3 .ap3-aside p {
+  margin:7px 0 0;
+  color:#52667c;
+  font-size:11px;
+  line-height:1.45;
+}
+
+body.coach-add-player-v3 .ap3-draft-strip {
+  padding:10px 12px;
+  border:1px solid #badfd2;
+  border-radius:13px;
+  background:#f3fbf8;
+  color:#0b5f4d;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  font-size:11px;
+  line-height:1.35;
+  font-weight:850;
+}
+
+body.coach-add-player-v3 .ap3-draft-strip[hidden] {
+  display:none!important;
+}
+
+body.coach-add-player-v3 .ap3-draft-strip > div {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+body.coach-add-player-v3 .ap3-review-card header {
+  margin-bottom:9px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+body.coach-add-player-v3 .ap3-review-card header h3 {
+  margin:0;
+}
+
+body.coach-add-player-v3 .ap3-hero p,
+body.coach-add-player-v3 .ap3-panel-title p,
+body.coach-add-player-v3 .ap3-section-head p,
+body.coach-add-player-v3 .ap3-context-card,
+body.coach-add-player-v3 .ap3-created p,
+body.coach-add-player-v3 .ap3-confirm,
+body.coach-add-player-v3 .ap3-review-row {
+  font-size:11px;
+}
+
+body.coach-add-player-v3 .ap3-btn,
+body.coach-add-player-v3 .ap3-pill,
+body.coach-add-player-v3 .ap3-field small,
+body.coach-add-player-v3 .ap3-field label,
+body.coach-add-player-v3 .ap3-input,
+body.coach-add-player-v3 .ap3-select,
+body.coach-add-player-v3 .ap3-textarea,
+body.coach-add-player-v3 .ap3-choice b,
+body.coach-add-player-v3 .ap3-rating label,
+body.coach-add-player-v3 .ap3-rating select {
+  font-size:11px;
+}
+
 body.coach-add-player-v3 :focus-visible {
   outline:3px solid rgba(15,163,127,.25)!important;
   outline-offset:2px!important;
@@ -1002,8 +1101,19 @@ body.coach-add-player-v3 :focus-visible {
 
   body.coach-add-player-v3 .ap3-form-grid,
   body.coach-add-player-v3 .ap3-form-grid.is-three,
+  body.coach-add-player-v3 .ap3-two-col,
   body.coach-add-player-v3 .ap3-review-grid {
     grid-template-columns:1fr;
+  }
+
+  body.coach-add-player-v3 .ap3-draft-strip {
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  body.coach-add-player-v3 .ap3-draft-strip > div,
+  body.coach-add-player-v3 .ap3-draft-strip .ap3-btn {
+    width:100%;
   }
 
   body.coach-add-player-v3 .ap3-field.is-full {
