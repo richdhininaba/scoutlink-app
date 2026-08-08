@@ -40,20 +40,20 @@
   };
 
   var HEIGHTS = {
-    very_short: { label: 'Very short', range: '155–163 cm', min: 155, max: 163 },
-    short: { label: 'Short', range: '163–170 cm', min: 163, max: 170 },
-    average: { label: 'Average', range: '170–178 cm', min: 170, max: 178 },
-    tall: { label: 'Tall', range: '178–185 cm', min: 178, max: 185 },
+    very_short: { label: 'Very short', range: '155-163 cm', min: 155, max: 163 },
+    short: { label: 'Short', range: '163-170 cm', min: 163, max: 170 },
+    average: { label: 'Average', range: '170-178 cm', min: 170, max: 178 },
+    tall: { label: 'Tall', range: '178-185 cm', min: 178, max: 185 },
     very_tall: { label: 'Very tall', range: '185+ cm', min: 185, max: 200 }
   };
 
   var BUILDS = {
-    very_slight: { label: 'Very slight', range: '50–58 kg', min: 50, max: 58 },
-    slight: { label: 'Slight', range: '58–65 kg', min: 58, max: 65 },
-    lean: { label: 'Lean', range: '65–72 kg', min: 65, max: 72 },
-    athletic: { label: 'Athletic', range: '72–80 kg', min: 72, max: 80 },
-    stocky: { label: 'Stocky', range: '80–88 kg', min: 80, max: 88 },
-    powerful: { label: 'Powerful', range: '88–96 kg', min: 88, max: 96 },
+    very_slight: { label: 'Very slight', range: '50-58 kg', min: 50, max: 58 },
+    slight: { label: 'Slight', range: '58-65 kg', min: 58, max: 65 },
+    lean: { label: 'Lean', range: '65-72 kg', min: 65, max: 72 },
+    athletic: { label: 'Athletic', range: '72-80 kg', min: 72, max: 80 },
+    stocky: { label: 'Stocky', range: '80-88 kg', min: 80, max: 88 },
+    powerful: { label: 'Powerful', range: '88-96 kg', min: 88, max: 96 },
     very_powerful: { label: 'Very powerful', range: '96+ kg', min: 96, max: 120 }
   };
 
@@ -339,8 +339,8 @@
   function money(value) {
     var number = Number(value) || 0;
     return number
-      ? '£' + number.toLocaleString('en-GB', { maximumFractionDigits: 0 })
-      : 'Calculating…';
+      ? '\u00a3' + number.toLocaleString('en-GB', { maximumFractionDigits: 0 })
+      : 'Calculating...';
   }
 
   function dateObject(value) {
@@ -407,12 +407,13 @@
       'overall_rating', 'transfer_value'
     ];
     var completeCore = core.filter(function (key) {
-      var value = attributeValue(record, key);
+      var value = record[key];
       return value !== null && value !== undefined && String(value).trim() !== '';
     }).length;
     var keys = attributeKeysForRecord(record);
     var completeAttributes = keys.filter(function (key) {
-      return record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== '';
+      var value = attributeValue(record, key);
+      return value !== null && value !== undefined && String(value).trim() !== '';
     }).length;
     var score = Math.round((completeCore / core.length) * 58);
     score += Math.round((completeAttributes / Math.max(1, keys.length)) * 24);
@@ -685,7 +686,7 @@
       return feet + "'" + remaining + '"';
     }
 
-    return convert(values[0]) + '–' + convert(values[1]);
+    return convert(values[0]) + '-' + convert(values[1]);
   }
 
   function resultType(match) {
@@ -706,13 +707,18 @@
   function matchRows() {
     var rows = matches().slice(0, 5);
     if (!rows.length) {
-      return '<div class="cpv8-empty"><b>No Match Facts yet</b><p>Add the latest match evidence to strengthen the profile.</p></div>';
+      var current = player() || {};
+      return '<div class="cpv8-empty cpv8-empty-actions"><b>No Match Facts recorded yet</b>' +
+        '<p>Add the latest match evidence to strengthen the profile.</p>' +
+        '<div class="button-row"><a class="btn secondary" href="' +
+        esc(route('/coach/match-facts?playerId=' + encodeURIComponent(current.id || ''))) +
+        '">Add Match Facts</a></div></div>';
     }
     return rows.map(function (match, index) {
       var result = resultType(match);
       var score = match.home_score == null || match.away_score == null
         ? 'Score not entered'
-        : match.home_score + '–' + match.away_score;
+        : match.home_score + '-' + match.away_score;
       var performance = firstFinite([
         match.performance_score,
         match.performance_rating,
@@ -725,15 +731,20 @@
         '<span class="result-pill' + (result === 'DRAW' ? ' draw' : '') + '">' + esc(result) + '</span>' +
         '<div><b>' + esc(match.opponent_name || match.opponent || match.opposition || 'Opponent') + '</b>' +
         '<small>' + esc(dateLabel(match.match_date || match.date, { day: '2-digit', month: 'short' })) +
-        ' · ' + esc(score) + ' · ' + esc(format) + '</small></div>' +
-        '<div class="history-output">Perf ' + performance + '<br>' + goals + 'G · ' + assists + 'A</div></button>';
+        ' &middot; ' + esc(score) + ' &middot; ' + esc(format) + '</small></div>' +
+        '<div class="history-output">Perf ' + performance + '<br>' + goals + 'G &middot; ' + assists + 'A</div></button>';
     }).join('');
   }
 
   function fixtureRows() {
     var rows = fixtures().slice(0, 4);
     if (!rows.length) {
-      return '<div class="cpv8-empty"><b>No upcoming fixtures</b><p>Add the next fixture to show the next evidence opportunity.</p></div>';
+      var current = player() || {};
+      return '<div class="cpv8-empty cpv8-empty-actions"><b>No upcoming fixture</b>' +
+        '<p>Add the next fixture to show the next evidence opportunity.</p>' +
+        '<div class="button-row"><a class="btn secondary" href="' +
+        esc(route('/coach/fixtures?playerId=' + encodeURIComponent(current.id || ''))) +
+        '">Add fixture</a></div></div>';
     }
     return rows.map(function (fixture, index) {
       var date = dateObject(fixture.fixture_date || fixture.date);
@@ -751,20 +762,25 @@
         '<div class="mobile-fixture-date"><b>' + esc(day) + '</b><span>' + esc(month) + '</span></div>' +
         '<div class="mobile-fixture-copy"><small>' + esc(homeAway) + '</small><h4>' +
         esc(fixture.opponent || fixture.opposition || 'Opponent') + '</h4><p>' +
-        esc(time) + ' · ' + esc(location) + '</p>' +
+        esc(time) + ' &middot; ' + esc(location) + '</p>' +
         (countdown ? '<span class="mobile-fixture-countdown">' + esc(countdown) + '</span>' : '') +
         '</div></button>';
     }).join('');
   }
 
-  function videoRows() {
+  function videoRows(record) {
+    record = record || player() || {};
     var rows = playableVideos();
     if (!rows.length) {
-      return '<div class="cpv8-empty"><b>No approved video yet</b><p>Generate a private upload link when the player, parent or guardian is ready.</p></div>';
+      return '<div class="cpv8-empty cpv8-empty-actions"><b>No approved video yet</b>' +
+        '<p>Generate a private 4MB upload link when the player or authorised adult is ready.</p>' +
+        '<div class="button-row"><button class="btn primary" type="button" data-profile-action="upload">Generate video link</button>' +
+        '<a class="btn secondary" href="' + esc(route('/coach/video-reels?playerId=' + encodeURIComponent(record.id || ''))) +
+        '">Open Video Reels</a></div></div>';
     }
     return '<div class="profile-video-grid">' + rows.map(function (video, index) {
       return '<button class="profile-video-card cpv8-video-button" type="button" data-video-index="' + index + '">' +
-        '<div class="video-thumb"><span>▶</span></div><div><b>' +
+        '<div class="video-thumb"><span>Play</span></div><div><b>' +
         esc(video.title || 'Player video') + '</b><span>' +
         esc(video.category || video.type || 'Approved evidence') + '</span></div></button>';
     }).join('') + '</div>';
@@ -785,11 +801,11 @@
     }).join('');
     var heightOptions = Object.keys(HEIGHTS).map(function (key) {
       return '<option value="' + key + '"' + (key === record.height_category ? ' selected' : '') + '>' +
-        HEIGHTS[key].label + ' · ' + HEIGHTS[key].range + '</option>';
+        HEIGHTS[key].label + ' - ' + HEIGHTS[key].range + '</option>';
     }).join('');
     var buildOptions = Object.keys(BUILDS).map(function (key) {
       return '<option value="' + key + '"' + (key === record.build_category ? ' selected' : '') + '>' +
-        BUILDS[key].label + ' · ' + BUILDS[key].range + '</option>';
+        BUILDS[key].label + ' - ' + BUILDS[key].range + '</option>';
     }).join('');
     var keys = attributeKeysForRecord(record);
     var fields = keys.map(function (key) {
@@ -882,13 +898,13 @@
     host.innerHTML = '<article class="coach-profile-v8">' +
       '<section class="profile-hero"><div><div class="profile-identity"><span class="avatar-square">' +
       avatarMarkup(record) + '</span><div><h2>' + esc(playerName(record)) + '</h2><p>' +
-      esc(position) + ' · ' + esc(record.age_group || 'Age group TBC') + ' · ' + esc(teamName) +
+      esc(position) + ' &middot; ' + esc(record.age_group || 'Age group TBC') + ' &middot; ' + esc(teamName) +
       '</p><div class="profile-tags"><span>Overall ' + overall + '/100</span><span>' +
       esc(record.foot || 'Foot TBC') + ' foot</span><span>' + esc(performance) +
       '</span><span>Profile owner: ' + esc(ownerName(record)) + '</span></div></div></div>' +
       '<div class="profile-actions"><div class="button-row">' +
       '<button class="btn white" type="button" data-profile-action="edit">Edit player profile</button>' +
-      '<button class="btn ghost" type="button" data-profile-action="upload">Generate upload link</button>' +
+      '<button class="btn ghost" type="button" data-profile-action="upload">Generate video link</button>' +
       '<a class="btn ghost" href="' + esc(route('/coach/match-facts?playerId=' + encodeURIComponent(record.id))) +
       '">Add Match Facts</a></div></div></div><div class="profile-value"><strong>' +
       esc(money(record.transfer_value)) + '</strong><span>Estimated transfer value</span></div></section>' +
@@ -909,7 +925,7 @@
 
       '<section class="profile-section rating-section"><header class="card-head"><div><h3>Overall rating breakdown</h3>' +
       '<p>Position-aware analysis using coach ratings, Match Facts, physical context, discipline and evidence confidence.</p></div>' +
-      '<span class="status-pill good">' + esc(record.age_group || 'Age group') + ' · ' +
+      '<span class="status-pill good">' + esc(record.age_group || 'Age group') + ' &middot; ' +
       esc(record.position_group || 'Position') + '</span></header>' +
       '<div class="rating-snapshot">' +
       '<article><small>Final score</small><strong>' + overall + ' / 100</strong><p>Headline ScoutLink overall.</p></article>' +
@@ -932,7 +948,7 @@
       '</strong><span>Clean sheets per game</span></article></section>' +
 
       '<div class="profile-detail-grid"><section class="profile-section" id="profileAttributes">' +
-      '<header class="card-head"><div><h3>All attributes</h3><p>Coach-rated from 1–10.</p></div>' +
+      '<header class="card-head"><div><h3>All attributes</h3><p>Coach-rated from 1-10.</p></div>' +
       '<button class="btn secondary" type="button" data-profile-action="attributes">Update</button></header>' +
       '<div class="attribute-list">' + attributeRows(record) + '</div></section><div class="form-stack">' +
       '<section class="profile-section"><header class="card-head"><div><h3>Match statistics</h3>' +
@@ -941,7 +957,7 @@
       '<section class="profile-section"><header class="card-head"><div><h3>Physical profile</h3>' +
       '<p>Ranges rather than exact measurements.</p></div><button class="btn secondary" type="button" data-profile-action="physical">Edit</button></header>' +
       '<div class="physical-grid"><div><small>Profile type</small><b>' + esc(height.label) +
-      ' height · ' + esc(build.label) + ' build</b></div><div><small>Height range</small><b>' +
+      ' height &middot; ' + esc(build.label) + ' build</b></div><div><small>Height range</small><b>' +
       esc(height.range) + '</b></div><div><small>Feet / inches</small><b>' +
       esc(cmRangeToFeet(height.range)) + '</b></div><div><small>Build</small><b>' +
       esc(build.label) + '</b></div><div><small>Weight range</small><b>' +
@@ -953,7 +969,7 @@
       esc(route('/coach/match-facts?playerId=' + encodeURIComponent(record.id))) +
       '">Add Match Facts</a></header><div>' + matchRows() + '</div></section>' +
       '<section class="profile-section mobile-profile-fixtures-section"><header class="card-head"><div><h3>Upcoming fixtures</h3>' +
-      '<p>The player’s next opportunities to add current match evidence.</p></div></header>' +
+      '<p>The player&apos;s next opportunities to add current match evidence.</p></div></header>' +
       '<div class="mobile-profile-fixture-list">' + fixtureRows() + '</div>' +
       '<footer class="mobile-profile-fixtures-action"><a class="btn secondary" href="' +
       esc(route('/coach/fixtures')) + '">Manage fixtures</a></footer></section></div>' +
@@ -961,10 +977,10 @@
       '<section class="profile-section" id="profileVideo"><header class="card-head"><div><h3>Video reels</h3>' +
       '<p>Approved clips connected to this player profile.</p></div></header>' +
       '<div class="upload-link-panel"><div><h4>Private video upload link</h4>' +
-      '<p>Generate a link for the player or an authorised parent to upload through an approved team channel. No ScoutLink account is needed.</p></div>' +
-      '<div class="button-row"><button class="btn primary" type="button" data-profile-action="upload">Generate upload link</button></div></div>' +
+      '<p>Generate a 4MB upload link for the player or authorised adult to upload through an approved team channel.</p></div>' +
+      '<div class="button-row"><button class="btn primary" type="button" data-profile-action="upload">Generate video link</button></div></div>' +
       '<div id="cpv8UploadResult" class="cpv8-upload-result" hidden></div>' +
-      videoRows() + '</section>' + editModal(record) + '</article>';
+      videoRows(record) + '</section>' + editModal(record) + '</article>';
 
     installEvents(record);
   }
@@ -1075,9 +1091,9 @@
     }
     if (button) {
       button.disabled = true;
-      button.textContent = 'Saving…';
+      button.textContent = 'Saving...';
     }
-    if (status) status.textContent = 'Saving player profile…';
+    if (status) status.textContent = 'Saving player profile...';
     try {
       var updated = null;
       if (isDemoContext()) updated = updateDemoRecord(record, payload);
@@ -1104,11 +1120,11 @@
     var output = document.getElementById('cpv8UploadResult');
     if (!output) return;
     output.hidden = false;
-    output.innerHTML = '<b>Generating private upload link…</b>';
+    output.innerHTML = '<b>Generating private upload link...</b>';
     try {
       var url = '';
       if (isDemoContext()) {
-        url = window.location.origin + '/video-upload?demo=1&player=' + encodeURIComponent(record.id);
+        url = window.location.origin + '/video-upload?demo=1&playerId=' + encodeURIComponent(record.id);
       } else {
         var response = await window.api('POST', '/api/videos/upload-link', { playerId: record.id });
         var body = response && response.data ? response.data : response;
