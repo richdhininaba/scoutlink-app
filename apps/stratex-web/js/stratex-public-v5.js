@@ -145,9 +145,11 @@
         if (!endpoint) return;
         var data = formDataObject(form);
         if (type === 'concern') {
-          data.name = data.contactName || '';
-          data.email = data.contactEmail || '';
-          data.message = data.details || '';
+          data.name = data.contactName || data.name || '';
+          data.email = data.contactEmail || data.email || '';
+          data.concernType = data.concernType || data.category || '';
+          data.description = data.description || data.details || '';
+          data.message = data.description || data.details || data.message || '';
         }
         setSubmitting(form, true);
         try {
@@ -422,10 +424,79 @@
     } catch (_) {}
   }
 
+  var COOKIE_PREF_KEY = 'stratex_cookie_preferences_v1';
+
+  function readCookiePreferences() {
+    try {
+      return JSON.parse(window.localStorage.getItem(COOKIE_PREF_KEY) || '{}') || {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function writeCookiePreferences(preferences) {
+    var payload = Object.assign({
+      essential: true,
+      savedAt: new Date().toISOString(),
+      consentVersion: '2026-08-stratex-public-v5'
+    }, preferences || {});
+    window.localStorage.setItem(COOKIE_PREF_KEY, JSON.stringify(payload));
+    try {
+      document.dispatchEvent(new CustomEvent('stratexCookiePreferences', { detail: payload }));
+    } catch (_) {}
+    return payload;
+  }
+
+  function setCookieToggle(button, active) {
+    button.classList.toggle('on', !!active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+
+  function cookiePreferencesFromDom() {
+    var preferences = { essential: true };
+    document.querySelectorAll('[data-cookie-toggle]').forEach(function (button) {
+      preferences[button.getAttribute('data-cookie-toggle')] = button.getAttribute('aria-pressed') === 'true';
+    });
+    return preferences;
+  }
+
+  function showCookieMessage(text) {
+    var message = document.querySelector('[data-cookie-message]');
+    if (!message) return;
+    message.textContent = text;
+    message.className = 'form-message ok';
+  }
+
   function bindCookieToggles() {
+    var stored = readCookiePreferences();
+    document.querySelectorAll('[data-cookie-toggle]').forEach(function (button) {
+      var key = button.getAttribute('data-cookie-toggle');
+      if (Object.prototype.hasOwnProperty.call(stored, key)) {
+        setCookieToggle(button, !!stored[key]);
+      }
+      button.addEventListener('click', function () {
+        setCookieToggle(button, button.getAttribute('aria-pressed') !== 'true');
+      });
+    });
     document.querySelectorAll('.cookie-toggle:not([data-locked])').forEach(function (button) {
       button.addEventListener('click', function () {
         button.setAttribute('aria-pressed', button.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+      });
+    });
+    document.querySelectorAll('[data-cookie-save]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        writeCookiePreferences(cookiePreferencesFromDom());
+        showCookieMessage('Your cookie preferences have been saved.');
+      });
+    });
+    document.querySelectorAll('[data-cookie-reject]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var preferences = { essential: true, functional: false, analytics: false, marketing: false };
+        document.querySelectorAll('[data-cookie-toggle]').forEach(function (toggle) {
+          setCookieToggle(toggle, !!preferences[toggle.getAttribute('data-cookie-toggle')]);
+        });
+        writeCookiePreferences(preferences);
+        showCookieMessage('Optional cookies have been rejected.');
       });
     });
   }
