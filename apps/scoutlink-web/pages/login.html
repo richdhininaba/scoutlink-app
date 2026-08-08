@@ -3,40 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
 <link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Sign in to ScoutLink | Secure Account Access</title>
-<meta name="description" content="Sign in securely to a ScoutLink coach, scout, player or Stratex workspace using a password or invitation code.">
-<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<title>Sign in | ScoutLink</title>
+<meta name="description" content="Sign in to an approved ScoutLink Coach, Scout, Player or Stratex workspace.">
 <link rel="canonical" href="https://www.scoutlink.app/login">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Sign in to ScoutLink | Secure Account Access">
-<meta property="og:description" content="Sign in securely to a ScoutLink coach, scout, player or Stratex workspace using a password or invitation code.">
-<meta property="og:url" content="https://www.scoutlink.app/login">
-<meta property="og:image" content="https://www.scoutlink.app/social_share_image.png">
-<meta property="og:image:alt" content="ScoutLink by Stratex Analytics">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Sign in to ScoutLink | Secure Account Access">
-<meta name="twitter:description" content="Sign in securely to a ScoutLink coach, scout, player or Stratex workspace using a password or invitation code.">
-<meta name="twitter:image" content="https://www.scoutlink.app/social_share_image.png">
-<meta name="theme-color" content="#08785c">
+<meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/public-core.css">
-<link rel="stylesheet" href="/css/public-core-runtime.css">
-<link rel="stylesheet" href="/css/login-v3.css">
-<link rel="stylesheet" href="/css/scoutlink-public-v4.css?v=4.1.0">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
 </head>
-<body class="public-site login-page-v4" data-public-page="login">
-<a class="public-skip" href="#publicCoreRoot">Skip to sign in</a>
-<div id="publicCoreRoot" class="public-root" aria-live="polite"></div>
-<script src="/js/demo-session-boundary-v1.js?v=20260730-1"></script>
-<script src="/js/public-core.js"></script>
-<script src="/js/public-core-runtime.js?v=20260730-2"></script>
-<script src="/js/login-v3.js"></script>
-<script src="/js/scoutlink-public-v4.js?v=4.1.0"></script>
-<script src="/js/login-v4.js"></script>
-<script src="/js/heap-analytics.js?v=20260730-4"></script>
+<body>
+<a class="slv5-skip" href="#loginPanel">Skip to sign in</a>
+<div class="site door">
+  <header class="door-top">
+    <a class="sl-mark" href="/login">ScoutLink<small>by Stratex Analytics</small></a>
+    <a href="/demo">See the demo</a>
+  </header>
+
+  <main class="door-mid">
+    <section class="door-panel" id="loginPanel" aria-live="polite">
+      <div class="sl-message err" id="loginError" role="alert" aria-live="assertive"></div>
+      <div class="sl-message ok" id="loginOk" role="status"></div>
+
+      <div class="door-view active" data-login-view="password">
+        <span class="sl-eb">Sign in</span>
+        <h1 class="door-h">Welcome back.</h1>
+        <p class="door-sub">Your workspace is where you left it.</p>
+        <form id="passwordLoginForm" novalidate>
+          <div class="sl-field">
+            <label class="sl-lab" for="email">Email address</label>
+            <input class="sl-in" id="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="sl-field">
+            <label class="sl-lab" for="password">Password</label>
+            <div class="password-wrap">
+              <input class="sl-in" id="password" type="password" autocomplete="current-password" required>
+              <button class="password-toggle" type="button" data-toggle-password="password">Show</button>
+            </div>
+          </div>
+          <button class="sl-btn chalk full" id="loginBtn" type="submit">
+            <span>Sign in</span><i class="sl-spinner" aria-hidden="true"></i>
+          </button>
+        </form>
+        <div class="door-links">
+          <a href="#reset" data-login-link="reset">Forgot password?</a><span>·</span>
+          <a href="#code" data-login-link="code">Use a login code</a>
+        </div>
+        <div class="door-div">New to ScoutLink</div>
+        <div class="door-links" style="margin-top:0">
+          <a href="/register">Create an account</a><span>·</span><a href="/demo">See it working first</a>
+        </div>
+      </div>
+
+      <div class="door-view" data-login-view="code">
+        <span class="sl-eb">Sign in with a code</span>
+        <h1 class="door-h">Use your login code.</h1>
+        <p class="door-sub">Enter the six characters from your approval or invitation email.</p>
+        <form id="codeLoginForm" novalidate>
+          <div class="sl-field">
+            <label class="sl-lab" for="codeEmail">Email address</label>
+            <input class="sl-in" id="codeEmail" type="email" autocomplete="email" required>
+          </div>
+          <div class="sl-field">
+            <label class="sl-lab" for="loginCode">Login code</label>
+            <input class="sl-in sl-code" id="loginCode" type="text" maxlength="6" autocomplete="one-time-code" autocapitalize="characters" required>
+          </div>
+          <button class="sl-btn chalk full" id="codeBtn" type="submit">
+            <span>Continue</span><i class="sl-spinner" aria-hidden="true"></i>
+          </button>
+        </form>
+        <div class="door-links"><a href="/login" data-login-link="password">Back to password sign-in</a></div>
+      </div>
+
+      <div class="door-view" data-login-view="reset-request">
+        <span class="sl-eb">Password reset</span>
+        <h1 class="door-h">Happens to everyone.</h1>
+        <p class="door-sub">Enter your email and we'll send a six-character reset code.</p>
+        <form id="resetRequestForm" novalidate>
+          <div class="sl-field">
+            <label class="sl-lab" for="resetRequestEmail">Email address</label>
+            <input class="sl-in" id="resetRequestEmail" type="email" autocomplete="email" required>
+          </div>
+          <button class="sl-btn chalk full" id="resetRequestBtn" type="submit">
+            <span>Send reset code</span><i class="sl-spinner" aria-hidden="true"></i>
+          </button>
+        </form>
+        <div class="door-links"><a href="/login" data-login-link="password">Back to sign-in</a></div>
+      </div>
+
+      <div class="door-view" data-login-view="reset-confirm">
+        <span class="sl-eb">Password reset</span>
+        <h1 class="door-h">Set a new one.</h1>
+        <p class="door-sub">Use the code from your email and a password of eight characters or more.</p>
+        <form id="resetConfirmForm" novalidate>
+          <div class="sl-field">
+            <label class="sl-lab" for="resetEmail">Email address</label>
+            <input class="sl-in" id="resetEmail" type="email" autocomplete="email" required>
+          </div>
+          <div class="sl-field">
+            <label class="sl-lab" for="resetCode">Reset code</label>
+            <input class="sl-in sl-code" id="resetCode" type="text" maxlength="6" autocomplete="one-time-code" autocapitalize="characters" required>
+          </div>
+          <div class="sl-field">
+            <label class="sl-lab" for="newPassword">New password <em>8+ characters</em></label>
+            <div class="password-wrap">
+              <input class="sl-in" id="newPassword" type="password" autocomplete="new-password" required>
+              <button class="password-toggle" type="button" data-toggle-password="newPassword">Show</button>
+            </div>
+          </div>
+          <div class="sl-field">
+            <label class="sl-lab" for="confirmResetPassword">Confirm password</label>
+            <div class="password-wrap">
+              <input class="sl-in" id="confirmResetPassword" type="password" autocomplete="new-password" required>
+              <button class="password-toggle" type="button" data-toggle-password="confirmResetPassword">Show</button>
+            </div>
+          </div>
+          <div id="resetRoleChooser" class="activation-role-grid" hidden></div>
+          <button class="sl-btn chalk full" id="resetConfirmBtn" type="submit">
+            <span>Set password &amp; sign in</span><i class="sl-spinner" aria-hidden="true"></i>
+          </button>
+        </form>
+        <div class="door-links"><a href="#reset" data-login-link="reset">Resend code</a><span>·</span><a href="/login" data-login-link="password">Back</a></div>
+      </div>
+
+      <div class="door-view" data-login-view="role">
+        <span class="sl-eb">Signed in</span>
+        <h1 class="door-h">Choose a workspace.</h1>
+        <p class="door-sub">This email has access to more than one.</p>
+        <div class="activation-role-grid" id="loginRoleOptions"></div>
+        <div class="door-links"><a href="/login" id="cancelRoleChoice">Back</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="door-foot">
+    <span>ScoutLink · A Stratex Analytics product</span>
+    <div>
+      <a href="https://www.stratexanalytics.co.uk/trust">Safeguarding</a>
+      <a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a>
+      <a href="https://www.stratexanalytics.co.uk/terms">Terms</a>
+    </div>
+  </footer>
+</div>
+<script src="/js/login-v5.js?v=5.0.0"></script>
+<script src="/js/heap-analytics.js"></script>
 </body>
 </html>
