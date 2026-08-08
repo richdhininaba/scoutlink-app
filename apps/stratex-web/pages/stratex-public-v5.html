@@ -23,33 +23,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/stratex-public-v5.css?v=20260808-2">
+  <link rel="stylesheet" href="/css/stratex-public-v5.css?v=20260808-5">
   <script type="application/ld+json" id="stratexJsonLd">{"@context":"https://schema.org","@type":"Organization","name":"Stratex Analytics","url":"https://www.stratexanalytics.co.uk"}</script>
-  <script>
-    (function () {
-      var path = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
-      if (path !== '/award-ceremonies') return;
-      var link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '/css/stratex-publishing-public-v1.css?v=20260730-1';
-      document.head.appendChild(link);
-      window.__loadStratexAwardsPublishing = true;
-    }());
-  </script>
 </head>
 <body>
   <a class="skip-link" href="#stratexPublicRoot">Skip to main content</a>
   <div id="stratexPublicRoot" aria-live="polite"></div>
-  <noscript><p style="padding:24px">JavaScript is required when this page is served from the static frontend. Production routes are also server-rendered.</p></noscript>
-  <script src="/js/stratex-public-v5.js?v=20260808-3"></script>
-  <script src="/js/stratex-showcase-countdown-v1.js?v=20260808-1"></script>
-  <script>
-    if (window.__loadStratexAwardsPublishing) {
-      var script = document.createElement('script');
-      script.src = '/js/stratex-publishing-public-v1.js?v=20260730-1';
-      document.body.appendChild(script);
-    }
-  </script>
+  <noscript><p style="padding:24px">JavaScript is required for interactive features. The main public page content is rendered by the server.</p></noscript>
+  <script src="/js/stratex-public-v5.js?v=20260808-5"></script>
+  <script src="/js/stratex-showcase-countdown-v1.js?v=20260808-5"></script>
+  <script src="/js/stratex-awards-v1.js?v=20260808-1"></script>
   <script src="/js/heap-analytics.js"></script>
 </body>
 </html>
