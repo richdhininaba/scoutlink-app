@@ -1,0 +1,199 @@
+{
+  "version": "20260808-1",
+  "routes": [
+    {
+      "path": "/",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "Football misses good players"
+      ]
+    },
+    {
+      "path": "/scoutlink",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "ScoutLink"
+      ]
+    },
+    {
+      "path": "/about",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "About"
+      ]
+    },
+    {
+      "path": "/leadership",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "Leadership"
+      ]
+    },
+    {
+      "path": "/trust",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "Trust"
+      ]
+    },
+    {
+      "path": "/careers",
+      "kind": "ssr-dynamic",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "careerJobs"
+      ]
+    },
+    {
+      "path": "/learning-centre",
+      "kind": "ssr-dynamic",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "learningPosts"
+      ]
+    },
+    {
+      "path": "/contact",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "data-stx-form=\"contact\""
+      ]
+    },
+    {
+      "path": "/report-a-concern",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "data-stx-form=\"concern\""
+      ]
+    },
+    {
+      "path": "/privacy-policy",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\""
+      ]
+    },
+    {
+      "path": "/terms",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\""
+      ]
+    },
+    {
+      "path": "/cookie-policy",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\""
+      ]
+    },
+    {
+      "path": "/security",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\""
+      ]
+    },
+    {
+      "path": "/accessibility",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\""
+      ]
+    },
+    {
+      "path": "/showcase-event",
+      "kind": "ssr",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "SCOUTLINK SHOWCASE EVENT"
+      ]
+    },
+    {
+      "path": "/award-ceremonies",
+      "kind": "ssr-dynamic",
+      "status": 200,
+      "requiredText": [
+        "data-server-rendered=\"true\"",
+        "stratexAwardsList"
+      ]
+    },
+    {
+      "path": "/showcase-event/player-registration",
+      "kind": "showcase-registration",
+      "status": 200,
+      "requiredText": [
+        "id=\"showcaseApp\"",
+        "showcase-player-registration-v1.js"
+      ]
+    },
+    {
+      "path": "/showcase-event/player-registration/complete",
+      "kind": "showcase-registration",
+      "status": 200,
+      "requiredText": [
+        "id=\"showcaseApp\"",
+        "showcase-player-registration-v1.js"
+      ]
+    },
+    {
+      "path": "/showcase-event/coach-scout-registration",
+      "kind": "showcase-registration",
+      "status": 200,
+      "requiredText": [
+        "id=\"showcaseApp\"",
+        "showcase-professional-registration-v1.js"
+      ]
+    },
+    {
+      "path": "/showcase-event/coach-scout-registration/complete",
+      "kind": "showcase-registration",
+      "status": 200,
+      "requiredText": [
+        "id=\"showcaseApp\"",
+        "showcase-professional-registration-v1.js"
+      ]
+    },
+    {
+      "path": "/showcase-event/coach-scout-registration/sold-out",
+      "kind": "showcase-registration",
+      "status": 200,
+      "requiredText": [
+        "id=\"showcaseApp\"",
+        "showcase-professional-registration-v1.js"
+      ]
+    }
+  ],
+  "dynamicRoutes": [
+    {
+      "pattern": "/careers/:slug",
+      "kind": "ssr-dynamic"
+    },
+    {
+      "pattern": "/learning-centre/:slug",
+      "kind": "ssr-dynamic"
+    }
+  ]
+}
