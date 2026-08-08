@@ -425,6 +425,115 @@
     renderPosts();
   }
 
+  function safePublicImageUrl(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    if (raw.charAt(0) === '/') return raw;
+    if (/^https:\/\//i.test(raw)) return raw;
+    return '';
+  }
+
+  function publishedLabel(value) {
+    if (!value) return 'Read guide';
+    var parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Read guide';
+    return parsed.toLocaleDateString('en-GB', {
+      day:'numeric',
+      month:'short',
+      year:'numeric'
+    });
+  }
+
+  function homepageLearningSection() {
+    if (route.path !== '/') return null;
+
+    var headings = Array.from(document.querySelectorAll('.s-h2'));
+    var heading = headings.find(function (node) {
+      return String(node.textContent || '').trim().toLowerCase() === 'useful football thinking';
+    });
+
+    return heading ? heading.closest('.s-sec') : null;
+  }
+
+  function homepageArticleCard(post) {
+    var slug = String(post.slug || '').trim();
+    if (!slug) return '';
+
+    var image = safePublicImageUrl(post.featured_image_url);
+    var imageStyle = image
+      ? ' style="background-image:url(&quot;' + esc(image) + '&quot;);background-size:cover;background-position:center"'
+      : '';
+
+    return (
+      '<a class="s-artcard" href="/learning-centre/' + encodeURIComponent(slug) + '">' +
+        '<div class="thumb"' + imageStyle + '></div>' +
+        '<div class="pad">' +
+          '<span class="s-chip">' + esc(post.category || 'Learning') + '</span>' +
+          '<h4>' + esc(post.title || 'Stratex guide') + '</h4>' +
+          '<span class="meta">' + esc(publishedLabel(post.published_at)) + '</span>' +
+        '</div>' +
+      '</a>'
+    );
+  }
+
+  async function loadHomepageLatestPosts() {
+    var section = homepageLearningSection();
+    if (!section) return;
+
+    /*
+     * Hide the old static sample cards immediately.
+     * The section only becomes visible again when genuine published posts exist.
+     */
+    section.hidden = true;
+
+    try {
+      var response = await fetch(API + '/api/stratex-website/blog?published=true', {
+        cache:'no-store',
+        credentials:'include'
+      });
+      var json = await response.json().catch(function () { return {}; });
+      if (!response.ok) throw new Error('Latest learning posts could not be loaded.');
+
+      var latest = (json.data || [])
+        .filter(function (post) {
+          return String(post.status || '').toLowerCase() === 'published' &&
+            String(post.slug || '').trim() &&
+            String(post.title || '').trim();
+        })
+        .sort(function (a, b) {
+          return new Date(b.published_at || b.created_at || 0).getTime() -
+            new Date(a.published_at || a.created_at || 0).getTime();
+        })
+        .slice(0, 3);
+
+      if (!latest.length) {
+        section.remove();
+        return;
+      }
+
+      var grid = section.querySelector('.s-grid3');
+      if (!grid) {
+        section.remove();
+        return;
+      }
+
+      grid.innerHTML = latest.map(homepageArticleCard).filter(Boolean).join('');
+
+      if (!grid.children.length) {
+        section.remove();
+        return;
+      }
+
+      section.hidden = false;
+    } catch (_) {
+      /*
+       * Never fall back to fabricated/sample article cards.
+       * If live published content cannot be confirmed, remove the section.
+       */
+      section.remove();
+    }
+  }
+
   function bodyParagraphs(value) {
     return String(value || '').split(/\n{2,}/).map(function (paragraph) {
       return '<p class="body">' + esc(paragraph).replace(/\n/g, '<br>') + '</p>';
@@ -715,6 +824,7 @@
     await Promise.all([
       loadJobs(),
       loadPosts(),
+      loadHomepageLatestPosts(),
       hydrateShowcase()
     ]);
 
