@@ -21,7 +21,7 @@
     },
     {
       "source": "/scoutlink/pricing",
-      "destination": "/pages/stratex-site"
+      "destination": "/pages/pricing"
     },
     {
       "source": "/login",
