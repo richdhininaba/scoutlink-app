@@ -1,16 +1,22 @@
-/* ScoutLink Coach Experience V8.2 clean-layout production runtime.
+/* ScoutLink Coach Experience V9 shared shell production runtime.
    This file changes presentation and navigation only.
    Existing route-specific data, API and submission scripts remain responsible
    for live behaviour. */
 'use strict';
 
 (function () {
-  var STYLE_ID = 'coachExperienceV8Style';
-  var STYLE_URL = '/css/coach-experience-v8.css?v=8.2.0-clean-layout';
+  var STYLE_ID = 'coachExperienceV9Style';
+  var STYLE_URL = '/css/coach-experience-v9.css?v=9.0.0-shell';
+  var OVERLAY_ID = 'coachOverlaysV1Script';
+  var OVERLAY_URL = '/js/coach-overlays-v1.js?v=1.0.0';
   var MOBILE_MAX = 760;
   var refreshQueued = false;
   var observer = null;
   var dashboardMetricsLoaded = false;
+  var searchCache = null;
+  var searchLoading = false;
+  var shortcutPrefix = null;
+  var shortcutTimer = null;
   var playerPage = 1;
   var PLAYER_PAGE_SIZE = 8;
   var legacyActionBridge = {
@@ -144,22 +150,22 @@
     ['Overview', [
       ['dashboard', 'Dashboard', 'DB']
     ]],
-    ['Players', [
+    ['Squad', [
       ['my-players', 'My players', 'PL'],
       ['add-player', 'Add player', 'AP'],
       ['bulk-add-players', 'Bulk import', 'BI']
     ]],
     ['Matchday', [
-      ['match-facts', 'Match Facts', 'MF'],
       ['fixtures', 'Fixtures', 'FX'],
+      ['match-facts', 'Match Facts', 'MF'],
       ['video-reels', 'Video reels', 'VR']
     ]],
-    ['Communication', [
+    ['Inbox', [
       ['chat', 'Chat', 'CH'],
-      ['notifications', 'Notifications', 'NT'],
-      ['report-a-concern', 'Report a concern', 'RC']
+      ['notifications', 'Notifications', 'NT']
     ]],
-    ['Account', [
+    ['Trust & admin', [
+      ['report-a-concern', 'Report a concern', 'RC'],
       ['settings', 'Settings', 'ST']
     ]]
   ];
@@ -281,6 +287,15 @@
     document.head.appendChild(link);
   }
 
+  function loadOverlayRuntime() {
+    if (document.getElementById(OVERLAY_ID) || window.CoachOverlays) return;
+    var script = document.createElement('script');
+    script.id = OVERLAY_ID;
+    script.src = OVERLAY_URL;
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
   function setMode() {
     if (!document.body) return;
     var mobile = window.innerWidth <= MOBILE_MAX;
@@ -296,7 +311,7 @@
   function navMarkup() {
     var active = activeNavKey();
     return NAV_GROUPS.map(function (group) {
-      return '<section class="nav-group coach-nav-group" data-coach-v8-nav>' +
+      return '<section class="nav-group coach-nav-group" data-coach-v9-nav>' +
         '<small class="coach-nav-label">' + esc(group[0]) + '</small>' +
         group[1].map(function (item) {
           return '<a class="nav-link nav-item side-link ' +
@@ -315,8 +330,259 @@
     return '<div class="user-info" data-coach-v8-user>' +
       '<span class="user-avatar avatar-square">' + esc(initials(name)) + '</span>' +
       '<div><b class="user-name">' + esc(name) + '</b>' +
-      '<small class="user-role">Coach · ' + esc(teamName()) + '</small></div>' +
-    '</div>';
+      '<small class="user-role">Coach - ' + esc(teamName()) + '</small></div>' +
+    '</div>' +
+    '<button class="coach-v9-signout" type="button" data-coach-v9-signout>Sign out</button>';
+  }
+
+  function signOut() {
+    if (typeof window.logoutToLogin === 'function') {
+      window.logoutToLogin();
+      return;
+    }
+
+    if (window.Auth && typeof window.Auth.clear === 'function') {
+      window.Auth.clear();
+    } else {
+      [
+        'sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email',
+        'sl_user_role','sl_user_data','sl_demo_mode','sl_admin_token',
+        'sl_admin_user','sl_admin_type','sl_experience_switcher'
+      ].forEach(function (key) {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (error) {}
+      });
+    }
+
+    if (typeof window.navigateClean === 'function') window.navigateClean('/login');
+    else window.location.href = '/login';
+  }
+
+  function apiGet(path) {
+    if (typeof window.api === 'function') return window.api('GET', path);
+    var base = window.API || localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
+    var token = (window.Auth && window.Auth.token) || localStorage.getItem('sl_token');
+    return fetch(base + path, {
+      headers: token ? { Authorization: 'Bearer ' + token } : {}
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (data) {
+        if (!response.ok) throw new Error(data.error || 'Request failed');
+        return data;
+      });
+    });
+  }
+
+  function listFrom(data, keys) {
+    if (Array.isArray(data)) return data;
+    for (var i = 0; i < keys.length; i += 1) {
+      if (Array.isArray(data && data[keys[i]])) return data[keys[i]];
+    }
+    return [];
+  }
+
+  function playerName(player) {
+    return [
+      player && (player.first_name || player.firstName),
+      player && (player.last_name || player.lastName)
+    ].filter(Boolean).join(' ') || (player && player.name) || 'Player';
+  }
+
+  function fetchSearchData() {
+    if (searchCache) return Promise.resolve(searchCache);
+    if (searchLoading) return Promise.resolve([]);
+    searchLoading = true;
+
+    return Promise.allSettled([
+      apiGet('/api/coaches/my-players'),
+      apiGet('/api/fixtures'),
+      apiGet('/api/videos')
+    ]).then(function (results) {
+      var players = results[0].status === 'fulfilled'
+        ? listFrom(results[0].value, ['players', 'data', 'items'])
+        : [];
+      var fixtures = results[1].status === 'fulfilled'
+        ? listFrom(results[1].value, ['fixtures', 'data', 'items'])
+        : [];
+      var videos = results[2].status === 'fulfilled'
+        ? listFrom(results[2].value, ['videos', 'data', 'items'])
+        : [];
+
+      searchCache = [].concat(
+        players.map(function (player) {
+          var name = playerName(player);
+          var id = player && player.id;
+          return {
+            type: 'Player',
+            icon: initials(name),
+            title: name,
+            meta: [
+              player && (player.age_group || player.ageGroup),
+              player && (player.specific_position || player.primary_position || player.position_group)
+            ].filter(Boolean).join(' - '),
+            href: id ? ROUTES.profile + '?id=' + encodeURIComponent(id) : ROUTES['my-players']
+          };
+        }),
+        fixtures.map(function (fixture) {
+          var opponent = fixture && (fixture.opponent || fixture.opponent_name || fixture.title) || 'Fixture';
+          return {
+            type: 'Fixture',
+            icon: 'FX',
+            title: opponent,
+            meta: [
+              fixture && (fixture.date || fixture.fixture_date || fixture.kickoff_at),
+              fixture && (fixture.venue || fixture.venue_name)
+            ].filter(Boolean).join(' - '),
+            href: ROUTES.fixtures + (fixture && fixture.id ? '?fixtureId=' + encodeURIComponent(fixture.id) : '')
+          };
+        }),
+        videos.map(function (video) {
+          var title = video && (video.title || video.category || video.file_name) || 'Video evidence';
+          return {
+            type: 'Video',
+            icon: 'VR',
+            title: title,
+            meta: [
+              video && (video.player_name || video.playerName),
+              video && (video.status || video.category)
+            ].filter(Boolean).join(' - '),
+            href: ROUTES['video-reels'] + (video && video.id ? '?videoId=' + encodeURIComponent(video.id) : '')
+          };
+        })
+      ).filter(function (item) {
+        return item && item.title && item.href;
+      });
+      return searchCache;
+    }).catch(function () {
+      return [];
+    }).finally(function () {
+      searchLoading = false;
+    });
+  }
+
+  function searchResultMarkup(item) {
+    return '<a class="coach-v9-search-result" href="' + esc(item.href) + '">' +
+      '<span>' + esc(item.icon || item.type.slice(0, 2)) + '</span>' +
+      '<div><b>' + esc(item.title) + '</b><small>' +
+      esc(item.meta || item.type) + '</small></div>' +
+      '<em>' + esc(item.type) + '</em></a>';
+  }
+
+  function renderSearchResults(wrap, query) {
+    var results = wrap.querySelector('.coach-v9-search-results');
+    if (!results) return;
+    query = String(query || '').trim().toLowerCase();
+    if (!query) {
+      wrap.classList.remove('is-open');
+      results.innerHTML = '';
+      return;
+    }
+
+    results.innerHTML = '<div class="coach-v9-search-empty">Searching...</div>';
+    wrap.classList.add('is-open');
+    fetchSearchData().then(function (items) {
+      var matches = items.filter(function (item) {
+        return [item.title, item.meta, item.type].join(' ').toLowerCase().indexOf(query) >= 0;
+      }).slice(0, 8);
+      results.innerHTML = matches.length
+        ? matches.map(searchResultMarkup).join('')
+        : '<div class="coach-v9-search-empty">No Coach results found.</div>';
+    });
+  }
+
+  function bindSearch(wrap) {
+    if (!wrap || wrap.dataset.coachV9SearchBound === '1') return;
+    wrap.dataset.coachV9SearchBound = '1';
+    var input = wrap.querySelector('.coach-v9-search');
+    var results = wrap.querySelector('.coach-v9-search-results');
+    if (!input || !results) return;
+
+    input.addEventListener('input', function () {
+      renderSearchResults(wrap, input.value);
+    });
+    input.addEventListener('focus', function () {
+      if (input.value) renderSearchResults(wrap, input.value);
+    });
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        wrap.classList.remove('is-open');
+        input.blur();
+      }
+      if (event.key === 'Enter') {
+        var first = results.querySelector('a');
+        if (first) {
+          event.preventDefault();
+          first.click();
+        }
+      }
+    });
+    document.addEventListener('click', function (event) {
+      if (!wrap.contains(event.target)) wrap.classList.remove('is-open');
+    });
+  }
+
+  function isTypingTarget(target) {
+    if (!target) return false;
+    var tag = String(target.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' ||
+      target.isContentEditable;
+  }
+
+  function focusGlobalSearch() {
+    var input = document.querySelector('.coach-v9-search');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function goToRoute(key) {
+    var href = routeFor(key);
+    if (!href || window.location.pathname === href) return;
+    window.location.href = href;
+  }
+
+  function bindShortcuts() {
+    if (!document.body || document.body.dataset.coachV9ShortcutsBound === '1') return;
+    document.body.dataset.coachV9ShortcutsBound = '1';
+
+    document.addEventListener('keydown', function (event) {
+      if (!isCoachPage()) return;
+
+      if ((event.metaKey || event.ctrlKey) && String(event.key || '').toLowerCase() === 'k') {
+        event.preventDefault();
+        focusGlobalSearch();
+        return;
+      }
+
+      if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      var key = String(event.key || '').toLowerCase();
+      if (key === 'g') {
+        shortcutPrefix = 'g';
+        window.clearTimeout(shortcutTimer);
+        shortcutTimer = window.setTimeout(function () {
+          shortcutPrefix = null;
+        }, 900);
+        return;
+      }
+
+      if (shortcutPrefix === 'g') {
+        shortcutPrefix = null;
+        window.clearTimeout(shortcutTimer);
+        if (key === 'd') {
+          event.preventDefault();
+          goToRoute('dashboard');
+        } else if (key === 'p') {
+          event.preventDefault();
+          goToRoute('my-players');
+        } else if (key === 'f') {
+          event.preventDefault();
+          goToRoute('fixtures');
+        }
+      }
+    });
   }
 
   function installSidebar() {
@@ -344,7 +610,16 @@
       sidebar.appendChild(nav);
     }
     nav.classList.add('sidebar-nav');
-    if (!nav.querySelector('[data-coach-v8-nav]')) nav.innerHTML = navMarkup();
+    var navState = activeNavKey();
+    if (
+      nav.dataset.coachV9Nav !== '1' ||
+      nav.dataset.coachV9Active !== navState ||
+      !nav.querySelector('[data-coach-v9-nav]')
+    ) {
+      nav.dataset.coachV9Nav = '1';
+      nav.dataset.coachV9Active = navState;
+      nav.innerHTML = navMarkup();
+    }
 
     var user = document.getElementById('sidebarUser') || sidebar.querySelector('.sidebar-user');
     if (!user) {
@@ -354,7 +629,12 @@
       sidebar.appendChild(user);
     }
     user.classList.add('sidebar-user');
-    if (!user.children.length) user.innerHTML = userMarkup();
+    var userState = fullName() + '|' + teamName();
+    if (user.dataset.coachV9User !== '1' || user.dataset.coachV9State !== userState) {
+      user.dataset.coachV9User = '1';
+      user.dataset.coachV9State = userState;
+      user.innerHTML = userMarkup();
+    }
   }
 
   function titleForPage() {
@@ -384,6 +664,23 @@
       copy.appendChild(label);
       copy.appendChild(title);
     }
+    title.textContent = titleForPage();
+
+    var searchWrap = topbar.querySelector('.coach-v9-search-wrap');
+    if (!searchWrap) {
+      searchWrap = document.createElement('div');
+      searchWrap.className = 'coach-v9-search-wrap';
+      searchWrap.innerHTML =
+        '<label class="sr-only" for="coachV9GlobalSearch">Search Coach workspace</label>' +
+        '<input id="coachV9GlobalSearch" class="coach-v9-search" type="search" ' +
+          'placeholder="Search players, fixtures, videos" autocomplete="off">' +
+        '<span class="coach-v9-search-kbd">Ctrl K</span>' +
+        '<div class="coach-v9-search-results" role="listbox"></div>';
+      var copyHost = topbar.querySelector('.coach-v8-topbar-copy') || title;
+      if (copyHost.nextSibling) topbar.insertBefore(searchWrap, copyHost.nextSibling);
+      else topbar.appendChild(searchWrap);
+    }
+    bindSearch(searchWrap);
 
     var right = topbar.querySelector('.topbar-right');
     if (!right) {
@@ -480,10 +777,15 @@
       document.body.appendChild(nav);
     }
     nav.innerHTML = bottomItems().map(function (item) {
-      var href = item[0] === 'more' ? '#coach-more' : routeFor(item[0]);
+      if (item[0] === 'more') {
+        return '<button type="button" data-coach-v9-more class="' +
+          (bottomActive(item[0]) ? 'active' : '') + '">' +
+          '<span>' + esc(item[1]) + '</span><b>' + esc(item[2]) + '</b></button>';
+      }
       return '<a class="' + (bottomActive(item[0]) ? 'active' : '') +
-        '" href="' + href + '"' + (bottomActive(item[0]) ? ' aria-current="page"' : '') +
-        '><span>' + item[1] + '</span><b>' + item[2] + '</b></a>';
+        '" href="' + esc(routeFor(item[0])) + '"' +
+        (bottomActive(item[0]) ? ' aria-current="page"' : '') +
+        '><span>' + esc(item[1]) + '</span><b>' + esc(item[2]) + '</b></a>';
     }).join('');
   }
 
@@ -502,7 +804,7 @@
         ['Report a concern', ROUTES['report-a-concern']],
         ['Settings', ROUTES.settings]
       ].map(function (item) {
-        return '<a href="' + item[1] + '"><span>' + esc(item[0]) + '</span><b>›</b></a>';
+        return '<a href="' + esc(item[1]) + '"><span>' + esc(item[0]) + '</span><b>&rsaquo;</b></a>';
       }).join('');
       document.body.appendChild(sheet);
     }
@@ -518,6 +820,9 @@
 
   function closeOverlays() {
     document.body.classList.remove('coach-v8-menu-open', 'coach-v2-menu-open', 'coach-v8-more-open');
+    if (window.CoachOverlays && typeof window.CoachOverlays.closeDrawer === 'function') {
+      window.CoachOverlays.closeDrawer();
+    }
   }
 
   function bindGlobalChrome() {
@@ -533,11 +838,18 @@
         return;
       }
 
-      var more = event.target.closest('a[href="#coach-more"]');
+      var more = event.target.closest('[data-coach-v9-more], a[href="#coach-more"]');
       if (more) {
         event.preventDefault();
         document.body.classList.toggle('coach-v8-more-open');
         document.body.classList.remove('coach-v8-menu-open', 'coach-v2-menu-open');
+        return;
+      }
+
+      if (event.target.closest('[data-coach-v9-signout]')) {
+        event.preventDefault();
+        closeOverlays();
+        signOut();
         return;
       }
 
@@ -591,7 +903,7 @@
   }
 
   function heroMeta(key) {
-    if (key === 'dashboard') return teamName() + ' · U16';
+    if (key === 'dashboard') return teamName() + ' - U16';
     if (key === 'add-player') {
       return 'Required information: name, age group and position group.';
     }
@@ -847,7 +1159,7 @@
       wrapper.innerHTML =
         sectionCard('Next actions', 'The most valuable work to complete now.',
           '<div class="action-list">' +
-            '<a class="coach-v8-priority-link" href="' + ROUTES['match-facts'] + '"><span>MF</span><div><b>Add recent Match Facts</b><p>Keep Saturday’s evidence connected to the correct players.</p></div><em>Start</em></a>' +
+            '<a class="coach-v8-priority-link" href="' + ROUTES['match-facts'] + '"><span>MF</span><div><b>Add recent Match Facts</b><p>Keep Saturday evidence connected to the correct players.</p></div><em>Start</em></a>' +
             '<a class="coach-v8-priority-link" href="' + ROUTES['video-reels'] + '"><span>VR</span><div><b>Review approved video</b><p>Generate an upload link or connect a submitted clip.</p></div><em>Open</em></a>' +
             '<a class="coach-v8-priority-link" href="' + ROUTES.chat + '"><span>CH</span><div><b>Reply to reviewed scouts</b><p>Keep each conversation connected to its player context.</p></div><em>Reply</em></a>' +
           '</div>', 'priority-card') +
@@ -1052,11 +1364,11 @@
     var start = (playerPage - 1) * PLAYER_PAGE_SIZE + 1;
     var end = Math.min(playerPage * PLAYER_PAGE_SIZE, cards.length);
     footer.innerHTML =
-      '<span>' + start + '–' + end + ' of ' + cards.length + '</span>' +
+      '<span>' + start + '-' + end + ' of ' + cards.length + '</span>' +
       '<div class="coach-v8-page-controls">' +
-        '<button type="button" data-player-page="-1" aria-label="Previous page">‹</button>' +
+        '<button type="button" data-player-page="-1" aria-label="Previous page">&lsaquo;</button>' +
         '<b>' + playerPage + ' / ' + pageCount + '</b>' +
-        '<button type="button" data-player-page="1" aria-label="Next page">›</button>' +
+        '<button type="button" data-player-page="1" aria-label="Next page">&rsaquo;</button>' +
       '</div>';
 
     footer.querySelectorAll('[data-player-page]').forEach(function (button) {
@@ -1164,6 +1476,10 @@
   }
 
   function toast(message) {
+    if (window.CoachOverlays && typeof window.CoachOverlays.showCoachToast === 'function') {
+      window.CoachOverlays.showCoachToast(message);
+      return;
+    }
     var existing = document.querySelector('.coach-v8-toast');
     if (existing) existing.remove();
     var node = document.createElement('div');
@@ -1193,7 +1509,7 @@
       '<div class="coach-player-top"><div class="coach-player-id">' +
       '<div class="coach-player-avatar">' + esc(initials(name)) + '</div>' +
       '<div class="coach-player-copy"><h4>' + esc(name) + '</h4><p>' +
-      esc(player && player.age_group || 'Age group TBC') + ' · ' +
+      esc(player && player.age_group || 'Age group TBC') + ' - ' +
       esc(position) + '</p></div></div>' +
       '<div class="coach-player-rating">' + esc(rating) + '</div></div>' +
       '<div class="coach-player-actions"><a class="btn btn-primary" href="' +
@@ -1204,7 +1520,15 @@
     window.CoachV2 = {
       refresh: refresh,
       renderPlayerCard: renderPlayerCard,
-      pageKey: pageKey
+      pageKey: pageKey,
+      openDrawer: function (options) {
+        return window.CoachOverlays && window.CoachOverlays.openDrawer
+          ? window.CoachOverlays.openDrawer(options || {})
+          : null;
+      },
+      closeDrawer: closeOverlays,
+      showToast: toast,
+      signOut: signOut
     };
     window.renderCoachMobilePlayerCard = function (player) {
       return renderPlayerCard(player);
@@ -1221,11 +1545,13 @@
 
     try {
       loadStylesheet();
+      loadOverlayRuntime();
       setMode();
 
       document.body.classList.add(
         'coach-v2',
         'coach-v8',
+        'coach-v9',
         'coach-page-' + pageKey()
       );
       document.body.classList.remove('theme-dark');
@@ -1238,6 +1564,7 @@
       installBottomNav();
       installMoreSheet();
       bindGlobalChrome();
+      bindShortcuts();
       ensureHero();
       bindScrollActions();
       classifyCurrentComponents();
@@ -1288,6 +1615,7 @@
 
   installPublicApi();
   loadStylesheet();
+  loadOverlayRuntime();
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);

@@ -1,5 +1,5 @@
 "use strict";
-/* ScoutLink navigation v1.3 — role-aware navigation plus Scout V8 profile loader. */
+/* ScoutLink navigation v1.3 - role-aware navigation plus Scout V8 profile loader. */
 
 var TABLER = {
   "layout-dashboard": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>',
@@ -51,8 +51,8 @@ var COACH_NAV_ITEMS = [
   { icon:"user", label:"My players", href:"/coach/my-players" },
   { icon:"user-plus", label:"Add player", href:"/coach/add-player" },
   { icon:"file-import", label:"Bulk import", href:"/coach/bulk-add-players" },
-  { icon:"clipboard", label:"Match facts", href:"/coach/match-facts" },
   { icon:"calendar-event", label:"Fixtures", href:"/coach/fixtures" },
+  { icon:"clipboard", label:"Match Facts", href:"/coach/match-facts" },
   { icon:"video", label:"Video reels", href:"/coach/video-reels" },
   { icon:"message", label:"Chat", href:"/coach/chat" },
   { icon:"bell", label:"Notifications", href:"/coach/notifications" },
@@ -62,10 +62,10 @@ var COACH_NAV_ITEMS = [
 
 var COACH_NAV_GROUPS = [
   { label:"Overview", items:["Dashboard"] },
-  { label:"Players", items:["My players","Add player","Bulk import"] },
-  { label:"Matchday", items:["Match facts","Fixtures","Video reels"] },
-  { label:"Communication", items:["Chat","Notifications","Report a concern"] },
-  { label:"Account", items:["Settings"] }
+  { label:"Squad", items:["My players","Add player","Bulk import"] },
+  { label:"Matchday", items:["Fixtures","Match Facts","Video reels"] },
+  { label:"Inbox", items:["Chat","Notifications"] },
+  { label:"Trust & admin", items:["Report a concern","Settings"] }
 ];
 
 var PLAYER_NAV_ITEMS = [
