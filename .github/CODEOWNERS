@@ -1,0 +1,9 @@
+# Stratex public website shared routing/rendering files
+/apps/stratex-web/vercel.json @richdhininaba
+/apps/stratex-web/api/stratex-render.js @richdhininaba
+/apps/stratex-web/api/stratex-sitemap.js @richdhininaba
+/apps/stratex-web/pages/stratex-public-v5.html @richdhininaba
+/apps/stratex-web/js/stratex-public-v5.js @richdhininaba
+/apps/stratex-web/css/stratex-public-v5.css @richdhininaba
+/apps/stratex-web/assets/stratex-public-v5-pages.json @richdhininaba
+/apps/stratex-web/assets/stratex-public-route-manifest.json @richdhininaba
