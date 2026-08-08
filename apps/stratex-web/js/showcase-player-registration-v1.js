@@ -151,7 +151,7 @@
   }
 
   function eventDateValue() {
-    return state.event && state.event.eventDate ? state.event.eventDate : '2026-09-12';
+    return state.event && state.event.eventDate ? state.event.eventDate : '2026-10-29';
   }
 
   function eventDateObject() {
@@ -160,7 +160,7 @@
 
   function eventDateLabel() {
     var date = eventDateObject();
-    if (Number.isNaN(date.getTime())) return 'Saturday 12 September 2026';
+    if (Number.isNaN(date.getTime())) return 'Thursday 29 October 2026';
     return date.toLocaleDateString('en-GB', {
       weekday: 'long',
       day: 'numeric',
@@ -172,7 +172,7 @@
 
   function eventDateShort() {
     var date = eventDateObject();
-    if (Number.isNaN(date.getTime())) return '12 Sep 2026';
+    if (Number.isNaN(date.getTime())) return '29 Oct 2026';
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -183,13 +183,13 @@
 
   function eventDay() {
     var date = eventDateObject();
-    return Number.isNaN(date.getTime()) ? '12' : String(date.getUTCDate());
+    return Number.isNaN(date.getTime()) ? '29' : String(date.getUTCDate());
   }
 
   function eventMonth() {
     var date = eventDateObject();
     return Number.isNaN(date.getTime())
-      ? 'SEP'
+      ? 'OCT'
       : date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' }).toUpperCase();
   }
 
@@ -201,7 +201,7 @@
   }
 
   function playerArrivalLabel() {
-    return formatTime(state.event && state.event.playerArrivalTime, '12:00 PM');
+    return formatTime(state.event && state.event.playerArrivalTime, '11:00 AM');
   }
 
   function eventMinAge() {
@@ -237,7 +237,7 @@
 
   function eligibleDateRangeLabel() {
     var eventDate = eventDateObject();
-    if (Number.isNaN(eventDate.getTime())) return '13 September 2009 to 12 September 2014';
+    if (Number.isNaN(eventDate.getTime())) return '30 October 2009 to 29 October 2014';
     var oldest = new Date(eventDate);
     oldest.setUTCFullYear(oldest.getUTCFullYear() - eventMaxAge() - 1);
     oldest.setUTCDate(oldest.getUTCDate() + 1);
