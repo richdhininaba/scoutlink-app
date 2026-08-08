@@ -1,0 +1,13 @@
+/* Mobile-only Showcase registration intro block fix.
+   Desktop presentation remains unchanged. */
+
+@media (max-width: 760px) {
+  .showcase-layout > .showcase-side {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: calc((100% - 100vw) / 2);
+    margin-right: calc((100% - 100vw) / 2);
+    padding-left: 34px;
+    padding-right: 34px;
+  }
+}
