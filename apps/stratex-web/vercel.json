@@ -85,7 +85,7 @@
     },
     {
       "source": "/award-ceremonies",
-      "destination": "/pages/stratex-public-v5"
+      "destination": "/api/stratex-render?path=/award-ceremonies"
     },
     {
       "source": "/showcase-event/player-registration",
