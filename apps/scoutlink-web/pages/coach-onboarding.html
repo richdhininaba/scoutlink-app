@@ -9,437 +9,597 @@
 <title>Coach setup - ScoutLink</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/variables.css">
 <link rel="stylesheet" href="/css/main.css">
-<link rel="stylesheet" href="/css/coach-experience-v8.css?v=8.0.0">
+<link rel="stylesheet" href="/css/coach-experience-v9.css?v=9.0.0-shell">
 <style>
-.onboarding-view[hidden]{display:none!important}
-.onboarding-error{display:none;margin:0 0 14px;padding:12px 14px;border:1px solid #efc5cc;background:#fff0f3;color:#8c263a;font-size:9px;line-height:1.5}
-.onboarding-error.show{display:block}
-.onboarding-loading{opacity:.58;pointer-events:none}
-.onboarding-stage input.field-control,
-.onboarding-stage select.field-control,
-.onboarding-stage textarea.field-control{width:100%;display:block}
-.onboarding-stage textarea.field-control{min-height:130px;padding-top:11px;resize:vertical}
-.onboarding-player-preview{margin-top:16px;padding:15px;border:1px solid var(--line);background:var(--green-soft);display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center}
-.onboarding-player-preview b,.onboarding-player-preview span{display:block}
-.onboarding-player-preview b{font-size:10px}
-.onboarding-player-preview span{margin-top:4px;color:#4d695e;font-size:8px}
-.onboarding-complete-note{padding:15px;border:1px solid #aed2c2;background:var(--green-soft);display:grid;grid-template-columns:28px 1fr;gap:11px}
-.onboarding-complete-note>span{width:28px;height:28px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:9px;font-weight:900}
-.onboarding-complete-note b{display:block;font-size:10px}
-.onboarding-complete-note p{margin:5px 0 0;color:#4d695e;font-size:8px;line-height:1.5}
+:root{
+  --onb-ink:#07111f;
+  --onb-muted:#617083;
+  --onb-line:#d8e2ec;
+  --onb-paper:#ffffff;
+  --onb-mist:#eef4f7;
+  --onb-soft:#e6f8f1;
+  --onb-pitch:#0aa77f;
+  --onb-coal:#071826;
+  --onb-red:#dc2626;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0;overflow-x:hidden;background:var(--onb-mist);color:var(--onb-ink);font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.45}
+body.coach-onboarding-v2{background:linear-gradient(180deg,#fff 0,#f2f7fa 210px,#eef4f7 100%)}
+body.onboarding-loading{cursor:progress}
+body.onboarding-loading .onb-shell{opacity:.72;pointer-events:none}
+button,input,select,textarea{font:inherit}
+.onb-shell{min-height:100vh;display:flex;flex-direction:column}
+.onb-top{position:sticky;top:0;z-index:10;height:64px;padding:0 44px;background:rgba(255,255,255,.94);border-bottom:1px solid var(--onb-line);display:flex;align-items:center;gap:18px;backdrop-filter:blur(16px)}
+.onb-logo{font-family:Anton,Impact,sans-serif;letter-spacing:.01em;text-transform:uppercase;font-size:18px;color:var(--onb-ink);text-decoration:none}
+.onb-logo span{color:var(--onb-pitch)}
+.onb-crumb{color:var(--onb-muted);font-weight:800;font-size:11px}
+.onb-save{margin-left:auto;color:#467565;background:var(--onb-soft);border:1px solid #bfead9;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.onb-main{width:100%;max-width:780px;margin:0 auto;padding:38px 24px 48px}
+.onb-rail{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 28px}
+.onb-rail button{min-width:0;border:1px solid var(--onb-line);background:#fff;color:#708096;border-radius:999px;padding:10px 11px;font-size:10px;font-weight:900;letter-spacing:.02em;text-align:left;cursor:pointer}
+.onb-rail button[aria-current="step"]{background:var(--onb-soft);border-color:#8adbbd;color:#05785c}
+.onb-rail button.done{background:#f6fbf8;color:#1b886d}
+.onb-kicker{margin:0 0 6px;color:#08795f;font-weight:900;text-transform:uppercase;letter-spacing:.08em;font-size:10px}
+.onb-title{margin:0;color:var(--onb-ink);font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;letter-spacing:.01em;font-size:34px;line-height:1}
+.onb-intro{max-width:620px;margin:10px 0 24px;color:var(--onb-muted);font-size:12px;line-height:1.65}
+.onb-card{background:var(--onb-paper);border:1px solid var(--onb-line);border-radius:28px;box-shadow:0 18px 46px rgba(18,38,63,.08);overflow:hidden}
+.onb-view{display:none;padding:24px}
+.onb-view.active{display:block}
+.onb-section-head{display:flex;justify-content:space-between;gap:22px;align-items:flex-start;margin:0 0 18px;padding:0 0 15px;border-bottom:1px solid var(--onb-line)}
+.onb-section-head h2{margin:0;font-size:17px;line-height:1.15}
+.onb-section-head p{max-width:330px;margin:0;color:var(--onb-muted);font-size:11.5px;line-height:1.55}
+.onb-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.onb-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.onb-field.full{grid-column:1/-1}
+.onb-field label,.onb-label{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#6b788a}
+.onb-field em{margin-left:6px;color:#0a8d6d;font-style:normal}
+.onb-field input,.onb-field select,.onb-field textarea{width:100%;min-width:0;border:1px solid #ccd8e3;background:#fff;color:var(--onb-ink);border-radius:14px;padding:0 13px;height:42px;outline:none}
+.onb-field textarea{height:150px;min-height:150px;padding:13px;line-height:1.65;resize:vertical;font-family:"IBM Plex Mono",Consolas,monospace;font-size:11px}
+.onb-field input:focus,.onb-field select:focus,.onb-field textarea:focus{border-color:#0aa77f;box-shadow:0 0 0 4px rgba(10,167,127,.13)}
+.onb-field input[readonly]{background:#f6f9fb;color:#69778b}
+.onb-help{margin-top:16px;padding:15px;border:1px solid #bfead9;background:#f2fcf8;border-radius:18px;color:#426c60}
+.onb-help b{display:block;margin-bottom:5px;color:#08795f;font-size:11px}
+.onb-help p{margin:0;font-size:11px;line-height:1.55}
+.onb-squad-meter{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+.onb-pill{display:inline-flex;align-items:center;min-height:27px;border-radius:999px;padding:6px 10px;background:#eef4f7;color:#647287;font-size:10px;font-weight:900}
+.onb-pill.ok{background:#ddf8ef;color:#08795f}
+.onb-preview{margin-top:16px;border:1px solid var(--onb-line);border-radius:18px;background:#f8fbfc;padding:14px;display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:center}
+.onb-initials{width:42px;height:42px;border-radius:14px;background:#0aa77f;color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px}
+.onb-preview b{display:block;font-size:12px}
+.onb-preview span{display:block;margin-top:4px;color:var(--onb-muted);font-size:11px}
+.onb-error{display:none;margin:0 0 14px;border:1px solid #fecdd3;background:#fff1f2;color:#991b1b;border-radius:15px;padding:12px 14px;font-size:11px;font-weight:800}
+.onb-error.show{display:block}
+.onb-actions{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:18px}
+.onb-actions-left,.onb-actions-right{display:flex;gap:10px;align-items:center;min-width:0}
+.onb-button{border:1px solid transparent;border-radius:14px;min-height:42px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+.onb-button.primary{background:var(--onb-pitch);color:#fff}
+.onb-button.primary:hover{background:#088968}
+.onb-button.secondary{background:#fff;color:#08795f;border-color:#c7e9db}
+.onb-button.muted{background:#eef4f7;color:#516076;border-color:#d7e2eb}
+.onb-button.danger{background:#fff;color:var(--onb-red);border-color:#fecaca}
+.onb-button[hidden]{display:none}
+.onb-footnote{margin:16px 0 0;color:var(--onb-muted);font-size:10.5px}
+.onb-summary{display:grid;gap:10px;margin-top:14px}
+.onb-summary div{border:1px solid var(--onb-line);background:#f8fbfc;border-radius:16px;padding:12px}
+.onb-summary b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#6d7b8f}
+.onb-summary span{display:block;margin-top:5px;font-size:12px;font-weight:800;color:#122034}
 @media(max-width:760px){
-  .onboarding-stage input.field-control,
-  .onboarding-stage select.field-control{min-height:48px}
-  .onboarding-stage textarea.field-control{min-height:160px}
+  html,body{font-size:12px}
+  .onb-top{height:auto;min-height:58px;padding:12px 16px;gap:10px;align-items:flex-start}
+  .onb-logo{font-size:16px}
+  .onb-crumb{display:none}
+  .onb-save{margin-left:auto;font-size:9px;padding:6px 9px}
+  .onb-main{max-width:none;padding:22px 14px 28px}
+  .onb-rail{grid-template-columns:1fr;gap:7px;margin-bottom:20px}
+  .onb-rail button{padding:11px 12px;text-align:center}
+  .onb-title{font-size:28px}
+  .onb-intro{font-size:12px;margin-bottom:18px}
+  .onb-card{border-radius:22px}
+  .onb-view{padding:17px}
+  .onb-section-head{display:block}
+  .onb-section-head p{max-width:none;margin-top:8px}
+  .onb-form-grid{grid-template-columns:1fr;gap:12px}
+  .onb-field input,.onb-field select{height:45px}
+  .onb-actions{display:block}
+  .onb-actions-left,.onb-actions-right{display:grid;grid-template-columns:1fr;gap:9px}
+  .onb-actions-right{margin-top:9px}
+  .onb-button{width:100%;white-space:normal;text-align:center}
 }
 </style>
 </head>
-<body class="coach-v8 coach-v2 coach-page-onboarding">
-<header class="mobile-topbar coach-v2-mobile-top">
-  <a class="coach-v8-mobile-logo" href="/coach/dashboard">Scout<span>Link</span></a>
-  <strong class="coach-v8-mobile-title coach-v2-mobile-title">Coach setup</strong>
-  <button class="coach-v2-menu-button" type="button" aria-label="Open Coach menu">Menu</button>
-</header>
+<body class="coach-onboarding-v2">
+<div class="onb-shell">
+  <header class="onb-top">
+    <a class="onb-logo" href="/coach/dashboard">Scout<span>Link</span></a>
+    <span class="onb-crumb">Coach setup</span>
+    <span class="onb-save" id="saveStatus">Draft not saved yet</span>
+  </header>
 
-<div class="dashboard coach-shell coach-page onboarding-page">
-  <aside class="sidebar coach-sidebar" id="sidebar" aria-label="Coach navigation">
-    <a class="sidebar-logo" href="/coach/dashboard"><span class="sl-logo">Scout<span>Link</span></span></a>
-    <nav class="sidebar-nav" id="sidebarNav"></nav>
-    <div class="sidebar-user" id="sidebarUser"></div>
-  </aside>
+  <main class="onb-main">
+    <nav class="onb-rail" aria-label="Coach setup progress">
+      <button type="button" data-step-jump="0" aria-current="step">1 - You</button>
+      <button type="button" data-step-jump="1">2 - The team</button>
+      <button type="button" data-step-jump="2">3 - Squad list</button>
+      <button type="button" data-step-jump="3">4 - First player</button>
+    </nav>
 
-  <section class="dashboard-main coach-workspace">
-    <header class="topbar coach-topbar">
-      <div class="coach-v8-topbar-copy">
-        <span class="route-label">Coach workspace</span>
-        <h1 class="topbar-title">Coach setup</h1>
-      </div>
-      <div class="topbar-right">
-        <button class="btn btn-outline" id="skipTopButton" type="button">Skip for now</button>
-      </div>
-    </header>
+    <p class="onb-kicker">Build the workspace around your team</p>
+    <h1 class="onb-title" id="stepTitle">Coach setup.</h1>
+    <p class="onb-intro" id="stepIntro">Your details first. They sit on every player record you create and every message you send.</p>
+    <div class="onb-error" id="onboardingError" role="alert"></div>
 
-    <main class="page-content coach-content">
-      <section class="page-hero navy">
-        <div>
-          <span>First-time coach setup</span>
-          <h2>Build the workspace around your team.</h2>
-          <p>Four short steps give ScoutLink the context needed to organise the squad, create the first profile and share the workload.</p>
-          <small class="hero-meta">You can leave at any point and finish setup later from Settings.</small>
-        </div>
-        <div class="button-row hero-actions">
-          <button class="btn ghost" id="skipHeroButton" type="button">Skip for now</button>
-        </div>
-      </section>
-
-      <section class="onboarding-progress-bar" id="onboardingProgress" aria-label="Coach setup progress">
-        <article data-progress-step="0"><span>1</span><div><b>Team</b><small>Team context</small></div></article>
-        <article data-progress-step="1"><span>2</span><div><b>Squad list</b><small>Optional import help</small></div></article>
-        <article data-progress-step="2"><span>3</span><div><b>First player</b><small>Start the squad</small></div></article>
-        <article data-progress-step="3"><span>4</span><div><b>Assistant</b><small>Share the work</small></div></article>
-      </section>
-
-      <div class="onboarding-error" id="onboardingError" role="alert"></div>
-
-      <section class="onboarding-stage" id="onboardingStage">
-        <div class="onboarding-form-column">
-          <section class="onboarding-view" data-onboarding-view="0">
-            <header class="stage-heading">
-              <div><span>Step 1 of 4</span><h3>Tell us about the team.</h3></div>
-              <p>ScoutLink reuses this information across player records, fixtures and the coach workspace.</p>
-            </header>
-            <div class="form-grid cols-2 spacious-form">
-              <label class="field"><span>Team name<em>Required</em></span><input class="field-control" id="teamName" autocomplete="organization" placeholder="Your team name"></label>
-              <label class="field"><span>League</span><input class="field-control" id="league" placeholder="Type or select league"></label>
-              <label class="field"><span>Location<em>Required</em></span><input class="field-control" id="city" autocomplete="address-level2" placeholder="City or local area"></label>
-              <label class="field"><span>Rough squad size including substitutes<em>Required</em></span><input class="field-control" id="squadSize" type="number" min="1" max="40" inputmode="numeric" placeholder="18"></label>
-            </div>
-            <div class="onboarding-help"><span>Why we ask</span><p>Team, league and location information is entered once and then carried into the parts of ScoutLink where it is needed.</p></div>
-          </section>
-
-          <section class="onboarding-view" data-onboarding-view="1" hidden>
-            <header class="stage-heading">
-              <div><span>Step 2 of 4</span><h3>Paste a squad list if it saves time.</h3></div>
-              <p>This step is optional. A simple list of names, age groups and positions gives the team a useful starting point.</p>
-            </header>
-            <div class="spacious-form">
-              <label class="field"><span>Squad list</span><textarea class="field-control" id="squadList" placeholder="Example&#10;Ethan Cole, U16, Forward&#10;Carter Hill, U16, Winger"></textarea><small>Nothing is submitted as a player until you finish setup.</small></label>
-            </div>
-            <div class="onboarding-help"><span>Keep it simple</span><p>You can leave this blank and use the full Bulk import workflow later.</p></div>
-          </section>
-
-          <section class="onboarding-view" data-onboarding-view="2" hidden>
-            <header class="stage-heading">
-              <div><span>Step 3 of 4</span><h3>Add the first player.</h3></div>
-              <p>Name, age group, position group and preferred foot are enough to create the first useful record.</p>
-            </header>
-            <div class="form-grid cols-2 spacious-form">
-              <label class="field"><span>First name<em>Required</em></span><input class="field-control" id="pFirst" autocomplete="off" placeholder="First name"></label>
-              <label class="field"><span>Last name<em>Required</em></span><input class="field-control" id="pLast" autocomplete="off" placeholder="Last name"></label>
-              <label class="field"><span>Age group<em>Required</em></span><select class="field-control" id="pAgeGroup"><option value="">Select age group</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option></select></label>
-              <label class="field"><span>Position group<em>Required</em></span><select class="field-control" id="pPosition"><option value="">Select position group</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></label>
-              <label class="field"><span>Preferred foot</span><select class="field-control" id="pFoot"><option>Right</option><option>Left</option><option>Both</option></select></label>
-            </div>
-            <div class="onboarding-player-preview" id="playerPreview"><span class="avatar-square">PL</span><div><b>First player preview</b><span>Complete the fields above to preview the record.</span></div></div>
-          </section>
-
-          <section class="onboarding-view" data-onboarding-view="3" hidden>
-            <header class="stage-heading">
-              <div><span>Step 4 of 4</span><h3>Invite an assistant if you share the work.</h3></div>
-              <p>This is optional. An assistant Coach can help maintain profiles, fixtures and Match Facts for the same team.</p>
-            </header>
-            <div class="spacious-form">
-              <label class="field"><span>Assistant Coach email</span><input class="field-control" id="assistantEmail" type="email" autocomplete="email" placeholder="assistant@example.com"><small>Leave this blank when you manage the team alone.</small></label>
-            </div>
-            <div class="onboarding-complete-note"><span>✓</span><div><b>Your Coach workspace is ready to be created.</b><p>Finishing setup saves the team, optional squad list, first player and assistant invitation through the existing onboarding service.</p></div></div>
-          </section>
-        </div>
-
-        <aside class="onboarding-next">
-          <span id="nextPanelLabel">Next in setup</span>
-          <h3 id="nextPanelTitle">Three quick steps remain.</h3>
-          <div class="onboarding-next-list" id="nextPanelList">
-            <article><b>02</b><div><strong>Paste a squad list</strong><p>Optional help for turning a full-team list into profiles.</p></div></article>
-            <article><b>03</b><div><strong>Add the first player</strong><p>Name, age group, position and foot are enough to begin.</p></div></article>
-            <article><b>04</b><div><strong>Invite an assistant</strong><p>Share profile and match-record maintenance with another Coach.</p></div></article>
+    <section class="onb-card" aria-live="polite">
+      <article class="onb-view active" data-onboarding-view="0">
+        <header class="onb-section-head">
+          <h2>You</h2>
+          <p>Registration details are carried into the workspace so you do not re-type verified information.</p>
+        </header>
+        <div class="onb-form-grid">
+          <div class="onb-field">
+            <label for="coachFirst">First name <em>Required</em></label>
+            <input id="coachFirst" autocomplete="given-name" placeholder="First name">
           </div>
-        </aside>
-      </section>
-
-      <section class="onboarding-actions" id="onboardingActions">
-        <span id="saveStatus">Your details are saved on this device when you continue.</span>
-        <div class="button-row">
-          <button class="btn secondary" id="backButton" type="button">Back</button>
-          <button class="btn primary" id="continueButton" type="button">Continue to squad list</button>
+          <div class="onb-field">
+            <label for="coachLast">Last name <em>Required</em></label>
+            <input id="coachLast" autocomplete="family-name" placeholder="Last name">
+          </div>
+          <div class="onb-field full">
+            <label for="coachEmail">Email</label>
+            <input id="coachEmail" type="email" autocomplete="email" placeholder="coach@example.com" readonly>
+          </div>
         </div>
-      </section>
-    </main>
-  </section>
+        <div class="onb-help">
+          <b>Already verified</b>
+          <p>Your email and account details come from registration or sign in. Only editable setup information is saved here.</p>
+        </div>
+      </article>
+
+      <article class="onb-view" data-onboarding-view="1">
+        <header class="onb-section-head">
+          <h2>The team</h2>
+          <p>Enough context to set up fixtures, player records and squad evidence. You can refine it later in Settings.</p>
+        </header>
+        <div class="onb-form-grid">
+          <div class="onb-field">
+            <label for="teamName">Team name <em>Required</em></label>
+            <input id="teamName" autocomplete="organization" placeholder="Northside Youth FC">
+          </div>
+          <div class="onb-field">
+            <label for="ageGroup">Age group <em>Required</em></label>
+            <select id="ageGroup">
+              <option value="">Select age group</option>
+              <option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option>
+              <option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option>
+            </select>
+          </div>
+          <div class="onb-field">
+            <label for="league">League</label>
+            <input id="league" placeholder="League or competition">
+          </div>
+          <div class="onb-field">
+            <label for="city">Location</label>
+            <input id="city" autocomplete="address-level2" placeholder="City or local area">
+          </div>
+          <div class="onb-field">
+            <label for="squadSize">Squad size</label>
+            <input id="squadSize" type="number" min="1" max="40" inputmode="numeric" placeholder="18">
+          </div>
+          <div class="onb-field">
+            <label for="assistantEmail">Assistant Coach email</label>
+            <input id="assistantEmail" type="email" autocomplete="email" placeholder="assistant@example.com">
+          </div>
+        </div>
+        <div class="onb-help">
+          <b>Invite an assistant if you share the work</b>
+          <p>This is optional. They can also be invited later from Settings.</p>
+        </div>
+      </article>
+
+      <article class="onb-view" data-onboarding-view="2">
+        <header class="onb-section-head">
+          <h2>Squad list</h2>
+          <p>Paste one player per line. The list is saved as setup context and can be reviewed later in Bulk Import.</p>
+        </header>
+        <div class="onb-field full">
+          <label for="squadList">Squad list <em>Optional</em></label>
+          <textarea id="squadList" placeholder="Kai Robertson, AM&#10;Tayo Okafor, ST&#10;Mia Bailey, CB"></textarea>
+        </div>
+        <div class="onb-squad-meter">
+          <span class="onb-pill ok" id="squadRowsCount">0 players recognised</span>
+          <span class="onb-pill">0 created from this paste</span>
+          <a class="onb-button secondary" href="/coach/bulk-add-players">Open Bulk Import after setup</a>
+        </div>
+        <p class="onb-footnote">No player is created from pasted text during onboarding.</p>
+      </article>
+
+      <article class="onb-view" data-onboarding-view="3">
+        <header class="onb-section-head">
+          <h2>First player</h2>
+          <p>One real player makes the workspace useful. This step can be skipped if you want to start from Bulk Import.</p>
+        </header>
+        <div class="onb-form-grid">
+          <div class="onb-field">
+            <label for="pFirst">First name</label>
+            <input id="pFirst" autocomplete="off" placeholder="First name">
+          </div>
+          <div class="onb-field">
+            <label for="pLast">Last name</label>
+            <input id="pLast" autocomplete="off" placeholder="Last name">
+          </div>
+          <div class="onb-field">
+            <label for="pAgeGroup">Age group</label>
+            <select id="pAgeGroup">
+              <option value="">Use team age group</option>
+              <option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option>
+              <option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option>
+            </select>
+          </div>
+          <div class="onb-field">
+            <label for="pPosition">Position group</label>
+            <select id="pPosition">
+              <option value="">Select position group</option>
+              <option>Goalkeeper</option>
+              <option>Defender</option>
+              <option>Midfielder</option>
+              <option>Forward</option>
+            </select>
+          </div>
+          <div class="onb-field">
+            <label for="pFoot">Preferred foot</label>
+            <select id="pFoot">
+              <option>Right</option>
+              <option>Left</option>
+              <option>Both</option>
+            </select>
+          </div>
+        </div>
+        <div class="onb-preview" id="playerPreview">
+          <span class="onb-initials">PL</span>
+          <div><b>First player preview</b><span>Complete the fields above to preview the record.</span></div>
+        </div>
+        <div class="onb-summary" id="finishSummary"></div>
+      </article>
+    </section>
+
+    <section class="onb-actions">
+      <div class="onb-actions-left">
+        <button class="onb-button muted" id="backButton" type="button" hidden>Back</button>
+        <button class="onb-button danger" id="exitButton" type="button">Skip for now</button>
+      </div>
+      <div class="onb-actions-right">
+        <button class="onb-button muted" id="skipStepButton" type="button" hidden>Skip for now</button>
+        <button class="onb-button primary" id="continueButton" type="button">Continue to the team</button>
+      </div>
+    </section>
+  </main>
 </div>
 
 <script src="/js/main.js"></script>
 <script src="/js/leagues.js"></script>
-<script src="/js/scout-nav.js"></script>
-<script src="/js/coach-v2.js?v=8.0.0"></script>
 <script>
 (function(){
   'use strict';
 
-  var DRAFT_KEY='scoutlink.coach.onboarding.v8';
-  var currentStep=0;
-  var submitting=false;
-  var state={
-    teamName:'',
-    league:'',
-    city:'',
-    squadSize:'',
-    squadList:'',
-    pFirst:'',
-    pLast:'',
-    pAgeGroup:'',
-    pPosition:'',
-    pFoot:'Right',
-    assistantEmail:''
+  var DRAFT_KEY = 'scoutlink.coach.onboarding.v9';
+  var step = 0;
+  var maxUnlocked = 0;
+  var submitting = false;
+  var state = {
+    coachFirst: '',
+    coachLast: '',
+    coachEmail: '',
+    teamName: '',
+    ageGroup: '',
+    league: '',
+    city: '',
+    squadSize: '',
+    assistantEmail: '',
+    squadList: '',
+    pFirst: '',
+    pLast: '',
+    pAgeGroup: '',
+    pPosition: '',
+    pFoot: 'Right'
   };
 
-  function route(path){
-    return typeof window.cleanRouteFor==='function'
-      ? window.cleanRouteFor(path)
-      : path;
-  }
+  var copy = [
+    ['Coach setup.', 'Your details first. They sit on every player record you create and every message you send.'],
+    ['Tell us about the team.', 'Enough to set up fixtures and player records. Everything can be refined later in Settings.'],
+    ['Paste a squad list if it saves time.', 'One player per line. Recognised rows are saved for review, never created silently.'],
+    ['Add the first player.', 'One real player makes the dashboard real. You can skip and begin from Bulk Import instead.']
+  ];
 
-  function goDashboard(){
-    window.location.href=route('/coach/dashboard');
+  function el(id){ return document.getElementById(id); }
+  function route(path){ return typeof window.cleanRouteFor === 'function' ? window.cleanRouteFor(path) : path; }
+  function isDemo(){ return sessionStorage.getItem('sl_public_demo') === '1' || localStorage.getItem('sl_demo_mode') === '1'; }
+  function user(){
+    if (window.Auth && window.Auth.user) return window.Auth.user;
+    try { return JSON.parse(localStorage.getItem('sl_user') || 'null') || {}; } catch (_) { return {}; }
   }
-
-  function get(id){
-    return document.getElementById(id);
+  function userType(){
+    return (window.Auth && window.Auth.type) || localStorage.getItem('sl_type') || sessionStorage.getItem('sl_public_demo_role') || '';
   }
-
-  function value(id){
-    var node=get(id);
-    return node?String(node.value||'').trim():'';
+  function apiPost(path, payload){
+    if (typeof window.api === 'function') return window.api('POST', path, payload);
+    var base = window.API || localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
+    var token = (window.Auth && window.Auth.token) || localStorage.getItem('sl_token');
+    return fetch(base + path, {
+      method: 'POST',
+      headers: Object.assign({'Content-Type':'application/json'}, token ? {'Authorization':'Bearer ' + token} : {}),
+      body: JSON.stringify(payload || {})
+    }).then(function(response){
+      return response.json().then(function(data){
+        if (!response.ok) throw new Error(data && data.error || 'Request failed');
+        return data;
+      });
+    });
   }
-
-  function showError(message){
-    var error=get('onboardingError');
-    error.textContent=message||'';
-    error.classList.toggle('show',!!message);
-    if(message)error.scrollIntoView({behavior:'smooth',block:'center'});
+  function getValue(id){
+    var node = el(id);
+    return node ? String(node.value || '').trim() : '';
   }
-
+  function setValue(id, value){
+    var node = el(id);
+    if (node && document.activeElement !== node) node.value = value || '';
+  }
+  function escapeHtml(value){
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
   function collect(){
-    ['teamName','league','city','squadSize','squadList','pFirst','pLast',
-      'pAgeGroup','pPosition','pFoot','assistantEmail'].forEach(function(key){
-      var node=get(key);
-      if(node)state[key]=String(node.value||'').trim();
-    });
+    Object.keys(state).forEach(function(key){ state[key] = getValue(key); });
   }
-
-  function apply(){
-    Object.keys(state).forEach(function(key){
-      var node=get(key);
-      if(node&&document.activeElement!==node)node.value=state[key]||'';
-    });
+  function applyState(){
+    Object.keys(state).forEach(function(key){ setValue(key, state[key]); });
+    updateSquadCount();
     updatePlayerPreview();
+    updateSummary();
   }
-
-  function saveDraft(){
+  function showError(message){
+    var box = el('onboardingError');
+    box.textContent = message || '';
+    box.classList.toggle('show', !!message);
+    if (message) box.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  function saveDraft(label){
     collect();
-    try{
-      localStorage.setItem(DRAFT_KEY,JSON.stringify({
-        step:currentStep,
-        state:state,
-        savedAt:new Date().toISOString()
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        step: step,
+        maxUnlocked: maxUnlocked,
+        state: state,
+        savedAt: new Date().toISOString()
       }));
-      get('saveStatus').textContent='Draft saved on this device.';
-    }catch(_){
-      get('saveStatus').textContent='Continue to keep moving through setup.';
+      el('saveStatus').textContent = label || 'Draft saved on this device';
+      return true;
+    } catch (_) {
+      el('saveStatus').textContent = 'Draft could not be saved';
+      return false;
     }
   }
-
   function restoreDraft(){
-    try{
-      var saved=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
-      if(saved&&saved.state){
-        Object.keys(state).forEach(function(key){
-          if(saved.state[key]!==undefined)state[key]=saved.state[key];
-        });
-        currentStep=Math.max(0,Math.min(3,Number(saved.step)||0));
-      }
-    }catch(_){}
+    try {
+      var saved = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+      if (!saved || !saved.state) return;
+      Object.keys(state).forEach(function(key){
+        if (saved.state[key] !== undefined) state[key] = saved.state[key];
+      });
+      step = Math.max(0, Math.min(3, Number(saved.step) || 0));
+      maxUnlocked = Math.max(step, Math.min(3, Number(saved.maxUnlocked) || 0));
+      el('saveStatus').textContent = 'Draft restored';
+    } catch (_) {}
   }
-
-  function validateStep(){
+  function prefillCoach(){
+    var u = user() || {};
+    state.coachFirst = state.coachFirst || u.first_name || u.firstName || u.first || '';
+    state.coachLast = state.coachLast || u.last_name || u.lastName || u.last || '';
+    state.coachEmail = state.coachEmail || u.email || localStorage.getItem('sl_user_email') || '';
+    state.teamName = state.teamName || u.team_name || u.teamName || '';
+    state.league = state.league || u.league || u.team_league || '';
+    state.city = state.city || u.city || u.team_county || u.location || '';
+  }
+  function validateCurrent(){
     collect();
-    if(currentStep===0){
-      if(!state.teamName)return 'Enter the team name.';
-      if(!state.city)return 'Enter the team location.';
-      var size=Number(state.squadSize);
-      if(!Number.isFinite(size)||size<1||size>40)return 'Enter a squad size between 1 and 40.';
+    if (step === 0) {
+      if (!state.coachFirst) return 'Enter your first name.';
+      if (!state.coachLast) return 'Enter your last name.';
     }
-    if(currentStep===2){
-      if(!state.pFirst||!state.pLast)return 'Enter the first player’s first and last name.';
-      if(!state.pAgeGroup)return 'Select the first player’s age group.';
-      if(!state.pPosition)return 'Select the first player’s position group.';
+    if (step === 1) {
+      if (!state.teamName) return 'Enter the team name.';
+      if (!state.ageGroup) return 'Select the team age group.';
+      if (state.squadSize) {
+        var size = Number(state.squadSize);
+        if (!Number.isFinite(size) || size < 1 || size > 40) return 'Enter a squad size between 1 and 40.';
+      }
+      if (state.assistantEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.assistantEmail)) {
+        return 'Enter a valid assistant Coach email or leave it blank.';
+      }
     }
-    if(currentStep===3&&state.assistantEmail&&
-       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.assistantEmail)){
-      return 'Enter a valid assistant Coach email or leave it blank.';
+    if (step === 3 && hasFirstPlayer()) {
+      if (!state.pFirst || !state.pLast || !state.pPosition) return 'To create a first player, add their name and position group.';
     }
     return '';
   }
-
-  function updatePlayerPreview(){
-    var box=get('playerPreview');
-    if(!box)return;
-    var name=((state.pFirst||'')+' '+(state.pLast||'')).trim();
-    var ini=((state.pFirst||'P').charAt(0)+(state.pLast||'L').charAt(0)).toUpperCase();
-    box.innerHTML='<span class="avatar-square">'+ini+'</span><div><b>'+
-      (name||'First player preview')+'</b><span>'+
-      [state.pAgeGroup||'Age group TBC',state.pPosition||'Position TBC',
-        (state.pFoot||'Right')+' foot'].join(' · ')+'</span></div>';
+  function hasFirstPlayer(){
+    return !!(state.pFirst || state.pLast || state.pAgeGroup || state.pPosition);
   }
-
-  function nextPanel(){
-    var data=[
-      {
-        label:'Next in setup',
-        title:'Three quick steps remain.',
-        rows:[
-          ['02','Paste a squad list','Optional help for turning a full-team list into profiles.'],
-          ['03','Add the first player','Name, age group, position and foot are enough to begin.'],
-          ['04','Invite an assistant','Share profile and match-record maintenance with another Coach.']
-        ]
-      },
-      {
-        label:'After the squad list',
-        title:'Two short steps remain.',
-        rows:[
-          ['03','Add the first player','Create the first useful player record.'],
-          ['04','Invite an assistant','Share the maintenance workload when needed.']
-        ]
-      },
-      {
-        label:'Final setup step',
-        title:'One optional invitation remains.',
-        rows:[
-          ['04','Invite an assistant','Add another responsible Coach or finish alone.']
-        ]
-      },
-      {
-        label:'Ready to finish',
-        title:'Create the Coach workspace.',
-        rows:[
-          ['✓','Team context','Saved across fixtures and player records.'],
-          ['✓','First player','Created with the team when setup finishes.']
-        ]
-      }
-    ][currentStep];
-
-    get('nextPanelLabel').textContent=data.label;
-    get('nextPanelTitle').textContent=data.title;
-    get('nextPanelList').innerHTML=data.rows.map(function(row){
-      return '<article><b>'+row[0]+'</b><div><strong>'+row[1]+
-        '</strong><p>'+row[2]+'</p></div></article>';
+  function updateSquadCount(){
+    var lines = String(state.squadList || '').split(/\r?\n/).map(function(row){ return row.trim(); }).filter(Boolean);
+    el('squadRowsCount').textContent = lines.length + (lines.length === 1 ? ' player recognised' : ' players recognised');
+  }
+  function updatePlayerPreview(){
+    var first = state.pFirst || '';
+    var last = state.pLast || '';
+    var initials = ((first.charAt(0) || 'P') + (last.charAt(0) || 'L')).toUpperCase();
+    var name = (first + ' ' + last).trim() || 'First player preview';
+    var age = state.pAgeGroup || state.ageGroup || 'Age group TBC';
+    var pos = state.pPosition || 'Position TBC';
+    var foot = state.pFoot || 'Right';
+    el('playerPreview').innerHTML = '<span class="onb-initials">' + escapeHtml(initials) + '</span><div><b>' +
+      escapeHtml(name) + '</b><span>' + escapeHtml(age + ' - ' + pos + ' - ' + foot + ' foot') + '</span></div>';
+  }
+  function updateSummary(){
+    if (!el('finishSummary')) return;
+    el('finishSummary').innerHTML = [
+      ['Team', state.teamName || 'Not set yet'],
+      ['Age group', state.ageGroup || 'Not set yet'],
+      ['Squad list', state.squadList ? 'Saved for Bulk Import review' : 'Skipped'],
+      ['First player', hasFirstPlayer() ? ((state.pFirst + ' ' + state.pLast).trim() || 'Started') : 'Skipped']
+    ].map(function(item){
+      return '<div><b>' + escapeHtml(item[0]) + '</b><span>' + escapeHtml(item[1]) + '</span></div>';
     }).join('');
   }
-
-  function buttonLabel(){
-    return [
-      'Continue to squad list',
-      'Continue to first player',
-      'Continue to assistant',
-      'Finish Coach setup'
-    ][currentStep];
-  }
-
-  function showStep(step){
-    currentStep=Math.max(0,Math.min(3,step));
-    document.querySelectorAll('[data-onboarding-view]').forEach(function(view){
-      view.hidden=Number(view.getAttribute('data-onboarding-view'))!==currentStep;
-    });
-    document.querySelectorAll('[data-progress-step]').forEach(function(item){
-      var index=Number(item.getAttribute('data-progress-step'));
-      item.classList.toggle('active',index===currentStep);
-      item.classList.toggle('done',index<currentStep);
-    });
-    get('backButton').style.visibility=currentStep===0?'hidden':'visible';
-    get('continueButton').textContent=buttonLabel();
-    nextPanel();
-    apply();
-    showError('');
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  async function finish(){
-    if(submitting)return;
-    var problem=validateStep();
-    if(problem){showError(problem);return;}
-
-    submitting=true;
+  function payload(){
     collect();
-    saveDraft();
-    document.body.classList.add('onboarding-loading');
-    get('continueButton').textContent='Creating workspace…';
-
-    try{
-      await window.api('POST','/api/onboarding/coach-wizard',{
-        team:{
-          teamName:state.teamName,
-          league:state.league,
-          city:state.city
-        },
-        squadSize:state.squadSize,
-        squadList:state.squadList,
-        assistantInviteEmail:state.assistantEmail,
-        firstPlayer:{
-          firstName:state.pFirst,
-          lastName:state.pLast,
-          ageGroup:state.pAgeGroup,
-          position:state.pPosition,
-          foot:state.pFoot
-        }
-      });
-      try{localStorage.removeItem(DRAFT_KEY);}catch(_){}
-      window.location.href=route('/coach/dashboard?setup=done');
-    }catch(error){
-      submitting=false;
-      document.body.classList.remove('onboarding-loading');
-      get('continueButton').textContent=buttonLabel();
-      showError(error&&error.message?error.message:'Coach setup could not be completed.');
+    var firstPlayer = hasFirstPlayer() ? {
+      firstName: state.pFirst,
+      lastName: state.pLast,
+      ageGroup: state.pAgeGroup || state.ageGroup,
+      position: state.pPosition,
+      positionGroup: state.pPosition,
+      foot: state.pFoot
+    } : null;
+    return {
+      coach: {
+        firstName: state.coachFirst,
+        lastName: state.coachLast,
+        email: state.coachEmail
+      },
+      team: {
+        teamName: state.teamName,
+        ageGroup: state.ageGroup,
+        league: state.league,
+        city: state.city
+      },
+      squadSize: state.squadSize,
+      squadList: state.squadList,
+      assistantInviteEmail: state.assistantEmail,
+      firstPlayer: firstPlayer
+    };
+  }
+  function setStep(next){
+    step = Math.max(0, Math.min(3, next));
+    maxUnlocked = Math.max(maxUnlocked, step);
+    document.querySelectorAll('[data-onboarding-view]').forEach(function(view){
+      view.classList.toggle('active', Number(view.getAttribute('data-onboarding-view')) === step);
+    });
+    document.querySelectorAll('[data-step-jump]').forEach(function(button){
+      var index = Number(button.getAttribute('data-step-jump'));
+      button.disabled = index > maxUnlocked;
+      button.classList.toggle('done', index < step);
+      if (index === step) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
+    el('stepTitle').textContent = copy[step][0];
+    el('stepIntro').textContent = copy[step][1];
+    el('backButton').hidden = step === 0;
+    el('skipStepButton').hidden = step < 2;
+    el('continueButton').textContent = ['Continue to the team','Continue to squad list','Continue to first player','Create player and open workspace'][step];
+    applyState();
+    showError('');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function continueFlow(){
+    var error = validateCurrent();
+    if (error) { showError(error); return; }
+    saveDraft('Draft saved on this device');
+    if (step < 3) setStep(step + 1);
+    else finish(false);
+  }
+  function skipStep(){
+    collect();
+    if (step === 2) {
+      state.squadList = '';
+      setValue('squadList', '');
+      saveDraft('Squad list skipped');
+      setStep(3);
+      return;
     }
+    if (step === 3) finish(true);
   }
-
-  function continueSetup(){
-    var problem=validateStep();
-    if(problem){showError(problem);return;}
-    saveDraft();
-    if(currentStep===3){finish();return;}
-    showStep(currentStep+1);
+  function goDashboard(){
+    window.location.href = route('/coach/dashboard');
   }
+  function finish(skipPlayer){
+    if (submitting) return;
+    collect();
+    if (skipPlayer) {
+      state.pFirst = '';
+      state.pLast = '';
+      state.pAgeGroup = '';
+      state.pPosition = '';
+      state.pFoot = state.pFoot || 'Right';
+    }
+    var teamProblem = (function(){
+      var oldStep = step;
+      step = 1;
+      var message = validateCurrent();
+      step = oldStep;
+      return message;
+    })();
+    if (teamProblem) {
+      showError(teamProblem);
+      setStep(1);
+      return;
+    }
+    submitting = true;
+    document.body.classList.add('onboarding-loading');
+    el('continueButton').textContent = 'Creating workspace';
+    saveDraft('Submitting setup');
 
-  function init(){
-    if(window.Auth&&window.Auth.isLoggedIn&&
-       (!window.Auth.isLoggedIn()||window.Auth.type!=='Coach')){
-      window.location.href=route('/login');
+    if (isDemo()) {
+      try {
+        sessionStorage.setItem('sl_public_demo_onboarding', JSON.stringify(payload()));
+        localStorage.removeItem(DRAFT_KEY);
+      } catch (_) {}
+      goDashboard();
       return;
     }
 
-    restoreDraft();
-    if(window.bindLeagueInput)window.bindLeagueInput('league');
-
-    get('skipTopButton').addEventListener('click',goDashboard);
-    get('skipHeroButton').addEventListener('click',goDashboard);
-    get('backButton').addEventListener('click',function(){
-      collect();
-      saveDraft();
-      showStep(currentStep-1);
+    apiPost('/api/onboarding/coach-wizard', payload()).then(function(){
+      try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+      window.location.href = route('/coach/dashboard?setup=done');
+    }).catch(function(error){
+      submitting = false;
+      document.body.classList.remove('onboarding-loading');
+      el('continueButton').textContent = 'Create player and open workspace';
+      showError(error && error.message ? error.message : 'Coach setup could not be completed.');
     });
-    get('continueButton').addEventListener('click',continueSetup);
-
+  }
+  function bind(){
     document.querySelectorAll('input,select,textarea').forEach(function(control){
-      control.addEventListener('input',function(){
-        collect();
-        updatePlayerPreview();
-      });
-      control.addEventListener('change',function(){
-        collect();
-        updatePlayerPreview();
+      control.addEventListener('input', function(){ collect(); saveDraft('Draft saved on this device'); applyState(); });
+      control.addEventListener('change', function(){ collect(); saveDraft('Draft saved on this device'); applyState(); });
+    });
+    document.querySelectorAll('[data-step-jump]').forEach(function(button){
+      button.addEventListener('click', function(){
+        var target = Number(button.getAttribute('data-step-jump'));
+        if (target <= maxUnlocked) { collect(); saveDraft('Draft saved on this device'); setStep(target); }
       });
     });
-
-    showStep(currentStep);
+    el('backButton').addEventListener('click', function(){ collect(); saveDraft('Draft saved on this device'); setStep(step - 1); });
+    el('exitButton').addEventListener('click', goDashboard);
+    el('skipStepButton').addEventListener('click', skipStep);
+    el('continueButton').addEventListener('click', continueFlow);
   }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',init);
-  }else{
-    init();
+  function init(){
+    if (!isDemo() && window.Auth && window.Auth.isLoggedIn && (!window.Auth.isLoggedIn() || userType() !== 'Coach')) {
+      window.location.href = route('/login');
+      return;
+    }
+    restoreDraft();
+    prefillCoach();
+    applyState();
+    bind();
+    if (window.bindLeagueInput) window.bindLeagueInput('league');
+    setStep(step);
   }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 </script>
 </body>
