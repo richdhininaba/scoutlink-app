@@ -9,7 +9,7 @@
     }
   }());
   var SITE = 'https://www.stratexanalytics.co.uk';
-  var CONTENT_URL = '/assets/stratex-public-v5-pages.json?v=20260808-1';
+  var CONTENT_URL = '/assets/stratex-public-v5-pages.json?v=20260808-2';
   var root = document.getElementById('stratexPublicRoot');
   var route = resolveRoute();
   var jobs = [];
