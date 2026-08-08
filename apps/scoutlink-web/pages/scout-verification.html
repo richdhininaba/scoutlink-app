@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/png" href="/scoutlink-favicon.png">
+<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
+<title>Scout Verification | ScoutLink</title>
+<meta name="description" content="Secure ScoutLink identity and safeguarding verification for reviewed scout access.">
+<link rel="canonical" href="https://www.scoutlink.app/scout-verification">
+<meta name="theme-color" content="#06201A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
+</head>
+<body>
+<a class="slv5-skip" href="#verificationRoot">Skip to verification</a>
+<div class="site door">
+  <header class="door-top">
+    <span class="sl-mark">ScoutLink<small>by Stratex Analytics</small></span>
+    <span class="chip">Secure verification</span>
+  </header>
+  <main class="door-mid">
+    <section class="door-panel wide" id="verificationRoot" aria-live="polite">
+      <div class="sl-message err" id="verificationError" role="alert"></div>
+      <div class="sl-message ok" id="verificationOk" role="status"></div>
+
+      <section class="door-view active" data-verification-view="loading">
+        <span class="sl-eb">Secure scout verification</span>
+        <h1 class="door-h">Checking your link.</h1>
+        <p class="door-sub">The secure request is being checked before uploads are enabled.</p>
+        <div class="loadbar"><i></i></div>
+      </section>
+
+      <section class="door-view" data-verification-view="form">
+        <span class="sl-eb">Stage 2 of 4</span>
+        <h1 class="door-h">Verification documents.</h1>
+        <p class="door-sub" id="verificationApplicant">Two files are required. They go directly to Stratex's restricted verification workflow.</p>
+        <form id="verificationForm" novalidate>
+          <div class="verify-files">
+            <label class="verify-file"><b>Identity document</b><small>Passport or driving licence · PDF, JPG, PNG, DOC or DOCX · max 5MB</small><input type="file" name="proofOfId" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required></label>
+            <label class="verify-file"><b>Safeguarding document</b><small>DBS certificate or equivalent · PDF, JPG, PNG, DOC or DOCX · max 5MB</small><input type="file" name="safeguardingEvidence" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required></label>
+          </div>
+          <button class="sl-btn chalk full" id="verificationSubmit" type="submit"><span>Submit documents</span><i class="sl-spinner"></i></button>
+          <p class="secure-copy">Encrypted in transit · reviewer-only access · retained under the Stratex data policy</p>
+        </form>
+      </section>
+
+      <section class="door-view" data-verification-view="received">
+        <div class="dmsg ok"><b>Documents received.</b> Stratex will review them and email the decision. Nothing further is needed from you now.</div>
+        <span class="sl-eb">Stage 3 of 4</span>
+        <h1 class="door-h">Under review.</h1>
+        <div class="ticket">
+          <div><small>01 Apply</small><b>Done</b></div>
+          <div><small>02 Documents</small><b>Done</b></div>
+          <div><small>03 Review</small><b>In progress</b></div>
+          <div><small>04 Decision</small><b>By email</b></div>
+        </div>
+        <a class="sl-btn ghostw full center" href="/login">Back to scoutlink.app</a>
+      </section>
+
+      <section class="door-view" data-verification-view="unavailable">
+        <span class="sl-eb">Link unavailable</span>
+        <h1 class="door-h">This link is unavailable.</h1>
+        <p class="door-sub">Verification links are single-use and time-limited. Enter the application email to request a fresh one.</p>
+        <form id="verificationResendForm" novalidate>
+          <div class="sl-field"><label class="sl-lab" for="verificationEmail">Application email</label><input class="sl-in" id="verificationEmail" type="email" autocomplete="email" required></div>
+          <button class="sl-btn chalk full" id="verificationResend" type="submit"><span>Send a new link</span><i class="sl-spinner"></i></button>
+        </form>
+        <div class="door-links"><a href="https://www.stratexanalytics.co.uk/contact">Contact support</a></div>
+      </section>
+    </section>
+  </main>
+  <footer class="door-foot">
+    <span>ScoutLink · A Stratex Analytics product</span>
+    <div><a href="https://www.stratexanalytics.co.uk/contact">Help</a><a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a></div>
+  </footer>
+</div>
+<script src="/js/scout-verification-v5.js?v=5.0.0"></script>
+<script src="/js/heap-analytics.js"></script>
+</body>
+</html>
