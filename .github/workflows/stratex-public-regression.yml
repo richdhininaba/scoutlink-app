@@ -1,0 +1,64 @@
+name: Stratex public regression
+
+on:
+  pull_request:
+    paths:
+      - 'apps/stratex-web/**'
+      - '.github/workflows/stratex-public-regression.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/stratex-web/**'
+      - '.github/workflows/stratex-public-regression.yml'
+
+jobs:
+  static-public-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check public renderer syntax
+        run: node --check apps/stratex-web/api/stratex-render.js
+
+      - name: Check public runtime syntax
+        run: node --check apps/stratex-web/js/stratex-public-v5.js
+
+      - name: Check awards runtime syntax
+        run: node --check apps/stratex-web/js/stratex-awards-v1.js
+
+      - name: Check route verifier syntax
+        run: node --check apps/stratex-web/scripts/verify-public-site.mjs
+
+      - name: Validate public route contract
+        run: node apps/stratex-web/scripts/verify-public-site.mjs
+
+      - name: Determine changed files
+        id: changed
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" > /tmp/stratex_changed_files.txt
+          else
+            git diff --name-only HEAD^ HEAD > /tmp/stratex_changed_files.txt
+          fi
+          {
+            echo 'files<<EOF'
+            cat /tmp/stratex_changed_files.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Enforce Showcase change boundary
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          STRATEX_FULL_PUBLIC_REGRESSION: '1'
+        run: node apps/stratex-web/scripts/check-public-change-scope.mjs
