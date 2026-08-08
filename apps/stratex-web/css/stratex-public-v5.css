@@ -602,3 +602,12 @@ button.s-tog:focus-visible{outline:2px solid var(--pitch);outline-offset:3px}
   .s-cta-row .s-btn{width:100%}
   .s-nav-r{min-width:0}
 }
+
+/* v5.1 brand sizing */
+.s-logoimg{width:92px;height:34px}
+.s-logoimg.big{width:104px;height:38px;margin-bottom:12px}
+
+@media(max-width:760px){
+  .s-nav .s-logoimg,.s-nav.m .s-logoimg{width:74px;height:27px;margin-right:auto}
+  .s-logoimg.big{width:104px;height:38px}
+}
