@@ -1,9 +1,13 @@
 'use strict';
 
+/* ScoutLink Coach Desk + Field overlay runtime.
+   The public API is intentionally compatible with the existing Coach pages.
+   Desktop renders drawers/modals; phone layouts turn the same actions into
+   bottom sheets through coach-experience-v9.css. */
 (function () {
   var root = null;
-  var lastFocus = null;
   var toastRegion = null;
+  var lastFocus = null;
   var previousOverflow = '';
 
   function esc(value) {
@@ -18,11 +22,14 @@
     });
   }
 
+  function isPhone() {
+    return document.body && document.body.classList.contains('mobile-site');
+  }
+
   function ensureRoot() {
     if (root && root.parentNode) return root;
     root = document.createElement('div');
     root.className = 'coach-overlay-root';
-    root.setAttribute('aria-live', 'polite');
     document.body.appendChild(root);
     return root;
   }
@@ -38,6 +45,7 @@
   }
 
   function focusables(scope) {
+    if (!scope) return [];
     return Array.prototype.slice.call(scope.querySelectorAll([
       'a[href]',
       'button:not([disabled])',
@@ -51,16 +59,22 @@
   }
 
   function lockBody() {
-    if (document.body.dataset.coachOverlayLocked === '1') return;
+    if (!document.body || document.body.dataset.coachOverlayLocked === '1') return;
     previousOverflow = document.body.style.overflow || '';
     document.body.style.overflow = 'hidden';
     document.body.dataset.coachOverlayLocked = '1';
   }
 
   function unlockBody() {
-    if (document.body.dataset.coachOverlayLocked !== '1') return;
+    if (!document.body || document.body.dataset.coachOverlayLocked !== '1') return;
     document.body.style.overflow = previousOverflow;
     delete document.body.dataset.coachOverlayLocked;
+  }
+
+  function restoreFocus() {
+    if (!lastFocus || typeof lastFocus.focus !== 'function') return;
+    try { lastFocus.focus({ preventScroll: true }); }
+    catch (_) { try { lastFocus.focus(); } catch (ignore) {} }
   }
 
   function closeAll() {
@@ -68,14 +82,12 @@
     root.className = 'coach-overlay-root';
     root.innerHTML = '';
     unlockBody();
-    document.removeEventListener('keydown', onKeydown, true);
-    if (lastFocus && typeof lastFocus.focus === 'function') {
-      try { lastFocus.focus({ preventScroll: true }); } catch (_) { lastFocus.focus(); }
-    }
+    document.removeEventListener('keydown', trapKeydown, true);
+    restoreFocus();
     lastFocus = null;
   }
 
-  function onKeydown(event) {
+  function trapKeydown(event) {
     if (!root || !root.classList.contains('is-open')) return;
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -108,29 +120,35 @@
     closeAll();
     var host = ensureRoot();
     lastFocus = options.trigger || document.activeElement;
+
     var title = options.title || (kind === 'drawer' ? 'Coach panel' : 'Confirm action');
     var body = options.body || options.content || '';
     var footer = options.footer || '';
-    var role = kind === 'drawer' ? 'dialog' : 'alertdialog';
-    var panelClass = kind === 'drawer' ? 'coach-overlay-drawer' : 'coach-overlay-modal';
+    var role = kind === 'modal' ? 'alertdialog' : 'dialog';
+    var panelClass = kind === 'modal' ? 'coach-overlay-modal' : 'coach-overlay-drawer';
+    var phoneClass = isPhone() ? ' is-phone-sheet' : '';
 
-    host.className = 'coach-overlay-root is-open';
+    host.className = 'coach-overlay-root is-open ' + (isPhone() ? 'is-phone' : 'is-desktop');
     host.innerHTML =
       '<button class="coach-overlay-scrim" type="button" data-coach-overlay-close aria-label="Close"></button>' +
-      '<section class="' + panelClass + '" role="' + role + '" aria-modal="true" data-coach-overlay-panel tabindex="-1">' +
+      '<section class="' + panelClass + phoneClass + '" role="' + role + '" aria-modal="true" data-coach-overlay-panel tabindex="-1">' +
+        (isPhone() ? '<div class="coach-overlay-grab" aria-hidden="true"></div>' : '') +
         '<header class="coach-overlay-head"><h2>' + esc(title) + '</h2>' +
-        '<button class="coach-overlay-close" type="button" data-coach-overlay-close aria-label="Close">x</button></header>' +
+          '<button class="coach-overlay-close" type="button" data-coach-overlay-close aria-label="Close">&times;</button></header>' +
         '<div class="coach-overlay-body">' + body + '</div>' +
         (footer ? '<footer class="coach-overlay-foot">' + footer + '</footer>' : '') +
       '</section>';
 
     var panel = host.querySelector('[data-coach-overlay-panel]');
-    if (options.width && kind === 'drawer') panel.style.width = options.width;
+    if (options.width && !isPhone() && panel) panel.style.width = options.width;
+    if (options.className && panel) panel.classList.add(options.className);
+
     host.querySelectorAll('[data-coach-overlay-close]').forEach(function (button) {
       button.addEventListener('click', closeAll);
     });
+
     lockBody();
-    document.addEventListener('keydown', onKeydown, true);
+    document.addEventListener('keydown', trapKeydown, true);
     window.requestAnimationFrame(function () {
       var nodes = focusables(panel);
       (nodes[0] || panel).focus();
@@ -142,6 +160,10 @@
     return mount('drawer', options || {});
   }
 
+  function openSheet(options) {
+    return mount('drawer', options || {});
+  }
+
   function closeDrawer() {
     closeAll();
   }
@@ -150,27 +172,59 @@
     options = options || {};
     var confirmText = options.confirmText || 'Confirm';
     var cancelText = options.cancelText || 'Cancel';
+    var toneClass = options.tone === 'danger' ? 'danger' : 'primary';
+    var typed = String(options.requireText || '').trim();
+    var body = '<p class="coach-overlay-message">' + esc(options.message || 'Are you sure you want to continue?') + '</p>';
+
+    if (typed) {
+      body += '<label class="coach-overlay-field"><span>Type <b>' + esc(typed) + '</b> to confirm</span>' +
+        '<input type="text" data-coach-confirm-text autocomplete="off"></label>';
+    }
+
     var footer =
       '<button class="btn secondary" type="button" data-coach-confirm-cancel>' + esc(cancelText) + '</button>' +
-      '<button class="btn ' + (options.tone === 'danger' ? 'danger' : 'primary') +
-      '" type="button" data-coach-confirm-action>' + esc(confirmText) + '</button>';
-    var body = '<p>' + esc(options.message || 'Are you sure you want to continue?') + '</p>';
+      '<button class="btn ' + toneClass + '" type="button" data-coach-confirm-action' + (typed ? ' disabled' : '') + '>' +
+        esc(confirmText) + '</button>';
+
     var panel = mount('modal', {
       title: options.title || 'Confirm action',
       body: body,
       footer: footer,
-      trigger: options.trigger
+      trigger: options.trigger,
+      className: options.className
     });
+
     var cancel = panel.querySelector('[data-coach-confirm-cancel]');
     var confirm = panel.querySelector('[data-coach-confirm-action]');
+    var typedInput = panel.querySelector('[data-coach-confirm-text]');
+
     if (cancel) cancel.addEventListener('click', closeAll);
-    if (confirm) confirm.addEventListener('click', function () {
-      try {
-        if (typeof options.onConfirm === 'function') options.onConfirm();
-      } finally {
+    if (typedInput && confirm) {
+      typedInput.addEventListener('input', function () {
+        confirm.disabled = typedInput.value !== typed;
+      });
+    }
+    if (confirm) {
+      confirm.addEventListener('click', function () {
+        if (confirm.disabled) return;
+        var result;
+        try {
+          result = typeof options.onConfirm === 'function' ? options.onConfirm() : null;
+        } catch (error) {
+          showCoachToast(error.message || 'The action could not be completed.', { tone: 'danger' });
+          return;
+        }
+        if (result && typeof result.then === 'function') {
+          confirm.disabled = true;
+          result.then(function () { closeAll(); }).catch(function (error) {
+            confirm.disabled = false;
+            showCoachToast(error && error.message ? error.message : 'The action could not be completed.', { tone: 'danger' });
+          });
+          return;
+        }
         closeAll();
-      }
-    });
+      });
+    }
     return panel;
   }
 
@@ -183,23 +237,27 @@
     var region = ensureToastRegion();
     var node = document.createElement('div');
     node.className = 'coach-overlay-toast';
-    node.setAttribute('role', 'status');
+    node.setAttribute('role', options.tone === 'danger' ? 'alert' : 'status');
     if (options.tone) node.dataset.tone = options.tone;
+
     var action = '';
     if (options.href && options.label) {
       action = '<a href="' + esc(options.href) + '">' + esc(options.label) + '</a>';
     } else if (options.label && typeof options.onAction === 'function') {
       action = '<button type="button" data-coach-toast-action>' + esc(options.label) + '</button>';
     }
+
     node.innerHTML = '<span>' + esc(message || '') + '</span>' + action;
     region.appendChild(node);
-    var button = node.querySelector('[data-coach-toast-action]');
-    if (button) {
-      button.addEventListener('click', function () {
+
+    var actionButton = node.querySelector('[data-coach-toast-action]');
+    if (actionButton) {
+      actionButton.addEventListener('click', function () {
         options.onAction();
         node.remove();
       });
     }
+
     window.setTimeout(function () {
       if (node.parentNode) node.remove();
     }, options.duration || 4200);
@@ -208,13 +266,16 @@
 
   window.CoachOverlays = {
     openDrawer: openDrawer,
+    openSheet: openSheet,
     closeDrawer: closeDrawer,
+    closeAll: closeAll,
     openConfirmModal: openConfirmModal,
     closeConfirmModal: closeConfirmModal,
     showCoachToast: showCoachToast
   };
 
   window.openDrawer = openDrawer;
+  window.openCoachSheet = openSheet;
   window.closeDrawer = closeDrawer;
   window.openConfirmModal = openConfirmModal;
   window.closeConfirmModal = closeConfirmModal;
