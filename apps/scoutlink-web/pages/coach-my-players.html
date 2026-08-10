@@ -1,64 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>My Players | ScoutLink</title>
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<title>My Players - ScoutLink</title>
 <link rel="stylesheet" href="/css/variables.css">
 <link rel="stylesheet" href="/css/main.css">
-<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=12.0.0">
+<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=13.0.0">
 </head>
-<body class="coach-product">
-<div class="dashboard">
-  <div class="dashboard-main">
-    <main class="page-content" id="coachMyPlayersApp">
-      <section class="flex player-toolbar" aria-label="Player filters">
-        <input class="searchbox" id="searchInput" type="search" placeholder="Search players…">
-        <button class="chip on" type="button" data-position-chip="">All positions</button>
-        <button class="chip" type="button" data-position-chip="Goalkeeper">GK</button>
-        <button class="chip" type="button" data-position-chip="Defender">DEF</button>
-        <button class="chip" type="button" data-position-chip="Midfielder">MID</button>
-        <button class="chip" type="button" data-position-chip="Forward">ATT</button>
-        <select id="positionFilter" hidden><option value=""></option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select>
-        <select id="evidenceFilter" class="chip on" aria-label="Evidence">
-          <option value="">Evidence: all</option><option value="needs">Evidence: needs work</option><option value="growing">Evidence: growing</option><option value="strong">Evidence: strong</option>
-        </select>
-        <select id="sortSelect" class="chip" aria-label="Sort players">
-          <option value="evidence">Sorted: Evidence ↑</option><option value="overall">Overall</option><option value="name">Name</option><option value="value">Value</option><option value="appearances">Apps</option><option value="goals">Goals</option>
-        </select>
-        <span class="right flex">
-          <button class="btn sm gh" id="coachV8ExportPlayers" type="button">Export CSV</button>
-          <a class="btn sm spend" href="/coach/add-player">Add player</a>
-        </span>
-      </section>
-
-      <section class="panel rule squad-panel">
-        <div class="ph3"><b id="playersListTitle">My Players</b><span class="m" id="playersListMeta">Loading squad…</span></div>
-        <div id="playersContainer" class="table-wrap" aria-live="polite"><div class="mut" style="padding:16px">Loading squad profiles…</div></div>
-      </section>
-
-      <div hidden>
-        <span id="kpiTotal">--</span><span id="kpiTotalSub"></span>
-        <span id="kpiAverage">--</span><span id="kpiAverageSub"></span>
-        <span id="kpiEvidence">--</span><span id="kpiEvidenceSub"></span>
-        <span id="kpiValue">--</span><span id="kpiValueSub"></span>
-      </div>
-    </main>
-  </div>
-</div>
+<body class="coach-product" data-coach-page="my-players">
+<div class="coach-desk"><div class="screen"><div class="shell" data-coach-shell data-active="My Players" data-title="My Players" data-tbx="Export CSV" data-tbx-id="coachExportPlayers" data-tbx-spend="Add player" data-tbx-spend-href="/coach/add-player"><main class="cv" id="coachDeskPage"><div class="coach-page-loading">Loading my players…</div></main></div></div></div>
+<div class="coach-field"><div class="scr" data-field-tab="Squad"><main class="body" id="coachFieldPage"><div class="coach-page-loading">Loading my players…</div></main><nav class="tabs"></nav><div class="homebar"></div></div></div>
 <script src="/js/main.js"></script>
 <script src="/js/heap-analytics.js"></script>
-<script src="/js/coach-overlays-v1.js?v=2.0.0"></script>
-<script src="/js/coach-my-players-v3.js?v=9.2.0-my-players"></script>
-<script>
-document.addEventListener('click',function(e){
-  var b=e.target.closest('[data-position-chip]'); if(!b)return;
-  document.querySelectorAll('[data-position-chip]').forEach(function(x){x.classList.toggle('on',x===b);});
-  var s=document.getElementById('positionFilter'); s.value=b.getAttribute('data-position-chip')||''; s.dispatchEvent(new Event('change',{bubbles:true}));
-});
-</script>
-<script src="/js/coach-v2.js?v=12.0.0"></script>
+<script src="/js/coach-v2.js?v=13.0.0"></script>
+<script src="/js/coach-pages-v1.js?v=13.0.0"></script>
 </body>
 </html>
