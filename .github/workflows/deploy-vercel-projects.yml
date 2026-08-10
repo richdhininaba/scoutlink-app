@@ -124,11 +124,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Deploy ScoutLink Web to production
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
-        working-directory: apps/scoutlink-web
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
 
   deploy_stratex_web:
@@ -174,11 +173,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Deploy Stratex Web to production
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
-        working-directory: apps/stratex-web
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
 
   deploy_scoutlink_api:
@@ -224,9 +222,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Deploy ScoutLink API to production
         if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
-        working-directory: backend
         run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
