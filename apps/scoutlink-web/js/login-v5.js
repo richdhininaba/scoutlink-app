@@ -1,8 +1,40 @@
-'use strict';
+\'use strict\';
 (function () {
+  var CANONICAL_API = 'https://scoutlink-api.vercel.app';
+
+  function shouldUseSameOriginApi() {
+    var host = String(window.location.hostname || '').toLowerCase();
+    return host === 'scoutlink.app' ||
+      host === 'www.scoutlink.app' ||
+      host.endsWith('.vercel.app') ||
+      host.endsWith('.app.github.dev');
+  }
+
   var API = (function () {
-    try { return localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app'; }
-    catch (_) { return 'https://scoutlink-api.vercel.app'; }
+    var host = String(window.location.hostname || '').toLowerCase();
+    var isProduction = host === 'scoutlink.app' || host === 'www.scoutlink.app';
+
+    /*
+     * Production login must not trust a browser-persisted API override.
+     * A stale sl_api_url can point login at an old preview/local API and make
+     * fetch() fail before the request reaches the live ScoutLink API.
+     *
+     * Keep the canonical value in storage so the signed-in ScoutLink pages
+     * that still read sl_api_url also recover after a successful login page load.
+     */
+    if (isProduction) {
+      try { localStorage.setItem('sl_api_url', CANONICAL_API); } catch (_) {}
+    }
+
+    /*
+     * On production, Vercel previews and Codespaces running `vercel dev`, use
+     * the ScoutLink web project's same-origin /api proxy. This removes browser
+     * CORS / stale-host failure modes from the login request itself.
+     */
+    if (shouldUseSameOriginApi()) return '';
+
+    try { return localStorage.getItem('sl_api_url') || CANONICAL_API; }
+    catch (_) { return CANONICAL_API; }
   }()).replace(/\/+$/, '');
 
   var pendingLogin = null;
@@ -79,12 +111,20 @@
   async function post(path, body, token) {
     var headers = { 'Content-Type':'application/json' };
     if (token) headers.Authorization = 'Bearer ' + token;
-    var response = await fetch(API + path, {
-      method:'POST',
-      headers:headers,
-      credentials:'include',
-      body:JSON.stringify(body || {})
-    });
+
+    var response;
+    try {
+      response = await fetch(API + path, {
+        method:'POST',
+        headers:headers,
+        credentials:'include',
+        body:JSON.stringify(body || {})
+      });
+    } catch (error) {
+      console.error('[ScoutLink login] API request failed', error);
+      throw new Error('ScoutLink could not reach the sign-in service. Please try again.');
+    }
+
     var json = await response.json().catch(function () { return {}; });
     if (!response.ok) throw new Error(json.error || 'The request could not be completed.');
     return json;
