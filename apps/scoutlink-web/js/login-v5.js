@@ -1,4 +1,4 @@
-\'use strict\';
+'use strict';
 (function () {
   var CANONICAL_API = 'https://scoutlink-api.vercel.app';
 
