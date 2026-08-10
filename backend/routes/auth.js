@@ -136,20 +136,18 @@ async function demoAccount(accountType, demoUserId) {
 
 async function buildExperienceList(user) {
   if (user.accountType === 'Stratex') {
-    const [demoCoaches, demoScouts, demoPlayers] = await Promise.all([
+    const [demoCoaches, demoScouts] = await Promise.all([
       demoAccountOptions('Coach'),
-      demoAccountOptions('Scout'),
-      demoAccountOptions('Player')
+      demoAccountOptions('Scout')
     ]);
     return [
       { accountType: 'Stratex', label: 'Stratex Admin', description: accountDescription('Stratex'), demo: false, admin: true },
       { accountType: 'Coach', label: 'Coach demo', description: accountDescription('Coach', true), demo: true, demoUsers: demoCoaches },
-      { accountType: 'Scout', label: 'Scout demo', description: accountDescription('Scout', true), demo: true, demoUsers: demoScouts },
-      { accountType: 'Player', label: 'Player demo', description: accountDescription('Player', true), demo: true, demoUsers: demoPlayers }
+      { accountType: 'Scout', label: 'Scout demo', description: accountDescription('Scout', true), demo: true, demoUsers: demoScouts }
     ];
   }
   const accounts = await findActiveAccounts(user.email);
-  return accounts.map(a => ({
+  return accounts.filter(a => a.accountType !== 'Player').map(a => ({
     accountType: a.accountType,
     label: a.accountType,
     description: accountDescription(a.accountType),
