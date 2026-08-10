@@ -16,15 +16,45 @@
     document.querySelectorAll('[data-showcase-countdown]').forEach(function (node) {
       var days = daysUntil(node.getAttribute('data-showcase-countdown'));
       if (days == null) return;
-      node.textContent = String(days);
+
+      var nextValue = String(days);
+
+      /*
+       * Do not write the same text back into the DOM.
+       * Replacing textContent creates a childList mutation, so writing on every
+       * MutationObserver callback would create a self-sustaining observer loop.
+       */
+      if (node.textContent !== nextValue) {
+        node.textContent = nextValue;
+      }
     });
+  }
+
+  function nodeContainsCountdown(node) {
+    if (!node || node.nodeType !== 1) return false;
+
+    if (typeof node.matches === 'function' && node.matches('[data-showcase-countdown]')) {
+      return true;
+    }
+
+    return typeof node.querySelector === 'function' &&
+      !!node.querySelector('[data-showcase-countdown]');
   }
 
   updateCountdowns();
 
   var root = document.getElementById('stratexPublicRoot');
+
   if (root && window.MutationObserver) {
-    new MutationObserver(updateCountdowns).observe(root, {
+    new MutationObserver(function (mutations) {
+      var countdownAdded = mutations.some(function (mutation) {
+        return Array.prototype.some.call(mutation.addedNodes || [], nodeContainsCountdown);
+      });
+
+      if (countdownAdded) {
+        updateCountdowns();
+      }
+    }).observe(root, {
       childList: true,
       subtree: true
     });
