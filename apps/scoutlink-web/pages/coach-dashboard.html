@@ -1,81 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>Dashboard | ScoutLink</title>
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<title>Coach dashboard - ScoutLink</title>
 <link rel="stylesheet" href="/css/variables.css">
 <link rel="stylesheet" href="/css/main.css">
-<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=12.0.0">
+<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=13.0.0">
 </head>
-<body class="coach-product">
-<div class="dashboard">
-  <div class="dashboard-main">
-    <main class="page-content" id="coachDashboardApp">
-
-      <section class="dash-ink">
-        <div class="ck">Coach workspace</div>
-        <h1 id="dashboardGreeting">Afternoon, Coach</h1>
-        <p>Your weekend, turned into evidence — the gaps that need you first.</p>
-        <div class="meta">
-          <span id="dashboardTeamMeta">Your team</span>
-          <span id="dashboardDateMeta">Today</span>
-        </div>
-      </section>
-
-      <section class="g4" aria-label="Dashboard summary">
-        <article class="panel tl"><div class="k">Squad</div><div class="n" id="kpiPlayers">--</div><div class="s" id="kpiPlayersSub">Accessible player profiles</div></article>
-        <article class="panel tl"><div class="k">Evidence complete</div><div class="n" id="kpiEvidence">--</div><div class="s" id="kpiEvidenceSub">Average profile completion</div></article>
-        <article class="panel tl"><div class="k">Match Facts coverage</div><div class="n" id="kpiCoverage">--</div><div class="s" id="kpiCoverageSub">Completed fixtures recorded</div></article>
-        <article class="panel tl"><div class="k">Squad value signal</div><div class="n" id="kpiValueSignal">--</div><div class="s" id="kpiValueSignalSub">Evidence-led squad signal</div></article>
-      </section>
-
-      <section class="dash-cols">
-        <div class="dash-stack">
-          <article class="panel rule">
-            <div class="ph3"><b>Needs attention</b><span class="m">the next fix, named</span><span class="r"><a class="btn sm gh" href="/coach/notifications">All notifications</a></span></div>
-            <div id="attentionQueue"><div class="mut">Loading attention queue…</div></div>
-          </article>
-
-          <article class="panel rule">
-            <div class="ph3"><b>Evidence by player</b><span class="m">weakest first</span><span class="r"><a class="btn sm gh" href="/coach/my-players">Manage squad</a></span></div>
-            <div id="evidenceByPlayer"><div class="mut">Loading evidence…</div></div>
-          </article>
-        </div>
-
-        <div class="dash-stack">
-          <article class="panel rule">
-            <div class="ph3"><b>Upcoming fixtures</b><span class="r"><a class="btn sm gh" href="/coach/fixtures">View fixtures</a></span></div>
-            <div id="dashboardNextFixture" style="display:none"></div>
-            <div id="upcomingFixtures"><div class="mut">Loading fixtures…</div></div>
-          </article>
-
-          <article class="panel rule">
-            <div class="ph3"><b>Scout activity</b><span class="m">reviewed contact only</span><span class="r"><a class="btn sm gh" href="/coach/chat">Open chat</a></span></div>
-            <div id="recentScoutActivity"><div class="mut">Loading scout activity…</div></div>
-          </article>
-
-          <article class="panel rule">
-            <div class="ph3"><b>Season summary</b><span class="m">current evidence picture</span></div>
-            <div id="seasonSummaryCurrent"><div class="mut">Loading season picture…</div></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="panel rule" id="prevSeasonsCard" style="margin-top:12px">
-        <div class="ph3"><b>Previous seasons</b><span class="m">archive</span></div>
-        <div id="prevSeasonsList"></div>
-      </section>
-    </main>
-  </div>
-</div>
-<div id="seasonSummaryModal" hidden><div id="summaryContent"></div></div>
+<body class="coach-product" data-coach-page="dashboard">
+<div class="coach-desk"><div class="screen"><div class="shell" data-coach-shell data-active="Dashboard" data-title="Dashboard"><main class="cv" id="coachDeskPage"><div class="coach-page-loading">Loading dashboard…</div></main></div></div></div>
+<div class="coach-field"><div class="scr" data-field-tab="Today"><main class="body" id="coachFieldPage"><div class="coach-page-loading">Loading dashboard…</div></main><nav class="tabs"></nav><div class="homebar"></div></div></div>
 <script src="/js/main.js"></script>
 <script src="/js/heap-analytics.js"></script>
-<script src="/js/coach-overlays-v1.js?v=2.0.0"></script>
-<script src="/js/coach-dashboard-v3.js?v=9.1.0-dashboard"></script>
-<script src="/js/coach-v2.js?v=12.0.0"></script>
+<script src="/js/coach-v2.js?v=13.0.0"></script>
+<script src="/js/coach-pages-v1.js?v=13.0.0"></script>
 </body>
 </html>
