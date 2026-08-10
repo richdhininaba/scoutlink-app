@@ -3,124 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex,nofollow">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>My players - ScoutLink</title>
+<title>My Players - ScoutLink</title>
 <link rel="stylesheet" href="/css/variables.css">
 <link rel="stylesheet" href="/css/main.css">
-<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=1.0.0">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};heap.load("3441720574");
-</script>
+<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=12.0.0">
 </head>
-<body class="coach-exact coach-page-my-players">
+<body class="coach-product">
 <div class="dashboard">
-  <nav class="sidebar" id="sidebar" aria-label="Coach navigation">
-    <div class="sidebar-logo"></div>
-    <div class="sidebar-nav" id="sidebarNav"></div>
-    <div class="sidebar-user" id="sidebarUser"></div>
-  </nav>
-
   <div class="dashboard-main">
-    <header class="topbar"></header>
-
     <main class="page-content" id="coachMyPlayersApp">
-      <section class="coach-squad-head" aria-labelledby="playersHeroTitle">
-        <div>
-          <span class="coach-kicker">Coach workspace</span>
-          <h1 id="playersHeroTitle">Your squad, clearly organised.</h1>
-          <p>Search, review and update player evidence. Weak profiles stay visible instead of disappearing into a table.</p>
-        </div>
-        <div class="coach-squad-actions">
-          <a class="btn btn-primary" href="/coach/add-player">Add player</a>
-          <a class="btn" href="/coach/bulk-add-players">Bulk import</a>
-        </div>
+      <section class="flex player-toolbar" aria-label="Player filters">
+        <input class="searchbox" id="searchInput" type="search" placeholder="Search players…">
+        <button class="chip on" type="button" data-position-chip="">All positions</button>
+        <button class="chip" type="button" data-position-chip="Goalkeeper">GK</button>
+        <button class="chip" type="button" data-position-chip="Defender">DEF</button>
+        <button class="chip" type="button" data-position-chip="Midfielder">MID</button>
+        <button class="chip" type="button" data-position-chip="Forward">ATT</button>
+        <select id="positionFilter" hidden><option value=""></option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select>
+        <select id="evidenceFilter" class="chip on" aria-label="Evidence">
+          <option value="">Evidence: all</option><option value="needs">Evidence: needs work</option><option value="growing">Evidence: growing</option><option value="strong">Evidence: strong</option>
+        </select>
+        <select id="sortSelect" class="chip" aria-label="Sort players">
+          <option value="evidence">Sorted: Evidence ↑</option><option value="overall">Overall</option><option value="name">Name</option><option value="value">Value</option><option value="appearances">Apps</option><option value="goals">Goals</option>
+        </select>
+        <span class="right flex">
+          <button class="btn sm gh" id="coachV8ExportPlayers" type="button">Export CSV</button>
+          <a class="btn sm spend" href="/coach/add-player">Add player</a>
+        </span>
       </section>
 
-      <section class="coach-squad-kpis" aria-label="Squad summary">
-        <article class="coach-squad-kpi">
-          <span>Players</span>
-          <strong id="kpiTotal">--</strong>
-          <p id="kpiTotalSub">Loading squad</p>
-        </article>
-        <article class="coach-squad-kpi">
-          <span>Average overall</span>
-          <strong id="kpiAverage">--</strong>
-          <p id="kpiAverageSub">Loading ratings</p>
-        </article>
-        <article class="coach-squad-kpi">
-          <span>Evidence complete</span>
-          <strong id="kpiEvidence">--</strong>
-          <p id="kpiEvidenceSub">Loading evidence</p>
-        </article>
-        <article class="coach-squad-kpi">
-          <span>Squad value</span>
-          <strong id="kpiValue">--</strong>
-          <p id="kpiValueSub">Loading value</p>
-        </article>
+      <section class="panel rule squad-panel">
+        <div class="ph3"><b id="playersListTitle">My Players</b><span class="m" id="playersListMeta">Loading squad…</span></div>
+        <div id="playersContainer" class="table-wrap" aria-live="polite"><div class="mut" style="padding:16px">Loading squad profiles…</div></div>
       </section>
 
-      <section class="coach-squad-toolbar coach-players-filters" aria-label="Search and filter players">
-        <div class="coach-filter">
-          <label for="searchInput">Search</label>
-          <input id="searchInput" type="search" placeholder="Search players…">
-        </div>
-        <div class="coach-filter">
-          <label for="positionFilter">Position</label>
-          <select id="positionFilter">
-            <option value="">All positions</option>
-            <option value="Goalkeeper">Goalkeepers</option>
-            <option value="Defender">Defenders</option>
-            <option value="Midfielder">Midfielders</option>
-            <option value="Forward">Forwards</option>
-          </select>
-        </div>
-        <div class="coach-filter">
-          <label for="evidenceFilter">Evidence</label>
-          <select id="evidenceFilter">
-            <option value="">All evidence</option>
-            <option value="strong">Strong evidence</option>
-            <option value="growing">Growing evidence</option>
-            <option value="needs">Needs evidence</option>
-          </select>
-        </div>
-        <div class="coach-filter">
-          <label for="sortSelect">Sort</label>
-          <select id="sortSelect">
-            <option value="overall">Overall</option>
-            <option value="evidence">Evidence</option>
-            <option value="name">Name</option>
-            <option value="value">Value</option>
-            <option value="appearances">Apps</option>
-            <option value="goals">Goals</option>
-          </select>
-        </div>
-        <button class="btn" id="coachV8ExportPlayers" type="button">Export CSV</button>
-      </section>
-
-      <section class="coach-panel coach-rule coach-squad-list-panel" aria-label="Player list">
-        <header class="coach-panel-head">
-          <div>
-            <span class="coach-kicker">Squad profiles</span>
-            <h2 id="playersListTitle">Loading players</h2>
-            <p id="playersListMeta">Full team sheet on Desk. Compact evidence records on Field.</p>
-          </div>
-        </header>
-        <div class="coach-panel-body">
-          <div id="playersContainer" aria-live="polite">
-            <div class="cv9-loading">Loading squad profiles</div>
-          </div>
-        </div>
-      </section>
+      <div hidden>
+        <span id="kpiTotal">--</span><span id="kpiTotalSub"></span>
+        <span id="kpiAverage">--</span><span id="kpiAverageSub"></span>
+        <span id="kpiEvidence">--</span><span id="kpiEvidenceSub"></span>
+        <span id="kpiValue">--</span><span id="kpiValueSub"></span>
+      </div>
     </main>
   </div>
 </div>
-
 <script src="/js/main.js"></script>
 <script src="/js/heap-analytics.js"></script>
 <script src="/js/coach-overlays-v1.js?v=2.0.0"></script>
-<script src="/js/coach-v2.js?v=11.0.0-exact"></script>
 <script src="/js/coach-my-players-v3.js?v=9.2.0-my-players"></script>
+<script>
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-position-chip]'); if(!b)return;
+  document.querySelectorAll('[data-position-chip]').forEach(function(x){x.classList.toggle('on',x===b);});
+  var s=document.getElementById('positionFilter'); s.value=b.getAttribute('data-position-chip')||''; s.dispatchEvent(new Event('change',{bubbles:true}));
+});
+</script>
+<script src="/js/coach-v2.js?v=12.0.0"></script>
 </body>
 </html>
