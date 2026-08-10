@@ -12,8 +12,6 @@
 
   var API = (function () {
     var host = String(window.location.hostname || '').toLowerCase();
-    var isProduction = host === 'scoutlink.app' || host === 'www.scoutlink.app';
-
     /*
      * Production login must not trust a browser-persisted API override.
      * A stale sl_api_url can point login at an old preview/local API and make
@@ -22,16 +20,17 @@
      * Keep the canonical value in storage so the signed-in ScoutLink pages
      * that still read sl_api_url also recover after a successful login page load.
      */
-    if (isProduction) {
-      try { localStorage.setItem('sl_api_url', CANONICAL_API); } catch (_) {}
-    }
-
     /*
      * On production, Vercel previews and Codespaces running `vercel dev`, use
-     * the ScoutLink web project's same-origin /api proxy. This removes browser
-     * CORS / stale-host failure modes from the login request itself.
+     * the ScoutLink web project's same-origin /api proxy. Persist the current
+     * web origin as sl_api_url as well so signed-in pages that still read that
+     * value also stay on the same-origin proxy instead of switching back to the
+     * separate API hostname.
      */
-    if (shouldUseSameOriginApi()) return '';
+    if (shouldUseSameOriginApi()) {
+      try { localStorage.setItem('sl_api_url', window.location.origin); } catch (_) {}
+      return '';
+    }
 
     try { return localStorage.getItem('sl_api_url') || CANONICAL_API; }
     catch (_) { return CANONICAL_API; }
