@@ -1,194 +1,21 @@
-﻿<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8">
-<meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Settings | ScoutLink</title>
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Settings - ScoutLink</title>
-<link rel="stylesheet" href="../css/variables.css">
-<link rel="stylesheet" href="../css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-.settings-shell{max-width:760px;margin:0 auto}
-.settings-panel{margin-bottom:20px}
-.settings-body{padding:0 20px 20px}
-.settings-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;flex-wrap:wrap}
-.settings-title{font-weight:700;color:#fff}
-.settings-copy{font-size:12px;color:#8b949e;margin-top:3px}
-.form-field{width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px 14px;color:#fff;font-size:14px;font-family:inherit;outline:none}
-.form-field:focus{border-color:#1d9e75}
-.field-label{display:block;font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:800}
-.seg{display:flex;gap:4px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:4px}
-.seg button{border:none;background:transparent;color:#8b949e;border-radius:6px;padding:7px 13px;font-weight:800;cursor:pointer}
-.seg button.active{background:#1d9e75;color:#001b12}
-.tgl{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
-.tgl input{opacity:0;width:0;height:0}
-.tgl-slider{position:absolute;cursor:pointer;inset:0;background:#30363d;border-radius:24px;transition:.3s}
-.tgl-slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#8b949e;border-radius:50%;transition:.3s}
-input:checked+.tgl-slider{background:#1d9e75}
-input:checked+.tgl-slider:before{transform:translateX(20px);background:#001b12}
-.coach-list{display:grid;gap:10px;margin-top:14px}
-.coach-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:12px;flex-wrap:wrap}
-.coach-row b{color:#fff}
-.coach-row span{font-size:12px;color:#8b949e}
-.coach-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-@media(max-width:640px){.coach-form-grid{grid-template-columns:1fr}}
-</style>
-<link rel="stylesheet" href="../css/coach-v2.css">
-<script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
-</script>
-</head><body>
-<div class="dashboard">
-<nav class="sidebar" id="sidebar"><div class="sidebar-logo"><a href="../index.html" style="font-size:20px;font-weight:900">ScoutLink</a></div><div class="sidebar-nav" id="sidebarNav"></div><div class="sidebar-user" id="sidebarUser"></div></nav>
-<div class="dashboard-main">
-<div class="topbar"><span class="topbar-title">Settings</span><div class="topbar-right"><button class="btn btn-sm btn-ghost" onclick="logout()">Sign Out</button></div></div>
-<div class="page-content">
-<div id="toast" style="display:none;position:fixed;top:20px;right:24px;z-index:9999;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)"></div>
-<div class="settings-shell">
-
-<div class="table-card settings-panel">
-<div class="table-header"><h3>Appearance</h3></div>
-<div class="settings-body">
-<div class="settings-row">
-<div><div class="settings-title">Theme</div><div class="settings-copy">Choose dark or light mode for your coach account.</div></div>
-<div class="seg" role="group" aria-label="Theme"><button type="button" id="darkThemeBtn" class="active">Dark</button><button type="button" id="lightThemeBtn">Light</button></div>
-</div>
-</div></div>
-
-<div class="table-card settings-panel" id="teamCoaches" style="display:none">
-<div class="table-header"><h3>Team Coaches</h3></div>
-<div class="settings-body">
-<div class="settings-row">
-<div><div class="settings-title">Invite a coach</div><div class="settings-copy">New coaches join your team and receive a login-code email.</div></div>
-</div>
-<div class="coach-form-grid">
-<div><label class="field-label">First name</label><input class="form-field" id="coachFirstName" placeholder="First name"></div>
-<div><label class="field-label">Last name</label><input class="form-field" id="coachLastName" placeholder="Last name"></div>
-<div><label class="field-label">Email</label><input class="form-field" id="coachEmail" type="email" placeholder="coach@team.co.uk"></div>
-<div><label class="field-label">Phone</label><input class="form-field" id="coachPhone" type="tel" placeholder="+44..."></div>
-</div>
-<div class="settings-row" style="margin-top:12px">
-<div><div class="settings-title">Super user</div><div class="settings-copy">Can add coaches and reassign players across this team.</div></div>
-<label class="tgl"><input type="checkbox" id="coachIsSuperUser"><span class="tgl-slider"></span></label>
-</div>
-<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap"><button class="btn btn-primary" id="inviteCoachBtn">Invite Coach</button><span id="coachInviteMsg" style="font-size:13px;color:#8b949e"></span></div>
-<div class="coach-list" id="teamCoachList"></div>
-</div></div>
-
-<div class="table-card settings-panel">
-<div class="table-header"><h3>Change Password</h3></div>
-<div class="settings-body">
-<div style="margin-bottom:14px"><label class="field-label">New Password</label><input type="password" id="newPassword" placeholder="Minimum 8 characters" class="form-field"></div>
-<div style="margin-bottom:16px"><label class="field-label">Confirm Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password" class="form-field"></div>
-<button class="btn btn-primary" id="changePassBtn">Update Password</button>
-</div></div>
-
-<div class="table-card settings-panel">
-<div class="table-header"><h3>Notification Preferences</h3></div>
-<div class="settings-body">
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n1" checked><span class="tgl-slider"></span></label><div><div class="settings-title">Email Notifications</div><div class="settings-copy">Receive fixture, player and message updates by email</div></div></div>
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n2" checked><span class="tgl-slider"></span></label><div><div class="settings-title">In-App Notifications</div><div class="settings-copy">See notifications in the platform</div></div></div>
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:#0d1117;border-radius:8px"><label class="tgl"><input type="checkbox" id="n3"><span class="tgl-slider"></span></label><div><div class="settings-title">Platform Updates</div><div class="settings-copy">Product announcements and service notices</div></div></div>
-<button class="btn btn-primary" id="savePrefsBtn">Save Preferences</button>
-</div></div>
-
-<div class="table-card" style="border:1.5px solid rgba(220,38,38,.3)">
-<div class="table-header"><h3 style="color:#EF5350">Danger Zone</h3></div>
-<div class="settings-body">
-<p style="color:#8b949e;margin-bottom:16px;font-size:14px">These actions are permanent. Contact support if you need help.</p>
-<button class="btn" style="background:rgba(220,38,38,.15);color:#EF5350;border:1px solid rgba(220,38,38,.3)" id="deactivateBtn">Deactivate Account</button>
-</div></div>
-
-</div></div></div></div>
-
-<script src="../js/scout-nav.js"></script>
-<script src="../js/main.js"></script>
-<script src="../js/heap-analytics.js"></script>
-<script src="../js/coach-v2.js"></script>
-<script>
-function initNav(){
-  if(!Auth.isLoggedIn()||Auth.type!=='Coach'){navigateClean('login.html');return;}
-  if(typeof buildScoutNav==='function') buildScoutNav('sidebarNav','Coach');
-  var u=Auth.user,uel=document.getElementById('sidebarUser');
-  if(uel&&u)uel.innerHTML='<div class="user-info"><div class="user-avatar" style="background:#1d9e75;color:#000">'+initials(u.firstName,u.lastName)+'</div><div><div class="user-name">'+(u.firstName||'')+' '+(u.lastName||'')+'</div><div class="user-role">Coach</div></div></div>';
-  updateNotifBadge();
-}
-function logout(){logoutToLogin();}
-function showToast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;t.style.display='block';t.style.background=type==='error'?'#EF5350':'#1d9e75';t.style.color='#fff';
-  setTimeout(function(){t.style.display='none';},3000);
-}
-function setTheme(theme){
-  theme=theme==='light'?'light':'dark';
-  applyTheme(theme);
-  document.getElementById('darkThemeBtn').classList.toggle('active',theme==='dark');
-  document.getElementById('lightThemeBtn').classList.toggle('active',theme==='light');
-  showToast('Theme saved.','success');
-}
-function changePassword(){
-  var np=document.getElementById('newPassword').value;
-  var cp=document.getElementById('confirmPassword').value;
-  if(!np||np.length<8){showToast('Password must be at least 8 characters.','error');return;}
-  if(np!==cp){showToast('Passwords do not match.','error');return;}
-  api('POST','/api/auth/change-password',{password:np}).then(function(){
-    showToast('Password updated.','success');
-    document.getElementById('newPassword').value='';
-    document.getElementById('confirmPassword').value='';
-  }).catch(function(e){showToast('Error: '+e.message,'error');});
-}
-function coachName(c){return ((c.first_name||'')+' '+(c.last_name||'')).trim()||c.email||'Coach';}
-function renderTeamCoaches(list){
-  var box=document.getElementById('teamCoachList');
-  if(!box)return;
-  if(!list.length){box.innerHTML='<div style="color:#8b949e;font-size:13px;padding:10px">No other coaches have been added yet.</div>';return;}
-  box.innerHTML=list.map(function(c){
-    return '<div class="coach-row"><div><b>'+coachName(c)+'</b><br><span>'+((c.email||'')+(c.registration_complete?'':' - invite pending'))+'</span></div><span class="badge '+(c.is_super_user?'badge-green':'badge-blue')+'">'+(c.is_super_user?'Super user':'Coach')+'</span></div>';
-  }).join('');
-}
-function loadTeamCoachesPanel(){
-  api('GET','/api/coaches/profile').then(function(p){
-    var me=p.coach||{};
-    if(!me.is_super_user)return;
-    document.getElementById('teamCoaches').style.display='block';
-    api('GET','/api/coaches/team-coaches').then(function(d){renderTeamCoaches(d.data||d.coaches||[]);}).catch(function(e){document.getElementById('teamCoachList').innerHTML='<div style="color:#f44336;font-size:13px;padding:10px">'+e.message+'</div>';});
-  }).catch(function(){});
-}
-function inviteCoach(){
-  var msg=document.getElementById('coachInviteMsg');
-  var body={
-    firstName:document.getElementById('coachFirstName').value.trim(),
-    lastName:document.getElementById('coachLastName').value.trim(),
-    emailAddr:document.getElementById('coachEmail').value.trim(),
-    phone:document.getElementById('coachPhone').value.trim()||null,
-    isSuperUser:document.getElementById('coachIsSuperUser').checked
-  };
-  if(!body.firstName||!body.lastName||!body.emailAddr){msg.textContent='First name, last name and email are required.';msg.style.color='#f44336';return;}
-  msg.textContent='Inviting coach...';msg.style.color='#8b949e';
-  api('POST','/api/coaches/add-coach',body).then(function(d){
-    msg.textContent=d.emailSent?'Coach invited and email sent.':'Coach created. Email could not be confirmed.';
-    msg.style.color=d.emailSent?'#1d9e75':'#FFC107';
-    ['coachFirstName','coachLastName','coachEmail','coachPhone'].forEach(function(id){document.getElementById(id).value='';});
-    document.getElementById('coachIsSuperUser').checked=false;
-    loadTeamCoachesPanel();
-  }).catch(function(e){msg.textContent=e.message;msg.style.color='#f44336';});
-}
-document.addEventListener('DOMContentLoaded',function(){
-  initNav();
-  var theme=localStorage.getItem('sl_theme')||'light';
-  document.getElementById('darkThemeBtn').classList.toggle('active',theme!=='light');
-  document.getElementById('lightThemeBtn').classList.toggle('active',theme==='light');
-  document.getElementById('darkThemeBtn').addEventListener('click',function(){setTheme('dark');});
-  document.getElementById('lightThemeBtn').addEventListener('click',function(){setTheme('light');});
-  document.getElementById('changePassBtn').addEventListener('click',changePassword);
-  document.getElementById('inviteCoachBtn').addEventListener('click',inviteCoach);
-  document.getElementById('savePrefsBtn').addEventListener('click',function(){showToast('Preferences saved.','success');});
-  document.getElementById('deactivateBtn').addEventListener('click',function(){showToast('Contact support@stratexanalytics.co.uk to deactivate your account.','error');});
-  loadTeamCoachesPanel();
-});
-</script>
-</body></html>
-
-
-
+<link rel="stylesheet" href="/css/variables.css">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=13.0.0">
+</head>
+<body class="coach-product" data-coach-page="settings">
+<div class="coach-desk"><div class="screen"><div class="shell" data-coach-shell data-active="Settings" data-title="Settings" data-tbx-spend="Save Preferences" data-tbx-spend-id="coachSavePreferences"><main class="cv" id="coachDeskPage"><div class="coach-page-loading">Loading settings…</div></main></div></div></div>
+<div class="coach-field"><div class="scr" data-field-tab="More"><main class="body" id="coachFieldPage"><div class="coach-page-loading">Loading settings…</div></main><nav class="tabs"></nav><div class="homebar"></div></div></div>
+<script src="/js/main.js"></script>
+<script src="/js/heap-analytics.js"></script>
+<script src="/js/coach-v2.js?v=13.0.0"></script>
+<script src="/js/coach-pages-v1.js?v=13.0.0"></script>
+</body>
+</html>
