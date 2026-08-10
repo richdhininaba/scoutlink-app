@@ -1,370 +1,72 @@
 'use strict';
 
-/*
- * Full V4 replacement for frontend/js/coach-match-facts-v3.js.
- *
- * The page keeps its existing five-step Match Facts workflow. This file owns
- * the V4 rating step and submission contract: whole-number overall performance,
- * position played, and the correct position-aware attribute snapshot.
- */
-(function () {
-  var draftKey = 'scoutlink.coach.matchFacts.v4';
-  var options = null;
-  var initAttempts = 0;
-
-  function scoring() {
-    return window.ScoutLinkScoringV4;
-  }
-
-  function playerById(id) {
-    return (window.myPlayers || []).find(function (player) {
-      return String(player.id) === String(id);
-    }) || null;
-  }
-
-  function playerName(player) {
-    return (((player && player.first_name) || '') + ' ' +
-      ((player && player.last_name) || '')).trim() || 'Player';
-  }
-
-  function initials(player) {
-    return (((player && player.first_name) || '?').charAt(0) +
-      ((player && player.last_name) || '?').charAt(0)).toUpperCase();
-  }
-
-  function positionPlayed(player) {
-    var slot = Object.keys(window.state.playerPositions || {}).find(function (key) {
-      return String(window.state.playerPositions[key]) === String(player.id);
-    });
-    var fromSlot = slot ? slot.replace(/\d+$/g, '').replace(/^(LAM|RAM|CAM)$/g, 'AM') : '';
-    return scoring().normalisePosition(fromSlot) ||
-      scoring().normalisePosition(player.specific_position || player.primary_position) ||
-      'CM';
-  }
-
-  function outputFor(playerId) {
-    var goals = (window.state.goals || []).filter(function (event) {
-      return String(event.player) === String(playerId);
-    }).length;
-    var assists = (window.state.goals || []).filter(function (event) {
-      return String(event.assist) === String(playerId);
-    }).length;
-    var yellow = (window.state.yellowCards || []).filter(function (id) {
-      return String(id) === String(playerId);
-    }).length;
-    var red = (window.state.redCards || []).filter(function (id) {
-      return String(id) === String(playerId);
-    }).length;
-    var parts = [];
-    if (goals) parts.push(goals + ' goal' + (goals === 1 ? '' : 's'));
-    if (assists) parts.push(assists + ' assist' + (assists === 1 ? '' : 's'));
-    if (yellow) parts.push('Yellow card');
-    if (red) parts.push('Red card');
-    return parts.join(' · ') || 'No recorded events';
-  }
-
-  function wholeOptions(value) {
-    var selected = Number.isInteger(Number(value)) ? Number(value) : '';
-    return '<option value="">Not observed</option>' +
-      Array.from({ length:10 }, function (_, index) { return index + 1; })
-        .map(function (rating) {
-          return '<option value="' + rating + '"' +
-            (rating === selected ? ' selected' : '') + '>' +
-            rating + ' / 10</option>';
-        }).join('');
-  }
-
-  function savedRatings(playerId) {
-    window.state.attributeRatings = window.state.attributeRatings || {};
-    return window.state.attributeRatings[playerId] || {};
-  }
-
-  function renderPlayerAssessment(player) {
-    var position = positionPlayed(player);
-    var overall = window.state.overallPerformance &&
-      window.state.overallPerformance[player.id];
-    overall = Number.isInteger(Number(overall)) ? Number(overall) : '';
-    return '<article class="mf3-panel" data-v4-player-card="' + player.id + '" style="margin-bottom:14px">' +
-      '<header class="mf3-panel-head">' +
-        '<div class="mf3-rating-player">' +
-          '<span class="mf3-rating-avatar">' + initials(player) + '</span>' +
-          '<span><b>' + scoring().esc(playerName(player)) + '</b><span>' +
-            scoring().esc(scoring().positionLabel(position, options)) + ' · ' +
-            scoring().esc(outputFor(player.id)) +
-          '</span></span>' +
-        '</div>' +
-        '<label class="v4-match-overall"><span>Overall match performance</span>' +
-          '<select data-v4-overall="' + player.id + '">' + wholeOptions(overall) + '</select>' +
-        '</label>' +
-      '</header>' +
-      '<div class="mf3-panel-body">' +
-        '<div class="sl-v4-match-assessment" data-v4-assessment="' + player.id + '"></div>' +
-      '</div>' +
-    '</article>';
-  }
-
-  function captureRatings() {
-    window.state.overallPerformance = window.state.overallPerformance || {};
-    window.state.ratings = window.state.ratings || {};
-    window.state.attributeRatings = window.state.attributeRatings || {};
-
-    document.querySelectorAll('[data-v4-player-card]').forEach(function (card) {
-      var playerId = card.getAttribute('data-v4-player-card');
-      var player = playerById(playerId);
-      if (!player) return;
-      var position = positionPlayed(player);
-      var overallSelect = card.querySelector('[data-v4-overall]');
-      var overall = scoring().validateRating(overallSelect ? overallSelect.value : null);
-      window.state.overallPerformance[playerId] = overall;
-      window.state.attributeRatings[playerId] = scoring().collectAssessment(
-        card.querySelector('[data-v4-assessment]'),
-        position,
-        options
-      );
-      window.state.ratings[playerId] = {
-        overall_performance:overall,
-        attribute_ratings:window.state.attributeRatings[playerId],
-        position_played:position
-      };
-    });
-  }
-
-  function allPlayersRated() {
-    var cards = Array.from(document.querySelectorAll('[data-v4-player-card]'));
-    return cards.length > 0 && cards.every(function (card) {
-      var select = card.querySelector('[data-v4-overall]');
-      return select && select.value !== '';
-    });
-  }
-
-  function installRatingStyles() {
-    if (document.getElementById('matchFactsV4Styles')) return;
-    var style = document.createElement('style');
-    style.id = 'matchFactsV4Styles';
-    style.textContent =
-      '.v4-match-overall{display:grid;gap:5px;min-width:190px}' +
-      '.v4-match-overall span{font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase}' +
-      '.v4-match-overall select{min-height:38px;padding:0 9px;border:1px solid #cbd5e1;background:#fff;color:#0f172a}' +
-      '.mf3-v4-rating-intro{padding:13px 15px;margin-bottom:14px;border-left:4px solid #0f9f75;background:#eefbf7;color:#31534a;font-size:12px}' +
-      '@media(max-width:760px){.v4-match-overall{width:100%;min-width:0}.mf3-panel-head{align-items:stretch;flex-direction:column}}';
-    document.head.appendChild(style);
-  }
-
-  function saveDraft() {
-    try {
-      captureRatings();
-      localStorage.setItem(draftKey, JSON.stringify({
-        version:4,
-        savedAt:new Date().toISOString(),
-        state:window.state
-      }));
-    } catch (_) {}
-  }
-
-  function restoreDraft() {
-    try {
-      var parsed = JSON.parse(localStorage.getItem(draftKey) || 'null');
-      if (!parsed || parsed.version !== 4 || !parsed.state) return;
-      window.state.attributeRatings = parsed.state.attributeRatings || window.state.attributeRatings || {};
-    } catch (_) {}
-  }
-
-  function overrideRatingStep() {
-    window.renderStep4 = function () {
-      if (typeof window.setStep === 'function') window.setStep(4);
-      window.state.attributeRatings = window.state.attributeRatings || {};
-      window.state.overallPerformance = window.state.overallPerformance || {};
-
-      var selected = (window.state.players || []).map(function (selectedPlayer) {
-        return playerById(selectedPlayer.id) || selectedPlayer;
-      }).filter(Boolean);
-
-      var host = document.getElementById('stepContent');
-      if (!host) return;
-      if (!selected.length) {
-        host.innerHTML = '<div class="table-card"><div style="padding:28px">No players were selected.</div></div>';
-        return;
-      }
-
-      host.innerHTML =
-        '<div class="mf3-shell">' +
-          '<div class="mf3-v4-rating-intro"><b>Match-only assessment</b><br>' +
-          'Rate the overall performance and only the attributes observed in this match. Every value is a whole number from 1 to 10; use Not observed rather than guessing.</div>' +
-          selected.map(renderPlayerAssessment).join('') +
-          '<section class="mf3-actionbar">' +
-            '<div><b>Complete every overall match-performance rating</b><span>Attribute fields may remain Not observed.</span></div>' +
-            '<div class="mf3-action-buttons">' +
-              '<button class="mf3-btn" type="button" id="mf4BackEvents">Back</button>' +
-              '<button class="mf3-btn is-primary" type="button" id="mf4NextReview">Next · Review match</button>' +
-            '</div>' +
-          '</section>' +
-        '</div>';
-
-      selected.forEach(function (player) {
-        scoring().renderAssessment(
-          host.querySelector('[data-v4-assessment="' + player.id + '"]'),
-          positionPlayed(player),
-          savedRatings(player.id),
-          options
-        );
-      });
-
-      host.querySelectorAll('select').forEach(function (select) {
-        select.addEventListener('change', saveDraft);
-      });
-
-      document.getElementById('mf4BackEvents').addEventListener('click', function () {
-        saveDraft();
-        if (window.state.mode === 'live' && typeof window.renderStep3Live === 'function') {
-          window.renderStep3Live();
-        } else if (typeof window.renderStep3Post === 'function') {
-          window.renderStep3Post();
-        } else if (typeof window.renderStep2Post === 'function') {
-          window.renderStep2Post();
-        }
-      });
-
-      document.getElementById('mf4NextReview').addEventListener('click', function () {
-        try {
-          captureRatings();
-          if (!allPlayersRated()) {
-            window.alert('Add a whole-number overall match-performance rating for every selected player.');
-            return;
-          }
-          if (typeof window.renderStep5 === 'function') window.renderStep5();
-        } catch (error) {
-          window.alert(error.message);
-        }
-      });
-    };
-  }
-
-  function buildPlayerSubmission(player) {
-    var id = player.id;
-    var goals = (window.state.goals || []).filter(function (event) {
-      return String(event.player) === String(id);
-    }).length;
-    var assists = (window.state.goals || []).filter(function (event) {
-      return String(event.assist) === String(id);
-    }).length;
-    var yellowCards = (window.state.yellowCards || []).filter(function (value) {
-      return String(value) === String(id);
-    }).length;
-    var redCards = (window.state.redCards || []).filter(function (value) {
-      return String(value) === String(id);
-    }).length;
-
-    return {
-      playerId:id,
-      goals:goals,
-      assists:assists,
-      yellowCards:yellowCards,
-      redCards:redCards,
-      performanceScore:window.state.overallPerformance[id],
-      overallPerformance:window.state.overallPerformance[id],
-      positionPlayed:positionPlayed(player),
-      attributeRatings:window.state.attributeRatings[id] || {},
-      ratingScale:'ten',
-      notes:window.state.coachNotes || ''
-    };
-  }
-
-  function overrideSubmission() {
-    window.submitMatchFacts = async function () {
-      var button = document.getElementById('submitBtn') || document.getElementById('mf3SubmitMobile');
-      var message = document.getElementById('submitMsg');
-      if (button) {
-        button.disabled = true;
-        button.textContent = 'Submitting…';
-      }
-
-      try {
-        captureRatings();
-        if (!allPlayersRated()) {
-          throw new Error('Every selected player needs an overall match-performance rating.');
-        }
-
-        var selected = (window.state.players || []).map(function (row) {
-          return playerById(row.id) || row;
-        }).filter(Boolean);
-
-        var response = await window.api('POST', '/api/match-facts', {
-          fixtureId:window.state.fixtureId || null,
-          teamId:window.state.coachTeamId || null,
-          matchDate:window.state.matchDate,
-          opponent:window.state.opponent,
-          homeScore:Number(window.state.homeScore) || 0,
-          awayScore:Number(window.state.awayScore) || 0,
-          format:window.state.format,
-          matchFormat:String(window.state.format || '').replace(/\D/g, '') + 'v' +
-            String(window.state.format || '').replace(/\D/g, ''),
-          formation:window.state.formation,
-          mode:window.state.mode || 'post',
-          players:selected.map(buildPlayerSubmission),
-          events:window.state.events || [],
-          playerPositions:window.state.playerPositions || {},
-          coachNotes:window.state.coachNotes || '',
-          confirmed:true
-        });
-
-        localStorage.removeItem(draftKey);
-        if (message) {
-          message.textContent = response.message || 'Match Facts submitted.';
-          message.style.color = '#08775e';
-        }
-        window.setTimeout(function () {
-          window.location.href = '/coach/my-players';
-        }, 700);
-      } catch (error) {
-        if (message) {
-          message.textContent = error.message || 'The Match Facts could not be submitted.';
-          message.style.color = '#b42335';
-        } else {
-          window.alert(error.message);
-        }
-        if (button) {
-          button.disabled = false;
-          button.textContent = 'Submit Match Facts';
-        }
-      }
-    };
-  }
-
-  async function init() {
-    if (!scoring()) {
-      initAttempts += 1;
-      if (initAttempts < 100) window.setTimeout(init, 50);
-      return;
-    }
-    options = await scoring().loadOptions();
-    installRatingStyles();
-    restoreDraft();
-    overrideRatingStep();
-    overrideSubmission();
-
-    /*
-     * Replace the old group label anywhere the existing setup step renders it.
-     * Exact positions continue to come from the formation slots.
-     */
-    var observer = new MutationObserver(function () {
-      document.querySelectorAll('select').forEach(function (select) {
-        Array.from(select.options).forEach(function (option) {
-          if (option.value === 'Forward' || option.textContent.trim() === 'Forward') {
-            option.value = 'Attacker';
-            option.textContent = 'Attacker';
-          }
-        });
-      });
-      document.querySelectorAll('input[type="range"][step="0.5"]').forEach(function (input) {
-        input.step = '1';
-      });
-    });
-    observer.observe(document.documentElement, { childList:true, subtree:true });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init, { once:true });
-  } else {
-    init();
-  }
+/* Exact Coach Desk 07 / Coach Field F4+F7 Match Facts and Matchday Log. */
+(function(){
+  var DRAFT='scoutlink.coach.matchFacts.v5';
+  var FORMATIONS={
+    '11':{'4-3-3':['GK','LB','CB1','CB2','RB','CM1','CM2','CM3','LW','ST','RW'],'4-4-2':['GK','LB','CB1','CB2','RB','LM','CM1','CM2','RM','ST1','ST2'],'4-2-3-1':['GK','LB','CB1','CB2','RB','DM1','DM2','LW','AM','RW','ST']},
+    '9':{'3-3-2':['GK','CB1','CB2','CB3','CM1','CM2','CM3','ST1','ST2'],'4-3-1':['GK','LB','CB1','CB2','RB','CM1','CM2','CM3','ST']},
+    '7':{'2-3-1':['GK','CB1','CB2','LM','CM','RM','ST'],'3-2-1':['GK','CB1','CB2','CB3','CM1','CM2','ST']},
+    '5':{'2-1-1':['GK','CB1','CB2','CM','ST'],'1-2-1':['GK','CB','CM1','CM2','ST']}
+  };
+  var S={step:1,mode:'post',fixtureId:'',opponent:'',matchDate:'',homeAway:'Home',format:'11',formation:'4-3-3',homeScore:0,awayScore:0,selected:[],positions:{},events:[],ratings:{},timerSeconds:0,timerRunning:false,coachNotes:'',teamId:null,teamName:'My team'};
+  var players=[],fixtures=[],options=null,timer=null;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function api(m,p,b){return window.api(m,p,b);}
+  function route(p){return window.CoachV2?window.CoachV2.clean(p):p;}
+  function pid(p){return String(p.id||p.player_id||'');}
+  function pname(p){return[p.first_name,p.last_name].filter(Boolean).join(' ')||'Player';}
+  function ppos(p){return p.specific_position||p.primary_position||p.position_group||'—';}
+  function initials(p){return((p.first_name||'P')[0]+(p.last_name||'L')[0]).toUpperCase();}
+  function player(id){return players.find(function(p){return pid(p)===String(id);});}
+  function selectedPlayers(){return S.selected.map(player).filter(Boolean);}
+  function fixture(id){return fixtures.find(function(f){return String(f.id)===String(id);});}
+  function slots(){var fm=FORMATIONS[S.format]||FORMATIONS['11'];return fm[S.formation]||fm[Object.keys(fm)[0]];}
+  function formationOptions(){return Object.keys(FORMATIONS[S.format]||FORMATIONS['11']);}
+  function save(){try{localStorage.setItem(DRAFT,JSON.stringify({version:5,savedAt:new Date().toISOString(),state:S}));if(window.CoachV2)window.CoachV2.setTopChip('Draft saved');}catch(_){}}
+  function restore(){try{var d=JSON.parse(localStorage.getItem(DRAFT)||'null');if(d&&d.version===5&&d.state)S=Object.assign(S,d.state,{timerRunning:false});}catch(_){}}
+  function wiz(step){var n=['Setup & players','Positions','Events','Ratings','Review'];return'<div class="wiz">'+n.map(function(x,i){var k=i+1;return'<span class="st '+(k<step?'done':k===step?'on':'')+'"><i>'+(k<step?'✓':k)+'</i>'+x+'</span>'+(k<5?'<span class="ln"></span>':'');}).join('')+'</div>';}
+  function obsteps(step){return'<div class="obsteps">'+[1,2,3,4,5].map(function(k){return'<i class="'+(k<=step?'on':'')+'"></i>';}).join('')+'</div>';}
+  function select(opts,val){return opts.map(function(x){var v=typeof x==='string'?x:x.value,l=typeof x==='string'?x:x.label;return'<option value="'+esc(v)+'"'+(String(v)===String(val)?' selected':'')+'>'+esc(l)+'</option>';}).join('');}
+  function fixtureOptions(){return'<option value="">Standalone match</option>'+fixtures.map(function(f){var d=String(f.fixture_date||'').slice(0,10);return'<option value="'+esc(f.id)+'"'+(String(f.id)===String(S.fixtureId)?' selected':'')+'>vs '+esc(f.opponent||'Opponent')+' · '+esc(d||'Date TBC')+'</option>';}).join('');}
+  function eventCounts(){var c={goal:0,assist:0,yellow:0,red:0,sub:0,conceded:0};S.events.forEach(function(e){if(c[e.type]!=null)c[e.type]++;});return c;}
+  function eventLabel(e){var p=player(e.playerId),off=player(e.playerOffId),on=player(e.playerOnId),a=player(e.assistId);if(e.type==='goal')return'Goal — '+pname(p)+(a?' · assist '+pname(a):'');if(e.type==='assist')return'Assist — '+pname(p);if(e.type==='yellow')return'Yellow card — '+pname(p);if(e.type==='red')return'Red card — '+pname(p);if(e.type==='sub')return'Sub — '+pname(on)+' on · '+pname(off)+' off';if(e.type==='conceded')return'Conceded — '+esc(S.opponent||'Opponent');return e.type;}
+  function field(label,req,control){return'<div class="field"><label>'+esc(label)+(req?' <i>'+esc(req)+'</i>':'')+'</label>'+control+'</div>';}
+  function desktopStage1(){return wiz(1)+'<div class="grid2"><div class="panel rule"><div class="ph3"><b>Match setup</b><span class="m">from a fixture, or standalone</span></div>'+field('Fixture','Optional','<select class="in" data-mf-field="fixtureId">'+fixtureOptions()+'</select>')+'<div class="two">'+field('Opponent','Required','<input class="in" data-mf-field="opponent" value="'+esc(S.opponent)+'" placeholder="Opponent">')+field('Date','Required','<input class="in" type="date" data-mf-field="matchDate" value="'+esc(S.matchDate)+'">')+field('Final score','Required','<span class="flex" style="gap:5px"><input class="in mono" style="width:70px" type="number" min="0" data-mf-field="homeScore" value="'+S.homeScore+'"><b>–</b><input class="in mono" style="width:70px" type="number" min="0" data-mf-field="awayScore" value="'+S.awayScore+'"></span>')+field('Home / away','', '<select class="in" data-mf-field="homeAway">'+select(['Home','Away'],S.homeAway)+'</select>')+field('Format','', '<select class="in" data-mf-field="format">'+select([{value:'5',label:'5-a-side'},{value:'7',label:'7-a-side'},{value:'9',label:'9-a-side'},{value:'11',label:'11-a-side'}],S.format)+'</select>')+field('Formation','', '<select class="in" data-mf-field="formation">'+select(formationOptions(),S.formation)+'</select>')+'</div><div class="mut" style="font-size:9.5px">Completed fixtures prefill this panel; a match without a fixture can still be recorded by entering the opponent manually.</div></div><div class="panel rule"><div class="ph3"><b>Players involved · '+S.selected.length+' selected</b><span class="r"><button class="btn sm gh" data-mf-select-all>Select all</button></span></div>'+players.map(function(p){var on=S.selected.indexOf(pid(p))>=0;return'<div class="kv"><span class="pw"><span class="av '+(on?'g':'')+'">'+esc(initials(p))+'</span><b>'+esc(pname(p))+' · '+esc(ppos(p))+'</b></span><b><button class="chip '+(on?'on':'')+'" data-mf-player="'+esc(pid(p))+'">'+(on?'Selected':'Not selected')+'</button></b></div>';}).join('')+'<div class="flex" style="justify-content:flex-end;gap:8px;margin-top:8px"><a class="btn gh" href="/coach/fixtures">Cancel</a><button class="btn pri" data-mf-next="2">Next: Assign positions →</button></div></div></div>';}
+  function pitchDesk(){var ss=slots(),assigned=Object.keys(S.positions).filter(function(k){return S.positions[k];}).length;var starterIds=Object.keys(S.positions).map(function(k){return S.positions[k];}).filter(Boolean);var bench=S.selected.filter(function(id){return starterIds.indexOf(id)<0;});return'<div class="pitchd">'+pitchRows(ss,'desk')+'</div>'+(assigned<ss.length?'<div class="callout a" style="margin:10px 0 0"><b>'+(ss.length-assigned)+' slot'+(ss.length-assigned===1?'':'s')+' empty.</b> Fill them or continue if you played short.</div>':'')+'<div class="mut" style="font-size:9px;margin-top:8px">Tap a slot to assign or change a player.</div>';}
+  function pitchRows(ss,mode){var groups=[];function add(keys){var row=keys.filter(function(k){return ss.indexOf(k)>=0;});if(row.length)groups.push(row);}add(['ST','ST1','ST2']);add(['LW','AM','RW','LM','RM']);add(['CM','CM1','CM2','CM3','DM','DM1','DM2']);add(['LB','CB','CB1','CB2','CB3','RB']);add(['GK']);ss.forEach(function(k){if(!groups.some(function(r){return r.indexOf(k)>=0;}))groups.splice(Math.max(0,groups.length-1),0,[k]);});return groups.map(function(row){return'<div class="row">'+row.map(function(k){var p=player(S.positions[k]);return'<button class="slot '+(!p?'empty':'')+'" data-mf-slot="'+esc(k)+'"><b>'+esc(p?pname(p).split(' ')[0]:'Empty')+'</b><span>'+esc(k.replace(/\d/g,''))+'</span></button>';}).join('')+'</div>';}).join('');}
+  function desktopStage2(){var starterIds=Object.keys(S.positions).map(function(k){return S.positions[k];}).filter(Boolean),bench=S.selected.filter(function(id){return starterIds.indexOf(id)<0;});return wiz(2)+'<div class="grid2"><div class="panel rule"><div class="ph3"><b>Formation</b><span class="m"><select class="chip" data-mf-field="formation">'+select(formationOptions(),S.formation)+'</select> · tap a slot, then a player</span></div>'+pitchDesk()+'</div><div class="panel rule"><div class="ph3"><b>Bench · '+bench.length+' to place</b></div>'+bench.map(function(id){var p=player(id);return'<div class="kv"><span class="pw"><span class="av">'+esc(initials(p))+'</span><span class="who"><b>'+esc(pname(p))+'</b><span>'+esc(ppos(p))+'</span></span></span><b><button class="btn sm" data-mf-place="'+esc(id)+'">Place</button></b></div>';}).join('')+'<div class="mut" style="font-size:9.5px;margin-top:8px">Bench players stay selected for ratings and can be logged in substitutions on stage three.</div><div class="flex" style="justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn gh" data-mf-prev="1">Back</button><button class="btn pri" data-mf-next="3">Next: Events →</button></div></div></div>';}
+  function playerOptions(value){return'<option value="">Select…</option>'+selectedPlayers().map(function(p){return'<option value="'+esc(pid(p))+'"'+(String(pid(p))===String(value||'')?' selected':'')+'>'+esc(pname(p))+'</option>';}).join('');}
+  function desktopStage3(){var c=eventCounts();return wiz(3)+'<div class="grid2"><div class="panel rule"><div class="ph3"><b>Add an event</b><span class="m">minute · type · player</span></div><div class="two">'+field('Minute','', '<input class="in mono" id="mfEventMinute" type="number" min="0" value="'+Math.floor(S.timerSeconds/60)+'">')+field('Event','', '<select class="in" id="mfEventType">'+select([{value:'goal',label:'Goal scored'},{value:'assist',label:'Assist'},{value:'yellow',label:'Yellow card'},{value:'red',label:'Red card'},{value:'sub',label:'Substitution'},{value:'conceded',label:'Conceded'}],'goal')+'</select>')+field('Player','', '<select class="in" id="mfEventPlayer">'+playerOptions('')+'</select>')+field('Assist / player on','Optional','<select class="in" id="mfEventExtra">'+playerOptions('')+'</select>')+'</div><div class="flex" style="gap:6px;margin:-2px 0 10px"><button class="chip on" data-mf-type="goal">Goal scored</button><button class="chip" data-mf-type="assist">Assist</button><button class="chip" data-mf-type="yellow">Yellow card</button><button class="chip" data-mf-type="red">Red card</button><button class="chip" data-mf-type="sub">Sub</button><button class="chip" data-mf-type="conceded">Conceded</button></div><div class="flex" style="justify-content:flex-end"><button class="btn pri" data-mf-add-event>Add event</button></div></div><div class="panel rule"><div class="ph3"><b>Event log · '+S.events.length+'</b><span class="m">score '+(c.goal===Number(S.homeScore)&&c.conceded===Number(S.awayScore)?'reconciles ✓':'needs checking')+'</span></div>'+(S.events.length?S.events.map(function(e,i){return'<div class="evrow"><span class="mn">'+Number(e.minute||0)+'\'</span><i class="ic">'+(e.type==='goal'?'⚽':e.type==='yellow'?'🟨':e.type==='red'?'🟥':e.type==='sub'?'⇄':e.type==='conceded'?'◻':'A')+'</i><span><b>'+esc(eventLabel(e))+'</b></span><button class="rm" data-mf-remove-event="'+i+'">✕</button></div>';}).join(''):'<div class="mut">No events logged yet.</div>')+'<div class="callout" style="margin:10px 0 0"><b>Events reconcile against the final score.</b> '+c.goal+' goals logged for '+S.homeScore+' scored; '+c.conceded+' conceded for '+S.awayScore+' against.</div><div class="flex" style="justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn gh" data-mf-prev="2">Back</button><button class="btn pri" data-mf-next="4">Next: Ratings →</button></div></div></div>';}
+  function output(id){var c={g:0,a:0,y:0,r:0,sub:0};S.events.forEach(function(e){if(String(e.playerId)===String(id)){if(e.type==='goal')c.g++;if(e.type==='assist')c.a++;if(e.type==='yellow')c.y++;if(e.type==='red')c.r++;}if(String(e.assistId)===String(id))c.a++;if(String(e.playerOnId)===String(id))c.sub++;});var x=[];if(c.g)x.push(c.g+' G');if(c.a)x.push(c.a+' A');if(c.y)x.push(c.y+' yellow');return x.join(' · ')||'No recorded events';}
+  function positionPlayed(id){var k=Object.keys(S.positions).find(function(x){return String(S.positions[x])===String(id);});var raw=(k||ppos(player(id))).replace(/\d/g,'').replace(/^(LAM|RAM|CAM)$/,'AM');return window.ScoutLinkScoringV4.normalisePosition(raw)||window.ScoutLinkScoringV4.normalisePosition(ppos(player(id)))||'CM';}
+  function desktopStage4(){var rated=S.selected.filter(function(id){return S.ratings[id]&&S.ratings[id].overall;}).length;return wiz(4)+'<div class="panel rule"><div class="ph3"><b>Rate every selected player · '+rated+' of '+S.selected.length+' rated</b><span class="m">1–10 · whole numbers · events shown for context</span></div>'+selectedPlayers().map(function(p){var id=pid(p),r=S.ratings[id]||{},v=Number(r.overall)||0;return'<div class="kv"><span class="pw"><span class="av '+(v?'g':'')+'">'+esc(initials(p))+'</span><span class="who"><b>'+esc(pname(p))+' · '+esc(positionPlayed(id))+'</b><span>'+esc(output(id))+'</span></span></span><b><select class="ratenum '+(v?'set':'')+'" data-mf-overall="'+esc(id)+'"><option value="">—</option>'+Array.from({length:10},function(_,i){return i+1;}).map(function(n){return'<option value="'+n+'"'+(v===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select><button class="btn sm gh" style="margin-left:5px" data-mf-attributes="'+esc(id)+'">Attributes</button></b></div>';}).join('')+(rated<S.selected.length?'<div class="callout a" style="margin:10px 0 0"><b>'+(S.selected.length-rated)+' players unrated.</b> Every selected player needs a whole-number rating before review.</div>':'')+'<div class="flex" style="justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn gh" data-mf-prev="3">Back</button><button class="btn pri" data-mf-next="5">Next · Review match</button></div></div>';}
+  function resultLabel(){return Number(S.homeScore)>Number(S.awayScore)?'W':Number(S.homeScore)<Number(S.awayScore)?'L':'D';}
+  function desktopStage5(){var c=eventCounts(),rated=S.selected.filter(function(id){return S.ratings[id]&&S.ratings[id].overall;}).length;return wiz(5)+'<div class="panel rule"><div class="ph3"><b>Review & submit</b><span class="m">every card edits its stage</span></div>'+reviewRow('Match','vs '+(S.opponent||'Opponent')+' · '+resultLabel()+' '+S.homeScore+'–'+S.awayScore+' · '+S.homeAway+' · '+(S.matchDate||'Date TBC'),1)+reviewRow('Lineup',S.formation+' · '+Object.keys(S.positions).filter(function(k){return S.positions[k];}).length+' placed · '+Math.max(0,S.selected.length-Object.keys(S.positions).filter(function(k){return S.positions[k];}).length)+' bench',2)+reviewRow('Events',c.goal+' goals · '+c.assist+' assists · '+c.yellow+' yellow · '+c.sub+' subs · '+c.conceded+' conceded',3)+reviewRow('Ratings',rated+' of '+S.selected.length+' rated',4)+'<div class="callout"><b>Submitting updates '+S.selected.length+' profiles</b> — stats, history, ratings and evidence — and marks this Match Facts record complete.</div><div class="flex" style="justify-content:flex-end;gap:8px;margin-top:8px"><button class="btn gh" data-mf-prev="4">Back</button><button class="btn pri" data-mf-submit>Submit Match Facts</button></div></div>';}
+  function reviewRow(t,c,s){return'<div class="kv"><span><b style="color:var(--ink)">'+t+'</b><br><span style="font-size:9px">'+esc(c)+'</span></span><b><button class="btn sm gh" data-mf-goto="'+s+'">Edit</button></b></div>';}
+  function fieldHead(){return'<div class="hd"><div><div class="t">Match Facts</div><div class="sub">Stage '+S.step+' of 5 · '+(S.opponent?'vs '+S.opponent+' · ':'')+'draft saved</div></div><div class="r"><button class="icb" data-mf-close>✕</button></div></div>'+obsteps(S.step);}
+  function fieldStage1(){return fieldHead()+'<div class="stack"><div class="card"><div class="ck">Match setup</div>'+field('Fixture','Optional','<select class="in" data-mf-field="fixtureId">'+fixtureOptions()+'</select>')+'<div class="two">'+field('Final score','', '<span class="flex" style="gap:4px"><input class="in" style="width:60px" type="number" data-mf-field="homeScore" value="'+S.homeScore+'"><b>–</b><input class="in" style="width:60px" type="number" data-mf-field="awayScore" value="'+S.awayScore+'"></span>')+field('Home / away','', '<select class="in" data-mf-field="homeAway">'+select(['Home','Away'],S.homeAway)+'</select>')+'</div>'+field('Opponent','', '<input class="in" data-mf-field="opponent" value="'+esc(S.opponent)+'">')+field('Date','', '<input class="in" type="date" data-mf-field="matchDate" value="'+esc(S.matchDate)+'">')+'</div><div class="card rule"><div class="flex" style="margin-bottom:6px"><span class="ck">Players involved · '+S.selected.length+' selected</span><button class="right bt sm gh" data-mf-select-all>Select all</button></div>'+players.map(function(p){var on=S.selected.indexOf(pid(p))>=0;return'<div class="rowline" style="padding:5px 0;border-bottom:1px solid var(--ln)"><span class="avm '+(on?'g':'')+'">'+esc(initials(p))+'</span><span class="who"><b>'+esc(pname(p))+' · '+esc(ppos(p))+'</b></span><button class="chip '+(on?'on':'')+'" data-mf-player="'+esc(pid(p))+'">'+(on?'Selected':'—')+'</button></div>';}).join('')+'</div><button class="bt pri blk" data-mf-next="2">Next: Positions →</button></div>';}
+  function fieldStage2(){return fieldHead()+'<div class="stack"><div class="flex"><span class="ck">Formation · '+esc(S.formation)+'</span><select class="right chip" data-mf-field="formation">'+select(formationOptions(),S.formation)+'</select></div><div class="pitchm">'+pitchRows(slots(),'field')+'</div><div class="callout a"><b>Tap an empty slot</b> to assign a selected player. You can continue if the team played short.</div><button class="bt pri blk" data-mf-next="3">Next: Events →</button><button class="bt gh blk" data-mf-prev="1">Back</button></div>';}
+  function fieldStage3(){var c=eventCounts();return fieldHead()+'<div class="stack"><div class="card"><div class="ck">Add an event</div><div class="two">'+field('Minute','', '<input class="in" id="fmMinute" type="number" value="0">')+field('Event','', '<select class="in" id="fmType">'+select([{value:'goal',label:'Goal scored'},{value:'assist',label:'Assist'},{value:'yellow',label:'Yellow card'},{value:'red',label:'Red card'},{value:'sub',label:'Sub'},{value:'conceded',label:'Conceded'}],'goal')+'</select>')+'</div>'+field('Player','', '<select class="in" id="fmPlayer">'+playerOptions('')+'</select>')+field('Assist / player on','Optional','<select class="in" id="fmExtra">'+playerOptions('')+'</select>')+'<button class="bt pri blk" data-mf-field-add>Add event</button></div><div class="card rule"><div class="flex" style="margin-bottom:6px"><span class="ck">Event log · '+S.events.length+'</span><span class="tagm '+(c.goal===Number(S.homeScore)&&c.conceded===Number(S.awayScore)?'g':'a')+'">'+S.homeScore+'–'+S.awayScore+' '+(c.goal===Number(S.homeScore)&&c.conceded===Number(S.awayScore)?'reconciled ✓':'check')+'</span></div>'+S.events.map(function(e,i){return'<div class="evm"><span class="mn">'+Number(e.minute||0)+'\'</span><span><b>'+esc(eventLabel(e))+'</b></span><button class="bt sm gh" data-mf-remove-event="'+i+'">✕</button></div>';}).join('')+'</div><button class="bt pri blk" data-mf-next="4">Next: Ratings →</button><button class="bt gh blk" data-mf-prev="2">Back</button></div>';}
+  function fieldStage4(){var rated=S.selected.filter(function(id){return S.ratings[id]&&S.ratings[id].overall;}).length;return fieldHead()+'<div class="stack"><div class="card rule" style="padding:10px 12px"><div class="ck" style="margin-bottom:6px">Rate every selected player · 1–10</div>'+selectedPlayers().map(function(p){var id=pid(p),v=Number((S.ratings[id]||{}).overall)||0;return'<div class="rowline" style="padding:6px 0;border-bottom:1px solid var(--ln)"><span class="avm '+(v?'g':'')+'">'+esc(initials(p))+'</span><span class="who"><b>'+esc(pname(p))+' · '+esc(positionPlayed(id))+'</b><span>'+esc(output(id))+'</span></span><select class="ratem '+(v?'set':'')+'" data-mf-overall="'+esc(id)+'"><option value="">—</option>'+Array.from({length:10},function(_,i){return i+1;}).map(function(n){return'<option value="'+n+'"'+(v===n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></div>';}).join('')+'</div>'+(rated<S.selected.length?'<div class="callout a"><b>'+(S.selected.length-rated)+' players unrated.</b> Everyone who played gets a whole number.</div>':'')+'<button class="bt pri blk" data-mf-next="5">Next · Review match</button><button class="bt gh blk" data-mf-prev="3">Back</button></div>';}
+  function fieldStage5(){var c=eventCounts(),rated=S.selected.filter(function(id){return S.ratings[id]&&S.ratings[id].overall;}).length;return fieldHead()+'<div class="stack"><div class="card rule" style="padding:10px 12px">'+mobileReview('Match','vs '+(S.opponent||'Opponent')+' · '+resultLabel()+' '+S.homeScore+'–'+S.awayScore,1)+mobileReview('Lineup',S.formation+' · '+Object.keys(S.positions).filter(function(k){return S.positions[k];}).length+' placed',2)+mobileReview('Events',c.goal+' G · '+c.assist+' A · '+c.yellow+' yellow · '+c.sub+' sub',3)+mobileReview('Ratings',rated+' of '+S.selected.length,4)+'</div><div class="callout"><b>Submitting updates '+S.selected.length+' profiles</b> — stats, history, ratings and evidence.</div><button class="bt spend blk" data-mf-submit>Submit Match Facts</button><button class="bt gh blk" data-mf-prev="4">Back</button></div>';}
+  function mobileReview(t,c,s){return'<div class="rowline" style="padding:5px 0;border-bottom:1px solid var(--ln)"><span class="who"><b>'+t+'</b><span>'+esc(c)+'</span></span><button class="bt sm gh" data-mf-goto="'+s+'">Edit</button></div>';}
+  function fieldLive(){var sec=S.timerSeconds,m=Math.floor(sec/60),ss=sec%60;return'<div class="hd"><div><div class="t">Matchday Log</div><div class="sub">vs '+esc(S.opponent||'Opponent')+' · '+esc(S.homeAway)+'</div></div><div class="r"><span class="avm">'+esc(window.CoachV2.initials())+'</span></div></div><div class="stack"><div class="livehd"><div class="lv"><i></i>'+(S.timerRunning?'LIVE':'MATCHDAY')+'</div><div class="clock">'+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0')+'<small>'+S.homeScore+' – '+S.awayScore+'</small></div></div><div class="pitchm">'+pitchRows(slots(),'field')+'</div><div class="evtaps"><button class="bt spend" data-live-event="goal">⚽ Goal</button><button class="bt" data-live-event="yellow">🟨 Yellow</button><button class="bt" data-live-event="sub">⇄ Sub</button><button class="bt" data-live-event="conceded">◻ Conceded</button></div><div class="card rule"><div class="ck">Log · '+S.events.length+'</div>'+S.events.slice().reverse().slice(0,6).map(function(e){return'<div class="evm"><span class="mn">'+Number(e.minute||0)+'\'</span><span>'+esc(eventLabel(e))+'</span></div>';}).join('')+'</div><div class="flex" style="gap:8px"><button class="bt pri" style="flex:1" data-live-toggle>'+(S.timerRunning?'Pause':'Start timer')+'</button><button class="bt dgr" style="flex:1" data-live-full>Full time</button></div><div class="mut" style="font-size:9px;text-align:center">Saved on phone · will sync through the same Match Facts draft</div></div>';}
+  function validateStep(n){if(n>=1){if(!S.opponent.trim())return'Enter the opponent or choose a fixture.';if(!S.matchDate)return'Select the match date.';if(!S.selected.length)return'Select at least one player.';}if(n>=4){var un=S.selected.filter(function(id){return!(S.ratings[id]&&S.ratings[id].overall);});if(un.length)return'Rate every selected player before review.';}return'';}
+  function go(n){var e=validateStep(n-1);if(e)return alert(e);S.step=n;save();render();}
+  function applyFixture(id){var f=fixture(id);if(!f)return;S.fixtureId=id;S.opponent=f.opponent||f.opponent_name||'';S.matchDate=String(f.fixture_date||'').slice(0,10);S.homeAway=f.home_or_away||'Home';var fmt=String(f.format||'').match(/(5|7|9|11)/);if(fmt)S.format=fmt[1];var opts=formationOptions();if(opts.indexOf(S.formation)<0)S.formation=opts[0];}
+  function bind(root){root.querySelectorAll('[data-mf-field]').forEach(function(x){x.onchange=x.oninput=function(){var k=x.dataset.mfField;if(k==='fixtureId'){applyFixture(x.value);render();return;}S[k]=(k==='homeScore'||k==='awayScore')?Number(x.value||0):x.value;if(k==='format'){var o=formationOptions();S.formation=o[0];S.positions={};render();return;}if(k==='formation'){S.positions={};render();return;}save();};});root.querySelectorAll('[data-mf-player]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfPlayer,i=S.selected.indexOf(id);if(i>=0){S.selected.splice(i,1);Object.keys(S.positions).forEach(function(k){if(S.positions[k]===id)delete S.positions[k];});}else S.selected.push(id);save();render();};});root.querySelectorAll('[data-mf-select-all]').forEach(function(b){b.onclick=function(){S.selected=players.map(pid);save();render();};});root.querySelectorAll('[data-mf-next]').forEach(function(b){b.onclick=function(){go(Number(b.dataset.mfNext));};});root.querySelectorAll('[data-mf-prev]').forEach(function(b){b.onclick=function(){S.step=Number(b.dataset.mfPrev);save();render();};});root.querySelectorAll('[data-mf-goto]').forEach(function(b){b.onclick=function(){S.step=Number(b.dataset.mfGoto);render();};});root.querySelectorAll('[data-mf-slot]').forEach(function(b){b.onclick=function(){assignSlot(b.dataset.mfSlot);};});root.querySelectorAll('[data-mf-place]').forEach(function(b){b.onclick=function(){var empty=slots().find(function(k){return!S.positions[k];});if(empty){S.positions[empty]=b.dataset.mfPlace;save();render();}};});root.querySelectorAll('[data-mf-type]').forEach(function(b){b.onclick=function(){var s=root.querySelector('#mfEventType');if(s)s.value=b.dataset.mfType;root.querySelectorAll('[data-mf-type]').forEach(function(x){x.classList.toggle('on',x===b);});};});root.querySelectorAll('[data-mf-add-event]').forEach(function(b){b.onclick=function(){addEvent(root,'desk');};});root.querySelectorAll('[data-mf-field-add]').forEach(function(b){b.onclick=function(){addEvent(root,'field');};});root.querySelectorAll('[data-mf-remove-event]').forEach(function(b){b.onclick=function(){S.events.splice(Number(b.dataset.mfRemoveEvent),1);save();render();};});root.querySelectorAll('[data-mf-overall]').forEach(function(x){x.onchange=function(){S.ratings[x.dataset.mfOverall]=S.ratings[x.dataset.mfOverall]||{attrs:{}};S.ratings[x.dataset.mfOverall].overall=x.value?Number(x.value):null;save();render();};});root.querySelectorAll('[data-mf-attributes]').forEach(function(b){b.onclick=function(){openAttributes(b.dataset.mfAttributes);};});root.querySelectorAll('[data-mf-submit]').forEach(function(b){b.onclick=submit;});root.querySelectorAll('[data-mf-close]').forEach(function(b){b.onclick=function(){save();location.href='/coach/fixtures';};});root.querySelectorAll('[data-live-toggle]').forEach(function(b){b.onclick=toggleTimer;});root.querySelectorAll('[data-live-full]').forEach(function(b){b.onclick=fullTime;});root.querySelectorAll('[data-live-event]').forEach(function(b){b.onclick=function(){liveEvent(b.dataset.liveEvent);};});}
+  function addEvent(root,mode){var pre=mode==='desk'?'mfEvent':'fm',minute=Number((root.querySelector('#'+pre+'Minute')||{}).value||0),type=(root.querySelector('#'+pre+'Type')||{}).value||'goal',pl=(root.querySelector('#'+pre+'Player')||{}).value||'',extra=(root.querySelector('#'+pre+'Extra')||{}).value||'';if(type!=='conceded'&&!pl)return alert('Select a player.');var e={type:type,minute:minute};if(type==='sub'){e.playerOffId=pl;e.playerOnId=extra;}else{e.playerId=pl;if(type==='goal'&&extra)e.assistId=extra;}S.events.push(e);save();render();}
+  function assignSlot(slot){var choices=S.selected.filter(function(id){return!Object.keys(S.positions).some(function(k){return k!==slot&&S.positions[k]===id;});});window.CoachV2.openDrawer({title:'Assign '+slot,html:'<div class="field"><label>Player</label><select class="in" id="slotPlayer"><option value="">Empty</option>'+choices.map(function(id){var p=player(id);return'<option value="'+esc(id)+'"'+(String(S.positions[slot]||'')===String(id)?' selected':'')+'>'+esc(pname(p))+'</option>';}).join('')+'</select></div>',footer:'<button class="btn gh" data-close-coach-overlay>Cancel</button><button class="btn pri" id="saveSlot">Save</button>'});setTimeout(function(){var b=document.getElementById('saveSlot');if(b)b.onclick=function(){var v=document.getElementById('slotPlayer').value;if(v)S.positions[slot]=v;else delete S.positions[slot];save();window.CoachV2.closeAll();render();};},0);}
+  function attrRows(pos){var g=window.ScoutLinkScoringV4.groupForPosition(pos);if(!g)return[];if(g==='Goalkeeper')return options.attributes.goalkeeper||[];return(options.attributes.general||[]).concat(options.attributes[String(g).toLowerCase()]||[]);}
+  function openAttributes(id){var p=player(id),pos=positionPlayed(id),r=S.ratings[id]=S.ratings[id]||{attrs:{}};var rows=attrRows(pos);window.CoachV2.openDrawer({title:pname(p)+' · observed attributes',html:'<div class="callout"><b>Match-only assessment.</b> Rate only what you actually observed. Not observed is valid.</div>'+rows.map(function(a){var v=r.attrs[a[0]];return'<div class="field"><label>'+esc(a[1])+' <i>1–10</i></label><select class="in" data-drawer-rating="'+esc(a[0])+'"><option value="">Not observed</option>'+Array.from({length:10},function(_,i){return i+1;}).map(function(n){return'<option value="'+n+'"'+(Number(v)===n?' selected':'')+'>'+n+' / 10</option>';}).join('')+'</select></div>';}).join(''),footer:'<button class="btn pri" id="saveAttributes">Save</button>'});setTimeout(function(){var b=document.getElementById('saveAttributes');if(b)b.onclick=function(){document.querySelectorAll('[data-drawer-rating]').forEach(function(x){if(x.value)r.attrs[x.dataset.drawerRating]=Number(x.value);else delete r.attrs[x.dataset.drawerRating];});save();window.CoachV2.closeAll();render();};},0);}
+  function liveEvent(type){if(type==='conceded'){S.events.push({type:'conceded',minute:Math.floor(S.timerSeconds/60)});S.awayScore++;save();render();return;}var selected=Object.keys(S.positions).map(function(k){return S.positions[k];}).filter(Boolean);window.CoachV2.openSheet({title:type==='goal'?'Goal scored':type==='yellow'?'Yellow card':'Substitution',html:type==='sub'?'<div class="field"><label>Player off</label><select class="in" id="liveOff">'+selected.map(function(id){return'<option value="'+id+'">'+esc(pname(player(id)))+'</option>';}).join('')+'</select></div><div class="field"><label>Player on</label><select class="in" id="liveOn">'+S.selected.filter(function(id){return selected.indexOf(id)<0;}).map(function(id){return'<option value="'+id+'">'+esc(pname(player(id)))+'</option>';}).join('')+'</select></div>':'<div class="field"><label>Player</label><select class="in" id="livePlayer">'+selected.map(function(id){return'<option value="'+id+'">'+esc(pname(player(id)))+'</option>';}).join('')+'</select></div>',footer:'<button class="btn pri" id="saveLiveEvent">Save</button>'});setTimeout(function(){var b=document.getElementById('saveLiveEvent');if(b)b.onclick=function(){var e={type:type,minute:Math.floor(S.timerSeconds/60)};if(type==='sub'){e.playerOffId=document.getElementById('liveOff').value;e.playerOnId=document.getElementById('liveOn').value;var slot=Object.keys(S.positions).find(function(k){return S.positions[k]===e.playerOffId;});if(slot&&e.playerOnId)S.positions[slot]=e.playerOnId;}else e.playerId=document.getElementById('livePlayer').value;S.events.push(e);if(type==='goal')S.homeScore++;save();window.CoachV2.closeAll();render();};},0);}
+  function toggleTimer(){S.timerRunning=!S.timerRunning;if(S.timerRunning&&!timer)timer=setInterval(function(){S.timerSeconds++;save();if(innerWidth<=760&&new URLSearchParams(location.search).get('mode')==='live')render();},1000);if(!S.timerRunning&&timer){clearInterval(timer);timer=null;}render();}
+  function fullTime(){if(!confirm('End the match and continue to player ratings?'))return;S.timerRunning=false;if(timer){clearInterval(timer);timer=null;}S.mode='post';S.step=4;save();history.replaceState({},'',location.pathname);render();}
+  function playerSubmission(id){var r=S.ratings[id]||{},pos=positionPlayed(id),goals=0,assists=0,yellow=0,red=0;S.events.forEach(function(e){if(e.type==='goal'&&String(e.playerId)===String(id))goals++;if((e.type==='assist'&&String(e.playerId)===String(id))||(e.type==='goal'&&String(e.assistId)===String(id)))assists++;if(e.type==='yellow'&&String(e.playerId)===String(id))yellow++;if(e.type==='red'&&String(e.playerId)===String(id))red++;});return{playerId:id,goals:goals,assists:assists,yellowCards:yellow,redCards:red,performanceScore:Number(r.overall),overallPerformance:Number(r.overall),positionPlayed:pos,attributeRatings:window.ScoutLinkScoringV4.nestRatings(r.attrs||{},window.ScoutLinkScoringV4.groupForPosition(pos),options),ratingScale:'ten',notes:''};}
+  async function submit(){var e=validateStep(4);if(e)return alert(e);try{await api('POST','/api/match-facts',{fixtureId:S.fixtureId||null,teamId:S.teamId||null,matchDate:S.matchDate,opponent:S.opponent,homeScore:Number(S.homeScore)||0,awayScore:Number(S.awayScore)||0,format:S.format,matchFormat:S.format+'v'+S.format,formation:S.formation,mode:'post',players:S.selected.map(playerSubmission),events:S.events,playerPositions:S.positions,coachNotes:S.coachNotes||'',confirmed:true});localStorage.removeItem(DRAFT);window.CoachV2.showToast('Match Facts recorded — '+S.selected.length+' profiles updated.');setTimeout(function(){location.href=route('/coach/fixtures');},650);}catch(err){alert(err.message||'Match Facts could not be submitted.');}}
+  function render(){var d=document.getElementById('coachDeskPage'),f=document.getElementById('coachFieldPage');if(!d||!f)return;d.innerHTML=S.step===1?desktopStage1():S.step===2?desktopStage2():S.step===3?desktopStage3():S.step===4?desktopStage4():desktopStage5();var live=innerWidth<=760&&new URLSearchParams(location.search).get('mode')==='live';f.innerHTML=live?fieldLive():S.step===1?fieldStage1():S.step===2?fieldStage2():S.step===3?fieldStage3():S.step===4?fieldStage4():fieldStage5();bind(d);bind(f);}
+  async function load(){var ps=await Promise.allSettled([api('GET','/api/coaches/profile'),api('GET','/api/fixtures?upcoming=true'),api('GET','/api/coaches/my-players')]);if(ps[0].status==='fulfilled'){var c=ps[0].value.coach||ps[0].value.data||ps[0].value;S.teamName=c.team_name||S.teamName;S.teamId=c.team_id||c.teamId||null;}if(ps[1].status==='fulfilled')fixtures=ps[1].value.data||ps[1].value.fixtures||[];if(ps[2].status==='fulfilled')players=ps[2].value.players||ps[2].value.data||[];var q=new URLSearchParams(location.search),fid=q.get('fixtureId');if(fid&&!S.fixtureId)applyFixture(fid);if(!S.matchDate)S.matchDate=new Date().toISOString().slice(0,10);if(!S.selected.length&&players.length)S.selected=players.map(pid);render();}
+  async function init(){if(!window.ScoutLinkScoringV4){setTimeout(init,40);return;}options=await window.ScoutLinkScoringV4.loadOptions();restore();await load();}
+  addEventListener('beforeunload',save);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 }());
