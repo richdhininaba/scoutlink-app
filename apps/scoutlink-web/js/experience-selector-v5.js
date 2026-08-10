@@ -30,16 +30,69 @@
     catch (_) { return CANONICAL_API; }
   }()).replace(/\/+$/, '');
 
-  var token = localStorage.getItem('sl_token') || '';
   var list = [];
   var busy = false;
+  var token = '';
 
   function byId(id){return document.getElementById(id);}
   function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
+  function restoreAdminSessionForSelector() {
+    var demoMode = localStorage.getItem('sl_demo_mode') === '1';
+    if(!demoMode) return false;
+
+    var adminToken = localStorage.getItem('sl_admin_token') || '';
+    var rawUser = localStorage.getItem('sl_admin_user') || '';
+    var adminType = localStorage.getItem('sl_admin_type') || 'Stratex';
+    if(!adminToken || !rawUser || adminType !== 'Stratex') return false;
+
+    try {
+      var user = JSON.parse(rawUser);
+      localStorage.setItem('sl_token',adminToken);
+      localStorage.setItem('sl_type','Stratex');
+      localStorage.setItem('sl_user',rawUser);
+      localStorage.setItem('sl_user_id',user&&user.id?user.id:'');
+      localStorage.setItem('sl_user_email',user&&user.email?user.email:'');
+      localStorage.removeItem('sl_demo_mode');
+      localStorage.setItem('sl_experience_switcher','1');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function storeAdminSessionIfNeeded() {
+    var currentType = localStorage.getItem('sl_type') || '';
+    var currentDemoMode = localStorage.getItem('sl_demo_mode') === '1';
+    if(currentType !== 'Stratex' || currentDemoMode) return;
+
+    var currentToken = localStorage.getItem('sl_token') || token || '';
+    var rawUser = localStorage.getItem('sl_user') || '';
+    if(!currentToken || !rawUser) return;
+
+    try {
+      JSON.parse(rawUser);
+      localStorage.setItem('sl_admin_token',currentToken);
+      localStorage.setItem('sl_admin_user',rawUser);
+      localStorage.setItem('sl_admin_type','Stratex');
+    } catch (_) {}
+  }
+
+  function resetInteractivity() {
+    busy=false;
+    document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){
+      row.removeAttribute('aria-disabled');
+    });
+  }
+
+  restoreAdminSessionForSelector();
+  token = localStorage.getItem('sl_token') || '';
+
   function clearSession() {
-    ['sl_token','sl_type','sl_user','sl_user_id','sl_user_email','sl_demo_mode','sl_experience_switcher']
-      .forEach(function (key) { localStorage.removeItem(key); });
+    [
+      'sl_token','sl_type','sl_user','sl_user_id','sl_user_email','sl_demo_mode',
+      'sl_admin_token','sl_admin_user','sl_admin_type','sl_experience_switcher'
+    ].forEach(function (key) { localStorage.removeItem(key); });
     ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_seed_players','sl_public_demo_started_at']
       .forEach(function (key) { sessionStorage.removeItem(key); });
   }
@@ -96,6 +149,7 @@
     byId('experienceLoading').hidden=true;
     var root=byId('experienceList');
     if(!list.length){
+      byId('experienceRoot').querySelector('.door-h').textContent='Checking your access.';
       byId('experienceIntro').textContent='This account has no approved workspace.';
       root.innerHTML='<div class="dmsg err"><b>No workspace available.</b> Contact Stratex support if you expected access.</div>'+
         '<div class="door-links" style="justify-content:flex-start"><a href="/register/coach">Register as a coach</a><span>·</span><a href="https://www.stratexanalytics.co.uk/contact">Contact support</a></div>';
@@ -110,6 +164,7 @@
         '<span class="go" aria-hidden="true">→</span></article>';
     }).join('');
     bindRows();
+    resetInteractivity();
   }
 
   function eventStartedInsideDropdown(event) {
@@ -139,6 +194,7 @@
     localStorage.setItem('sl_user',JSON.stringify(data.user||{}));
     localStorage.setItem('sl_user_id',data.user&&data.user.id?data.user.id:'');
     localStorage.setItem('sl_user_email',data.user&&data.user.email?data.user.email:'');
+    localStorage.setItem('sl_experience_switcher','1');
     if(data.demoMode) localStorage.setItem('sl_demo_mode','1'); else localStorage.removeItem('sl_demo_mode');
   }
 
@@ -148,6 +204,8 @@
     var exp=list[index];
     document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){row.setAttribute('aria-disabled','true');});
     try{
+      storeAdminSessionIfNeeded();
+
       if(exp.current&&!exp.demo){
         location.href=homeFor(exp.accountType);
         return;
@@ -162,12 +220,13 @@
       location.href=homeFor(data.accountType||exp.accountType);
     }catch(error){
       var msg=byId('experienceError');msg.textContent=error.message;msg.classList.add('show');
-      busy=false;
-      document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){row.removeAttribute('aria-disabled');});
+      resetInteractivity();
     }
   }
 
   async function load() {
+    restoreAdminSessionForSelector();
+    token=localStorage.getItem('sl_token')||'';
     if(!token){location.replace('/login');return;}
     try{
       var data=await api('/api/auth/experiences');
@@ -184,8 +243,16 @@
       if(/token|auth|unauthor/i.test(error.message)){clearSession();location.replace('/login');return;}
       byId('experienceLoading').hidden=true;
       var msg=byId('experienceError');msg.textContent=error.message;msg.classList.add('show');
+      resetInteractivity();
     }
   }
+
+  window.addEventListener('pageshow',function(){
+    if(restoreAdminSessionForSelector()){
+      token=localStorage.getItem('sl_token')||token;
+    }
+    resetInteractivity();
+  });
 
   byId('experienceSignOut').addEventListener('click',function(){clearSession();location.href='/login?logout=1';});
   load();
