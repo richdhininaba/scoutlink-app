@@ -60,6 +60,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://scoutlink-api.vercel.app/api/:path*"
+    },
+    {
       "source": "/demo",
       "destination": "/pages/demo"
     },
