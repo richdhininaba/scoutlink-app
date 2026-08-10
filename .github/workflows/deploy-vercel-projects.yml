@@ -1,0 +1,232 @@
+name: Deploy Vercel Projects
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/scoutlink-web/**'
+      - 'apps/stratex-web/**'
+      - 'backend/**'
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Project to deploy
+        required: true
+        type: choice
+        options:
+          - scoutlink-web
+          - stratex-web
+          - scoutlink-api
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changed deployment root
+    runs-on: ubuntu-latest
+    outputs:
+      scoutlink_web: ${{ steps.changed.outputs.scoutlink_web }}
+      stratex_web: ${{ steps.changed.outputs.stratex_web }}
+      scoutlink_api: ${{ steps.changed.outputs.scoutlink_api }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select project or detect changed paths
+        id: changed
+        shell: bash
+        run: |
+          SCOUTLINK_WEB=false
+          STRATEX_WEB=false
+          SCOUTLINK_API=false
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "${{ inputs.project }}" in
+              scoutlink-web)
+                SCOUTLINK_WEB=true
+                ;;
+              stratex-web)
+                STRATEX_WEB=true
+                ;;
+              scoutlink-api)
+                SCOUTLINK_API=true
+                ;;
+            esac
+          else
+            BEFORE="${{ github.event.before }}"
+            AFTER="${{ github.sha }}"
+
+            CHANGED_FILES="$(git diff --name-only "$BEFORE" "$AFTER")"
+            printf '%s\n' "$CHANGED_FILES"
+
+            if printf '%s\n' "$CHANGED_FILES" | grep -q '^apps/scoutlink-web/'; then
+              SCOUTLINK_WEB=true
+            fi
+
+            if printf '%s\n' "$CHANGED_FILES" | grep -q '^apps/stratex-web/'; then
+              STRATEX_WEB=true
+            fi
+
+            if printf '%s\n' "$CHANGED_FILES" | grep -q '^backend/'; then
+              SCOUTLINK_API=true
+            fi
+          fi
+
+          echo "scoutlink_web=$SCOUTLINK_WEB" >> "$GITHUB_OUTPUT"
+          echo "stratex_web=$STRATEX_WEB" >> "$GITHUB_OUTPUT"
+          echo "scoutlink_api=$SCOUTLINK_API" >> "$GITHUB_OUTPUT"
+
+  deploy_scoutlink_web:
+    name: Deploy ScoutLink Web
+    needs: changes
+    if: needs.changes.outputs.scoutlink_web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    concurrency:
+      group: scoutlink-web-production
+      cancel-in-progress: true
+
+    env:
+      VERCEL_ORG_ID: team_9bYFi5waY2YDrtwxNQ11T3JU
+      VERCEL_PROJECT_ID: prj_nh7hVrTsIFokIoKBFnosmHygKWuM
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Debounce rapid ScoutLink pushes
+        if: github.event_name == 'push'
+        run: sleep 30
+
+      - name: Confirm this is still the latest main commit
+        id: latest
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          if [ "$(git rev-parse origin/main)" = "$GITHUB_SHA" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists. This ScoutLink deployment is superseded."
+          fi
+
+      - name: Set up Node.js
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy ScoutLink Web to production
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        working-directory: apps/scoutlink-web
+        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+
+  deploy_stratex_web:
+    name: Deploy Stratex Web
+    needs: changes
+    if: needs.changes.outputs.stratex_web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    concurrency:
+      group: stratex-web-production
+      cancel-in-progress: true
+
+    env:
+      VERCEL_ORG_ID: team_9bYFi5waY2YDrtwxNQ11T3JU
+      VERCEL_PROJECT_ID: prj_iyHAESqtrLlJYsn3F2KVYH3YS6tW
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Debounce rapid Stratex pushes
+        if: github.event_name == 'push'
+        run: sleep 30
+
+      - name: Confirm this is still the latest main commit
+        id: latest
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          if [ "$(git rev-parse origin/main)" = "$GITHUB_SHA" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists. This Stratex deployment is superseded."
+          fi
+
+      - name: Set up Node.js
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Stratex Web to production
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        working-directory: apps/stratex-web
+        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
+
+  deploy_scoutlink_api:
+    name: Deploy ScoutLink API
+    needs: changes
+    if: needs.changes.outputs.scoutlink_api == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    concurrency:
+      group: scoutlink-api-production
+      cancel-in-progress: true
+
+    env:
+      VERCEL_ORG_ID: team_9bYFi5waY2YDrtwxNQ11T3JU
+      VERCEL_PROJECT_ID: prj_KSRdgQOth0EM39WJi1MtXRNhDtD0
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Debounce rapid API pushes
+        if: github.event_name == 'push'
+        run: sleep 30
+
+      - name: Confirm this is still the latest main commit
+        id: latest
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git fetch origin main --depth=1
+          if [ "$(git rev-parse origin/main)" = "$GITHUB_SHA" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists. This API deployment is superseded."
+          fi
+
+      - name: Set up Node.js
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy ScoutLink API to production
+        if: github.event_name == 'workflow_dispatch' || steps.latest.outputs.should_deploy == 'true'
+        working-directory: backend
+        run: npx --yes vercel@latest deploy --prod --yes --token="$VERCEL_TOKEN"
