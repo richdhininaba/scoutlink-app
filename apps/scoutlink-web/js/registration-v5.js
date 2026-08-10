@@ -13,9 +13,34 @@
 
   var STORAGE_KEY = 'scoutlink_registration_v5_' + role;
   var PLAN_DATA = [
-    { name:'Core', seat:'1 seat', copy:'Search & shortlists · compatibility overview' },
-    { name:'Plus', seat:'Up to 3 seats', copy:'Advanced filters · comparison · pipeline · notes & exports' },
-    { name:'Elite', seat:'Up to 8 seats', copy:'Collaboration · advanced compatibility intelligence · predictions' }
+    {
+      name:'Core',
+      seat:'1 seat',
+      annual:'£599/year',
+      monthly:'£69/month',
+      copy:'U7 to U16 player database search, player profile access, compatibility scoring, shortlisting, basic pipeline, 20 exports/year, 60 predictions/year, 30 coach-mediated interest requests/year'
+    },
+    {
+      name:'Plus',
+      seat:'5 seats',
+      annual:'£1,999/year',
+      monthly:'£219/month',
+      copy:'Everything in Core, shared team usage, stronger team workflow, more player dossier exports, more prediction usage, 100 exports/year, 300 predictions/year, 120 coach-mediated interest requests/year'
+    },
+    {
+      name:'Elite',
+      seat:'10 seats',
+      annual:'£4,999/year',
+      monthly:'£549/month',
+      copy:'Everything in Plus, advanced recruitment workflow, team reporting, stronger admin controls, priority onboarding, higher usage limits, 300 exports/year, 900 predictions/year, 300 coach-mediated interest requests/year'
+    },
+    {
+      name:'Enterprise',
+      seat:'Custom seats',
+      annual:'From £10,000/year',
+      monthly:'Custom',
+      copy:'Custom limits, organisation-level onboarding, custom reporting, procurement support, bespoke account management, custom exports, custom predictions and custom coach-mediated interest request limits'
+    }
   ];
   var state = {
     step:1,
@@ -158,15 +183,27 @@
     );
   }
 
+  function planFor(name) {
+    return PLAN_DATA.find(function (plan) { return plan.name === name; }) || PLAN_DATA[1];
+  }
+
+  function planPrice(plan) {
+    if (!plan) return '';
+    if (plan.monthly === 'Custom') return plan.annual + ' · monthly pricing custom';
+    return plan.annual + ' · ' + plan.monthly;
+  }
+
   function planRows() {
     return '<label class="sl-lab" style="margin:14px 0 8px">Preferred ScoutLink plan <em>Preference only</em></label>' +
       PLAN_DATA.map(function (plan) {
         var on=state.values.preferredScoutPlan===plan.name;
         return '<button class="planrow'+(on?' on':'')+'" type="button" data-plan="'+esc(plan.name)+'">' +
-          '<span class="radio"></span><div><h4>'+esc(plan.name)+'</h4><p class="fts">'+esc(plan.copy)+'</p></div>' +
+          '<span class="radio"></span><div><h4>'+esc(plan.name)+'</h4>' +
+          '<p class="who">'+esc(planPrice(plan))+'</p>' +
+          '<p class="fts">'+esc(plan.copy)+'</p></div>' +
           '<span class="seat">'+esc(plan.seat)+'</span></button>';
       }).join('') +
-      '<div class="sl-aside"><b>No payment now</b><p>Stratex reviews first, then confirms plan, limits and commercial terms before any subscription begins.</p></div>';
+      '<div class="sl-aside"><b>No payment now</b><p>The advertised plan price, seats and benefits are shown before you apply. Stratex reviews access first; a subscription only begins after approval.</p></div>';
   }
 
   function scoutStep2() {
@@ -206,6 +243,7 @@
   }
 
   function scoutStep3() {
+    var selectedPlan=planFor(state.values.preferredScoutPlan||'Plus');
     return check('accuracy','The application is accurate',
       'The information will remain accurate through review and after access is granted.') +
       check('verification','I will complete identity and safeguarding verification',
@@ -214,7 +252,7 @@
       'Access can be reviewed or withdrawn where necessary to protect players.') +
       '<div class="reg-summary">'+summaryRow('Applicant',(state.values.fullName||'')+' · '+(state.values.currentScoutingRole||''))+
       summaryRow('Organisation',(state.values.scoutClub||'')+' · '+(state.values.primaryScoutingRegion||''))+
-      summaryRow('Plan preference',(state.values.preferredScoutPlan||'Plus')+' · '+(state.values.expectedScoutUsers||'')+' users · no payment taken')+'</div>';
+      summaryRow('Plan preference',selectedPlan.name+' · '+selectedPlan.seat+' · '+planPrice(selectedPlan)+' · no payment taken')+'</div>';
   }
 
   function titleForStep() {
@@ -225,7 +263,7 @@
     ][state.step-1];
     return [
       ['Who you are.','Professional details that can be matched to your scouting role. Your password is created after approval.'],
-      ['Team & plan.','The plan is a preference, not a purchase — nothing is charged until after approval.'],
+      ['Team & plan.','Compare the current plan price, seats and benefits before recording your preference. Nothing is charged until after approval.'],
       ['Declarations.','Confirm the application, verification and responsible-access commitments.']
     ][state.step-1];
   }
@@ -241,7 +279,7 @@
         '<div class="sl-aside"><b>Saved as you go</b><p>Progress is stored locally between steps on this device.</p></div></aside>';
     }
     return '<aside class="reg-side"><div class="sl-aside"><b>Reviewed access</b><p>This is youth football. Identity, safeguarding information and role context are reviewed before player-search access.</p></div>' +
-      '<div class="sl-aside"><b>No payment now</b><p>Plan preference is recorded now; commercial terms follow verification and review.</p></div></aside>';
+      '<div class="sl-aside"><b>Clear pricing before approval</b><p>Annual and monthly pricing, seat allowance and key benefits are shown when you choose a plan. No payment is taken on this application.</p></div></aside>';
   }
 
   function render() {
