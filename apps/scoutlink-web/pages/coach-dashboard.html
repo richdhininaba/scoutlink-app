@@ -9,216 +9,170 @@
 <title>Coach dashboard - ScoutLink</title>
 <link rel="stylesheet" href="/css/variables.css">
 <link rel="stylesheet" href="/css/main.css">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/coach-v2.css">
-<link rel="stylesheet" href="/css/coach-dashboard-v3.css">
-<link rel="stylesheet" href="/css/coach-experience-v9.css?v=9.1.0-dashboard">
+<link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=1.0.0">
 <script type="text/javascript">
-  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};
-  heap.load("3441720574");
+  window.heapReadyCb=window.heapReadyCb||[],window.heap=window.heap||[],heap.load=function(e,t){window.heap.envId=e,window.heap.clientConfig=t=t||{},window.heap.clientConfig.shouldFetchServerConfig=!1;var a=document.createElement("script");a.type="text/javascript",a.async=!0,a.src="https://cdn.eu.heap-api.com/config/"+e+"/heap_config.js";var r=document.getElementsByTagName("script")[0];r.parentNode.insertBefore(a,r);var n=["init","startTracking","stopTracking","track","resetIdentity","identify","getSessionId","getUserId","getIdentity","addUserProperties","addEventProperties","removeEventProperty","clearEventProperties","addAccountProperties","addAdapter","addTransformer","addTransformerFn","onReady","addPageviewProperties","removePageviewProperty","clearPageviewProperties","trackPageview"],i=function(e){return function(){var t=Array.prototype.slice.call(arguments,0);window.heapReadyCb.push({name:e,fn:function(){heap[e]&&heap[e].apply(heap,t)}})}};for(var p=0;p<n.length;p++)heap[n[p]]=i(n[p])};heap.load("3441720574");
 </script>
 </head>
-<body class="coach-page-dashboard">
-<header class="mobile-top coach-v2-mobile-top coach-dashboard-mobile-top">
-  <a class="coach-v8-mobile-logo" href="/coach/dashboard" aria-label="ScoutLink Coach dashboard">Scout<span>Link</span></a>
-  <strong class="coach-v2-mobile-title" id="mobileDashboardTitle">Dashboard</strong>
-  <button type="button" class="coach-v2-menu-button" aria-label="Open Coach menu">Menu</button>
-</header>
-
+<body class="coach-exact coach-page-dashboard">
 <div class="dashboard">
   <nav class="sidebar" id="sidebar" aria-label="Coach navigation">
-    <div class="sidebar-logo"><a class="sl-logo" href="/coach/dashboard">Scout<span>Link</span></a></div>
+    <div class="sidebar-logo"></div>
     <div class="sidebar-nav" id="sidebarNav"></div>
     <div class="sidebar-user" id="sidebarUser"></div>
   </nav>
 
   <div class="dashboard-main">
-    <header class="topbar">
-      <span class="topbar-title" id="coachTitle">Dashboard</span>
-      <div class="topbar-right">
-        <button class="notif-btn" id="notifToggleBtn" type="button" aria-label="Open notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-          <span class="notif-badge" id="notifBadge" style="display:none"></span>
-        </button>
-        <button class="btn btn-sm btn-outline" id="logoutBtn" type="button">Sign out</button>
-      </div>
-    </header>
+    <header class="topbar"></header>
 
-    <main class="page-content coach-v9-dashboard" id="coachDashboardApp">
-      <section class="cv9-dash-greeting" data-dashboard-greeting aria-live="polite">
-        <div>
-          <span class="cv9-chip">Coach workspace</span>
-          <h1>Loading your dashboard</h1>
-          <p>Gathering your squad, fixtures and evidence signals.</p>
-          <div class="cv9-dash-meta">
+    <main class="page-content" id="coachDashboardApp">
+      <section class="coach-dashboard-hero" aria-labelledby="dashboardGreeting">
+        <div class="coach-dashboard-greeting-copy">
+          <span class="coach-kicker">Coach workspace</span>
+          <h1 id="dashboardGreeting">Loading your dashboard</h1>
+          <p>Your squad evidence, fixtures and Scout signals are organised for the next useful action.</p>
+          <div class="coach-dashboard-meta">
             <span id="dashboardTeamMeta">Team loading</span>
             <span id="dashboardDateMeta">Today</span>
           </div>
         </div>
-        <aside class="cv9-next-fixture" id="dashboardNextFixture">
-          <span class="cv9-panel-eyebrow">Next fixture</span>
+
+        <aside class="coach-dashboard-next" id="dashboardNextFixture">
+          <span>Next fixture</span>
           <strong>Checking schedule</strong>
           <p>Upcoming match data will appear here.</p>
-          <div class="cv9-dash-actions">
-            <a class="btn btn-primary" href="/coach/add-player">Add player</a>
-            <a class="btn btn-outline" href="/coach/match-facts">Record Match Facts</a>
+          <div class="coach-dashboard-actions">
+            <a class="btn btn-primary" href="/coach/match-facts?mode=live">Open Matchday Log</a>
+            <a class="btn" href="/coach/fixtures">Fixture</a>
           </div>
         </aside>
       </section>
 
-      <section class="coach-dashboard-stat-grid cv9-dash-kpis" aria-label="Coach dashboard summary" data-dashboard-kpis>
-        <article class="cv9-kpi">
+      <section class="coach-dashboard-kpis" aria-label="Coach dashboard summary">
+        <article class="coach-dashboard-kpi">
           <span>Squad</span>
           <strong id="kpiPlayers">--</strong>
           <p id="kpiPlayersSub">Loading player count</p>
         </article>
-        <article class="cv9-kpi">
+        <article class="coach-dashboard-kpi">
           <span>Evidence complete</span>
           <strong id="kpiEvidence">--</strong>
           <p id="kpiEvidenceSub">Loading profile evidence</p>
         </article>
-        <article class="cv9-kpi">
+        <article class="coach-dashboard-kpi">
           <span>Match Facts coverage</span>
           <strong id="kpiCoverage">--</strong>
           <p id="kpiCoverageSub">Checking completed fixtures</p>
         </article>
-        <article class="cv9-kpi">
+        <article class="coach-dashboard-kpi">
           <span>Squad value signal</span>
           <strong id="kpiValueSignal">--</strong>
           <p id="kpiValueSignalSub">Waiting for comparable evidence</p>
         </article>
       </section>
 
-      <section class="dashboard-priority-grid cv9-dash-priority" aria-label="Dashboard priorities">
-        <article class="cv9-panel cv9-attention-panel">
-          <header class="cv9-panel-head">
-            <div>
-              <span class="cv9-panel-eyebrow">Needs attention</span>
-              <h2>Focus the next action</h2>
+      <section class="coach-dashboard-grid" aria-label="Coach dashboard">
+        <div class="coach-dashboard-stack">
+          <article class="coach-panel coach-rule">
+            <header class="coach-panel-head">
+              <div>
+                <span class="coach-kicker">Needs attention</span>
+                <h2>Focus the next action</h2>
+                <p>Generated from missing evidence, Match Facts and reviewed Scout activity.</p>
+              </div>
+              <a class="btn btn-sm" href="/coach/notifications">All notifications</a>
+            </header>
+            <div class="coach-panel-body" id="attentionQueue" aria-live="polite">
+              <div class="cv9-loading">Loading attention queue</div>
             </div>
-            <a class="btn btn-sm btn-outline" href="/coach/notifications">All notifications</a>
-          </header>
-          <div class="cv9-panel-body" id="attentionQueue" aria-live="polite">
-            <div class="cv9-loading">Loading attention queue</div>
-          </div>
-        </article>
+          </article>
 
-        <article class="cv9-panel cv9-mobile-action-panel">
-          <header class="cv9-panel-head">
-            <div>
-              <span class="cv9-panel-eyebrow">Quick action</span>
-              <h2>Build evidence</h2>
+          <article class="coach-panel coach-rule">
+            <header class="coach-panel-head">
+              <div>
+                <span class="coach-kicker">Squad evidence</span>
+                <h2>Weakest completion first</h2>
+                <p>The profiles that need work stay visible before a Scout finds them.</p>
+              </div>
+              <a class="btn btn-sm" href="/coach/my-players">Manage squad</a>
+            </header>
+            <div class="coach-panel-body" id="evidenceByPlayer" aria-live="polite">
+              <div class="cv9-loading">Loading player evidence</div>
             </div>
-          </header>
-          <div class="cv9-panel-body cv9-action-stack">
-            <a class="btn btn-primary" href="/coach/add-player">Add player</a>
-            <a class="btn btn-outline" href="/coach/match-facts">Record Match Facts</a>
-            <a class="btn btn-outline" href="/coach/fixtures">Add fixture</a>
-          </div>
-        </article>
-      </section>
+          </article>
+        </div>
 
-      <section class="cv9-dash-grid" aria-label="Coach dashboard panels">
-        <article class="cv9-panel">
-          <header class="cv9-panel-head">
-            <div>
-              <span class="cv9-panel-eyebrow">Matchday</span>
-              <h2>Upcoming fixtures</h2>
+        <div class="coach-dashboard-stack">
+          <article class="coach-panel coach-rule">
+            <header class="coach-panel-head">
+              <div>
+                <span class="coach-kicker">Matchday</span>
+                <h2>Upcoming fixtures</h2>
+                <p>The next evidence opportunities.</p>
+              </div>
+              <a class="btn btn-sm" href="/coach/fixtures">View fixtures</a>
+            </header>
+            <div class="coach-panel-body" id="upcomingFixtures" aria-live="polite">
+              <div class="cv9-loading">Loading fixtures</div>
             </div>
-            <a class="btn btn-sm btn-outline" href="/coach/fixtures">View fixtures</a>
-          </header>
-          <div class="cv9-panel-body" id="upcomingFixtures" aria-live="polite">
-            <div class="cv9-loading">Loading fixtures</div>
-          </div>
-        </article>
+          </article>
 
-        <article class="cv9-panel">
-          <header class="cv9-panel-head">
-            <div>
-              <span class="cv9-panel-eyebrow">Scout activity</span>
-              <h2>Recent scout signals</h2>
+          <article class="coach-panel coach-rule">
+            <header class="coach-panel-head">
+              <div>
+                <span class="coach-kicker">Scout activity</span>
+                <h2>Recent Scout signals</h2>
+                <p>Reviewed contact that needs a Coach response.</p>
+              </div>
+              <a class="btn btn-sm" href="/coach/chat">Open chat</a>
+            </header>
+            <div class="coach-panel-body" id="recentScoutActivity" aria-live="polite">
+              <div class="cv9-loading">Loading Scout activity</div>
             </div>
-            <a class="btn btn-sm btn-outline" href="/coach/chat">Open chat</a>
-          </header>
-          <div class="cv9-panel-body" id="recentScoutActivity" aria-live="polite">
-            <div class="cv9-loading">Loading scout activity</div>
-          </div>
-        </article>
+          </article>
+        </div>
 
-        <article class="cv9-panel cv9-season-panel">
-          <header class="cv9-panel-head">
+        <article class="coach-panel coach-rule coach-dashboard-wide">
+          <header class="coach-panel-head">
             <div>
-              <span class="cv9-panel-eyebrow">Season summary</span>
+              <span class="coach-kicker">Season summary</span>
               <h2>Current evidence picture</h2>
+              <p>Completed fixtures, Match Facts and the season archive in one readout.</p>
             </div>
           </header>
-          <div class="cv9-panel-body" id="seasonSummaryCurrent" aria-live="polite">
+          <div class="coach-panel-body" id="seasonSummaryCurrent" aria-live="polite">
             <div class="cv9-loading">Loading season picture</div>
           </div>
         </article>
 
-        <article class="cv9-panel">
-          <header class="cv9-panel-head">
+        <article class="coach-panel coach-rule coach-dashboard-wide coach-dashboard-archive" id="prevSeasonsCard">
+          <header class="coach-panel-head">
             <div>
-              <span class="cv9-panel-eyebrow">Squad evidence</span>
-              <h2>Weakest completion first</h2>
-            </div>
-            <a class="btn btn-sm btn-outline" href="/coach/my-players">Manage squad</a>
-          </header>
-          <div class="cv9-panel-body" id="evidenceByPlayer" aria-live="polite">
-            <div class="cv9-loading">Loading player evidence</div>
-          </div>
-        </article>
-
-        <article class="cv9-panel cv9-archive-panel" id="prevSeasonsCard" aria-labelledby="previousSeasonsHeading">
-          <header class="cv9-panel-head">
-            <div>
-              <span class="cv9-panel-eyebrow">Archive</span>
-              <h2 id="previousSeasonsHeading">Previous seasons</h2>
+              <span class="coach-kicker">Archive</span>
+              <h2>Previous seasons</h2>
             </div>
           </header>
-          <div class="cv9-panel-body" id="prevSeasonsList"></div>
+          <div class="coach-panel-body" id="prevSeasonsList"></div>
         </article>
       </section>
     </main>
   </div>
 </div>
 
-<nav class="mobile-bottom coach-v2-bottom-nav coach-dashboard-bottom-nav" aria-label="Coach mobile navigation">
-  <a class="bottom-link active" href="/coach/dashboard" aria-current="page">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10.5V20h14v-9.5"></path><path d="M9 20v-6h6v6"></path></svg><span>Home</span>
-  </a>
-  <a class="bottom-link" href="/coach/my-players">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg><span>Players</span>
-  </a>
-  <a class="bottom-link" href="/coach/match-facts">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m12 7 3 2.2-1.1 3.5h-3.8L9 9.2 12 7Z"></path><path d="m5.5 10.5 3.5-1.3M15 9.2l3.5 1.3M10.1 12.7 8 16m5.9-3.3L16 16"></path></svg><span>Match</span>
-  </a>
-  <a class="bottom-link" href="/coach/chat">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l2.5-2H17a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3"></path><path d="M8 9h8M8 13h5"></path></svg><span>Chat</span>
-  </a>
-  <a class="bottom-link" href="/coach/settings">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.3a1.7 1.7 0 0 1 3.4 0 1.7 1.7 0 0 0 2.6 1.1 1.7 1.7 0 0 1 2.4 2.4 1.7 1.7 0 0 0 1 2.5 1.7 1.7 0 0 1 0 3.4 1.7 1.7 0 0 0-1 2.6 1.7 1.7 0 0 1-2.4 2.4 1.7 1.7 0 0 0-2.6 1 1.7 1.7 0 0 1-3.4 0 1.7 1.7 0 0 0-2.6-1 1.7 1.7 0 0 1-2.4-2.4 1.7 1.7 0 0 0-1-2.6 1.7 1.7 0 0 1 0-3.4 1.7 1.7 0 0 0 1-2.5 1.7 1.7 0 0 1 2.4-2.4 1.7 1.7 0 0 0 2.6-1.1Z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Settings</span>
-  </a>
-</nav>
-
 <div class="coach-dashboard-modal" id="seasonSummaryModal" aria-hidden="true">
   <section class="coach-dashboard-modal-card" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
     <h2 id="summaryTitle">Season summary</h2>
     <div id="summaryContent"></div>
     <div class="coach-dashboard-modal-actions">
-      <button class="btn btn-outline" type="button" data-close-dashboard-modal="seasonSummaryModal">Close</button>
+      <button class="btn" type="button" data-close-dashboard-modal="seasonSummaryModal">Close</button>
     </div>
   </section>
 </div>
 
-<script src="/js/scout-nav.js"></script>
 <script src="/js/main.js"></script>
 <script src="/js/heap-analytics.js"></script>
-<script src="/js/coach-v2.js"></script>
+<script src="/js/coach-overlays-v1.js?v=2.0.0"></script>
+<script src="/js/coach-v2.js?v=11.0.0-exact"></script>
 <script src="/js/coach-dashboard-v3.js?v=9.1.0-dashboard"></script>
 </body>
 </html>
