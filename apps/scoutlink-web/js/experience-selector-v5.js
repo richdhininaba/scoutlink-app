@@ -1,9 +1,35 @@
 'use strict';
 (function () {
+  var CANONICAL_API = 'https://scoutlink-api.vercel.app';
+
+  function shouldUseSameOriginApi() {
+    var host = String(window.location.hostname || '').toLowerCase();
+    return host === 'scoutlink.app' ||
+      host === 'www.scoutlink.app' ||
+      host.endsWith('.vercel.app') ||
+      host.endsWith('.app.github.dev');
+  }
+
   var API = (function () {
-    try { return localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app'; }
-    catch (_) { return 'https://scoutlink-api.vercel.app'; }
+    /*
+     * The experience selector sits immediately after login and is responsible
+     * for loading /api/auth/experiences and switching between real/demo
+     * workspaces. Keep those requests on the ScoutLink web origin whenever its
+     * Vercel /api proxy is available.
+     *
+     * Persist the web origin as sl_api_url too. Shared signed-in ScoutLink pages
+     * still read that key, so this keeps Coach/Scout/Player requests on the same
+     * proxy after the user leaves the selector.
+     */
+    if (shouldUseSameOriginApi()) {
+      try { localStorage.setItem('sl_api_url', window.location.origin); } catch (_) {}
+      return '';
+    }
+
+    try { return localStorage.getItem('sl_api_url') || CANONICAL_API; }
+    catch (_) { return CANONICAL_API; }
   }()).replace(/\/+$/, '');
+
   var token = localStorage.getItem('sl_token') || '';
   var list = [];
   var busy = false;
@@ -26,7 +52,15 @@
     options=options||{};
     options.headers=Object.assign({},options.headers||{},token?{Authorization:'Bearer '+token}:{});
     options.credentials='include';
-    var response=await fetch(API+path,options);
+
+    var response;
+    try {
+      response=await fetch(API+path,options);
+    } catch (error) {
+      console.error('[ScoutLink experiences] API request failed', error);
+      throw new Error('ScoutLink could not load your approved workspaces. Please refresh and try again.');
+    }
+
     var json=await response.json().catch(function(){return {};});
     if(!response.ok) throw new Error(json.error||'Could not load this workspace.');
     return json;
