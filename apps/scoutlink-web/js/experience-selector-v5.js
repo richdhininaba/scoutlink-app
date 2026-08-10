@@ -18,7 +18,7 @@
      * Vercel /api proxy is available.
      *
      * Persist the web origin as sl_api_url too. Shared signed-in ScoutLink pages
-     * still read that key, so this keeps Coach/Scout/Player requests on the same
+     * still read that key, so this keeps Coach/Scout requests on the same
      * proxy after the user leaves the selector.
      */
     if (shouldUseSameOriginApi()) {
@@ -45,7 +45,7 @@
   }
 
   function homeFor(type) {
-    return {Stratex:'/stratex/dashboard',Coach:'/coach/dashboard',Scout:'/scout/dashboard',Player:'/player/dashboard'}[type] || '/login';
+    return {Stratex:'/stratex/dashboard',Coach:'/coach/dashboard',Scout:'/scout/dashboard'}[type] || '/login';
   }
 
   async function api(path, options) {
@@ -76,7 +76,6 @@
     return exp.description ||
       (exp.accountType==='Coach'?'Squads, fixtures, Match Facts and video':
       exp.accountType==='Scout'?'Player search, comparison and pipeline':
-      exp.accountType==='Player'?'Profile, video reels and notifications':
       'Internal administration');
   }
 
@@ -105,17 +104,32 @@
     byId('experienceRoot').querySelector('.door-h').textContent='Where to?';
     byId('experienceIntro').textContent='Approved workspaces for this account.';
     root.innerHTML=list.map(function(exp,index){
-      return '<article class="experience-choice roleline'+(exp.current&&!exp.demo?' on':'')+'">'+
+      return '<article class="experience-choice roleline'+(exp.current&&!exp.demo?' on':'')+'" data-enter="'+index+'" role="button" tabindex="0" aria-label="Open '+esc(nameFor(exp))+'">'+
         '<span class="k">'+esc(shortType(exp))+'</span><div style="min-width:0;flex:1"><h4>'+esc(nameFor(exp))+'</h4>'+
         '<p>'+esc(descriptionFor(exp))+'</p>'+userSelect(exp,index)+'</div>'+
-        '<button class="go" type="button" aria-label="Open '+esc(nameFor(exp))+'" data-enter="'+index+'">→</button></article>';
+        '<span class="go" aria-hidden="true">→</span></article>';
     }).join('');
     bindRows();
   }
 
+  function eventStartedInsideDropdown(event) {
+    var target=event.target;
+    return !!(target&&target.closest&&target.closest('select'));
+  }
+
   function bindRows() {
-    document.querySelectorAll('[data-enter]').forEach(function(button){
-      button.addEventListener('click',function(){enter(Number(button.getAttribute('data-enter')));});
+    document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){
+      row.addEventListener('click',function(event){
+        if(eventStartedInsideDropdown(event)) return;
+        enter(Number(row.getAttribute('data-enter')));
+      });
+      row.addEventListener('keydown',function(event){
+        if(eventStartedInsideDropdown(event)) return;
+        if(event.key==='Enter'||event.key===' '){
+          event.preventDefault();
+          enter(Number(row.getAttribute('data-enter')));
+        }
+      });
     });
   }
 
@@ -132,7 +146,7 @@
     if(busy||!list[index]) return;
     busy=true;
     var exp=list[index];
-    document.querySelectorAll('[data-enter]').forEach(function(b){b.disabled=true;});
+    document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){row.setAttribute('aria-disabled','true');});
     try{
       if(exp.current&&!exp.demo){
         location.href=homeFor(exp.accountType);
@@ -148,7 +162,8 @@
       location.href=homeFor(data.accountType||exp.accountType);
     }catch(error){
       var msg=byId('experienceError');msg.textContent=error.message;msg.classList.add('show');
-      busy=false;document.querySelectorAll('[data-enter]').forEach(function(b){b.disabled=false;});
+      busy=false;
+      document.querySelectorAll('.experience-choice[data-enter]').forEach(function(row){row.removeAttribute('aria-disabled');});
     }
   }
 
@@ -156,7 +171,9 @@
     if(!token){location.replace('/login');return;}
     try{
       var data=await api('/api/auth/experiences');
-      list=Array.isArray(data.data)?data.data:[];
+      list=(Array.isArray(data.data)?data.data:[]).filter(function(exp){
+        return exp&&exp.accountType!=='Player';
+      });
       var real=list.filter(function(exp){return !exp.demo;});
       if(list.length===1&&real.length===1){
         location.replace(homeFor(real[0].accountType));
