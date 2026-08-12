@@ -713,3 +713,117 @@ body.coach-product .coach-usage-request{display:none!important}
   body.coach-product .coach-field .ptop button.bk,body.coach-product .coach-field .ptop a.bk{border:0;background:transparent;padding:0;margin:0;font:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:flex-start}
   body.coach-product .coach-field .ptop button.ic{background:var(--paper)}
 }
+
+
+/* ===== 2026-08-12 Coach production QA fixes ===== */
+@media (min-width:761px){
+  body.coach-product .coach-search-wrap{position:relative;display:flex;align-items:center}
+  body.coach-product .srch{padding:0 9px;overflow:hidden}
+  body.coach-product .srch input{
+    width:100%;height:100%;min-width:0;border:0!important;outline:0!important;box-shadow:none!important;
+    background:transparent!important;padding:0!important;margin:0!important;font:inherit;color:var(--ink2)
+  }
+  body.coach-product .srch input::placeholder{color:var(--ink4)}
+  body.coach-product .rail{width:224px;flex-basis:224px}
+  body.coach-product .rsec .ri{display:grid;grid-template-columns:15px minmax(0,1fr) auto;gap:8px;align-items:center}
+  body.coach-product .rsec .ri input{width:13px;height:13px;margin:0}
+  body.coach-product .rsec .ri .rit{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.coach-product .rsec .ri .n{margin-left:0;text-align:right}
+  body.coach-product .chat-desk-shell{display:grid;grid-template-columns:312px minmax(0,1fr);min-height:650px;border:1px solid var(--line);background:var(--paper)}
+  body.coach-product .chat-desk-list{border-right:1px solid var(--line);min-width:0}
+  body.coach-product .chat-list-tools{padding:12px;border-bottom:1px solid var(--line)}
+  body.coach-product .chat-list-tools .inp{width:100%;height:30px;margin-bottom:9px}
+  body.coach-product .chat-list-tools .chips{gap:5px}
+  body.coach-product .chat-desk-canvas{display:flex;flex-direction:column;min-width:0}
+  body.coach-product .chat-context{min-height:58px;padding:11px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+  body.coach-product .chat-context b{display:block;font-size:12.5px}
+  body.coach-product .chat-context span{display:block;margin-top:2px;font-size:10.5px;color:var(--ink3)}
+  body.coach-product .chat-message-canvas{flex:1;padding:22px 18px;overflow:auto;background:var(--paper)}
+  body.coach-product .chat-compose{border-top:1px solid var(--line);padding:10px 12px;background:var(--canvas)}
+  body.coach-product .chat-compose textarea{width:100%;height:54px;resize:none}
+  body.coach-product .chat-compose-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+  body.coach-product .chat-empty{padding:28px}
+  body.coach-product .thr{width:100%;border:0;border-bottom:1px solid var(--line);background:var(--paper);text-align:left}
+  body.coach-product .thr .tm u{display:inline-flex;min-width:16px;height:16px;border-radius:8px;background:var(--blue);color:#fff;align-items:center;justify-content:center;margin-left:6px;text-decoration:none;font-size:9px;font-weight:700}
+  body.coach-product .settings-clean-card .card-b{padding:16px}
+  body.coach-product .settings-clean-row{display:flex;align-items:center;gap:20px;padding:14px 0;border-bottom:1px solid var(--line)}
+  body.coach-product .settings-clean-row:last-of-type{border-bottom:0}
+  body.coach-product .settings-clean-row>div{flex:1;min-width:0}
+  body.coach-product .settings-clean-row b{display:block;font-size:12px}
+  body.coach-product .settings-clean-row span:not(.tag){display:block;margin-top:2px;font-size:11px;color:var(--ink3)}
+  body.coach-product .settings-clean-row strong{font-size:11px;color:var(--ink2);white-space:nowrap}
+  body.coach-product .settings-clean-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  body.coach-product .coach-role-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  body.coach-product .coach-role-option{display:flex!important;align-items:flex-start!important;gap:9px!important;border:1px solid var(--line2);padding:12px!important;margin:0!important;text-transform:none!important;letter-spacing:0!important;color:var(--ink)!important;cursor:pointer}
+  body.coach-product .coach-role-option:has(input:checked){border-color:var(--blue);background:var(--blue-t)}
+  body.coach-product .coach-role-option input{margin:2px 0 0;accent-color:var(--blue)}
+  body.coach-product .coach-role-option b{display:block;font-size:11.5px}
+  body.coach-product .coach-role-option small{display:block;margin-top:3px;color:var(--ink3);font-size:10.5px;line-height:1.45}
+  body.coach-product .coach-profile-metric .value{font-size:15px!important;line-height:1.3;font-weight:700!important;text-transform:uppercase;letter-spacing:0}
+}
+
+@media (max-width:760px){
+  body.coach-product{background:var(--canvas)}
+  body.coach-product .coach-field .scr{background:var(--canvas);padding-bottom:76px}
+  body.coach-product .coach-field .pbody{padding:14px;min-height:calc(100dvh - 140px)}
+  body.coach-product .coach-field .card{padding:0!important;background:var(--paper);border:1px solid var(--line)}
+  body.coach-product .coach-field .card .card-b{padding:16px!important}
+  body.coach-product .coach-field .row{padding:12px 16px!important}
+  body.coach-product .coach-field .rowline{padding:12px 16px!important}
+  body.coach-product .coach-field .ptop{height:50px;padding:0 14px}
+  body.coach-product .coach-field .ptop h1{font-size:15px}
+  body.coach-product .coach-field .pkpi{gap:8px}
+  body.coach-product .coach-field .pkpi .kpi{padding:11px 12px}
+  body.coach-product .coach-field .pkpi .kpi .v{font-size:21px}
+  body.coach-product .coach-field .pcap{margin:18px 0 8px;font-size:9.5px}
+  body.coach-product .coach-field .player-phone-search{margin:0 0 10px}
+  body.coach-product .player-phone-list{border:1px solid var(--line);background:var(--paper)}
+  body.coach-product .player-phone-row{display:block;padding:12px 14px;border-bottom:1px solid var(--line);text-decoration:none;color:inherit;background:var(--paper)}
+  body.coach-product .player-phone-row:last-child{border-bottom:0}
+  body.coach-product .player-phone-main{display:flex;align-items:center;gap:10px}
+  body.coach-product .player-phone-who{flex:1;min-width:0}
+  body.coach-product .player-phone-who b{display:block;font-size:12.5px}
+  body.coach-product .player-phone-who span{display:block;font-size:10.5px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.coach-product .player-phone-overall{text-align:right;min-width:45px}
+  body.coach-product .player-phone-overall b{display:block;font-size:17px;line-height:1}
+  body.coach-product .player-phone-overall small{display:block;margin-top:3px;color:var(--ink3);font-size:8.5px;text-transform:uppercase;letter-spacing:.08em}
+  body.coach-product .player-phone-evidence{display:flex;align-items:center;gap:7px;margin-top:10px}
+  body.coach-product .player-ready-bar{height:6px;flex:1;background:var(--canvas2);overflow:hidden;min-width:52px}
+  body.coach-product .player-ready-bar i{display:block;height:100%;background:var(--blue)}
+  body.coach-product .player-phone-evidence>b{font-size:10.5px;min-width:30px}
+  body.coach-product .player-phone-form{width:56px;height:24px;overflow:hidden}
+  body.coach-product .player-phone-form svg{width:56px!important;height:22px!important}
+  body.coach-product .player-phone-more{padding:12px 14px;color:var(--ink3);font-size:11px}
+  body.coach-product .chat-phone-list .thr{width:100%;border:0;border-bottom:1px solid var(--line);padding:12px 14px;background:var(--paper);text-align:left}
+  body.coach-product .chat-phone-list .thr:last-child{border-bottom:0}
+  body.coach-product .chat-phone-context{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper);border-bottom:1px solid var(--line)}
+  body.coach-product .chat-phone-context b{display:block;font-size:12.5px}
+  body.coach-product .chat-phone-context span{display:block;font-size:10.5px;color:var(--ink3)}
+  body.coach-product .chat-phone-messages{padding:16px 14px 100px}
+  body.coach-product .chat-phone-messages .msg{max-width:82%}
+  body.coach-product .chat-phone-compose{position:sticky;bottom:64px;z-index:50;padding:10px 14px;background:var(--paper);border-top:1px solid var(--line);display:flex;gap:8px}
+  body.coach-product .chat-phone-compose textarea{flex:1;min-height:42px;height:42px;resize:none}
+  body.coach-product .chat-report-link{display:block;padding:12px 14px 20px;color:var(--red);font-size:11px;text-decoration:none}
+  body.coach-product .settings-phone-profile{display:flex;align-items:center;gap:10px;padding:14px;background:var(--paper);border:1px solid var(--line)}
+  body.coach-product .settings-phone-profile>div{flex:1}
+  body.coach-product .settings-phone-profile b{display:block;font-size:12.5px}
+  body.coach-product .settings-phone-profile span{display:block;font-size:10.5px;color:var(--ink3);margin-top:2px}
+  body.coach-product .settings-phone-card{overflow:hidden}
+  body.coach-product .settings-phone-row{width:100%;min-height:52px;border:0;border-bottom:1px solid var(--line);background:var(--paper);padding:10px 14px;display:flex;align-items:center;gap:10px;text-align:left;text-decoration:none;color:inherit}
+  body.coach-product .settings-phone-row:last-child{border-bottom:0}
+  body.coach-product .settings-phone-row>span:first-child{flex:1;min-width:0}
+  body.coach-product .settings-phone-row b{display:block;font-size:11.5px}
+  body.coach-product .settings-phone-row small{display:block;margin-top:2px;font-size:10px;color:var(--ink3)}
+  body.coach-product .settings-phone-row>i{font-style:normal;color:var(--ink3);font-size:17px}
+  body.coach-product .settings-phone-row>strong{font-size:10.5px;color:var(--green)}
+  body.coach-product .settings-phone-row.locked{cursor:default}
+  body.coach-product .coach-role-options{display:grid;gap:8px}
+  body.coach-product .coach-role-option{display:flex!important;align-items:flex-start!important;gap:9px!important;border:1px solid var(--line2);padding:12px!important;text-transform:none!important;letter-spacing:0!important;color:var(--ink)!important}
+  body.coach-product .coach-role-option input{margin:2px 0 0}
+  body.coach-product .coach-role-option b{display:block}
+  body.coach-product .coach-role-option small{display:block;color:var(--ink3);font-size:10.5px;margin-top:3px}
+  body.coach-product .coach-profile-phone-hero{padding:14px!important}
+  body.coach-product .coach-profile-phone-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+  body.coach-product .coach-profile-phone-metrics>div{padding-right:10px}
+  body.coach-product .coach-profile-phone-metrics .value{font-size:17px;font-weight:700;margin-top:2px;text-transform:uppercase}
+}
