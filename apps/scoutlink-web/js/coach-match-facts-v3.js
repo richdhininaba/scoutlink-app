@@ -10,7 +10,7 @@
   var queryAtLoad=new URLSearchParams(location.search),matchdayMode=queryAtLoad.get('mode')==='matchday',matchdayStartedAt=Date.now(),matchdayTimer=null;
   var S={
     step:1, fixtureId:'', source:'fixture', fixture:null, fixtures:[], players:[], attendance:[], scouts:{}, options:null,
-    selected:{}, starter:{}, playedPosition:{}, homeScore:'', awayScore:'', format:'11v11', formation:'4-3-3',
+    selected:{}, starter:{}, playedPosition:{}, slotAssignments:{}, homeScore:'', awayScore:'', format:'11v11', formation:'4-3-3',
     matchLength:'2 × 40 minutes', opponent:'', matchDate:'', events:[], ratings:{}, notes:{}, advanced:{}, saved:null
   };
   var desk=document.getElementById('coachDeskPage'), field=document.getElementById('coachFieldPage');
@@ -51,7 +51,35 @@
   }
   function normaliseFormat(v){var x=String(v||'11v11').match(/(5|7|9|11)/);return x?x[1]+'v'+x[1]:'11v11';}
   function formatOptions(){return['5v5','7v7','9v9','11v11'];}
-  function formationOptions(){return['4-3-3','4-2-3-1','4-4-2','3-5-2','3-4-3'];}
+  function starterLimit(){
+    var m=String(S.format||'11v11').match(/(5|7|9|11)/);
+    return m?Number(m[1]):11;
+  }
+  function formationOptions(format){
+    var f=normaliseFormat(format||S.format), n=String(f).match(/\d+/), raw=S.options&&S.options.formationsByFormat;
+    if(raw&&typeof raw==='object'){
+      var found=raw[f]||raw[f.replace('v','')]||raw[n&&n[0]]||raw[(n&&n[0])+'v'+(n&&n[0])];
+      if(Array.isArray(found)&&found.length)return found.slice();
+    }
+    return ({
+      '5v5':['1-2-1','2-1-1','1-1-2'],
+      '7v7':['2-3-1','3-2-1','2-2-2'],
+      '9v9':['3-3-2','3-2-3','4-3-1'],
+      '11v11':['4-3-3','4-2-3-1','4-4-2','3-5-2','3-4-3']
+    })[f]||['4-3-3'];
+  }
+  function reconcileFormation(){
+    var opts=formationOptions(S.format);
+    if(opts.indexOf(S.formation)<0)S.formation=opts[0];
+    S.slotAssignments={};
+  }
+  function ensureStarterCount(){
+    var limit=starterLimit(), chosen=selectedPlayers(), start=chosen.filter(function(p){return S.starter[p.id]!==false;});
+    if(start.length>limit){start.slice(limit).forEach(function(p){S.starter[p.id]=false;});}
+    if(start.length<Math.min(limit,chosen.length)){
+      chosen.filter(function(p){return S.starter[p.id]===false;}).slice(0,Math.min(limit,chosen.length)-start.length).forEach(function(p){S.starter[p.id]=true;});
+    }
+  }
   function scoutAtFixture(){
     return S.attendance.filter(function(a){return String(a.fixture_id)===String(S.fixtureId)&&String(a.status||'').toLowerCase()!=='cancelled';});
   }
@@ -67,27 +95,75 @@
         '<div class="fld"><span class="fl">Source</span><div class="chips"><button class="chip '+(S.source==='fixture'?'on':'')+'" data-mf-source="fixture">Existing fixture</button><button class="chip '+(S.source==='standalone'?'on':'')+'" data-mf-source="standalone">Standalone match</button></div></div>'+
         (S.source==='fixture'?'<div class="fld"><span class="fl">Fixture</span><select class="inp" id="mfFixture"><option value="">Choose fixture…</option>'+S.fixtures.map(function(x){return'<option value="'+esc(x.id)+'"'+(String(x.id)===String(S.fixtureId)?' selected':'')+'>'+fixtureLabel(x).replace(/&amp;/g,'&')+'</option>';}).join('')+'</select></div>':'<div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><span class="fl">Opponent</span><input class="inp" id="mfOpponent" value="'+esc(S.opponent)+'"></div><div class="fld"><span class="fl">Match date</span><input class="inp" type="date" id="mfDate" value="'+esc(S.matchDate)+'"></div></div>')+
         (f?'<div class="row" style="border:1px solid var(--blue-t2);background:var(--blue-t);padding:12px 14px"><div class="sp"><b class="rt">'+fixtureLabel(f).split(' · ')[0]+'</b><s class="rs">'+esc(fmtDate(f.fixture_date)+(f.fixture_time?' · '+String(f.fixture_time).slice(0,5):'')+(f.venue?' · '+f.venue:'')+' · '+(f.format||S.format))+'</s></div><span class="tag a"><i></i>Match Facts missing</span></div>':'')+
-        '<div class="g" style="grid-template-columns:repeat(4,1fr);margin-top:14px"><div class="fld" style="margin:0"><span class="fl">Our score</span><input class="inp" id="mfHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Their score</span><input class="inp" id="mfAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Format</span><select class="inp" id="mfFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="fld" style="margin:0"><span class="fl">Formation</span><select class="inp" id="mfFormation">'+formationOptions().map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div>'+
+        '<div class="g" style="grid-template-columns:repeat(4,1fr);margin-top:14px"><div class="fld" style="margin:0"><span class="fl">Our score</span><input class="inp" id="mfHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Their score</span><input class="inp" id="mfAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Format</span><select class="inp" id="mfFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="fld" style="margin:0"><span class="fl">Formation</span><select class="inp" id="mfFormation">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div>'+
       '</div></div>'+
       '<div class="card"><div class="card-h"><h3>Squad</h3><div class="sp"></div><span class="hint">'+selected.length+' of '+S.players.length+' selected · '+starters().length+' starting, '+bench().length+' bench</span><button class="btn sm" id="mfLastLineup">Load last line-up</button></div><table><thead><tr><th style="width:26px"></th><th>Player</th><th class="c">Selected as</th><th class="r">Apps</th><th class="r">Overall</th></tr></thead><tbody>'+S.players.map(function(p){var on=!!S.selected[p.id],st=S.starter[p.id]!==false;return'<tr><td><button class="ck '+(on?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button></td><td><div class="who"><div class="av">'+esc(initials(p))+'</div><div><b>'+esc(name(p))+'</b><s>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</s></div></div></td><td class="c">'+(on?'<button class="tag '+(st?'b':'')+'" data-mf-starter="'+esc(p.id)+'">'+(st?'Starting':'Bench')+'</button>':'<span class="tag">Not selected</span>')+'</td><td class="r num">'+n(p.appearances,0)+'</td><td class="r num">'+(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
       '<div class="g"><div class="card"><div class="card-h"><h3>Attribute observations</h3></div><div class="card-b"><div class="mut" style="font-size:11.5px;line-height:1.8">Each selected player is assessed on the attributes for <b>the position they played today</b>, not their profile position. Changing the played position changes that match assessment set.</div></div></div>'+
       '<div class="card"><div class="card-h"><h3>Scouts at this fixture</h3></div>'+(scoutAtFixture().length?scoutAtFixture().map(function(a){return'<div class="row"><div class="sp"><b class="rt">'+esc(scoutName(a.scout_id))+'</b><s class="rs">'+esc((a.status||'Attending')+' · confirmed '+fmtDate(a.created_at))+'</s></div></div>';}).join(''):'<div class="card-b mut">No confirmed scout attendance is recorded.</div>')+'</div></div></div>'+footer(null,2,'Continue to positions');
   }
 
-  function formationSlots(){
-    var st=starters(), names={
+  function formationSlotCodes(){
+    var maps={
+      '1-2-1':['GK','CB','LM','RM','ST'],
+      '2-1-1':['GK','CB','CB','CM','ST'],
+      '1-1-2':['GK','CB','CM','LW','RW'],
+      '2-3-1':['GK','CB','CB','LM','CM','RM','ST'],
+      '3-2-1':['GK','LB','CB','RB','CM','CM','ST'],
+      '2-2-2':['GK','CB','CB','CM','CM','ST','ST'],
+      '3-3-2':['GK','LB','CB','RB','LM','CM','RM','ST','ST'],
+      '3-2-3':['GK','LB','CB','RB','CM','CM','LW','ST','RW'],
+      '4-3-1':['GK','LB','CB','CB','RB','LM','CM','RM','ST'],
       '4-3-3':['GK','RB','CB','CB','LB','DM','CM','AM','RW','LW','ST'],
       '4-2-3-1':['GK','RB','CB','CB','LB','DM','CM','RW','AM','LW','ST'],
       '4-4-2':['GK','RB','CB','CB','LB','RM','CM','CM','LM','ST','ST'],
       '3-5-2':['GK','CB','CB','CB','RWB','CM','DM','CM','LWB','ST','ST'],
       '3-4-3':['GK','CB','CB','CB','RM','CM','CM','LM','RW','ST','LW']
     };
-    var posns=names[S.formation]||names['4-3-3'];
-    return st.map(function(p,i){return{p:p,position:S.playedPosition[p.id]||posns[i]||pos(p)};});
+    return (maps[S.formation]||maps[formationOptions(S.format)[0]]||[]).slice(0,starterLimit());
+  }
+  function slotDefinitions(){
+    var seen={};
+    return formationSlotCodes().map(function(code){seen[code]=(seen[code]||0)+1;return{key:code+seen[code],position:code,label:code+(formationSlotCodes().filter(function(x){return x===code;}).length>1?' '+seen[code]:'')};});
+  }
+  function sameGroup(a,b){return groupFor(a)===groupFor(b);}
+  function syncSlotAssignments(){
+    if(!S.slotAssignments||typeof S.slotAssignments!=='object')S.slotAssignments={};
+    ensureStarterCount();
+    var defs=slotDefinitions(), valid={};defs.forEach(function(d){valid[d.key]=1;});
+    Object.keys(S.slotAssignments).forEach(function(k){var pid=S.slotAssignments[k],p=S.players.find(function(x){return String(x.id)===String(pid);});if(!valid[k]||!p||!S.selected[p.id]||S.starter[p.id]===false)delete S.slotAssignments[k];});
+    var used={};Object.keys(S.slotAssignments).forEach(function(k){if(S.slotAssignments[k])used[S.slotAssignments[k]]=1;});
+    var candidates=starters().filter(function(p){return !used[p.id];});
+    defs.forEach(function(d){
+      if(S.slotAssignments[d.key])return;
+      var index=candidates.findIndex(function(p){return pos(p)===d.position;});
+      if(index<0)index=candidates.findIndex(function(p){return sameGroup(pos(p),d.position);});
+      if(index<0&&candidates.length)index=0;
+      if(index>=0){var p=candidates.splice(index,1)[0];S.slotAssignments[d.key]=p.id;used[p.id]=1;}
+    });
+    defs.forEach(function(d){var pid=S.slotAssignments[d.key];if(pid)S.playedPosition[pid]=d.position;});
+  }
+  function assignSlot(slotKey,pid){
+    syncSlotAssignments();
+    var current=S.slotAssignments[slotKey]||'', priorKey='';
+    Object.keys(S.slotAssignments).some(function(k){if(String(S.slotAssignments[k])===String(pid)){priorKey=k;return true;}return false;});
+    if(!pid){delete S.slotAssignments[slotKey];syncSlotAssignments();return;}
+    if(priorKey&&priorKey!==slotKey){
+      S.slotAssignments[priorKey]=current||'';
+    }
+    S.slotAssignments[slotKey]=pid;
+    S.selected[pid]=true;S.starter[pid]=true;
+    slotDefinitions().forEach(function(d){var id=S.slotAssignments[d.key];if(id)S.playedPosition[id]=d.position;});
+  }
+  function formationSlots(){
+    syncSlotAssignments();
+    return slotDefinitions().map(function(d){var pid=S.slotAssignments[d.key]||'',p=S.players.find(function(x){return String(x.id)===String(pid);})||null;return{slot:d.key,label:d.label,position:d.position,p:p};});
   }
   function pitch(slots){
-    var coords=[[65,210],[190,65],[180,150],[180,270],[190,355],[350,210],[395,115],[395,310],[570,80],[570,345],[620,210]];
-    return'<svg style="display:block" viewBox="0 0 760 430" width="100%"><rect fill="var(--canvas)" width="760" height="430"/><rect x="10" y="10" width="740" height="410" fill="none" stroke="var(--line2)"/><line x1="380" x2="380" y1="10" y2="420" stroke="var(--line2)"/><circle cx="380" cy="215" r="69" fill="none" stroke="var(--line2)"/><rect x="10" y="103" width="84" height="224" fill="none" stroke="var(--line2)"/><rect x="666" y="103" width="84" height="224" fill="none" stroke="var(--line2)"/>'+slots.slice(0,11).map(function(x,i){var c=coords[i]||[380,215],last=name(x.p).split(/\s+/).slice(-1)[0];return'<g data-pitch-player="'+esc(x.p.id)+'" tabindex="0"><circle cx="'+c[0]+'" cy="'+c[1]+'" r="15" fill="var(--blue)"/><text x="'+c[0]+'" y="'+(c[1]+4)+'" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">'+esc(x.position)+'</text><text x="'+c[0]+'" y="'+(c[1]+29)+'" text-anchor="middle" fill="var(--ink2)" font-size="9.5" font-weight="600">'+esc(last)+'</text></g>';}).join('')+'</svg>';
+    var groups={GK:[],DEF:[],MID:[],ATT:[]};
+    slots.forEach(function(x){var g=x.position==='GK'?'GK':groupFor(x.position)==='Defender'?'DEF':groupFor(x.position)==='Midfielder'?'MID':'ATT';groups[g].push(x);});
+    var xmap={GK:70,DEF:230,MID:410,ATT:600}, nodes=[];
+    Object.keys(groups).forEach(function(g){var arr=groups[g];arr.forEach(function(slot,i){var y=arr.length===1?215:55+(i*(320/Math.max(1,arr.length-1)));nodes.push({slot:slot,x:xmap[g],y:y});});});
+    return'<svg class="mf-pitch" style="display:block" viewBox="0 0 760 430" width="100%"><rect fill="var(--canvas)" width="760" height="430"/><rect x="10" y="10" width="740" height="410" fill="none" stroke="var(--line2)"/><line x1="380" x2="380" y1="10" y2="420" stroke="var(--line2)"/><circle cx="380" cy="215" r="69" fill="none" stroke="var(--line2)"/><rect x="10" y="103" width="84" height="224" fill="none" stroke="var(--line2)"/><rect x="666" y="103" width="84" height="224" fill="none" stroke="var(--line2)"/>'+nodes.map(function(nod){var x=nod.slot,p=nod.slot.p,last=p?name(p).split(/\s+/).slice(-1)[0]:'Choose';return'<g><circle cx="'+nod.x+'" cy="'+nod.y+'" r="15" fill="'+(p?'var(--blue)':'var(--line2)')+'"/><text x="'+nod.x+'" y="'+(nod.y+4)+'" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">'+esc(x.position)+'</text><text x="'+nod.x+'" y="'+(nod.y+29)+'" text-anchor="middle" fill="var(--ink2)" font-size="9.5" font-weight="600">'+esc(last)+'</text></g>';}).join('')+'</svg>';
   }
   function assessmentSummary(slots){
     var grouped={};
@@ -95,9 +171,9 @@
     return Object.keys(grouped).map(function(g){var count=attrsFor((slots.find(function(x){return groupFor(x.position)===g;})||{}).position).length;return'<tr><td><b>'+esc(grouped[g].join(', '))+'</b><s class="mut" style="display:block;font-size:11px">'+esc(g)+'</s></td><td class="r mut" style="font-size:11.5px">'+(g==='Goalkeeper'?'Goalkeeper '+count:'General 13 + '+g+' '+Math.max(0,count-13))+'</td></tr>';}).join('');
   }
   function stage2(){
-    var slots=formationSlots();
-    return steps()+'<div class="g" style="grid-template-columns:1fr 340px"><div class="card"><div class="card-h"><h3>Positions played</h3><div class="sp"></div><span class="hint">'+esc(S.formation)+' · '+slots.length+' starting</span><select class="tag b" id="mfFormation2">'+formationOptions().map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="card-b">'+pitch(slots)+'<div class="mut" style="font-size:11.5px;margin-top:6px">Click a player on the pitch to change the position they played. The attribute set for the post-match assessment follows this position.</div></div></div>'+
-      '<div class="g"><div class="card"><div class="card-h"><h3>Assessment sets for this match</h3><div class="sp"></div><span class="hint">Derived from the pitch</span></div><div class="card-b"><table><tbody>'+assessmentSummary(slots)+'</tbody></table></div></div><div class="card"><div class="card-h"><h3>Bench</h3></div>'+(bench().length?bench().map(function(p){return'<div class="row"><div class="sp"><b class="rt">'+esc(name(p))+'</b><s class="rs">'+esc(pos(p)+' · available from kick-off')+'</s></div><span class="tag">Bench</span></div>';}).join(''):'<div class="card-b mut">No bench players selected.</div>')+'</div></div></div>'+footer(1,3,'Continue to events');
+    var slots=formationSlots(), available=selectedPlayers();
+    return steps()+'<div class="g" style="grid-template-columns:minmax(0,1fr) 360px"><div class="g"><div class="card"><div class="card-h"><h3>Positions played</h3><div class="sp"></div><span class="hint">'+esc(S.format)+' · '+esc(S.formation)+'</span><select class="tag b" id="mfFormation2">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="card-b">'+pitch(slots)+'<div class="callout" style="margin-top:10px"><b>Choose the actual player for every formation slot.</b> Their Match Facts assessment follows this match position, not their saved profile position.</div></div></div>'+footer(1,3,'Continue to events')+'</div>'+ 
+      '<div class="g"><div class="card"><div class="card-h"><h3>Assign formation slots</h3><div class="sp"></div><span class="hint">'+slots.filter(function(x){return x.p;}).length+' of '+slots.length+' placed</span></div><div class="card-b">'+slots.map(function(x){return'<div class="fld" style="margin-bottom:10px"><span class="fl">'+esc(x.label)+' · '+esc(x.position)+'</span><select class="inp" data-mf-slot="'+esc(x.slot)+'"><option value="">Choose player…</option>'+available.map(function(p){return'<option value="'+esc(p.id)+'"'+(x.p&&String(x.p.id)===String(p.id)?' selected':'')+'>'+esc(name(p)+' · profile '+pos(p))+'</option>';}).join('')+'</select></div>';}).join('')+'</div></div><div class="card"><div class="card-h"><h3>Assessment sets</h3></div><div class="card-b"><table><tbody>'+assessmentSummary(slots.filter(function(x){return x.p;}))+'</tbody></table></div></div><div class="card"><div class="card-h"><h3>Bench</h3></div>'+(bench().length?bench().map(function(p){return'<div class="row"><div class="sp"><b class="rt">'+esc(name(p))+'</b><s class="rs">'+esc(pos(p)+' · available from kick-off')+'</s></div><span class="tag">Bench</span></div>';}).join(''):'<div class="card-b mut">No bench players selected.</div>')+'</div></div></div>';
   }
 
   function eventLabel(e){var p=S.players.find(function(x){return String(x.id)===String(e.playerId);});return(e.minute?e.minute+"' ":'')+(e.type||'Event')+(p?' · '+name(p):'')+(e.note?' · '+e.note:'');}
@@ -189,12 +265,12 @@
     return'<div style="margin-bottom:14px"><div style="display:flex;gap:4px;margin-bottom:8px">'+[1,2,3,4,5].map(function(x){return'<u style="display:block;height:3px;flex:1;background:'+(x<=S.step?'var(--blue)':'var(--canvas2)')+'"></u>';}).join('')+'</div><div style="display:flex;align-items:baseline"><b style="font-size:13px">'+esc(names[S.step-1])+'</b><span class="mut" style="font-size:11px;margin-left:auto">Step '+S.step+' of 5</span></div></div>';
   }
   function phone(){
-    if(S.saved)return phoneHeader()+'<div class="card"><div class="card-b" style="text-align:center;padding:26px"><h2>Match Facts saved</h2><p class="mut">Player records were updated.</p><a class="bt spend blk" href="'+esc(clean('/coach/dashboard'))+'">Back to Today</a></div></div>';
-    if(S.step===1)return phoneHeader()+'<div class="stack"><div class="card"><div class="ck" style="margin-bottom:8px">Match</div><div class="field"><label>Fixture</label><select class="in" id="mfPhoneFixture"><option value="">Standalone match</option>'+S.fixtures.map(function(f){return'<option value="'+esc(f.id)+'"'+(String(f.id)===String(S.fixtureId)?' selected':'')+'>'+fixtureLabel(f).replace(/&amp;/g,'&')+'</option>';}).join('')+'</select></div><div class="two"><div class="field"><label>Our score</label><input class="in" id="mfPhoneHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="field"><label>Their score</label><input class="in" id="mfPhoneAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div></div><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation">'+formationOptions().map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div><div class="pcap">Squad <span>'+selectedPlayers().length+' selected</span></div><div class="card">'+S.players.map(function(p){return'<div class="rowline"><button class="ck '+(S.selected[p.id]?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</span></span>'+(S.selected[p.id]?'<button class="tag '+(S.starter[p.id]!==false?'b':'')+'" data-mf-starter="'+esc(p.id)+'">'+(S.starter[p.id]!==false?'Starting':'Bench')+'</button>':'')+'</div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="2">Continue to positions</button></div>';
-    if(S.step===2)return phoneHeader()+'<div class="stack"><div class="card"><div class="ck" style="margin-bottom:8px">Positions played · '+esc(S.formation)+'</div>'+formationSlots().map(function(x){return'<div class="rowline"><span class="who"><b>'+esc(name(x.p))+'</b><span>Profile '+esc(pos(x.p))+'</span></span><button class="tag b" data-phone-position="'+esc(x.p.id)+'">'+esc(x.position)+' ▾</button></div>';}).join('')+'</div><div class="card"><div class="ck">Bench</div>'+bench().map(function(p){return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p))+'</span></span><span class="tag">Bench</span></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="3">Continue to events</button><button class="bt gh blk" data-mf-goto="1">Back</button></div>';
-    if(S.step===3)return phoneHeader()+'<div class="stack"><div class="card"><div class="two"><div class="field"><label>Minute</label><input class="in" id="mfPhoneEventMinute" type="number"></div><div class="field"><label>Event</label><select class="in" id="mfPhoneEventType"><option>Goal</option><option>Goal conceded</option><option>Yellow card</option><option>Red card</option><option>Substitution</option></select></div></div><div class="field"><label>Player</label><select class="in" id="mfPhoneEventPlayer"><option value="">—</option>'+selectedPlayers().map(function(p){return'<option value="'+esc(p.id)+'">'+esc(name(p))+'</option>';}).join('')+'</select></div><button class="bt spend blk" id="mfPhoneAddEvent">Add event</button></div><div class="pcap">Matchday log <span>'+S.events.length+'</span></div><div class="card">'+S.events.map(function(e,i){return'<div class="rowline"><span class="who"><b>'+esc(e.type)+'</b><span>'+esc(eventLabel(e))+'</span></span><button class="bt sm gh" data-mf-remove-event="'+i+'">Remove</button></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="4">Continue to ratings</button><button class="bt gh blk" data-mf-goto="2">Back</button></div>';
+    if(S.saved)return phoneHeader()+'<div class="card"><div class="card-b" style="text-align:center;padding:26px"><h2>Match Facts saved</h2><p class="mut">Player records were updated.</p><a class="bt spend blk" href="'+esc(clean('/coach/dashboard'))+'">Back to Dashboard</a></div></div>';
+    if(S.step===1)return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="ck" style="margin-bottom:8px">Match</div><div class="field"><label>Fixture</label><select class="in" id="mfPhoneFixture"><option value="">Standalone match</option>'+S.fixtures.map(function(f){return'<option value="'+esc(f.id)+'"'+(String(f.id)===String(S.fixtureId)?' selected':'')+'>'+fixtureLabel(f).replace(/&amp;/g,'&')+'</option>';}).join('')+'</select></div><div class="two"><div class="field"><label>Our score</label><input class="in" id="mfPhoneHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="field"><label>Their score</label><input class="in" id="mfPhoneAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div></div><div class="two"><div class="field"><label>Format</label><select class="in" id="mfPhoneFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div></div></div><div class="pcap">Squad <span>'+selectedPlayers().length+' selected · '+starters().length+'/'+starterLimit()+' starting</span></div><div class="card">'+S.players.map(function(p){return'<div class="rowline"><button class="ck '+(S.selected[p.id]?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</span></span>'+(S.selected[p.id]?'<button class="tag '+(S.starter[p.id]!==false?'b':'')+'" data-mf-starter="'+esc(p.id)+'">'+(S.starter[p.id]!==false?'Starting':'Bench')+'</button>':'')+'</div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="2">Continue to positions</button></div>';
+    if(S.step===2){var slots=formationSlots(),available=selectedPlayers();return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="ck">Assign formation slots</div><p class="mut" style="margin:6px 0 12px">Choose where each player actually played. This controls the attributes you will assess.</p><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation2">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div>'+slots.map(function(x){return'<div class="field"><label>'+esc(x.label)+' · '+esc(x.position)+'</label><select class="in" data-mf-slot="'+esc(x.slot)+'"><option value="">Choose player…</option>'+available.map(function(p){return'<option value="'+esc(p.id)+'"'+(x.p&&String(x.p.id)===String(p.id)?' selected':'')+'>'+esc(name(p)+' · profile '+pos(p))+'</option>';}).join('')+'</select></div>';}).join('')+'</div></div><div class="pcap">Bench</div><div class="card">'+(bench().length?bench().map(function(p){return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p))+'</span></span><span class="tag">Bench</span></div>';}).join(''):'<div class="card-b mut">No bench players selected.</div>')+'</div><button class="bt spend blk" data-mf-goto="3">Continue to events</button><button class="bt gh blk" data-mf-goto="1">Back</button></div>';}
+    if(S.step===3)return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="two"><div class="field"><label>Minute</label><input class="in" id="mfPhoneEventMinute" type="number"></div><div class="field"><label>Event</label><select class="in" id="mfPhoneEventType"><option>Goal</option><option>Goal conceded</option><option>Yellow card</option><option>Red card</option><option>Substitution</option></select></div></div><div class="field"><label>Player</label><select class="in" id="mfPhoneEventPlayer"><option value="">—</option>'+selectedPlayers().map(function(p){return'<option value="'+esc(p.id)+'">'+esc(name(p))+'</option>';}).join('')+'</select></div><button class="bt spend blk" id="mfPhoneAddEvent">Add event</button></div></div><div class="pcap">Matchday log <span>'+S.events.length+'</span></div><div class="card">'+S.events.map(function(e,i){return'<div class="rowline"><span class="who"><b>'+esc(e.type)+'</b><span>'+esc(eventLabel(e))+'</span></span><button class="bt sm gh" data-mf-remove-event="'+i+'">Remove</button></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="4">Continue to ratings</button><button class="bt gh blk" data-mf-goto="2">Back</button></div>';
     if(S.step===4)return phoneHeader()+'<div class="stack"><div class="card">'+selectedPlayers().map(function(p){var st=playerState(p.id);return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>Played '+esc(S.playedPosition[p.id]||pos(p))+' · '+observationCount(p)+' observed</span></span><span class="ratem '+(st.performance?'set':'')+'">'+esc(st.performance||'—')+'</span><button class="bt sm gh" data-mf-open-ratings="'+esc(p.id)+'">Rate</button></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="5">Continue to review</button><button class="bt gh blk" data-mf-goto="3">Back</button></div>';
-    return phoneHeader()+'<div class="stack"><div class="card hero"><div class="num" style="font-size:34px;font-weight:700">'+esc((S.homeScore||0)+' – '+(S.awayScore||0))+'</div><b>vs '+esc(S.opponent||'Opponent')+'</b><div class="mut">'+esc(fmtDate(S.matchDate)+' · '+S.format+' · '+S.formation)+'</div></div><div class="card">'+kv('Players updated',selectedPlayers().length)+kv('Events',S.events.length)+kv('Attribute observations',selectedPlayers().reduce(function(sum,p){return sum+Number(observationCount(p).split('/')[0]);},0))+'</div><button class="bt spend blk" id="mfPhoneSubmit">Submit Match Facts</button><button class="bt gh blk" data-mf-goto="4">Back</button></div>';
+    return phoneHeader()+'<div class="stack"><div class="card hero"><div class="num" style="font-size:28px;font-weight:700">'+esc((S.homeScore||0)+' – '+(S.awayScore||0))+'</div><b>vs '+esc(S.opponent||'Opponent')+'</b><div class="mut">'+esc(fmtDate(S.matchDate)+' · '+S.format+' · '+S.formation)+'</div></div><div class="card">'+kv('Players updated',selectedPlayers().length)+kv('Events',S.events.length)+kv('Attribute observations',selectedPlayers().reduce(function(sum,p){return sum+Number(observationCount(p).split('/')[0]);},0))+'</div><button class="bt spend blk" id="mfPhoneSubmit">Submit Match Facts</button><button class="bt gh blk" data-mf-goto="4">Back</button></div>';
   }
 
   function render(){
@@ -205,8 +281,10 @@
 
   function syncInputs(){
     [['mfHome','homeScore'],['mfPhoneHome','homeScore'],['mfAway','awayScore'],['mfPhoneAway','awayScore'],['mfOpponent','opponent'],['mfDate','matchDate']].forEach(function(x){var el=document.getElementById(x[0]);if(el)el.oninput=function(){S[x[1]]=el.value;saveDraft();};});
-    [['mfFormat','format'],['mfFormation','formation'],['mfPhoneFormation','formation'],['mfFormation2','formation']].forEach(function(x){var el=document.getElementById(x[0]);if(el)el.onchange=function(){S[x[1]]=el.value;saveDraft();render();};});
-    ['mfFixture','mfPhoneFixture'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.fixtureId=el.value;S.source=el.value?'fixture':'standalone';applyFixture(currentFixture());saveDraft();render();};});
+    ['mfFormat','mfPhoneFormat'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.format=normaliseFormat(el.value);reconcileFormation();ensureStarterCount();saveDraft();render();};});
+    ['mfFormation','mfPhoneFormation','mfFormation2','mfPhoneFormation2'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.formation=el.value;S.slotAssignments={};syncSlotAssignments();saveDraft();render();};});
+    document.querySelectorAll('[data-mf-slot]').forEach(function(el){el.onchange=function(){assignSlot(el.dataset.mfSlot,el.value);saveDraft();render();};});
+    ['mfFixture','mfPhoneFixture'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.fixtureId=el.value;S.source=el.value?'fixture':'standalone';applyFixture(currentFixture());reconcileFormation();ensureStarterCount();saveDraft();render();};});
   }
   function positionSheet(pid){
     var p=S.players.find(function(x){return String(x.id)===String(pid);});if(!p)return;
@@ -237,10 +315,10 @@
   }
 
   function bind(){
-    document.querySelectorAll('[data-mf-goto]').forEach(function(b){b.onclick=function(){if(!b.disabled)setStep(b.dataset.mfGoto);};});
+    document.querySelectorAll('[data-mf-goto]').forEach(function(b){b.onclick=function(){if(!b.disabled){if(Number(b.dataset.mfGoto)===2){ensureStarterCount();syncSlotAssignments();}setStep(b.dataset.mfGoto);}};});
     document.querySelectorAll('[data-mf-source]').forEach(function(b){b.onclick=function(){S.source=b.dataset.mfSource;if(S.source==='standalone')S.fixtureId='';saveDraft();render();};});
-    document.querySelectorAll('[data-mf-select]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfSelect;S.selected[id]=!S.selected[id];if(S.selected[id]&&S.starter[id]==null)S.starter[id]=starters().length<11;saveDraft();render();};});
-    document.querySelectorAll('[data-mf-starter]').forEach(function(b){b.onclick=function(){S.starter[b.dataset.mfStarter]=!S.starter[b.dataset.mfStarter];saveDraft();render();};});
+    document.querySelectorAll('[data-mf-select]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfSelect;S.selected[id]=!S.selected[id];if(S.selected[id]&&S.starter[id]==null)S.starter[id]=starters().length<starterLimit();if(!S.selected[id]){S.starter[id]=false;Object.keys(S.slotAssignments||{}).forEach(function(k){if(String(S.slotAssignments[k])===String(id))delete S.slotAssignments[k];});}ensureStarterCount();saveDraft();render();};});
+    document.querySelectorAll('[data-mf-starter]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfStarter;if(S.starter[id]===false&&starters().length>=starterLimit())return window.CoachV2.showToast('This '+S.format+' format has '+starterLimit()+' starting positions.',true);S.starter[id]=!S.starter[id];S.slotAssignments={};ensureStarterCount();saveDraft();render();};});
     document.querySelectorAll('[data-pitch-player],[data-phone-position]').forEach(function(b){b.onclick=function(){positionSheet(b.dataset.pitchPlayer||b.dataset.phonePosition);};});
     document.querySelectorAll('[data-mf-remove-event]').forEach(function(b){b.onclick=function(){S.events.splice(Number(b.dataset.mfRemoveEvent),1);saveDraft();render();};});
     document.querySelectorAll('[data-mf-open-ratings]').forEach(function(b){b.onclick=function(){ratingsSheet(b.dataset.mfOpenRatings);};});
@@ -262,15 +340,25 @@
   function addEventDesk(){addEvent(document.getElementById('mfEventMinute').value,document.getElementById('mfEventType').value,document.getElementById('mfEventPlayer').value,document.getElementById('mfEventNote').value);}
   function addEventPhone(){addEvent(document.getElementById('mfPhoneEventMinute').value,document.getElementById('mfPhoneEventType').value,document.getElementById('mfPhoneEventPlayer').value,'');}
   async function loadLast(){
-    try{var r=await api('GET','/api/coach-experience/last-lineup'),m=r.match||(r.data&&r.data.match);if(!m||!m.player_positions)throw new Error('No previous line-up is available.');var ids=Object.values(m.player_positions);S.players.forEach(function(p){S.selected[p.id]=ids.indexOf(p.id)>=0;});Object.keys(m.player_positions).forEach(function(slot){var id=m.player_positions[slot],code=String(slot).replace(/\d+$/,'').toUpperCase();S.playedPosition[id]=code;S.starter[id]=true;});S.formation=m.formation||S.formation;saveDraft();render();}catch(e){window.CoachV2.showToast(e.message||'Could not load last line-up.',true);}
+    try{
+      var r=await api('GET','/api/coach-experience/last-lineup'),m=r.match||(r.data&&r.data.match);
+      if(!m||!m.player_positions)throw new Error('No previous line-up is available.');
+      S.format=normaliseFormat(m.match_format||m.format||S.format);S.formation=m.formation_played||m.formation||formationOptions(S.format)[0];
+      if(formationOptions(S.format).indexOf(S.formation)<0)S.formation=formationOptions(S.format)[0];
+      S.slotAssignments={};var ids=[];
+      Object.keys(m.player_positions).forEach(function(slot){var id=m.player_positions[slot];if(!id)return;ids.push(String(id));var code=String(slot).replace(/\d+$/,'').toUpperCase(),defs=slotDefinitions(),match=defs.find(function(d){return d.key===slot;})||defs.find(function(d){return d.position===code&&!S.slotAssignments[d.key];});if(match)S.slotAssignments[match.key]=id;S.playedPosition[id]=match?match.position:code;S.starter[id]=true;});
+      S.players.forEach(function(p){S.selected[p.id]=ids.indexOf(String(p.id))>=0;if(!S.selected[p.id])S.starter[p.id]=false;});
+      syncSlotAssignments();saveDraft();render();
+    }catch(e){window.CoachV2.showToast(e.message||'Could not load last line-up.',true);}
   }
   function payload(){
-    var ps=selectedPlayers().map(function(p){var st=playerState(p.id),adv=S.advanced[p.id]||{};return Object.assign({
-      playerId:p.id,positionPlayed:S.playedPosition[p.id]||pos(p),minutesPlayed:st.minutes||null,
+    syncSlotAssignments();
+    var ps=selectedPlayers().map(function(p){var st=playerState(p.id),adv=S.advanced[p.id]||{},played=S.playedPosition[p.id]||pos(p);return Object.assign({
+      playerId:p.id,positionPlayed:played,minutesPlayed:st.minutes||null,
       goals:n(st.goals),assists:n(st.assists),yellowCards:n(st.yellowCards),redCards:n(st.redCards),
       performanceScore:st.performance||null,attributeRatings:st.attributes||{}
     },adv);});
-    var positions={};starters().forEach(function(p,i){positions[(S.playedPosition[p.id]||pos(p))+(i+1)]=p.id;});
+    var positions={};slotDefinitions().forEach(function(d){var pid=S.slotAssignments[d.key];if(pid)positions[d.key]=pid;});
     return{fixtureId:S.fixtureId||null,matchDate:S.matchDate||new Date().toISOString().slice(0,10),opponent:S.opponent||((currentFixture()||{}).opponent)||null,format:S.format,formation:S.formation,homeScore:S.homeScore===''?null:Number(S.homeScore),awayScore:S.awayScore===''?null:Number(S.awayScore),events:S.events,playerPositions:positions,players:ps,confirmed:true};
   }
   async function submit(){
@@ -286,11 +374,11 @@
       var rs=await Promise.all([api('GET','/api/coach-experience/overview'),window.ScoutLinkScoringV4?window.ScoutLinkScoringV4.loadOptions():api('GET','/api/scoring/options')]);
       var o=rs[0].data||rs[0];S.players=list(o,['players']);S.fixtures=list(o,['fixtures']);S.attendance=list(o,['attendance']);S.scouts=o.scouts||{};S.options=rs[1].data||rs[1];
       if(S.fixtureId)applyFixture(currentFixture());
+      S.format=normaliseFormat(S.format);if(formationOptions(S.format).indexOf(S.formation)<0)S.formation=formationOptions(S.format)[0];
       if(!S.matchDate)S.matchDate=(currentFixture()||{}).fixture_date||new Date().toISOString().slice(0,10);
       if(!S.opponent)S.opponent=(currentFixture()||{}).opponent||'';
-      /* A clean first visit preselects up to 12 visible players, matching the source screen. */
-      if(!Object.keys(S.selected||{}).length){S.players.slice(0,12).forEach(function(p,i){S.selected[p.id]=true;S.starter[p.id]=i<11;S.playedPosition[p.id]=pos(p);});}
-      render();
+      if(!Object.keys(S.selected||{}).length){var max=Math.min(S.players.length,starterLimit()+5);S.players.slice(0,max).forEach(function(p,i){S.selected[p.id]=true;S.starter[p.id]=i<starterLimit();S.playedPosition[p.id]=pos(p);});}
+      ensureStarterCount();syncSlotAssignments();render();
     }catch(e){desk.innerHTML='<div class="coach-route-message error">'+esc(e.message||'Match Facts could not load.')+'</div>';field.innerHTML=desk.innerHTML;}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
