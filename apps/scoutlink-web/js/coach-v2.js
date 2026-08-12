@@ -465,7 +465,7 @@
     if (document.getElementById('coachDesignV14Script')) return;
     var script = document.createElement('script');
     script.id = 'coachDesignV14Script';
-    script.src = '/js/coach-design-v14.js?v=14.0.0';
+    script.src = '/js/coach-design-v14.js?v=14.1.0';
     script.defer = true;
     document.head.appendChild(script);
   }
@@ -533,7 +533,25 @@
     observer.observe(document.body, {childList:true, subtree:true});
   }
 
+  /*
+   * Compatibility surface required by the existing Coach route renderers.
+   * V14 changed the shell implementation, but coach-pages-v1.js and the
+   * specialised Coach workflows still call the established V13 public API.
+   * Keep those names stable so presentation changes never stop page boot.
+   */
+  function refresh() {
+    removeCoachUsageSurfaces();
+    document.querySelectorAll('.coach-desk .shell[data-coach-shell]').forEach(hydrateDeskShell);
+    hydrateField();
+  }
+
+  function setTopChip(text) {
+    var chip = document.getElementById('coachTopChip');
+    if (chip) chip.textContent = text || '';
+  }
+
   window.CoachV2 = {
+    /* V14 native API */
     esc:esc,
     clean:clean,
     api:api,
@@ -546,7 +564,17 @@
     firstName:firstName,
     initials:initials,
     refreshBadges:refreshBadges,
-    isPublicDemo:isPublicDemo
+    isPublicDemo:isPublicDemo,
+
+    /* Stable compatibility API used by existing Coach page/workflow scripts */
+    refresh:refresh,
+    openDrawer:function (options) { return openOverlay('drawer', options); },
+    openModal:function (options) { return openOverlay('modal', options); },
+    openSheet:function (options) { return openOverlay('sheet', options); },
+    closeAll:closeOverlay,
+    signOut:signOut,
+    setTopChip:setTopChip,
+    allowedCoach:allowedCoach
   };
 
   if (document.readyState === 'loading') {
