@@ -74,11 +74,19 @@
     S.slotAssignments={};
   }
   function ensureStarterCount(){
-    var limit=starterLimit(), chosen=selectedPlayers(), start=chosen.filter(function(p){return S.starter[p.id]!==false;});
-    if(start.length>limit){start.slice(limit).forEach(function(p){S.starter[p.id]=false;});}
-    if(start.length<Math.min(limit,chosen.length)){
-      chosen.filter(function(p){return S.starter[p.id]===false;}).slice(0,Math.min(limit,chosen.length)-start.length).forEach(function(p){S.starter[p.id]=true;});
-    }
+    /* Starting places are owned by explicit formation-slot assignments only.
+       Selecting a player on step 1 never auto-promotes them into the XI. */
+    var limit=starterLimit(), assigned=0;
+    Object.keys(S.slotAssignments||{}).forEach(function(key){
+      var pid=S.slotAssignments[key];
+      if(pid&&assigned<limit){assigned+=1;return;}
+      if(pid)delete S.slotAssignments[key];
+    });
+    selectedPlayers().forEach(function(p){S.starter[p.id]=false;});
+    Object.keys(S.slotAssignments||{}).forEach(function(key){
+      var pid=S.slotAssignments[key];
+      if(pid)S.starter[pid]=true;
+    });
   }
   function scoutAtFixture(){
     return S.attendance.filter(function(a){return String(a.fixture_id)===String(S.fixtureId)&&String(a.status||'').toLowerCase()!=='cancelled';});
@@ -97,7 +105,7 @@
         (f?'<div class="row" style="border:1px solid var(--blue-t2);background:var(--blue-t);padding:12px 14px"><div class="sp"><b class="rt">'+fixtureLabel(f).split(' · ')[0]+'</b><s class="rs">'+esc(fmtDate(f.fixture_date)+(f.fixture_time?' · '+String(f.fixture_time).slice(0,5):'')+(f.venue?' · '+f.venue:'')+' · '+(f.format||S.format))+'</s></div><span class="tag a"><i></i>Match Facts missing</span></div>':'')+
         '<div class="g" style="grid-template-columns:repeat(4,1fr);margin-top:14px"><div class="fld" style="margin:0"><span class="fl">Our score</span><input class="inp" id="mfHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Their score</span><input class="inp" id="mfAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div><div class="fld" style="margin:0"><span class="fl">Format</span><select class="inp" id="mfFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="fld" style="margin:0"><span class="fl">Formation</span><select class="inp" id="mfFormation">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div>'+
       '</div></div>'+
-      '<div class="card"><div class="card-h"><h3>Squad</h3><div class="sp"></div><span class="hint">'+selected.length+' of '+S.players.length+' selected · '+starters().length+' starting, '+bench().length+' bench</span><button class="btn sm" id="mfLastLineup">Load last line-up</button></div><table><thead><tr><th style="width:26px"></th><th>Player</th><th class="c">Selected as</th><th class="r">Apps</th><th class="r">Overall</th></tr></thead><tbody>'+S.players.map(function(p){var on=!!S.selected[p.id],st=S.starter[p.id]!==false;return'<tr><td><button class="ck '+(on?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button></td><td><div class="who"><div class="av">'+esc(initials(p))+'</div><div><b>'+esc(name(p))+'</b><s>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</s></div></div></td><td class="c">'+(on?'<button class="tag '+(st?'b':'')+'" data-mf-starter="'+esc(p.id)+'">'+(st?'Starting':'Bench')+'</button>':'<span class="tag">Not selected</span>')+'</td><td class="r num">'+n(p.appearances,0)+'</td><td class="r num">'+(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</td></tr>';}).join('')+'</tbody></table></div></div>'+
+      '<div class="card"><div class="card-h"><h3>Squad</h3><div class="sp"></div><span class="hint">'+selected.length+' of '+S.players.length+' included · positions stay empty until step 2</span><button class="btn sm" id="mfLastLineup">Load last line-up</button></div><table><thead><tr><th style="width:26px"></th><th>Player</th><th class="c">Match squad</th><th class="r">Apps</th><th class="r">Overall</th></tr></thead><tbody>'+S.players.map(function(p){var on=!!S.selected[p.id];return'<tr><td><button class="ck '+(on?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button></td><td><div class="who"><div class="av">'+esc(initials(p))+'</div><div><b>'+esc(name(p))+'</b><s>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</s></div></div></td><td class="c">'+(on?'<span class="tag b">Included</span>':'<span class="tag">Not selected</span>')+'</td><td class="r num">'+n(p.appearances,0)+'</td><td class="r num">'+(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</td></tr>';}).join('')+'</tbody></table><div class="help">No starting XI is pre-filled. On step 2 you choose the player for every formation position; any extra selected players remain on the bench.</div></div></div>'+
       '<div class="g"><div class="card"><div class="card-h"><h3>Attribute observations</h3></div><div class="card-b"><div class="mut" style="font-size:11.5px;line-height:1.8">Each selected player is assessed on the attributes for <b>the position they played today</b>, not their profile position. Changing the played position changes that match assessment set.</div></div></div>'+
       '<div class="card"><div class="card-h"><h3>Scouts at this fixture</h3></div>'+(scoutAtFixture().length?scoutAtFixture().map(function(a){return'<div class="row"><div class="sp"><b class="rt">'+esc(scoutName(a.scout_id))+'</b><s class="rs">'+esc((a.status||'Attending')+' · confirmed '+fmtDate(a.created_at))+'</s></div></div>';}).join(''):'<div class="card-b mut">No confirmed scout attendance is recorded.</div>')+'</div></div></div>'+footer(null,2,'Continue to positions');
   }
@@ -128,31 +136,37 @@
   function sameGroup(a,b){return groupFor(a)===groupFor(b);}
   function syncSlotAssignments(){
     if(!S.slotAssignments||typeof S.slotAssignments!=='object')S.slotAssignments={};
-    ensureStarterCount();
-    var defs=slotDefinitions(), valid={};defs.forEach(function(d){valid[d.key]=1;});
-    Object.keys(S.slotAssignments).forEach(function(k){var pid=S.slotAssignments[k],p=S.players.find(function(x){return String(x.id)===String(pid);});if(!valid[k]||!p||!S.selected[p.id]||S.starter[p.id]===false)delete S.slotAssignments[k];});
-    var used={};Object.keys(S.slotAssignments).forEach(function(k){if(S.slotAssignments[k])used[S.slotAssignments[k]]=1;});
-    var candidates=starters().filter(function(p){return !used[p.id];});
-    defs.forEach(function(d){
-      if(S.slotAssignments[d.key])return;
-      var index=candidates.findIndex(function(p){return pos(p)===d.position;});
-      if(index<0)index=candidates.findIndex(function(p){return sameGroup(pos(p),d.position);});
-      if(index<0&&candidates.length)index=0;
-      if(index>=0){var p=candidates.splice(index,1)[0];S.slotAssignments[d.key]=p.id;used[p.id]=1;}
+    var defs=slotDefinitions(),valid={},used={};
+    defs.forEach(function(d){valid[d.key]=d;});
+    Object.keys(S.slotAssignments).forEach(function(k){
+      var pid=S.slotAssignments[k],p=S.players.find(function(x){return String(x.id)===String(pid);});
+      if(!valid[k]||!pid||!p||!S.selected[p.id]||used[String(pid)]){
+        delete S.slotAssignments[k];
+        return;
+      }
+      used[String(pid)]=1;
     });
-    defs.forEach(function(d){var pid=S.slotAssignments[d.key];if(pid)S.playedPosition[pid]=d.position;});
+    selectedPlayers().forEach(function(p){S.starter[p.id]=false;});
+    defs.forEach(function(d){
+      var pid=S.slotAssignments[d.key];
+      if(!pid)return;
+      S.starter[pid]=true;
+      S.playedPosition[pid]=d.position;
+    });
   }
   function assignSlot(slotKey,pid){
     syncSlotAssignments();
-    var current=S.slotAssignments[slotKey]||'', priorKey='';
-    Object.keys(S.slotAssignments).some(function(k){if(String(S.slotAssignments[k])===String(pid)){priorKey=k;return true;}return false;});
-    if(!pid){delete S.slotAssignments[slotKey];syncSlotAssignments();return;}
-    if(priorKey&&priorKey!==slotKey){
-      S.slotAssignments[priorKey]=current||'';
+    if(!pid){
+      delete S.slotAssignments[slotKey];
+      syncSlotAssignments();
+      return;
     }
+    Object.keys(S.slotAssignments).forEach(function(k){
+      if(k!==slotKey&&String(S.slotAssignments[k])===String(pid))delete S.slotAssignments[k];
+    });
+    S.selected[pid]=true;
     S.slotAssignments[slotKey]=pid;
-    S.selected[pid]=true;S.starter[pid]=true;
-    slotDefinitions().forEach(function(d){var id=S.slotAssignments[d.key];if(id)S.playedPosition[id]=d.position;});
+    syncSlotAssignments();
   }
   function formationSlots(){
     syncSlotAssignments();
@@ -266,8 +280,8 @@
   }
   function phone(){
     if(S.saved)return phoneHeader()+'<div class="card"><div class="card-b" style="text-align:center;padding:26px"><h2>Match Facts saved</h2><p class="mut">Player records were updated.</p><a class="bt spend blk" href="'+esc(clean('/coach/dashboard'))+'">Back to Dashboard</a></div></div>';
-    if(S.step===1)return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="ck" style="margin-bottom:8px">Match</div><div class="field"><label>Fixture</label><select class="in" id="mfPhoneFixture"><option value="">Standalone match</option>'+S.fixtures.map(function(f){return'<option value="'+esc(f.id)+'"'+(String(f.id)===String(S.fixtureId)?' selected':'')+'>'+fixtureLabel(f).replace(/&amp;/g,'&')+'</option>';}).join('')+'</select></div><div class="two"><div class="field"><label>Our score</label><input class="in" id="mfPhoneHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="field"><label>Their score</label><input class="in" id="mfPhoneAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div></div><div class="two"><div class="field"><label>Format</label><select class="in" id="mfPhoneFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div></div></div><div class="pcap">Squad <span>'+selectedPlayers().length+' selected · '+starters().length+'/'+starterLimit()+' starting</span></div><div class="card">'+S.players.map(function(p){return'<div class="rowline"><button class="ck '+(S.selected[p.id]?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</span></span>'+(S.selected[p.id]?'<button class="tag '+(S.starter[p.id]!==false?'b':'')+'" data-mf-starter="'+esc(p.id)+'">'+(S.starter[p.id]!==false?'Starting':'Bench')+'</button>':'')+'</div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="2">Continue to positions</button></div>';
-    if(S.step===2){var slots=formationSlots(),available=selectedPlayers();return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="ck">Assign formation slots</div><p class="mut" style="margin:6px 0 12px">Choose where each player actually played. This controls the attributes you will assess.</p><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation2">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div>'+slots.map(function(x){return'<div class="field"><label>'+esc(x.label)+' · '+esc(x.position)+'</label><select class="in" data-mf-slot="'+esc(x.slot)+'"><option value="">Choose player…</option>'+available.map(function(p){return'<option value="'+esc(p.id)+'"'+(x.p&&String(x.p.id)===String(p.id)?' selected':'')+'>'+esc(name(p)+' · profile '+pos(p))+'</option>';}).join('')+'</select></div>';}).join('')+'</div></div><div class="pcap">Bench</div><div class="card">'+(bench().length?bench().map(function(p){return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p))+'</span></span><span class="tag">Bench</span></div>';}).join(''):'<div class="card-b mut">No bench players selected.</div>')+'</div><button class="bt spend blk" data-mf-goto="3">Continue to events</button><button class="bt gh blk" data-mf-goto="1">Back</button></div>';}
+    if(S.step===1)return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="mobile-card-title" style="margin-bottom:8px">Match</div><div class="field"><label>Fixture</label><select class="in" id="mfPhoneFixture"><option value="">Standalone match</option>'+S.fixtures.map(function(f){return'<option value="'+esc(f.id)+'"'+(String(f.id)===String(S.fixtureId)?' selected':'')+'>'+fixtureLabel(f).replace(/&amp;/g,'&')+'</option>';}).join('')+'</select></div><div class="two"><div class="field"><label>Our score</label><input class="in" id="mfPhoneHome" type="number" min="0" value="'+esc(S.homeScore)+'"></div><div class="field"><label>Their score</label><input class="in" id="mfPhoneAway" type="number" min="0" value="'+esc(S.awayScore)+'"></div></div><div class="two"><div class="field"><label>Format</label><select class="in" id="mfPhoneFormat">'+formatOptions().map(function(x){return'<option'+(x===S.format?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div></div></div><div class="pcap">Squad <span>'+selectedPlayers().length+' included · assign positions next</span></div><div class="card">'+S.players.map(function(p){return'<div class="rowline"><button class="ck '+(S.selected[p.id]?'on':'')+'" data-mf-select="'+esc(p.id)+'"></button><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+(p.age_group||'—'))+'</span></span>'+(S.selected[p.id]?'<span class="tag b">Included</span>':'')+'</div>';}).join('')+'</div><div class="help">The line-up is intentionally blank. Step 2 is where you place each selected player into the position they actually played.</div><button class="bt spend blk" data-mf-goto="2">Continue to positions</button></div>';
+    if(S.step===2){var slots=formationSlots(),available=selectedPlayers();return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="mobile-card-title">Assign formation slots</div><p class="mut" style="margin:6px 0 12px">Choose where each player actually played. This controls the attributes you will assess.</p><div class="field"><label>Formation</label><select class="in" id="mfPhoneFormation2">'+formationOptions(S.format).map(function(x){return'<option'+(x===S.formation?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div>'+slots.map(function(x){return'<div class="field"><label>'+esc(x.label)+' · '+esc(x.position)+'</label><select class="in" data-mf-slot="'+esc(x.slot)+'"><option value="">Choose player…</option>'+available.map(function(p){return'<option value="'+esc(p.id)+'"'+(x.p&&String(x.p.id)===String(p.id)?' selected':'')+'>'+esc(name(p)+' · profile '+pos(p))+'</option>';}).join('')+'</select></div>';}).join('')+'</div></div><div class="pcap">Bench</div><div class="card">'+(bench().length?bench().map(function(p){return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(pos(p))+'</span></span><span class="tag">Bench</span></div>';}).join(''):'<div class="card-b mut">No bench players selected.</div>')+'</div><button class="bt spend blk" data-mf-goto="3">Continue to events</button><button class="bt gh blk" data-mf-goto="1">Back</button></div>';}
     if(S.step===3)return phoneHeader()+'<div class="stack"><div class="card"><div class="card-b"><div class="two"><div class="field"><label>Minute</label><input class="in" id="mfPhoneEventMinute" type="number"></div><div class="field"><label>Event</label><select class="in" id="mfPhoneEventType"><option>Goal</option><option>Goal conceded</option><option>Yellow card</option><option>Red card</option><option>Substitution</option></select></div></div><div class="field"><label>Player</label><select class="in" id="mfPhoneEventPlayer"><option value="">—</option>'+selectedPlayers().map(function(p){return'<option value="'+esc(p.id)+'">'+esc(name(p))+'</option>';}).join('')+'</select></div><button class="bt spend blk" id="mfPhoneAddEvent">Add event</button></div></div><div class="pcap">Matchday log <span>'+S.events.length+'</span></div><div class="card">'+S.events.map(function(e,i){return'<div class="rowline"><span class="who"><b>'+esc(e.type)+'</b><span>'+esc(eventLabel(e))+'</span></span><button class="bt sm gh" data-mf-remove-event="'+i+'">Remove</button></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="4">Continue to ratings</button><button class="bt gh blk" data-mf-goto="2">Back</button></div>';
     if(S.step===4)return phoneHeader()+'<div class="stack"><div class="card">'+selectedPlayers().map(function(p){var st=playerState(p.id);return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>Played '+esc(S.playedPosition[p.id]||pos(p))+' · '+observationCount(p)+' observed</span></span><span class="ratem '+(st.performance?'set':'')+'">'+esc(st.performance||'—')+'</span><button class="bt sm gh" data-mf-open-ratings="'+esc(p.id)+'">Rate</button></div>';}).join('')+'</div><button class="bt spend blk" data-mf-goto="5">Continue to review</button><button class="bt gh blk" data-mf-goto="3">Back</button></div>';
     return phoneHeader()+'<div class="stack"><div class="card hero"><div class="num" style="font-size:28px;font-weight:700">'+esc((S.homeScore||0)+' – '+(S.awayScore||0))+'</div><b>vs '+esc(S.opponent||'Opponent')+'</b><div class="mut">'+esc(fmtDate(S.matchDate)+' · '+S.format+' · '+S.formation)+'</div></div><div class="card">'+kv('Players updated',selectedPlayers().length)+kv('Events',S.events.length)+kv('Attribute observations',selectedPlayers().reduce(function(sum,p){return sum+Number(observationCount(p).split('/')[0]);},0))+'</div><button class="bt spend blk" id="mfPhoneSubmit">Submit Match Facts</button><button class="bt gh blk" data-mf-goto="4">Back</button></div>';
@@ -281,10 +295,10 @@
 
   function syncInputs(){
     [['mfHome','homeScore'],['mfPhoneHome','homeScore'],['mfAway','awayScore'],['mfPhoneAway','awayScore'],['mfOpponent','opponent'],['mfDate','matchDate']].forEach(function(x){var el=document.getElementById(x[0]);if(el)el.oninput=function(){S[x[1]]=el.value;saveDraft();};});
-    ['mfFormat','mfPhoneFormat'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.format=normaliseFormat(el.value);reconcileFormation();ensureStarterCount();saveDraft();render();};});
+    ['mfFormat','mfPhoneFormat'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.format=normaliseFormat(el.value);reconcileFormation();syncSlotAssignments();saveDraft();render();};});
     ['mfFormation','mfPhoneFormation','mfFormation2','mfPhoneFormation2'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.formation=el.value;S.slotAssignments={};syncSlotAssignments();saveDraft();render();};});
     document.querySelectorAll('[data-mf-slot]').forEach(function(el){el.onchange=function(){assignSlot(el.dataset.mfSlot,el.value);saveDraft();render();};});
-    ['mfFixture','mfPhoneFixture'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.fixtureId=el.value;S.source=el.value?'fixture':'standalone';applyFixture(currentFixture());reconcileFormation();ensureStarterCount();saveDraft();render();};});
+    ['mfFixture','mfPhoneFixture'].forEach(function(id){var el=document.getElementById(id);if(el)el.onchange=function(){S.fixtureId=el.value;S.source=el.value?'fixture':'standalone';applyFixture(currentFixture());reconcileFormation();syncSlotAssignments();saveDraft();render();};});
   }
   function positionSheet(pid){
     var p=S.players.find(function(x){return String(x.id)===String(pid);});if(!p)return;
@@ -315,9 +329,32 @@
   }
 
   function bind(){
-    document.querySelectorAll('[data-mf-goto]').forEach(function(b){b.onclick=function(){if(!b.disabled){if(Number(b.dataset.mfGoto)===2){ensureStarterCount();syncSlotAssignments();}setStep(b.dataset.mfGoto);}};});
+    document.querySelectorAll('[data-mf-goto]').forEach(function(b){b.onclick=function(){
+      if(b.disabled)return;
+      var target=Number(b.dataset.mfGoto);
+      if(target===2&&S.step===1&&selectedPlayers().length<starterLimit()){
+        return window.CoachV2.showToast('Select at least '+starterLimit()+' players for this '+S.format+' match before assigning positions.',true);
+      }
+      if(target===3&&S.step===2){
+        syncSlotAssignments();
+        var missing=slotDefinitions().filter(function(d){return !S.slotAssignments[d.key];});
+        if(missing.length)return window.CoachV2.showToast('Assign a player to every formation position before continuing.',true);
+      }
+      setStep(target);
+    };});
     document.querySelectorAll('[data-mf-source]').forEach(function(b){b.onclick=function(){S.source=b.dataset.mfSource;if(S.source==='standalone')S.fixtureId='';saveDraft();render();};});
-    document.querySelectorAll('[data-mf-select]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfSelect;S.selected[id]=!S.selected[id];if(S.selected[id]&&S.starter[id]==null)S.starter[id]=starters().length<starterLimit();if(!S.selected[id]){S.starter[id]=false;Object.keys(S.slotAssignments||{}).forEach(function(k){if(String(S.slotAssignments[k])===String(id))delete S.slotAssignments[k];});}ensureStarterCount();saveDraft();render();};});
+    document.querySelectorAll('[data-mf-select]').forEach(function(b){b.onclick=function(){
+      var id=b.dataset.mfSelect;
+      S.selected[id]=!S.selected[id];
+      if(S.selected[id]){
+        S.starter[id]=false;
+        if(!S.playedPosition[id])S.playedPosition[id]=pos(S.players.find(function(p){return String(p.id)===String(id);})||{});
+      }else{
+        S.starter[id]=false;
+        Object.keys(S.slotAssignments||{}).forEach(function(k){if(String(S.slotAssignments[k])===String(id))delete S.slotAssignments[k];});
+      }
+      syncSlotAssignments();saveDraft();render();
+    };});
     document.querySelectorAll('[data-mf-starter]').forEach(function(b){b.onclick=function(){var id=b.dataset.mfStarter;if(S.starter[id]===false&&starters().length>=starterLimit())return window.CoachV2.showToast('This '+S.format+' format has '+starterLimit()+' starting positions.',true);S.starter[id]=!S.starter[id];S.slotAssignments={};ensureStarterCount();saveDraft();render();};});
     document.querySelectorAll('[data-pitch-player],[data-phone-position]').forEach(function(b){b.onclick=function(){positionSheet(b.dataset.pitchPlayer||b.dataset.phonePosition);};});
     document.querySelectorAll('[data-mf-remove-event]').forEach(function(b){b.onclick=function(){S.events.splice(Number(b.dataset.mfRemoveEvent),1);saveDraft();render();};});
@@ -377,8 +414,10 @@
       S.format=normaliseFormat(S.format);if(formationOptions(S.format).indexOf(S.formation)<0)S.formation=formationOptions(S.format)[0];
       if(!S.matchDate)S.matchDate=(currentFixture()||{}).fixture_date||new Date().toISOString().slice(0,10);
       if(!S.opponent)S.opponent=(currentFixture()||{}).opponent||'';
-      if(!Object.keys(S.selected||{}).length){var max=Math.min(S.players.length,starterLimit()+5);S.players.slice(0,max).forEach(function(p,i){S.selected[p.id]=true;S.starter[p.id]=i<starterLimit();S.playedPosition[p.id]=pos(p);});}
-      ensureStarterCount();syncSlotAssignments();render();
+      /* New Match Facts drafts always begin with an empty match squad.
+         A restored draft or an explicit “Load last line-up” action may contain selections. */
+      if(!Object.keys(S.selected||{}).length){S.selected={};S.starter={};S.playedPosition={};S.slotAssignments={};}
+      syncSlotAssignments();render();
     }catch(e){desk.innerHTML='<div class="coach-route-message error">'+esc(e.message||'Match Facts could not load.')+'</div>';field.innerHTML=desk.innerHTML;}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
