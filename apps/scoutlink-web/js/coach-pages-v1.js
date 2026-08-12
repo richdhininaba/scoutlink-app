@@ -1,844 +1,579 @@
 'use strict';
 
 /*
- * ScoutLink Coach Desk / Coach Field — source-faithful everyday route renderer.
+ * ScoutLink Coach Desk / Coach Field — exact everyday route renderer.
  *
- * Presentation follows:
- *   - ScoutLink Coach Desk — desktop design specification
- *   - ScoutLink Coach Field — phone design specification
- *
- * Business behaviour deliberately remains on the existing ScoutLink APIs.
- * This file does not add schema requirements and does not invent dead controls.
+ * The supplied Coach Desk and Coach Field HTML are the visual source of truth.
+ * All cards, rails, tables, grouped notifications, video moderation, chat,
+ * fixtures and settings below are hydrated from live ScoutLink APIs.
  */
-(function () {
-  var page = document.body && document.body.getAttribute('data-coach-page');
-  if (!page) return;
+(function(){
+  var page=document.body&&document.body.getAttribute('data-coach-page');
+  if(!page)return;
+  var desk=document.getElementById('coachDeskPage'),field=document.getElementById('coachFieldPage');
+  var S={overview:null,coaches:[],filters:{search:'',ages:{},group:'',coach:'',evidence:'',interest:'',sort:'overall',rating:'60-85',availability:{Available:true,Injured:false,Unavailable:false}},playerPage:1,selectedPlayers:[],fixtureTab:'upcoming',activeFixtureId:'',activeThread:'',threads:[],messages:[],settingsPane:'team',prefs:null,concernRef:''};
 
-  var desk = document.getElementById('coachDeskPage');
-  var field = document.getElementById('coachFieldPage');
-  var state = {
-    playerSearch: '',
-    playerPosition: '',
-    playerAge: '',
-    playerAssigned: '',
-    playerNeedsWork: false,
-    playerPage: 1,
-    playerSort: 'name',
-    notifFilter: 'all',
-    settingsPane: 'team'
-  };
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function api(m,p,b){return window.CoachV2&&window.CoachV2.api?window.CoachV2.api(m,p,b):window.api(m,p,b);}
+  function clean(p){return window.CoachV2?window.CoachV2.clean(p):p;}
+  function rows(v,keys){if(Array.isArray(v))return v;for(var i=0;i<keys.length;i++)if(v&&Array.isArray(v[keys[i]]))return v[keys[i]];return[];}
+  function val(o,keys,d){for(var i=0;i<keys.length;i++)if(o&&o[keys[i]]!=null&&o[keys[i]]!=='')return o[keys[i]];return d;}
+  function n(v,d){v=Number(v);return Number.isFinite(v)?v:(d==null?0:d);}
+  function bool(v){return v===true||v===1||/^(true|1|yes)$/i.test(String(v||''));}
+  function name(p){return[p&&p.first_name,p&&p.last_name].filter(Boolean).join(' ')||val(p,['name','player_name'],'Player');}
+  function initials(x){return window.CoachV2?window.CoachV2.initials(typeof x==='string'?x:name(x)):'PL';}
+  function team(){return window.CoachV2?window.CoachV2.teamName():'Your team';}
+  function ageGroup(){return window.CoachV2?window.CoachV2.ageGroup():'';}
+  function position(p){return val(p,['primary_position','specific_position','position'],'—');}
+  function posGroup(p){var x=String(position(p)).toUpperCase();if(/GK/.test(x))return'GK';if(/RB|LB|CB|RWB|LWB/.test(x))return'DEF';if(/DM|CM|AM|RM|LM/.test(x))return'MID';return'ATT';}
+  function fmtDate(v,tm){if(!v)return'—';var d=new Date(String(v).length<=10?v+'T12:00:00':v);if(Number.isNaN(d.getTime()))return String(v);var s=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});if(tm)s+=' · '+String(tm).slice(0,5);return s;}
+  function fmtMoney(v){v=Number(v);if(!Number.isFinite(v)||v<=0)return'—';if(v>=1000000)return'£'+(v/1000000).toFixed(v>=10000000?0:1)+'m';if(v>=1000)return'£'+Math.round(v/1000)+'k';return'£'+Math.round(v);}
+  function safeStatus(v){return String(v||'pending').toLowerCase();}
+  function msg(t,e){return'<div class="coach-route-message'+(e?' error':'')+'">'+esc(t)+'</div>';}
+  function fieldHeader(title,sub,right,left){if(window.CoachV2&&window.CoachV2.setFieldHeader)window.CoachV2.setFieldHeader(title,sub||'',right||'',left||'');return'';}
+  function metric(label,value,detail){return'<div class="kpi"><div class="k">'+esc(label)+'</div><div class="v">'+value+'</div>'+(detail?'<div class="d">'+detail+'</div>':'')+'</div>';}
+  function completion(p){
+    var attrs=p.attribute_ratings||{},flat={};(function f(o){if(!o||typeof o!=='object')return;Object.keys(o).forEach(function(k){var v=o[k];if(v&&typeof v==='object'&&!Array.isArray(v))f(v);else if(v!==null&&v!==undefined&&v!=='')flat[k]=v;});})(attrs);
+    var attrCount=Object.keys(flat).length;
+    var total=/^GK$/i.test(position(p))?12:(posGroup(p)==='DEF'?24:posGroup(p)==='MID'?23:24);
+    var pc=total?Math.round(Math.min(1,attrCount/total)*70):0;
+    pc+=(p.height_category||p.height_range_cm)?5:0;pc+=(p.build_category||p.weight_range_kg)?5:0;
+    var facts=matchFactsForPlayer(p.id);if(facts.length)pc+=10;
+    var vids=videosForPlayer(p.id).filter(function(v){return safeStatus(v.moderation_status)==='approved';});if(vids.length)pc+=10;
+    return Math.min(100,pc);
+  }
+  function matchFactsForPlayer(pid){var o=S.overview||{};return rows(o,['matchFacts']).filter(function(m){return String(m.player_id||'')===String(pid);});}
+  function videosForPlayer(pid){return rows(S.overview||{},['videos']).filter(function(v){return String(v.player_id||'')===String(pid);});}
+  function interestsForPlayer(pid){return rows(S.overview||{},['interest']).filter(function(x){return String(x.player_id||'')===String(pid);});}
+  function scoutsMap(){return(S.overview&&S.overview.scouts)||{};}
+  function attendanceFor(fixtureId){return rows(S.overview||{},['attendance']).filter(function(a){return String(a.fixture_id)===String(fixtureId)&&safeStatus(a.status)!=='cancelled';});}
+  function factsForFixture(fid){return rows(S.overview||{},['matchFacts']).filter(function(m){return String(m.fixture_id||'')===String(fid);});}
+  function coachName(id){var c=S.coaches.find(function(x){return String(x.id)===String(id);});return c?[c.first_name,c.last_name].filter(Boolean).join(' '):((S.overview&&S.overview.coach&&String(S.overview.coach.id)===String(id))?[S.overview.coach.first_name,S.overview.coach.last_name].filter(Boolean).join(' '):'Coach');}
+  function scoutLabel(id){var s=scoutsMap()[id];return s?(s.club_name||[s.first_name,s.last_name].filter(Boolean).join(' ')||'Reviewed scout'):'Reviewed scout';}
+  function daysAgo(v){var d=new Date(v||0),ms=Date.now()-d.getTime();if(!Number.isFinite(ms))return'';var days=Math.floor(ms/86400000);return days<=0?'today':days===1?'1 day ago':days+' days ago';}
+  function setActions(leftLabel,leftHref,rightLabel,rightHref){
+    if(!window.CoachV2||!window.CoachV2.setRouteActions)return;
+    window.CoachV2.setRouteActions({secondary:leftLabel?{label:leftLabel,href:leftHref}:null,primary:rightLabel?{label:rightLabel,href:rightHref}:null});
+  }
+  async function loadOverview(force){
+    if(S.overview&&!force)return S.overview;
+    var r=await api('GET','/api/coach-experience/overview');S.overview=r.data||r;
+    var c=S.overview.coach||{};
+    S.coaches=[c];
+    if(c.is_super_user){
+      try{var cr=await api('GET','/api/coaches/team-coaches');S.coaches=S.coaches.concat(rows(cr,['data','coaches']));}catch(_){}
+    }
+    S.coaches=S.coaches.filter(function(x,i,a){return x&&x.id&&a.findIndex(function(y){return y&&String(y.id)===String(x.id);})===i;});
+    return S.overview;
+  }
 
-  function esc(v) {
-    return window.CoachV2 ? window.CoachV2.esc(v) : String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
+  /* ---------- SVG charts copied from the source design grammar ---------- */
+  function lineChart(values){
+    values=values&&values.length?values:[0];var min=5,max=10,pts=values.map(function(v,i){var x=22+(values.length===1?0:i/(values.length-1)*650),y=148-(Math.max(min,Math.min(max,n(v,min)))-min)/(max-min)*110;return x.toFixed(1)+','+y.toFixed(1);}).join(' ');
+    return'<svg viewBox="0 0 700 180" width="100%" height="180" style="display:block"><rect x="22" y="38" width="650" height="44" fill="var(--green-t)"></rect><rect x="22" y="82" width="650" height="66" fill="var(--blue-t)"></rect>'+[5,6,7,8,9,10].map(function(v){var y=148-(v-min)/(max-min)*110;return'<line x1="22" x2="672" y1="'+y+'" y2="'+y+'" stroke="var(--line)"/><text x="2" y="'+(y+3)+'" font-size="9" fill="var(--ink3)">'+v+'</text>';}).join('')+'<polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2"/>'+values.map(function(v,i){var x=22+(values.length===1?0:i/(values.length-1)*650),y=148-(Math.max(min,Math.min(max,n(v,min)))-min)/(max-min)*110;return'<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="#fff" stroke="var(--blue)" stroke-width="2"/>';}).join('')+'</svg>';
   }
-  function clean(h) { return window.CoachV2 ? window.CoachV2.clean(h) : h; }
-  function api(method, path, body) {
-    if (window.CoachV2 && window.CoachV2.api) return window.CoachV2.api(method, path, body);
-    return window.api(method, path, body);
+  function bars(values){
+    values=values&&values.length?values:[0,0,0,0,0,0,0,0];var mx=Math.max.apply(null,values.concat([1]));
+    return'<svg viewBox="0 0 700 180" width="100%" height="180" style="display:block">'+values.map(function(v,i){var w=44,gap=34,x=30+i*(w+gap),h=Math.max(0,v/mx*118),y=148-h;return'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="var(--blue)"/><text x="'+(x+w/2)+'" y="'+(y-5)+'" text-anchor="middle" font-size="9" font-weight="700" fill="var(--ink2)">'+v+'</text><text x="'+(x+w/2)+'" y="164" text-anchor="middle" font-size="9" fill="var(--ink4)">w'+(i+1)+'</text>';}).join('')+'</svg>';
   }
-  function list(r, keys) {
-    if (Array.isArray(r)) return r;
-    for (var i = 0; i < keys.length; i++) if (r && Array.isArray(r[keys[i]])) return r[keys[i]];
-    return [];
+  function spark(values){values=values&&values.length?values:[0,0,0,0,0];var mx=Math.max.apply(null,values.concat([1])),mn=Math.min.apply(null,values.concat([0])),r=Math.max(1,mx-mn),pts=values.map(function(v,i){return(i/(values.length-1)*90+5)+','+(28-(v-mn)/r*20);}).join(' ');return'<svg viewBox="0 0 100 34" width="90" height="32"><polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2"/></svg>';}
+  function phoneLineChart(values){
+    values=values&&values.length?values:[0];var min=5,max=10,w=330,h=150,left=24,right=12,top=16,bottom=24,plotW=w-left-right,plotH=h-top-bottom;
+    var pts=values.map(function(v,i){var x=left+(values.length===1?0:i/(values.length-1)*plotW),y=top+(max-Math.max(min,Math.min(max,n(v,min))))/(max-min)*plotH;return x.toFixed(1)+','+y.toFixed(1);}).join(' ');
+    var y7=top+(max-7)/(max-min)*plotH,y9=top+(max-9)/(max-min)*plotH;
+    return'<svg viewBox="0 0 330 150" width="100%" height="150" style="display:block"><rect x="'+left+'" y="'+y9+'" width="'+plotW+'" height="'+(y7-y9)+'" fill="var(--green-t)"/><rect x="'+left+'" y="'+y7+'" width="'+plotW+'" height="'+(top+plotH-y7)+'" fill="var(--blue-t)"/>'+[5,7,9].map(function(v){var y=top+(max-v)/(max-min)*plotH;return'<line x1="'+left+'" x2="'+(left+plotW)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)"/><text x="3" y="'+(y+3)+'" font-size="8" fill="var(--ink3)">'+v+'</text>';}).join('')+'<polyline points="'+pts+'" fill="none" stroke="var(--blue)" stroke-width="2"/>'+values.map(function(v,i){var x=left+(values.length===1?0:i/(values.length-1)*plotW),y=top+(max-Math.max(min,Math.min(max,n(v,min))))/(max-min)*plotH;return'<circle cx="'+x+'" cy="'+y+'" r="3" fill="#fff" stroke="var(--blue)" stroke-width="2"/>';}).join('')+'</svg>';
   }
-  function value(o, keys) {
-    for (var i = 0; i < keys.length; i++) if (o && o[keys[i]] != null && o[keys[i]] !== '') return o[keys[i]];
-    return null;
+  function phoneBars(values){
+    values=values&&values.length?values:[0,0,0,0,0,0,0,0];var mx=Math.max.apply(null,values.concat([1])),w=330,h=150,left=18,right=10,top=18,bottom=26,plotW=w-left-right,gap=8,bw=(plotW-gap*(values.length-1))/values.length;
+    return'<svg viewBox="0 0 330 150" width="100%" height="150" style="display:block">'+values.map(function(v,i){var bh=Math.max(0,v/mx*(h-top-bottom)),x=left+i*(bw+gap),y=h-bottom-bh;return'<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" fill="var(--blue)"/><text x="'+(x+bw/2)+'" y="'+(y-4)+'" text-anchor="middle" font-size="8" font-weight="700" fill="var(--ink2)">'+v+'</text><text x="'+(x+bw/2)+'" y="139" text-anchor="middle" font-size="8" fill="var(--ink4)">w'+(i+1)+'</text>';}).join('')+'</svg>';
   }
-  function num(v, fallback) {
-    var n = Number(v);
-    return Number.isFinite(n) ? n : (fallback == null ? 0 : fallback);
-  }
-  function bool(v) {
-    if (v === true || v === 1) return true;
-    return /^(1|true|yes)$/i.test(String(v == null ? '' : v));
-  }
-  function user() { return window.Auth && window.Auth.user ? window.Auth.user : {}; }
-  function fullName() { return window.CoachV2 ? window.CoachV2.fullName() : 'Coach'; }
-  function firstName() { return window.CoachV2 ? window.CoachV2.firstName() : 'Coach'; }
-  function initials(v) { return window.CoachV2 ? window.CoachV2.initials(v) : String(v || 'PL').slice(0,2).toUpperCase(); }
-  function team() { return window.CoachV2 ? window.CoachV2.teamName() : 'Your team'; }
-  function age() { return window.CoachV2 ? window.CoachV2.ageGroup() : ''; }
-  function teamLine() { return [team(), age()].filter(Boolean).join(' · '); }
-  function nameOf(p) { return [p && p.first_name, p && p.last_name].filter(Boolean).join(' ').trim() || value(p, ['name','player_name']) || 'Player'; }
-  function position(p) { return value(p, ['specific_position','primary_position','position','position_group']) || '—'; }
-  function positionGroup(p) {
-    var s = String(position(p)).toUpperCase();
-    if (/GK|GOAL/.test(s)) return 'GK';
-    if (/CB|LB|RB|WB|DEF/.test(s)) return 'DEF';
-    if (/CM|DM|AM|MID/.test(s)) return 'MID';
-    return 'ATT';
-  }
-  function formatDate(raw, withTime) {
-    if (!raw) return 'Date to be confirmed';
-    var d = new Date(String(raw).length <= 10 ? String(raw) + 'T12:00:00' : raw);
-    if (Number.isNaN(d.getTime())) return String(raw);
-    var s = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
-    if (withTime && typeof withTime === 'string') s += ' · ' + withTime.slice(0,5);
-    return s;
-  }
-  function formatDateLong(raw) {
-    var d = raw ? new Date(raw) : new Date();
-    if (Number.isNaN(d.getTime())) d = new Date();
-    return d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
-  }
-  function fmtMoney(v) {
-    var n = Number(v);
-    if (!Number.isFinite(n) || n <= 0) return 'Developing';
-    if (n >= 1000000) return '£' + (n / 1000000).toFixed(n >= 10000000 ? 0 : 1) + 'm';
-    if (n >= 1000) return '£' + Math.round(n / 1000) + 'k';
-    return '£' + Math.round(n);
-  }
-  function routeMessage(message, error) {
-    return '<div class="coach-route-message' + (error ? ' error' : '') + '">' + esc(message) + '</div>';
-  }
-  function completion(p) {
-    var explicit = Number(value(p, ['profile_completion','profileCompletion','completion_percent','evidence_completion']));
-    if (Number.isFinite(explicit)) return Math.max(0, Math.min(100, Math.round(explicit <= 1 ? explicit * 100 : explicit)));
-    var checks = [
-      nameOf(p) !== 'Player',
-      !!value(p,['age_group','ageGroup']),
-      position(p) !== '—',
-      Number.isFinite(Number(value(p,['overall_rating','overall']))),
-      !!value(p,['foot','preferred_foot']),
-      !!value(p,['height_category','heightCategory']),
-      !!value(p,['build_category','buildCategory']),
-      num(value(p,['appearances','apps']),0) > 0
-    ];
-    return Math.round(checks.filter(Boolean).length / checks.length * 100);
-  }
-  function readinessLabel(pc) { return pc >= 80 ? 'Ready' : pc >= 60 ? 'Building' : 'Needs work'; }
-  function readinessTag(pc) { return pc >= 80 ? 'g' : pc >= 60 ? 'a' : 'r'; }
-  function evidenceClass(pc) { return pc < 50 ? 'low' : pc < 75 ? 'mid' : ''; }
-  function iconBox(text, cls) { return '<span class="icn ' + (cls || '') + '">' + esc(text) + '</span>'; }
-  function avatar(name, cls) { return '<span class="av ' + (cls || '') + '">' + esc(initials(name)) + '</span>'; }
-  function fieldHeader(title, sub, right) {
-    return '<div class="hd ptop"><div><div class="t">' + esc(title) + '</div><div class="sub">' + esc(sub || '') + '</div></div><div class="r">' +
-      (right || '<span class="avm">' + esc(initials(fullName())) + '</span>') + '</div></div>';
-  }
-  function setShellActions(secondaryLabel, secondaryHref, primaryLabel, primaryHref) {
-    var top = document.getElementById('coachDeskTopbar');
-    if (!top) {
-      setTimeout(function () { setShellActions(secondaryLabel, secondaryHref, primaryLabel, primaryHref); }, 0);
-      return;
-    }
-    top.querySelectorAll('[data-coach-route-action],#coachImportFixtures,#coachAddFixture,#coachRefreshVideos,#coachExportPlayers,#coachMarkAllRead,#coachSavePreferences').forEach(function (node) { node.remove(); });
-    var before = top.querySelector('.coach-search-wrap') || top.querySelector('.bell') || null;
-    function add(label, href, primary, kind) {
-      if (!label) return;
-      var node = document.createElement(href && href !== '#' ? 'a' : 'button');
-      node.className = 'btn sm' + (primary ? ' p' : '');
-      node.setAttribute('data-coach-route-action', kind);
-      if (href && href !== '#') node.href = clean(href);
-      else node.type = 'button';
-      node.textContent = label;
-      top.insertBefore(node, before);
-    }
-    add(secondaryLabel, secondaryHref, false, 'secondary');
-    add(primaryLabel, primaryHref, true, 'primary');
-  }
-  function safeSettled(result, keys) {
-    return result && result.status === 'fulfilled' ? list(result.value, keys) : [];
-  }
-  function spark(values, cls) {
-    values = values && values.length ? values : [0,0,0,0,0,0,0,0];
-    var max = Math.max.apply(null, values.concat([1]));
-    var min = Math.min.apply(null, values.concat([0]));
-    var range = Math.max(1, max - min);
-    var pts = values.map(function (v, i) {
-      var x = values.length === 1 ? 50 : i / (values.length - 1) * 100;
-      var y = 34 - ((v - min) / range * 27);
-      return x.toFixed(1) + ',' + y.toFixed(1);
-    }).join(' ');
-    return '<svg class="coach-spark ' + (cls || '') + '" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>';
-  }
-  function barChart(values, labels) {
-    values = values && values.length ? values : [0,0,0,0,0,0,0,0];
-    labels = labels || values.map(function (_, i) { return String(i + 1); });
-    var max = Math.max.apply(null, values.concat([1]));
-    return '<div class="coach-bars">' + values.map(function (v, i) {
-      var h = Math.max(3, Math.round(v / max * 100));
-      return '<div class="coach-bar-col"><span class="coach-bar" style="height:' + h + '%"></span><small>' + esc(labels[i] || '') + '</small></div>';
-    }).join('') + '</div>';
-  }
-  function weekSeries(rows, predicate) {
-    var now = new Date();
-    var out = [];
-    for (var i = 7; i >= 0; i--) {
-      var start = new Date(now);
-      start.setDate(now.getDate() - (i * 7 + 6));
-      start.setHours(0,0,0,0);
-      var end = new Date(start);
-      end.setDate(start.getDate() + 7);
-      out.push(rows.filter(function (row) {
-        var raw = value(row,['created_at','createdAt','fixture_date','fixtureDate','date']);
-        var d = raw ? new Date(raw) : null;
-        return d && !Number.isNaN(d.getTime()) && d >= start && d < end && (!predicate || predicate(row));
-      }).length);
-    }
+
+  /* ================= Dashboard ================= */
+  function weeklyInterest(){
+    var rowsI=rows(S.overview||{},['interest']),out=[],now=Date.now();
+    for(var w=7;w>=0;w--){var a=now-(w+1)*7*86400000,b=now-w*7*86400000;out.push(rowsI.filter(function(x){var t=new Date(x.created_at||x.interest_registered_at||0).getTime();return t>=a&&t<b;}).length);}
     return out;
   }
-
-  function matchPerformanceSeries(facts) {
-    var grouped = {};
-    (facts || []).forEach(function (fact) {
-      var score = Number(value(fact,['performance_score','performanceScore']));
-      if (!Number.isFinite(score)) return;
-      var key = String(value(fact,['fixture_id','fixtureId']) || value(fact,['match_date','matchDate']) || value(fact,['created_at','createdAt']) || '');
-      if (!key) return;
-      if (!grouped[key]) grouped[key] = {scores:[], date:value(fact,['match_date','matchDate','created_at','createdAt']) || ''};
-      grouped[key].scores.push(score);
-    });
-    var rows = Object.keys(grouped).map(function (key) {
-      var g = grouped[key];
-      return {date:g.date, score:g.scores.reduce(function (a,b) { return a + b; },0) / Math.max(1,g.scores.length)};
-    }).sort(function (a,b) { return new Date(a.date || 0) - new Date(b.date || 0); }).slice(-8);
-    return rows.length ? rows.map(function (r) { return Number(r.score.toFixed(1)); }) : [0,0,0,0,0,0,0,0];
+  function matchTrend(){
+    var facts=rows(S.overview||{},['matchFacts']),by={};facts.forEach(function(f){var k=f.fixture_id||f.match_date;if(!k||!Number.isFinite(Number(f.performance_score)))return;(by[k]||(by[k]=[])).push(Number(f.performance_score));});
+    return Object.keys(by).slice(-8).map(function(k){var a=by[k];return a.reduce(function(x,y){return x+y},0)/a.length;});
   }
-
-  function notificationPlayerId(n) {
-    return value(n,['player_id','playerId']) || (n && n.data ? value(n.data,['player_id','playerId']) : null);
+  function dashboardActions(){
+    var o=S.overview,actions=[];
+    var old=rows(o,['fixtures']).filter(function(f){return new Date(f.fixture_date+'T12:00:00')<new Date()&&!factsForFixture(f.id).length;}).slice(-1);
+    if(old[0])actions.push({tone:'a',title:'Record Match Facts',sub:'vs '+old[0].opponent+' · played '+fmtDate(old[0].fixture_date),label:'Record now',href:'/coach/match-facts?fixtureId='+old[0].id});
+    var pending=rows(o,['videos']).filter(function(v){return safeStatus(v.moderation_status)==='pending';});
+    if(pending.length)actions.push({tone:'b',title:'Review '+pending.length+' uploaded video'+(pending.length===1?'':'s'),sub:'Awaiting coach approval',label:'Review',href:'/coach/video-reels'});
+    var low=rows(o,['players']).slice().sort(function(a,b){return completion(a)-completion(b);}).find(function(p){return completion(p)<80;});
+    if(low)actions.push({tone:'',title:'Complete '+name(low)+"'s assessment",sub:completion(low)+'% profile readiness',label:'Update profile',href:'/player/profile?id='+low.id});
+    var next=rows(o,['fixtures']).find(function(f){return new Date(f.fixture_date+'T12:00:00')>=new Date()&&attendanceFor(f.id).length;});
+    if(next)actions.push({tone:'g',title:attendanceFor(next.id).length+' scouts attending '+fmtDate(next.fixture_date),sub:'vs '+next.opponent,label:'View fixture',href:'/coach/fixtures?fixtureId='+next.id});
+    if(!actions.length)actions.push({tone:'g',title:'Your coach workspace is up to date',sub:'No urgent actions are waiting.',label:'View squad',href:'/coach/my-players'});
+    return actions.slice(0,5);
   }
-
-  /* ================= DASHBOARD ================= */
-  function fixtureDate(f) { return value(f,['fixture_date','fixtureDate','date','kickoff_at']); }
-  function fixtureTime(f) { return value(f,['fixture_time','fixtureTime','time','kickoff_time']) || ''; }
-  function opponent(f) { return value(f,['opponent','opponent_name','opponentName']) || 'Opponent'; }
-  function venue(f) { return value(f,['venue_name','venue','location']) || ''; }
-  function futureFixtures(fixtures) {
-    var today = new Date(); today.setHours(0,0,0,0);
-    return fixtures.filter(function (f) {
-      var d = new Date(String(fixtureDate(f) || '').slice(0,10) + 'T12:00:00');
-      return Number.isNaN(d.getTime()) || d >= today;
-    }).sort(function (a,b) { return new Date(fixtureDate(a) || '2999-01-01') - new Date(fixtureDate(b) || '2999-01-01'); });
-  }
-  function pastFixtures(fixtures) {
-    var today = new Date(); today.setHours(0,0,0,0);
-    return fixtures.filter(function (f) {
-      var status = String(value(f,['status','state']) || '').toLowerCase();
-      var d = new Date(String(fixtureDate(f) || '').slice(0,10) + 'T12:00:00');
-      return /completed|played|finished/.test(status) || (!Number.isNaN(d.getTime()) && d < today);
-    });
-  }
-  function factFixtureId(f) { return value(f,['fixture_id','fixtureId']); }
-  function factMap(facts) {
-    var map = {};
-    facts.forEach(function (x) { var id = factFixtureId(x); if (id) map[String(id)] = x; });
-    return map;
-  }
-  function unreadThreads(threads) {
-    return threads.reduce(function (sum,t) { return sum + num(value(t,['unread_count','unreadCount']),0); },0);
-  }
-  function scoutNotif(n) {
-    var text = [value(n,['notification_type','type']), value(n,['title']), value(n,['body'])].join(' ').toLowerCase();
-    return /scout|interest|recruit/.test(text);
-  }
-  function dashboardActions(data) {
-    var rows = [];
-    var fmap = factMap(data.facts);
-    pastFixtures(data.fixtures).filter(function (f) { return !fmap[String(f.id)]; }).slice(0,2).forEach(function (f) {
-      rows.push({tone:'r',icon:'MF',title:'Record Match Facts',sub:'vs ' + opponent(f) + ' · ' + formatDate(fixtureDate(f)),label:'Record now',href:'/coach/match-facts?fixtureId=' + encodeURIComponent(f.id || '')});
-    });
-    var unread = unreadThreads(data.threads);
-    if (unread) rows.push({tone:'b',icon:'IN',title:'Reply to ' + unread + ' unread message' + (unread === 1 ? '' : 's'),sub:'Reviewed Scout conversations are waiting',label:'Open inbox',href:'/coach/chat'});
-    data.players.slice().sort(function (a,b) { return completion(a)-completion(b); }).filter(function (p) { return completion(p) < 80; }).slice(0,1).forEach(function (p) {
-      rows.push({tone:'a',icon:'PR',title:'Improve ' + nameOf(p) + '’s profile',sub:'Profile readiness is ' + completion(p) + '%',label:'Review',href:'/player/profile?id=' + encodeURIComponent(p.id || '')});
-    });
-    var scout = data.notifications.filter(scoutNotif)[0];
-    if (scout) rows.push({tone:'g',icon:'SC',title:value(scout,['title']) || 'New scout activity',sub:value(scout,['body']) || 'Reviewed scout activity on your squad',label:value(scout,['actionLabel','action_label']) || 'View',href:value(scout,['actionUrl','action_url']) || '/coach/notifications'});
-    if (rows.length < 5 && futureFixtures(data.fixtures)[0]) rows.push({tone:'b',icon:'FX',title:'Prepare for ' + opponent(futureFixtures(data.fixtures)[0]),sub:formatDate(fixtureDate(futureFixtures(data.fixtures)[0]),fixtureTime(futureFixtures(data.fixtures)[0])),label:'Open fixtures',href:'/coach/fixtures'});
-    return rows.slice(0,5);
-  }
-  function renderDashboard(data) {
-    setShellActions('Export squad', '#', 'Record Match Facts', '/coach/match-facts');
-    var players = data.players, fixtures = data.fixtures, notifications = data.notifications, facts = data.facts, threads = data.threads;
-    var db = data.dashboard || {};
-    var avgReady = players.length ? Math.round(players.reduce(function (s,p) { return s + completion(p); },0) / players.length) : 0;
-    var unread = unreadThreads(threads);
-    var scoutCount = num(value(db,['scoutsInterested','scouts_interested']), notifications.filter(scoutNotif).length);
-    var squadValue = num(value(db,['totalSquadValue','total_squad_value']), players.reduce(function (s,p) { return s + num(value(p,['transfer_value','estimated_value']),0); },0));
-    var actions = dashboardActions(data);
-    var next = futureFixtures(fixtures)[0];
-    var fmap = factMap(facts);
-    var completed = pastFixtures(fixtures);
-    var covered = completed.filter(function (f) { return !!fmap[String(f.id)]; }).length;
-    var ratingSeries = matchPerformanceSeries(facts);
-    var interestSeries = weekSeries(notifications, scoutNotif);
-    var shape = {GK:0,DEF:0,MID:0,ATT:0};
-    players.forEach(function (p) { shape[positionGroup(p)]++; });
-    var interestedIds = {};
-    notifications.filter(scoutNotif).forEach(function (n) { var pid = notificationPlayerId(n); if (pid) interestedIds[String(pid)] = (interestedIds[String(pid)] || 0) + 1; });
-    var interestPlayers = players.filter(function (p) { return !!interestedIds[String(p.id)] || bool(value(p,['scout_interest','has_scout_interest','scoutInterest'])) || num(value(p,['scout_interest_count','scoutInterestCount']),0) > 0; }).slice(0,5);
-    if (!interestPlayers.length) interestPlayers = players.slice().sort(function (a,b) { return num(value(b,['overall_rating','overall']),0)-num(value(a,['overall_rating','overall']),0); }).slice(0,3);
-
-    var kpis = [
-      ['Players', players.length, 'active in ' + team()],
-      ['Scout interest', scoutCount, num(value(db,['newInterestCount','new_interest_count']),0) ? '+' + num(value(db,['newInterestCount','new_interest_count']),0) + ' in 7 days' : 'reviewed scout activity'],
-      ['Unread messages', unread, unread ? 'requires a reply' : 'inbox is clear'],
-      ['Estimated squad value', fmtMoney(squadValue), squadValue ? 'current evidence-led estimate' : 'builds with evidence'],
-      ['Profile readiness', avgReady + '%', readinessLabel(avgReady) + ' across the squad']
-    ];
-
-    desk.innerHTML =
-      '<div class="g coach-kpi-five" style="grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:14px">' +
-        kpis.map(function (k) { return '<div class="kpi"><div class="k">' + esc(k[0]) + '</div><div class="v">' + esc(k[1]) + '</div><div class="d">' + esc(k[2]) + '</div></div>'; }).join('') +
-      '</div>' +
-      '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Next actions</h3><span class="sp"></span><span class="hint">generated from your live workspace</span></div><div class="card-b" style="padding-top:4px;padding-bottom:4px">' +
-        (actions.length ? actions.map(function (a) {
-          return '<div class="row"><span class="icn ' + (a.tone === 'g' ? 'g' : a.tone === 'r' ? 'r' : a.tone === 'a' ? 'a' : 'b') + '">' + esc(a.icon) + '</span><span class="sp"><b class="rt">' + esc(a.title) + '</b><s class="rs">' + esc(a.sub) + '</s></span><a class="btn sm ' + (a.tone === 'r' ? 'p' : 'q') + '" href="' + esc(clean(a.href)) + '">' + esc(a.label) + '</a></div>';
-        }).join('') : '<div class="row"><span class="sp"><b class="rt">Nothing urgent</b><s class="rs">Your current data has no outstanding action.</s></span></div>') +
-      '</div></div>' +
-      '<div class="g" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-bottom:14px">' +
-        '<div class="card"><div class="card-h"><h3>Squad activity trend</h3><span class="sp"></span><span class="hint">last 8 weeks</span></div><div class="card-b"><div class="coach-chart-big">' + spark(ratingSeries,'b') + '</div><div class="mut">Average Match Facts performance score · last 8 recorded matches</div></div></div>' +
-        '<div class="card"><div class="card-h"><h3>New scout interest</h3><span class="sp"></span><span class="hint">last 8 weeks</span></div><div class="card-b"><div class="coach-chart-big">' + barChart(interestSeries,['W1','W2','W3','W4','W5','W6','W7','Now']) + '</div><div class="mut">Scout-related notifications by week</div></div></div>' +
-      '</div>' +
-      '<div class="g" style="grid-template-columns:1.05fr .95fr .95fr;align-items:start">' +
-        '<div class="card"><div class="card-h"><h3>Scout interest by player</h3><span class="sp"></span><a class="btn q sm" href="/coach/my-players">My Players</a></div><div class="card-b" style="padding-top:4px;padding-bottom:4px">' +
-          (interestPlayers.length ? interestPlayers.map(function (p) {
-            return '<a class="row" href="/player/profile?id=' + encodeURIComponent(p.id || '') + '" style="text-decoration:none"><span class="av">' + esc(initials(nameOf(p))) + '</span><span class="sp"><b class="rt">' + esc(nameOf(p)) + '</b><s class="rs">' + esc(position(p) + ' · ' + (value(p,['age_group']) || age() || '')) + '</s></span><span class="tag b">' + (interestedIds[String(p.id)] ? interestedIds[String(p.id)] + ' interest' + (interestedIds[String(p.id)] === 1 ? '' : 's') : (bool(value(p,['scout_interest','has_scout_interest'])) ? 'Interest' : 'Profile')) + '</span></a>';
-          }).join('') : '<div class="row"><span class="sp mut">No player-level scout interest is available yet.</span></div>') +
-        '</div></div>' +
-        '<div class="g" style="gap:14px">' +
-          '<div class="card"><div class="card-h"><h3>Upcoming fixtures</h3><span class="sp"></span><a class="btn q sm" href="/coach/fixtures">All fixtures</a></div><div class="card-b" style="padding-top:4px;padding-bottom:4px">' +
-            (futureFixtures(fixtures).slice(0,3).map(function (f) { return '<div class="row"><span class="icn b">FX</span><span class="sp"><b class="rt">vs ' + esc(opponent(f)) + '</b><s class="rs">' + esc(formatDate(fixtureDate(f),fixtureTime(f)) + (venue(f) ? ' · ' + venue(f) : '')) + '</s></span><span class="tag">' + esc(value(f,['home_or_away','homeOrAway']) || 'Home') + '</span></div>'; }).join('') || '<div class="row"><span class="sp mut">No upcoming fixtures.</span></div>') +
-          '</div></div>' +
-          '<div class="card"><div class="card-h"><h3>Scout activity</h3><span class="sp"></span><a class="btn q sm" href="/coach/notifications">Notifications</a></div><div class="card-b" style="padding-top:4px;padding-bottom:4px">' +
-            (notifications.filter(scoutNotif).slice(0,3).map(function (n) { return '<div class="row">' + iconBox('SC','g') + '<span class="sp"><b class="rt">' + esc(value(n,['title']) || 'Scout activity') + '</b><s class="rs">' + esc(value(n,['body']) || 'Reviewed scout update') + '</s></span></div>'; }).join('') || '<div class="row"><span class="sp mut">No recent scout activity.</span></div>') +
-          '</div></div>' +
-        '</div>' +
-        '<div class="g" style="gap:14px">' +
-          '<div class="card"><div class="card-h"><h3>Squad shape</h3></div><div class="card-b"><div class="g" style="grid-template-columns:repeat(4,1fr);gap:8px">' + ['GK','DEF','MID','ATT'].map(function (g) { return '<div class="kpi" style="padding:10px"><div class="k">' + g + '</div><div class="v" style="font-size:21px">' + shape[g] + '</div></div>'; }).join('') + '</div></div></div>' +
-          '<div class="card"><div class="card-h"><h3>Profile readiness</h3><span class="sp"></span><span class="hint">' + avgReady + '% average</span></div><div class="card-b">' +
-            players.slice().sort(function (a,b) { return completion(a)-completion(b); }).slice(0,5).map(function (p) { var pc=completion(p); return '<div class="at"><span class="an">' + esc(nameOf(p)) + '</span><span class="track"><u style="width:' + pc + '%"></u></span><span class="atv">' + pc + '%</span></div>'; }).join('') +
-            '<div class="help">' + covered + ' of ' + completed.length + ' completed fixtures have Match Facts.</div></div></div>' +
-        '</div>' +
-      '</div>';
-
-    var mobileKpis = kpis.slice(0,4);
-    field.innerHTML =
-      fieldHeader('Today', formatDateLong() + ' · ' + teamLine(), '<button class="icb" type="button" data-coach-notifications aria-label="Notifications">◉' + (unread ? '<u>' + unread + '</u>' : '') + '</button><span class="avm">' + esc(initials(fullName())) + '</span>') +
-      '<div class="pkpi">' + mobileKpis.map(function (k) { return '<div class="kpi"><div class="k">' + esc(k[0]) + '</div><div class="v">' + esc(k[1]) + '</div><div class="d">' + esc(k[2]) + '</div></div>'; }).join('') + '</div>' +
-      '<div class="kpi" style="margin-top:8px"><div class="k">Estimated squad value</div><div class="v">' + esc(fmtMoney(squadValue)) + '</div><div class="d">' + (squadValue ? 'evidence-led estimate' : 'builds with evidence') + '</div></div>' +
-      '<div class="pcap">Next actions <span>' + actions.length + '</span></div>' +
-      '<div class="card"><div class="card-b" style="padding-top:3px;padding-bottom:3px">' +
-        (actions.length ? actions.slice(0,4).map(function (a) { return '<div class="row" style="padding-left:0;padding-right:0">' + iconBox(a.icon,a.tone === 'g' ? 'g' : a.tone === 'r' ? 'r' : a.tone === 'a' ? 'a' : 'b') + '<span class="sp"><b class="rt">' + esc(a.title) + '</b><s class="rs">' + esc(a.sub) + '</s></span><a class="btn sm ' + (a.tone === 'r' ? 'p' : 'q') + '" href="' + esc(clean(a.href)) + '">' + esc(a.label.replace(' now','')) + '</a></div>'; }).join('') : '<div class="row"><span class="sp mut">Nothing urgent.</span></div>') +
-      '</div></div>' +
-      '<div class="pcap">Performance <span>8 weeks</span></div><div class="card"><div class="card-b"><div class="coach-chart-phone">' + spark(ratingSeries,'b') + '</div><div class="mut">Average Match Facts performance score</div></div></div>' +
-      '<div class="pcap">Scout interest <span>8 weeks</span></div><div class="card"><div class="card-b"><div class="coach-chart-phone">' + barChart(interestSeries,['','','','','','','','Now']) + '</div></div></div>' +
-      '<div class="pcap">Next fixture <span><a href="/coach/fixtures">Fixtures</a></span></div><div class="card"><div class="card-b">' +
-        (next ? '<b style="font-size:14px">vs ' + esc(opponent(next)) + '</b><div class="mut">' + esc(formatDate(fixtureDate(next),fixtureTime(next)) + (venue(next) ? ' · ' + venue(next) : '')) + '</div><div style="margin-top:10px"><a class="btn p" href="/coach/match-facts?fixtureId=' + encodeURIComponent(next.id || '') + '">Open Matchday</a></div>' : '<div class="mut">No upcoming fixture.</div>') +
-      '</div></div>' +
-      '<div class="pcap">Squad shape</div><div class="pkpi">' + ['GK','DEF','MID','ATT'].map(function (g) { return '<div class="kpi"><div class="k">' + g + '</div><div class="v">' + shape[g] + '</div></div>'; }).join('') + '</div>' +
-      '<div class="pcap">Profile readiness <span>' + avgReady + '%</span></div><div class="card"><div class="card-b">' +
-        players.slice().sort(function (a,b) { return completion(a)-completion(b); }).slice(0,4).map(function (p) { var pc=completion(p); return '<a class="row" href="/player/profile?id=' + encodeURIComponent(p.id || '') + '" style="padding-left:0;padding-right:0;text-decoration:none"><span class="av">' + esc(initials(nameOf(p))) + '</span><span class="sp"><b class="rt">' + esc(nameOf(p)) + '</b><s class="rs">' + esc(position(p)) + '</s></span><span class="tag ' + readinessTag(pc) + '">' + pc + '%</span></a>'; }).join('') +
+  function dashboardDesk(){
+    var o=S.overview,players=rows(o,['players']),ints=rows(o,['interest']),threads=S.threads||[],unreadMsgs=threads.reduce(function(a,t){return a+n(t.unread_count||t.unreadCount,0)},0);
+    var uniqueScouts={};ints.forEach(function(x){if(x.scout_id)uniqueScouts[x.scout_id]=1;});
+    var valueTotal=players.reduce(function(a,p){return a+n(p.transfer_value,0)},0),ready=players.length?Math.round(players.reduce(function(a,p){return a+completion(p)},0)/players.length):0;
+    var next=rows(o,['fixtures']).filter(function(f){return new Date(f.fixture_date+'T12:00:00')>=new Date();}).sort(function(a,b){return new Date(a.fixture_date)-new Date(b.fixture_date);}).slice(0,3);
+    var shape={GK:0,DEF:0,MID:0,ATT:0};players.forEach(function(p){shape[posGroup(p)]++;});
+    var actions=dashboardActions(),interestPlayers=players.filter(function(p){return interestsForPlayer(p.id).length;}).sort(function(a,b){return interestsForPlayer(b.id).length-interestsForPlayer(a.id).length;}).slice(0,6);
+    return'<div class="g" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">'+
+      metric('Players',players.length,'Visible in this coach workspace')+
+      metric('Scout interest',Object.keys(uniqueScouts).length+' <small>scouts</small>',ints.length+' explicit interest events')+
+      metric('Unread messages',unreadMsgs,'Reviewed scout conversations')+
+      metric('Estimated squad value',fmtMoney(valueTotal),players.filter(function(p){return n(p.transfer_value)>0}).length+' of '+players.length+' players valued')+
+      metric('Profile readiness',ready+'<small>%</small>','Squad average across '+players.length+' profiles')+'</div>'+
+      '<div class="g" style="grid-template-columns:minmax(0,1fr) 336px;align-items:start"><div class="g">'+
+        '<div class="card"><div class="card-h"><h3>Next actions</h3><div class="sp"></div><span class="hint">'+actions.length+' open · every item deep-links to the work</span><a class="btn q sm" href="'+esc(clean('/coach/notifications'))+'">View all</a></div>'+actions.map(function(a){return'<div class="row"><span class="icn '+(a.tone||'')+'">●</span><span class="sp"><b class="rt">'+esc(a.title)+'</b><s class="rs">'+esc(a.sub)+'</s></span><a class="btn sm" href="'+esc(clean(a.href))+'">'+esc(a.label)+'</a></div>';}).join('')+'</div>'+
+        '<div class="g" style="grid-template-columns:1fr 1fr"><div class="card"><div class="card-h"><h3>Squad performance trend</h3><div class="sp"></div><span class="hint">Last 8 matches</span></div><div class="card-b">'+lineChart(matchTrend())+'<div class="lgd"><span><i style="background:var(--blue)"></i>Average Match Facts rating</span><span><i style="background:var(--green-t);border:1px solid var(--line)"></i>Target band 7.0–9.0</span></div></div></div>'+
+        '<div class="card"><div class="card-h"><h3>New scout interest</h3><div class="sp"></div><span class="hint">Last 8 weeks</span></div><div class="card-b">'+bars(weeklyInterest())+'<div class="lgd"><span><i style="background:var(--blue)"></i>Interest events per week</span></div></div></div></div>'+
+        '<div class="card"><div class="card-h"><h3>Players receiving scout interest</h3><div class="sp"></div><span class="hint">Explicit interest only · scout notes are never shown to coaches</span></div><div class="card-b">'+(interestPlayers.length?interestPlayers.map(function(p){var c=interestsForPlayer(p.id).length;return'<div class="at"><div class="an"><a href="'+esc(clean('/player/profile?id='+p.id))+'"><b>'+esc(name(p))+'</b></a> <span class="mut">'+esc(position(p)+' · '+(p.age_group||''))+'</span></div><div class="track"><u style="width:'+Math.min(100,c*25)+'%"></u></div><div class="atv">'+c+'</div></div>';}).join(''):'<div class="mut">No explicit scout interest yet.</div>')+'</div></div>'+
+      '</div><div class="g">'+
+        '<div class="card"><div class="card-h"><h3>Upcoming fixtures</h3><div class="sp"></div><a class="btn q sm" href="'+esc(clean('/coach/fixtures'))+'">Fixtures</a></div>'+(next.length?next.map(function(f){var a=attendanceFor(f.id).length;return'<div class="row"><span class="sp"><b class="rt">vs '+esc(f.opponent)+'</b><s class="rs">'+esc(fmtDate(f.fixture_date,f.fixture_time)+' · '+(f.home_or_away||'')+' · '+(f.format||''))+'</s></span><span class="tag '+(a?'g':'')+'">'+(a?a+' scouts attending':'No attendance yet')+'</span></div>';}).join(''):'<div class="card-b mut">No upcoming fixtures.</div>')+'</div>'+
+        '<div class="card"><div class="card-h"><h3>Scout activity</h3><div class="sp"></div><span class="hint">Last 30 days</span></div><div class="card-b"><div class="g" style="grid-template-columns:1fr 1fr">'+metricMini('Scouts',Object.keys(uniqueScouts).length)+metricMini('Players',interestPlayers.length)+metricMini('New conversations',threads.filter(function(t){return Date.now()-new Date(t.created_at||0).getTime()<30*86400000;}).length)+metricMini('Fixtures watched',new Set(rows(o,['attendance']).map(function(a){return a.fixture_id;})).size)+'</div></div></div>'+
+        '<div class="card"><div class="card-h"><h3>Squad shape</h3></div><div class="card-b">'+['GK','DEF','MID','ATT'].map(function(k){return'<div class="at"><div class="an" style="width:30px;flex:0 0 30px">'+k+'</div><div class="track"><u style="width:'+(players.length?shape[k]/players.length*100:0)+'%"></u></div><div class="atv">'+shape[k]+'</div></div>';}).join('')+'</div></div>'+
+        '<div class="card"><div class="card-h"><h3>Profile readiness</h3></div><div class="card-b">'+readinessBar(players)+'</div></div>'+
       '</div></div>';
-
-    var exportLink = document.querySelector('#coachDeskTopbar [data-coach-route-action="secondary"]');
-    if (exportLink) {
-      exportLink.addEventListener('click', function (e) { e.preventDefault(); exportPlayers(players); });
-    }
+  }
+  function metricMini(k,v){return'<div><div class="lbl">'+esc(k)+'</div><div class="num" style="font-size:23px;font-weight:700;margin-top:4px">'+esc(v)+'</div></div>';}
+  function readinessBar(players){
+    var complete=players.filter(function(p){return completion(p)>=80}).length,work=players.filter(function(p){var c=completion(p);return c>=50&&c<80}).length,low=players.filter(function(p){return completion(p)<50}).length,total=Math.max(1,players.length);
+    return'<div class="coach-stacked"><span style="width:'+complete/total*100+'%;background:var(--blue)">'+complete+'</span><span style="width:'+work/total*100+'%;background:var(--amber)">'+work+'</span><span style="width:'+low/total*100+'%;background:var(--grey)">'+low+'</span></div><div class="lgd" style="margin-top:12px"><span><i style="background:var(--blue)"></i>Complete '+complete+'</span><span><i style="background:var(--amber)"></i>Needs work '+work+'</span><span><i style="background:var(--grey)"></i>Not started '+low+'</span></div>';
+  }
+  function dashboardPhone(){
+    var o=S.overview,players=rows(o,['players']),ints=rows(o,['interest']),unique={};ints.forEach(function(x){if(x.scout_id)unique[x.scout_id]=1;});
+    var total=players.reduce(function(a,p){return a+n(p.transfer_value,0)},0),actions=dashboardActions(),next=rows(o,['fixtures']).filter(function(f){return new Date(f.fixture_date+'T12:00:00')>=new Date()}).sort(function(a,b){return new Date(a.fixture_date)-new Date(b.fixture_date)})[0];
+    var shape={GK:0,DEF:0,MID:0,ATT:0};players.forEach(function(p){shape[posGroup(p)]++;});
+    var interestPlayers=players.filter(function(p){return interestsForPlayer(p.id).length;}).sort(function(a,b){return interestsForPlayer(b.id).length-interestsForPlayer(a.id).length;}).slice(0,5);
+    return fieldHeader('Dashboard',team()+' · '+players.length+' players')+'<div class="pkpi">'+metric('Players',players.length,'')+metric('Scout interest',Object.keys(unique).length,'')+metric('Messages',(S.threads||[]).reduce(function(a,t){return a+n(t.unread_count,0)},0),'')+metric('Readiness',(players.length?Math.round(players.reduce(function(a,p){return a+completion(p)},0)/players.length):0)+'%','')+'</div>'+
+      '<div class="kpi" style="margin-top:8px"><div class="k">Estimated squad value</div><div class="v">'+fmtMoney(total)+'</div></div>'+
+      '<div class="pcap">Next actions <span>'+actions.length+'</span></div><div class="card">'+actions.map(function(a){return'<a class="rowline" href="'+esc(clean(a.href))+'"><span class="icn '+a.tone+'">●</span><span class="who"><b>'+esc(a.title)+'</b><span>'+esc(a.sub)+'</span></span><span>›</span></a>';}).join('')+'</div>'+
+      '<div class="pcap">Squad performance <span>last matches</span></div><div class="card"><div class="card-b">'+phoneLineChart(matchTrend())+'</div></div>'+
+      '<div class="pcap">Scout interest <span>8 weeks</span></div><div class="card"><div class="card-b">'+phoneBars(weeklyInterest())+'</div></div>'+
+      (next?'<div class="pcap">Next fixture</div><div class="card"><a class="rowline" href="'+esc(clean('/coach/fixtures?fixtureId='+next.id))+'"><span class="who"><b>vs '+esc(next.opponent)+'</b><span>'+esc(fmtDate(next.fixture_date,next.fixture_time)+' · '+(next.home_or_away||''))+'</span></span><span class="tag '+(attendanceFor(next.id).length?'g':'')+'">'+attendanceFor(next.id).length+' scouts</span></a></div>':'')+
+      '<div class="pcap">Squad shape</div><div class="card"><div class="card-b">'+['GK','DEF','MID','ATT'].map(function(k){return'<div class="at"><div class="an" style="width:30px;flex:0 0 30px">'+k+'</div><div class="track"><u style="width:'+(players.length?shape[k]/players.length*100:0)+'%"></u></div><div class="atv">'+shape[k]+'</div></div>';}).join('')+'</div></div>'+
+      '<div class="pcap">Profile readiness</div><div class="card"><div class="card-b">'+readinessBar(players)+'</div></div>'+
+      '<div class="pcap">Players with scout interest <span>'+interestPlayers.length+'</span></div><div class="card">'+(interestPlayers.length?interestPlayers.map(function(p){var c=interestsForPlayer(p.id).length;return'<a class="rowline" href="'+esc(clean('/player/profile?id='+p.id))+'"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||''))+'</span></span><span class="tag b">'+c+' scout'+(c===1?'':'s')+'</span></a>';}).join(''):'<div class="card-b mut">No explicit scout interest yet.</div>')+'</div>';
+  }
+  async function initDashboard(){
+    setActions('Export squad','#','Record Match Facts','/coach/match-facts');
+    try{await loadOverview();var tr=await api('GET','/api/chat/threads').catch(function(){return{data:[]}});S.threads=rows(tr,['threads','data']);desk.innerHTML=dashboardDesk();field.innerHTML=dashboardPhone();bindDashboard();}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}
+  }
+  function bindDashboard(){
+    var ex=document.querySelector('[data-coach-route-action="secondary"]');if(ex)ex.onclick=function(e){e.preventDefault();exportSquad(rows(S.overview,['players']));};
   }
 
-  async function initDashboard() {
-    try {
-      var rs = await Promise.allSettled([
-        api('GET','/api/coaches/dashboard'),
-        api('GET','/api/coaches/my-players'),
-        api('GET','/api/fixtures'),
-        api('GET','/api/match-facts?limit=100'),
-        api('GET','/api/notifications?limit=80'),
-        api('GET','/api/chat/threads')
-      ]);
-      renderDashboard({
-        dashboard: rs[0].status === 'fulfilled' ? (rs[0].value || {}) : {},
-        players: safeSettled(rs[1],['players','data']),
-        fixtures: safeSettled(rs[2],['fixtures','data']),
-        facts: safeSettled(rs[3],['matchFacts','match_facts','data']),
-        notifications: safeSettled(rs[4],['notifications','data']),
-        threads: safeSettled(rs[5],['threads','data'])
-      });
-    } catch (e) {
-      desk.innerHTML = routeMessage(e.message || 'Dashboard could not load.', true);
-      field.innerHTML = routeMessage(e.message || 'Dashboard could not load.', true);
-    }
-  }
-
-  /* ================= MY PLAYERS ================= */
-  function playerAge(p) { return value(p,['age_group','ageGroup']) || '—'; }
-  function currentPlayers() {
-    var q = String(state.playerSearch || '').toLowerCase();
-    var rows = (state.players || []).filter(function (p) {
-      var assigned = String(value(p,['assigned_coach_id','assignedCoachId']) || '');
-      return (!q || (nameOf(p) + ' ' + position(p) + ' ' + playerAge(p)).toLowerCase().indexOf(q) >= 0) &&
-        (!state.playerPosition || positionGroup(p) === state.playerPosition) &&
-        (!state.playerAge || playerAge(p) === state.playerAge) &&
-        (!state.playerAssigned || assigned === state.playerAssigned) &&
-        (!state.playerNeedsWork || completion(p) < 80);
+  /* ================= My Players ================= */
+  function playerInterestCount(p){return interestsForPlayer(p.id).length;}
+  function assignedCounts(){var out={};rows(S.overview||{},['players']).forEach(function(p){var id=p.assigned_coach_id||'';out[id]=(out[id]||0)+1;});return out;}
+  function filteredPlayers(){
+    var f=S.filters,q=String(f.search||'').toLowerCase(),listp=rows(S.overview||{},['players']).filter(function(p){
+      if(q&&name(p).toLowerCase().indexOf(q)<0)return false;
+      if(Object.keys(f.ages).some(function(k){return f.ages[k]})&&!f.ages[p.age_group])return false;
+      if(f.group&&posGroup(p)!==f.group)return false;
+      if(f.coach&&String(p.assigned_coach_id)!==String(f.coach))return false;
+      if(f.evidence==='work'&&completion(p)>=80)return false;
+      if(f.evidence==='novideo'&&videosForPlayer(p.id).some(function(v){return safeStatus(v.moderation_status)==='approved'}))return false;
+      if(f.interest==='yes'&&!playerInterestCount(p))return false;
+      if(f.interest==='no'&&playerInterestCount(p))return false;
+      var rating=n(p.overall_rating,-1);
+      if(f.rating==='60-85'&&rating>=0&&(rating<60||rating>85))return false;
+      var av=p.availability||'Available',activeAvailability=Object.keys(f.availability||{}).filter(function(k){return f.availability[k]});
+      if(activeAvailability.length&&activeAvailability.indexOf(av)<0)return false;
+      return true;
     });
-    rows.sort(function (a,b) {
-      if (state.playerSort === 'overall') return num(value(b,['overall_rating','overall']),-1) - num(value(a,['overall_rating','overall']),-1);
-      if (state.playerSort === 'readiness') return completion(a) - completion(b);
-      return nameOf(a).localeCompare(nameOf(b));
-    });
-    return rows;
+    if(f.sort==='overall')listp.sort(function(a,b){return n(b.overall_rating)-n(a.overall_rating)});
+    else if(f.sort==='name')listp.sort(function(a,b){return name(a).localeCompare(name(b));});
+    else if(f.sort==='value')listp.sort(function(a,b){return n(b.transfer_value)-n(a.transfer_value);});
+    return listp;
   }
-  function coachName(c) { return [c && c.first_name,c && c.last_name].filter(Boolean).join(' ') || 'Coach'; }
-  function coachOptions(selected) {
-    return (state.coaches || []).map(function (c) {
-      return '<option value="' + esc(c.id) + '"' + (String(c.id) === String(selected) ? ' selected' : '') + '>' + esc(coachName(c)) + (c.is_super_user ? ' · owner' : '') + '</option>';
-    }).join('');
+  function playerStatus(p){
+    var availability=p.availability||'Available';
+    if(availability==='Injured')return'<span class="tag a"><i></i>Injured</span>';
+    if(availability==='Unavailable')return'<span class="tag r"><i></i>Unavailable</span>';
+    if(playerInterestCount(p))return'<span class="tag g"><i></i>Scout interest</span>';
+    var pc=completion(p);if(pc<70)return'<span class="tag a"><i></i>Evidence incomplete</span>';
+    if(!videosForPlayer(p.id).some(function(v){return safeStatus(v.moderation_status)==='approved'}))return'<span class="tag">No video</span>';
+    return'<span class="tag b"><i></i>Match-ready</span>';
   }
-  function playerStatus(p) {
-    var pc = completion(p);
-    if (bool(value(p,['scout_interest','has_scout_interest','scoutInterest']))) return ['b','Scout interest'];
-    if (pc >= 80) return ['g','Match-ready'];
-    return [pc < 50 ? 'r' : 'a','Evidence incomplete'];
+  function rail(){
+    var all=rows(S.overview||{},['players']),ages={};all.forEach(function(p){ages[p.age_group]=(ages[p.age_group]||0)+1;});var counts=assignedCounts();
+    var availabilityCounts={Available:0,Injured:0,Unavailable:0};all.forEach(function(p){var a=p.availability||'Available';if(availabilityCounts[a]!=null)availabilityCounts[a]++;});
+    return'<aside class="rail"><div class="rail-h">Filters<button class="btn q sm" id="resetPlayers">Reset</button></div>'+
+      '<div class="rsec"><div class="rh">Search</div><input class="inp" id="playerSearch" placeholder="Player name" value="'+esc(S.filters.search)+'"></div>'+
+      '<div class="rsec"><div class="rh">Age group <span>'+Object.keys(ages).length+' of 10</span></div>'+Object.keys(ages).sort().map(function(a){return'<label class="ri"><input type="checkbox" data-filter-age="'+esc(a)+'" '+(S.filters.ages[a]?'checked':'')+'> '+esc(a)+'<span class="n">'+ages[a]+'</span></label>';}).join('')+'</div>'+
+      '<div class="rsec"><div class="rh">Position</div>'+[['','All positions'],['GK','Goalkeeper'],['DEF','Defender'],['MID','Midfielder'],['ATT','Attacker']].map(function(x){return'<label class="ri"><input type="radio" name="pg" data-filter-group="'+x[0]+'" '+(S.filters.group===x[0]?'checked':'')+'> '+x[1]+'<span class="n">'+(x[0]?all.filter(function(p){return posGroup(p)===x[0]}).length:all.length)+'</span></label>';}).join('')+'<div class="sel" style="margin-top:8px">Exact position — any</div></div>'+
+      (S.coaches.length>1?'<div class="rsec"><div class="rh">Assigned coach</div>'+S.coaches.map(function(c){return'<label class="ri"><input type="radio" name="coach" data-filter-coach="'+esc(c.id)+'" '+(String(S.filters.coach)===String(c.id)?'checked':'')+'> '+esc([c.first_name,c.last_name].filter(Boolean).join(' '))+'<span class="n">'+(counts[c.id]||0)+'</span></label>';}).join('')+'</div>':'')+
+      '<div class="rsec"><div class="rh">Evidence</div>'+[['','All'],['work','Profile needs work'],['novideo','No video']].map(function(x){return'<label class="ri"><input type="radio" name="ev" data-filter-evidence="'+x[0]+'" '+(S.filters.evidence===x[0]?'checked':'')+'> '+x[1]+'<span class="n">'+(x[0]==='work'?all.filter(function(p){return completion(p)<80}).length:x[0]==='novideo'?all.filter(function(p){return!videosForPlayer(p.id).some(function(v){return safeStatus(v.moderation_status)==='approved'})}).length:all.length)+'</span></label>';}).join('')+'</div>'+
+      '<div class="rsec"><div class="rh">Scout interest</div>'+[['','Any'],['yes','Has interest'],['no','No interest']].map(function(x){return'<label class="ri"><input type="radio" name="si" data-filter-interest="'+x[0]+'" '+(S.filters.interest===x[0]?'checked':'')+'> '+x[1]+'<span class="n">'+(x[0]==='yes'?all.filter(playerInterestCount).length:x[0]==='no'?all.filter(function(p){return !playerInterestCount(p)}).length:all.length)+'</span></label>';}).join('')+'</div>'+
+      '<div class="rsec"><div class="rh">Overall rating</div><select class="inp" id="filterRating"><option value=""'+(!S.filters.rating?' selected':'')+'>Any rating</option><option value="60-85"'+(S.filters.rating==='60-85'?' selected':'')+'>60 to 85</option></select></div>'+
+      '<div class="rsec"><div class="rh">Availability</div>'+['Available','Injured','Unavailable'].map(function(a){return'<label class="ri"><input type="checkbox" data-filter-availability="'+a+'" '+(S.filters.availability[a]?'checked':'')+'> '+a+' <span class="n">'+availabilityCounts[a]+'</span></label>';}).join('')+'</div></aside>';
   }
-  function exportPlayers(rows) {
-    rows = rows || currentPlayers();
-    var csv = ['Player,Position,Age group,Apps,Goals,Assists,Overall,Profile readiness,Estimated value'];
-    rows.forEach(function (p) {
-      csv.push([nameOf(p),position(p),playerAge(p),num(value(p,['appearances','apps']),0),num(value(p,['goals']),0),num(value(p,['assists']),0),value(p,['overall_rating','overall']) || '',completion(p) + '%',num(value(p,['transfer_value','estimated_value']),0)].map(function (v) {
-        return '"' + String(v).replace(/"/g,'""') + '"';
-      }).join(','));
-    });
-    var blob = new Blob([csv.join('\n')], {type:'text/csv'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = 'scoutlink-my-players.csv'; a.click();
-    URL.revokeObjectURL(url);
+  function selectedSet(){var out={};(S.selectedPlayers||[]).forEach(function(id){out[String(id)]=1;});return out;}
+  function playersDesk(){
+    var all=filteredPlayers(),per=10,pages=Math.max(1,Math.ceil(all.length/per));S.playerPage=Math.min(S.playerPage,pages);var listp=all.slice((S.playerPage-1)*per,S.playerPage*per),selected=selectedSet(),selectedCount=S.selectedPlayers.length;
+    var toolbar=selectedCount?
+      '<div class="card-h" style="background:var(--blue-t)"><h3>'+selectedCount+' player'+(selectedCount===1?'':'s')+' selected</h3><div class="sp"></div><button class="btn sm" id="bulkAssignCoach">Assign coach</button><button class="btn sm" id="bulkGenerateLinks">Generate upload links</button><button class="btn sm" id="bulkAvailability">Set availability</button><button class="btn sm" id="bulkExport">Export</button><button class="btn sm dgr" id="bulkArchive">Archive to season</button><button class="btn q sm" id="bulkClear">Clear</button></div>':
+      '<div class="card-h"><h3>Squad</h3><span class="hint">'+all.length+' players · showing '+(all.length?((S.playerPage-1)*per+1):0)+'–'+Math.min(S.playerPage*per,all.length)+'</span><div class="sp"></div><select class="tag" id="playerSort"><option value="overall"'+(S.filters.sort==='overall'?' selected':'')+'>Sort: Overall rating</option><option value="name"'+(S.filters.sort==='name'?' selected':'')+'>Sort: Name</option><option value="value"'+(S.filters.sort==='value'?' selected':'')+'>Sort: Value</option></select><button class="btn sm" id="playerColumns">Columns</button><button class="btn sm" id="playersExport">Export</button></div>';
+    return'<div style="display:flex;gap:14px;align-items:flex-start">'+rail()+'<div class="card" style="flex:1;min-width:0">'+toolbar+'<table><thead><tr><th style="width:28px"><input type="checkbox" id="selectPagePlayers" aria-label="Select visible players" '+(listp.length&&listp.every(function(p){return selected[String(p.id)]})?'checked':'')+'></th><th>Player</th><th class="r">Apps</th><th class="r">G</th><th class="r">A</th><th class="r">OVR</th><th class="r">Last</th><th>Form</th><th class="r">Value</th><th>Profile</th><th class="r">Scouts</th><th>Status</th></tr></thead><tbody>'+listp.map(function(p){var pc=completion(p),facts=matchFactsForPlayer(p.id),vals=facts.slice(0,5).map(function(x){return n(x.performance_score,0)}).reverse();return'<tr data-player-row="'+esc(p.id)+'"><td><input type="checkbox" data-player-select="'+esc(p.id)+'" aria-label="Select '+esc(name(p))+'" '+(selected[String(p.id)]?'checked':'')+'></td><td><a class="who" href="'+esc(clean('/player/profile?id='+p.id))+'">'+avatar(p)+'<span><b>'+esc(name(p))+'</b><s>'+esc(position(p)+' · '+(p.age_group||'—')+' · '+coachName(p.assigned_coach_id))+'</s></span></a></td><td class="r">'+n(p.appearances)+'</td><td class="r">'+n(p.goals)+'</td><td class="r">'+n(p.assists)+'</td><td class="r"><b>'+esc(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</b></td><td class="r">'+(facts[0]&&Number.isFinite(Number(facts[0].performance_score))?Number(facts[0].performance_score).toFixed(1):'—')+'</td><td>'+spark(vals)+'</td><td class="r">'+fmtMoney(p.transfer_value)+'</td><td><div class="ebar '+(pc<50?'low':pc<80?'mid':'')+'"><span class="tr"><i style="width:'+pc+'%"></i></span><b>'+pc+'%</b></div></td><td class="r">'+(playerInterestCount(p)||'—')+'</td><td>'+playerStatus(p)+'</td></tr>';}).join('')+'</tbody></table><div class="foot"><span class="mut">Rows link to the player profile. Filters and sort persist per coach.</span><div class="sp"></div><button class="btn sm" data-player-page="'+Math.max(1,S.playerPage-1)+'">Previous</button>'+Array.from({length:Math.min(3,pages)},function(_,i){var x=i+1;return'<button class="btn sm '+(x===S.playerPage?'p':'')+'" data-player-page="'+x+'">'+x+'</button>';}).join('')+'<button class="btn sm" data-player-page="'+Math.min(pages,S.playerPage+1)+'">Next</button></div></div></div>';
   }
-  function filterRail() {
-    var ages = Array.from(new Set((state.players || []).map(playerAge).filter(function (x) { return x !== '—'; }))).sort();
-    return '<aside class="rail"><div class="rail-h">Filters<button class="btn q sm" type="button" id="clearPlayerFilters">Clear</button></div>' +
-      '<div class="rsec"><div class="rh">Search</div><input class="inp" id="playerSearch" type="search" value="' + esc(state.playerSearch || '') + '" placeholder="Player name"></div>' +
-      '<div class="rsec"><div class="rh">Age group</div><div class="chips">' + [''].concat(ages).map(function (x) { return '<button class="chip ' + (state.playerAge === x ? 'on' : '') + '" type="button" data-age="' + esc(x) + '">' + esc(x || 'All') + '</button>'; }).join('') + '</div></div>' +
-      '<div class="rsec"><div class="rh">Position</div>' + ['','GK','DEF','MID','ATT'].map(function (x) { return '<button class="ri" type="button" data-pos="' + x + '" style="width:100%;border:0;background:transparent"><span class="' + (state.playerPosition === x ? 'rd on' : 'rd') + '"></span>' + (x || 'All positions') + '</button>'; }).join('') + '</div>' +
-      (state.coaches && state.coaches.length ? '<div class="rsec"><div class="rh">Assigned coach</div><select class="inp" id="assignedFilter"><option value="">All coaches</option>' + coachOptions(state.playerAssigned) + '</select></div>' : '') +
-      '<div class="rsec"><div class="rh">Evidence</div><button class="ri" type="button" id="needsWorkFilter" style="width:100%;border:0;background:transparent"><span class="' + (state.playerNeedsWork ? 'ck on' : 'ck') + '"></span>Needs work</button></div>' +
-      '</aside>';
+  function avatar(p){return'<span class="av">'+esc(initials(p))+'</span>';}
+  function playersPhone(){
+    var listp=filteredPlayers();
+    return fieldHeader('My Players',listp.length+' players', '<button class="icb" id="phonePlayerFilter">⌕</button><a class="icb" href="'+esc(clean('/coach/add-player'))+'">+</a>')+
+      '<div class="field"><input class="in" id="phonePlayerSearch" placeholder="Search players" value="'+esc(S.filters.search)+'"></div><div class="stack">'+listp.map(function(p){var pc=completion(p);return'<a class="card player-card" href="'+esc(clean('/player/profile?id='+p.id))+'"><div class="flex"><span class="avm">'+esc(initials(p))+'</span><span class="who" style="flex:1"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||'—')+' · '+coachName(p.assigned_coach_id))+'</span></span>'+playerStatus(p)+'</div><div class="g" style="grid-template-columns:repeat(4,1fr);margin-top:10px">'+metricMini('OVR',p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+metricMini('Apps',n(p.appearances))+metricMini('Scouts',playerInterestCount(p))+metricMini('Ready',pc+'%')+'</div></a>';}).join('')+'</div>';
   }
-  function renderPlayers() {
-    setShellActions('Bulk import','/coach/bulk-add-players','Add player','/coach/add-player');
-    var rows = currentPlayers();
-    var pages = Math.max(1,Math.ceil(rows.length / 12));
-    state.playerPage = Math.min(state.playerPage || 1,pages);
-    var slice = rows.slice((state.playerPage - 1) * 12,state.playerPage * 12);
+  function playerFilterSheet(){
+    window.CoachV2.openSheet({title:'Filter squad',html:'<div class="field"><label>Position group</label><select class="in" id="sheetGroup"><option value="">All positions</option><option value="GK">Goalkeeper</option><option value="DEF">Defender</option><option value="MID">Midfielder</option><option value="ATT">Attacker</option></select></div><div class="field"><label>Scout interest</label><select class="in" id="sheetInterest"><option value="">Any</option><option value="yes">Has interest</option><option value="no">No interest</option></select></div><div class="field"><label>Evidence</label><select class="in" id="sheetEvidence"><option value="">All</option><option value="work">Profile needs work</option><option value="novideo">No video</option></select></div>',footer:'<button class="btn p" id="applyPhoneFilters">Apply filters</button>'});
+    setTimeout(function(){document.getElementById('sheetGroup').value=S.filters.group;document.getElementById('sheetInterest').value=S.filters.interest;document.getElementById('sheetEvidence').value=S.filters.evidence;document.getElementById('applyPhoneFilters').onclick=function(){S.filters.group=document.getElementById('sheetGroup').value;S.filters.interest=document.getElementById('sheetInterest').value;S.filters.evidence=document.getElementById('sheetEvidence').value;window.CoachV2.closeAll();renderPlayers();};},0);
+  }
+  function toggleSelected(id,on){
+    var key=String(id),set=selectedSet();
+    if(on)set[key]=1;else delete set[key];
+    S.selectedPlayers=Object.keys(set);
+  }
+  function assignSelected(){
+    if(!S.selectedPlayers.length)return;
+    var options=S.coaches.map(function(c){return'<option value="'+esc(c.id)+'">'+esc([c.first_name,c.last_name].filter(Boolean).join(' '))+'</option>';}).join('');
+    window.CoachV2.openDrawer({title:'Assign '+S.selectedPlayers.length+' players',html:'<div class="field"><label>Assigned coach</label><select class="in" id="bulkCoachSelect">'+options+'</select></div><div class="callout">Only coaches in this team can be assigned.</div><div id="bulkCoachMsg"></div>',footer:'<button class="btn p" id="bulkCoachSave">Assign coach</button>'});
+    setTimeout(function(){document.getElementById('bulkCoachSave').onclick=function(){var coachId=document.getElementById('bulkCoachSelect').value,ids=S.selectedPlayers.slice();ids.reduce(function(chain,id){return chain.then(function(){return api('POST','/api/coaches/assign-player/'+encodeURIComponent(id),{coachId:coachId})});},Promise.resolve()).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Players assigned.');S.selectedPlayers=[];return loadOverview(true)}).then(renderPlayers).catch(function(e){document.getElementById('bulkCoachMsg').innerHTML=msg(e.message,true);});};},0);
+  }
+  function generateSelectedLinks(){
+    var ids=S.selectedPlayers.slice();if(!ids.length)return;
+    window.CoachV2.openDrawer({title:'Safeguarded upload links',html:'<div class="callout"><b>One link per selected player.</b> Uploads enter the coach review queue and stay hidden from scouts until approved.</div><div id="bulkLinkResults" class="stack"><div class="mut">Generating '+ids.length+' secure links…</div></div>',footer:'<button class="btn" id="copyBulkLinks" disabled>Copy all links</button>'});
+    Promise.all(ids.map(function(id){return api('POST','/api/videos/upload-link',{playerId:id}).then(function(r){var d=r.data||r;return{id:id,url:d.uploadUrl||d.url||''}})})).then(function(items){var out=document.getElementById('bulkLinkResults'),urls=items.map(function(x){return x.url}).filter(Boolean),map={};rows(S.overview||{},['players']).forEach(function(p){map[String(p.id)]=p});out.innerHTML=items.map(function(x){return'<div class="card"><div class="card-b"><b>'+esc(name(map[String(x.id)]||{}))+'</b><div class="linkbox">'+esc(x.url||'Link unavailable')+'</div></div></div>';}).join('');var copy=document.getElementById('copyBulkLinks');copy.disabled=!urls.length;copy.onclick=function(){navigator.clipboard.writeText(urls.join('\n')).then(function(){window.CoachV2.showToast('Upload links copied.');});};}).catch(function(e){document.getElementById('bulkLinkResults').innerHTML=msg(e.message,true);});
+  }
+  function availabilitySelected(){
+    if(!S.selectedPlayers.length)return;
+    window.CoachV2.openDrawer({title:'Set availability',html:'<div class="field"><label>Availability</label><select class="in" id="bulkAvailabilityValue"><option>Available</option><option>Injured</option><option>Unavailable</option></select></div><div id="bulkAvailabilityMsg"></div>',footer:'<button class="btn p" id="bulkAvailabilitySave">Update '+S.selectedPlayers.length+' players</button>'});
+    setTimeout(function(){document.getElementById('bulkAvailabilitySave').onclick=function(){api('POST','/api/coach-experience/players/bulk-availability',{playerIds:S.selectedPlayers,availability:document.getElementById('bulkAvailabilityValue').value}).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Availability updated.');S.selectedPlayers=[];return loadOverview(true)}).then(renderPlayers).catch(function(e){document.getElementById('bulkAvailabilityMsg').innerHTML=msg(e.message,true);});};},0);
+  }
+  function archiveSelected(){
+    if(!S.selectedPlayers.length)return;
+    if(!confirm('Archive '+S.selectedPlayers.length+' selected player'+(S.selectedPlayers.length===1?'':'s')+' from the active season? Their historical records remain intact.'))return;
+    api('POST','/api/coach-experience/players/bulk-archive',{playerIds:S.selectedPlayers,reason:'Season archive'}).then(function(){window.CoachV2.showToast('Players archived.');S.selectedPlayers=[];return loadOverview(true)}).then(renderPlayers).catch(function(e){alert(e.message);});
+  }
+  function bindPlayers(){
+    var q=document.getElementById('playerSearch');if(q)q.oninput=function(){S.filters.search=q.value;S.playerPage=1;renderPlayers();};
+    var qp=document.getElementById('phonePlayerSearch');if(qp)qp.oninput=function(){S.filters.search=qp.value;renderPlayers();};
+    document.querySelectorAll('[data-filter-age]').forEach(function(x){x.onchange=function(){S.filters.ages[x.dataset.filterAge]=x.checked;S.playerPage=1;renderPlayers();};});
+    document.querySelectorAll('[data-filter-group]').forEach(function(x){x.onchange=function(){S.filters.group=x.dataset.filterGroup;renderPlayers();};});
+    document.querySelectorAll('[data-filter-coach]').forEach(function(x){x.onchange=function(){S.filters.coach=x.dataset.filterCoach;renderPlayers();};});
+    document.querySelectorAll('[data-filter-evidence]').forEach(function(x){x.onchange=function(){S.filters.evidence=x.dataset.filterEvidence;renderPlayers();};});
+    document.querySelectorAll('[data-filter-interest]').forEach(function(x){x.onchange=function(){S.filters.interest=x.dataset.filterInterest;renderPlayers();};});
+    document.querySelectorAll('[data-filter-availability]').forEach(function(x){x.onchange=function(){S.filters.availability[x.dataset.filterAvailability]=x.checked;S.playerPage=1;renderPlayers();};});
+    var fr=document.getElementById('filterRating');if(fr)fr.onchange=function(){S.filters.rating=fr.value;S.playerPage=1;renderPlayers();};
+    document.querySelectorAll('[data-player-select]').forEach(function(x){x.onchange=function(){toggleSelected(x.dataset.playerSelect,x.checked);renderPlayers();};});
+    var allBox=document.getElementById('selectPagePlayers');if(allBox)allBox.onchange=function(){var pageIds=Array.from(document.querySelectorAll('[data-player-select]')).map(function(x){return x.dataset.playerSelect});pageIds.forEach(function(id){toggleSelected(id,allBox.checked)});renderPlayers();};
+    document.querySelectorAll('[data-player-page]').forEach(function(x){x.onclick=function(){S.playerPage=Number(x.dataset.playerPage);renderPlayers();};});
+    var srt=document.getElementById('playerSort');if(srt)srt.onchange=function(){S.filters.sort=srt.value;renderPlayers();};
+    var reset=document.getElementById('resetPlayers');if(reset)reset.onclick=function(){S.filters={search:'',ages:{},group:'',coach:'',evidence:'',interest:'',sort:'overall',rating:'60-85',availability:{Available:true,Injured:false,Unavailable:false}};S.playerPage=1;S.selectedPlayers=[];renderPlayers();};
+    var exp=document.getElementById('playersExport');if(exp)exp.onclick=function(){exportSquad(filteredPlayers());};
+    var be=document.getElementById('bulkExport');if(be)be.onclick=function(){var set=selectedSet();exportSquad(rows(S.overview||{},['players']).filter(function(p){return set[String(p.id)]}));};
+    var clear=document.getElementById('bulkClear');if(clear)clear.onclick=function(){S.selectedPlayers=[];renderPlayers();};
+    var assign=document.getElementById('bulkAssignCoach');if(assign)assign.onclick=assignSelected;
+    var links=document.getElementById('bulkGenerateLinks');if(links)links.onclick=generateSelectedLinks;
+    var avail=document.getElementById('bulkAvailability');if(avail)avail.onclick=availabilitySelected;
+    var archive=document.getElementById('bulkArchive');if(archive)archive.onclick=archiveSelected;
+    var filter=document.getElementById('phonePlayerFilter');if(filter)filter.onclick=playerFilterSheet;
+  }
+  function exportSquad(players){
+    var headers=['first_name','last_name','age_group','primary_position','appearances','goals','assists','overall_rating','estimated_value','profile_readiness','scout_interest'];
+    var csv=[headers.join(',')].concat(players.map(function(p){return[p.first_name,p.last_name,p.age_group,position(p),p.appearances||0,p.goals||0,p.assists||0,p.overall_rating||'',p.transfer_value||'',completion(p),playerInterestCount(p)].map(function(v){return'"'+String(v==null?'':v).replace(/"/g,'""')+'"'}).join(',')})).join('\n');
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='scoutlink-squad.csv';a.click();URL.revokeObjectURL(a.href);
+  }
+  function renderPlayers(){desk.innerHTML=playersDesk();field.innerHTML=playersPhone();bindPlayers();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function initPlayers(){setActions('Bulk import','/coach/bulk-add-players','Add player','/coach/add-player');try{await loadOverview();renderPlayers();}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}}
 
-    desk.innerHTML =
-      '<div style="display:flex;gap:14px;align-items:flex-start">' + filterRail() +
-      '<div style="flex:1;min-width:0">' +
-        '<div class="card"><div class="card-h"><h3>Squad · ' + rows.length + '</h3><span class="sp"></span><label class="sel">Sort&nbsp;<select id="playerSort" style="border:0;background:transparent"><option value="name"' + (state.playerSort === 'name' ? ' selected' : '') + '>Name</option><option value="overall"' + (state.playerSort === 'overall' ? ' selected' : '') + '>Overall ↓</option><option value="readiness"' + (state.playerSort === 'readiness' ? ' selected' : '') + '>Readiness ↑</option></select></label></div>' +
-        '<div class="coach-table-scroll"><table><thead><tr><th>Player</th><th>Age</th><th>Position</th><th class="r">Apps</th><th class="r">G</th><th class="r">A</th><th class="r">Overall</th><th>Profile readiness</th><th>Value</th><th>Assigned coach</th><th>Status</th><th></th></tr></thead><tbody>' +
-          slice.map(function (p) {
-            var pc = completion(p), st = playerStatus(p), assigned = value(p,['assigned_coach_id','assignedCoachId']);
-            return '<tr><td><a class="who" href="/player/profile?id=' + encodeURIComponent(p.id || '') + '" style="text-decoration:none">' + avatar(nameOf(p)) + '<span><b>' + esc(nameOf(p)) + '</b><s>' + esc(team()) + '</s></span></a></td>' +
-              '<td>' + esc(playerAge(p)) + '</td><td>' + esc(position(p)) + '</td><td class="r">' + num(value(p,['appearances','apps']),0) + '</td><td class="r">' + num(value(p,['goals']),0) + '</td><td class="r">' + num(value(p,['assists']),0) + '</td><td class="r">' + (value(p,['overall_rating','overall']) == null ? '—' : Math.round(num(value(p,['overall_rating','overall']),0))) + '</td>' +
-              '<td><div class="ebar ' + evidenceClass(pc) + '"><span class="tr"><i style="width:' + pc + '%"></i></span><b>' + pc + '%</b></div></td><td>' + esc(fmtMoney(value(p,['transfer_value','estimated_value']))) + '</td>' +
-              '<td>' + (state.isSuper && state.coaches.length ? '<select class="sel" data-assign="' + esc(p.id) + '">' + coachOptions(assigned || state.profile.id) + '</select>' : esc(value(p,['assigned_coach_name']) || fullName())) + '</td><td><span class="tag ' + st[0] + '">' + esc(st[1]) + '</span></td>' +
-              '<td><button class="btn q sm" type="button" data-player-menu="' + esc(p.id) + '">•••</button></td></tr>';
-          }).join('') +
-        '</tbody></table></div><div class="foot"><span class="mut">Showing ' + slice.length + ' of ' + rows.length + '</span><span class="sp"></span><button class="btn sm" data-page="' + Math.max(1,state.playerPage-1) + '">Previous</button><span class="tag b">Page ' + state.playerPage + ' of ' + pages + '</span><button class="btn sm" data-page="' + Math.min(pages,state.playerPage+1) + '">Next</button></div></div>' +
-      '</div></div>';
+  /* ================= Fixtures ================= */
+  function isFuture(f){return new Date(f.fixture_date+'T12:00:00')>=new Date(new Date().setHours(0,0,0,0));}
+  function fixtureCardRow(f){
+    var fact=factsForFixture(f.id)[0],a=attendanceFor(f.id).length;
+    return'<div class="row"><div class="plate '+(fact?'g':'')+'"><b>'+esc(new Date(f.fixture_date+'T12:00:00').getDate())+'</b><span>'+esc(new Date(f.fixture_date+'T12:00:00').toLocaleDateString('en-GB',{month:'short'}))+'</span></div><span class="sp"><b class="rt">vs '+esc(f.opponent)+'</b><s class="rs">'+esc(fmtDate(f.fixture_date,f.fixture_time)+' · '+(f.home_or_away||'')+' · '+(f.format||'')+(f.venue?' · '+f.venue:''))+'</s></span>'+(a?'<span class="tag g"><i></i>'+a+' scouts attending</span>':'<span class="tag">No scout attendance</span>')+'<span class="tag '+(fact?'g':'a')+'">'+(fact?'Match Facts recorded':'Match Facts missing')+'</span><button class="btn sm" data-fixture-open="'+esc(f.id)+'">View</button></div>';
+  }
+  function fixturesDesk(){
+    var fixtures=rows(S.overview||{},['fixtures']).slice().sort(function(a,b){return new Date(a.fixture_date)-new Date(b.fixture_date)}),up=fixtures.filter(isFuture),past=fixtures.filter(function(f){return!isFuture(f)}).reverse(),coverage=fixtures.length?Math.round(fixtures.filter(function(f){return factsForFixture(f.id).length}).length/fixtures.length*100):0;
+    var run=past.slice(0,6).map(function(f){var mf=factsForFixture(f.id)[0];return mf&&mf.home_score!=null&&mf.away_score!=null?(mf.home_score+'–'+mf.away_score):'—';});
+    return'<div class="g" style="grid-template-columns:minmax(0,1fr) 320px"><div class="g"><div class="card"><div class="card-h"><h3>Upcoming</h3><div class="sp"></div><span class="hint">'+up.length+' fixtures</span></div>'+(up.length?up.map(fixtureCardRow).join(''):'<div class="card-b mut">No upcoming fixtures.</div>')+'</div><div class="card"><div class="card-h"><h3>Played</h3><div class="sp"></div><span class="hint">'+past.length+' fixtures</span></div>'+(past.length?past.slice(0,8).map(fixtureCardRow).join(''):'<div class="card-b mut">No played fixtures yet.</div>')+'</div></div>'+
+      '<div class="g"><div class="card"><div class="card-h"><h3>Match Facts coverage</h3></div><div class="card-b"><div class="num" style="font-size:34px;font-weight:700">'+coverage+'%</div><div class="meter"><span class="bar"><i style="width:'+coverage+'%"></i></span></div><div class="mut" style="margin-top:8px">Recorded fixtures strengthen every player’s evidence trail.</div></div></div><div class="card"><div class="card-h"><h3>Results run</h3></div><div class="card-b"><div class="chips">'+run.map(function(x){return'<span class="chip">'+esc(x)+'</span>';}).join('')+'</div></div></div><div class="card"><div class="card-h"><h3>Scouts attending soon</h3></div>'+up.filter(function(f){return attendanceFor(f.id).length}).slice(0,4).map(function(f){return'<div class="row"><span class="sp"><b class="rt">vs '+esc(f.opponent)+'</b><s class="rs">'+esc(fmtDate(f.fixture_date))+'</s></span><span class="tag g">'+attendanceFor(f.id).length+' scouts</span></div>';}).join('')+'</div></div></div>';
+  }
+  function fixtureCoverage(fixtures){
+    var played=fixtures.filter(function(f){return !isFuture(f)}),recorded=0,drafts=0,missing=0;
+    played.forEach(function(f){var facts=factsForFixture(f.id);if(facts.some(function(x){return x.confirmed!==false}))recorded++;else if(facts.length)drafts++;else missing++;});
+    return{played:played.length,recorded:recorded,drafts:drafts,missing:missing};
+  }
+  function fixturePhoneDetail(f){
+    var att=attendanceFor(f.id),facts=factsForFixture(f.id),players=rows(S.overview||{},['players']),videos=rows(S.overview||{},['videos']).filter(function(v){return String(v.fixture_id||'')===String(f.id)}),address=[f.venue_address||f.venue,f.city,f.venue_postcode,f.country].filter(Boolean).join(', '),availability={Available:0,Injured:0,Unavailable:0};
+    players.forEach(function(p){var a=p.availability||'Available';availability[a]=(availability[a]||0)+1;});
+    var previous=rows(S.overview||{},['fixtures']).filter(function(x){return String(x.id)!==String(f.id)&&String(x.opponent||'').toLowerCase()===String(f.opponent||'').toLowerCase()&&!isFuture(x)}).sort(function(a,b){return new Date(b.fixture_date)-new Date(a.fixture_date)}).slice(0,3);
+    function threadForScout(sid){return(S.threads||rows(S.overview||{},['threads'])).find(function(t){return String(t.scout_id||'')===String(sid)});}
+    return fieldHeader('vs '+(f.opponent||'Opponent'),fmtDate(f.fixture_date,f.fixture_time),'<button class="ic" aria-label="Fixture actions">⋯</button>','<button class="bk" id="fixturePhoneBack">‹</button>')+
+      '<div class="stack">'+
+        '<div class="card"><div class="ck" style="margin-bottom:8px">Fixture detail</div><div class="kv"><span>Home / away</span><b>'+esc(f.home_or_away||'—')+'</b></div><div class="kv"><span>Format</span><b>'+esc((f.format||'—')+(String(f.format||'').indexOf('v')<0&&f.format?'v'+f.format:''))+'</b></div><div class="kv"><span>Venue</span><b>'+esc(f.venue||'—')+'</b></div>'+(address?'<div class="kv"><span>Address</span><b style="text-align:right">'+esc(address)+'</b></div><a class="bt blk" style="margin-top:10px" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address)+'">Directions</a>':'')+'</div>'+
+        '<div class="pkpi"><div class="kpi"><div class="k">Scouts attending</div><div class="v">'+att.length+'</div></div><div class="kpi"><div class="k">Available</div><div class="v">'+availability.Available+'</div></div></div>'+
+        '<div class="card"><div class="ck" style="margin-bottom:6px">Scout attendance</div>'+(att.length?att.map(function(a){var t=threadForScout(a.scout_id);return'<div class="rowline"><span class="who"><b>'+esc(scoutLabel(a.scout_id))+'</b><span>'+esc(a.status||'Attending')+'</span></span>'+(t?'<a class="bt sm" href="'+esc(clean('/coach/chat?threadId='+threadId(t)))+'">Chat</a>':'')+'</div>';}).join(''):'<div class="mut">No scout attendance yet.</div>')+'</div>'+
+        '<div class="card"><div class="ck" style="margin-bottom:6px">Squad availability</div><div class="kv"><span>Available</span><b>'+availability.Available+'</b></div><div class="kv"><span>Injured</span><b>'+availability.Injured+'</b></div><div class="kv"><span>Unavailable</span><b>'+availability.Unavailable+'</b></div></div>'+
+        '<div class="card"><div class="ck" style="margin-bottom:6px">Previous meetings</div>'+(previous.length?previous.map(function(x){var mf=factsForFixture(x.id)[0];return'<div class="rowline"><span class="who"><b>'+esc(fmtDate(x.fixture_date))+'</b><span>'+esc(mf&&mf.home_score!=null&&mf.away_score!=null?mf.home_score+'–'+mf.away_score:'Result not recorded')+'</span></span></div>';}).join(''):'<div class="mut">No previous meetings recorded.</div>')+'</div>'+
+        '<div class="card"><div class="ck" style="margin-bottom:6px">Video</div>'+(videos.length?videos.map(function(v){return'<div class="rowline"><span class="icn '+(safeStatus(v.moderation_status)==='approved'?'g':'a')+'">▶</span><span class="who"><b>'+esc(v.title||'Fixture video')+'</b><span>'+esc(safeStatus(v.moderation_status))+'</span></span><a class="bt sm" href="'+esc(clean('/coach/video-reels'))+'">Open</a></div>';}).join(''):'<div class="mut">No video is linked to this fixture.</div>')+'<a class="bt blk" style="margin-top:10px" href="'+esc(clean('/coach/video-reels?fixtureId='+f.id))+'">Attach video</a></div>'+
+      '</div><div class="actbar"><button class="bt gh" id="phoneEditFixture" style="flex:1">Edit</button><a class="bt gh" style="flex:1" href="'+esc(clean('/coach/match-facts?fixtureId='+f.id+'&mode=matchday'))+'">Matchday mode</a><a class="bt spend" style="flex:1" href="'+esc(clean('/coach/match-facts?fixtureId='+f.id))+'">'+(facts.length?'Match Facts':'Record facts')+'</a></div>';
+  }
+  function fixturesPhone(){
+    var fixtures=rows(S.overview||{},['fixtures']).slice().sort(function(a,b){return new Date(a.fixture_date)-new Date(b.fixture_date)});
+    if(S.activeFixtureId){var active=fixtures.find(function(f){return String(f.id)===String(S.activeFixtureId)});if(active)return fixturePhoneDetail(active);}
+    var up=fixtures.filter(isFuture),past=fixtures.filter(function(f){return!isFuture(f)}).reverse(),coverage=fixtureCoverage(fixtures),attendance=rows(S.overview||{},['attendance']),missing=past.find(function(f){return!factsForFixture(f.id).length}),recordedPct=coverage.played?Math.round(coverage.recorded/coverage.played*100):0,draftPct=coverage.played?Math.round(coverage.drafts/coverage.played*100):0,missingPct=Math.max(0,100-recordedPct-draftPct);
+    var visible=S.fixtureTab==='played'?past:up;
+    return fieldHeader('Fixtures','Schedule & Match Facts','<button class="icb" id="phoneAddFixture">+</button>')+
+      '<div class="seg"><a href="#" data-fixture-tab="upcoming" class="'+(S.fixtureTab==='upcoming'?'on':'')+'">Upcoming</a><a href="#" data-fixture-tab="played" class="'+(S.fixtureTab==='played'?'on':'')+'">Played</a></div>'+
+      '<div class="pkpi" style="margin-top:10px"><div class="kpi"><div class="k">Recorded</div><div class="v">'+coverage.recorded+' <small>of '+coverage.played+'</small></div></div><div class="kpi"><div class="k">Scout attendance</div><div class="v">'+attendance.length+'</div></div></div>'+
+      '<div class="card" style="margin-top:10px"><div class="ck">Match Facts coverage</div><div style="height:10px;display:flex;margin-top:10px;background:var(--canvas2);overflow:hidden"><i style="width:'+recordedPct+'%;background:var(--green)"></i><i style="width:'+draftPct+'%;background:var(--blue)"></i><i style="width:'+missingPct+'%;background:var(--amber)"></i></div><div class="lgd" style="margin-top:8px"><span><i style="background:var(--green)"></i>Recorded '+coverage.recorded+'</span><span><i style="background:var(--blue)"></i>Draft '+coverage.drafts+'</span><span><i style="background:var(--amber)"></i>Missing '+coverage.missing+'</span></div></div>'+
+      (S.fixtureTab==='upcoming'&&missing?'<div class="pcap">Needs recording</div><div class="card" style="border-left:3px solid var(--amber)!important"><div class="rowline"><span class="dateplate"><b>'+new Date(missing.fixture_date+'T12:00:00').getDate()+'</b><span>'+new Date(missing.fixture_date+'T12:00:00').toLocaleDateString('en-GB',{month:'short'})+'</span></span><span class="who"><b>vs '+esc(missing.opponent)+'</b><span>'+esc(fmtDate(missing.fixture_date)+' · Match Facts missing')+'</span></span><a class="bt sm spend" href="'+esc(clean('/coach/match-facts?fixtureId='+missing.id))+'">Record</a></div></div>':'')+
+      '<div class="pcap">'+(S.fixtureTab==='played'?'Recently played':'Upcoming')+' <span>'+visible.length+'</span></div><div class="stack">'+(visible.length?visible.map(function(f){var fact=factsForFixture(f.id)[0],a=attendanceFor(f.id).length;return'<div class="card"><div class="rowline" style="border-bottom:0"><span class="dateplate '+(fact?'g':'')+'"><b>'+new Date(f.fixture_date+'T12:00:00').getDate()+'</b><span>'+new Date(f.fixture_date+'T12:00:00').toLocaleDateString('en-GB',{month:'short'})+'</span></span><span class="who"><b>vs '+esc(f.opponent)+'</b><span>'+esc((f.fixture_time||'').slice(0,5)+' · '+(f.home_or_away||'')+' · '+(f.format||''))+'</span></span></div><div class="flex" style="margin-top:8px"><span class="tag '+(a?'g':'')+'">'+a+' scouts</span><span class="tag '+(fact?'g':'a')+'">'+(fact?'Match Facts recorded':(isFuture(f)?'Match Facts upcoming':'Needs recording'))+'</span><span class="right"></span><button class="bt sm" data-fixture-open="'+esc(f.id)+'">View</button><a class="bt sm '+(isFuture(f)?'spend':'')+'" href="'+esc(clean('/coach/match-facts?fixtureId='+f.id+(isFuture(f)?'&mode=matchday':'')))+'">'+(isFuture(f)?'Matchday mode':(fact?'Open facts':'Record'))+'</a></div></div>';}).join(''):'<div class="card"><div class="mut">No fixtures in this view.</div></div>')+'</div>';
+  }
+  function fixtureDrawer(id){
+    var f=rows(S.overview||{},['fixtures']).find(function(x){return String(x.id)===String(id)});if(!f)return;
+    var att=attendanceFor(f.id),facts=factsForFixture(f.id);
+    window.CoachV2.openDrawer({title:'Fixture · vs '+f.opponent,html:'<div class="card"><div class="card-b"><div class="g" style="grid-template-columns:repeat(2,1fr)">'+metricMini('Date',fmtDate(f.fixture_date,f.fixture_time))+metricMini('Home / away',f.home_or_away||'—')+metricMini('Format',f.format||'—')+metricMini('Venue',f.venue||'—')+'</div></div></div><div class="card" style="margin-top:12px"><div class="card-h"><h3>Scout attendance</h3></div>'+(att.length?att.map(function(a){return'<div class="row"><span class="sp"><b class="rt">'+esc(scoutLabel(a.scout_id))+'</b><s class="rs">'+esc(a.status||'Attending')+'</s></span></div>';}).join(''):'<div class="card-b mut">No scout attendance yet.</div>')+'</div>',footer:'<button class="btn dgr" id="deleteFixture">Delete</button><button class="btn" id="editFixture">Edit</button><a class="btn p" href="'+esc(clean('/coach/match-facts?fixtureId='+f.id))+'">'+(facts.length?'View / amend Match Facts':'Record Match Facts')+'</a>'});
+    setTimeout(function(){var ed=document.getElementById('editFixture');if(ed)ed.onclick=function(){window.CoachV2.closeAll();fixtureForm(f);};var del=document.getElementById('deleteFixture');if(del)del.onclick=function(){if(confirm('Delete this fixture?'))api('DELETE','/api/fixtures/'+encodeURIComponent(f.id)).then(function(){window.CoachV2.closeAll();loadFixtures();}).catch(function(e){alert(e.message);});};},0);
+  }
+  function fixtureForm(f){
+    f=f||{};window.CoachV2.openDrawer({title:f.id?'Edit fixture':'Add fixture',html:'<form id="fixtureForm"><div class="field"><label>Opponent</label><input class="in" name="opponent" value="'+esc(f.opponent||'')+'" required></div><div class="two"><div class="field"><label>Date</label><input class="in" type="date" name="fixtureDate" value="'+esc(f.fixture_date||'')+'" required></div><div class="field"><label>Time</label><input class="in" type="time" name="fixtureTime" value="'+esc((f.fixture_time||'').slice(0,5))+'"></div></div><div class="two"><div class="field"><label>Home / away</label><select class="in" name="homeOrAway"><option'+((f.home_or_away||'Home')==='Home'?' selected':'')+'>Home</option><option'+(f.home_or_away==='Away'?' selected':'')+'>Away</option><option'+(f.home_or_away==='Neutral'?' selected':'')+'>Neutral</option></select></div><div class="field"><label>Format</label><select class="in" name="format">'+['5','7','9','11'].map(function(x){return'<option'+(String(f.format||'11').indexOf(x)===0?' selected':'')+'>'+x+'</option>';}).join('')+'</select></div></div><div class="field"><label>Venue</label><input class="in" name="venue" value="'+esc(f.venue||'')+'"></div><div class="field"><label>Notes</label><textarea class="in ta" name="notes">'+esc(f.notes||'')+'</textarea></div><div id="fixtureMsg"></div><button class="btn p" type="submit">'+(f.id?'Save fixture':'Add fixture')+'</button></form>'});
+    setTimeout(function(){var form=document.getElementById('fixtureForm');if(form)form.onsubmit=function(e){e.preventDefault();var fd=new FormData(form),body={};fd.forEach(function(v,k){body[k]=v});api(f.id?'PUT':'POST',f.id?'/api/fixtures/'+encodeURIComponent(f.id):'/api/fixtures',body).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Fixture saved.');loadFixtures();}).catch(function(err){document.getElementById('fixtureMsg').innerHTML=msg(err.message,true);});};},0);
+  }
+  function bindFixtures(){
+    document.querySelectorAll('[data-fixture-open]').forEach(function(b){b.onclick=function(){if(window.innerWidth<=760){S.activeFixtureId=b.dataset.fixtureOpen;renderFixtures();window.scrollTo(0,0);}else fixtureDrawer(b.dataset.fixtureOpen);};});
+    document.querySelectorAll('[data-fixture-tab]').forEach(function(b){b.onclick=function(e){e.preventDefault();S.fixtureTab=b.dataset.fixtureTab;renderFixtures();};});
+    var back=document.getElementById('fixturePhoneBack');if(back)back.onclick=function(){S.activeFixtureId='';renderFixtures();};
+    var edit=document.getElementById('phoneEditFixture');if(edit)edit.onclick=function(){var f=rows(S.overview||{},['fixtures']).find(function(x){return String(x.id)===String(S.activeFixtureId)});if(f)fixtureForm(f);};
+    ['coachAddFixtureExact','phoneAddFixture'].forEach(function(id){var b=document.getElementById(id);if(b)b.onclick=function(){fixtureForm();};});
+  }
+  async function loadFixtures(){await loadOverview(true);renderFixtures();}
+  function renderFixtures(){desk.innerHTML=fixturesDesk();field.innerHTML=fixturesPhone();bindFixtures();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function initFixtures(){
+    setActions('Import CSV','#','Add fixture','#');
+    try{await loadOverview();renderFixtures();setTimeout(function(){var acts=document.querySelectorAll('[data-coach-route-action]');acts.forEach(function(a){if(a.textContent==='Add fixture')a.onclick=function(e){e.preventDefault();fixtureForm();};if(a.textContent==='Import CSV')a.onclick=function(e){e.preventDefault();fixtureCsv();};});},0);}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}
+  }
+  function fixtureCsv(){window.CoachV2.openSheet({title:'Import fixture CSV',html:'<div class="callout"><b>Columns:</b> opponent, fixtureDate, fixtureTime, venue, homeOrAway, format, notes.</div><div class="field"><label>CSV file</label><input class="in" id="fixtureCsvFile" type="file" accept=".csv,text/csv"></div><div id="fixtureCsvMsg"></div>',footer:'<button class="btn p" id="fixtureCsvGo">Import CSV</button>'});setTimeout(function(){document.getElementById('fixtureCsvGo').onclick=function(){var file=document.getElementById('fixtureCsvFile').files[0];if(!file)return;file.text().then(function(text){var lines=text.trim().split(/\r?\n/),headers=lines.shift().split(',').map(function(x){return x.trim()});var rowsx=lines.map(function(line){var vals=line.split(',');var o={};headers.forEach(function(h,i){o[h]=vals[i]&&vals[i].trim()});return o;});return rowsx.reduce(function(p,r){return p.then(function(){return api('POST','/api/fixtures',r)});},Promise.resolve());}).then(function(){window.CoachV2.closeAll();loadFixtures();}).catch(function(e){document.getElementById('fixtureCsvMsg').innerHTML=msg(e.message,true);});};},0);}
 
-    field.innerHTML =
-      fieldHeader('Squad', (state.players || []).length + ' players · ' + teamLine(), '<a class="btn p sm" href="/coach/add-player">Add</a>') +
-      '<div class="pbar"><label class="srch" style="width:auto;flex:1"><input id="fieldPlayerSearch" type="search" value="' + esc(state.playerSearch || '') + '" placeholder="Search players" style="width:100%;border:0;background:transparent;outline:0"></label><button class="btn sm" type="button" id="openPlayerFilters">Filters</button></div>' +
-      '<div class="pbody" style="padding-left:0;padding-right:0"><div class="card">' +
-        slice.map(function (p) {
-          var pc=completion(p), st=playerStatus(p);
-          return '<a class="row" href="/player/profile?id=' + encodeURIComponent(p.id || '') + '" style="text-decoration:none"><span class="av">' + esc(initials(nameOf(p))) + '</span><span class="sp"><b class="rt">' + esc(nameOf(p)) + '</b><s class="rs">' + esc(position(p) + ' · ' + playerAge(p) + ' · ' + num(value(p,['appearances','apps']),0) + ' apps') + '</s></span><span style="text-align:right"><span class="tag ' + st[0] + '">' + esc(st[1]) + '</span><s class="rs">' + pc + '% ready</s></span></a>';
-        }).join('') +
-      '</div><div class="pnote">Full table, assignment and CSV export are available on Coach Desk.</div></div>';
-    bindPlayers();
+  /* ================= Video Reels ================= */
+  function pendingVideos(){return rows(S.overview||{},['videos']).filter(function(v){return safeStatus(v.moderation_status)==='pending'});}
+  function approvedVideos(){return rows(S.overview||{},['videos']).filter(function(v){return safeStatus(v.moderation_status)==='approved'});}
+  function playerById(id){return rows(S.overview||{},['players']).find(function(p){return String(p.id)===String(id)})||{};}
+  function videoDesk(){
+    var pending=pendingVideos(),players=rows(S.overview||{},['players']),approved=approvedVideos(),withVid=players.filter(function(p){return approved.some(function(v){return String(v.player_id)===String(p.id)})}),without=players.filter(function(p){return !approved.some(function(v){return String(v.player_id)===String(p.id)})});
+    return'<div class="g" style="grid-template-columns:minmax(0,1fr) 320px"><div class="g"><div class="card"><div class="card-h"><h3>Pending review</h3><div class="sp"></div><span class="hint">'+pending.length+' waiting</span></div>'+(pending.length?pending.map(function(v){var p=playerById(v.player_id);return'<div class="row"><span class="icn a">▶</span><span class="sp"><b class="rt">'+esc(v.title||'Video')+'</b><s class="rs">'+esc(name(p)+' · '+(v.category||v.video_type||'Highlight')+' · '+fmtDate(v.created_at)+(v.fixture_id?' · linked fixture':''))+'</s></span><button class="btn sm" data-video-preview="'+esc(v.id)+'">Preview</button><button class="btn dgr sm" data-video-moderate="'+esc(v.id)+'" data-decision="rejected">Reject</button><button class="btn p sm" data-video-moderate="'+esc(v.id)+'" data-decision="approved">Approve</button></div>';}).join(''):'<div class="card-b mut">No videos are waiting for review.</div>')+'</div>'+
+      '<div class="card"><div class="card-h"><h3>Player coverage</h3><div class="sp"></div><span class="hint">'+withVid.length+' of '+players.length+' with approved video</span></div>'+players.slice(0,12).map(function(p){var vids=approved.filter(function(v){return String(v.player_id)===String(p.id)});return'<div class="row"><span class="sp"><b class="rt">'+esc(name(p))+'</b><s class="rs">'+esc(position(p)+' · '+(p.age_group||'—'))+'</s></span><span class="tag '+(vids.length?'g':'a')+'">'+(vids.length?vids.length+' approved':'No approved video')+'</span><a class="btn sm" href="'+esc(clean('/player/profile?id='+p.id))+'">Manage</a></div>';}).join('')+'</div></div>'+
+      '<div class="g"><div class="card"><div class="card-h"><h3>Coverage</h3></div><div class="card-b"><div class="num" style="font-size:34px;font-weight:700">'+(players.length?Math.round(withVid.length/players.length*100):0)+'%</div><div class="meter"><span class="bar"><i style="width:'+(players.length?withVid.length/players.length*100:0)+'%"></i></span></div><div class="mut" style="margin-top:8px">'+without.length+' players still need approved video evidence.</div></div></div>'+
+      '<div class="card"><div class="card-h"><h3>Upload a video</h3></div><div class="card-b"><button class="btn p" id="uploadCoachVideo">Upload</button></div></div>'+
+      '<div class="card"><div class="card-h"><h3>Safeguarded upload links</h3></div><div class="card-b"><div class="mut" style="line-height:1.7;margin-bottom:10px">Generate a token-protected link for a parent or trusted adult. The upload enters this review queue and stays hidden from scouts until approved.</div><button class="btn" id="generatePlayerLink">Generate upload link</button></div></div></div></div>';
   }
-  function bindPlayers() {
-    ['playerSearch','fieldPlayerSearch'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('input', function () { state.playerSearch = el.value; state.playerPage = 1; renderPlayers(); });
-    });
-    document.querySelectorAll('[data-pos]').forEach(function (b) { b.onclick = function () { state.playerPosition = b.dataset.pos || ''; state.playerPage = 1; renderPlayers(); }; });
-    document.querySelectorAll('[data-age]').forEach(function (b) { b.onclick = function () { state.playerAge = b.dataset.age || ''; state.playerPage = 1; renderPlayers(); }; });
-    var af = document.getElementById('assignedFilter'); if (af) af.onchange = function () { state.playerAssigned = af.value; state.playerPage = 1; renderPlayers(); };
-    var nw = document.getElementById('needsWorkFilter'); if (nw) nw.onclick = function () { state.playerNeedsWork = !state.playerNeedsWork; state.playerPage = 1; renderPlayers(); };
-    var clear = document.getElementById('clearPlayerFilters'); if (clear) clear.onclick = function () { state.playerSearch='';state.playerPosition='';state.playerAge='';state.playerAssigned='';state.playerNeedsWork=false;state.playerPage=1;renderPlayers(); };
-    var sort = document.getElementById('playerSort'); if (sort) sort.onchange = function () { state.playerSort = sort.value; renderPlayers(); };
-    document.querySelectorAll('[data-page]').forEach(function (b) { b.onclick = function () { state.playerPage = Number(b.dataset.page) || 1; renderPlayers(); }; });
-    document.querySelectorAll('[data-assign]').forEach(function (sel) {
-      sel.onchange = function () {
-        api('POST','/api/coaches/assign-player/' + encodeURIComponent(sel.dataset.assign),{coachId:sel.value}).then(function () {
-          if (window.CoachV2) window.CoachV2.showToast('Player assignment updated.');
-        }).catch(function (e) { alert(e.message || 'Could not update assignment.'); });
-      };
-    });
-    document.querySelectorAll('[data-player-menu]').forEach(function (b) {
-      b.onclick = function () {
-        var p = (state.players || []).find(function (x) { return String(x.id) === String(b.dataset.playerMenu); });
-        if (!p || !window.CoachV2) return;
-        window.CoachV2.openDrawer({title:nameOf(p),html:'<div class="stack"><a class="btn p" href="/player/profile?id=' + encodeURIComponent(p.id) + '">Open profile</a><a class="btn" href="/player/profile?id=' + encodeURIComponent(p.id) + '&edit=1">Edit assessment</a><button class="btn" id="generatePlayerLink" type="button">Generate video upload link</button><div id="playerLinkResult"></div></div>'});
-        setTimeout(function () {
-          var g=document.getElementById('generatePlayerLink');
-          if (g) g.onclick=function () {
-            api('POST','/api/videos/upload-link',{playerId:p.id}).then(function (r) {
-              var d=r.data||r, url=d.uploadUrl||d.url||'';
-              document.getElementById('playerLinkResult').innerHTML='<div class="callout"><b>Upload link</b><br>' + esc(url || 'Link created') + '</div>';
-            }).catch(function (e) { document.getElementById('playerLinkResult').innerHTML=routeMessage(e.message,true); });
-          };
-        },0);
-      };
-    });
-    var filters=document.getElementById('openPlayerFilters');
-    if (filters && window.CoachV2) filters.onclick=function () {
-      var html='<div class="stack"><div class="field"><label>Position</label><select id="sheetPos"><option value="">All</option><option>GK</option><option>DEF</option><option>MID</option><option>ATT</option></select></div><label class="chip"><input id="sheetNeeds" type="checkbox"' + (state.playerNeedsWork?' checked':'') + '> Needs work</label><button class="btn p" id="applyPlayerSheet" type="button">Apply filters</button></div>';
-      window.CoachV2.openSheet({title:'Squad filters',html:html});
-      setTimeout(function () {
-        var sp=document.getElementById('sheetPos'); if(sp)sp.value=state.playerPosition||'';
-        var apply=document.getElementById('applyPlayerSheet'); if(apply)apply.onclick=function () {
-          state.playerPosition=sp?sp.value:'';
-          state.playerNeedsWork=!!(document.getElementById('sheetNeeds')&&document.getElementById('sheetNeeds').checked);
-          state.playerPage=1; window.CoachV2.closeAll(); renderPlayers();
-        };
-      },0);
-    };
+  function videoPhone(){
+    var pending=pendingVideos(),players=rows(S.overview||{},['players']),approved=approvedVideos(),withVid=players.filter(function(p){return approved.some(function(v){return String(v.player_id)===String(p.id)})}),without=players.filter(function(p){return !approved.some(function(v){return String(v.player_id)===String(p.id)})}),coverage=players.length?Math.round(withVid.length/players.length*100):0;
+    return fieldHeader('Video Reels',pending.length+' pending review','<button class="icb" id="phoneUploadVideo">+</button>')+
+      '<div class="pkpi"><div class="kpi"><div class="k">With video</div><div class="v">'+withVid.length+' <small>of '+players.length+'</small></div></div><div class="kpi"><div class="k">Pending</div><div class="v">'+pending.length+'</div></div></div>'+
+      '<div class="card" style="margin-top:10px"><div class="flex"><div><div class="ck">Approved video coverage</div><div class="fitn">'+coverage+'%</div></div><div class="right" style="width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--blue) '+coverage+'%,var(--canvas2) 0);display:grid;place-items:center"><span style="width:54px;height:54px;background:var(--paper);border-radius:50%;display:grid;place-items:center;font-weight:700">'+coverage+'%</span></div></div><div class="mut">'+without.length+' players still need approved video evidence.</div></div>'+
+      '<div class="pcap">Pending review <span>'+pending.length+'</span></div><div class="stack">'+(pending.length?pending.map(function(v){var p=playerById(v.player_id);return'<div class="card"><div class="rowline" style="border-bottom:0"><span class="icn a">▶</span><span class="who"><b>'+esc(v.title||'Video')+'</b><span>'+esc(name(p)+' · '+(v.category||v.video_type||'Highlight')+' · '+fmtDate(v.created_at))+'</span></span></div><div class="flex" style="margin-top:8px"><button class="bt sm" data-video-preview="'+esc(v.id)+'">Preview</button><button class="bt sm dgr" data-video-moderate="'+esc(v.id)+'" data-decision="rejected">Reject</button><button class="bt sm spend right" data-video-moderate="'+esc(v.id)+'" data-decision="approved">Approve</button></div></div>';}).join(''):'<div class="card"><div class="mut">No videos are waiting for review.</div></div>')+'</div>'+
+      '<div class="pcap">No approved video <span>'+without.length+'</span></div><div class="card">'+without.slice(0,10).map(function(p){return'<div class="rowline"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||''))+'</span></span><button class="bt sm" data-generate-link-player="'+esc(p.id)+'">Generate link</button></div>';}).join('')+(without.length?'':'<div class="mut">Every player has approved video.</div>')+'</div>'+
+      '<button class="bt spend blk" id="phoneGenerateLink" style="margin-top:10px">Generate upload links</button>';
   }
-  async function initPlayers() {
-    try {
-      var rs = await Promise.allSettled([api('GET','/api/coaches/my-players'),api('GET','/api/coaches/profile')]);
-      state.players = safeSettled(rs[0],['players','data']);
-      state.profile = rs[1].status === 'fulfilled' ? (rs[1].value.coach || rs[1].value.profile || rs[1].value || {}) : {};
-      state.isSuper = !!state.profile.is_super_user;
-      state.coaches = [];
-      if (state.isSuper) {
-        var cr = await api('GET','/api/coaches/team-coaches').catch(function () { return {data:[]}; });
-        state.coaches = [state.profile].concat(list(cr,['coaches','data'])).filter(function (c,i,a) { return c && c.id && a.findIndex(function (x) { return x && String(x.id) === String(c.id); }) === i; });
-      }
-      renderPlayers();
-    } catch (e) {
-      desk.innerHTML=routeMessage(e.message,true); field.innerHTML=routeMessage(e.message,true);
-    }
+  function videoById(id){return rows(S.overview||{},['videos']).find(function(v){return String(v.id)===String(id)});}
+  function reviewVideo(id){
+    var v=videoById(id);if(!v)return;var url=v.signed_url||v.video_url||v.url||'';
+    window.CoachV2.openDrawer({title:'Review video',html:'<div class="card"><div class="card-b"><b>'+esc(v.title||'Video')+'</b><div class="mut">'+esc(name(playerById(v.player_id))+' · '+(v.category||v.video_type||'Highlight'))+'</div>'+(url?'<video controls style="width:100%;margin-top:10px" src="'+esc(url)+'"></video>':'<div class="mut" style="margin-top:12px">Preview is not available.</div>')+'</div></div>',footer:'<button class="btn dgr" data-video-moderate="'+esc(v.id)+'" data-decision="rejected">Reject</button><button class="btn p" data-video-moderate="'+esc(v.id)+'" data-decision="approved">Approve</button>'});setTimeout(bindVideos,0);
   }
+  function moderateVideo(id,decision){api('PATCH','/api/videos/'+encodeURIComponent(id)+'/moderation',{status:decision}).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Video '+decision+'.');loadVideos();}).catch(function(e){window.CoachV2.showToast(e.message,true);});}
+  function uploadVideo(){
+    var players=rows(S.overview||{},['players']),fixtures=rows(S.overview||{},['fixtures']);
+    window.CoachV2.openDrawer({title:'Upload a video',html:'<form id="coachVideoForm"><div class="field"><label>Player</label><select class="in" name="playerId">'+players.map(function(p){return'<option value="'+esc(p.id)+'">'+esc(name(p))+'</option>';}).join('')+'</select></div><div class="field"><label>Fixture link · optional</label><select class="in" name="fixtureId"><option value="">No linked fixture</option>'+fixtures.map(function(f){return'<option value="'+esc(f.id)+'">vs '+esc(f.opponent)+' · '+esc(fmtDate(f.fixture_date))+'</option>';}).join('')+'</select></div><div class="field"><label>Title</label><input class="in" name="title" required></div><div class="field"><label>Category</label><select class="in" name="category"><option>Highlight</option><option>Match</option><option>Training</option><option>Skills</option></select></div><div class="field"><label>Video file</label><input class="in" type="file" name="file" accept="video/*" required></div><div id="coachVideoMsg"></div><button class="btn p" type="submit">Upload for review</button></form>'});
+    setTimeout(function(){var f=document.getElementById('coachVideoForm');if(f)f.onsubmit=function(e){e.preventDefault();var fd=new FormData(f),file=fd.get('file');var body=new FormData();['playerId','fixtureId','title','category'].forEach(function(k){body.append(k,fd.get(k)||'')});body.append('file',file);fetch((window.API||'')+'/api/videos/upload',{method:'POST',headers:{Authorization:'Bearer '+((window.Auth&&window.Auth.token)||'')},body:body}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload failed');return d})}).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Video uploaded for review.');loadVideos();}).catch(function(e2){document.getElementById('coachVideoMsg').innerHTML=msg(e2.message,true);});};},0);
+  }
+  function generateLinkFor(playerId){
+    var p=playerById(playerId);
+    window.CoachV2.openSheet({title:'Safeguarded upload link',html:'<div class="callout"><b>Uploads wait for coach approval.</b> They are never shown to scouts automatically.</div><div class="field"><label>Player</label><div class="in">'+esc(name(p))+'</div></div><div id="linkResult"><div class="mut">Generating secure link…</div></div>'});
+    api('POST','/api/videos/upload-link',{playerId:playerId}).then(function(r){var d=r.data||r,url=d.uploadUrl||d.url;document.getElementById('linkResult').innerHTML='<div class="linkbox">'+esc(url||'')+'</div><button class="btn sm" id="copyLink">Copy link</button>';document.getElementById('copyLink').onclick=function(){navigator.clipboard.writeText(url);window.CoachV2.showToast('Link copied.');};}).catch(function(e){document.getElementById('linkResult').innerHTML=msg(e.message,true);});
+  }
+  function generateLink(){
+    var players=rows(S.overview||{},['players']);
+    window.CoachV2.openSheet({title:'Safeguarded upload link',html:'<div class="callout"><b>Uploads wait for coach approval.</b> They are never shown to scouts automatically.</div><div class="field"><label>Player</label><select class="in" id="linkPlayer">'+players.map(function(p){return'<option value="'+esc(p.id)+'">'+esc(name(p))+'</option>';}).join('')+'</select></div><div id="linkResult"></div>',footer:'<button class="btn p" id="makeLink">Generate link</button>'});setTimeout(function(){document.getElementById('makeLink').onclick=function(){api('POST','/api/videos/upload-link',{playerId:document.getElementById('linkPlayer').value}).then(function(r){var d=r.data||r,url=d.uploadUrl||d.url;document.getElementById('linkResult').innerHTML='<div class="linkbox">'+esc(url||'')+'</div><button class="btn sm" id="copyLink">Copy</button>';document.getElementById('copyLink').onclick=function(){navigator.clipboard.writeText(url);window.CoachV2.showToast('Link copied.');};}).catch(function(e){document.getElementById('linkResult').innerHTML=msg(e.message,true);});};},0);
+  }
+  function bindVideos(){
+    document.querySelectorAll('[data-video-preview]').forEach(function(b){b.onclick=function(){reviewVideo(b.dataset.videoPreview)};});
+    document.querySelectorAll('[data-video-moderate]').forEach(function(b){b.onclick=function(){moderateVideo(b.dataset.videoModerate,b.dataset.decision)};});
+    document.querySelectorAll('[data-generate-link-player]').forEach(function(b){b.onclick=function(){generateLinkFor(b.dataset.generateLinkPlayer)};});
+    ['uploadCoachVideo','phoneUploadVideo'].forEach(function(id){var b=document.getElementById(id);if(b)b.onclick=uploadVideo;});
+    ['generatePlayerLink','phoneGenerateLink'].forEach(function(id){var b=document.getElementById(id);if(b)b.onclick=generateLink;});
+  }
+  async function loadVideos(){await loadOverview(true);renderVideos();}
+  function renderVideos(){desk.innerHTML=videoDesk();field.innerHTML=videoPhone();bindVideos();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function initVideos(){setActions(null,null,'Upload video','#');try{await loadOverview();renderVideos();setTimeout(function(){document.querySelectorAll('[data-coach-route-action]').forEach(function(a){a.onclick=function(e){e.preventDefault();uploadVideo();};});},0);}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}}
 
-  /* ================= FIXTURES ================= */
-  function fixtureStatus(f, fmap) {
-    var today=new Date();today.setHours(0,0,0,0);
-    var d=new Date(String(fixtureDate(f)||'').slice(0,10)+'T12:00:00');
-    if (Number.isNaN(d.getTime()) || d >= today) return 'upcoming';
-    return fmap[String(f.id)] ? 'recorded' : 'missing';
+  /* ================= Chat ================= */
+  function threadId(t){return t.id||t.thread_id||t.threadId;}
+  function threadScout(t){return t.scout_name||t.scoutName||scoutLabel(t.scout_id)||'Reviewed scout';}
+  function threadPlayer(t){var p=playerById(t.player_id||t.playerId);return p.id?name(p):(t.player_name||'Player');}
+  function threadList(){
+    if(!S.threads.length)return'<div class="card-b mut">No reviewed scout conversations yet.</div>';
+    return S.threads.map(function(t){var active=String(threadId(t))===String(S.activeThread);return'<button class="thr '+(active?'on':'')+'" data-chat-thread="'+esc(threadId(t))+'"><span class="av">'+esc(initials(threadScout(t)))+'</span><span class="sp"><b>'+esc(threadScout(t))+'</b><span class="re">'+esc(threadPlayer(t))+'</span><span class="pv">'+esc(t.last_message||t.preview||'Open conversation')+'</span></span><span class="tm">'+esc(daysAgo(t.last_message_at||t.created_at))+'</span></button>';}).join('');
   }
-  function fixtureScore(f) {
-    if (f.home_score != null || f.away_score != null) return num(f.home_score,0) + '–' + num(f.away_score,0);
-    return '';
+  function activeThread(){return S.threads.find(function(t){return String(threadId(t))===String(S.activeThread)})||null;}
+  function chatDesk(){
+    var t=activeThread(),p=t&&playerById(t.player_id||t.playerId);
+    return'<div class="g" style="grid-template-columns:330px minmax(0,1fr);gap:0;border:1px solid var(--line);background:var(--paper);min-height:660px"><div style="border-right:1px solid var(--line)"><div class="card-h"><h3>Conversations</h3><div class="sp"></div><span class="hint">'+S.threads.length+'</span></div>'+threadList()+'</div><div>'+(t?'<div class="card-h"><div><h3>'+esc(threadScout(t))+'</h3><div class="hint">'+esc((p&&p.id?name(p):threadPlayer(t))+' · reviewed scout conversation')+'</div></div><div class="sp"></div>'+(p&&p.id?'<a class="btn sm" href="'+esc(clean('/player/profile?id='+p.id))+'">View player</a>':'')+'<button class="btn sm" id="shareProfile">Share profile</button><a class="btn dgr sm" href="'+esc(clean('/coach/report-a-concern'))+'">Report concern</a></div><div id="chatMessages" style="padding:18px;min-height:500px">'+renderMessages()+'</div><form class="pbar" id="chatCompose"><textarea class="inp" id="chatMessage" style="flex:1;height:40px" placeholder="Write a message…"></textarea><button class="btn p" type="submit">Send</button></form>':'<div class="card-b mut">Choose a conversation.</div>')+'</div></div>';
   }
-  function renderFixtures() {
-    setShellActions('Import CSV','#','Add fixture','#');
-    var fmap=factMap(state.matchFacts||[]);
-    var up=(state.fixtures||[]).filter(function(f){return fixtureStatus(f,fmap)==='upcoming';});
-    var done=(state.fixtures||[]).filter(function(f){return fixtureStatus(f,fmap)!=='upcoming';});
-    var missing=done.filter(function(f){return fixtureStatus(f,fmap)==='missing';});
-    var coverage=done.length?Math.round((done.length-missing.length)/done.length*100):100;
-    var goalsFor=done.reduce(function(s,f){return s+num(value(f,['home_score','goals_for']),0);},0);
-    var goalsAgainst=done.reduce(function(s,f){return s+num(value(f,['away_score','goals_against']),0);},0);
-
-    function deskRow(f,status) {
-      var score=fixtureScore(f);
-      return '<div class="row">' + iconBox(status==='missing'?'!':'FX',status==='missing'?'r':status==='recorded'?'g':'b') +
-        '<span class="sp"><b class="rt">vs ' + esc(opponent(f)) + (score?' · '+esc(score):'') + '</b><s class="rs">' + esc(formatDate(fixtureDate(f),fixtureTime(f)) + (venue(f)?' · '+venue(f):'') + ' · ' + (value(f,['home_or_away','homeOrAway'])||'Home')) + '</s></span>' +
-        (status==='missing'?'<a class="btn p sm" href="/coach/match-facts?fixtureId=' + encodeURIComponent(f.id||'') + '">Record Match Facts</a>':status==='recorded'?'<span class="tag g">Recorded</span>':'<button class="btn q sm" data-edit-fixture="' + esc(f.id) + '">Edit</button><button class="btn dgr sm" data-delete-fixture="' + esc(f.id) + '">Delete</button>') +
-      '</div>';
-    }
-
-    desk.innerHTML =
-      '<div class="g" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px"><div class="kpi"><div class="k">This season</div><div class="v">' + done.length + '</div><div class="d">played fixtures</div></div><div class="kpi"><div class="k">Match Facts recorded</div><div class="v">' + (done.length-missing.length) + '<small>/' + done.length + '</small></div><div class="d">' + coverage + '% coverage</div></div><div class="kpi"><div class="k">Goals for</div><div class="v">' + goalsFor + '</div><div class="d">from recorded results</div></div><div class="kpi"><div class="k">Goal difference</div><div class="v">' + (goalsFor-goalsAgainst >= 0?'+':'') + (goalsFor-goalsAgainst) + '</div><div class="d">current recorded fixtures</div></div></div>' +
-      (missing.length?'<div class="card" style="margin-bottom:14px;border-color:#E8C0BC"><div class="card-h"><h3 style="color:var(--red)">Match Facts missing · ' + missing.length + '</h3><span class="sp"></span><span class="hint">complete the evidence trail</span></div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + missing.map(function(f){return deskRow(f,'missing');}).join('') + '</div></div>':'') +
-      '<div class="g" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start"><div class="card"><div class="card-h"><h3>Upcoming</h3><span class="sp"></span><span class="hint">' + up.length + ' scheduled</span></div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + (up.length?up.map(function(f){return deskRow(f,'upcoming');}).join(''):'<div class="row"><span class="sp mut">No upcoming fixtures.</span></div>') + '</div></div><div class="card"><div class="card-h"><h3>Played</h3><span class="sp"></span><span class="hint">' + done.length + ' fixtures</span></div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + (done.length?done.slice(0,8).map(function(f){return deskRow(f,fixtureStatus(f,fmap));}).join(''):'<div class="row"><span class="sp mut">No completed fixtures.</span></div>') + '</div></div></div><input type="file" id="fixtureCsvInput" accept=".csv" hidden>';
-
-    field.innerHTML =
-      fieldHeader('Fixtures', up.length + ' upcoming · ' + done.length + ' played', '<button class="btn p sm" type="button" id="fieldAddFixture">Add</button>') +
-      '<div class="pkpi"><div class="kpi"><div class="k">Played</div><div class="v">' + done.length + '</div></div><div class="kpi"><div class="k">MF coverage</div><div class="v">' + coverage + '%</div></div></div>' +
-      (missing.length?'<div class="pcap">Needs attention <span>' + missing.length + '</span></div><div class="card">' + missing.map(function(f){return '<div class="row">' + iconBox('!','r') + '<span class="sp"><b class="rt">vs ' + esc(opponent(f)) + '</b><s class="rs">' + esc(formatDate(fixtureDate(f),fixtureTime(f))) + '</s></span><a class="btn p sm" href="/coach/match-facts?fixtureId=' + encodeURIComponent(f.id||'') + '">Record</a></div>';}).join('') + '</div>':'') +
-      '<div class="pcap">Upcoming</div><div class="card">' + (up.length?up.map(function(f){return '<div class="row">' + iconBox('FX','b') + '<span class="sp"><b class="rt">vs ' + esc(opponent(f)) + '</b><s class="rs">' + esc(formatDate(fixtureDate(f),fixtureTime(f)) + ' · ' + (value(f,['home_or_away'])||'Home')) + '</s></span><button class="btn q sm" data-edit-fixture="' + esc(f.id) + '">Edit</button></div>';}).join(''):'<div class="row"><span class="sp mut">No upcoming fixtures.</span></div>') + '</div>' +
-      '<div class="pcap">Recently played</div><div class="card">' + (done.length?done.slice(0,6).map(function(f){var st=fixtureStatus(f,fmap);return '<div class="row">' + iconBox(st==='missing'?'!':'✓',st==='missing'?'r':'g') + '<span class="sp"><b class="rt">vs ' + esc(opponent(f)) + (fixtureScore(f)?' · '+esc(fixtureScore(f)):'') + '</b><s class="rs">' + esc(formatDate(fixtureDate(f))) + '</s></span><span class="tag ' + (st==='missing'?'r':'g') + '">' + (st==='missing'?'Missing MF':'Recorded') + '</span></div>';}).join(''):'<div class="row"><span class="sp mut">No completed fixtures.</span></div>') + '</div>';
-    bindFixtureActions();
+  function renderMessages(){
+    return(S.messages||[]).map(function(m){var mine=String(m.sender_type||'').toLowerCase()==='coach'||String(m.sender_id||'')===String(window.Auth&&window.Auth.user&&window.Auth.user.id);return'<div class="msg '+(mine?'out':'in')+'" style="margin-bottom:10px">'+esc(m.body||m.message||'')+'<div class="mt">'+esc(fmtDate(m.created_at))+'</div></div>';}).join('')||'<div class="mut">No messages yet.</div>';
   }
-  function fixtureForm(f) {
-    f=f||{};
-    return '<form id="fixtureForm"><div class="fld"><label class="fl">Opponent</label><input class="inp" name="opponent" value="' + esc(opponent(f)==='Opponent'?'':opponent(f)) + '" required></div><div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><label class="fl">Date</label><input class="inp" name="fixtureDate" type="date" value="' + esc(String(fixtureDate(f)||'').slice(0,10)) + '" required></div><div class="fld"><label class="fl">Kick-off</label><input class="inp" name="fixtureTime" type="time" value="' + esc(String(fixtureTime(f)||'').slice(0,5)) + '"></div></div><div class="fld"><label class="fl">Venue</label><input class="inp" name="venue" value="' + esc(venue(f)) + '"></div><div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><label class="fl">Home / away</label><select class="inp" name="homeOrAway"><option' + ((value(f,['home_or_away'])||'Home')==='Home'?' selected':'') + '>Home</option><option' + (value(f,['home_or_away'])==='Away'?' selected':'') + '>Away</option></select></div><div class="fld"><label class="fl">Format</label><select class="inp" name="format"><option>11-a-side</option><option>9-a-side</option><option>7-a-side</option><option>5-a-side</option></select></div></div><div class="fld"><label class="fl">Notes</label><textarea class="inp ta" name="notes">' + esc(value(f,['notes'])||'') + '</textarea></div><div id="fixtureFormMsg"></div><div style="display:flex;justify-content:flex-end"><button class="btn p" type="submit">Save fixture</button></div></form>';
+  function chatPhone(){
+    var t=activeThread();
+    if(!t)return fieldHeader('Chat',S.threads.filter(function(t){return n(t.unread_count||t.unreadCount,0)>0}).length+' unread')+'<div class="card">'+threadList()+'</div>';
+    return fieldHeader(threadScout(t),threadPlayer(t),'<button class="ic" aria-label="Conversation actions">⋯</button>','<button class="bk" id="backThreads">‹</button>')+'<div class="card" style="min-height:calc(100dvh - 190px)"><div class="card-b">'+renderMessages()+'</div></div><form class="pbar" id="fieldChatCompose"><textarea class="inp" id="fieldChatMessage" style="flex:1;height:40px" placeholder="Write a message…"></textarea><button class="btn p" type="submit">Send</button></form>';
   }
-  function openFixture(f) {
-    if (!window.CoachV2) return;
-    window.CoachV2.openDrawer({title:f?'Edit fixture':'Add fixture',html:fixtureForm(f)});
-    setTimeout(function(){
-      var form=document.getElementById('fixtureForm');
-      if (!form) return;
-      form.onsubmit=function(e){
-        e.preventDefault();
-        var fd=new FormData(form), body={};
-        fd.forEach(function(v,k){body[k]=v||null;});
-        body.opponent=String(body.opponent||'').trim();
-        if(!body.opponent||!body.fixtureDate){document.getElementById('fixtureFormMsg').innerHTML=routeMessage('Opponent and date are required.',true);return;}
-        api(f?'PUT':'POST',f?'/api/fixtures/'+encodeURIComponent(f.id):'/api/fixtures',body).then(function(){window.CoachV2.closeAll();return loadFixtures();}).catch(function(err){document.getElementById('fixtureFormMsg').innerHTML=routeMessage(err.message,true);});
-      };
-    },0);
-  }
-  function bindFixtureActions() {
-    document.querySelectorAll('[data-edit-fixture]').forEach(function(b){b.onclick=function(){openFixture((state.fixtures||[]).find(function(f){return String(f.id)===String(b.dataset.editFixture);})||null);};});
-    document.querySelectorAll('[data-delete-fixture]').forEach(function(b){b.onclick=function(){var f=(state.fixtures||[]).find(function(x){return String(x.id)===String(b.dataset.deleteFixture);});if(f&&confirm('Delete the fixture against '+opponent(f)+'?'))api('DELETE','/api/fixtures/'+encodeURIComponent(f.id),{}).then(loadFixtures).catch(function(e){alert(e.message);});};});
-    var top=document.querySelector('#coachDeskTopbar [data-coach-route-action="primary"]'); if(top)top.onclick=function(e){e.preventDefault();openFixture(null);};
-    var fieldAdd=document.getElementById('fieldAddFixture'); if(fieldAdd)fieldAdd.onclick=function(){openFixture(null);};
-    var importButton=document.querySelector('#coachDeskTopbar [data-coach-route-action="secondary"]'); var input=document.getElementById('fixtureCsvInput');
-    if(importButton&&input){importButton.onclick=function(e){e.preventDefault();input.click();};input.onchange=function(){if(input.files[0])importFixtureCsv(input.files[0]);};}
-  }
-  function importFixtureCsv(file) {
-    file.text().then(function(text){
-      var lines=text.split(/\r?\n/).filter(Boolean);if(lines.length<2)throw new Error('CSV has no fixture rows.');
-      var h=lines[0].split(',').map(function(x){return x.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_');});
-      var rows=lines.slice(1).map(function(line){var v=line.split(','),r={};h.forEach(function(k,i){r[k]=(v[i]||'').trim();});return{opponent:r.opponent||r.opponent_name,fixtureDate:r.fixture_date||r.date,fixtureTime:r.fixture_time||r.time||null,venue:r.venue||r.venue_name||null,homeOrAway:r.home_or_away||r.home_away||'Home',format:r.format||'11-a-side'};}).filter(function(r){return r.opponent&&r.fixtureDate;});
-      return rows.reduce(function(p,r){return p.then(function(){return api('POST','/api/fixtures',r);});},Promise.resolve());
-    }).then(function(){if(window.CoachV2)window.CoachV2.showToast('Fixture CSV imported.');return loadFixtures();}).catch(function(e){alert(e.message);});
-  }
-  async function loadFixtures() {
-    try {
-      var rs=await Promise.all([api('GET','/api/fixtures').catch(function(){return{data:[]};}),api('GET','/api/match-facts?limit=100').catch(function(){return{data:[]};})]);
-      state.fixtures=list(rs[0],['fixtures','data']);
-      state.matchFacts=list(rs[1],['matchFacts','match_facts','data']);
-      renderFixtures();
-    } catch(e){desk.innerHTML=routeMessage(e.message,true);field.innerHTML=routeMessage(e.message,true);}
-  }
-
-  /* ================= VIDEO REELS ================= */
-  function videoUrl(v){return value(v,['signed_url','url','video_url','file_url'])||'';}
-  function videoPlayerName(v){
-    return value(v,['player_name','playerName']) ||
-      (v.players ? [v.players.first_name,v.players.last_name].filter(Boolean).join(' ') : '') ||
-      ((state.videoPlayers||[]).find(function(p){return String(p.id)===String(v.player_id);}) ? nameOf((state.videoPlayers||[]).find(function(p){return String(p.id)===String(v.player_id);})) : 'Player');
-  }
-  function renderVideos() {
-    setShellActions('Refresh','#','Upload video','#');
-    var videos=state.videos||[], players=state.videoPlayers||[];
-    var byPlayer={};videos.forEach(function(v){if(v.player_id)byPlayer[String(v.player_id)]=(byPlayer[String(v.player_id)]||0)+1;});
-    var withVideo=players.filter(function(p){return byPlayer[String(p.id)]>0;});
-    var noVideo=players.filter(function(p){return !byPlayer[String(p.id)];});
-
-    function videoCard(v,mobile){
-      var url=videoUrl(v);
-      return '<div class="card coach-video-card"><button class="coach-video-thumb" type="button" data-watch-video="' + esc(url) + '">▶</button><div class="card-b"><b>' + esc(value(v,['title'])||'Video reel') + '</b><div class="mut">' + esc(videoPlayerName(v) + ' · ' + (value(v,['category','video_type'])||'Highlight')) + '</div><div style="display:flex;gap:6px;margin-top:8px"><button class="btn q sm" type="button" data-watch-video="' + esc(url) + '">Open</button>' + (!mobile?'<button class="btn dgr sm" type="button" data-delete-video="' + esc(v.id||'') + '">Delete</button>':'') + '</div></div></div>';
-    }
-
-    desk.innerHTML =
-      '<div class="g" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px"><div class="kpi"><div class="k">Players with video</div><div class="v">' + withVideo.length + '</div><div class="d">of ' + players.length + ' players</div></div><div class="kpi"><div class="k">Awaiting review</div><div class="v">0</div><div class="d">clips waiting for coach review</div></div><div class="kpi"><div class="k">No video</div><div class="v">' + noVideo.length + '</div><div class="d">players without a reel</div></div><div class="kpi"><div class="k">Approved clips</div><div class="v">' + videos.length + '</div><div class="d">clips available to the workspace</div></div></div>' +
-      '<div class="g" style="grid-template-columns:minmax(0,1fr) 330px;align-items:start"><div><div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Player coverage</h3><span class="sp"></span><span class="hint">' + withVideo.length + '/' + players.length + '</span></div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + (players.length?players.map(function(p){return '<div class="row">' + avatar(nameOf(p)) + '<span class="sp"><b class="rt">' + esc(nameOf(p)) + '</b><s class="rs">' + esc(position(p)) + '</s></span><span class="tag ' + (byPlayer[String(p.id)]?'g':'a') + '">' + (byPlayer[String(p.id)]?byPlayer[String(p.id)]+' clip'+(byPlayer[String(p.id)]===1?'':'s'):'No video') + '</span>' + (!byPlayer[String(p.id)]?'<button class="btn q sm" data-generate-link="' + esc(p.id) + '">Upload link</button>':'') + '</div>';}).join(''):'<div class="row"><span class="sp mut">No players available.</span></div>') + '</div></div><div class="card"><div class="card-h"><h3>All video reels · ' + videos.length + '</h3></div><div class="card-b"><div class="g coach-video-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">' + (videos.length?videos.map(function(v){return videoCard(v,false);}).join(''):'<div class="mut">No videos yet.</div>') + '</div></div></div></div>' +
-      '<div><div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Upload Video Reel</h3></div><div class="card-b"><form id="videoUploadForm"><div class="fld"><label class="fl">Player</label><select class="inp" name="playerId" required><option value="">Select player…</option>' + players.map(function(p){return '<option value="' + esc(p.id) + '">' + esc(nameOf(p)) + '</option>';}).join('') + '</select></div><div class="fld"><label class="fl">Category</label><select class="inp" name="category"><option>Highlight</option><option>Match</option><option>Training</option><option>Skills</option><option>Goal</option></select></div><div class="fld"><label class="fl">Title</label><input class="inp" name="title" placeholder="Optional title"></div><label class="drop"><b>Choose video file</b><input name="file" type="file" accept="video/*" style="display:block;margin:8px auto 0"><span class="help">The current API upload limit is 4 MB.</span></label><div id="videoUploadMsg"></div><button class="btn p" type="submit" style="margin-top:10px">Upload Video</button></form></div></div><div class="card"><div class="card-h"><h3>Player Upload Link</h3></div><div class="card-b"><div class="fld"><label class="fl">Player</label><select class="inp" id="videoLinkPlayer"><option value="">Select player…</option>' + players.map(function(p){return '<option value="' + esc(p.id) + '">' + esc(nameOf(p)) + '</option>';}).join('') + '</select></div><button class="btn p" id="generateVideoLink">Generate Link</button><div id="videoLinkResult" style="margin-top:8px"></div><div class="help">Token-protected, single-player upload link.</div></div></div></div></div>';
-
-    field.innerHTML =
-      fieldHeader('Video Reels', videos.length + ' clips · ' + withVideo.length + ' players covered') +
-      '<div class="pkpi"><div class="kpi"><div class="k">Covered</div><div class="v">' + withVideo.length + '</div><div class="d">players</div></div><div class="kpi"><div class="k">No video</div><div class="v">' + noVideo.length + '</div><div class="d">players</div></div></div>' +
-      '<div class="pcap">No video <span>' + noVideo.length + '</span></div><div class="card">' + (noVideo.slice(0,5).map(function(p){return '<div class="row">' + avatar(nameOf(p)) + '<span class="sp"><b class="rt">' + esc(nameOf(p)) + '</b><s class="rs">' + esc(position(p)) + '</s></span><button class="btn q sm" data-generate-link="' + esc(p.id) + '">Link</button></div>';}).join('') || '<div class="row"><span class="sp mut">Every listed player has a video.</span></div>') + '</div>' +
-      '<div class="pcap">Approved clips <span>' + videos.length + '</span></div><div class="g coach-video-grid" style="grid-template-columns:1fr 1fr;gap:8px">' + videos.slice(0,8).map(function(v){return videoCard(v,true);}).join('') + '</div>' +
-      '<div style="height:12px"></div><button class="btn p" style="width:100%" id="fieldUploadVideo" type="button">Upload or generate a link</button>';
-    bindVideoActions();
-  }
-  function generateVideoLink(pid, target) {
-    if (!pid) return Promise.reject(new Error('Choose a player.'));
-    return api('POST','/api/videos/upload-link',{playerId:pid}).then(function(r){
-      var d=r.data||r,url=d.uploadUrl||d.url||'';
-      if(target)target.innerHTML='<div class="callout"><b>Upload link</b><br><span class="coach-break">' + esc(url||'Link created') + '</span><div style="margin-top:6px"><button class="btn sm" type="button" data-copy-link="' + esc(url) + '">Copy</button></div></div>';
-      return url;
-    });
-  }
-  function bindVideoActions() {
-    document.querySelectorAll('[data-watch-video]').forEach(function(b){b.onclick=function(){var url=b.dataset.watchVideo;if(!url)return alert('Video URL is unavailable.');window.open(url,'_blank','noopener');};});
-    document.querySelectorAll('[data-delete-video]').forEach(function(b){b.onclick=function(){if(confirm('Delete this video?'))api('DELETE','/api/videos/'+encodeURIComponent(b.dataset.deleteVideo),{}).then(loadVideos).catch(function(e){alert(e.message);});};});
-    document.querySelectorAll('[data-generate-link]').forEach(function(b){b.onclick=function(){if(!window.CoachV2)return;var pid=b.dataset.generateLink;window.CoachV2.openSheet({title:'Player upload link',html:'<div id="sheetVideoLink">Generating…</div>'});setTimeout(function(){var t=document.getElementById('sheetVideoLink');generateVideoLink(pid,t).catch(function(e){if(t)t.innerHTML=routeMessage(e.message,true);});},0);};});
-    document.addEventListener('click',function copyHandler(e){var b=e.target.closest('[data-copy-link]');if(!b)return;navigator.clipboard.writeText(b.dataset.copyLink||'').then(function(){if(window.CoachV2)window.CoachV2.showToast('Link copied.');});},{once:true});
-    var form=document.getElementById('videoUploadForm');if(form)form.onsubmit=uploadVideo;
-    var gen=document.getElementById('generateVideoLink');if(gen)gen.onclick=function(){var pid=document.getElementById('videoLinkPlayer').value,target=document.getElementById('videoLinkResult');generateVideoLink(pid,target).catch(function(e){target.innerHTML=routeMessage(e.message,true);});};
-    var refresh=document.querySelector('#coachDeskTopbar [data-coach-route-action="secondary"]');if(refresh)refresh.onclick=function(e){e.preventDefault();loadVideos();};
-    var uploadTop=document.querySelector('#coachDeskTopbar [data-coach-route-action="primary"]');if(uploadTop)uploadTop.onclick=function(e){e.preventDefault();var form=document.getElementById('videoUploadForm');if(form)form.scrollIntoView({behavior:'smooth',block:'start'});};
-    var fieldButton=document.getElementById('fieldUploadVideo');if(fieldButton&&window.CoachV2)fieldButton.onclick=function(){window.CoachV2.openSheet({title:'Video Reels',html:'<div class="stack"><a class="btn p" href="/coach/video-reels">Open full Video Reels tools</a><div class="mut">Use Coach Desk for direct file upload. Player upload links work on both layouts.</div></div>'});};
-  }
-  function uploadVideo(e) {
-    e.preventDefault();
-    var form=e.currentTarget,fd0=new FormData(form),file=fd0.get('file'),msg=document.getElementById('videoUploadMsg');
-    if(!fd0.get('playerId')||!file||!file.size){msg.innerHTML=routeMessage('Choose a player and video file.',true);return;}
-    if(file.size>4*1024*1024){msg.innerHTML=routeMessage('The current ScoutLink API accepts video files up to 4 MB.',true);return;}
-    var fd=new FormData();fd.append('file',file);fd.append('title',fd0.get('title')||file.name);fd.append('category',fd0.get('category')||'Highlight');fd.append('playerId',fd0.get('playerId'));
-    msg.innerHTML=routeMessage('Uploading…');
-    fetch((window.API||'')+'/api/videos/upload',{method:'POST',headers:{Authorization:'Bearer '+(window.Auth&&window.Auth.token||'')},body:fd}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Upload failed');return d;});}).then(function(){if(window.CoachV2)window.CoachV2.showToast('Video uploaded.');return loadVideos();}).catch(function(e2){msg.innerHTML=routeMessage(e2.message,true);});
-  }
-  async function loadVideos() {
-    try {
-      var rs=await Promise.all([api('GET','/api/videos?type=player').catch(function(){return{data:[]};}),api('GET','/api/coaches/my-players').catch(function(){return{data:[]};})]);
-      state.videos=list(rs[0],['videos','data']);
-      state.videoPlayers=list(rs[1],['players','data']);
-      renderVideos();
-    } catch(e){desk.innerHTML=routeMessage(e.message,true);field.innerHTML=routeMessage(e.message,true);}
-  }
-
-  /* ================= CHAT ================= */
-  function threadId(t){return value(t,['id','thread_id','threadId']);}
-  function threadPlayer(t){return value(t,['player_name','playerName'])||nameOf(t.player||{});}
-  function threadScout(t){return value(t,['scout_name','scoutName','other_user_name','otherUserName','title'])||'ScoutLink Scout';}
-  async function loadThread(id){
-    state.activeThread=String(id||'');
-    try{var r=await api('GET','/api/chat/threads/'+encodeURIComponent(id)+'/messages');state.messages=list(r,['messages','data']);state.chatError='';renderChat();}
-    catch(e){state.messages=[];state.chatError=e.message;renderChat();}
-  }
-  function renderThreadList(mobile) {
-    var threads=state.threads||[];
-    return threads.map(function(t){
-      var on=String(threadId(t))===String(state.activeThread);
-      return '<button class="thr ' + (on?'on':'') + '" type="button" data-thread="' + esc(threadId(t)) + '" style="width:100%;text-align:left;border:0;background:' + (on?'var(--blue-t)':'var(--paper)') + '">' + avatar(threadScout(t)) + '<span class="sp"><b>' + esc(threadScout(t)) + '</b><span class="re">Reviewed Scout · ' + esc(threadPlayer(t)) + '</span><div class="pv">' + esc(value(t,['last_message','lastMessage','preview'])||'Open conversation') + '</div></span><span class="tm">' + (num(value(t,['unread_count','unreadCount']),0)?'<span class="tag b">'+num(value(t,['unread_count','unreadCount']),0)+'</span>':'') + '</span></button>';
-    }).join('');
-  }
-  function renderChat() {
-    setShellActions(null,null,null,null);
-    var threads=state.threads||[];
-    var active=threads.find(function(t){return String(threadId(t))===String(state.activeThread);})||threads[0]||null;
-    if(active&&!state.activeThread)state.activeThread=String(threadId(active));
-    var messages=state.messages||[];
-
-    desk.innerHTML='<div style="display:grid;grid-template-columns:300px minmax(0,1fr);min-height:660px"><div class="card" style="border-right:0"><div class="card-h"><h3>Conversations</h3><span class="sp"></span><span class="hint">'+threads.length+'</span></div><div>'+renderThreadList(false)+'</div></div><div class="card" style="display:flex;flex-direction:column;min-width:0">' +
-      (active?'<div class="card-h">' + avatar(threadScout(active)) + '<div><h3>' + esc(threadScout(active)) + ' <span class="tag g">Reviewed Scout</span></h3><div class="hint">about ' + esc(threadPlayer(active)) + '</div></div><span class="sp"></span><a class="btn q sm" href="/player/profile?id=' + encodeURIComponent(value(active,['player_id','playerId'])||'') + '">Player profile</a><a class="btn dgr sm" href="/coach/report-a-concern">Report concern</a></div><div class="coach-chatlog" style="flex:1;padding:18px;overflow:auto">' +
-        (state.chatError?routeMessage(state.chatError,true):messages.map(function(m){var mine=String(value(m,['sender_type','sender_role','senderRole'])||'').toLowerCase()==='coach'||String(value(m,['sender_id','senderId'])||'')===String(user().id||'');return '<div class="msg ' + (mine?'out':'in') + '" style="margin-bottom:10px">' + esc(value(m,['body','message','text'])||'') + '<div class="mt">' + esc(formatDate(value(m,['created_at','createdAt']))) + '</div></div>';}).join('')) +
-        '</div><form class="foot" id="chatCompose"><textarea class="inp ta" id="chatMessage" style="height:52px;flex:1" placeholder="Write a message…"></textarea><button class="btn p" type="submit">Send</button></form>':'<div class="card-b mut">No player conversations yet.</div>') +
-      '</div></div>';
-
-    field.innerHTML=active?
-      fieldHeader(threadScout(active),'Reviewed Scout · about '+threadPlayer(active),'<a class="btn q sm" href="/coach/chat">Inbox</a>') +
-      '<div class="pbody"><div style="display:flex;gap:6px;margin-bottom:10px"><a class="btn q sm" href="/player/profile?id=' + encodeURIComponent(value(active,['player_id','playerId'])||'') + '">Player profile</a><a class="btn dgr sm" href="/coach/report-a-concern">Report</a></div><div class="coach-chatlog-phone">' +
-      messages.map(function(m){var mine=String(value(m,['sender_type','sender_role','senderRole'])||'').toLowerCase()==='coach'||String(value(m,['sender_id','senderId'])||'')===String(user().id||'');return '<div class="msg ' + (mine?'out':'in') + '" style="margin-bottom:8px">' + esc(value(m,['body','message','text'])||'') + '<div class="mt">' + esc(formatDate(value(m,['created_at','createdAt']))) + '</div></div>';}).join('') +
-      '</div><form class="pbar" id="fieldChatCompose" style="margin:14px -14px -14px"><textarea class="inp" id="fieldChatMessage" style="flex:1;height:38px" placeholder="Write a message…"></textarea><button class="btn p" type="submit">Send</button></form></div>':
-      fieldHeader('Inbox','Reviewed Scout conversations')+'<div class="pbody"><div class="card">'+renderThreadList(true)+'</div></div>';
-    bindChat();
-  }
-  function sendChat(text){var body=String(text||'').trim();if(!body||!state.activeThread)return Promise.resolve();return api('POST','/api/chat/threads/'+encodeURIComponent(state.activeThread)+'/messages',{body:body}).then(function(){return loadThread(state.activeThread);});}
+  async function loadThread(id){S.activeThread=id;var r=await api('GET','/api/chat/threads/'+encodeURIComponent(id)+'/messages');S.messages=rows(r,['messages','data']);renderChat();}
+  async function sendChat(text){var body=String(text||'').trim();if(!body||!S.activeThread)return;await api('POST','/api/chat/threads/'+encodeURIComponent(S.activeThread)+'/messages',{body:body});await loadThread(S.activeThread);}
   function bindChat(){
-    document.querySelectorAll('[data-thread]').forEach(function(b){b.onclick=function(){loadThread(b.dataset.thread);};});
-    var f=document.getElementById('chatCompose');if(f)f.onsubmit=function(e){e.preventDefault();var t=document.getElementById('chatMessage');sendChat(t.value).then(function(){t.value='';});};
-    var ff=document.getElementById('fieldChatCompose');if(ff)ff.onsubmit=function(e){e.preventDefault();var t=document.getElementById('fieldChatMessage');sendChat(t.value).then(function(){t.value='';});};
+    document.querySelectorAll('[data-chat-thread]').forEach(function(b){b.onclick=function(){loadThread(b.dataset.chatThread).catch(function(e){alert(e.message)});};});
+    var f=document.getElementById('chatCompose');if(f)f.onsubmit=function(e){e.preventDefault();var t=document.getElementById('chatMessage');sendChat(t.value).then(function(){t.value=''})};
+    var ff=document.getElementById('fieldChatCompose');if(ff)ff.onsubmit=function(e){e.preventDefault();var t=document.getElementById('fieldChatMessage');sendChat(t.value).then(function(){t.value=''})};
+    var back=document.getElementById('backThreads');if(back)back.onclick=function(){S.activeThread='';S.messages=[];renderChat();};
+    var share=document.getElementById('shareProfile');if(share)share.onclick=function(){var t=activeThread(),p=t&&playerById(t.player_id);if(!p)return;sendChat('Player profile: '+location.origin+clean('/player/profile?id='+p.id));};
   }
-  async function initChat(){try{var r=await api('GET','/api/chat/threads');state.threads=list(r,['threads','data']).filter(function(t){return value(t,['player_id','playerId'])||t.player;});var requested=new URLSearchParams(location.search).get('threadId');var first=requested||threadId(state.threads[0]);if(first)await loadThread(first);else renderChat();}catch(e){desk.innerHTML=routeMessage(e.message,true);field.innerHTML=routeMessage(e.message,true);}}
+  function renderChat(){desk.innerHTML=chatDesk();field.innerHTML=chatPhone();bindChat();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function initChat(){try{await loadOverview();var r=await api('GET','/api/chat/threads');S.threads=rows(r,['threads','data']).filter(function(t){return t.player_id||t.playerId||t.player});var req=new URLSearchParams(location.search).get('threadId');var id=req||threadId(S.threads[0]);if(id)await loadThread(id);else renderChat();}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}}
 
-  /* ================= NOTIFICATIONS ================= */
-  function notifGroup(n) {
-    var explicit=String(value(n,['filterGroup','filter_group','notification_type','type'])||'').toLowerCase();
-    var text=(explicit+' '+String(value(n,['title'])||'')+' '+String(value(n,['body'])||'')).toLowerCase();
-    if(/message|chat/.test(text))return'messages';
-    if(/match|fixture/.test(text))return'match';
-    if(/video/.test(text))return'video';
-    if(/scout|interest|recruit/.test(text))return'scout';
-    return'system';
+  /* ================= Notifications ================= */
+  function notifGroup(x){
+    var t=String((x.notification_type||x.type||'')+' '+(x.title||'')+' '+(x.body||'')).toLowerCase();
+    if(/scout|interest|recruit|attendance/.test(t))return'Scout activity';
+    if(/message|chat|reply/.test(t))return'Messages';
+    if(/match.?facts|rating|observation/.test(t))return'Match Facts';
+    if(/video|upload/.test(t))return'Video';
+    if(/fixture|matchday/.test(t))return'Fixtures';
+    return'Account and system';
   }
-  function notificationRow(n) {
-    var url=value(n,['actionUrl','action_url'])||'#',label=value(n,['actionLabel','action_label'])||'View',read=bool(value(n,['isRead','is_read']));
-    var group=notifGroup(n), cls=group==='scout'?'g':group==='match'?'r':group==='messages'?'b':group==='video'?'a':'';
-    return '<div class="row" style="' + (read?'opacity:.62':'') + '">' + iconBox(group==='scout'?'SC':group==='messages'?'IN':group==='match'?'MF':group==='video'?'VD':'•',cls) + '<span class="sp"><b class="rt">' + esc(value(n,['title'])||'ScoutLink notification') + '</b><s class="rs">' + esc(value(n,['body'])||'') + '</s></span><a class="btn ' + (group==='match'?'p':'q') + ' sm" data-notification-id="' + esc(n.id||'') + '" href="' + esc(clean(url)) + '">' + esc(label) + '</a></div>';
+  function notifHref(x){
+    var d=x.data||{},pid=d.playerId||d.player_id,fixture=d.fixtureId||d.fixture_id,thread=d.threadId||d.thread_id;
+    var g=notifGroup(x);if(thread)return'/coach/chat?threadId='+thread;if(pid)return'/player/profile?id='+pid;if(fixture)return'/coach/fixtures?fixtureId='+fixture;if(g==='Messages')return'/coach/chat';if(g==='Match Facts')return'/coach/match-facts';if(g==='Video')return'/coach/video-reels';if(g==='Fixtures')return'/coach/fixtures';return'/coach/settings';
   }
-  function renderNotifications() {
-    setShellActions('Mark all read','#',null,null);
-    var all=state.notifications||[],filter=state.notifFilter||'all',rows=filter==='all'?all:all.filter(function(n){return notifGroup(n)===filter;});
-    var groups=[['all','All'],['scout','Scout activity'],['messages','Messages'],['match','Match Facts'],['video','Video'],['system','Account & system']];
-    desk.innerHTML='<div class="chips" style="margin-bottom:14px">' + groups.map(function(g){var count=g[0]==='all'?all.length:all.filter(function(n){return notifGroup(n)===g[0];}).length;return '<button class="chip ' + (filter===g[0]?'on':'') + '" data-notif-filter="' + g[0] + '">' + esc(g[1]) + ' · ' + count + '</button>';}).join('') + '</div>' +
-      groups.slice(1).map(function(g){var items=rows.filter(function(n){return notifGroup(n)===g[0];});if(!items.length)return'';return '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>' + esc(g[1]) + '</h3><span class="sp"></span><span class="hint">' + items.length + '</span></div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + items.map(notificationRow).join('') + '</div></div>';}).join('') +
-      (!rows.length?'<div class="card"><div class="card-b mut">No notifications in this filter.</div></div>':'');
-
-    field.innerHTML=fieldHeader('Notifications',state.unread+' unread','<button class="btn q sm" id="fieldMarkAll">Mark read</button>') +
-      '<div class="pbody"><div class="pseg" style="margin-bottom:10px"><u class="' + (filter==='all'?'on':'') + '" data-notif-filter="all">All</u><u class="' + (filter==='scout'?'on':'') + '" data-notif-filter="scout">Scout</u><u class="' + (filter==='messages'?'on':'') + '" data-notif-filter="messages">Messages</u></div><div class="card">' + (rows.length?rows.map(notificationRow).join(''):'<div class="card-b mut">No notifications.</div>') + '</div></div>';
-    bindNotifications();
+  function notifDesk(){
+    var notes=rows(S.overview||{},['notifications']),groups=['Scout activity','Messages','Match Facts','Video','Fixtures','Account and system'];
+    return'<div class="g">'+groups.map(function(g){var listn=notes.filter(function(x){return notifGroup(x)===g});return'<div class="card"><div class="card-h"><h3>'+g+'</h3><div class="sp"></div><span class="hint">'+listn.length+'</span></div>'+(listn.length?listn.map(function(x){return'<a class="row '+(!bool(x.is_read)?'zz':'')+'" data-notif-id="'+esc(x.id)+'" href="'+esc(clean(notifHref(x)))+'"><span class="icn '+(g==='Scout activity'?'g':g==='Video'?'a':'b')+'">●</span><span class="sp"><b class="rt">'+esc(x.title||g)+'</b><s class="rs">'+esc(x.body||'')+'</s></span><span class="mut">'+esc(daysAgo(x.created_at))+'</span><span class="btn sm">'+esc(g==='Messages'?'Reply':g==='Video'?'Review video':'View')+'</span></a>';}).join(''):'<div class="card-b mut">No notifications in this group.</div>')+'</div>';}).join('')+'</div>';
   }
-  function bindNotifications(){
-    document.querySelectorAll('[data-notif-filter]').forEach(function(b){b.onclick=function(){state.notifFilter=b.dataset.notifFilter;renderNotifications();};});
-    document.querySelectorAll('[data-notification-id]').forEach(function(a){a.addEventListener('click',function(){if(a.dataset.notificationId)api('PATCH','/api/notifications/'+encodeURIComponent(a.dataset.notificationId)+'/read',{}).catch(function(){});});});
-    function mark(){api('PATCH','/api/notifications/mark-all-read',{}).then(loadNotifications).catch(function(e){alert(e.message);});}
-    var top=document.querySelector('#coachDeskTopbar [data-coach-route-action="secondary"]');if(top)top.onclick=function(e){e.preventDefault();mark();};
+  function notifPhone(){
+    var notes=rows(S.overview||{},['notifications']);
+    return fieldHeader('Notifications',notes.filter(function(x){return!bool(x.is_read)}).length+' unread','<button class="icb" id="fieldMarkAll">✓</button>')+['Scout activity','Messages','Match Facts','Video','Fixtures','Account and system'].map(function(g){var listn=notes.filter(function(x){return notifGroup(x)===g});return listn.length?'<div class="pcap">'+g+' <span>'+listn.length+'</span></div><div class="card">'+listn.map(function(x){return'<a class="rowline" data-notif-id="'+esc(x.id)+'" href="'+esc(clean(notifHref(x)))+'"><span class="icn '+(g==='Scout activity'?'g':g==='Video'?'a':'b')+'">●</span><span class="who"><b>'+esc(x.title||g)+'</b><span>'+esc(x.body||'')+'</span></span><span>›</span></a>';}).join('')+'</div>':'';}).join('');
+  }
+  function bindNotifs(){
+    document.querySelectorAll('[data-notif-id]').forEach(function(a){a.addEventListener('click',function(){api('PATCH','/api/notifications/'+encodeURIComponent(a.dataset.notifId)+'/read',{}).catch(function(){});});});
+    function mark(){api('PATCH','/api/notifications/mark-all-read',{}).then(loadNotifications).catch(function(e){alert(e.message)});}
     var f=document.getElementById('fieldMarkAll');if(f)f.onclick=mark;
+    document.querySelectorAll('[data-coach-route-action]').forEach(function(a){if(a.textContent==='Mark all read')a.onclick=function(e){e.preventDefault();mark();};});
   }
-  async function loadNotifications(){try{var r=await api('GET','/api/notifications?limit=80');state.notifications=list(r,['notifications','data']);state.unread=num(r.unreadCount||r.unread_count,state.notifications.filter(function(n){return !bool(value(n,['isRead','is_read']));}).length);renderNotifications();if(window.CoachV2)window.CoachV2.refreshBadges();}catch(e){desk.innerHTML=routeMessage(e.message,true);field.innerHTML=routeMessage(e.message,true);}}
+  function renderNotifications(){desk.innerHTML=notifDesk();field.innerHTML=notifPhone();bindNotifs();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function loadNotifications(){await loadOverview(true);renderNotifications();if(window.CoachV2)window.CoachV2.refreshBadges();}
+  async function initNotifications(){setActions('Mark all read','#',null,null);try{await loadOverview();renderNotifications();}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}}
 
-  /* ================= REPORT A CONCERN ================= */
-  function concernForm(id) {
-    var email=value(state.concernProfile||{},['email','email_address','emailAddr'])||value(user(),['email','email_address','emailAddr'])||localStorage.getItem('sl_user_email')||'';
-    return '<form id="' + id + '"><div class="fld"><label class="fl">Category · required</label><select class="inp" name="concernType" required><option value="">Select category</option><option>Inappropriate contact</option><option>Suspected misuse</option><option>Incorrect access</option><option>Safeguarding issue</option><option>Another platform-safety concern</option></select></div><div class="fld"><label class="fl">Who or what does this concern? · optional</label><input class="inp" name="personOrAccount"></div><div class="fld"><label class="fl">What happened · required</label><textarea class="inp ta" name="description" placeholder="Describe what you saw, when, and anyone involved." required></textarea></div><div class="fld"><label class="fl">Urgency</label><select class="inp" name="urgency"><option>Standard review</option><option>Urgent review</option></select></div><input type="hidden" name="contactEmail" value="' + esc(email) + '"><input type="hidden" name="contactName" value="' + esc(fullName()) + '"><div class="concern-msg"></div><button class="btn p" type="submit">Submit concern</button></form>';
+  /* ================= Settings ================= */
+  function settingsTabs(){
+    return'<div class="settings-tabs" style="display:flex;border-bottom:1px solid var(--line);background:var(--paper);margin-bottom:14px">'+[
+      ['team','Team'],['coaches','Coaches & permissions'],['notifications','Notifications'],['privacy','Privacy & safeguarding'],['season','Season'],['account','Account']
+    ].map(function(x){return'<button class="'+(S.settingsPane===x[0]?'on':'')+'" data-settings-pane="'+x[0]+'" style="padding:11px 14px;border:0;border-bottom:2px solid '+(S.settingsPane===x[0]?'var(--blue)':'transparent')+';background:transparent;color:'+(S.settingsPane===x[0]?'var(--blue)':'var(--ink3)')+';font-weight:'+(S.settingsPane===x[0]?'700':'500')+'">'+x[1]+'</button>';}).join('')+'</div>';
   }
-  function renderConcern() {
-    setShellActions(null,null,null,null);
-    desk.innerHTML='<div class="g" style="grid-template-columns:minmax(0,680px) 300px;align-items:start"><div class="card"><div class="card-h"><h3>Report a Concern</h3><span class="sp"></span><span class="tag r">Private</span></div><div class="card-b"><p class="mut" style="margin-top:0">Use this form for safeguarding, inappropriate contact, suspected misuse or incorrect access. Reports go to the Stratex trust team.</p>' + concernForm('concernForm') + '</div></div><div class="card"><div class="card-h"><h3>Before you submit</h3></div><div class="card-b"><div class="callout r"><b>Immediate risk</b><br>If a child is at immediate risk, contact emergency services first.</div><div class="help" style="margin-top:12px">Include dates, the relevant player or conversation, and enough context for the trust team to review the report.</div></div></div></div>';
-    field.innerHTML=fieldHeader('Report a Concern','Reviewed by the Stratex trust team')+'<div class="pbody"><div class="callout r" style="margin-bottom:12px"><b>Immediate risk</b><br>If a child is at immediate risk, contact emergency services first.</div><div class="card"><div class="card-b">' + concernForm('fieldConcernForm') + '</div></div></div>';
-    ['concernForm','fieldConcernForm'].forEach(function(id){var f=document.getElementById(id);if(f)f.onsubmit=submitConcern;});
+  function teamSettings(){
+    var c=S.overview.coach||{};
+    return'<div class="g" style="grid-template-columns:minmax(0,1fr) 320px"><div class="card"><div class="card-h"><h3>Team</h3></div><form class="card-b" id="teamSettingsForm"><div class="two"><div class="field"><label>Team name</label><input class="in" name="teamName" value="'+esc(c.team_name||'')+'"></div><div class="field"><label>Age groups</label><input class="in" name="teamAgeGroups" placeholder="U14, U15, U16" value="'+esc((c.team_age_groups||[]).join?c.team_age_groups.join(', '):(c.team_age_groups||''))+'"></div><div class="field"><label>League</label><input class="in" name="teamLeague" value="'+esc(c.team_league||'')+'"></div><div class="field"><label>County FA</label><input class="in" name="teamCounty" value="'+esc(c.team_county||'')+'"></div><div class="field"><label>Home venue</label><input class="in" name="teamHomeVenue" value="'+esc(c.team_home_venue||'')+'"></div><div class="field"><label>Team website <i>Optional</i></label><input class="in" name="teamWebsite" value="'+esc(c.team_website||'')+'"></div></div><div class="field"><label>Team contact email</label><input class="in" type="email" name="teamContactEmail" value="'+esc(c.team_contact_email||c.email||'')+'"></div><div class="foot" style="margin:0 -16px -16px"><div class="sp"></div><button class="btn" type="reset">Discard</button><button class="btn p" type="submit">Save team</button></div></form></div><div class="card"><div class="card-h"><h3>Where this appears</h3></div><div class="card-b mut" style="line-height:1.8">Team name, age group and league appear on player profiles a scout can see. Venue is used on fixtures and scout attendance. Contact details are limited to appropriate verified-scout workflows.</div></div></div>';
   }
-  function submitConcern(e){
-    e.preventDefault();
-    var form=e.currentTarget,fd=new FormData(form),body={sourcePage:'/coach/report-a-concern'};fd.forEach(function(v,k){body[k]=v;});
-    var msg=form.querySelector('.concern-msg'),btn=form.querySelector('button[type="submit"]');
-    if(!body.concernType||!String(body.description||'').trim()||!body.contactEmail){msg.innerHTML=routeMessage('Complete category and description. Your signed-in email is also required.',true);return;}
-    btn.disabled=true;
-    fetch((window.API||'')+'/api/trust/safeguarding-concerns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not submit concern');return d;});}).then(function(d){
-      msg.innerHTML='<div class="callout"><b>Concern submitted.</b>' + ((d.concernId || d.submissionId)?'<br>Reference ' + esc(d.concernId || d.submissionId):'') + '</div>';
-      form.reset(); if(window.CoachV2)window.CoachV2.showToast('Concern submitted.');
-    }).catch(function(err){msg.innerHTML=routeMessage(err.message,true);}).finally(function(){btn.disabled=false;});
+  function coachesSettings(){
+    var counts=assignedCounts();
+    return'<div class="g"><div class="card"><div class="card-h"><h3>Coaches</h3><div class="sp"></div><span class="hint">'+S.coaches.filter(function(c){return c.registration_complete!==false}).length+' active</span></div><table><thead><tr><th>Coach</th><th>Role</th><th class="r">Assigned players</th><th>Status</th><th></th></tr></thead><tbody>'+S.coaches.map(function(c){return'<tr><td><div class="who"><span class="av">'+esc(initials([c.first_name,c.last_name].join(' ')))+'</span><span><b>'+esc([c.first_name,c.last_name].filter(Boolean).join(' '))+'</b><s>'+esc(c.email||'')+'</s></span></div></td><td>'+esc((c.role_at_club||'Coach')+(c.is_super_user?' · Super User':''))+'</td><td class="r">'+(counts[c.id]||0)+'</td><td><span class="tag '+(c.registration_complete===false?'a':'g')+'">'+(c.registration_complete===false?'Invitation pending':'Active')+'</span></td><td><button class="btn sm" data-manage-coach="'+esc(c.id)+'">'+(c.registration_complete===false?'Resend':'Manage')+'</button></td></tr>';}).join('')+'</tbody></table><div class="foot"><button class="btn p" id="inviteCoach">Invite coach</button><span class="mut">Invitations expire after 7 days under the current API.</span></div></div>'+
+      '<div class="g" style="grid-template-columns:1fr 1fr"><div class="card"><div class="card-h"><h3>Permissions</h3></div><table><thead><tr><th>Capability</th><th>Head Coach</th><th>Assistant</th></tr></thead><tbody>'+[
+        ['View all squad players','✓','✓'],['Edit assigned players','✓','✓'],['Edit any player','✓','—'],['Record Match Facts','✓','✓'],['Approve videos','✓','✓'],['Reply to scouts','✓','✓'],['Assign players to coaches','✓','—'],['Invite coaches','✓','—']
+      ].map(function(x){return'<tr><td>'+x[0]+'</td><td>'+x[1]+'</td><td>'+x[2]+'</td></tr>';}).join('')+'</tbody></table></div><div class="card"><div class="card-h"><h3>Reassign players</h3><div class="sp"></div><span class="hint">'+rows(S.overview,['players']).length+' players</span></div><div class="card-b">'+S.coaches.map(function(c){var count=counts[c.id]||0;return'<div class="at"><div class="an">'+esc(c.first_name||'Coach')+'</div><div class="track"><u style="width:'+(rows(S.overview,['players']).length?count/rows(S.overview,['players']).length*100:0)+'%"></u></div><div class="atv">'+count+'</div></div>';}).join('')+'<div class="callout" style="margin-top:12px">Reassign players before deactivating a coach so every player keeps a responsible adult.</div><button class="btn" id="reassignPlayers" style="margin-top:10px">Reassign players</button></div></div></div></div>';
   }
-
-  function initConcern() {
-    api('GET','/api/coaches/profile').then(function (r) {
-      state.concernProfile = r.coach || r.profile || r || {};
-      renderConcern();
-    }).catch(function () {
-      state.concernProfile = {};
-      renderConcern();
-    });
-  }
-
-  /* ================= SETTINGS ================= */
-  function settingRail() {
-    var tabs=[['team','Team'],['coaches','Coaches & permissions'],['notifications','Notifications'],['privacy','Privacy & safeguarding'],['season','Season'],['account','Account'],['appearance','Appearance']];
-    return '<aside class="rail" id="settingsRail"><div class="rail-h">Settings</div>' + tabs.map(function(t){return '<button class="row ' + (state.settingsPane===t[0]?'settings-on':'') + '" type="button" data-settings-pane="' + t[0] + '" style="width:100%;border:0;border-bottom:1px solid var(--line);text-align:left;background:' + (state.settingsPane===t[0]?'var(--blue-t)':'var(--paper)') + '"><span class="sp"><b class="rt">' + esc(t[1]) + '</b></span></button>';}).join('') + '</aside>';
-  }
-  function settingsPanel() {
-    var p=state.settingsProfile||{},coaches=state.settingsCoaches||[];
-    if(state.settingsPane==='coaches') return '<div class="card"><div class="card-h"><h3>Coaches & permissions</h3><span class="sp"></span>' + (p.is_super_user?'<button class="btn p sm" id="inviteCoach">Invite coach</button>':'') + '</div><div class="card-b" style="padding-top:3px;padding-bottom:3px">' + coaches.map(function(c){return '<div class="row">' + avatar(coachName(c)) + '<span class="sp"><b class="rt">' + esc(coachName(c)) + '</b><s class="rs">' + (c.is_super_user?'Owner / super user':'Coach') + (String(c.id)===String(p.id)?' · You':'') + '</s></span><span class="tag ' + (c.is_super_user?'b':'') + '">' + (c.is_super_user?'Super user':'Coach') + '</span></div>';}).join('') + (!p.is_super_user?'<div class="help">Only the team super user can invite or reassign coaches.</div>':'') + '</div></div>';
-    if(state.settingsPane==='notifications') {
-      var prefs=JSON.parse(localStorage.getItem('scoutlink.coach.notificationPrefs')||'{"scout":true,"match":true,"system":true}');
-      return '<div class="card"><div class="card-h"><h3>Notifications</h3></div><div class="card-b">' + [['scout','Scout interest','Reviewed scout interest and messages'],['match','Match Facts reminders','Completed fixtures missing Match Facts'],['system','Account & system','Product and account notices']].map(function(x){return '<div class="row"><span class="sp"><b class="rt">' + x[1] + '</b><s class="rs">' + x[2] + '</s></span><button class="chip ' + (prefs[x[0]]?'on':'') + '" data-pref="' + x[0] + '">' + (prefs[x[0]]?'On':'Off') + '</button></div>';}).join('') + '<div class="help">These presentation preferences are saved on this device; the current API does not expose server-side notification preference persistence.</div></div></div>';
-    }
-    if(state.settingsPane==='privacy') return '<div class="card"><div class="card-h"><h3>Privacy & safeguarding</h3></div><div class="card-b"><div class="row">' + iconBox('✓','g') + '<span class="sp"><b class="rt">Scout conversations are reviewed-access only</b><s class="rs">Use Report a Concern for inappropriate contact or suspected misuse.</s></span><a class="btn dgr sm" href="/coach/report-a-concern">Report concern</a></div><div class="callout"><b>Player data stays attached to the team.</b><br>Do not use Coach settings to bypass safeguarding or data-retention controls.</div></div></div>';
-    if(state.settingsPane==='season') return '<div class="card"><div class="card-h"><h3>Season</h3></div><div class="card-b"><div class="row">' + iconBox('FX','b') + '<span class="sp"><b class="rt">Fixtures and Match Facts</b><s class="rs">Manage the live season from Fixtures and Match Facts.</s></span><a class="btn q sm" href="/coach/fixtures">Open fixtures</a></div><div class="row">' + iconBox('MF','g') + '<span class="sp"><b class="rt">Season evidence</b><s class="rs">Recorded Match Facts form the current evidence trail.</s></span><a class="btn q sm" href="/coach/match-facts">Match Facts</a></div></div></div>';
-    if(state.settingsPane==='account') return '<div class="card"><div class="card-h"><h3>Account</h3></div><div class="card-b"><div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><label class="fl">New password</label><input class="inp" id="newPassword" type="password" placeholder="Minimum 8 characters"></div><div class="fld"><label class="fl">Confirm password</label><input class="inp" id="confirmPassword" type="password"></div></div><button class="btn p" id="changePassword">Update password</button><hr class="sep"><button class="btn dgr" data-coach-signout>Sign out</button></div></div>';
-    if(state.settingsPane==='appearance') return '<div class="card"><div class="card-h"><h3>Appearance</h3></div><div class="card-b"><div class="row"><span class="sp"><b class="rt">Theme</b><s class="rs">Choose the local interface preference.</s></span><div class="chips"><button class="chip on" data-theme="light">Light</button><button class="chip" data-theme="dark">Dark</button></div></div></div></div>';
-    return '<div class="card"><div class="card-h"><h3>Team</h3></div><div class="card-b"><div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><label class="fl">Team name</label><div class="inp">' + esc(p.team_name||team()) + '</div></div><div class="fld"><label class="fl">Role</label><div class="inp">' + esc(p.role_at_club||'Coach') + '</div></div><div class="fld"><label class="fl">Signed in as</label><div class="inp">' + esc(coachName(p)||fullName()) + '</div></div><div class="fld"><label class="fl">Access level</label><div class="inp">' + (p.is_super_user?'Super user':'Coach') + '</div></div></div><div class="help">The current Coach API exposes these team fields read-only. Existing functional coach-invite and assignment controls remain under Coaches & permissions.</div></div></div>';
-  }
-  function renderSettings() {
-    setShellActions(null,null,null,null);
-    desk.innerHTML='<div style="display:flex;gap:14px;align-items:flex-start">' + settingRail() + '<div style="flex:1;min-width:0">' + settingsPanel() + '</div></div>';
-    var p=state.settingsProfile||{},coaches=state.settingsCoaches||[];
-    field.innerHTML=fieldHeader('More',teamLine()+' · '+fullName()) + '<div class="pbody"><div class="card"><a class="row" href="/coach/video-reels" style="text-decoration:none"><span class="sp"><b class="rt">Video Reels</b><s class="rs">Clips and player upload links</s></span><span>›</span></a><a class="row" href="/coach/fixtures" style="text-decoration:none"><span class="sp"><b class="rt">Fixtures</b><s class="rs">Schedule and Match Facts status</s></span><span>›</span></a><a class="row" href="/coach/add-player" style="text-decoration:none"><span class="sp"><b class="rt">Add Player</b><s class="rs">Four-stage player flow</s></span><span>›</span></a></div><div class="pcap">Settings</div><div class="card"><div class="row"><span class="sp"><b class="rt">Team & coaches</b><s class="rs">' + coaches.length + ' active coach' + (coaches.length===1?'':'es') + '</s></span><a class="btn q sm" href="/coach/settings">Open</a></div><div class="row"><span class="sp"><b class="rt">Notifications</b><s class="rs">Scout, Match Facts and system</s></span><a class="btn q sm" href="/coach/settings">Open</a></div><div class="row"><span class="sp"><b class="rt">Account</b><s class="rs">' + esc(p.email||'Signed-in account') + '</s></span><a class="btn q sm" href="/coach/settings">Open</a></div></div><div class="pcap">Trust & safety</div><a class="card" href="/coach/report-a-concern" style="display:block;text-decoration:none"><div class="row"><span class="sp"><b class="rt" style="color:var(--red)">Report a Concern</b><s class="rs">Reviewed by the Stratex trust team</s></span><span>›</span></div></a><button class="btn" style="width:100%;margin-top:14px" data-coach-signout>Sign out</button></div>';
-    bindSettings();
-  }
-  function bindSettings() {
-    document.querySelectorAll('[data-settings-pane]').forEach(function(b){b.onclick=function(){state.settingsPane=b.dataset.settingsPane;renderSettings();};});
-    var invite=document.getElementById('inviteCoach');if(invite&&window.CoachV2)invite.onclick=function(){
-      window.CoachV2.openDrawer({title:'Invite coach',html:'<form id="inviteCoachForm"><div class="g" style="grid-template-columns:1fr 1fr"><div class="fld"><label class="fl">First name</label><input class="inp" name="firstName" required></div><div class="fld"><label class="fl">Last name</label><input class="inp" name="lastName" required></div></div><div class="fld"><label class="fl">Email</label><input class="inp" name="emailAddr" type="email" required></div><div class="fld"><label class="fl">Phone</label><input class="inp" name="phone"></div><label class="chip"><input name="isSuperUser" type="checkbox"> Super user</label><div id="inviteMsg"></div><button class="btn p" type="submit" style="margin-top:10px">Invite coach</button></form>'});
-      setTimeout(function(){var f=document.getElementById('inviteCoachForm');if(f)f.onsubmit=function(e){e.preventDefault();var fd=new FormData(f),body={firstName:fd.get('firstName'),lastName:fd.get('lastName'),emailAddr:fd.get('emailAddr'),phone:fd.get('phone')||null,isSuperUser:fd.get('isSuperUser')==='on'};api('POST','/api/coaches/add-coach',body).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Coach invited.');loadSettings();}).catch(function(err){document.getElementById('inviteMsg').innerHTML=routeMessage(err.message,true);});};},0);
+  function defaultPrefs(){
+    return{
+      scout_interest:{in_app:true,email:true,urgent_only:false},
+      scout_message:{in_app:true,email:true,urgent_only:false},
+      fixture_attendance:{in_app:true,email:true,urgent_only:false},
+      match_facts_reminder:{in_app:true,email:false,urgent_only:false},
+      video_upload:{in_app:true,email:true,urgent_only:false},
+      safeguarding:{in_app:true,email:true,always_on:true},
+      product_updates:{in_app:true,email:false,urgent_only:false},
+      account_system:{in_app:true,email:true,always_on:true}
     };
-    document.querySelectorAll('[data-pref]').forEach(function(b){b.onclick=function(){var prefs=JSON.parse(localStorage.getItem('scoutlink.coach.notificationPrefs')||'{"scout":true,"match":true,"system":true}');prefs[b.dataset.pref]=!prefs[b.dataset.pref];localStorage.setItem('scoutlink.coach.notificationPrefs',JSON.stringify(prefs));renderSettings();};});
-    document.querySelectorAll('[data-theme]').forEach(function(b){b.onclick=function(){if(typeof window.applyTheme==='function')window.applyTheme(b.dataset.theme);try{localStorage.setItem('sl_theme',b.dataset.theme);}catch(_){};document.querySelectorAll('[data-theme]').forEach(function(x){x.classList.toggle('on',x===b);});};});
-    var cp=document.getElementById('changePassword');if(cp)cp.onclick=function(){var np=document.getElementById('newPassword').value,cf=document.getElementById('confirmPassword').value;if(np.length<8)return alert('Password must be at least 8 characters.');if(np!==cf)return alert('Passwords do not match.');api('POST','/api/auth/change-password',{password:np}).then(function(){if(window.CoachV2)window.CoachV2.showToast('Password updated.');document.getElementById('newPassword').value='';document.getElementById('confirmPassword').value='';}).catch(function(e){alert(e.message);});};
   }
-  async function loadSettings(){try{var pr=await api('GET','/api/coaches/profile');state.settingsProfile=pr.coach||pr.profile||pr;var cr=await api('GET','/api/coaches/team-coaches').catch(function(){return{data:[]};});state.settingsCoaches=[state.settingsProfile].concat(list(cr,['coaches','data'])).filter(function(c,i,a){return c&&c.id&&a.findIndex(function(x){return x&&String(x.id)===String(c.id);})===i;});renderSettings();}catch(e){desk.innerHTML=routeMessage(e.message,true);field.innerHTML=routeMessage(e.message,true);}}
-
-  function boot() {
-    if (window.CoachV2 && !window.CoachV2.allowedCoach() && page !== 'report-a-concern') { location.href='/login'; return; }
-    if (page==='dashboard') initDashboard();
-    else if (page==='my-players') initPlayers();
-    else if (page==='fixtures') loadFixtures();
-    else if (page==='video-reels') loadVideos();
-    else if (page==='chat') initChat();
-    else if (page==='notifications') loadNotifications();
-    else if (page==='report-a-concern') initConcern();
-    else if (page==='settings') loadSettings();
+  function notifSettings(){
+    var p=S.prefs||defaultPrefs(),defs=[
+      ['scout_interest','Scout registers interest','In a player assigned to you'],
+      ['scout_message','New message from a scout',''],
+      ['fixture_attendance','Scout confirms fixture attendance',''],
+      ['match_facts_reminder','Match Facts reminder','Sent the evening after an unrecorded fixture'],
+      ['video_upload','Player video upload',''],
+      ['safeguarding','Safeguarding and trust updates','Always on'],
+      ['product_updates','ScoutLink product updates','']
+    ];
+    return'<div class="g" style="grid-template-columns:minmax(0,1fr) 336px"><div class="card"><div class="card-h"><h3>Notification preferences</h3><div class="sp"></div><span class="hint">Per event, per channel</span></div><table><thead><tr><th>Event</th><th class="c">In app</th><th class="c">Email</th><th class="c">Urgent only</th></tr></thead><tbody>'+defs.map(function(x){var v=p[x[0]]||{},locked=x[0]==='safeguarding';return'<tr><td><b>'+esc(x[1])+'</b>'+(x[2]?'<s class="mut" style="display:block;font-size:11px">'+esc(x[2])+'</s>':'')+'</td><td class="c"><input type="checkbox" data-pref-event="'+x[0]+'" data-pref-channel="in_app" '+((locked||v.in_app!==false)?'checked':'')+' '+(locked?'disabled':'')+'></td><td class="c"><input type="checkbox" data-pref-event="'+x[0]+'" data-pref-channel="email" '+((locked||v.email===true)?'checked':'')+' '+(locked?'disabled':'')+'></td><td class="c">'+(locked?'<span class="mut" style="font-size:11px">Always on</span>':'<input type="radio" data-pref-event="'+x[0]+'" data-pref-channel="urgent_only" '+(v.urgent_only?'checked':'')+'>')+'</td></tr>';}).join('')+'</tbody></table><div class="foot"><span class="mut">Saved to your coach profile, not to this browser</span><div class="sp"></div><button class="btn p" id="savePrefs">Save preferences</button></div></div><div class="card"><div class="card-h"><h3>What changes here</h3></div><div class="card-b"><div class="mut" style="line-height:1.8">These choices persist against the coach record so they follow the coach to a new device.</div><hr class="sep"><div class="lbl">Cannot be disabled</div><div class="mut" style="font-size:11.5px;margin-top:6px">Safeguarding and trust notifications, and anything Stratex must tell you about your account.</div></div></div></div>';
   }
+  function privacySettings(){return'<div class="card"><div class="card-h"><h3>Privacy & safeguarding</h3></div><div class="card-b"><div class="callout"><b>Coach boundary:</b> Scout reports, recruitment scores, private notes and decision rationale are never exposed in the Coach product.</div><div class="kv"><span>Player safeguarding information</span><b>Restricted to authorised roles</b></div><div class="kv"><span>Video visibility</span><b>Approved clips only for scouts</b></div><div class="kv"><span>Safeguarding notifications</span><b>Always on</b></div><a class="btn dgr" style="margin-top:12px" href="'+esc(clean('/coach/report-a-concern'))+'">Report a concern</a></div></div>';}
+  function seasonSettings(){return'<div class="card"><div class="card-h"><h3>Season</h3></div><div class="card-b"><div class="kv"><span>Current season</span><b>'+esc((new Date().getFullYear())+'/'+String(new Date().getFullYear()+1).slice(-2))+'</b></div><div class="kv"><span>Player age groups</span><b>Seasonal rollover is handled by ScoutLink</b></div><div class="callout" style="margin-top:12px">Archiving preserves historic records rather than rewriting previous seasons.</div></div></div>';}
+  function accountSettings(){var c=S.overview.coach||{};return'<div class="g" style="grid-template-columns:1fr 1fr"><div class="card"><div class="card-h"><h3>Account</h3></div><div class="card-b"><div class="field"><label>Name</label><div class="in">'+esc([c.first_name,c.last_name].filter(Boolean).join(' '))+'</div></div><div class="field"><label>Email</label><div class="in">'+esc(c.email||'')+'</div></div><button class="btn" data-coach-signout>Sign out</button></div></div><div class="card"><div class="card-h"><h3>Change password</h3></div><div class="card-b"><div class="field"><label>New password</label><input class="in" type="password" id="newPassword"></div><div class="field"><label>Confirm password</label><input class="in" type="password" id="confirmPassword"></div><button class="btn p" id="changePassword">Update password</button></div></div></div>';}
+  function settingsDesk(){
+    var body=S.settingsPane==='team'?teamSettings():S.settingsPane==='coaches'?coachesSettings():S.settingsPane==='notifications'?notifSettings():S.settingsPane==='privacy'?privacySettings():S.settingsPane==='season'?seasonSettings():accountSettings();
+    return settingsTabs()+body;
+  }
+  function settingsPhone(){
+    return fieldHeader('Settings','Team, coaches, notifications & account')+'<div class="stack"><div class="card">'+settingsSectionPhone('Team',teamSettings())+'</div><div class="card">'+settingsSectionPhone('Coaches & permissions',coachesSettings())+'</div><div class="card">'+settingsSectionPhone('Notifications',notifSettings())+'</div><div class="card">'+settingsSectionPhone('Privacy & safeguarding',privacySettings())+'</div><div class="card">'+settingsSectionPhone('Season',seasonSettings())+'</div><div class="card">'+settingsSectionPhone('Account',accountSettings())+'</div></div>';
+  }
+  function settingsSectionPhone(title,html){return'<details '+(title==='Team'?'open':'')+'><summary style="font-weight:700;padding:4px 0">'+esc(title)+'</summary><div class="settings-mobile-inner">'+html+'</div></details>';}
+  function renderSettings(){desk.innerHTML=settingsDesk();field.innerHTML=settingsPhone();bindSettings();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  function inviteCoach(){
+    window.CoachV2.openDrawer({title:'Invite coach',html:'<form id="inviteCoachForm"><div class="two"><div class="field"><label>First name</label><input class="in" name="firstName" required></div><div class="field"><label>Last name</label><input class="in" name="lastName" required></div></div><div class="field"><label>Email</label><input class="in" type="email" name="emailAddr" required></div><div class="field"><label>Phone</label><input class="in" name="phone"></div><label class="chip"><input type="checkbox" name="isSuperUser"> Super user</label><div id="inviteCoachMsg"></div><button class="btn p" type="submit" style="margin-top:12px">Invite coach</button></form>'});
+    setTimeout(function(){var f=document.getElementById('inviteCoachForm');if(f)f.onsubmit=function(e){e.preventDefault();var fd=new FormData(f);api('POST','/api/coaches/add-coach',{firstName:fd.get('firstName'),lastName:fd.get('lastName'),emailAddr:fd.get('emailAddr'),phone:fd.get('phone')||null,isSuperUser:fd.get('isSuperUser')==='on'}).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Coach invited.');loadSettings();}).catch(function(er){document.getElementById('inviteCoachMsg').innerHTML=msg(er.message,true);});};},0);
+  }
+  function reassignSheet(){
+    var players=rows(S.overview||{},['players']);
+    window.CoachV2.openDrawer({title:'Reassign players',html:'<div class="callout">Choose a coach for each player that needs to move. This does not alter player evidence.</div>'+players.map(function(p){return'<div class="row"><span class="sp"><b class="rt">'+esc(name(p))+'</b><s class="rs">'+esc(position(p)+' · currently '+coachName(p.assigned_coach_id))+'</s></span><select class="inp" style="width:180px" data-reassign-player="'+esc(p.id)+'">'+S.coaches.map(function(c){return'<option value="'+esc(c.id)+'"'+(String(c.id)===String(p.assigned_coach_id)?' selected':'')+'>'+esc([c.first_name,c.last_name].filter(Boolean).join(' '))+'</option>';}).join('')+'</select></div>';}).join(''),footer:'<button class="btn p" id="saveReassign">Save reassignments</button>'});setTimeout(function(){document.getElementById('saveReassign').onclick=async function(){var changes=[];document.querySelectorAll('[data-reassign-player]').forEach(function(s){var p=players.find(function(x){return String(x.id)===String(s.dataset.reassignPlayer)});if(p&&String(p.assigned_coach_id)!==String(s.value))changes.push({p:p.id,c:s.value});});try{for(var i=0;i<changes.length;i++)await api('POST','/api/coaches/assign-player/'+encodeURIComponent(changes[i].p),{coachId:changes[i].c});window.CoachV2.closeAll();window.CoachV2.showToast('Players reassigned.');loadSettings();}catch(e){alert(e.message);}};},0);
+  }
+  function bindSettings(){
+    document.querySelectorAll('[data-settings-pane]').forEach(function(b){b.onclick=function(){S.settingsPane=b.dataset.settingsPane;renderSettings();};});
+    document.querySelectorAll('#inviteCoach').forEach(function(b){b.onclick=inviteCoach;});
+    document.querySelectorAll('#reassignPlayers').forEach(function(b){b.onclick=reassignSheet;});
+    document.querySelectorAll('[data-pref-event]').forEach(function(x){x.onchange=function(){var p=S.prefs||(S.prefs=defaultPrefs()),ev=x.dataset.prefEvent,ch=x.dataset.prefChannel;if(!p[ev])p[ev]={};p[ev][ch]=x.checked;};});
+    document.querySelectorAll('#savePrefs').forEach(function(b){b.onclick=function(){api('PUT','/api/coach-experience/notification-preferences',{preferences:S.prefs}).then(function(r){S.prefs=(r.data||r).preferences||S.prefs;window.CoachV2.showToast('Preferences saved.');}).catch(function(e){alert(e.message);});};});
+    document.querySelectorAll('#teamSettingsForm').forEach(function(f){f.onsubmit=function(e){e.preventDefault();var fd=new FormData(f),body={};fd.forEach(function(v,k){body[k]=v});body.teamAgeGroups=String(body.teamAgeGroups||'').split(',').map(function(x){return x.trim()}).filter(Boolean);api('PUT','/api/coach-experience/team-settings',body).then(function(r){S.overview.coach=(r.data||r).coach||S.overview.coach;window.CoachV2.showToast('Team settings saved.');renderSettings();}).catch(function(er){alert(er.message);});};});
+    document.querySelectorAll('#changePassword').forEach(function(b){b.onclick=function(){var np=document.querySelector('#newPassword').value,cp=document.querySelector('#confirmPassword').value;if(np.length<8)return alert('Password must be at least 8 characters.');if(np!==cp)return alert('Passwords do not match.');api('POST','/api/auth/change-password',{password:np}).then(function(){window.CoachV2.showToast('Password updated.');}).catch(function(e){alert(e.message);});};});
+  }
+  async function loadSettings(){await loadOverview(true);try{var pr=await api('GET','/api/coach-experience/notification-preferences');S.prefs=(pr.data||pr).preferences||defaultPrefs();}catch(_){S.prefs=defaultPrefs();}renderSettings();}
+  async function initSettings(){try{await loadSettings();}catch(e){desk.innerHTML=msg(e.message,true);field.innerHTML=desk.innerHTML;}}
 
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true});
-  else boot();
+  /* ================= Report concern ================= */
+  function concernForm(id){
+    var c=S.overview&&S.overview.coach||{},email=c.email||(window.Auth&&window.Auth.user&&window.Auth.user.email)||'';
+    return'<form id="'+id+'"><div class="field"><label>Category · required</label><select class="in" name="concernType" required><option value="">Select category</option><option>Inappropriate contact</option><option>Suspected misuse</option><option>Incorrect access</option><option>Safeguarding issue</option><option>Another platform-safety concern</option></select></div><div class="field"><label>Who or what does this concern? <i>Optional</i></label><input class="in" name="personOrAccount"></div><div class="field"><label>What happened · required</label><textarea class="in ta" name="description" required placeholder="Describe what you saw, when, and anyone involved."></textarea></div><div class="field"><label>Urgency</label><select class="in" name="urgency"><option>Standard review</option><option>Urgent review</option></select></div><input type="hidden" name="contactEmail" value="'+esc(email)+'"><input type="hidden" name="contactName" value="'+esc(window.CoachV2?window.CoachV2.fullName():'Coach')+'"><div class="concern-msg"></div><div class="flex" style="justify-content:flex-end"><a class="btn" href="'+esc(clean('/coach/dashboard'))+'">Cancel</a><button class="btn p" type="submit">Submit concern</button></div></form>';
+  }
+  function concernDesk(){
+    if(S.concernRef)return'<div class="card"><div class="card-b" style="padding:40px;text-align:center"><div class="icn g" style="width:42px;height:42px;margin:0 auto 14px">✓</div><h2>Concern submitted</h2><p class="mut">Your report has been sent privately to the Stratex trust team.</p><div class="lbl">Reference</div><div class="num" style="font-size:24px;font-weight:700;margin:6px">'+esc(S.concernRef)+'</div><a class="btn p" href="'+esc(clean('/coach/dashboard'))+'">Back to dashboard</a></div></div>';
+    return'<div class="g" style="grid-template-columns:minmax(0,1fr) 330px"><div class="card"><div class="card-h"><h3>Report a concern</h3></div><div class="card-b">'+concernForm('concernDeskForm')+'</div></div><div class="g"><div class="card"><div class="card-h"><h3>If a child is at immediate risk</h3></div><div class="card-b"><div class="callout r"><b>Use emergency services or your club safeguarding procedure first.</b> ScoutLink reporting is not an emergency response service.</div></div></div><div class="card"><div class="card-h"><h3>What happens next</h3></div><div class="card-b mut" style="line-height:1.8">The Stratex trust team receives the report privately, reviews account and platform evidence available to them, and follows the appropriate safeguarding or platform-safety process. Your report is not shown to the person you report.</div></div><div class="card"><div class="card-h"><h3>Your reports</h3></div><div class="card-b mut">Submitted references appear here when available. Keep your reference if you need to follow up.</div></div></div></div>';
+  }
+  function concernPhone(){
+    if(S.concernRef)return fieldHeader('Report a Concern','Submitted')+'<div class="card"><div class="card-b" style="text-align:center"><h2>Concern submitted</h2><p class="mut">Reference</p><div class="num" style="font-size:24px;font-weight:700">'+esc(S.concernRef)+'</div><a class="bt spend blk" href="'+esc(clean('/coach/dashboard'))+'" style="margin-top:12px">Back to Today</a></div></div>';
+    return fieldHeader('Report a Concern','Private safeguarding & platform-safety report')+'<div class="card" style="margin-bottom:10px"><div class="callout r"><b>If a child is at immediate risk,</b> use emergency services or your club safeguarding process first.</div></div><div class="card">'+concernForm('concernPhoneForm')+'</div><div class="pcap">What happens next</div><div class="card"><div class="card-b mut">Your report is reviewed privately by the Stratex trust team and is not shown to the person reported.</div></div>';
+  }
+  function submitConcern(form){
+    var fd=new FormData(form),body={sourcePage:'/coach/report-a-concern'};fd.forEach(function(v,k){body[k]=v});var m=form.querySelector('.concern-msg'),btn=form.querySelector('button[type=submit]');if(!body.concernType||!String(body.description||'').trim()){m.innerHTML=msg('Complete category and description.',true);return;}btn.disabled=true;fetch((window.API||'')+'/api/trust/safeguarding-concerns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Could not submit concern');return d})}).then(function(d){S.concernRef=d.concernId||d.submissionId||'Submitted';renderConcern();}).catch(function(e){m.innerHTML=msg(e.message,true);}).finally(function(){btn.disabled=false;});
+  }
+  function bindConcern(){document.querySelectorAll('#concernDeskForm,#concernPhoneForm').forEach(function(f){f.onsubmit=function(e){e.preventDefault();submitConcern(f);};});}
+  function renderConcern(){desk.innerHTML=concernDesk();field.innerHTML=concernPhone();bindConcern();document.dispatchEvent(new CustomEvent('coach:rendered'));}
+  async function initConcern(){try{await loadOverview();renderConcern();}catch(e){S.overview={coach:{}};renderConcern();}}
+
+  function boot(){
+    if(page==='dashboard')initDashboard();
+    else if(page==='my-players')initPlayers();
+    else if(page==='fixtures')initFixtures();
+    else if(page==='video-reels')initVideos();
+    else if(page==='chat')initChat();
+    else if(page==='notifications')initNotifications();
+    else if(page==='settings')initSettings();
+    else if(page==='report-a-concern')initConcern();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 }());
