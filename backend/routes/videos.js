@@ -12,6 +12,7 @@ const config = require('../config');
 const MAX_VIDEO_UPLOAD_BYTES = 4 * 1024 * 1024;
 const VIDEO_TOO_LARGE_MESSAGE = 'This video is too large to upload. Please choose a smaller file.';
 const MODERATION = new Set(['pending','approved','rejected']);
+const PUBLIC_SCOUTLINK_ORIGIN = 'https://scoutlink.app';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -51,6 +52,45 @@ async function getCoachTeam(userId) {
 
 function storageRef(filePath) {
   return filePath ? 'storage://player-videos/' + filePath : null;
+}
+
+function externalVideoMeta(rawUrl) {
+  const text = String(rawUrl || '').trim();
+  if (!text || text.length > 2048) {
+    const error = new Error('Enter a valid video share URL.');
+    error.status = 400;
+    throw error;
+  }
+  let parsed;
+  try { parsed = new URL(text); } catch (_) {
+    const error = new Error('Enter a valid video share URL.');
+    error.status = 400;
+    throw error;
+  }
+  if (parsed.protocol !== 'https:') {
+    const error = new Error('Video share links must use https://');
+    error.status = 400;
+    throw error;
+  }
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  let provider = 'External video';
+  if (host === 'youtu.be' || host.endsWith('youtube.com')) provider = 'YouTube';
+  else if (host.endsWith('drive.google.com') || host.endsWith('docs.google.com')) provider = 'Google Drive';
+  else if (host.endsWith('dropbox.com') || host.endsWith('dropboxusercontent.com')) provider = 'Dropbox';
+  else if (host.endsWith('veo.co') || host.endsWith('veo.live')) provider = 'Veo';
+  else if (host.endsWith('wyscout.com')) provider = 'Wyscout';
+  else if (host.endsWith('tonsser.com')) provider = 'Tonsser';
+  else if (host.endsWith('vimeo.com')) provider = 'Vimeo';
+  return { url: parsed.toString(), provider };
+}
+
+async function markUploadLinkUsed(link) {
+  if (!link?.id) return;
+  const { error } = await supabase
+    .from('player_video_upload_links')
+    .update({ used_at: new Date().toISOString() })
+    .eq('id', link.id);
+  if (error) console.warn('[Videos] upload-link usage update skipped:', error.message);
 }
 
 function tokenHash(token) {
@@ -254,14 +294,14 @@ router.post('/upload-link', requireAuth, requireRole('Coach','Stratex','Stratex 
       linkMode = 'signed-token';
     }
 
-    const base = (config.brandUrl || 'https://www.scoutlink.app').replace(/\/$/, '');
     const cleanPath = '/video-upload?token=' + encodeURIComponent(uploadToken);
 
     res.status(201).json({
       uploadLinkId,
-      uploadUrl: base + cleanPath,
-      cleanUploadUrl: base + cleanPath,
-      staticUploadUrl: base + cleanPath,
+      uploadPath: cleanPath,
+      uploadUrl: PUBLIC_SCOUTLINK_ORIGIN + cleanPath,
+      cleanUploadUrl: PUBLIC_SCOUTLINK_ORIGIN + cleanPath,
+      staticUploadUrl: PUBLIC_SCOUTLINK_ORIGIN + cleanPath,
       expiresAt: responseExpiresAt,
       mode: linkMode,
       player: { id: player.id, firstName: player.first_name, lastName: player.last_name, teamName: player.team_name }
@@ -336,13 +376,7 @@ router.post('/public-upload', uploadSingleVideo, async (req, res) => {
       .single();
     if (error) throw error;
 
-    if (link.id) {
-      const { error: linkUseErr } = await supabase
-        .from('player_video_upload_links')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', link.id);
-      if (linkUseErr) console.warn('[Videos public-upload] link usage update skipped:', linkUseErr.message);
-    }
+    await markUploadLinkUsed(link);
 
     const [video] = await attachSignedVideoUrls([data]);
     res.status(201).json({
@@ -353,6 +387,96 @@ router.post('/public-upload', uploadSingleVideo, async (req, res) => {
     console.error('[Videos public-upload]', { code: err.code, message: err.message });
     res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 500)
       .json({ error: err.code === 'LIMIT_FILE_SIZE' ? VIDEO_TOO_LARGE_MESSAGE : (err.message || 'Video upload failed') });
+  }
+});
+
+// Add an external video link from an authenticated Coach/Stratex workspace.
+// ScoutLink stores the share URL; it never attempts to bypass the provider's own access controls.
+router.post('/link', requireAuth, requireRole('Coach','Stratex','Stratex Admin'), async (req, res) => {
+  try {
+    const { playerId, title, category, description, fixtureId, url, videoUrl } = req.body || {};
+    if (!playerId) return res.status(400).json({ error: 'playerId required' });
+    if (!title) return res.status(400).json({ error: 'title required' });
+    const external = externalVideoMeta(url || videoUrl);
+    const { player, coach } = await assertCanManagePlayerVideo(req, playerId);
+    const uploadedByType = isStratexAccount(req.user) ? 'Stratex' : 'Coach';
+
+    const { data, error } = await supabase
+      .from('player_videos')
+      .insert({
+        player_id: player.id,
+        coach_id: uploadedByType === 'Coach' ? req.user.id : null,
+        team_id: player.team_id || coach?.team_id || null,
+        title: String(title).trim(),
+        url: external.url,
+        video_url: external.url,
+        file_path: null,
+        category: category || 'Highlight',
+        description: description || null,
+        video_type: external.provider,
+        uploaded_by: req.user.id,
+        uploaded_by_type: uploadedByType,
+        fixture_id: fixtureId || null,
+        moderation_status: 'pending'
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    res.status(201).json({
+      message: external.provider + ' link added for coach review.',
+      provider: external.provider,
+      video: data
+    });
+  } catch (err) {
+    console.error('[Videos external link]', { code: err.code, message: err.message });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not add video link' });
+  }
+});
+
+// Add an external share URL through a token-protected parent/player upload link.
+router.post('/public-link', async (req, res) => {
+  try {
+    const { token, title, category, description, fixtureId, url } = req.body || {};
+    if (!token) return res.status(400).json({ error: 'upload token required' });
+    if (!title) return res.status(400).json({ error: 'title required' });
+    const external = externalVideoMeta(url);
+    const link = await getActiveUploadLink(token);
+    if (!link) return res.status(404).json({ error: 'This upload link is invalid or has expired.' });
+
+    const uploaderId = link.coach_id || link.created_by || null;
+    const uploaderType = link.coach_id ? 'Coach' : (link.created_by_type || 'Stratex');
+    const { data, error } = await supabase
+      .from('player_videos')
+      .insert({
+        player_id: link.player_id,
+        coach_id: link.coach_id || null,
+        team_id: link.team_id || null,
+        title: String(title).trim(),
+        url: external.url,
+        video_url: external.url,
+        file_path: null,
+        category: category || 'Highlight',
+        description: description || null,
+        video_type: external.provider,
+        uploaded_by: uploaderId,
+        uploaded_by_type: uploaderType,
+        fixture_id: fixtureId || null,
+        moderation_status: 'pending'
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    await markUploadLinkUsed(link);
+
+    res.status(201).json({
+      message: external.provider + ' link submitted for coach review. It is not visible to scouts yet.',
+      provider: external.provider,
+      video: data
+    });
+  } catch (err) {
+    console.error('[Videos public external link]', { code: err.code, message: err.message });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not add video link' });
   }
 });
 
