@@ -136,6 +136,39 @@
   function approvedVideos(){return videos().filter(function(v){return status(v.moderation_status||v.status)==='approved'||(!v.moderation_status&&!v.status);});}
   function pendingVideos(){return videos().filter(function(v){return status(v.moderation_status||v.status)==='pending';});}
   function externalVideo(v){var u=String(v&&((v.signed_url||v.video_url||v.url))||'');return /^https?:\/\//i.test(u)&&!v.file_path;}
+  function videoUrl(v){return String(v&&((v.signed_url||v.video_url||v.url))||'').trim();}
+  function videoProvider(url){
+    var u=String(url||'').toLowerCase();
+    if(/youtu\.be|youtube\.com/.test(u))return'YouTube';
+    if(/vimeo\.com/.test(u))return'Vimeo';
+    if(/drive\.google\.com/.test(u))return'Google Drive';
+    if(/dropbox\.com/.test(u))return'Dropbox';
+    if(/veo\.co/.test(u))return'Veo';
+    if(/wyscout\.com/.test(u))return'Wyscout';
+    if(/tonsser\.com/.test(u))return'Tonsser';
+    return'Video provider';
+  }
+  function videoEmbedUrl(url){
+    var u=String(url||'').trim(),m;
+    m=u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i);
+    if(m)return'https://www.youtube-nocookie.com/embed/'+encodeURIComponent(m[1]);
+    m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if(m)return'https://player.vimeo.com/video/'+encodeURIComponent(m[1]);
+    m=u.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+    if(m)return'https://drive.google.com/file/d/'+encodeURIComponent(m[1])+'/preview';
+    return'';
+  }
+  function videoPreviewHtml(v){
+    var url=videoUrl(v),embed=videoEmbedUrl(url),provider=videoProvider(url);
+    if(!url)return'<div class="video-preview-empty">Video preview unavailable.</div>';
+    if(!externalVideo(v)||/\.(mp4|webm|ogg|mov)(?:$|[?#])/i.test(url)){
+      return'<div class="video-preview-shell"><video controls playsinline preload="metadata" src="'+esc(url)+'"></video></div>';
+    }
+    if(embed){
+      return'<div class="video-preview-shell"><iframe src="'+esc(embed)+'" title="'+esc(v.title||'Video preview')+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="video-preview-foot"><span>'+esc(provider)+' preview</span><a class="btn sm" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Open provider</a></div>';
+    }
+    return'<div class="video-preview-empty"><b>'+esc(provider)+' does not provide a reliable public embed for this link.</b><span>Open the original provider to watch it with the permissions attached to that service.</span><a class="btn p" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Open '+esc(provider)+'</a></div>';
+  }
   function resolvedUploadUrl(d){d=d||{};if(d.uploadPath)return location.origin.replace(/\/$/,'')+d.uploadPath;return d.uploadUrl||d.cleanUploadUrl||d.url||'';}
 
   function shell(){
@@ -192,8 +225,8 @@
     var list=videos();
     if(!list.length)return'<div class="card-b mut">No video reels yet.</div>';
     return list.slice(0,5).map(function(v){
-      var st=status(v.moderation_status||v.status||'approved');
-      return'<div class="row"><span class="icn '+(st==='approved'?'g':st==='pending'?'a':'r')+'">▶</span><span class="sp"><b class="rt">'+esc(v.title||'Video reel')+'</b><s class="rs">'+esc((v.category||v.video_type||'Highlight')+' · '+formatDate(v.created_at))+'</s></span><span class="tag '+(st==='approved'?'g':st==='pending'?'a':'r')+'">'+esc(st.charAt(0).toUpperCase()+st.slice(1))+'</span>'+(st==='pending'?'<button class="btn sm" data-review-video="'+esc(v.id||'')+'">Review</button>':'')+'</div>';
+      var st=status(v.moderation_status||v.status||'approved'),url=videoUrl(v);
+      return'<div class="row"><span class="icn '+(st==='approved'?'g':st==='pending'?'a':'r')+'">▶</span><span class="sp"><b class="rt">'+esc(v.title||'Video reel')+'</b><s class="rs">'+esc((v.category||v.video_type||'Highlight')+' · '+formatDate(v.created_at))+'</s></span><span class="tag '+(st==='approved'?'g':st==='pending'?'a':'r')+'">'+esc(st.charAt(0).toUpperCase()+st.slice(1))+'</span>'+(url?'<button class="btn sm" data-review-video="'+esc(v.id||'')+'">'+(st==='pending'?'Review':'Preview')+'</button>':'')+'</div>';
     }).join('');
   }
   function scoutRows(){
@@ -267,7 +300,7 @@
     if(window.CoachV2&&window.CoachV2.setFieldHeader)window.CoachV2.setFieldHeader(name(p),pos(p)+' · '+age(p),'<button class="ic" type="button" aria-label="Player actions">⋯</button>','back');
     return '<div class="card coach-profile-phone-hero"><div class="flex" style="gap:9px"><span class="avm" style="width:40px;height:40px;font-size:12px">'+esc(initials(name(p)))+'</span><span class="who" style="flex:1"><b style="font-size:15px">'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+age(p)+' · '+(p.foot||'—')+' footed · '+team(p))+'</span></span></div>'+
       '<div class="flex" style="gap:6px;margin-top:10px">'+tags(p)+'</div>'+
-      '<div class="coach-profile-phone-metrics"><div><div class="lbl">Overall</div><div class="value">'+esc(overall(p))+'</div></div><div><div class="lbl">Value</div><div class="value">'+esc(fmtMoney(p.transfer_value))+'</div></div><div><div class="lbl">Ready</div><div class="value">'+readiness(p)+'%</div></div></div></div>'+
+      '<div class="coach-profile-phone-metrics"><div><div class="lbl">Overall</div><div class="value">'+esc(overall(p))+'</div></div><div><div class="lbl">Value</div><div class="value">'+esc(fmtMoney(p.transfer_value)==='Not estimated'?'—':fmtMoney(p.transfer_value))+'</div>'+(fmtMoney(p.transfer_value)==='Not estimated'?'<div class="metric-note">Not estimated</div>':'')+'</div><div><div class="lbl">Ready</div><div class="value">'+readiness(p)+'%</div></div></div></div>'+
       '<div class="pseg" style="margin-top:10px">'+[['overview','Overview'],['attributes','Attributes'],['facts','Facts'],['video','Video']].map(function(x){return'<u data-profile-tab="'+x[0]+'" class="'+(S.tab===x[0]?'on':'')+'">'+x[1]+'</u>';}).join('')+'</div>';
   }
   function phone(p){
@@ -345,8 +378,13 @@
   }
   function reviewVideo(id){
     var v=videos().find(function(x){return String(x.id)===String(id);});if(!v)return;
-    var url=v.signed_url||v.video_url||v.url||'',isExternal=externalVideo(v);
-    window.CoachV2.openSheet({title:'Review video',html:'<div class="card"><div class="card-b"><b>'+esc(v.title||'Video')+'</b><div class="mut">'+esc(v.category||v.video_type||'Highlight')+'</div>'+(url?(isExternal?'<a class="btn p" style="margin-top:12px" target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">Open external video</a>':'<video controls style="width:100%;margin-top:10px" src="'+esc(url)+'"></video>'):'<div class="mut" style="margin-top:10px">Video preview unavailable.</div>')+'</div></div>',footer:'<button class="btn dgr" data-video-decision="rejected">Reject</button><button class="btn p" data-video-decision="approved">Approve</button>'});
+    var st=status(v.moderation_status||v.status||'approved'),url=videoUrl(v);
+    window.CoachV2.openSheet({
+      title:st==='pending'?'Review video':'Video preview',
+      html:'<div class="video-review-meta"><b>'+esc(v.title||'Video')+'</b><span class="mut">'+esc((v.category||v.video_type||'Highlight')+' · '+videoProvider(url))+'</span></div>'+videoPreviewHtml(v),
+      footer:st==='pending'?'<button class="btn dgr" data-video-decision="rejected">Reject</button><button class="btn p" data-video-decision="approved">Approve</button>':'<button class="btn" data-close-coach-overlay>Close</button>'
+    });
+    if(st!=='pending')return;
     setTimeout(function(){document.querySelectorAll('[data-video-decision]').forEach(function(b){b.onclick=function(){api('PATCH','/api/videos/'+encodeURIComponent(id)+'/moderation',{status:b.dataset.videoDecision}).then(function(){window.CoachV2.closeAll();window.CoachV2.showToast('Video '+b.dataset.videoDecision+'.');v.moderation_status=b.dataset.videoDecision;render();}).catch(function(e){window.CoachV2.showToast(e.message,true);});};});},0);
   }
 
