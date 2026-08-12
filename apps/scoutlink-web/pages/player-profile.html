@@ -18,9 +18,12 @@
   <link rel="stylesheet" href="/css/scout-intelligence-v4.css">
   <link rel="stylesheet" href="/css/scout-experience-v8.css?v=20260731-4">
   <link rel="stylesheet" href="/css/scout-hydration-gate-v1.css?v=20260804-3">
-  <link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=14.1.0">
+  <link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=20260812-qa2">
   <style>
     html,body{min-height:100%;margin:0}
+    #profileRouteRoot.profile-route-loading{visibility:hidden}
+    body.coach-player-profile-v8 #profileRouteRoot{visibility:hidden}
+    body.coach-player-profile-v8.coach-profile-ready #profileRouteRoot{visibility:visible}
     .profile-simple-modal{position:fixed;z-index:13000;inset:0;display:none;place-items:center;padding:20px;background:rgba(7,17,31,.68)}
     .profile-simple-modal.open{display:grid}
     .profile-simple-modal-box{width:min(700px,100%);max-height:calc(100vh - 40px);overflow:auto;border:1px solid #dbe4e9;background:#fff;box-shadow:0 24px 70px rgba(7,17,31,.28)}
@@ -43,9 +46,9 @@
   <script id="dataMediaGuardV1Script" src="/js/data-media-guard-v1.js?v=20260804-2"></script>
   <script src="/js/player-initials-v1.js?v=20260731-5"></script>
   <script src="/js/scout-nav.js?v=20260730-2"></script>
-  <script src="/js/coach-v2.js?v=14.1.0"></script>
+  <script src="/js/coach-v2.js?v=20260812-qa2"></script>
   <script src="/js/player-profile-router-v2.js?v=20260808-5"></script>
-  <script src="/js/coach-player-profile-v4.js?v=14.1.0"></script>
+  <script src="/js/coach-player-profile-v4.js?v=20260812-qa2"></script>
   <script src="/js/scout-v1.js"></script>
   <script src="/js/scout-experience-exact-v3.js"></script>
   <script id="scoutProfileRuntimeV1Script" src="/js/scout-profile-runtime-v1.js?v=20260804-3"></script>
