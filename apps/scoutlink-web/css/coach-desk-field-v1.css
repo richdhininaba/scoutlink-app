@@ -20,7 +20,7 @@
   --amber:#B07316; --amber-t:#FBF2E2;
   --red:#B0362C; --red-t:#F9EAE8;
   --slate:#33414B; --grey:#C4CCD1;
-  --lockup:url('/scoutlink_logo.png');
+  --lockup:url('/scoutlink_logo.png?v=20260812-1');
   --mark:url('/scoutlink-favicon.png');
 
   /* Backwards-compatible aliases used by the existing functional Coach scripts. */
