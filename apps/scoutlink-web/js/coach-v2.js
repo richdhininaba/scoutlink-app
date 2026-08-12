@@ -49,7 +49,7 @@
   var videoPending=0;
   var unreadChat=0;
   var searchCache=null,searchLoading=null;
-  var titleOverride='',subtitleOverride='',fieldTitleOverride='',fieldSubtitleOverride='',fieldRightOverride='',fieldLeftOverride='';
+  var titleOverride='',subtitleOverride='',fieldTitleOverride=null,fieldSubtitleOverride=null,fieldRightOverride=null,fieldLeftOverride=null;
 
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function clean(href){return typeof window.cleanRouteFor==='function'?window.cleanRouteFor(href):href;}
@@ -217,9 +217,10 @@
         ptop=document.createElement('header');ptop.className='ptop';ptop.id='coachFieldTop';
         scr.insertBefore(ptop,body);
       }
-      var fieldTitle=fieldTitleOverride||pageTitle(),fieldSub=fieldSubtitleOverride||pageSubtitle();
-      var fieldRight=fieldRightOverride||('<button class="ic" type="button" data-coach-notifications aria-label="Notifications">☼'+(unread?'<u>'+unread+'</u>':'')+'</button><button class="av" type="button" data-coach-account aria-label="Coach account">'+esc(initials())+'</button>');
-      var fieldLeft=fieldLeftOverride==='back'?'<button class="bk" type="button" data-field-back aria-label="Back">‹</button>':(fieldLeftOverride||'<div class="mk"></div>');
+      var fieldTitle=fieldTitleOverride!==null?fieldTitleOverride:pageTitle(),fieldSub=fieldSubtitleOverride!==null?fieldSubtitleOverride:pageSubtitle();
+      var defaultFieldRight='<button class="ic" type="button" data-coach-notifications aria-label="Notifications">☼'+(unread?'<u>'+unread+'</u>':'')+'</button><button class="av" type="button" data-coach-account aria-label="Coach account">'+esc(initials())+'</button>';
+      var fieldRight=fieldRightOverride!==null?fieldRightOverride:defaultFieldRight;
+      var fieldLeft=fieldLeftOverride==='back'?'<button class="bk" type="button" data-field-back aria-label="Back">‹</button>':(fieldLeftOverride?fieldLeftOverride:'<div class="mk"></div>');
       var fieldMarkup=fieldLeft+'<div><h1>'+esc(fieldTitle)+'</h1>'+(fieldSub?'<div class="mut" style="font-size:10.5px">'+esc(fieldSub)+'</div>':'')+'</div><div class="sp"></div>'+fieldRight;
       if(ptop.dataset.coachMarkup!==fieldMarkup){ptop.innerHTML=fieldMarkup;ptop.dataset.coachMarkup=fieldMarkup;}
       var tabs=scr.querySelector('.tabs,.ptabs');
@@ -234,7 +235,7 @@
     refreshChrome();hydrateField();
   }
   function setSubtitle(v){subtitleOverride=v||'';refreshChrome();hydrateField();}
-  function setFieldHeader(title,subtitle,rightHtml,leftHtml){fieldTitleOverride=title||'';fieldSubtitleOverride=subtitle||'';fieldRightOverride=rightHtml||'';fieldLeftOverride=leftHtml||'';hydrateField();}
+  function setFieldHeader(title,subtitle,rightHtml,leftHtml){fieldTitleOverride=arguments.length>0?String(title||''):null;fieldSubtitleOverride=arguments.length>1?String(subtitle||''):null;fieldRightOverride=arguments.length>2?String(rightHtml||''):null;fieldLeftOverride=arguments.length>3?String(leftHtml||''):null;hydrateField();}
   function setTopChip(){/* source design has no global chip; kept for compatibility */}
   function closeAll(){document.querySelectorAll('[data-coach-overlay]').forEach(function(n){n.remove();});}
   function openOverlay(kind,opt){
