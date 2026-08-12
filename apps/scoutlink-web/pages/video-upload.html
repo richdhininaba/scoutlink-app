@@ -1,54 +1,41 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<title>Secure player video upload | ScoutLink</title>
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
-<title>Secure Player Video Upload | ScoutLink</title>
-<meta name="description" content="Use a token-protected ScoutLink link to attach approved video to a coach-managed player profile.">
-<link rel="canonical" href="https://www.scoutlink.app/video-upload">
-<meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0F1712;--ink2:#4A554E;--ink3:#7E8983;--ink4:#A7B0AA;--line:#E3E7E4;--line2:#CDD4CF;--paper:#fff;--canvas:#F6F8F7;--canvas2:#EFF2F0;--blue:#1B5AC4;--blue-d:#154AA3;--blue-t:#EAF0FB;--green:#3F8F33;--green-t:#E9F3E6;--red:#B0362C;--red-t:#F9EAE8;--ui:'Inter',sans-serif;--lockup:url('/scoutlink_logo.png?v=20260812-1');--mark:url('/scoutlink-favicon.png')}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--canvas);color:var(--ink);font-family:var(--ui);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}button,input,textarea{font:inherit;color:inherit}.top{height:62px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px}.logo{width:150px;height:34px;background:var(--lockup) no-repeat left center/contain}.sp{flex:1}.tag{display:inline-flex;align-items:center;gap:5px;min-height:19px;padding:2px 7px;border-radius:2px;background:var(--green-t);color:var(--green);font-size:10.5px;font-weight:600}.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}.main{max-width:720px;margin:0 auto;padding:44px 0 60px}.card{background:var(--paper);border:1px solid var(--line)}.card-b{padding:26px}.hero-title{margin:0 0 6px;font-size:22px;letter-spacing:-.02em}.mut{color:var(--ink3)}.sub{font-size:12.5px;margin-bottom:20px}.fld{margin-bottom:14px}.fl{display:block;margin-bottom:6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700}.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{min-height:28px;padding:4px 11px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);color:var(--ink2);font-size:11.5px;cursor:pointer}.chip.on{border-color:var(--blue);background:var(--blue-t);color:var(--blue-d);font-weight:600}.drop{border:1.5px dashed var(--line2);padding:38px;text-align:center;background:var(--canvas)}.drop b{display:block;font-size:14px}.drop .mut{font-size:12px;margin:6px 0 14px}.btn{min-height:29px;padding:5px 12px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}.help{font-size:11.5px;line-height:1.8;color:var(--ink3);margin-top:14px}.bottom{font-size:11.5px;text-align:center;color:var(--ink3);margin-top:18px}.message{display:none;margin-bottom:12px;padding:11px 14px;border:1px solid var(--line);background:var(--paper)}.message.show{display:block}.message.err{border-color:#E4C5C1;border-left:3px solid var(--red);background:var(--red-t);color:var(--red)}.message.ok{border-left:3px solid var(--green);background:var(--green-t);color:var(--green)}textarea{width:100%;min-height:70px;border:1px solid var(--line2);border-radius:3px;padding:8px 10px;background:var(--paper)}#videoFile{position:absolute;left:-9999px}
+@media(max-width:760px){.top{height:50px;padding:0 14px}.logo{width:26px;height:26px;background-image:var(--mark);background-position:center}.main{max-width:none;padding:14px}.card-b{padding:16px}.hero-title{font-size:17px}.sub{font-size:11.5px}.drop{padding:28px}.drop b{font-size:13px}.drop .mut{font-size:11px}.bottom{font-size:10.5px;padding:0 10px}.chips{gap:5px}}
+</style>
 </head>
 <body>
-<a class="slv5-skip" href="#videoUploadRoot">Skip to video upload</a>
-<div class="site door video-door">
-  <header class="door-top">
-    <span class="sl-mark">ScoutLink<small>by Stratex Analytics</small></span>
-    <span class="chip">Secure video link</span>
-  </header>
-  <main class="door-mid">
-    <section class="door-panel wide" id="videoUploadRoot" aria-live="polite">
-      <div class="sl-message err" id="videoLoadError" role="alert"></div>
-      <div class="sl-message ok" id="videoMessage" role="status"></div>
-      <span class="sl-eb">Token-protected upload</span>
-      <h1 class="door-h">Add player video.</h1>
-      <p class="door-sub">This file attaches directly to the coach-managed player profile connected to this secure link.</p>
-      <div class="video-player">
-        <small>Video for</small>
-        <b id="videoPlayerName">Checking secure link…</b>
-        <span id="videoPlayerTeam">Coach-managed ScoutLink profile</span>
-      </div>
-      <form id="videoUploadForm" hidden novalidate>
-        <div class="sl-field"><label class="sl-lab" for="videoTitle">Video title <em>Required</em></label><input class="sl-in" id="videoTitle" required placeholder="Match highlights"></div>
-        <div class="sl-field"><label class="sl-lab" for="videoCategory">Category</label><select class="sl-in" id="videoCategory"><option>Highlight</option><option>Match</option><option>Training</option><option>Skills</option><option>Goal</option></select></div>
-        <div class="sl-field"><label class="sl-lab" for="videoDescription">Description</label><textarea class="sl-in" id="videoDescription" placeholder="Add useful context for the coach."></textarea></div>
-        <div class="upl"><b>Video file</b><small>MP4, MOV, WEBM or AVI · maximum 4MB</small><input id="videoFile" type="file" accept="video/*" required></div>
-        <button class="sl-btn chalk full" id="videoSubmit" type="submit"><span>Upload video</span><i class="sl-spinner"></i></button>
-        <p class="secure-copy">By uploading, you confirm you are authorised to share this video with the player’s coach-managed ScoutLink profile.</p>
+<header class="top"><div class="logo" aria-label="ScoutLink"></div><div class="sp"></div><span class="tag"><i></i>Secure upload link</span></header>
+<main class="main" id="videoUploadRoot">
+  <div class="message err" id="videoLoadError" role="alert"></div>
+  <div class="message ok" id="videoMessage" role="status"></div>
+  <section class="card">
+    <div class="card-b">
+      <h1 class="hero-title">Upload a video for <span id="videoPlayerName">this player</span></h1>
+      <div class="mut sub" id="videoPlayerTeam">Checking the secure link…</div>
+      <form id="videoUploadForm" hidden>
+        <div class="fld"><span class="fl">What is this video</span><div class="chips" id="videoCategories"></div></div>
+        <div class="drop"><b>Choose a video</b><div class="mut">Up to 4MB · MP4, MOV, WEBM or AVI</div><label class="btn p" for="videoFile">Select file</label><input id="videoFile" type="file" accept="video/*" required><div class="mut" id="selectedFile" style="margin-top:10px"></div></div>
+        <div class="fld" style="margin-top:14px"><span class="fl">Title</span><input id="videoTitle" style="width:100%;height:34px;border:1px solid var(--line2);border-radius:3px;padding:0 10px" placeholder="Match highlights" required></div>
+        <div class="fld"><span class="fl">Description — optional</span><textarea id="videoDescription" placeholder="Add useful context for the coach."></textarea></div>
+        <button class="btn p" id="videoSubmit" type="submit" style="width:100%">Upload video</button>
+        <div class="help">Your video goes to the coach for review. It is not visible to scouts, or to anyone else, unless the coach approves it. Nothing is published automatically.</div>
       </form>
-    </section>
-  </main>
-  <footer class="door-foot">
-    <span>ScoutLink · A Stratex Analytics product</span>
-    <div><a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a><a href="https://www.stratexanalytics.co.uk/contact">Help</a></div>
-  </footer>
-</div>
-<script src="/js/video-upload-v5.js?v=5.0.0"></script>
+    </div>
+  </section>
+  <div class="bottom">Not expecting this? Do not upload anything and tell your coach.</div>
+</main>
+<script src="/js/video-upload-v5.js?v=6.0.0"></script>
 </body>
 </html>
