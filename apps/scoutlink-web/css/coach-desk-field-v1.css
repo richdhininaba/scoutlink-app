@@ -1,17 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-/*
- * ScoutLink Coach Desk + Coach Field — V14 production stylesheet
- * Source of truth:
- *   scoutlink-coach-desk-design-v1.html
- *   scoutlink-coach-field-design-v1.html
- *
- * User-approved production overrides:
- *   1. Coaches have NO usage/allowance limits or usage-request UI.
- *   2. Production cards/widgets get a little more inner inset than the design
- *      board so text and actions never sit hard against their edges.
- */
-
+/* ScoutLink Coach Desk + Coach Field — source-faithful production stylesheet */
 :root{
   --ink:#0F1712; --ink2:#4A554E; --ink3:#7E8983; --ink4:#A7B0AA;
   --line:#E3E7E4; --line2:#CDD4CF; --paper:#FFFFFF; --canvas:#F6F8F7; --canvas2:#EFF2F0;
@@ -20,45 +7,10 @@
   --amber:#B07316; --amber-t:#FBF2E2;
   --red:#B0362C; --red-t:#F9EAE8;
   --slate:#33414B; --grey:#C4CCD1;
-  --lockup:url('/scoutlink_logo.png?v=20260812-1');
-  --mark:url('/scoutlink-favicon.png');
-
-  /* Backwards-compatible aliases used by the existing functional Coach scripts. */
-  --panel:var(--paper); --panel2:var(--canvas); --panel3:var(--canvas2);
-  --mut:var(--ink3); --faint:var(--ink4); --ln:var(--line); --ln2:var(--line2);
-  --turf:var(--blue); --turf-d:var(--blue-d); --turf-t:var(--blue-t);
-  --pitch:var(--green); --pitch-d:#2F7427; --pitch-t:var(--green-t);
-  --am:var(--amber); --am-t:var(--amber-t); --rd:var(--red); --rd-t:var(--red-t);
-  --disp:'Inter',sans-serif; --ui:'Inter',sans-serif;
-  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono',monospace;
-  --bg:var(--canvas); --pn:var(--paper); --pn2:var(--canvas); --pn3:var(--canvas2); --chalk:var(--ink);
+  --lockup:url('/scoutlink_logo.png?v=20260812-2'); --mark:url('/scoutlink-favicon.png');
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
-
-*{box-sizing:border-box}
-html{min-height:100%;background:var(--canvas);scroll-behavior:smooth}
-body.coach-product{
-  min-height:100vh;
-  margin:0;
-  background:var(--canvas);
-  color:var(--ink);
-  font-family:var(--ui);
-  font-size:12.5px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-}
-body.coach-product button,
-body.coach-product input,
-body.coach-product select,
-body.coach-product textarea{font:inherit;color:inherit}
-body.coach-product button{cursor:pointer}
-body.coach-product a{color:inherit}
-body.coach-product h1,
-body.coach-product h2,
-body.coach-product h3,
-body.coach-product h4{font-family:var(--ui)}
-body.coach-product :focus-visible{outline:3px solid rgba(27,90,196,.22);outline-offset:2px}
-.coach-desk{display:block;min-height:100vh}
-.coach-field{display:none}
 
 
 /* ---------- desktop app shell ---------- */
@@ -253,309 +205,9 @@ td .who s{text-decoration:none;color:var(--ink3);font-size:11px;display:block}
 .msg .mt{font-size:10px;margin-top:5px;opacity:.65}
 .msg.out .mt{color:#fff}
 
-
-/* =====================================================================
-   V13 functional-DOM compatibility
-   The JS functionality stays in place; these selectors make that DOM use
-   the new V14 Desk/Field visual grammar.
-   ===================================================================== */
-
-.coach-desk .screen{min-width:980px;min-height:100vh;background:var(--canvas)}
-.coach-desk .shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}
-.coach-desk .sb{
-  width:auto;min-width:0;height:100vh;min-height:100vh;position:sticky;top:0;overflow:auto;
-  background:var(--paper);border-right:1px solid var(--line);padding:0 0 18px;display:flex;flex-direction:column
-}
-.coach-desk .sb .brand{
-  height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:9px
-}
-.coach-desk .sb .brand svg{display:none}
-.coach-desk .sb .brand:before{
-  content:"";display:block;width:132px;height:32px;background:var(--lockup) no-repeat left center/contain
-}
-.coach-desk .sb .brand>div{display:none}
-.coach-desk .sb .ws{display:none}
-.coach-desk .sb nav{display:block}
-.coach-desk .sb .g{
-  font-size:9.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--ink4);
-  font-weight:700;padding:20px 18px 7px;margin:0
-}
-.coach-desk .sb a.n{
-  min-height:34px;display:flex;align-items:center;gap:9px;padding:7px 18px;font-size:12.5px;
-  color:var(--ink2);text-decoration:none;border-left:2px solid transparent;white-space:nowrap
-}
-.coach-desk .sb a.n:hover{color:var(--ink)}
-.coach-desk .sb a.n.on{color:var(--blue);background:var(--blue-t);border-left-color:var(--blue);font-weight:600}
-.coach-desk .sb a.n .bdg{
-  margin-left:auto;font-size:10px;font-weight:700;background:var(--blue);color:#fff;
-  min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px
-}
-.coach-desk .sb .me{
-  margin:18px 12px 0;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);
-  display:flex;gap:9px;align-items:center;color:var(--ink2)
-}
-.coach-desk .coach-main{min-width:0;min-height:100vh;background:var(--canvas)}
-.coach-desk .tb{
-  position:sticky;top:0;z-index:90;height:62px;min-height:62px;background:var(--paper);
-  border:0;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;gap:16px
-}
-.coach-desk .tb .t{font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
-.coach-desk .tb .crumb{font-size:11.5px;color:var(--ink3)}
-.coach-desk .tb .sp{flex:1}
-.coach-desk .tb .srch{
-  width:230px;height:30px;border:1px solid var(--line2);border-radius:3px;background:var(--canvas);
-  display:flex;align-items:center;padding:0 9px;gap:7px;font-size:11.5px;color:var(--ink4)
-}
-.coach-desk .tb .srch input{width:100%;min-width:0;border:0!important;background:transparent!important;padding:0!important}
-.coach-desk .tb .srch kbd{display:none}
-.coach-desk .tb .bell{
-  width:30px;height:30px;border:1px solid var(--line2)!important;border-radius:3px!important;background:var(--paper)!important;
-  display:flex;align-items:center;justify-content:center;position:relative;color:var(--ink2)
-}
-.coach-desk .tb .bell u{
-  position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:9px;font-weight:700;
-  min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none
-}
-.coach-desk .cv{
-  min-width:0;
-  /* Deliberately roomier than the design-board frame. */
-  padding:26px 30px 38px!important;
-  background:var(--canvas)
-}
-
-/* Production widget inset: don't let content touch card edges. */
-body.coach-product .panel,
-body.coach-product .table-card,
-body.coach-product .section-card,
-body.coach-product .ap3-panel,
-body.coach-product .bi3-panel,
-body.coach-product .mf3-panel,
-body.coach-product .cf3-panel,
-body.coach-product .settings-section,
-body.coach-product .notification-card{
-  background:var(--paper)!important;border:1px solid var(--line)!important;border-radius:0!important;
-  box-shadow:none!important;min-width:0;padding:18px!important
-}
-body.coach-product .panel.rule,
-body.coach-product .table-card,
-body.coach-product .section-card,
-body.coach-product .ap3-panel,
-body.coach-product .bi3-panel,
-body.coach-product .mf3-panel,
-body.coach-product .cf3-panel{border-top:1px solid var(--line)!important}
-body.coach-product .panel>.ph3:first-child{
-  margin:-18px -18px 16px!important;padding:14px 18px!important;border-bottom:1px solid var(--line);
-  display:flex;align-items:center;gap:10px
-}
-body.coach-product .ph3 b{font-size:12.5px;font-weight:700}
-body.coach-product .ph3 .m{font-size:10.5px;color:var(--ink3)}
-body.coach-product .ph3 .r{margin-left:auto}
-body.coach-product .g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-body.coach-product .g4.v14-five{grid-template-columns:repeat(5,minmax(0,1fr))}
-body.coach-product .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
-body.coach-product .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-body.coach-product .three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-body.coach-product .flex{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-body.coach-product .right{margin-left:auto}
-body.coach-product .stack>*+*{margin-top:12px}
-body.coach-product .mut{color:var(--ink3)}
-
-body.coach-product .btn,
-body.coach-product .bt{
-  min-height:29px;height:auto;padding:5px 12px;border:1px solid var(--line2);border-radius:3px;
-  background:var(--paper);color:var(--ink);font-size:11.5px;font-weight:600;line-height:1.2;
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;white-space:nowrap
-}
-body.coach-product .btn.pri,
-body.coach-product .btn.spend,
-body.coach-product .bt.pri,
-body.coach-product .bt.spend{background:var(--blue);border-color:var(--blue);color:#fff}
-body.coach-product .btn.gh,
-body.coach-product .bt.gh{background:transparent;color:var(--blue);border-color:transparent}
-body.coach-product .btn.dgr,
-body.coach-product .bt.dgr{border-color:#E4C5C1;color:var(--red);background:var(--paper)}
-body.coach-product .btn.sm,
-body.coach-product .bt.sm{min-height:24px;padding:4px 9px;font-size:11px}
-body.coach-product .bt.blk{width:100%}
-
-body.coach-product .chip,
-body.coach-product .sel{
-  min-height:28px;padding:4px 11px;border:1px solid var(--line2);border-radius:3px;
-  font-size:11.5px;display:inline-flex;align-items:center;color:var(--ink2);background:var(--paper);text-decoration:none
-}
-body.coach-product .chip.on{border-color:var(--blue);background:var(--blue-t);color:var(--blue-d);font-weight:600}
-body.coach-product .tag,
-body.coach-product .tagm,
-body.coach-product .stg,
-body.coach-product .vband,
-body.coach-product .vb{
-  display:inline-flex;align-items:center;gap:5px;min-height:19px;padding:2px 7px;border:0;border-radius:2px;
-  font-size:10.5px;font-weight:600;background:var(--canvas2);color:var(--ink2);white-space:nowrap
-}
-body.coach-product .tag.g,body.coach-product .tagm.g,body.coach-product .stg.obs,body.coach-product .vband.ex,body.coach-product .vb.ex{background:var(--green-t);color:var(--green)}
-body.coach-product .tag.a,body.coach-product .tagm.a,body.coach-product .stg.short,body.coach-product .vband.am,body.coach-product .vb.am{background:var(--amber-t);color:var(--amber)}
-body.coach-product .tag.r,body.coach-product .tagm.r,body.coach-product .vband.rd{background:var(--red-t);color:var(--red)}
-body.coach-product .stg.watch,body.coach-product .stg.int,body.coach-product .vband.st,body.coach-product .vb.st{background:var(--blue-t);color:var(--blue-d)}
-
-body.coach-product table.t{width:100%;border-collapse:collapse}
-body.coach-product table.t th{
-  font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700;
-  text-align:left;padding:10px 12px;border-bottom:1px solid var(--line2);white-space:nowrap
-}
-body.coach-product table.t td{font-size:12.5px;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-body.coach-product table.t tr:last-child td{border-bottom:0}
-body.coach-product table.t .num{font-variant-numeric:tabular-nums;font-weight:600}
-
-body.coach-product .kv{
-  display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);
-  font-size:12px;align-items:center
-}
-body.coach-product .kv:last-child{border-bottom:0}
-body.coach-product .kv>span:first-child{color:var(--ink2);min-width:0}
-body.coach-product .pw,.rowline{display:flex;align-items:center;gap:10px;min-width:0}
-body.coach-product .who{min-width:0}
-body.coach-product .who b{display:block;color:var(--ink);font-size:12px;font-weight:600}
-body.coach-product .who span{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
-
-body.coach-product .field,
-body.coach-product .fld{margin-bottom:14px}
-body.coach-product .field label,
-body.coach-product .fld .fl{
-  font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700;
-  display:flex;justify-content:space-between;margin-bottom:6px
-}
-body.coach-product .field label i{font-style:normal;color:var(--ink4)}
-body.coach-product .field input,
-body.coach-product .field select,
-body.coach-product .field textarea,
-body.coach-product .field .in,
-body.coach-product .inp,
-body.coach-product input.coach-input,
-body.coach-product select.coach-input,
-body.coach-product textarea.coach-input{
-  width:100%;min-width:0;border:1px solid var(--line2)!important;border-radius:3px!important;
-  background:var(--paper)!important;color:var(--ink)!important;box-shadow:none!important;padding:8px 10px!important
-}
-body.coach-product .field input,
-body.coach-product .field select,
-body.coach-product .field .in,
-body.coach-product .inp{min-height:34px}
-body.coach-product .field textarea,
-body.coach-product .field .in.ta,
-body.coach-product .inp.ta{min-height:76px;resize:vertical;align-items:flex-start}
-body.coach-product .field .in{display:flex;align-items:center;justify-content:space-between;gap:8px}
-body.coach-product input[type="checkbox"],
-body.coach-product input[type="radio"]{accent-color:var(--blue)}
-
-body.coach-product .ebar,
-body.coach-product .ebm,
-body.coach-product .meter{display:flex;align-items:center;gap:8px;min-width:110px}
-body.coach-product .ebar .tr,
-body.coach-product .ebm .tr,
-body.coach-product .meter .bar{flex:1;height:6px;background:var(--canvas2);border:0;border-radius:1px;overflow:hidden}
-body.coach-product .ebar .tr i,
-body.coach-product .ebm .tr i,
-body.coach-product .meter .bar i{display:block;height:100%;background:var(--blue)}
-body.coach-product .ebar.low .tr i,body.coach-product .ebm.low .tr i,body.coach-product .meter.zero .bar i{background:var(--red)}
-body.coach-product .ebar.mid .tr i,body.coach-product .ebm.mid .tr i,body.coach-product .meter.warn .bar i{background:var(--amber)}
-body.coach-product .ebar>b,
-body.coach-product .ebm>b{width:34px;text-align:right;font-size:10.5px;font-variant-numeric:tabular-nums}
-
-body.coach-product .wiz{
-  display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);margin-bottom:14px;overflow:hidden
-}
-body.coach-product .wiz .st{flex:1;min-height:48px;padding:12px 14px;display:flex;align-items:center;gap:9px;border-right:1px solid var(--line);color:var(--ink3);font-size:11.5px}
-body.coach-product .wiz .st:last-of-type{border-right:0}
-body.coach-product .wiz .st i{
-  width:20px;height:20px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;
-  justify-content:center;font-style:normal;font-size:10.5px;font-weight:700;background:var(--paper)
-}
-body.coach-product .wiz .st.on{background:var(--blue-t);color:var(--blue-d);font-weight:600}
-body.coach-product .wiz .st.on i{background:var(--blue);border-color:var(--blue);color:#fff}
-body.coach-product .wiz .st.done{color:var(--ink2)}
-body.coach-product .wiz .st.done i{background:var(--green);border-color:var(--green);color:#fff}
-body.coach-product .wiz .ln{display:none}
-
-body.coach-product .drop,
-body.coach-product .dropm{
-  border:1px dashed var(--line2);border-radius:3px;background:var(--canvas);padding:24px 20px;text-align:center;color:var(--ink3)
-}
-body.coach-product .callout{
-  border:1px solid var(--blue-t2);border-left:3px solid var(--blue);background:var(--blue-t);
-  border-radius:0;padding:11px 14px;color:var(--blue-d);font-size:11px
-}
-body.coach-product .callout.a{border-left-color:var(--amber);background:var(--amber-t);color:var(--amber)}
-body.coach-product .callout.r{border-left-color:var(--red);background:var(--red-t);color:var(--red)}
-
-body.coach-product .plate,
-body.coach-product .dateplate{
-  min-width:60px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);padding:7px 10px;text-align:center
-}
-body.coach-product .plate b,body.coach-product .dateplate b{display:block;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
-body.coach-product .plate span,body.coach-product .dateplate span{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3)}
-body.coach-product .plate.g{border-color:var(--green)}
-body.coach-product .plate.g b{color:var(--green)}
-
-body.coach-product .coach-search-wrap{position:relative}
-body.coach-product .coach-search-results{
-  display:none;position:absolute;top:calc(100% + 7px);right:0;width:360px;max-height:390px;overflow:auto;
-  z-index:260;border:1px solid var(--line2);background:var(--paper);box-shadow:0 14px 28px -22px rgba(15,23,18,.45);padding:5px
-}
-body.coach-product .coach-search-wrap.open .coach-search-results{display:block}
-body.coach-product .coach-search-row{display:block;padding:10px 11px;border-bottom:1px solid var(--line);text-decoration:none}
-body.coach-product .coach-search-row:last-child{border-bottom:0}
-body.coach-product .coach-search-row b{display:block;font-size:12px}
-body.coach-product .coach-search-row small{display:block;margin-top:2px;font-size:10.5px;color:var(--ink3)}
-
-body.coach-product .coach-route-message{
-  border:1px solid var(--line2);border-left:3px solid var(--blue);background:var(--paper);
-  padding:13px 15px;color:var(--ink2);font-size:11.5px
-}
-body.coach-product .coach-route-message.error{border-left-color:var(--red);background:var(--red-t);color:var(--red)}
-body.coach-product .coach-page-loading{padding:28px 0;color:var(--ink3);font-size:11.5px}
-body.coach-product .coach-drawer-backdrop{position:fixed;inset:0;z-index:650;background:rgba(15,23,18,.34)}
-body.coach-product .drawer,
-body.coach-product .modal{
-  position:fixed;z-index:700;background:var(--paper);border:1px solid var(--line2);
-  box-shadow:-24px 0 60px -30px rgba(15,23,18,.4);overflow:auto
-}
-body.coach-product .drawer{right:0;top:0;bottom:0;width:min(520px,100%)}
-body.coach-product .modal{left:50%;top:50%;width:min(520px,calc(100% - 32px));transform:translate(-50%,-50%)}
-body.coach-product .oh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
-body.coach-product .oh b{font-size:14.5px;font-weight:700}
-body.coach-product .oh .x{margin-left:auto;color:var(--ink3);font-size:11px}
-body.coach-product .ob{padding:20px}
-body.coach-product .of{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:var(--canvas)}
-body.coach-product .toast{
-  position:fixed;right:18px;bottom:18px;z-index:1000;background:var(--ink);color:#fff;
-  padding:9px 13px;border-radius:3px;font-size:11.5px;font-weight:600
-}
-
-/* Generic compatibility for the specialised Add Player / Bulk Import / Match Facts / Fixtures renderers. */
-body.coach-product .ap3-hero,
-body.coach-product .bi3-hero,
-body.coach-product .cf3-hero,
-body.coach-product .mf3-hero,
-body.coach-product .page-hero{
-  background:var(--paper)!important;color:var(--ink)!important;border:1px solid var(--line)!important;
-  border-radius:0!important;box-shadow:none!important;padding:18px!important
-}
-body.coach-product .ap3-panel-head,
-body.coach-product .bi3-panel-head,
-body.coach-product .cf3-panel-head,
-body.coach-product .mf3-panel-head,
-body.coach-product .table-header,
-body.coach-product .card-header{
-  padding:14px 18px!important;border-bottom:1px solid var(--line)!important;background:var(--paper)!important
-}
-body.coach-product .ap3-panel-body,
-body.coach-product .bi3-panel-body,
-body.coach-product .cf3-panel-body,
-body.coach-product .mf3-panel-body,
-body.coach-product .section-body,
-body.coach-product .card-body{padding:18px!important}
-
-
+.dev{width:414px;padding:11px;background:#101613;border-radius:38px;
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 22px 50px -26px rgba(15,23,18,.5)}
+.scr{width:392px;background:var(--canvas);border-radius:28px;overflow:hidden;position:relative}
 .sbar{height:40px;background:var(--paper);display:flex;align-items:flex-end;justify-content:space-between;
   padding:0 20px 5px;font-size:11px;font-weight:700;color:var(--ink)}
 .sbar u{text-decoration:none;letter-spacing:.02em}
@@ -595,104 +247,300 @@ body.coach-product .card-body{padding:18px!important}
 .pnote{font-size:10.5px;color:var(--ink3);font-family:var(--mono);text-align:center;margin:10px 0 0}
 
 
-/* =====================================================================
-   PHONE — Coach Field
-   ===================================================================== */
+
+/* ==========================================================================
+   PRODUCTION ADAPTER
+   This section maps the repository's existing functional Coach DOM to the
+   exact Coach Desk / Coach Field design primitives above. It deliberately
+   does not change API behaviour.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --panel:var(--paper);--panel2:var(--canvas);--panel3:var(--canvas2);
+  --mut:var(--ink3);--faint:var(--ink4);--ln:var(--line);--ln2:var(--line2);
+  --turf:var(--blue);--turf-d:var(--blue-d);--turf-t:var(--blue-t);
+  --pitch:var(--green);--pitch-d:#2F7427;--pitch-t:var(--green-t);
+  --am:var(--amber);--am-t:var(--amber-t);--rd:var(--red);--rd-t:var(--red-t);
+  --disp:var(--sans);--ui:var(--sans);--bg:var(--canvas);--pn:var(--paper);
+  --pn2:var(--canvas);--pn3:var(--canvas2);--chalk:var(--ink);
+}
+
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--canvas);scroll-behavior:smooth}
+body.coach-product{
+  min-height:100vh;margin:0;background:var(--canvas);color:var(--ink);
+  font-family:var(--sans);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased
+}
+body.coach-product button,
+body.coach-product input,
+body.coach-product select,
+body.coach-product textarea{font:inherit;color:inherit}
+body.coach-product button{cursor:pointer}
+body.coach-product a{color:inherit}
+body.coach-product :focus-visible{outline:3px solid rgba(27,90,196,.22);outline-offset:2px}
+.coach-desk{display:block;min-height:100vh}
+.coach-field{display:none}
+
+/* Desk shell produced by coach-v2.js */
+.coach-desk .screen{min-width:980px;min-height:100vh;background:var(--canvas)}
+.coach-desk .shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}
+.coach-desk .sb{
+  width:230px;min-width:230px;height:100vh;position:sticky;top:0;overflow:auto;
+  background:var(--paper);border-right:1px solid var(--line);padding:0 0 18px;
+  display:flex;flex-direction:column
+}
+.coach-desk .sb nav{display:block}
+.coach-desk .sb .g{margin:0}
+.coach-desk .sb a.n{text-decoration:none}
+.coach-desk .sb .me{margin-top:auto}
+.coach-desk .coach-main{min-width:0;min-height:100vh;background:var(--canvas);display:flex;flex-direction:column}
+.coach-desk .tb{position:sticky;top:0;z-index:90;flex:0 0 62px}
+.coach-desk .tb .crumb{font-size:11.5px;color:var(--ink3)}
+.coach-desk .tb .srch input{width:100%;min-width:0;border:0;background:transparent;outline:0;padding:0}
+.coach-desk .coach-search-wrap{position:relative}
+.coach-desk .coach-search-results{
+  display:none;position:absolute;top:calc(100% + 7px);right:0;width:360px;max-height:390px;
+  overflow:auto;z-index:260;border:1px solid var(--line2);background:var(--paper);
+  box-shadow:0 14px 28px -22px rgba(15,23,18,.45);padding:5px
+}
+.coach-desk .coach-search-wrap.open .coach-search-results{display:block}
+.coach-desk .coach-search-row{display:block;padding:10px 11px;border-bottom:1px solid var(--line);text-decoration:none}
+.coach-desk .coach-search-row:last-child{border-bottom:0}
+.coach-desk .coach-search-row b{display:block;font-size:12px}
+.coach-desk .coach-search-row small{display:block;margin-top:2px;font-size:10.5px;color:var(--ink3)}
+.coach-desk .cv{min-width:0;padding:22px 24px 34px;background:var(--canvas)}
+
+/* Existing functional route primitives */
+body.coach-product .panel{
+  background:var(--paper);border:1px solid var(--line);border-radius:0;box-shadow:none;
+  min-width:0;padding:16px
+}
+body.coach-product .panel>.ph3:first-child{
+  margin:-16px -16px 16px;padding:13px 16px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px
+}
+body.coach-product .ph3 b{font-size:12.5px;font-weight:700}
+body.coach-product .ph3 .m{font-size:10.5px;color:var(--ink3)}
+body.coach-product .ph3 .r{margin-left:auto}
+body.coach-product .g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+body.coach-product .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+body.coach-product .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+body.coach-product .three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+body.coach-product .flex{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+body.coach-product .right{margin-left:auto}
+body.coach-product .stack>*+*{margin-top:12px}
+
+body.coach-product .btn.pri,
+body.coach-product .btn.spend,
+body.coach-product .bt.pri,
+body.coach-product .bt.spend{background:var(--blue);border-color:var(--blue);color:#fff}
+body.coach-product .btn.gh,
+body.coach-product .bt.gh{border-color:transparent;background:transparent;color:var(--blue);padding-left:4px;padding-right:4px}
+body.coach-product .bt{
+  display:inline-flex;align-items:center;gap:6px;height:29px;padding:0 12px;border:1px solid var(--line2);
+  border-radius:3px;background:var(--paper);font-size:11.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;text-decoration:none;justify-content:center
+}
+body.coach-product .bt.sm{height:24px;padding:0 9px;font-size:11px}
+body.coach-product .bt.blk{width:100%}
+
+body.coach-product .sel{
+  min-height:28px;padding:4px 8px;border:1px solid var(--line2);border-radius:3px;
+  font-size:11.5px;color:var(--ink2);background:var(--paper)
+}
+body.coach-product .tagm,
+body.coach-product .stg,
+body.coach-product .vband,
+body.coach-product .vb{
+  display:inline-flex;align-items:center;gap:5px;min-height:19px;padding:2px 7px;border-radius:2px;
+  font-size:10.5px;font-weight:600;background:var(--canvas2);color:var(--ink2);white-space:nowrap
+}
+body.coach-product .tagm.g,body.coach-product .stg.obs,body.coach-product .vband.ex,body.coach-product .vb.ex{background:var(--green-t);color:var(--green)}
+body.coach-product .tagm.a,body.coach-product .stg.short,body.coach-product .vband.am,body.coach-product .vb.am{background:var(--amber-t);color:var(--amber)}
+body.coach-product .tagm.r,body.coach-product .vband.rd{background:var(--red-t);color:var(--red)}
+body.coach-product .stg.watch,body.coach-product .stg.int,body.coach-product .vband.st,body.coach-product .vb.st{background:var(--blue-t);color:var(--blue-d)}
+
+body.coach-product .kv{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:12px;align-items:center}
+body.coach-product .kv:last-child{border-bottom:0}
+body.coach-product .pw,.rowline{display:flex;align-items:center;gap:10px;min-width:0}
+body.coach-product .who{min-width:0}
+body.coach-product .who b{display:block;color:var(--ink);font-size:12px;font-weight:600}
+body.coach-product .who span{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+body.coach-product .dot,body.coach-product .dotm{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 8px;background:var(--blue)}
+body.coach-product .dot.g,body.coach-product .dotm.g{background:var(--green)}
+body.coach-product .dot.a,body.coach-product .dotm.a{background:var(--amber)}
+body.coach-product .dot.r,body.coach-product .dotm.r{background:var(--red)}
+
+body.coach-product .field{margin-bottom:14px}
+body.coach-product .field label{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700;
+  display:flex;justify-content:space-between;margin-bottom:6px
+}
+body.coach-product .field label i{font-style:normal;color:var(--ink4)}
+body.coach-product .field input,
+body.coach-product .field select,
+body.coach-product .field textarea,
+body.coach-product .field .in,
+body.coach-product .in{
+  width:100%;min-width:0;border:1px solid var(--line2);border-radius:3px;background:var(--paper);
+  color:var(--ink);box-shadow:none;padding:7px 10px;min-height:32px
+}
+body.coach-product .field textarea,body.coach-product .field .in.ta,body.coach-product .in.ta{min-height:74px;resize:vertical}
+body.coach-product input[type="checkbox"],body.coach-product input[type="radio"]{accent-color:var(--blue)}
+
+body.coach-product .ebar,
+body.coach-product .ebm,
+body.coach-product .meter{display:flex;align-items:center;gap:8px;min-width:110px}
+body.coach-product .ebar .tr,
+body.coach-product .ebm .tr,
+body.coach-product .meter .bar{flex:1;height:6px;background:var(--canvas2);border-radius:1px;overflow:hidden}
+body.coach-product .ebar .tr i,
+body.coach-product .ebm .tr i,
+body.coach-product .meter .bar i{display:block;height:100%;background:var(--blue)}
+body.coach-product .ebar.low .tr i,body.coach-product .ebm.low .tr i{background:var(--red)}
+body.coach-product .ebar.mid .tr i,body.coach-product .ebm.mid .tr i{background:var(--amber)}
+body.coach-product .ebar>b,body.coach-product .ebm>b{width:34px;text-align:right;font-size:10.5px;font-variant-numeric:tabular-nums}
+
+body.coach-product .wiz{display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);margin-bottom:14px;overflow:hidden}
+body.coach-product .wiz .st{flex:1;min-height:48px;padding:13px 16px;display:flex;align-items:center;gap:9px;border-right:1px solid var(--line);color:var(--ink3);font-size:11.5px}
+body.coach-product .wiz .st:last-of-type{border-right:0}
+body.coach-product .wiz .st i{width:20px;height:20px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10.5px;font-weight:700;background:var(--paper)}
+body.coach-product .wiz .st.on{background:var(--blue-t);color:var(--blue-d);font-weight:600}
+body.coach-product .wiz .st.on i{background:var(--blue);border-color:var(--blue);color:#fff}
+body.coach-product .wiz .st.done{color:var(--ink2)}
+body.coach-product .wiz .st.done i{background:var(--green);border-color:var(--green);color:#fff}
+body.coach-product .wiz .ln{display:none}
+
+body.coach-product .drop,body.coach-product .dropm{border:1px dashed var(--line2);border-radius:3px;background:var(--canvas);padding:24px 20px;text-align:center;color:var(--ink3)}
+body.coach-product .callout{border:1px solid var(--blue-t2);border-left:3px solid var(--blue);background:var(--blue-t);padding:11px 14px;color:var(--blue-d);font-size:11px}
+body.coach-product .callout.a{border-left-color:var(--amber);background:var(--amber-t);color:var(--amber)}
+body.coach-product .callout.r{border-left-color:var(--red);background:var(--red-t);color:var(--red)}
+body.coach-product .help{font-size:11px;color:var(--ink3);margin-top:6px}
+
+body.coach-product .coach-table-scroll,.v14-table-scroll{width:100%;overflow:auto}
+body.coach-product .coach-route-message{border:1px solid var(--line2);border-left:3px solid var(--blue);background:var(--paper);padding:13px 15px;color:var(--ink2);font-size:11.5px}
+body.coach-product .coach-route-message.error{border-left-color:var(--red);background:var(--red-t);color:var(--red)}
+body.coach-product .coach-page-loading{padding:28px 0;color:var(--ink3);font-size:11.5px}
+
+/* Functional overlays retain source drawer/sheet geometry. */
+body.coach-product .coach-drawer-backdrop{position:fixed;inset:0;z-index:650;background:rgba(15,23,18,.34)}
+body.coach-product .drawer,
+body.coach-product .modal{
+  position:fixed;z-index:700;background:var(--paper);border:1px solid var(--line2);
+  box-shadow:-24px 0 60px -30px rgba(15,23,18,.4);overflow:auto
+}
+body.coach-product .drawer{right:0;top:0;bottom:0;width:min(520px,100%)}
+body.coach-product .modal{left:50%;top:50%;width:min(520px,calc(100% - 32px));transform:translate(-50%,-50%)}
+body.coach-product .oh{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+body.coach-product .oh b{font-size:14.5px}
+body.coach-product .oh .x{margin-left:auto}
+body.coach-product .ob{padding:20px}
+body.coach-product .of{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;background:var(--canvas)}
+body.coach-product .toast{position:fixed;right:18px;bottom:18px;z-index:1000;background:var(--ink);color:#fff;padding:9px 13px;border-radius:3px;font-size:11.5px;font-weight:600}
+
+/* Specialised functional workflows: exact flat source treatment, no roomier override. */
+body.coach-product .ap3-hero,
+body.coach-product .bi3-hero,
+body.coach-product .cf3-hero,
+body.coach-product .mf3-hero,
+body.coach-product .page-hero,
+body.coach-product .ap3-panel,
+body.coach-product .bi3-panel,
+body.coach-product .cf3-panel,
+body.coach-product .mf3-panel,
+body.coach-product .section-card,
+body.coach-product .table-card{
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:0;box-shadow:none
+}
+body.coach-product .ap3-hero,
+body.coach-product .bi3-hero,
+body.coach-product .cf3-hero,
+body.coach-product .mf3-hero,
+body.coach-product .page-hero{padding:16px}
+body.coach-product .ap3-panel-head,
+body.coach-product .bi3-panel-head,
+body.coach-product .cf3-panel-head,
+body.coach-product .mf3-panel-head,
+body.coach-product .table-header,
+body.coach-product .card-header{padding:13px 16px;border-bottom:1px solid var(--line);background:var(--paper)}
+body.coach-product .ap3-panel-body,
+body.coach-product .bi3-panel-body,
+body.coach-product .cf3-panel-body,
+body.coach-product .mf3-panel-body,
+body.coach-product .section-body,
+body.coach-product .card-body{padding:16px}
+
+/* Lightweight charts used by the live renderer; no gradients or decorative chrome. */
+.coach-chart-big{height:150px;color:var(--blue)}
+.coach-chart-phone{height:116px;color:var(--blue)}
+.coach-spark{width:100%;height:100%;display:block}
+.coach-bars{height:150px;display:flex;align-items:flex-end;gap:8px;border-bottom:1px solid var(--line);padding:6px 0 0}
+.coach-bar-col{height:100%;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:4px}
+.coach-bar{display:block;min-height:3px;background:var(--blue)}
+.coach-bar-col small{text-align:center;font-size:9px;color:var(--ink4);font-family:var(--mono)}
+.coach-video-grid .card{min-width:0}
+.coach-video-thumb{width:100%;height:112px;border:0;border-bottom:1px solid var(--line);background:var(--slate);color:#fff;font-size:24px}
+.coach-break{overflow-wrap:anywhere}
+.settings-on{color:var(--blue)}
+.coach-chatlog .msg,.coach-chatlog-phone .msg{clear:both}
+.coach-chatlog-phone{min-height:calc(100dvh - 210px)}
+
+/* The Coach product has no allowance / usage-request surface. */
+body.coach-product a[href*="/coach/usage-requests"],
+body.coach-product [data-coach-usage],
+body.coach-product .coach-usage-limit,
+body.coach-product .coach-usage-request{display:none!important}
+
+/* Coach Field */
 @media(max-width:760px){
-  body.coach-product{background:var(--canvas);font-size:12.5px;padding:0}
+  body.coach-product{background:var(--canvas)}
   .coach-desk{display:none!important}
   .coach-field{display:block!important;min-height:100dvh}
   .coach-field .scr{
-    width:100%!important;max-width:none!important;min-height:100dvh!important;border-radius:0!important;
-    overflow:visible!important;background:var(--canvas)!important;position:relative!important;
-    padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))
+    width:100%;max-width:none;min-height:100dvh;border-radius:0;overflow:visible;
+    background:var(--canvas);position:relative;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))
   }
   .coach-field .body{
-    min-height:calc(100dvh - 72px);
-    /* Slightly more inset than the 14px design-board frame, per user request. */
-    padding:16px!important;background:var(--canvas);overflow:visible
+    min-height:calc(100dvh - 68px);padding:14px;background:var(--canvas);overflow:visible
   }
+  .coach-field .body>.pbody{padding:0}
   .coach-field .hd{
-    min-height:58px;margin:-16px -16px 16px;padding:10px 16px;background:var(--paper);
+    min-height:50px;margin:-14px -14px 14px;padding:0 14px;background:var(--paper);
     border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px
   }
   .coach-field .hd .t{font-size:15px;font-weight:700;letter-spacing:-.01em}
   .coach-field .hd .sub{font-size:10.5px;color:var(--ink3);margin-top:1px}
   .coach-field .hd .r{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .coach-field .icb{
-    width:28px;height:28px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);
-    display:flex;align-items:center;justify-content:center;position:relative
-  }
-  .coach-field .icb u{
-    position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:8.5px;font-weight:700;
-    min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;text-decoration:none
-  }
-  .coach-field .avm,.coach-field .av{
-    width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:var(--slate);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700
-  }
+  .coach-field .icb{width:28px;height:28px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);display:flex;align-items:center;justify-content:center;position:relative}
+  .coach-field .icb u{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:8.5px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;text-decoration:none}
+  .coach-field .avm{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:var(--slate);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
 
-  .coach-field .card,
-  .coach-field .panel{
-    background:var(--paper)!important;border:1px solid var(--line)!important;border-radius:0!important;
-    box-shadow:none!important;padding:15px!important;min-width:0
-  }
-  .coach-field .card.rule,.coach-field .panel.rule{border-top:1px solid var(--line)!important}
-  .coach-field .card>.rowline,
-  .coach-field .card>.kv{padding-left:1px;padding-right:1px}
-  .coach-field .ck{font-size:9.5px;text-transform:uppercase;letter-spacing:.12em;color:var(--ink3);font-weight:700}
-  .coach-field .ck.g{color:var(--blue)}
-  .coach-field .fitn{font-size:20px;font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums}
-  .coach-field .two{grid-template-columns:1fr 1fr;gap:9px}
-  .coach-field .grid2,.coach-field .three{grid-template-columns:1fr;gap:10px}
-
-  .coach-field .seg{
-    display:flex;background:var(--canvas2);border:0;border-radius:3px;padding:2px;gap:2px
-  }
-  .coach-field .seg a{
-    flex:1;text-align:center;font-size:11px;font-weight:600;color:var(--ink2);padding:6px 0;
-    text-decoration:none;border-radius:2px
-  }
-  .coach-field .seg a.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(15,23,18,.1)}
+  .coach-field .pbar{margin-left:-14px;margin-right:-14px}
+  .coach-field .card{min-width:0}
+  .coach-field .card-b{padding:14px}
+  .coach-field .row{padding:11px 14px}
+  .coach-field .row .sp{min-width:0}
+  .coach-field .two,.coach-field .grid2,.coach-field .three{grid-template-columns:1fr}
+  .coach-field .pkpi{grid-template-columns:1fr 1fr;gap:8px}
+  .coach-field .kpi{padding:11px 12px}
+  .coach-field .kpi .v{font-size:21px;margin-top:5px}
+  .coach-field .srch{width:100%}
 
   .coach-field .tabs{
-    position:fixed;left:0;right:0;bottom:0;z-index:620;background:var(--paper);border-top:1px solid var(--line);
-    display:flex;padding:8px 0 calc(12px + env(safe-area-inset-bottom,0px))
+    position:fixed;left:0;right:0;bottom:0;z-index:620;background:var(--paper);
+    border-top:1px solid var(--line);display:flex;padding:8px 0 calc(12px + env(safe-area-inset-bottom,0px))
   }
   .coach-field .tabs a{
     flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;
     font-size:9.5px;color:var(--ink3);font-weight:600;text-decoration:none
   }
-  .coach-field .tabs a .b{
-    width:20px;height:20px;display:flex;align-items:center;justify-content:center;position:relative
-  }
+  .coach-field .tabs a .b{width:20px;height:20px;display:flex;align-items:center;justify-content:center;position:relative}
   .coach-field .tabs a svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7}
   .coach-field .tabs a.on{color:var(--blue)}
-  .coach-field .tabs a .b u{
-    position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;font-size:8px;font-weight:700;
-    min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;text-decoration:none;padding:0 3px
-  }
+  .coach-field .tabs a .b u{position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;text-decoration:none;padding:0 3px}
   .coach-field .homebar{display:none!important}
-
-  .coach-field .field label{font-size:10px}
-  .coach-field .field input,
-  .coach-field .field select,
-  .coach-field .field textarea,
-  .coach-field .field .in,
-  .coach-field .inp{min-height:42px!important;border-radius:3px!important;background:var(--paper)!important}
-  .coach-field .field textarea,.coach-field .field .in.ta,.coach-field .inp.ta{min-height:88px!important}
-
-  .coach-field .rowline{
-    display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);text-decoration:none
-  }
-  .coach-field .rowline:last-child{border-bottom:0}
-  .coach-field .rowline .who{flex:1;min-width:0}
-  .coach-field .rowline .who b{font-size:12.5px}
-  .coach-field .rowline .who span{font-size:10.5px}
-  .coach-field .msg{max-width:82%;padding:10px 12px;border-radius:4px;font-size:12px;margin-bottom:8px}
-  .coach-field .msg.me,.coach-field .msg.out{background:var(--blue);color:#fff;margin-left:auto}
-  .coach-field .msg.them,.coach-field .msg.in{background:var(--canvas2);color:var(--ink)}
-  .coach-field .msg .tm,.coach-field .msg .mt{font-size:9.5px;margin-top:4px;opacity:.65}
 
   body.coach-product .sheet{
     position:fixed;left:0;right:0;bottom:0;top:auto;z-index:800;width:100%;max-width:none;
@@ -701,47 +549,36 @@ body.coach-product .card-body{padding:18px!important}
     padding:0 16px calc(16px + env(safe-area-inset-bottom,0px))
   }
   body.coach-product .sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--line2);margin:9px auto 4px}
-  body.coach-product .sheet .sh,
-  body.coach-product .sheet .oh{padding:12px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
-  body.coach-product .sheet .sh b,body.coach-product .sheet .oh b{font-size:14px}
-  body.coach-product .sheet .x{margin-left:auto;color:var(--ink3)}
+  body.coach-product .sheet .oh{padding:12px 0}
   body.coach-product .sheet .ob{padding:16px 0}
   body.coach-product .drawer,
-  body.coach-product .modal{
-    left:0;right:0;top:auto;bottom:0;width:100%;max-width:none;transform:none;
-    border-radius:16px 16px 0 0;max-height:88dvh
-  }
+  body.coach-product .modal{left:0;right:0;top:auto;bottom:0;width:100%;max-width:none;transform:none;border-radius:16px 16px 0 0;max-height:88dvh}
   body.coach-product .coach-search-results{display:none!important}
-  body.coach-product .toast,body.coach-product .toastm{
-    right:16px;left:16px;bottom:82px;text-align:center;justify-content:center;border-radius:3px
-  }
+  body.coach-product .toast{left:16px;right:16px;bottom:80px;text-align:center}
 
-  /* Specialised workflows stay functional, but use Field spacing. */
   body.coach-product .ap3-hero,
   body.coach-product .bi3-hero,
   body.coach-product .cf3-hero,
   body.coach-product .mf3-hero,
-  body.coach-product .page-hero{padding:15px!important}
+  body.coach-product .page-hero{padding:14px}
   body.coach-product .ap3-panel-head,
   body.coach-product .bi3-panel-head,
   body.coach-product .cf3-panel-head,
   body.coach-product .mf3-panel-head,
   body.coach-product .table-header,
-  body.coach-product .card-header,
+  body.coach-product .card-header{padding:13px 14px}
   body.coach-product .ap3-panel-body,
   body.coach-product .bi3-panel-body,
   body.coach-product .cf3-panel-body,
   body.coach-product .mf3-panel-body,
   body.coach-product .section-body,
-  body.coach-product .card-body{padding:15px!important}
+  body.coach-product .card-body{padding:14px}
+
+  .coach-chart-phone,.coach-chart-big{height:116px}
+  .coach-bars{height:116px}
+  .coach-video-thumb{height:88px}
 }
 
 @media(min-width:761px){
   .coach-field{display:none!important}
 }
-
-/* Explicitly neutralise any accidental Coach usage-limit surfaces. */
-body.coach-product a[href*="/coach/usage-requests"],
-body.coach-product [data-coach-usage],
-body.coach-product .coach-usage-limit,
-body.coach-product .coach-usage-request{display:none!important}
