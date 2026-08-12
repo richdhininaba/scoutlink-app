@@ -827,3 +827,213 @@ body.coach-product .coach-usage-request{display:none!important}
   body.coach-product .coach-profile-phone-metrics>div{padding-right:10px}
   body.coach-product .coach-profile-phone-metrics .value{font-size:17px;font-weight:700;margin-top:2px;text-transform:uppercase}
 }
+
+/* --------------------------------------------------------------------------
+   Coach Field final mobile-only polish — 2026-08-12
+   These rules are deliberately scoped below 761px so the approved Coach Desk
+   desktop presentation is unchanged.
+   -------------------------------------------------------------------------- */
+@media (max-width:760px){
+  /* Route-aware Field header: one compact 50px bar with no accidental wrapping. */
+  body.coach-product .coach-field .ptop{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+    overflow:hidden;
+  }
+  body.coach-product .coach-field .ptop>div:not(.sp){
+    min-width:0;
+  }
+  body.coach-product .coach-field .ptop h1{
+    margin:0;
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1.15;
+  }
+  body.coach-product .coach-field .ptop .mut{
+    margin-top:2px!important;
+    max-width:240px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1.2;
+  }
+  body.coach-product .coach-field .ptop .sp{min-width:4px}
+  body.coach-product .coach-field .ptop .ic,
+  body.coach-product .coach-field .ptop .av,
+  body.coach-product .coach-field .ptop .bk{
+    flex:0 0 auto;
+  }
+
+  /* Text headings must never inherit .ck, which is the 13px checkbox control. */
+  body.coach-product .coach-field .mobile-card-title{
+    width:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    padding:0!important;
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    color:var(--ink);
+    font-size:12px;
+    line-height:1.35;
+    font-weight:700;
+    text-align:left;
+  }
+  body.coach-product .coach-field .mobile-card-title>b{
+    flex:0 0 auto;
+    font-size:12px;
+    color:var(--blue);
+  }
+
+  /* Source-like segmented shortcut below My Players search. */
+  body.coach-product .coach-field .player-phone-quick{
+    margin:0 0 10px;
+  }
+
+  /* Coverage meters used on Fixtures. */
+  body.coach-product .coach-field .phone-stacked-bar{
+    display:flex;
+    width:100%;
+    height:9px;
+    margin-top:10px;
+    overflow:hidden;
+    background:var(--canvas2);
+  }
+  body.coach-product .coach-field .phone-stacked-bar>i{
+    display:block;
+    height:100%;
+    flex:0 0 auto;
+  }
+  body.coach-product .coach-field .phone-coverage-card .lgd{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 14px;
+  }
+  body.coach-product .coach-field .phone-coverage-card .lgd span{
+    font-size:10px;
+  }
+
+  /* Video coverage and in-app playback. */
+  body.coach-product .coach-field .phone-video-coverage .card-b{
+    padding:14px!important;
+  }
+  body.coach-product .video-review-meta{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    margin-bottom:10px;
+  }
+  body.coach-product .video-review-meta>b{font-size:13px}
+  body.coach-product .video-review-meta>.mut{font-size:10.5px}
+  body.coach-product .video-preview-shell{
+    width:100%;
+    aspect-ratio:16/9;
+    overflow:hidden;
+    border:1px solid var(--line2);
+    border-radius:3px;
+    background:#0F1712;
+  }
+  body.coach-product .video-preview-shell video,
+  body.coach-product .video-preview-shell iframe{
+    display:block;
+    width:100%;
+    height:100%;
+    border:0;
+    background:#0F1712;
+    object-fit:contain;
+  }
+  body.coach-product .video-preview-foot{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:8px;
+    color:var(--ink3);
+    font-size:10.5px;
+  }
+  body.coach-product .video-preview-empty{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+    padding:14px;
+    border:1px solid var(--line);
+    background:var(--canvas);
+    color:var(--ink2);
+    font-size:11px;
+    line-height:1.5;
+  }
+  body.coach-product .video-preview-empty b{color:var(--ink);font-size:11.5px}
+
+  /* Mobile sheet header. The previous shell had no .sh definition, so More/Close
+     appeared as raw text against the left edge. */
+  body.coach-product .coach-overlay.psheet .sh{
+    min-height:48px;
+    padding:8px 16px 10px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--paper);
+  }
+  body.coach-product .coach-overlay.psheet .sh h3{
+    margin:0;
+    font-size:15px;
+    line-height:1.2;
+    font-weight:700;
+  }
+  body.coach-product .coach-overlay.psheet .sh .sp{flex:1}
+  body.coach-product .coach-overlay.psheet .sh .btn.q{
+    min-height:30px;
+    padding:4px 10px;
+    border:0;
+    background:transparent;
+    color:var(--blue);
+    font-size:11.5px;
+    font-weight:600;
+  }
+
+  /* Safeguarding callouts use the source red semantic treatment. */
+  body.coach-product .coach-field .callout.r{
+    border-color:#E4C5C1!important;
+    border-left-color:var(--red)!important;
+    background:var(--red-t)!important;
+    color:var(--red)!important;
+  }
+
+  /* Keep all three player-profile headline metrics deliberately equal. */
+  body.coach-product .coach-profile-phone-metrics>div{
+    min-width:0;
+  }
+  body.coach-product .coach-profile-phone-metrics .value{
+    font-size:17px!important;
+    line-height:1.15;
+    min-height:20px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  body.coach-product .coach-profile-phone-metrics .metric-note{
+    margin-top:3px;
+    color:var(--ink3);
+    font-size:8.5px;
+    line-height:1.15;
+    text-transform:none;
+    letter-spacing:0;
+  }
+
+  /* Match Facts selection/assignment copy is instructional, not another card. */
+  body.coach-product .coach-field .help{
+    font-size:10px;
+    line-height:1.5;
+  }
+}
