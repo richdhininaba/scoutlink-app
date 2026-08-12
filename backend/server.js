@@ -107,6 +107,7 @@ app.use('/api/stratex', require('./routes/stratexJobs'));
 app.use('/api/scouts', require('./routes/scouts'));
 app.use('/api/scout', require('./routes/scouts'));
 app.use('/api/coaches', require('./routes/coaches'));
+app.use('/api/coach-experience', require('./routes/coachExperience'));
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/awards', require('./routes/awards'));
 app.use('/api/scout-intelligence', require('./routes/scoutIntelligence'));
