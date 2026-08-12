@@ -6,523 +6,57 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Coach setup | ScoutLink</title>
 <link rel="icon" type="image/png" href="/scoutlink-favicon.png">
-<link rel="apple-touch-icon" href="/scoutlink-favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --ink:#0F1712;--ink2:#4A554E;--ink3:#7E8983;--ink4:#A7B0AA;
-  --line:#E3E7E4;--line2:#CDD4CF;--paper:#FFFFFF;--canvas:#F6F8F7;--canvas2:#EFF2F0;
-  --blue:#1B5AC4;--blue-d:#154AA3;--blue-t:#EAF0FB;--blue-t2:#D6E2F6;
-  --green:#3F8F33;--green-t:#E9F3E6;--amber:#B07316;--amber-t:#FBF2E2;--red:#B0362C;--red-t:#F9EAE8;
-  --slate:#33414B;--ui:'Inter',sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-}
-*{box-sizing:border-box}
-html,body{min-height:100%;margin:0;background:var(--canvas);color:var(--ink);font-family:var(--ui);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
-a{color:inherit}
-:focus-visible{outline:3px solid rgba(27,90,196,.22);outline-offset:2px}
-
-.onb{min-height:100vh;background:var(--canvas)}
-.onb-top{
-  height:62px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;
-  padding:0 30px;gap:16px;position:sticky;top:0;z-index:30
-}
-.onb-logo{display:block;width:150px;height:34px;background:url('/scoutlink_logo.png?v=20260812-1') no-repeat left center/contain;flex:0 0 150px}
-.onb-top .sp{flex:1}
-.onb-status{font-size:11.5px;color:var(--ink3);white-space:nowrap}
-.onb-save{height:29px;border:0;background:transparent;color:var(--blue);font-size:11.5px;font-weight:600;padding:0 4px}
-.onb-main{width:min(920px,calc(100% - 60px));margin:0 auto;padding:36px 0 54px}
-.steps{display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);margin-bottom:24px}
-.step{flex:1;min-width:0;min-height:48px;padding:12px 16px;display:flex;align-items:center;gap:10px;border:0;border-right:1px solid var(--line);background:var(--paper);color:var(--ink3);text-align:left}
-.step:last-child{border-right:0}
-.step i{width:20px;height:20px;flex:0 0 20px;border:1px solid var(--line2);border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;font-weight:700}
-.step span{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.step.current{background:var(--blue-t);color:var(--blue-d)}
-.step.current i{background:var(--blue);border-color:var(--blue);color:#fff}
-.step.done{color:var(--ink2)}
-.step.done i{background:var(--green);border-color:var(--green);color:#fff}
-.step:disabled{cursor:not-allowed}
-
-.card{background:var(--paper);border:1px solid var(--line)}
-.card-b{padding:30px}
-.onb-title{margin:0 0 6px;font-size:23px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
-.onb-intro{margin:0 0 24px;color:var(--ink3);font-size:13px;max-width:70ch}
-.onb-error{display:none;margin:0 0 16px;border:1px solid #E4C5C1;border-left:3px solid var(--red);background:var(--red-t);color:var(--red);padding:11px 14px;font-size:11.5px}
-.onb-error.show{display:block}
-.view{display:none}.view.active{display:block}
-.view-head{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-.view-head h2{margin:0;font-size:15px;font-weight:700}
-.view-head p{margin:5px 0 0;color:var(--ink3);font-size:11.5px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fld{margin-bottom:15px;min-width:0}.fld.full{grid-column:1/-1}
-.fl{display:block;margin-bottom:6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700}
-.fl em{font-style:normal;color:var(--blue)}
-.fld input,.fld select,.fld textarea{
-  width:100%;min-width:0;border:1px solid var(--line2);border-radius:3px;background:var(--paper);
-  padding:8px 10px;outline:0
-}
-.fld input,.fld select{height:36px}
-.fld textarea{min-height:128px;resize:vertical;font-family:var(--mono);font-size:10.5px;line-height:1.55}
-.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,90,196,.09)}
-.fld input[readonly]{background:var(--canvas);color:var(--ink3)}
-.help{margin-top:8px;font-size:11px;color:var(--ink3)}
-.callout{margin-top:14px;border:1px solid var(--blue-t2);border-left:3px solid var(--blue);background:var(--blue-t);padding:11px 14px;color:var(--blue-d);font-size:11px}
-.pills{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.pill{font-size:10.5px;font-weight:600;background:var(--canvas2);color:var(--ink2);padding:3px 7px;border-radius:2px}
-.pill.ok{background:var(--green-t);color:var(--green)}
-.preview{margin-top:14px;border:1px solid var(--line);background:var(--canvas);padding:12px 14px;display:flex;align-items:center;gap:10px}
-.avatar{width:32px;height:32px;border-radius:50%;background:var(--slate);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700}
-.preview b,.preview span{display:block}.preview span{margin-top:2px;color:var(--ink3);font-size:11px}
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.summary div{border:1px solid var(--line);background:var(--canvas);padding:11px 12px}
-.summary b{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3)}
-.summary span{display:block;margin-top:4px;font-size:11.5px;font-weight:600}
-.finish{display:none;margin-top:14px;background:var(--green-t);color:var(--green);padding:10px 12px;font-size:11.5px;font-weight:600}.finish.show{display:block}
-
-.foot{display:flex;align-items:center;gap:10px;padding:16px 20px;border-top:1px solid var(--line);background:var(--canvas)}
-.foot .sp{flex:1}
-.btn{min-height:31px;padding:6px 12px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
-.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}
-.btn.q{border-color:transparent;background:transparent;color:var(--blue)}
-.btn.dgr{border-color:#E4C5C1;color:var(--red);background:var(--paper)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-
-@media(max-width:760px){
-  html,body{font-size:12.5px}
-  .onb-top{height:58px;padding:0 16px}
-  .onb-logo{width:128px;flex-basis:128px;height:30px}
-  .onb-status{display:none}
-  .onb-save{margin-left:auto;font-size:11px}
-  .onb-main{width:auto;margin:0;padding:18px 16px 30px}
-  .steps{margin-bottom:16px}
-  .step{padding:10px 8px;justify-content:center}
-  .step span{display:none}
-  .step i{width:22px;height:22px;flex-basis:22px}
-  .card-b{padding:20px 18px}
-  .onb-title{font-size:20px}
-  .onb-intro{font-size:12px;margin-bottom:18px}
-  .grid,.summary{grid-template-columns:1fr}
-  .fld input,.fld select{height:42px}
-  .fld textarea{min-height:116px}
-  .foot{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .foot .sp{display:none}
-  .foot .btn{width:100%;min-height:42px}
-  #continueButton{grid-column:2}
-  #backButton,#exitButton,#skipStepButton{grid-column:auto}
-}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+:root{--ink:#0F1712;--ink2:#4A554E;--ink3:#7E8983;--ink4:#A7B0AA;--line:#E3E7E4;--line2:#CDD4CF;--paper:#fff;--canvas:#F6F8F7;--canvas2:#EFF2F0;--blue:#1B5AC4;--blue-d:#154AA3;--blue-t:#EAF0FB;--green:#3F8F33;--green-t:#E9F3E6;--amber:#B07316;--amber-t:#FBF2E2;--red:#B0362C;--red-t:#F9EAE8;--slate:#33414B;--ui:'Inter',sans-serif;--lockup:url('/scoutlink_logo.png?v=20260812-1');--mark:url('/scoutlink-favicon.png')}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--canvas);color:var(--ink);font-family:var(--ui);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}button,input,select{font:inherit;color:inherit}button{cursor:pointer}:focus-visible{outline:3px solid rgba(27,90,196,.22);outline-offset:2px}.top{height:62px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}.logo{width:150px;height:34px;background:var(--lockup) no-repeat left center/contain}.sp{flex:1}.mut{color:var(--ink3)}.btn{min-height:29px;padding:5px 12px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap}.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}.btn.q{background:transparent;border-color:transparent;color:var(--blue)}.btn.sm{min-height:24px;padding:4px 9px;font-size:11px}.main{max-width:880px;margin:0 auto;padding:34px 0 44px}.steps{display:flex;background:var(--paper);border:1px solid var(--line);margin-bottom:22px}.st{flex:1;display:flex;align-items:center;gap:10px;padding:13px 16px;border-right:1px solid var(--line);color:var(--ink3);font-weight:600}.st:last-child{border-right:0}.st i{width:20px;height:20px;border:1px solid var(--line2);border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px}.st.on{background:var(--blue-t);color:var(--blue-d)}.st.on i{background:var(--blue);border-color:var(--blue);color:#fff}.st.dn{color:var(--ink2)}.st.dn i{background:var(--green);border-color:var(--green);color:#fff}.card{background:var(--paper);border:1px solid var(--line)}.card-b{padding:26px}.foot{display:flex;align-items:center;gap:8px;padding:14px 16px;border-top:1px solid var(--line);background:var(--canvas)}h1{margin:0 0 6px;font-size:23px;line-height:1.2;letter-spacing:-.02em}h3{margin:0;font-size:14px}.intro{font-size:13px;margin-bottom:22px}.g{display:grid;gap:14px}.g.two{grid-template-columns:1fr 1fr}.g.three{grid-template-columns:repeat(3,1fr)}.fld{margin-bottom:14px}.fl{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);font-weight:700;display:block;margin-bottom:6px}.inp{width:100%;min-height:34px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);padding:8px 10px}.inp[readonly]{background:var(--canvas);color:var(--ink2)}.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{min-height:28px;padding:4px 11px;border:1px solid var(--line2);border-radius:3px;background:var(--paper);color:var(--ink2);font-size:11.5px}.chip.on{border-color:var(--blue);background:var(--blue-t);color:var(--blue-d);font-weight:600}.tag{display:inline-flex;align-items:center;gap:5px;min-height:19px;padding:2px 7px;border-radius:2px;background:var(--canvas2);font-size:10.5px;font-weight:600}.tag.b{background:var(--blue-t);color:var(--blue-d)}.tag.g{background:var(--green-t);color:var(--green)}.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}.choice{padding:18px;text-align:left}.choice.on{border-color:var(--blue);background:var(--blue-t)}.choice b{display:block;font-size:14px}.choice .mut{font-size:11.5px;margin:6px 0 12px}.row{display:flex;gap:12px;align-items:center;padding:14px 16px;border:1px solid var(--line);margin-bottom:8px}.row.primary{border-color:var(--blue);background:var(--blue-t)}.icn{width:28px;height:28px;display:grid;place-items:center;background:var(--canvas2);color:var(--ink2);font-weight:700}.icn.b{background:var(--blue-t);color:var(--blue)}.row .rt{display:block;font-size:12.5px}.row .rs{display:block;text-decoration:none;font-size:11.5px;color:var(--ink3);margin-top:2px}.help{font-size:11px;color:var(--ink3);margin-top:6px}.msg{display:none;padding:11px 14px;margin-bottom:14px;border:1px solid #E4C5C1;border-left:3px solid var(--red);background:var(--red-t);color:var(--red)}.msg.show{display:block}.mobile-progress{display:none}
+@media(max-width:760px){.top{height:50px;padding:0 14px}.logo{width:26px;height:26px;background-image:var(--mark);background-position:center}.top .step-label{display:none}.main{max-width:none;margin:0;padding:14px}.steps{display:none}.mobile-progress{display:block}.bars{display:flex;gap:4px;margin-bottom:8px}.bars i{display:block;height:3px;flex:1;background:var(--canvas2)}.bars i.on{background:var(--blue)}.mobile-step{display:flex;align-items:baseline;margin-bottom:14px}.mobile-step b{font-size:13px}.mobile-step span{margin-left:auto;font-size:11px;color:var(--ink3)}.card-b{padding:14px}h1{font-size:20px}.intro{font-size:12px;margin-bottom:16px}.g.two,.g.three{grid-template-columns:1fr}.choice{padding:14px}.choice.on[data-method="bulk"]{border-color:var(--line);background:var(--paper)}.choice[data-method="one"]{border-color:var(--blue);background:var(--blue-t)}.foot{padding:12px 0 0;border-top:0;background:transparent}.foot .mut{display:none}.foot .sp{display:none}.foot .btn{flex:1;min-height:40px}.fld .inp{min-height:42px}.row{padding:14px}.top .btn.q{margin-left:auto}.desktop-copy{display:none}}
 </style>
 </head>
 <body>
-<div class="onb">
-  <header class="onb-top">
-    <a class="onb-logo" href="/coach/dashboard" aria-label="ScoutLink"></a>
-    <div class="sp"></div>
-    <span class="onb-status" id="saveStatus" aria-live="polite">Draft not saved yet</span>
-    <button class="onb-save" id="saveLaterButton" type="button">Save and finish later</button>
-  </header>
-
-  <main class="onb-main">
-    <nav class="steps" aria-label="Coach setup progress">
-      <button class="step current" type="button" data-step-jump="0" aria-current="step"><i>1</i><span>You</span></button>
-      <button class="step" type="button" data-step-jump="1"><i>2</i><span>The team</span></button>
-      <button class="step" type="button" data-step-jump="2"><i>3</i><span>Squad list</span></button>
-      <button class="step" type="button" data-step-jump="3"><i>4</i><span>First player</span></button>
-    </nav>
-
-    <section class="card" aria-live="polite">
-      <div class="card-b">
-        <h1 class="onb-title" id="stepTitle">Let's set up your coach account</h1>
-        <p class="onb-intro" id="stepIntro">Four short steps. You can stop and come back without losing your draft.</p>
-        <div class="onb-error" id="onboardingError" role="alert"></div>
-
-        <article class="view active" data-onboarding-view="0">
-          <header class="view-head"><h2>You</h2><p>Verified account details carry into the workspace so ScoutLink never asks you to re-type what it already knows.</p></header>
-          <div class="grid">
-            <div class="fld"><label class="fl" for="coachFirst">First name <em>Required</em></label><input id="coachFirst" autocomplete="given-name" placeholder="First name"></div>
-            <div class="fld"><label class="fl" for="coachLast">Last name <em>Required</em></label><input id="coachLast" autocomplete="family-name" placeholder="Last name"></div>
-            <div class="fld full"><label class="fl" for="coachEmail">Email</label><input id="coachEmail" type="email" autocomplete="email" readonly></div>
-          </div>
-          <div class="callout"><b>Already verified.</b> Your account identity came from registration. Only editable setup information is saved here.</div>
-        </article>
-
-        <article class="view" data-onboarding-view="1">
-          <header class="view-head"><h2>Tell us about the team</h2><p>This context appears around the player records scouts see and helps local discovery.</p></header>
-          <div class="grid">
-            <div class="fld"><label class="fl" for="teamName">Team name <em>Required</em></label><input id="teamName" autocomplete="organization" placeholder="Hendon Colts"></div>
-            <div class="fld"><label class="fl" for="ageGroup">Age group <em>Required</em></label><select id="ageGroup"><option value="">Select age group</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option></select></div>
-            <div class="fld"><label class="fl" for="league">League</label><input id="league" placeholder="League or competition"></div>
-            <div class="fld"><label class="fl" for="city">Home venue or town</label><input id="city" autocomplete="address-level2" placeholder="Town, venue or local area"></div>
-            <div class="fld"><label class="fl" for="squadSize">Rough squad size</label><input id="squadSize" type="number" min="1" max="40" inputmode="numeric" placeholder="17"></div>
-            <div class="fld"><label class="fl" for="assistantEmail">Assistant Coach email</label><input id="assistantEmail" type="email" autocomplete="email" placeholder="Optional"></div>
-          </div>
-          <div class="help">Scouts search by area, so the venue/town field helps the right local scouts find the squad.</div>
-        </article>
-
-        <article class="view" data-onboarding-view="2">
-          <header class="view-head"><h2>Paste a squad list if it saves time</h2><p>One player per line. Nothing is silently turned into a live player record; the list stays setup context until you review it.</p></header>
-          <div class="fld full"><label class="fl" for="squadList">Squad list <em>Optional</em></label><textarea id="squadList" placeholder="Kai Robertson, AM&#10;Tayo Okafor, ST&#10;Mia Bailey, CB"></textarea></div>
-          <div class="pills"><span class="pill ok" id="squadRowsCount">0 players recognised</span><span class="pill">Review later in Bulk Import</span></div>
-          <div class="callout"><b>No hidden write.</b> Pasted names stay in the setup draft until you intentionally review them.</div>
-        </article>
-
-        <article class="view" data-onboarding-view="3">
-          <header class="view-head"><h2>One useful player first?</h2><p>Add a first player now or skip this and go straight to the dashboard. Exact assessment detail can be completed later.</p></header>
-          <div class="grid">
-            <div class="fld"><label class="fl" for="pFirst">First name <em>Required if adding</em></label><input id="pFirst" autocomplete="off"></div>
-            <div class="fld"><label class="fl" for="pLast">Last name <em>Required if adding</em></label><input id="pLast" autocomplete="off"></div>
-            <div class="fld"><label class="fl" for="pAgeGroup">Age group</label><select id="pAgeGroup"><option value="">Use team age group</option><option>U7</option><option>U8</option><option>U9</option><option>U10</option><option>U11</option><option>U12</option><option>U13</option><option>U14</option><option>U15</option><option>U16</option></select></div>
-            <div class="fld"><label class="fl" for="pPosition">Position group <em>Required if adding</em></label><select id="pPosition"><option value="">Select position group</option><option>Goalkeeper</option><option>Defender</option><option>Midfielder</option><option>Forward</option></select></div>
-          </div>
-          <div class="preview" id="playerPreview"><span class="avatar">PL</span><div><b>First player preview</b><span>Complete the fields above to preview the record.</span></div></div>
-          <div class="summary" id="finishSummary"></div>
-          <div class="finish" id="finishToast">Workspace created. Opening Dashboard…</div>
-        </article>
-      </div>
-
-      <footer class="foot">
-        <button class="btn dgr" id="exitButton" type="button">Skip for now</button>
-        <button class="btn" id="backButton" type="button" hidden>Back</button>
-        <div class="sp"></div>
-        <button class="btn q" id="skipStepButton" type="button" hidden>Skip this step</button>
-        <button class="btn p" id="continueButton" type="button">Continue</button>
-      </footer>
-    </section>
-  </main>
-</div>
-
+<header class="top"><a class="logo" href="/coach/dashboard" aria-label="ScoutLink"></a><div class="sp"></div><span class="mut step-label" id="topStep">Step 1 of 4</span><button class="btn q" id="finishLater" type="button">Save and finish later</button></header>
+<main class="main">
+  <nav class="steps" id="steps" aria-label="Coach setup progress"></nav>
+  <div class="mobile-progress"><div class="bars" id="bars"></div><div class="mobile-step"><b id="mobileStage">You</b><span id="mobileStep">Step 1 of 4</span></div></div>
+  <section class="card">
+    <div class="card-b">
+      <div class="msg" id="error" role="alert"></div>
+      <div id="content"></div>
+    </div>
+    <div class="foot"><span class="mut" id="footStep">Step 1 of 4</span><div class="sp"></div><button class="btn" id="back" type="button" hidden>Back</button><button class="btn p" id="next" type="button">Continue</button></div>
+  </section>
+</main>
 <script src="/js/main.js"></script>
-<script src="/js/leagues.js"></script>
 <script>
+'use strict';
 (function(){
-  'use strict';
-
-  /* Keep the current production draft key so existing in-progress Coach setup is restored. */
-  var DRAFT_KEY='scoutlink.coach.onboarding.v10';
-  var LEGACY_DRAFT_KEY='scoutlink.coach.onboarding.v9';
-  var step=0,maxUnlocked=0,submitting=false,syncTimer=null,firstPlayerCreatedId='';
-  var state={
-    coachFirst:'',coachLast:'',coachEmail:'',teamName:'',ageGroup:'',league:'',city:'',
-    squadSize:'',assistantEmail:'',squadList:'',pFirst:'',pLast:'',pAgeGroup:'',pPosition:'',pFoot:'Right'
-  };
-
-  var copy=[
-    ["Let's set up your coach account","Four short steps. You can stop and come back without losing your draft."],
-    ["Tell us about the team","This context appears around the player records scouts see and helps local discovery."],
-    ["Paste a squad list if it saves time","One player per line. Nothing becomes a live player record until you intentionally review it."],
-    ["One useful player first?","Add a first player now or skip this and go straight to the dashboard."]
-  ];
-
-  function el(id){return document.getElementById(id)}
-  function route(path){return typeof window.cleanRouteFor==='function'?window.cleanRouteFor(path):path}
-  function isDemo(){try{return sessionStorage.getItem('sl_public_demo')==='1'||localStorage.getItem('sl_demo_mode')==='1'}catch(_){return false}}
-  function user(){if(window.Auth&&window.Auth.user)return window.Auth.user;try{return JSON.parse(localStorage.getItem('sl_user')||'null')||{}}catch(_){return{}}}
-  function userType(){return (window.Auth&&window.Auth.type)||localStorage.getItem('sl_type')||sessionStorage.getItem('sl_public_demo_role')||''}
-  function authToken(){return (window.Auth&&window.Auth.token)||localStorage.getItem('sl_token')||''}
-  function apiRequest(method,path,payload){
-    if(typeof window.api==='function')return window.api(method,path,payload);
-    var base=(window.API||localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app').replace(/\/+$/,'');
-    return fetch(base+path,{
-      method:method,credentials:'include',
-      headers:Object.assign({'Content-Type':'application/json'},authToken()?{'Authorization':'Bearer '+authToken()}:{}),
-      body:method==='GET'?undefined:JSON.stringify(payload||{})
-    }).then(function(response){
-      return response.json().catch(function(){return{}}).then(function(data){
-        if(!response.ok)throw new Error(data.error||'Request failed');
-        return data;
-      });
-    });
-  }
-  function getValue(id){var node=el(id);return node?String(node.value||'').trim():''}
-  function setValue(id,value){var node=el(id);if(node&&document.activeElement!==node)node.value=value||''}
-  function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})}
-  function collect(){Object.keys(state).forEach(function(key){state[key]=getValue(key)})}
-  function draftObject(){collect();return{version:14,step:step,maxUnlocked:maxUnlocked,state:state,firstPlayerCreatedId:firstPlayerCreatedId,savedAt:new Date().toISOString()}}
-  function applyState(){Object.keys(state).forEach(function(key){setValue(key,state[key])});updateSquadCount();updatePlayerPreview();updateSummary()}
-  function showError(message){var box=el('onboardingError');box.textContent=message||'';box.classList.toggle('show',!!message);if(message)box.scrollIntoView({behavior:'smooth',block:'center'})}
-  function setSaveStatus(message,tone){var node=el('saveStatus');node.textContent=message;node.style.color=tone==='ok'?'var(--green)':tone==='pending'?'var(--amber)':'var(--ink3)'}
-
-  function saveLocal(label){
-    var draft=draftObject();
-    try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));setSaveStatus(label||'Saved on device','ok')}
-    catch(_){setSaveStatus('Local save unavailable','pending')}
-    scheduleRemoteSave(draft);
-    return draft;
-  }
-
-  function scheduleRemoteSave(draft){
-    if(isDemo()||!authToken())return;
-    clearTimeout(syncTimer);
-    setSaveStatus(navigator.onLine===false?'Saved on device · will sync':'Saving to ScoutLink…','pending');
-    syncTimer=setTimeout(function(){
-      apiRequest('POST','/api/onboarding/coach-draft',{draft:draft})
-        .then(function(){setSaveStatus('Saved to ScoutLink','ok')})
-        .catch(function(){setSaveStatus('Saved on device · will sync','pending')});
-    },450);
-  }
-
-  function newerDraft(localDraft,remoteDraft){
-    if(!remoteDraft)return localDraft;
-    if(!localDraft)return remoteDraft;
-    return (Date.parse(remoteDraft.savedAt||0)||0)>(Date.parse(localDraft.savedAt||0)||0)?remoteDraft:localDraft;
-  }
-
-  function applyDraft(saved){
-    if(!saved||!saved.state)return;
-    Object.keys(state).forEach(function(key){if(saved.state[key]!==undefined)state[key]=saved.state[key]});
-    step=Math.max(0,Math.min(3,Number(saved.step)||0));
-    maxUnlocked=Math.max(step,Math.min(3,Number(saved.maxUnlocked)||0));
-    firstPlayerCreatedId=saved.firstPlayerCreatedId||'';
-  }
-
-  function localDraft(){
-    try{
-      var current=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
-      if(current&&current.state)return current;
-      var legacy=JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY)||'null');
-      return legacy&&legacy.state?legacy:null;
-    }catch(_){return null}
-  }
-
-  function loadRemoteDraft(){
-    if(isDemo()||!authToken())return Promise.resolve(null);
-    return apiRequest('GET','/api/onboarding/me').then(function(response){
-      var data=response&&response.data||{};
-      if(data.setup_wizard_completed){window.location.replace(route('/coach/dashboard'));return null}
-      var wizard=data.wizard_data||{};
-      return wizard.draft&&wizard.draft.state?wizard.draft:null;
-    }).catch(function(){return null});
-  }
-
-  function prefillCoach(){
-    var u=user()||{};
-    state.coachFirst=state.coachFirst||u.first_name||u.firstName||'';
-    state.coachLast=state.coachLast||u.last_name||u.lastName||'';
-    state.coachEmail=state.coachEmail||u.email||localStorage.getItem('sl_user_email')||'';
-    state.teamName=state.teamName||u.team_name||u.teamName||'';
-    state.league=state.league||u.league||u.team_league||'';
-    state.city=state.city||u.city||u.team_county||u.location||'';
-  }
-
-  function hasFirstPlayer(){return!!(state.pFirst||state.pLast||state.pAgeGroup||state.pPosition)}
-
-  function validateCurrent(){
-    collect();
-    if(step===0){
-      if(!state.coachFirst)return'Enter your first name.';
-      if(!state.coachLast)return'Enter your last name.';
-    }
-    if(step===1){
-      if(!state.teamName)return'Enter the team name.';
-      if(!state.ageGroup)return'Select the team age group.';
-      if(state.squadSize){
-        var size=Number(state.squadSize);
-        if(!Number.isFinite(size)||size<1||size>40)return'Enter a squad size between 1 and 40.';
-      }
-      if(state.assistantEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.assistantEmail))return'Enter a valid assistant Coach email or leave it blank.';
-    }
-    if(step===3&&hasFirstPlayer()&&(!state.pFirst||!state.pLast||!state.pPosition)){
-      return'To add the first player, enter their first name, last name and position group.';
-    }
-    return'';
-  }
-
-  function updateSquadCount(){
-    var lines=String(state.squadList||'').split(/\r?\n/).map(function(row){return row.trim()}).filter(Boolean);
-    el('squadRowsCount').textContent=lines.length+(lines.length===1?' player recognised':' players recognised');
-  }
-
-  function updatePlayerPreview(){
-    var first=state.pFirst||'',last=state.pLast||'';
-    var initials=((first.charAt(0)||'P')+(last.charAt(0)||'L')).toUpperCase();
-    var name=(first+' '+last).trim()||'First player preview';
-    var ag=state.pAgeGroup||state.ageGroup||'Age group TBC';
-    var pos=state.pPosition||'Position group TBC';
-    el('playerPreview').innerHTML='<span class="avatar">'+escapeHtml(initials)+'</span><div><b>'+escapeHtml(name)+'</b><span>'+escapeHtml(ag+' · '+pos)+'</span></div>';
-  }
-
-  function updateSummary(){
-    el('finishSummary').innerHTML=[
-      ['Team',state.teamName||'Not set'],
-      ['Age group',state.ageGroup||'Not set'],
-      ['Squad list',state.squadList?'Saved for Bulk Import review':'Skipped'],
-      ['First player',hasFirstPlayer()?((state.pFirst+' '+state.pLast).trim()||'Started'):'Skipped']
-    ].map(function(item){return'<div><b>'+escapeHtml(item[0])+'</b><span>'+escapeHtml(item[1])+'</span></div>'}).join('');
-  }
-
-  function positionCode(group){return{Goalkeeper:'GK',Defender:'CB',Midfielder:'CM',Forward:'ST'}[group]||''}
-
-  function firstPlayerPayload(){
-    if(!hasFirstPlayer())return null;
-    var position=positionCode(state.pPosition);
-    return{
-      firstName:state.pFirst,lastName:state.pLast,ageGroup:state.pAgeGroup||state.ageGroup,
-      positionGroup:state.pPosition,specificPosition:position,primaryPosition:position,
-      positions:[position],foot:state.pFoot||'Right',attributeRatings:{}
-    };
-  }
-
-  function wizardPayload(){
-    collect();
-    return{
-      coach:{firstName:state.coachFirst,lastName:state.coachLast,email:state.coachEmail},
-      team:{teamName:state.teamName,ageGroup:state.ageGroup,league:state.league,city:state.city},
-      squadSize:state.squadSize,squadList:state.squadList,assistantInviteEmail:state.assistantEmail,
-      firstPlayer:hasFirstPlayer()?{firstName:state.pFirst,lastName:state.pLast,ageGroup:state.pAgeGroup||state.ageGroup,positionGroup:state.pPosition}:null
-    };
-  }
-
-  function setStep(next){
-    step=Math.max(0,Math.min(3,next));
-    maxUnlocked=Math.max(maxUnlocked,step);
-    document.querySelectorAll('[data-onboarding-view]').forEach(function(view){
-      view.classList.toggle('active',Number(view.getAttribute('data-onboarding-view'))===step);
-    });
-    document.querySelectorAll('[data-step-jump]').forEach(function(button){
-      var index=Number(button.getAttribute('data-step-jump'));
-      button.disabled=index>maxUnlocked;
-      button.classList.toggle('done',index<step);
-      button.classList.toggle('current',index===step);
-      button.querySelector('i').textContent=index<step?'✓':String(index+1);
-      if(index===step)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
-    });
-    el('stepTitle').textContent=copy[step][0];
-    el('stepIntro').textContent=copy[step][1];
-    el('backButton').hidden=step===0;
-    el('skipStepButton').hidden=step<2;
-    el('continueButton').textContent=['Continue','Continue','Continue','Create workspace'][step];
-    applyState();
-    showError('');
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  function continueFlow(){
-    var error=validateCurrent();
-    if(error){showError(error);return}
-    saveLocal('Saved');
-    if(step<3)setStep(step+1);else finish(false);
-  }
-
-  function skipStep(){
-    collect();
-    if(step===2){
-      state.squadList='';
-      setValue('squadList','');
-      saveLocal('Squad list skipped');
-      setStep(3);
-      return;
-    }
-    if(step===3)finish(true);
-  }
-
-  function goDashboard(){window.location.href=route('/coach/dashboard')}
-
-  function createFirstPlayerIfNeeded(){
-    var player=firstPlayerPayload();
-    if(!player||firstPlayerCreatedId)return Promise.resolve(null);
-    return apiRequest('POST','/api/players',player).then(function(response){
-      firstPlayerCreatedId=response&&response.player&&response.player.id||'';
-      saveLocal('First player created');
-      return response;
-    });
-  }
-
-  function finish(skipPlayer){
-    if(submitting)return;
-    collect();
-
-    if(skipPlayer){
-      state.pFirst='';state.pLast='';state.pAgeGroup='';state.pPosition='';firstPlayerCreatedId='';
-    }
-
-    var old=step;
-    step=1;
-    var teamProblem=validateCurrent();
-    step=old;
-    if(teamProblem){showError(teamProblem);setStep(1);return}
-
-    if(hasFirstPlayer()){
-      var firstProblem=validateCurrent();
-      if(firstProblem){showError(firstProblem);return}
-    }
-
-    submitting=true;
-    el('continueButton').disabled=true;
-    el('continueButton').textContent='Creating workspace…';
-    saveLocal('Submitting setup');
-
-    if(isDemo()){
-      try{
-        sessionStorage.setItem('sl_public_demo_onboarding',JSON.stringify(wizardPayload()));
-        localStorage.removeItem(DRAFT_KEY);localStorage.removeItem(LEGACY_DRAFT_KEY);
-      }catch(_){}
-      el('finishToast').classList.add('show');
-      setTimeout(goDashboard,500);
-      return;
-    }
-
-    apiRequest('POST','/api/onboarding/coach-wizard',wizardPayload())
-      .then(function(){return createFirstPlayerIfNeeded()})
-      .then(function(){
-        try{localStorage.removeItem(DRAFT_KEY);localStorage.removeItem(LEGACY_DRAFT_KEY)}catch(_){}
-        el('finishToast').classList.add('show');
-        setSaveStatus('Setup complete','ok');
-        setTimeout(function(){window.location.href=route('/coach/dashboard?setup=done')},650);
-      })
-      .catch(function(error){
-        submitting=false;
-        el('continueButton').disabled=false;
-        el('continueButton').textContent='Create workspace';
-        showError(error&&error.message?error.message:'Coach setup could not be completed.');
-      });
-  }
-
-  function bind(){
-    document.querySelectorAll('input,select,textarea').forEach(function(control){
-      function changed(){collect();saveLocal('Saved');applyState()}
-      control.addEventListener('input',changed);
-      control.addEventListener('change',changed);
-    });
-
-    document.querySelectorAll('[data-step-jump]').forEach(function(button){
-      button.addEventListener('click',function(){
-        var target=Number(button.getAttribute('data-step-jump'));
-        if(target<=maxUnlocked){collect();saveLocal('Saved');setStep(target)}
-      });
-    });
-
-    el('backButton').addEventListener('click',function(){collect();saveLocal('Saved');setStep(step-1)});
-    el('exitButton').addEventListener('click',goDashboard);
-    el('skipStepButton').addEventListener('click',skipStep);
-    el('continueButton').addEventListener('click',continueFlow);
-    el('saveLaterButton').addEventListener('click',function(){saveLocal('Saved');setTimeout(goDashboard,120)});
-    window.addEventListener('online',function(){saveLocal('Back online · syncing')});
-  }
-
-  function init(){
-    if(!isDemo()&&window.Auth&&window.Auth.isLoggedIn&&(!window.Auth.isLoggedIn()||userType()!=='Coach')){
-      window.location.href=route('/login');
-      return;
-    }
-
-    var local=localDraft();
-    loadRemoteDraft().then(function(remote){
-      var chosen=newerDraft(local,remote);
-      applyDraft(chosen);
-      prefillCoach();
-      applyState();
-      bind();
-      if(window.bindLeagueInput)window.bindLeagueInput('league');
-      setStep(step);
-      setSaveStatus(chosen?'Draft restored':'Draft not saved yet',chosen?'ok':'');
-    });
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-})();
+  var state={step:0,maxUnlocked:0,coachFirst:'',coachLast:'',coachEmail:'',roleAtClub:'Head Coach',phone:'',teamName:'',league:'',ageGroups:[],homeVenue:'',squadSize:'',squadMethod:'',playerCount:0};
+  var names=['You','The team','Squad list','First player'];
+  function api(m,p,b){return window.api(m,p,b)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function user(){return window.Auth&&window.Auth.user||{}}
+  function showError(t){var e=document.getElementById('error');e.textContent=t||'';e.classList.toggle('show',!!t)}
+  function draft(){return{version:14,step:state.step,maxUnlocked:state.maxUnlocked,state:state,savedAt:new Date().toISOString()}}
+  function saveDraft(){return api('POST','/api/onboarding/coach-draft',{draft:draft()}).then(function(){return true})}
+  function chip(label,on,attrs){return'<button class="chip '+(on?'on':'')+'" type="button" '+attrs+'>'+esc(label)+'</button>'}
+  function input(label,id,value,type,extra){return'<div class="fld"><label class="fl" for="'+id+'">'+esc(label)+'</label><input class="inp" id="'+id+'" '+(type?'type="'+type+'" ':'')+(extra||'')+' value="'+esc(value||'')+'"></div>'}
+  function step1(){return'<h1>Let\'s set up your coach account</h1><div class="mut intro">Four short steps. You can add players later — this takes about three minutes.</div><div class="g two">'+input('First name','coachFirst',state.coachFirst)+input('Last name','coachLast',state.coachLast)+'</div><div class="fld"><span class="fl">Email</span><div class="inp">'+esc(state.coachEmail)+' <span class="tag g" style="margin-left:auto"><i></i>Verified</span></div></div><div class="fld"><span class="fl">Role at the club</span><div class="chips">'+['Head Coach','Assistant Coach','Manager','Club official'].map(function(x){return chip(x,state.roleAtClub===x,'data-role="'+x+'"')}).join('')+'</div></div>'+input('Mobile — optional','phone',state.phone,'tel','placeholder="Urgent safeguarding contact only"')}
+  function step2(){return'<h1>Tell us about the team</h1><div class="mut intro">This appears on every player profile a scout can see.</div><div class="g two">'+input('Team name','teamName',state.teamName)+input('League','league',state.league)+'</div><div class="fld"><span class="fl">Age groups you coach</span><div class="chips">'+['U7','U8','U9','U10','U11','U12','U13','U14','U15','U16'].map(function(x){return chip(x,state.ageGroups.indexOf(x)>=0,'data-age="'+x+'"')}).join('')+'</div></div>'+input('Home venue or town','homeVenue',state.homeVenue,'text','placeholder="Powerleague Barnet, N20"')+'<div class="help">Scouts search by area, so this is how local scouts find your squad.</div>'}
+  function methodCopy(method){if(method==='bulk')return innerWidth<=760?'Best for 10 or more players, on a computer. We can take you to the desktop import flow.':'Best for 10 or more players. Download the template, fill it in, review each row. Around fifteen minutes for a full squad.';if(method==='one')return innerWidth<=760?'Works well on a phone. About two minutes each, and you can stop whenever you like.':'Best for a handful of players, or when you want to assess carefully as you go.';return'Go straight to your dashboard. You can add players any time, and your fixtures still work.'}
+  function step3(){var rec=innerWidth<=760?'one':(Number(state.squadSize||state.playerCount||0)>=10?'bulk':'one');if(!state.squadMethod)state.squadMethod=rec;var order=innerWidth<=760?['one','bulk','later']:['bulk','one','later'];var titles={bulk:'Bulk import a spreadsheet',one:'Add players one at a time',later:'Do this later'};return'<h1>How do you want to add your squad?</h1><div class="mut intro">You do not have to do this now, and you never have to complete every profile before ScoutLink is useful.</div><div class="g '+(innerWidth>760?'three':'')+'">'+order.map(function(m){return'<button type="button" class="card choice '+(state.squadMethod===m?'on':'')+'" data-method="'+m+'"><b>'+titles[m]+'</b><div class="mut">'+methodCopy(m)+'</div>'+(m===rec?'<span class="tag b">'+(innerWidth<=760?'Recommended on phone':'Recommended for your squad')+'</span>':'')+'</button>'}).join('')+'</div>'}
+  function step4(){var count=state.playerCount||0;var first=count?'Complete your highest-priority assessment':'Add your first player';var firstSub=count?'Finish any Not observed attributes before scout review':'Create one real player profile with the position-aware assessment';var firstHref=count?'/coach/my-players':'/coach/add-player';return'<h1>You\'re set up'+(count?'. One useful thing first?':'')+'</h1><div class="mut intro">'+(count?count+' players are already in '+esc(state.teamName||'your squad')+'. Here is the fastest way to make the squad useful to scouts.':'Your workspace is ready. Start with the action that gives ScoutLink useful evidence fastest.')+'</div><div class="row primary"><div class="icn b">1</div><div class="sp"><b class="rt">'+first+'</b><s class="rs">'+firstSub+'</s></div><button class="btn sm p" type="button" data-finish-href="'+firstHref+'">Open</button></div><div class="row"><div class="icn">2</div><div class="sp"><b class="rt">Add your first fixture</b><s class="rs">Fixtures are how scouts arrange to watch your players</s></div><button class="btn sm" type="button" data-finish-href="/coach/fixtures?action=add">Add</button></div><div class="row"><div class="icn">3</div><div class="sp"><b class="rt">Generate video upload links</b><s class="rs">Players need approved video before scouts can see video evidence</s></div><button class="btn sm" type="button" data-finish-href="/coach/video-reels">Generate</button></div>'}
+  function syncFields(){[['coachFirst','coachFirst'],['coachLast','coachLast'],['phone','phone'],['teamName','teamName'],['league','league'],['homeVenue','homeVenue']].forEach(function(x){var el=document.getElementById(x[0]);if(el)state[x[1]]=el.value.trim()})}
+  function render(){showError('');document.getElementById('topStep').textContent='Step '+(state.step+1)+' of 4';document.getElementById('footStep').textContent='Step '+(state.step+1)+' of 4';document.getElementById('mobileStep').textContent='Step '+(state.step+1)+' of 4';document.getElementById('mobileStage').textContent=names[state.step];document.getElementById('steps').innerHTML=names.map(function(n,i){return'<div class="st '+(i<state.step?'dn':i===state.step?'on':'')+'"><i>'+(i<state.step?'✓':i+1)+'</i><b>'+n+'</b></div>'}).join('');document.getElementById('bars').innerHTML=names.map(function(_,i){return'<i class="'+(i<=state.step?'on':'')+'"></i>'}).join('');document.getElementById('content').innerHTML=[step1,step2,step3,step4][state.step]();var back=document.getElementById('back'),next=document.getElementById('next');back.hidden=state.step===0;next.hidden=state.step===3;next.textContent=state.step===2?(state.squadMethod==='bulk'&&innerWidth>760?'Continue with bulk import':state.squadMethod==='one'&&innerWidth<=760?'Add first player':'Continue'):'Continue';bind()}
+  function bind(){document.querySelectorAll('[data-role]').forEach(function(b){b.onclick=function(){syncFields();state.roleAtClub=b.dataset.role;render()}});document.querySelectorAll('[data-age]').forEach(function(b){b.onclick=function(){syncFields();var x=b.dataset.age,i=state.ageGroups.indexOf(x);if(i>=0)state.ageGroups.splice(i,1);else state.ageGroups.push(x);render()}});document.querySelectorAll('[data-method]').forEach(function(b){b.onclick=function(){syncFields();state.squadMethod=b.dataset.method;render()}});document.querySelectorAll('[data-finish-href]').forEach(function(b){b.onclick=function(){finish(b.dataset.finishHref)}})}
+  function validate(){syncFields();if(state.step===0&&(!state.coachFirst||!state.coachLast))return'Enter your first and last name.';if(state.step===1&&(!state.teamName||!state.ageGroups.length))return'Enter the team name and choose at least one age group.';if(state.step===2&&!state.squadMethod)return'Choose how you want to add the squad.';return''}
+  function next(){var err=validate();if(err){showError(err);return}state.maxUnlocked=Math.max(state.maxUnlocked,state.step+1);state.step++;saveDraft().catch(function(){});render()}
+  function payload(){syncFields();return{person:{firstName:state.coachFirst,lastName:state.coachLast,roleAtClub:state.roleAtClub,phone:state.phone},team:{teamName:state.teamName,league:state.league,ageGroups:state.ageGroups,homeVenue:state.homeVenue},squadSize:Number(state.squadSize||state.playerCount||0)||null,squadMethod:state.squadMethod,squadList:''}}
+  function finish(href){var b=document.querySelector('[data-finish-href="'+href+'"]');if(b)b.disabled=true;api('POST','/api/onboarding/coach-wizard',payload()).then(function(){location.href=href||'/coach/dashboard'}).catch(function(e){showError(e.message);if(b)b.disabled=false})}
+  document.getElementById('next').onclick=next;document.getElementById('back').onclick=function(){syncFields();state.step=Math.max(0,state.step-1);render()};document.getElementById('finishLater').onclick=function(){syncFields();saveDraft().then(function(){location.href='/experience-select'}).catch(function(e){showError(e.message)})};
+  Promise.all([api('GET','/api/coaches/profile'),api('GET','/api/onboarding/me'),api('GET','/api/coaches/my-players').catch(function(){return{data:[]}})]).then(function(rs){var c=rs[0].coach||rs[0]||{},progress=rs[1].data||rs[1]||{},d=progress.wizard_data&&progress.wizard_data.draft,players=rs[2].data||rs[2].players||[];if(progress.setup_wizard_completed){location.replace('/coach/dashboard');return}state.coachFirst=c.first_name||'';state.coachLast=c.last_name||'';state.coachEmail=c.email||user().email||'';state.roleAtClub=c.role_at_club||'Head Coach';state.phone=c.phone||'';state.teamName=c.team_name||'';state.league=c.team_league||'';state.ageGroups=c.team_age_groups||[];state.homeVenue=c.team_home_venue||c.team_county||'';state.playerCount=players.length;if(d&&d.state){state=Object.assign(state,d.state);state.step=Math.max(0,Math.min(3,Number(d.step)||0));state.maxUnlocked=Math.max(state.step,Number(d.maxUnlocked)||0)}render()}).catch(function(e){showError(e.message);render()});
+}());
 </script>
 <script src="/js/heap-analytics.js"></script>
 </body>
