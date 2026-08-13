@@ -298,10 +298,26 @@
   function phoneHero(p){
     var c=counts(p);
     if(window.CoachV2&&window.CoachV2.setFieldHeader)window.CoachV2.setFieldHeader(name(p),pos(p)+' · '+age(p),'<button class="ic" type="button" aria-label="Player actions">⋯</button>','back');
-    return '<div class="card coach-profile-phone-hero"><div class="flex" style="gap:9px"><span class="avm" style="width:40px;height:40px;font-size:12px">'+esc(initials(name(p)))+'</span><span class="who" style="flex:1"><b style="font-size:15px">'+esc(name(p))+'</b><span>'+esc(pos(p)+' · '+age(p)+' · '+(p.foot||'—')+' footed · '+team(p))+'</span></span></div>'+
-      '<div class="flex" style="gap:6px;margin-top:10px">'+tags(p)+'</div>'+
+    return '<div class="card coach-profile-phone-hero"><div class="flex" style="gap:12px;align-items:center"><span class="avm">'+esc(initials(name(p)))+'</span><span class="who" style="flex:1"><b class="coach-profile-phone-name">'+esc(name(p))+'</b><span class="coach-profile-phone-meta">'+esc(pos(p)+' · '+age(p)+' · '+(p.foot||'—')+' footed · '+team(p))+'</span></span></div>'+
+      '<div class="coach-profile-phone-tags">'+tags(p)+'</div>'+
       '<div class="coach-profile-phone-metrics"><div><div class="lbl">Overall</div><div class="value">'+esc(overall(p))+'</div></div><div><div class="lbl">Value</div><div class="value">'+esc(fmtMoney(p.transfer_value)==='Not estimated'?'—':fmtMoney(p.transfer_value))+'</div>'+(fmtMoney(p.transfer_value)==='Not estimated'?'<div class="metric-note">Not estimated</div>':'')+'</div><div><div class="lbl">Ready</div><div class="value">'+readiness(p)+'%</div></div></div></div>'+
       '<div class="pseg" style="margin-top:10px">'+[['overview','Overview'],['attributes','Attributes'],['facts','Facts'],['video','Video']].map(function(x){return'<u data-profile-tab="'+x[0]+'" class="'+(S.tab===x[0]?'on':'')+'">'+x[1]+'</u>';}).join('')+'</div>';
+  }
+  function phoneTrendChart(vals){
+    vals=vals.length?vals:[5];
+    var pts=vals.map(function(v,i){var x=34+(vals.length===1?0:i/(vals.length-1)*288),clamped=Math.max(5,Math.min(10,n(v,5))),y=128-(clamped-5)/5*116;return{x:x,y:y};});
+    return'<svg viewBox="0 0 330 150" width="100%" aria-label="Development trend"><rect x="34" y="12" width="288" height="58" fill="var(--green-t)"></rect><rect x="34" y="70" width="288" height="58" fill="var(--blue-t)"></rect>'+
+      [5,7,9,10].map(function(v){var y=128-(v-5)/5*116;return'<line x1="34" x2="322" y1="'+y+'" y2="'+y+'" stroke="var(--line)"></line><text x="26" y="'+(y+3.5)+'" text-anchor="end" font-size="9.5" fill="var(--ink4)">'+v+'</text>';}).join('')+
+      '<polyline points="'+pts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ')+'" fill="none" stroke="var(--blue)" stroke-width="2"></polyline>'+pts.map(function(p){return'<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="3.2" fill="var(--paper)" stroke="var(--blue)" stroke-width="2"></circle>';}).join('')+'</svg>';
+  }
+  function phoneAverageRating(ms){var vals=ms.map(function(m){return n(m.performance_score,NaN);}).filter(Number.isFinite);return vals.length?(vals.reduce(function(a,b){return a+b},0)/vals.length).toFixed(1):'—';}
+  function phoneReadinessCard(p,c,ms,approved){
+    var ready=readiness(p),circ=289,dash=(ready/100*circ).toFixed(1),needs=[];
+    if(c.missing)needs.push(c.missing+' applicable attribute'+(c.missing===1?'':'s')+' Not observed');
+    if(!approved.length)needs.push('No approved match video');
+    if(!ms.length)needs.push('No Match Facts yet');
+    if(!needs.length)needs.push('Profile evidence is complete');
+    return'<div class="card coach-profile-readiness-card"><div class="card-b"><svg class="profile-readiness-ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="none" stroke="var(--canvas2)" stroke-width="11"></circle><circle cx="60" cy="60" r="46" fill="none" stroke="var(--blue)" stroke-width="11" stroke-dasharray="'+dash+' '+circ+'" transform="rotate(-90 60 60)"></circle><text x="60" y="58" text-anchor="middle" font-size="23" font-weight="700" fill="var(--ink)">'+ready+'%</text><text x="60" y="76" text-anchor="middle" font-size="9" fill="var(--ink3)">ready</text></svg><div class="coach-profile-readiness-copy"><div class="lbl">Needs attention</div><p>'+needs.map(esc).join('<br>')+'</p></div></div><div class="foot"><button class="btn sm p" style="flex:1;justify-content:center" data-profile-edit>Complete profile</button></div></div>';
   }
   function phone(p){
     var c=counts(p),r=ratings(p),sections=applicable(p),ms=matches(),approved=approvedVideos(),pending=pendingVideos(),trend=ms.slice().reverse().map(function(m){return n(m.performance_score,NaN);}).filter(Number.isFinite).slice(-9);
@@ -309,12 +325,9 @@
     if(S.tab==='facts')return phoneHero(p)+'<div class="pcap">Match Facts <span>'+ms.length+'</span></div><div class="card">'+(ms.length?ms.slice(0,8).map(function(m){return'<div class="rowline"><span class="who"><b>vs '+esc(m.opponent||m.opponent_name||'Opponent')+'</b><span>'+esc(formatDate(m.match_date))+' · '+esc(m.position_played||pos(p))+'</span></span><span class="ratem set">'+score(m)+'</span></div>';}).join(''):'<div class="card-b mut">No Match Facts yet.</div>')+'</div><a class="bt spend blk" style="margin-top:10px" href="'+esc(route('/coach/match-facts?playerId='+encodeURIComponent(p.id||'')))+'">Record Match Facts</a>';
     if(S.tab==='video')return phoneHero(p)+'<div class="pcap">Video <span>'+approved.length+' approved · '+pending.length+' pending</span></div><div class="card">'+videoRows(p)+'</div><div class="g" style="grid-template-columns:1fr 1fr;margin-top:10px"><button class="bt" data-profile-upload>Add video</button><button class="bt spend" data-profile-upload-link>Upload link</button></div>';
     return phoneHero(p)+
-      '<div class="pcap">Development <span>Last '+Math.min(9,ms.length)+'</span></div><div class="card"><div class="card-b">'+lineChart(trend)+'</div></div>'+
-      '<div class="pcap">Season output</div><div class="card"><div class="card-b"><div class="coach-profile-phone-metrics" style="border-top:0;margin-top:0;padding-top:0"><div><div class="lbl">Apps</div><div class="value">'+n(p.appearances)+'</div></div><div><div class="lbl">Goals</div><div class="value">'+n(p.goals)+'</div></div><div><div class="lbl">Assists</div><div class="value">'+n(p.assists)+'</div></div></div></div></div>'+
-      '<div class="pcap">Profile readiness <span>'+readiness(p)+'%</span></div><div class="card">'+
-        '<div class="rowline"><span class="who"><b>Attributes</b><span>'+c.rated+' of '+c.total+' rated</span></span><span class="tag '+(c.missing?'a':'g')+'">'+(c.missing?c.missing+' Not observed':'Complete')+'</span></div>'+
-        '<div class="rowline"><span class="who"><b>Match Facts</b><span>'+ms.length+' records</span></span><span class="tag '+(ms.length?'g':'a')+'">'+(ms.length?'Added':'Add')+'</span></div>'+
-        '<div class="rowline"><span class="who"><b>Approved video</b><span>'+approved.length+' clips</span></span><span class="tag '+(approved.length?'g':'a')+'">'+(approved.length?'Added':'Add')+'</span></div></div>'+
+      '<div class="pcap">Development <span>Last '+Math.min(9,ms.length)+'</span></div><div class="card coach-profile-phone-chart"><div class="card-b">'+phoneTrendChart(trend)+'<div class="mut">Season average '+phoneAverageRating(ms)+(ms.length?' · '+ms.length+' Match Facts records':'')+'</div></div></div>'+
+      '<div class="pcap">Season output</div><div class="coach-profile-phone-season"><div class="kpi"><div class="k">Appearances</div><div class="v">'+n(p.appearances)+'</div></div><div class="kpi"><div class="k">Goals</div><div class="v">'+n(p.goals)+'</div></div><div class="kpi"><div class="k">Assists</div><div class="v">'+n(p.assists)+'</div></div><div class="kpi"><div class="k">Avg rating</div><div class="v">'+phoneAverageRating(ms)+'</div></div></div>'+
+      '<div class="pcap">Profile readiness</div>'+phoneReadinessCard(p,c,ms,approved)+
       '<div class="pcap">Recent Match Facts <span>'+ms.length+'</span></div><div class="card">'+(ms.length?ms.slice(0,4).map(function(m){return'<div class="rowline"><span class="who"><b>vs '+esc(m.opponent||'Opponent')+'</b><span>'+esc(formatDate(m.match_date))+' · '+esc(m.result||'')+' · '+esc(m.position_played||pos(p))+'</span></span><span class="ratem set">'+score(m)+'</span></div>';}).join(''):'<div class="card-b mut">No Match Facts yet.</div>')+'</div>'+
       '<div class="pcap">Scout activity <span>'+interestCount()+'</span></div><div class="card">'+scoutRows()+'</div>'+
       '<div class="pcap">Videos <span>'+approved.length+' approved</span></div><div class="card">'+videoRows(p)+'</div>'+
