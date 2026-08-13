@@ -1037,3 +1037,90 @@ body.coach-product .coach-usage-request{display:none!important}
     line-height:1.5;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Coach Field cleanup — 2026-08-13
+   Production-only corrections requested after device testing. All selectors in
+   this block are phone-scoped so Coach Desk remains unchanged.
+   -------------------------------------------------------------------------- */
+@media (max-width:760px){
+  /* The source HTML's .sbar was part of the illustrated phone frame only. */
+  body.coach-product .coach-field .sbar{display:none!important}
+  body.coach-product .coach-field .pbody{min-height:calc(100dvh - 126px)!important}
+
+  /* Dashboard: keep readiness readable and attached to squad shape like Field. */
+  body.coach-product .dashboard-phone-shape-card .sep{margin:12px 0}
+  body.coach-product .dashboard-phone-readiness-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  body.coach-product .dashboard-phone-readiness-head .lbl{margin:0}
+  body.coach-product .dashboard-phone-readiness-head b{font-size:12px;color:var(--blue);font-variant-numeric:tabular-nums}
+  body.coach-product .phone-readiness-bar{height:10px;display:flex;width:100%;overflow:hidden;background:var(--canvas2)}
+  body.coach-product .phone-readiness-bar i{display:block;height:100%;min-width:0}
+  body.coach-product .phone-readiness-legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:9px}
+  body.coach-product .phone-readiness-legend span{display:inline-flex;align-items:center;gap:5px;color:var(--ink2);font-size:10.5px;font-weight:600;white-space:nowrap}
+  body.coach-product .phone-readiness-legend i{width:7px;height:7px;border-radius:50%;display:inline-block}
+
+  /* My Players: deliberately reduce each mobile row to identity, completeness and overall. */
+  body.coach-product .player-phone-row.player-phone-row-simple{padding:12px 14px}
+  body.coach-product .player-phone-row-simple .player-phone-main{align-items:center}
+  body.coach-product .player-phone-row-simple .player-phone-who span{font-size:11px}
+  body.coach-product .player-phone-row-simple .player-phone-overall{min-width:42px}
+  body.coach-product .player-phone-row-simple .player-phone-evidence{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:9px;align-items:center}
+  body.coach-product .player-phone-row-simple .player-ready-bar{width:100%;min-width:0;flex:none}
+  body.coach-product .player-phone-row-simple .player-phone-evidence>b{min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+  body.coach-product .player-phone-row-simple .player-phone-form,
+  body.coach-product .player-phone-row-simple .tag{display:none!important}
+
+  /* Player profile: mirror the Field F6.1 geometry rather than a compressed Desk card. */
+  body.coach-product .coach-profile-phone-hero{padding:12px!important;margin-bottom:10px}
+  body.coach-product .coach-profile-phone-hero .avm{width:48px!important;height:48px!important;flex:0 0 48px!important;font-size:16px!important;border-radius:4px!important}
+  body.coach-product .coach-profile-phone-hero .coach-profile-phone-name{font-size:18px!important;line-height:1.15}
+  body.coach-product .coach-profile-phone-hero .coach-profile-phone-meta{font-size:11.5px!important;line-height:1.45}
+  body.coach-product .coach-profile-phone-hero .coach-profile-phone-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  body.coach-product .coach-profile-phone-metrics{margin-top:14px!important;padding-top:12px!important}
+  body.coach-product .coach-profile-phone-metrics .value{font-size:20px!important;line-height:1.1!important;overflow:visible!important;text-overflow:clip!important}
+  body.coach-product .coach-profile-phone-chart svg{display:block!important;width:100%!important;height:auto!important;aspect-ratio:330/150}
+  body.coach-product .coach-profile-phone-chart .mut{margin-top:6px;font-size:10.5px}
+  body.coach-product .coach-profile-phone-season{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  body.coach-product .coach-profile-phone-season .kpi{padding:11px 12px!important}
+  body.coach-product .coach-profile-phone-season .v{font-size:21px!important}
+  body.coach-product .coach-profile-readiness-card .card-b{display:flex;gap:14px;align-items:center;padding:12px!important}
+  body.coach-product .profile-readiness-ring{width:84px;height:84px;flex:0 0 84px;display:block}
+  body.coach-product .coach-profile-readiness-copy{flex:1;min-width:0}
+  body.coach-product .coach-profile-readiness-copy .lbl{margin-bottom:6px}
+  body.coach-product .coach-profile-readiness-copy p{margin:0;color:var(--ink2);font-size:11px;line-height:1.75}
+  body.coach-product .coach-profile-readiness-card .foot{padding:10px 12px}
+
+  /* Match Facts ratings: clean row hierarchy and phone-sized controls. */
+  body.coach-product .mf-phone-rating-summary .card-b{padding:12px!important}
+  body.coach-product .mf-phone-rating-summary svg{display:block;width:100%;height:auto}
+  body.coach-product .mf-phone-rating-list .rowline{display:grid!important;grid-template-columns:32px minmax(0,1fr) 38px auto;gap:9px;align-items:center;padding:11px 12px!important}
+  body.coach-product .mf-phone-rating-list .avm{width:32px;height:32px;flex:0 0 32px;font-size:9px}
+  body.coach-product .mf-phone-rating-list .who b{font-size:12.5px}
+  body.coach-product .mf-phone-rating-list .who span{font-size:10.5px;line-height:1.35;white-space:normal}
+  body.coach-product .mf-phone-rating-value{text-align:right}
+  body.coach-product .mf-phone-rating-value b{display:block;font-size:17px;line-height:1;font-variant-numeric:tabular-nums}
+  body.coach-product .mf-phone-rating-value small{display:block;margin-top:3px;color:var(--ink3);font-size:9px}
+  body.coach-product .mf-phone-rating-list .bt{min-width:46px;justify-content:center}
+
+  /* Per-player rating sheet follows the Field observation sheet hierarchy. */
+  body.coach-product .mf-phone-rating-sheet .mf-phone-performance{display:flex;align-items:center;gap:10px}
+  body.coach-product .mf-phone-rating-sheet .mf-phone-performance>div:first-child{min-width:86px}
+  body.coach-product .mf-phone-rating-sheet .mf-phone-performance .num{font-size:24px;font-weight:700}
+  body.coach-product .mf-phone-rating-sheet .scale{display:flex;flex-wrap:wrap;gap:4px}
+  body.coach-product .mf-phone-rating-sheet .profile-scale-row{padding:9px 0;border-bottom:1px solid var(--line)}
+  body.coach-product .mf-phone-rating-sheet .profile-scale-row>b{display:block;margin-bottom:7px;font-size:12px}
+
+  /* Review: never inherit any generic site .hero height. */
+  body.coach-product .coach-field .card.mf-phone-review-summary{height:auto!important;min-height:0!important;display:block!important;margin-bottom:10px}
+  body.coach-product .coach-field .mf-phone-review-summary .card-b{padding:16px!important;text-align:center!important;min-height:0!important}
+  body.coach-product .mf-phone-review-score{font-size:28px;line-height:1;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  body.coach-product .mf-phone-review-opponent{font-size:13px;font-weight:700;margin-top:5px}
+  body.coach-product .mf-phone-review-meta{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.45}
+  body.coach-product .mf-phone-review-ratings .at{min-height:24px}
+  body.coach-product .mf-phone-review-ratings .an{width:76px;flex:0 0 76px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.coach-product .mf-phone-review-ratings .atv{width:24px;flex:0 0 24px;font-size:10.5px}
+  body.coach-product .mf-phone-write-table{width:100%;border-collapse:collapse}
+  body.coach-product .mf-phone-write-table td{padding:8px 0;border-bottom:1px solid var(--line);font-size:11.5px}
+  body.coach-product .mf-phone-write-table tr:last-child td{border-bottom:0}
+  body.coach-product .mf-phone-write-table td:last-child{text-align:right}
+}
