@@ -141,6 +141,14 @@
     var complete=players.filter(function(p){return completion(p)>=80}).length,work=players.filter(function(p){var c=completion(p);return c>=50&&c<80}).length,low=players.filter(function(p){return completion(p)<50}).length,total=Math.max(1,players.length);
     return'<div class="coach-stacked">'+(complete?'<span style="width:'+complete/total*100+'%;background:var(--blue)">'+complete+'</span>':'')+(work?'<span style="width:'+work/total*100+'%;background:var(--amber)">'+work+'</span>':'')+(low?'<span style="width:'+low/total*100+'%;background:var(--grey)">'+low+'</span>':'')+'</div><div class="lgd" style="margin-top:12px"><span><i style="background:var(--blue)"></i>Complete '+complete+'</span><span><i style="background:var(--amber)"></i>Needs work '+work+'</span><span><i style="background:var(--grey)"></i>Not started '+low+'</span></div>';
   }
+  function readinessPhone(players){
+    var complete=players.filter(function(p){return completion(p)>=80}).length,work=players.filter(function(p){var c=completion(p);return c>=50&&c<80}).length,low=players.filter(function(p){return completion(p)<50}).length,total=Math.max(1,players.length);
+    return'<div class="phone-readiness-bar">'+
+      (complete?'<i style="width:'+(complete/total*100)+'%;background:var(--blue)"></i>':'')+
+      (work?'<i style="width:'+(work/total*100)+'%;background:var(--amber)"></i>':'')+
+      (low?'<i style="width:'+(low/total*100)+'%;background:var(--grey)"></i>':'')+
+      '</div><div class="phone-readiness-legend"><span><i style="background:var(--blue)"></i>Complete '+complete+'</span><span><i style="background:var(--amber)"></i>Needs work '+work+'</span><span><i style="background:var(--grey)"></i>Not started '+low+'</span></div>';
+  }
   function dashboardPhone(){
     var o=S.overview,players=rows(o,['players']),ints=rows(o,['interest']),unique={};ints.forEach(function(x){if(x.scout_id)unique[x.scout_id]=1;});
     var total=players.reduce(function(a,p){return a+n(p.transfer_value,0)},0),actions=dashboardActions(),next=rows(o,['fixtures']).filter(function(f){return new Date(f.fixture_date+'T12:00:00')>=new Date()}).sort(function(a,b){return new Date(a.fixture_date)-new Date(b.fixture_date)})[0];
@@ -152,8 +160,7 @@
       '<div class="pcap">Squad performance <span>last matches</span></div><div class="card"><div class="card-b">'+phoneLineChart(matchTrend())+'</div></div>'+
       '<div class="pcap">Scout interest <span>8 weeks</span></div><div class="card"><div class="card-b">'+phoneBars(weeklyInterest())+'</div></div>'+
       (next?'<div class="pcap">Next fixture</div><div class="card"><a class="rowline" href="'+esc(clean('/coach/fixtures?fixtureId='+next.id))+'"><span class="who"><b>vs '+esc(next.opponent)+'</b><span>'+esc(fmtDate(next.fixture_date,next.fixture_time)+' · '+(next.home_or_away||''))+'</span></span><span class="tag '+(attendanceFor(next.id).length?'g':'')+'">'+attendanceFor(next.id).length+' scouts</span></a></div>':'')+
-      '<div class="pcap">Squad shape</div><div class="card"><div class="card-b">'+['GK','DEF','MID','ATT'].map(function(k){return'<div class="at"><div class="an" style="width:30px;flex:0 0 30px">'+k+'</div><div class="track"><u style="width:'+(players.length?shape[k]/players.length*100:0)+'%"></u></div><div class="atv">'+shape[k]+'</div></div>';}).join('')+'</div></div>'+
-      '<div class="pcap">Profile readiness</div><div class="card"><div class="card-b">'+readinessBar(players)+'</div></div>'+
+      '<div class="pcap">Squad shape</div><div class="card dashboard-phone-shape-card"><div class="card-b">'+['GK','DEF','MID','ATT'].map(function(k){return'<div class="at"><div class="an" style="width:30px;flex:0 0 30px">'+k+'</div><div class="track"><u style="width:'+(players.length?shape[k]/players.length*100:0)+'%"></u></div><div class="atv">'+shape[k]+'</div></div>';}).join('')+'<hr class="sep"><div class="dashboard-phone-readiness-head"><span class="lbl">Profile readiness</span><b>'+(players.length?Math.round(players.reduce(function(a,p){return a+completion(p)},0)/players.length):0)+'%</b></div>'+readinessPhone(players)+'</div></div>'+
       '<div class="pcap">Players with scout interest <span>'+interestPlayers.length+'</span></div><div class="card">'+(interestPlayers.length?interestPlayers.map(function(p){var c=interestsForPlayer(p.id).length;return'<a class="rowline" href="'+esc(clean('/player/profile?id='+p.id))+'"><span class="who"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||''))+'</span></span><span class="tag b">'+c+' scout'+(c===1?'':'s')+'</span></a>';}).join(''):'<div class="card-b mut">No explicit scout interest yet.</div>')+'</div>';
   }
   async function initDashboard(){
@@ -227,9 +234,9 @@
     return fieldHeader('My Players',all.length+' players','<button class="icb" id="phonePlayerFilter" aria-label="Filter players">☰</button><a class="icb" href="'+esc(clean('/coach/add-player'))+'" aria-label="Add player">+</a>')+
       '<div class="field player-phone-search"><input class="in" id="phonePlayerSearch" placeholder="Search players" value="'+esc(S.filters.search)+'"></div>'+ 
       '<div class="pseg player-phone-quick"><u class="'+(!S.filters.evidence&&!S.filters.interest?'on':'')+'" data-phone-player-view="all">All '+rows(S.overview||{},['players']).length+'</u><u class="'+(S.filters.evidence==='work'?'on':'')+'" data-phone-player-view="work">Needs work</u><u class="'+(S.filters.interest==='yes'?'on':'')+'" data-phone-player-view="interest">Interest</u></div>'+ 
-      '<div class="player-phone-list">'+listp.map(function(p){var pc=completion(p),facts=matchFactsForPlayer(p.id),vals=facts.slice(0,5).map(function(x){return n(x.performance_score,0)}).reverse();return'<a class="player-phone-row" href="'+esc(clean('/player/profile?id='+p.id))+'">'+
-        '<div class="player-phone-main"><span class="avm">'+esc(initials(p))+'</span><span class="player-phone-who"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||'—')+' · '+coachName(p.assigned_coach_id))+'</span></span><span class="player-phone-overall"><b>'+esc(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</b><small>overall</small></span></div>'+
-        '<div class="player-phone-evidence"><span class="player-ready-bar"><i style="width:'+pc+'%"></i></span><b>'+pc+'%</b><span class="player-phone-form">'+spark(vals)+'</span>'+playerStatus(p)+(playerInterestCount(p)?'<span class="tag b">'+playerInterestCount(p)+' scout'+(playerInterestCount(p)===1?'':'s')+'</span>':'')+'</div>'+
+      '<div class="player-phone-list">'+listp.map(function(p){var pc=completion(p);return'<a class="player-phone-row player-phone-row-simple" href="'+esc(clean('/player/profile?id='+p.id))+'">'+
+        '<div class="player-phone-main"><span class="avm">'+esc(initials(p))+'</span><span class="player-phone-who"><b>'+esc(name(p))+'</b><span>'+esc(position(p)+' · '+(p.age_group||'—'))+'</span></span><span class="player-phone-overall"><b>'+esc(p.overall_rating==null?'—':Math.round(n(p.overall_rating)))+'</b><small>overall</small></span></div>'+
+        '<div class="player-phone-evidence"><span class="player-ready-bar" aria-label="Profile completeness '+pc+' percent"><i style="width:'+pc+'%"></i></span><b>'+pc+'%</b></div>'+
       '</a>';}).join('')+(all.length>20?'<div class="player-phone-more">'+(all.length-20)+' more players · use filters to narrow the squad</div>':'')+'</div>';
   }
   function playerFilterSheet(){
