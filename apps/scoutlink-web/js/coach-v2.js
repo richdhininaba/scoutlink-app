@@ -206,12 +206,9 @@
       body.classList.remove('body');
       body.classList.add('pbody');
       body.id='coachFieldPage';
-      if(!scr.querySelector('.sbar')){
-        var sbar=document.createElement('div');sbar.className='sbar';
-        var now=new Date(),hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
-        sbar.innerHTML='<u>'+hh+':'+mm+'</u><u>●●●&nbsp;&nbsp;▮▮▮</u>';
-        scr.insertBefore(sbar,body);
-      }
+      /* The status bar in the supplied Coach Field HTML is device-frame annotation,
+         not ScoutLink product chrome. Never render it in production. */
+      scr.querySelectorAll('.sbar').forEach(function(statusBar){statusBar.remove();});
       var ptop=scr.querySelector('.ptop');
       if(!ptop){
         ptop=document.createElement('header');ptop.className='ptop';ptop.id='coachFieldTop';
