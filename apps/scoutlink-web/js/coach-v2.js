@@ -53,7 +53,79 @@
 
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function clean(href){return typeof window.cleanRouteFor==='function'?window.cleanRouteFor(href):href;}
+  var publicCoachDemoCache=null,publicCoachDemoLoading=null,publicScoringOptionsCache=null;
+  function apiBase(){
+    try{return window.API||localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}
+    catch(_){return window.API||'https://scoutlink-api.vercel.app';}
+  }
+  function fetchPublicCoachDemo(force){
+    if(!force&&publicCoachDemoCache)return Promise.resolve(publicCoachDemoCache);
+    if(!force&&publicCoachDemoLoading)return publicCoachDemoLoading;
+    publicCoachDemoLoading=fetch(apiBase()+'/api/coach-experience/public-demo',{method:'GET',headers:{Accept:'application/json'},cache:'no-store'})
+      .then(function(r){return r.json().catch(function(){return{};}).then(function(d){if(!r.ok)throw new Error(d.error||'Public Coach demo data could not be loaded.');return d.data||d;});})
+      .then(function(d){publicCoachDemoCache=d||{};return publicCoachDemoCache;})
+      .finally(function(){publicCoachDemoLoading=null;});
+    return publicCoachDemoLoading;
+  }
+  function demoRows(o,key){return o&&Array.isArray(o[key])?o[key]:[];}
+  function publicCoachDemoRead(path){
+    var u=new URL(path,'https://scoutlink.local'),p=u.pathname;
+    if(p==='/api/scoring/options'){
+      if(publicScoringOptionsCache)return Promise.resolve(publicScoringOptionsCache);
+      return fetch(apiBase()+'/api/scoring/public-options',{headers:{Accept:'application/json'}})
+        .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||'Scoring options could not be loaded.');publicScoringOptionsCache=d;return d;});});
+    }
+    var supported=(
+      p==='/api/coach-experience/overview'||
+      p==='/api/coaches/profile'||
+      p==='/api/coaches/my-players'||
+      p==='/api/coaches/team-coaches'||
+      p==='/api/fixtures'||
+      p==='/api/videos'||
+      p==='/api/match-facts'||
+      p==='/api/notifications'||
+      p==='/api/chat/threads'||
+      p==='/api/coach-experience/last-lineup'||
+      p==='/api/coach-experience/notification-preferences'||
+      /^\/api\/chat\/threads\/[^/]+\/messages$/.test(p)||
+      /^\/api\/coach-experience\/fixtures\/[^/]+$/.test(p)||
+      /^\/api\/coach-experience\/players\/[^/]+\/activity$/.test(p)
+    );
+    if(!supported)return null;
+    return fetchPublicCoachDemo(false).then(function(o){
+      var players=demoRows(o,'players'),fixtures=demoRows(o,'fixtures'),videos=demoRows(o,'videos'),facts=demoRows(o,'matchFacts'),threads=demoRows(o,'threads'),notifications=demoRows(o,'notifications'),interest=demoRows(o,'interest'),attendance=demoRows(o,'attendance'),messages=demoRows(o,'chatMessages');
+      if(p==='/api/coach-experience/overview')return o;
+      if(p==='/api/coaches/profile')return{coach:o.coach||null};
+      if(p==='/api/coaches/my-players')return{players:players,data:players};
+      if(p==='/api/coaches/team-coaches'){var cs=demoRows(o,'teamCoaches');return{coaches:cs,data:cs};}
+      if(p==='/api/fixtures'){
+        var past=u.searchParams.get('past'),now=Date.now();
+        var listFx=fixtures.filter(function(f){if(past!=='true'&&past!=='false')return true;var t=new Date(String(f.fixture_date||'').length<=10?f.fixture_date+'T12:00:00':f.fixture_date).getTime();return past==='true'?t<now:t>=now;});
+        return{fixtures:listFx,data:listFx};
+      }
+      if(p==='/api/videos')return{videos:videos,data:videos};
+      if(p==='/api/match-facts')return{matchFacts:facts,data:facts};
+      if(p==='/api/notifications')return{notifications:notifications,data:notifications,unreadCount:notifications.filter(function(n){return!n.is_read;}).length};
+      if(p==='/api/chat/threads')return{threads:threads,data:threads};
+      if(p==='/api/coach-experience/notification-preferences')return{preferences:o.notificationPreferences||{}};
+      if(p==='/api/coach-experience/last-lineup'){
+        var confirmed=facts.filter(function(f){return f.confirmed!==false;}).sort(function(a,b){return new Date(b.match_date||b.created_at||0)-new Date(a.match_date||a.created_at||0);});
+        return{match:confirmed[0]||null};
+      }
+      var tm=p.match(/^\/api\/chat\/threads\/([^/]+)\/messages$/);
+      if(tm){var tid=decodeURIComponent(tm[1]);var ms=messages.filter(function(m){return String(m.thread_id)===String(tid);});return{messages:ms,data:ms};}
+      var fm=p.match(/^\/api\/coach-experience\/fixtures\/([^/]+)$/);
+      if(fm){var fid=decodeURIComponent(fm[1]),fx=fixtures.find(function(f){return String(f.id)===String(fid);})||null;var at=attendance.filter(function(a){return String(a.fixture_id)===String(fid);});var vv=videos.filter(function(v){return String(v.fixture_id)===String(fid);});var ff=facts.filter(function(f){return String(f.fixture_id)===String(fid);});return{fixture:fx,attendance:at,scouts:o.scouts||{},videos:vv,matchFacts:ff};}
+      var pm=p.match(/^\/api\/coach-experience\/players\/([^/]+)\/activity$/);
+      if(pm){var pid=decodeURIComponent(pm[1]),pl=players.find(function(x){return String(x.id)===String(pid);})||null;return{player:pl,interest:interest.filter(function(x){return String(x.player_id)===String(pid);}),threads:threads.filter(function(x){return String(x.player_id)===String(pid);}),videos:videos.filter(function(x){return String(x.player_id)===String(pid);}),scouts:o.scouts||{}};}
+      return null;
+    });
+  }
   function api(method,path,body){
+    if(isPublicDemo()&&String(method||'GET').toUpperCase()==='GET'){
+      var demo=publicCoachDemoRead(path);
+      if(demo)return demo;
+    }
     if(typeof window.api==='function') return window.api(method,path,body);
     return Promise.reject(new Error('ScoutLink API client is unavailable.'));
   }
