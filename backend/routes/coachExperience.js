@@ -67,6 +67,155 @@ async function scoutDirectory(ids) {
   }, {});
 }
 
+const PUBLIC_COACH_DEMO_TEAM = 'Northgate United (Demo)';
+
+async function publicDemoCoach() {
+  const { data, error } = await supabase
+    .from('coaches')
+    .select('id,first_name,last_name,email,team_id,team_name,team_county,team_league,team_age_groups,team_home_venue,team_website,team_contact_email,role_at_club,is_super_user,registration_complete,notification_preferences')
+    .eq('is_demo', true)
+    .eq('is_active', true)
+    .eq('is_super_user', true)
+    .eq('team_name', PUBLIC_COACH_DEMO_TEAM)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    const e = new Error('Public Coach demo workspace not found');
+    e.status = 404;
+    throw e;
+  }
+  return data;
+}
+
+async function publicDemoPlayers(coach) {
+  let q = supabase
+    .from('players')
+    .select('id,player_id,first_name,last_name,age_group,position_group,specific_position,primary_position,alternative_positions,foot,height_category,height_range_cm,build_category,weight_range_kg,assigned_coach_id,team_id,team_name,overall_rating,transfer_value,appearances,goals,assists,clean_sheets,availability,attribute_ratings,scoring_result,scored_at,created_at,is_active')
+    .eq('is_demo', true)
+    .eq('is_active', true)
+    .order('overall_rating', { ascending: false });
+  if (coach.team_id) q = q.eq('team_id', coach.team_id);
+  else q = q.eq('team_name', coach.team_name);
+  const result = await q;
+  if (result.error) throw result.error;
+  return rows(result);
+}
+
+router.get('/public-demo', async (_req, res) => {
+  try {
+    const coach = await publicDemoCoach();
+    const players = await publicDemoPlayers(coach);
+    const playerIds = players.map(player => player.id);
+
+    let fixturesQ = supabase
+      .from('fixtures')
+      .select('id,team_id,coach_id,opponent,fixture_date,fixture_time,venue,venue_address,venue_postcode,city,country,home_or_away,format,notes,created_at')
+      .order('fixture_date', { ascending: true });
+    fixturesQ = scopeTeam(fixturesQ, coach);
+
+    let videosQ = supabase
+      .from('player_videos')
+      .select('id,player_id,team_id,coach_id,title,category,description,video_type,video_url,url,file_path,fixture_id,moderation_status,moderation_reason,moderated_at,created_at,uploaded_by_type')
+      .order('created_at', { ascending: false });
+    if (playerIds.length) videosQ = videosQ.in('player_id', playerIds);
+    else videosQ = videosQ.eq('coach_id', coach.id);
+
+    let matchQ = supabase
+      .from('match_facts')
+      .select('id,player_id,fixture_id,team_id,coach_id,match_date,opponent,result,minutes_played,goals,assists,performance_score,home_score,away_score,format,formation,confirmed,position_played,role_played,events,player_positions,ratings,attribute_ratings,passes_attempted,passes_completed,progressive_passes,line_breaking_passes,progressive_carries,chances_created,take_ons_attempted,take_ons_completed,duels_attempted,duels_won,aerial_duels_attempted,aerial_duels_won,pressures,successful_pressures,recoveries,blocks,clearances,box_entries,box_touches,created_at')
+      .order('match_date', { ascending: false })
+      .limit(500);
+    if (playerIds.length) matchQ = matchQ.in('player_id', playerIds);
+    else matchQ = scopeTeam(matchQ, coach);
+
+    const [fixturesR, videosR, matchR, threadsR, notificationsR, teamCoachesR] = await Promise.all([
+      fixturesQ,
+      videosQ,
+      matchQ,
+      supabase.from('chat_threads').select('id,scout_id,coach_id,player_id,status,last_message_at,created_at').eq('coach_id', coach.id).order('last_message_at', { ascending: false }),
+      supabase.from('notifications').select('id,notification_type,title,body,data,is_read,created_at').eq('recipient_id', coach.id).order('created_at', { ascending: false }).limit(100),
+      supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,is_super_user,team_id,team_name').eq('is_demo', true).eq('is_active', true).eq('team_id', coach.team_id).order('last_name')
+    ]);
+    for (const result of [fixturesR, videosR, matchR, threadsR, notificationsR, teamCoachesR]) {
+      if (result && result.error) throw result.error;
+    }
+
+    const fixtures = rows(fixturesR);
+    const videos = rows(videosR);
+    const matchFacts = rows(matchR);
+    const threads = rows(threadsR);
+    const notifications = rows(notificationsR);
+    const teamCoaches = rows(teamCoachesR);
+
+    let interest = [];
+    if (playerIds.length) {
+      const interestR = await supabase
+        .from('recruitment_pipeline')
+        .select('id,scout_id,player_id,stage,interest_level,created_at,updated_at,interest_registered_at,is_active')
+        .in('player_id', playerIds)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (interestR.error) throw interestR.error;
+      interest = rows(interestR);
+    }
+
+    const fixtureIds = fixtures.map(fixture => fixture.id);
+    let attendance = [];
+    if (fixtureIds.length) {
+      const attendanceR = await supabase
+        .from('fixture_attendance')
+        .select('id,fixture_id,scout_id,status,created_at')
+        .in('fixture_id', fixtureIds)
+        .order('created_at', { ascending: false });
+      if (attendanceR.error) throw attendanceR.error;
+      attendance = rows(attendanceR);
+    }
+
+    const threadIds = threads.map(thread => thread.id);
+    let chatMessages = [];
+    if (threadIds.length) {
+      const messagesR = await supabase
+        .from('chat_messages')
+        .select('id,thread_id,sender_id,sender_type,body,is_read,message_kind,reference_type,reference_id,metadata,created_at')
+        .in('thread_id', threadIds)
+        .order('created_at', { ascending: true });
+      if (messagesR.error) throw messagesR.error;
+      chatMessages = rows(messagesR);
+    }
+
+    const scoutIds = Array.from(new Set(
+      interest.map(item => item.scout_id)
+        .concat(attendance.map(item => item.scout_id))
+        .concat(threads.map(item => item.scout_id))
+        .filter(Boolean)
+    ));
+    const scouts = await scoutDirectory(scoutIds);
+
+    res.set('Cache-Control', 'public, max-age=15, s-maxage=60');
+    res.json({
+      coach,
+      teamCoaches,
+      players,
+      fixtures,
+      attendance,
+      videos,
+      matchFacts,
+      threads,
+      chatMessages,
+      notifications,
+      interest,
+      scouts,
+      notificationPreferences: normalisePreferences(coach.notification_preferences),
+      demo: true,
+      teamName: coach.team_name
+    });
+  } catch (err) {
+    console.error('[CoachExperience public demo]', err);
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Could not load public Coach demo data' });
+  }
+});
+
 router.get('/overview', ...COACH_ONLY, async (req, res) => {
   try {
     const coach = await coachContext(req.user.id);
@@ -87,7 +236,7 @@ router.get('/overview', ...COACH_ONLY, async (req, res) => {
 
     let matchQ = supabase
       .from('match_facts')
-      .select('id,fixture_id,team_id,coach_id,match_date,opponent,home_score,away_score,format,formation,confirmed,performance_score,player_positions,ratings,events,created_at')
+      .select('id,player_id,fixture_id,team_id,coach_id,match_date,opponent,home_score,away_score,format,formation,confirmed,performance_score,player_positions,ratings,events,created_at')
       .order('match_date', { ascending: false })
       .limit(100);
     matchQ = scopeTeam(matchQ, coach);
