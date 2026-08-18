@@ -4,55 +4,55 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>Stratex Admin Centre | Stratex Analytics</title>
-  <meta name="theme-color" content="#061625">
-  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260730-admin-v6">
-  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260730-admin-v6">
+  <title>Stratex Analytics | Admin Centre</title>
+  <meta name="theme-color" content="#04352A">
+  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260818-admin-v2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260818-admin-v2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/variables.css">
-  <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/stratex-admin-v5.css?v=20260730-2">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/stratex-admin-v5.css?v=20260818-admin-centre-v2">
   <style>
-    html,body{min-height:100%;margin:0;background:#f2f5f4}
-    .stx-admin-boot{min-height:100vh;display:grid;place-items:center;padding:24px;background:#f2f5f4;color:#07150f;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
-    .stx-admin-boot-card{width:min(460px,100%);padding:31px;border:1px solid #d7e2dd;border-radius:15px;background:#fff;text-align:center;box-shadow:0 18px 50px rgba(6,22,37,.08)}
-    .stx-admin-boot-mark{width:54px;height:54px;margin:0 auto;border-radius:13px;background:linear-gradient(135deg,#08745b,#1fbbb2);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:950}
-    .stx-admin-boot-brand{display:block;margin-top:13px;color:#08745b;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
-    .stx-admin-boot h1{margin:8px 0 0;font-size:24px;line-height:1.15}
-    .stx-admin-boot p{margin:9px 0 0;color:#536a61;font-size:12px;line-height:1.55}
-    .stx-admin-boot-line{height:5px;margin-top:19px;border-radius:99px;background:#e7f4ef;overflow:hidden}
-    .stx-admin-boot-line::after{content:"";display:block;width:42%;height:100%;border-radius:99px;background:#08745b;animation:stxAdminBoot 1.15s ease-in-out infinite alternate}
-    @keyframes stxAdminBoot{from{transform:translateX(-10%)}to{transform:translateX(150%)}}
+    html,body{min-height:100%;margin:0;background:#04352A}
+    .admin-v2-boot{min-height:100vh;display:grid;place-items:center;padding:24px;background:#04352A;color:#F7F6F0;font-family:Archivo,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    .admin-v2-boot-inner{width:min(420px,100%);text-align:center}
+    .admin-v2-boot-logo{width:170px;height:64px;margin:0 auto;background:url('/images/redesign/stratex-header.png') center/contain no-repeat;filter:brightness(0) invert(1)}
+    .admin-v2-boot small{display:block;margin-top:20px;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#D8F547}
+    .admin-v2-boot h1{margin:10px 0 0;font:400 30px Anton,Impact,sans-serif;letter-spacing:.01em;text-transform:uppercase}
+    .admin-v2-boot p{margin:10px 0 0;color:rgba(247,246,240,.72);font-size:12px;line-height:1.6}
   </style>
   <script>
     (function () {
       try {
-        ['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_seed_players','sl_public_demo_started_at']
-          .forEach(function (key) { sessionStorage.removeItem(key); });
+        [
+          'sl_public_demo',
+          'sl_public_demo_role',
+          'sl_public_demo_state',
+          'sl_public_demo_seed_players',
+          'sl_public_demo_started_at'
+        ].forEach(function (key) {
+          sessionStorage.removeItem(key);
+        });
       } catch (_) {}
     }());
   </script>
 </head>
-<body class="stx-admin-v5">
-  <div class="stx-admin-boot" id="stxAdminBoot" role="status" aria-live="polite">
-    <section class="stx-admin-boot-card">
-      <span class="stx-admin-boot-mark">SA</span>
-      <span class="stx-admin-boot-brand">Stratex Analytics</span>
-      <h1>Loading Stratex Admin Centre</h1>
-      <p>Opening the secure parent-company operations workspace.</p>
-      <div class="stx-admin-boot-line" aria-hidden="true"></div>
-    </section>
+<body class="stratex-admin-centre-v2">
+  <div class="admin-v2-boot" id="stratexAdminBoot" role="status" aria-live="polite">
+    <div class="admin-v2-boot-inner">
+      <div class="admin-v2-boot-logo" aria-label="Stratex Analytics"></div>
+      <small>Admin Centre</small>
+      <h1>Loading secure workspace</h1>
+      <p>Opening Stratex Analytics internal administration.</p>
+    </div>
   </div>
   <noscript>
-    <p style="margin:0;padding:24px;background:#fff;color:#061625">
+    <p style="margin:0;padding:24px;background:#04352A;color:#F7F6F0;font-family:Arial,sans-serif">
       JavaScript is required to use the Stratex Admin Centre.
     </p>
   </noscript>
-  <script src="/js/main.js?v=20260730-2"></script>
-  <script src="/js/stratex-admin-route-guard-v1.js?v=20260730-1"></script>
-  <script src="/js/stratex-admin-v5.js?v=20260730-2"></script>
-  <script src="/js/heap-analytics.js?v=20260730-2"></script>
+  <script src="/js/main.js?v=20260818-admin-centre-v2"></script>
+  <script src="/js/stratex-admin-v5.js?v=20260818-admin-centre-v2"></script>
+  <script src="/js/heap-analytics.js?v=20260818-admin-centre-v2"></script>
 </body>
 </html>
