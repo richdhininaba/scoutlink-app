@@ -18,6 +18,39 @@ const BUILD_CATEGORIES = new Set(['very_slight','slight','lean','athletic','stoc
 
 router.use(requireAuth, requireRole('Stratex'));
 
+/*
+ * Admin Centre bootstrap check.
+ * The frontend must validate its stored bearer token against the live Stratex
+ * account before rendering any internal workspace. This prevents stale local
+ * storage from bypassing the sign-in screen and leaving the UI half-loaded.
+ */
+router.get('/session', async (req, res) => {
+  try {
+    const result = await supabase
+      .from('stratex')
+      .select('id,stratex_id,first_name,last_name,email,role,admin_role,job_title,manager_id,permissions,is_active,registration_complete,last_login')
+      .eq('id', req.user.id)
+      .maybeSingle();
+    throwDb(result.error);
+
+    if (!result.data || result.data.is_active === false) {
+      return res.status(403).json({ error: 'This Stratex Admin session is no longer active.' });
+    }
+
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      authenticated: true,
+      accountType: 'Stratex',
+      user: result.data
+    });
+  } catch (error) {
+    console.error('[Admin Centre session]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'The Stratex Admin session could not be verified.'
+    });
+  }
+});
+
 function text(value, max = 2000) {
   return String(value == null ? '' : value).replace(/[<>]/g, '').trim().slice(0, max);
 }
