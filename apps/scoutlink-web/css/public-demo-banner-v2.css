@@ -1,0 +1,226 @@
+/*
+ * ScoutLink Public Demo Banner V2
+ *
+ * Visual source: ScoutLink Public Pages Design Specification v2.
+ * Pitch on a quiet light surface, sharp geometry, restrained copy,
+ * and no decorative radius/shadow system.
+ */
+
+.public-demo-banner.slpd-banner-v2,
+.slwf-demo-banner.slpd-banner-v2 {
+  --slpd-coal: #06201A;
+  --slpd-pitch: #075F48;
+  --slpd-chalk: #F7F6F0;
+  --slpd-soft: #E4EFEA;
+  --slpd-ink: #0C201A;
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  width: 100%;
+  min-height: 48px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 8px 18px;
+  margin: 0;
+  background: var(--slpd-soft) !important;
+  color: var(--slpd-ink) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(7, 95, 72, .30) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: 'Archivo', 'Inter', Arial, sans-serif;
+}
+
+.public-demo-banner.slpd-banner-v2 *,
+.slwf-demo-banner.slpd-banner-v2 * {
+  box-sizing: border-box;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-main,
+.public-demo-banner.slpd-banner-v2 .public-demo-cta,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-main,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-cta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-main,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-main {
+  flex: 1 1 auto;
+  gap: 10px;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-badge,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  background: transparent !important;
+  color: var(--slpd-pitch) !important;
+  border: 1px solid rgba(7, 95, 72, .38) !important;
+  border-radius: 0 !important;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-copy,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-copy {
+  min-width: 0;
+  color: var(--slpd-ink) !important;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-cta,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-cta {
+  flex: none;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-home,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-home {
+  display: none !important;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-access,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-access {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  margin: 0;
+  background: var(--slpd-pitch) !important;
+  color: var(--slpd-chalk) !important;
+  border: 1px solid var(--slpd-pitch) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: 'Archivo', 'Inter', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none !important;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-exit,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-exit {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  margin: 0;
+  background: transparent !important;
+  color: var(--slpd-pitch) !important;
+  border: 1px solid rgba(7, 95, 72, .42) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-family: 'Archivo', 'Inter', Arial, sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-access:focus-visible,
+.public-demo-banner.slpd-banner-v2 .public-demo-exit:focus-visible,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-access:focus-visible,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-exit:focus-visible {
+  outline: 2px solid var(--slpd-coal);
+  outline-offset: 2px;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-access:hover,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-access:hover {
+  background: var(--slpd-coal) !important;
+  border-color: var(--slpd-coal) !important;
+}
+
+.public-demo-banner.slpd-banner-v2 .public-demo-exit:hover,
+.slwf-demo-banner.slpd-banner-v2 .public-demo-exit:hover {
+  background: rgba(7, 95, 72, .07) !important;
+}
+
+/*
+ * scout-experience-core-v2.js still mounts its historical Scout-only demo
+ * banner. Keep that node mounted so its runtime does not recreate it, but hide
+ * it once the shared V2 banner is active.
+ */
+.public-demo-banner-v2-active
+  .slwf-demo-banner[data-slwf-demo-banner],
+.slpd-retired-demo-banner {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .public-demo-banner.slpd-banner-v2,
+  .slwf-demo-banner.slpd-banner-v2 {
+    position: sticky;
+    top: 0;
+    min-height: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 9px 12px;
+  }
+
+  .public-demo-banner.slpd-banner-v2 .public-demo-main,
+  .slwf-demo-banner.slpd-banner-v2 .public-demo-main {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .public-demo-banner.slpd-banner-v2 .public-demo-copy,
+  .slwf-demo-banner.slpd-banner-v2 .public-demo-copy {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .public-demo-banner.slpd-banner-v2 .public-demo-cta,
+  .slwf-demo-banner.slpd-banner-v2 .public-demo-cta {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .public-demo-banner.slpd-banner-v2 .public-demo-access,
+  .slwf-demo-banner.slpd-banner-v2 .public-demo-access {
+    width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .public-demo-banner.slpd-banner-v2 .public-demo-main,
+  .slwf-demo-banner.slpd-banner-v2 .public-demo-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-demo-banner.slpd-banner-v2 *,
+  .slwf-demo-banner.slpd-banner-v2 * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
