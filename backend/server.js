@@ -104,6 +104,7 @@ app.use('/api/predictions', require('./routes/predictions'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/stratex', require('./routes/stratex'));
 app.use('/api/stratex', require('./routes/stratexJobs'));
+app.use('/api/stratex-admin-centre', require('./routes/stratexAdminCentreV2'));
 app.use('/api/scouts', require('./routes/scouts'));
 app.use('/api/scout', require('./routes/scouts'));
 app.use('/api/coaches', require('./routes/coaches'));
