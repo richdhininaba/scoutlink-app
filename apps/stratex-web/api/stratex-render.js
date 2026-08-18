@@ -43,13 +43,28 @@ function publicPathFromRequest(req) {
 
 function resolveRoute(req) {
   const requestPath = publicPathFromRequest(req);
+
   if (/^\/careers\/[^/]+/.test(requestPath)) {
-    return { key: '/careers/{job-slug}', canonicalPath: requestPath };
+    return {
+      key: '/careers/{job-slug}',
+      canonicalPath: requestPath,
+      slug: decodeURIComponent(requestPath.split('/').slice(2).join('/'))
+    };
   }
+
   if (/^\/learning-centre\/[^/]+/.test(requestPath)) {
-    return { key: '/learning-centre/{article-slug}', canonicalPath: requestPath };
+    return {
+      key: '/learning-centre/{article-slug}',
+      canonicalPath: requestPath,
+      slug: decodeURIComponent(requestPath.split('/').slice(2).join('/'))
+    };
   }
-  return { key: requestPath, canonicalPath: requestPath };
+
+  return {
+    key: requestPath,
+    canonicalPath: requestPath,
+    slug: ''
+  };
 }
 
 function findBundlePath(...segments) {
@@ -287,120 +302,1151 @@ function applyEditorialOverrides(page, routeKey) {
   return page;
 }
 
-function schemaFor(page, canonical) {
-  const pieces = canonical.replace(SITE, '').split('/').filter(Boolean);
-  const items = [{ '@type':'ListItem', position:1, name:'Home', item:SITE + '/' }];
+function cleanMetaText(value, max = 320) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+function publicImage(value) {
+  const raw = String(value || '').trim();
+
+  if (!raw) return '';
+
+  if (raw.charAt(0) === '/') {
+    return SITE + raw;
+  }
+
+  if (/^https:\/\//i.test(raw)) {
+    return raw;
+  }
+
+  return '';
+}
+
+function sameSiteCanonical(value, fallback) {
+  const raw = String(value || '').trim();
+
+  if (!raw) return fallback;
+
+  try {
+    const parsed = new URL(raw, SITE);
+
+    if (
+      parsed.protocol === 'https:' &&
+      (
+        parsed.hostname === 'www.stratexanalytics.co.uk' ||
+        parsed.hostname === 'stratexanalytics.co.uk'
+      )
+    ) {
+      parsed.protocol = 'https:';
+      parsed.hostname = 'www.stratexanalytics.co.uk';
+      parsed.hash = '';
+      parsed.search = '';
+
+      return parsed.toString().replace(/\/$/, '') ||
+        SITE + '/';
+    }
+  } catch (_) {}
+
+  return fallback;
+}
+
+function dateIso(value) {
+  if (!value) return undefined;
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+
+  return parsed.toISOString();
+}
+
+function visibleJob(job) {
+  if (!job) return false;
+
+  const now = Date.now();
+  const status =
+    String(job.status || '').toLowerCase();
+
+  const released =
+    status === 'live' ||
+    (
+      status === 'scheduled' &&
+      job.release_at &&
+      new Date(job.release_at).getTime() <= now
+    );
+
+  const notClosed =
+    !job.closing_at ||
+    new Date(job.closing_at).getTime() >= now;
+
+  return released && notClosed;
+}
+
+async function fetchSupabaseRows(table, params) {
+  const supabaseUrl =
+    process.env.SUPABASE_URL ||
+    process.env.SUPABASE_PROJECT_URL;
+
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (
+    !supabaseUrl ||
+    !key ||
+    typeof fetch !== 'function'
+  ) {
+    return [];
+  }
+
+  try {
+    const query =
+      new URLSearchParams(params || {});
+
+    const response = await fetch(
+      supabaseUrl.replace(/\/$/, '') +
+        '/rest/v1/' +
+        table +
+        '?' +
+        query.toString(),
+      {
+        headers: {
+          apikey: key,
+          authorization: 'Bearer ' + key,
+          accept: 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const rows = await response.json();
+
+    return Array.isArray(rows) ? rows : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+async function dynamicContext(route) {
+  const context = {
+    job: null,
+    article: null,
+    showcase: null,
+    awards: []
+  };
+
+  if (
+    route.key === '/careers/{job-slug}' &&
+    route.slug
+  ) {
+    const jobs = await fetchSupabaseRows(
+      'job_posts',
+      {
+        select: '*',
+        slug: 'eq.' + route.slug,
+        limit: '1'
+      }
+    );
+
+    context.job =
+      jobs[0] && visibleJob(jobs[0])
+        ? jobs[0]
+        : null;
+
+    return context;
+  }
+
+  if (
+    route.key === '/learning-centre/{article-slug}' &&
+    route.slug
+  ) {
+    const posts = await fetchSupabaseRows(
+      'stratex_learning_posts',
+      {
+        select:
+          'id,slug,title,excerpt,body,category,status,' +
+          'published_at,created_at,updated_at,' +
+          'featured_image_url,image_alt,seo_title,' +
+          'meta_description,canonical_url,index_when_published',
+        slug: 'eq.' + route.slug,
+        status: 'eq.published',
+        limit: '1'
+      }
+    );
+
+    context.article = posts[0] || null;
+
+    return context;
+  }
+
+  if (route.key === '/showcase-event') {
+    const events = await fetchSupabaseRows(
+      'showcase_events',
+      {
+        select:
+          'id,event_name,slug,event_date,venue_name,' +
+          'venue_address,description,summary,status,' +
+          'confirmed,public_visible,featured,' +
+          'registration_deadline,player_min_age,' +
+          'player_max_age,updated_at,created_at',
+        public_visible: 'eq.true',
+        order: 'featured.desc,event_date.asc',
+        limit: '20'
+      }
+    );
+
+    context.showcase =
+      events.find(event => event.featured) ||
+      events[0] ||
+      null;
+
+    return context;
+  }
+
+  if (route.key === '/award-ceremonies') {
+    context.awards = await fetchSupabaseRows(
+      'award_ceremonies',
+      {
+        select:
+          'id,name,slug,event_date,location,status,' +
+          'categories,audience,description,' +
+          'hero_image_url,public_visible,' +
+          'created_at,updated_at',
+        public_visible: 'eq.true',
+        status: 'in.(published,completed)',
+        order: 'event_date.asc'
+      }
+    );
+  }
+
+  return context;
+}
+
+function applyDynamicMetadata(page, route, context) {
+  const next = {
+    ...page
+  };
+
+  if (
+    route.key === '/careers/{job-slug}' &&
+    context.job
+  ) {
+    const job = context.job;
+
+    next.title =
+      cleanMetaText(job.job_title, 120) +
+      ' | Stratex Analytics Careers';
+
+    next.description =
+      cleanMetaText(
+        job.role_overview ||
+        job.about_company ||
+        'View and apply for this Stratex Analytics role.',
+        300
+      );
+  }
+
+  if (
+    route.key === '/learning-centre/{article-slug}' &&
+    context.article
+  ) {
+    const article = context.article;
+
+    next.title =
+      cleanMetaText(
+        article.seo_title ||
+        (
+          cleanMetaText(article.title, 120) +
+          ' | Stratex Analytics'
+        ),
+        160
+      );
+
+    next.description =
+      cleanMetaText(
+        article.meta_description ||
+        article.excerpt ||
+        'Read practical football intelligence guidance from Stratex Analytics.',
+        300
+      );
+  }
+
+  return next;
+}
+
+function pageRobots(route, context) {
+  if (
+    route.key === '/learning-centre/{article-slug}' &&
+    context.article &&
+    context.article.index_when_published === false
+  ) {
+    return 'noindex,follow';
+  }
+
+  return (
+    'index,follow,' +
+    'max-image-preview:large,' +
+    'max-snippet:-1,' +
+    'max-video-preview:-1'
+  );
+}
+
+function breadcrumbSchema(canonical) {
+  const pieces =
+    canonical.replace(SITE, '')
+      .split('/')
+      .filter(Boolean);
+
+  const items = [
+    {
+      '@type':'ListItem',
+      position:1,
+      name:'Home',
+      item:SITE + '/'
+    }
+  ];
 
   pieces.forEach((piece, index) => {
     items.push({
       '@type':'ListItem',
       position:index + 2,
-      name:piece.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-      item:SITE + '/' + pieces.slice(0, index + 1).join('/')
+      name:piece
+        .split('-')
+        .map(word =>
+          word.charAt(0).toUpperCase() +
+          word.slice(1)
+        )
+        .join(' '),
+      item:
+        SITE +
+        '/' +
+        pieces
+          .slice(0, index + 1)
+          .join('/')
     });
   });
 
   return {
-    '@context':'https://schema.org',
-    '@graph':[
-      {
-        '@type':'Organization',
-        '@id':SITE + '/#organization',
-        name:'Stratex Analytics',
-        legalName:'Stratex Analytics Limited',
-        url:SITE + '/',
-        image:OG_IMAGE,
-        sameAs:['https://www.scoutlink.app']
-      },
-      {
-        '@type':'WebPage',
-        '@id':canonical + '#webpage',
-        url:canonical,
-        name:page.title,
-        description:page.description,
-        isPartOf:{ '@type':'WebSite', '@id':SITE + '/#website', name:'Stratex Analytics', url:SITE + '/' },
-        publisher:{ '@id':SITE + '/#organization' },
-        breadcrumb:{ '@type':'BreadcrumbList', itemListElement:items }
-      }
+    '@type':'BreadcrumbList',
+    '@id':canonical + '#breadcrumb',
+    itemListElement:items
+  };
+}
+
+function organizationSchema() {
+  return {
+    '@type':'Organization',
+    '@id':SITE + '/#organization',
+    name:'Stratex Analytics',
+    legalName:'Stratex Analytics Limited',
+    url:SITE + '/',
+    logo:SITE + '/images/redesign/stratex-header.png',
+    image:OG_IMAGE,
+    description:
+      'UK football intelligence and sports technology company focused on grassroots player development, evidence, visibility and recruitment.',
+    areaServed:{
+      '@type':'Country',
+      name:'United Kingdom'
+    },
+    contactPoint:{
+      '@type':'ContactPoint',
+      telephone:'+44 20 7164 0181',
+      contactType:'customer support',
+      availableLanguage:['English']
+    },
+    sameAs:[
+      'https://www.scoutlink.app'
     ]
   };
 }
 
-function readStore() {
-  const raw = readBundleFile('assets', 'stratex-public-v5-pages.json');
-  const store = JSON.parse(raw);
-  if (!store || typeof store !== 'object' || !store.pages || typeof store.pages !== 'object') {
-    throw new Error('Invalid Stratex public page bundle.');
+function websiteSchema() {
+  return {
+    '@type':'WebSite',
+    '@id':SITE + '/#website',
+    url:SITE + '/',
+    name:'Stratex Analytics',
+    publisher:{
+      '@id':SITE + '/#organization'
+    }
+  };
+}
+
+function webPageType(routeKey) {
+  if (routeKey === '/about') {
+    return 'AboutPage';
   }
+
+  if (
+    routeKey === '/contact' ||
+    routeKey === '/report-a-concern'
+  ) {
+    return 'ContactPage';
+  }
+
+  if (
+    routeKey === '/careers' ||
+    routeKey === '/learning-centre' ||
+    routeKey === '/award-ceremonies'
+  ) {
+    return 'CollectionPage';
+  }
+
+  return 'WebPage';
+}
+
+function leadershipPeople() {
+  return [
+    {
+      '@type':'Person',
+      '@id':SITE + '/leadership#richdhin-inaba',
+      name:'Richdhin Inaba',
+      jobTitle:'Founder & CEO',
+      email:'mailto:richdhin@stratexanalytics.co.uk',
+      description:
+        'Founder and CEO responsible for company direction, product priorities and partnerships.',
+      worksFor:{
+        '@id':SITE + '/#organization'
+      }
+    },
+    {
+      '@type':'Person',
+      '@id':SITE + '/leadership#lucy-ali',
+      name:'Lucy Ali',
+      jobTitle:
+        'Director of Operations & Customer Success',
+      email:'mailto:lucy.ali@stratexanalytics.co.uk',
+      description:
+        'Leads operations, customer success and customer relationships at Stratex Analytics.',
+      worksFor:{
+        '@id':SITE + '/#organization'
+      }
+    },
+    {
+      '@type':'Person',
+      '@id':SITE + '/leadership#alexandro-ilioaie',
+      name:'Alexandro Ilioaie',
+      jobTitle:
+        'Director of Football Strategy & Growth',
+      email:
+        'mailto:alexandro.ilioaie@stratexanalytics.co.uk',
+      description:
+        'Leads football strategy, growth, events and partnerships at Stratex Analytics.',
+      worksFor:{
+        '@id':SITE + '/#organization'
+      }
+    }
+  ];
+}
+
+function scoutLinkServiceSchema(canonical, page) {
+  return {
+    '@type':'Service',
+    '@id':canonical + '#service',
+    name:'ScoutLink',
+    url:canonical,
+    serviceType:
+      'Grassroots football intelligence and player discovery platform',
+    description:page.description,
+    provider:{
+      '@id':SITE + '/#organization'
+    },
+    audience:[
+      {
+        '@type':'Audience',
+        audienceType:'Grassroots football coaches'
+      },
+      {
+        '@type':'Audience',
+        audienceType:'Football scouts'
+      },
+      {
+        '@type':'Audience',
+        audienceType:'Football clubs and recruitment teams'
+      }
+    ],
+    termsOfService:
+      SITE + '/terms'
+  };
+}
+
+function jobPostingSchema(job, canonical) {
+  const schema = {
+    '@type':'JobPosting',
+    '@id':canonical + '#job',
+    title:cleanMetaText(job.job_title, 160),
+    description:cleanMetaText(
+      job.role_overview ||
+      job.about_company ||
+      job.responsibilities,
+      5000
+    ),
+    url:canonical,
+    hiringOrganization:{
+      '@id':SITE + '/#organization'
+    },
+    identifier:{
+      '@type':'PropertyValue',
+      name:'Stratex Analytics',
+      value:String(job.id || job.slug || canonical)
+    }
+  };
+
+  const posted =
+    dateIso(job.release_at || job.created_at);
+
+  const validThrough =
+    dateIso(job.closing_at);
+
+  if (posted) {
+    schema.datePosted = posted;
+  }
+
+  if (validThrough) {
+    schema.validThrough = validThrough;
+  }
+
+  if (job.employment_type) {
+    schema.employmentType =
+      cleanMetaText(job.employment_type, 100);
+  }
+
+  if (
+    String(job.working_type || '')
+      .toLowerCase() === 'remote'
+  ) {
+    schema.jobLocationType = 'TELECOMMUTE';
+  } else if (job.location) {
+    schema.jobLocation = {
+      '@type':'Place',
+      address:{
+        '@type':'PostalAddress',
+        addressLocality:
+          cleanMetaText(job.location, 160),
+        addressCountry:'GB'
+      }
+    };
+  }
+
+  return schema;
+}
+
+function articleSchema(article, canonical, page) {
+  const image =
+    publicImage(article.featured_image_url);
+
+  const schema = {
+    '@type':'BlogPosting',
+    '@id':canonical + '#article',
+    headline:
+      cleanMetaText(article.title, 180),
+    description:page.description,
+    url:canonical,
+    mainEntityOfPage:{
+      '@id':canonical + '#webpage'
+    },
+    author:{
+      '@id':SITE + '/#organization'
+    },
+    publisher:{
+      '@id':SITE + '/#organization'
+    }
+  };
+
+  const published =
+    dateIso(article.published_at);
+
+  const modified =
+    dateIso(
+      article.updated_at ||
+      article.published_at
+    );
+
+  if (published) {
+    schema.datePublished = published;
+  }
+
+  if (modified) {
+    schema.dateModified = modified;
+  }
+
+  if (image) {
+    schema.image = image;
+  }
+
+  if (article.category) {
+    schema.articleSection =
+      cleanMetaText(article.category, 120);
+  }
+
+  return schema;
+}
+
+function showcaseEventSchema(event, canonical) {
+  if (!event) return null;
+
+  const schema = {
+    '@type':'Event',
+    '@id':canonical + '#event',
+    name:
+      cleanMetaText(
+        event.event_name ||
+        'ScoutLink Showcase Event',
+        180
+      ),
+    url:canonical,
+    organizer:{
+      '@id':SITE + '/#organization'
+    },
+    eventStatus:
+      'https://schema.org/EventScheduled',
+    audience:{
+      '@type':'Audience',
+      audienceType:
+        'Grassroots football players, coaches and scouts'
+    }
+  };
+
+  const startDate =
+    dateIso(event.event_date);
+
+  if (startDate) {
+    schema.startDate = startDate;
+  }
+
+  if (
+    event.venue_name ||
+    event.venue_address
+  ) {
+    schema.location = {
+      '@type':'Place',
+      name:
+        cleanMetaText(
+          event.venue_name ||
+          event.venue_address,
+          180
+        ),
+      address:
+        cleanMetaText(
+          event.venue_address ||
+          event.venue_name,
+          300
+        )
+    };
+  }
+
+  const description =
+    cleanMetaText(
+      event.summary ||
+      event.description,
+      600
+    );
+
+  if (description) {
+    schema.description = description;
+  }
+
+  return schema;
+}
+
+function awardEventSchemas(awards, canonical) {
+  return (awards || [])
+    .filter(Boolean)
+    .map((award, index) => {
+      const schema = {
+        '@type':'Event',
+        '@id':
+          canonical +
+          '#event-' +
+          (
+            award.slug ||
+            award.id ||
+            index + 1
+          ),
+        name:cleanMetaText(
+          award.name ||
+          'Stratex Football Honours',
+          180
+        ),
+        url:canonical,
+        organizer:{
+          '@id':SITE + '/#organization'
+        },
+        eventStatus:
+          award.status === 'cancelled'
+            ? 'https://schema.org/EventCancelled'
+            : 'https://schema.org/EventScheduled'
+      };
+
+      const date =
+        dateIso(award.event_date);
+
+      if (date) {
+        schema.startDate = date;
+      }
+
+      if (award.location) {
+        schema.location = {
+          '@type':'Place',
+          name:cleanMetaText(
+            award.location,
+            240
+          )
+        };
+      }
+
+      if (award.description) {
+        schema.description =
+          cleanMetaText(
+            award.description,
+            600
+          );
+      }
+
+      return schema;
+    });
+}
+
+function schemaFor(
+  page,
+  canonical,
+  route,
+  context
+) {
+  const graph = [
+    organizationSchema(),
+    websiteSchema(),
+    breadcrumbSchema(canonical)
+  ];
+
+  graph.push({
+    '@type':webPageType(route.key),
+    '@id':canonical + '#webpage',
+    url:canonical,
+    name:page.title,
+    description:page.description,
+    isPartOf:{
+      '@id':SITE + '/#website'
+    },
+    publisher:{
+      '@id':SITE + '/#organization'
+    },
+    breadcrumb:{
+      '@id':canonical + '#breadcrumb'
+    }
+  });
+
+  if (route.key === '/scoutlink') {
+    graph.push(
+      scoutLinkServiceSchema(
+        canonical,
+        page
+      )
+    );
+  }
+
+  if (route.key === '/leadership') {
+    graph.push(
+      ...leadershipPeople()
+    );
+  }
+
+  if (
+    route.key === '/careers/{job-slug}' &&
+    context.job
+  ) {
+    graph.push(
+      jobPostingSchema(
+        context.job,
+        canonical
+      )
+    );
+  }
+
+  if (
+    route.key === '/learning-centre/{article-slug}' &&
+    context.article
+  ) {
+    graph.push(
+      articleSchema(
+        context.article,
+        canonical,
+        page
+      )
+    );
+  }
+
+  if (
+    route.key === '/showcase-event' &&
+    context.showcase
+  ) {
+    const event =
+      showcaseEventSchema(
+        context.showcase,
+        canonical
+      );
+
+    if (event) {
+      graph.push(event);
+    }
+  }
+
+  if (route.key === '/award-ceremonies') {
+    graph.push(
+      ...awardEventSchemas(
+        context.awards,
+        canonical
+      )
+    );
+  }
+
+  return {
+    '@context':'https://schema.org',
+    '@graph':graph
+  };
+}
+
+function readStore() {
+  const raw =
+    readBundleFile(
+      'assets',
+      'stratex-public-v5-pages.json'
+    );
+
+  const store =
+    JSON.parse(raw);
+
+  if (
+    !store ||
+    typeof store !== 'object' ||
+    !store.pages ||
+    typeof store.pages !== 'object'
+  ) {
+    throw new Error(
+      'Invalid Stratex public page bundle.'
+    );
+  }
+
   return store;
 }
 
-module.exports = function handler(req, res) {
+function sendNotFound(res) {
+  const notFoundPath =
+    findBundlePath(
+      'pages',
+      '404.html'
+    );
+
+  res.statusCode = 404;
+  res.setHeader(
+    'Content-Type',
+    'text/html; charset=utf-8'
+  );
+  res.setHeader(
+    'Cache-Control',
+    'no-store'
+  );
+  res.setHeader(
+    'X-Robots-Tag',
+    'noindex, nofollow'
+  );
+  res.end(
+    notFoundPath
+      ? fs.readFileSync(
+          notFoundPath,
+          'utf8'
+        )
+      : 'Not found'
+  );
+}
+
+module.exports = async function handler(req, res) {
   try {
-    const shellPath = findBundlePath('pages', 'stratex-public-v5.html');
-    const contentPath = findBundlePath('assets', 'stratex-public-v5-pages.json');
+    const shellPath =
+      findBundlePath(
+        'pages',
+        'stratex-public-v5.html'
+      );
+
+    const contentPath =
+      findBundlePath(
+        'assets',
+        'stratex-public-v5-pages.json'
+      );
 
     if (!shellPath || !contentPath) {
       res.statusCode = 500;
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.end('The Stratex public website bundle is missing.');
+      res.setHeader(
+        'Content-Type',
+        'text/plain; charset=utf-8'
+      );
+      res.end(
+        'The Stratex public website bundle is missing.'
+      );
       return;
     }
 
     const route = resolveRoute(req);
     const store = readStore();
 
-    let page = route.key === '/award-ceremonies'
-      ? awardCeremoniesPage()
-      : store.pages[route.key];
+    let page =
+      route.key === '/award-ceremonies'
+        ? awardCeremoniesPage()
+        : store.pages[route.key];
 
     if (!page) {
-      const notFoundPath = findBundlePath('pages', '404.html');
-      res.statusCode = 404;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-store');
-      res.end(notFoundPath ? fs.readFileSync(notFoundPath, 'utf8') : 'Not found');
+      sendNotFound(res);
       return;
     }
 
-    page = applyEditorialOverrides(page, route.key);
+    const context =
+      await dynamicContext(route);
 
-    let html = readBundleFile('pages', 'stratex-public-v5.html');
-    const canonical = SITE + (route.canonicalPath === '/' ? '/' : route.canonicalPath);
-    const schema = JSON.stringify(schemaFor(page, canonical)).replace(/</g, '\\u003c');
+    if (
+      route.key === '/careers/{job-slug}' &&
+      !context.job
+    ) {
+      sendNotFound(res);
+      return;
+    }
 
-    html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + esc(page.title) + '</title>');
-    html = html.replace(/<meta name="description" content="[^"]*">/i, '<meta name="description" content="' + esc(page.description) + '">');
-    html = html.replace(/<link rel="canonical" href="[^"]*">/i, '<link rel="canonical" href="' + esc(canonical) + '">');
-    html = html.replace(/<meta property="og:title" content="[^"]*">/i, '<meta property="og:title" content="' + esc(page.title) + '">');
-    html = html.replace(/<meta property="og:description" content="[^"]*">/i, '<meta property="og:description" content="' + esc(page.description) + '">');
-    html = html.replace(/<meta property="og:url" content="[^"]*">/i, '<meta property="og:url" content="' + esc(canonical) + '">');
-    html = html.replace(/<meta name="twitter:title" content="[^"]*">/i, '<meta name="twitter:title" content="' + esc(page.title) + '">');
-    html = html.replace(/<meta name="twitter:description" content="[^"]*">/i, '<meta name="twitter:description" content="' + esc(page.description) + '">');
+    if (
+      route.key === '/learning-centre/{article-slug}' &&
+      !context.article
+    ) {
+      sendNotFound(res);
+      return;
+    }
+
+    page =
+      applyEditorialOverrides(
+        page,
+        route.key
+      );
+
+    page =
+      applyDynamicMetadata(
+        page,
+        route,
+        context
+      );
+
+    let canonical =
+      SITE +
+      (
+        route.canonicalPath === '/'
+          ? '/'
+          : route.canonicalPath
+      );
+
+    if (
+      route.key === '/learning-centre/{article-slug}' &&
+      context.article
+    ) {
+      canonical =
+        sameSiteCanonical(
+          context.article.canonical_url,
+          canonical
+        );
+    }
+
+    const robots =
+      pageRobots(
+        route,
+        context
+      );
+
+    const schema =
+      JSON.stringify(
+        schemaFor(
+          page,
+          canonical,
+          route,
+          context
+        )
+      ).replace(
+        /</g,
+        '\\u003c'
+      );
+
+    let html =
+      readBundleFile(
+        'pages',
+        'stratex-public-v5.html'
+      );
+
+    html = html.replace(
+      /<title>[\s\S]*?<\/title>/i,
+      '<title>' +
+        esc(page.title) +
+        '</title>'
+    );
+
+    html = html.replace(
+      /<meta name="description" content="[^"]*">/i,
+      '<meta name="description" content="' +
+        esc(page.description) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta name="robots" content="[^"]*">/i,
+      '<meta name="robots" content="' +
+        esc(robots) +
+        '">'
+    );
+
+    html = html.replace(
+      /<link rel="canonical" href="[^"]*">/i,
+      '<link rel="canonical" href="' +
+        esc(canonical) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta property="og:title" content="[^"]*">/i,
+      '<meta property="og:title" content="' +
+        esc(page.title) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta property="og:description" content="[^"]*">/i,
+      '<meta property="og:description" content="' +
+        esc(page.description) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta property="og:url" content="[^"]*">/i,
+      '<meta property="og:url" content="' +
+        esc(canonical) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta name="twitter:title" content="[^"]*">/i,
+      '<meta name="twitter:title" content="' +
+        esc(page.title) +
+        '">'
+    );
+
+    html = html.replace(
+      /<meta name="twitter:description" content="[^"]*">/i,
+      '<meta name="twitter:description" content="' +
+        esc(page.description) +
+        '">'
+    );
+
+    if (
+      route.key === '/learning-centre/{article-slug}' &&
+      context.article
+    ) {
+      const articleImage =
+        publicImage(
+          context.article.featured_image_url
+        );
+
+      if (articleImage) {
+        html = html.replace(
+          /<meta property="og:image" content="[^"]*">/i,
+          '<meta property="og:image" content="' +
+            esc(articleImage) +
+            '">'
+        );
+
+        html = html.replace(
+          /<meta name="twitter:image" content="[^"]*">/i,
+          '<meta name="twitter:image" content="' +
+            esc(articleImage) +
+            '">'
+        );
+      }
+
+      if (context.article.image_alt) {
+        html = html.replace(
+          /<meta property="og:image:alt" content="[^"]*">/i,
+          '<meta property="og:image:alt" content="' +
+            esc(
+              cleanMetaText(
+                context.article.image_alt,
+                300
+              )
+            ) +
+            '">'
+        );
+      }
+    }
+
     html = html.replace(
       /<script type="application\/ld\+json" id="stratexJsonLd">[\s\S]*?<\/script>/i,
-      '<script type="application/ld+json" id="stratexJsonLd">' + schema + '</script>'
+      '<script type="application/ld+json" id="stratexJsonLd">' +
+        schema +
+        '</script>'
     );
+
     html = html.replace(
       '<div id="stratexPublicRoot" aria-live="polite"></div>',
-      '<div id="stratexPublicRoot" aria-live="polite" data-server-rendered="true">' + page.html + '</div>'
+      '<div id="stratexPublicRoot" aria-live="polite" data-server-rendered="true">' +
+        page.html +
+        '</div>'
     );
 
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
-    res.setHeader('X-Stratex-Public-Renderer', 'v5-ssr');
+    res.setHeader(
+      'Content-Type',
+      'text/html; charset=utf-8'
+    );
+    res.setHeader(
+      'Cache-Control',
+      'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
+    );
+    res.setHeader(
+      'X-Stratex-Public-Renderer',
+      'v5-ssr'
+    );
+    res.setHeader(
+      'X-Robots-Tag',
+      robots.replace(/,/g, ', ')
+    );
     res.end(html);
   } catch (error) {
-    console.error('[stratex-render]', error);
+    console.error(
+      '[stratex-render]',
+      error
+    );
+
     res.statusCode = 500;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader(
+      'Content-Type',
+      'text/html; charset=utf-8'
+    );
+    res.setHeader(
+      'Cache-Control',
+      'no-store'
+    );
+    res.setHeader(
+      'X-Robots-Tag',
+      'noindex, nofollow'
+    );
     res.end(
-      '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-      '<title>Stratex Analytics</title></head><body><main style="padding:32px;font-family:Arial,sans-serif">' +
-      '<h1>Stratex Analytics</h1><p>The public website could not be loaded. Please try again.</p>' +
-      '<p><a href="/contact">Contact Stratex</a></p></main></body></html>'
+      '<!doctype html><html lang="en"><head>' +
+      '<meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<meta name="robots" content="noindex,nofollow">' +
+      '<title>Stratex Analytics</title></head>' +
+      '<body><main style="padding:32px;font-family:Arial,sans-serif">' +
+      '<h1>Stratex Analytics</h1>' +
+      '<p>The public website could not be loaded. Please try again.</p>' +
+      '<p><a href="/contact">Contact Stratex</a></p>' +
+      '</main></body></html>'
     );
   }
 };
