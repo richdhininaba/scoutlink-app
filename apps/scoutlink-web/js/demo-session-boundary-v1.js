@@ -214,10 +214,10 @@
     restoreRealAuth();
   }
 
-  if (page === '/demo') {
+  if (page === '/demo' || page === '/public-demo') {
     /*
-     * The public demo landing page is always a neutral entry point. A previous
-     * demo identity is cleared, but any genuine pre-demo account remains safely
+     * Both public-demo entry URLs are neutral landing points. A previous demo
+     * identity is cleared, but any genuine pre-demo account remains safely
      * backed up until the user next chooses Sign in.
      */
     clearTemporaryDemoIdentity();
