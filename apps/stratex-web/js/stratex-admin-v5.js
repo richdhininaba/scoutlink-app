@@ -1,7 +1,7 @@
 'use strict';
 (function(){
 if(window.__stratexAdminCentreV2)return;window.__stratexAdminCentreV2=true;
-var API=(function(){try{return localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}catch(_){return'https://scoutlink-api.vercel.app';}})();
+var API='https://scoutlink-api.vercel.app';
 var SITE='https://www.stratexanalytics.co.uk',SCOUTLINK='https://www.scoutlink.app';
 var state={route:'dashboard',data:{},selected:{},scoring:null,modalReturn:null};
 var ROUTES=[
@@ -13,9 +13,36 @@ function auth(){try{return typeof Auth!=='undefined'?Auth:null;}catch(_){return 
 function user(){var a=auth();if(a&&a.user)return a.user;try{return JSON.parse(localStorage.getItem('sl_user')||'{}')||{};}catch(_){return{};}}
 function token(){var a=auth();if(a&&a.token)return a.token;try{return localStorage.getItem('sl_token')||'';}catch(_){return'';}}
 function type(){var a=auth();if(a&&a.type)return a.type;try{return localStorage.getItem('sl_type')||'';}catch(_){return'';}}
-function logged(){var a=auth();if(a&&typeof a.isLoggedIn==='function')return a.isLoggedIn()&&type()==='Stratex';return!!token()&&type()==='Stratex';}
 function setSession(x){var a=auth();if(a&&typeof a.set==='function')a.set(x.token,x.user,'Stratex');else{localStorage.setItem('sl_token',x.token);localStorage.setItem('sl_user',JSON.stringify(x.user||{}));localStorage.setItem('sl_type','Stratex');}}
-function clearSession(){var a=auth();if(a&&typeof a.clear==='function')a.clear();['sl_token','sl_user','sl_type'].forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});}
+function clearSession(){
+  var a=auth();
+  if(a&&typeof a.clear==='function')a.clear();
+  [
+    'sl_token','sl_user','sl_type','sl_session','sl_user_id','sl_user_email',
+    'sl_user_role','sl_user_data','sl_demo_mode','sl_admin_token','sl_admin_user',
+    'sl_admin_type','sl_experience_switcher'
+  ].forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});
+  [
+    'sl_public_demo','sl_public_demo_role','sl_public_demo_state',
+    'sl_public_demo_seed_players','sl_public_demo_started_at','sl_heap_demo_sid'
+  ].forEach(function(k){try{sessionStorage.removeItem(k);}catch(_){}});
+}
+function safeNext(){
+  var next=qs().get('next')||'/admin';
+  if(next.indexOf('/admin')!==0||next.indexOf('/admin/login')===0)return'/admin';
+  return next;
+}
+function loginUrl(reason){
+  var next=location.pathname+location.search;
+  if(next.indexOf('/admin/login')===0)next='/admin';
+  var url='/admin/login?next='+encodeURIComponent(next);
+  if(reason)url+='&reason='+encodeURIComponent(reason);
+  return url;
+}
+function goToLogin(reason){
+  clearSession();
+  location.replace(loginUrl(reason||''));
+}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function name(r){r=r||{};return[r.first_name||r.firstName,r.last_name||r.lastName].filter(Boolean).join(' ')||r.full_name||r.fullName||r.name||r.email||'Stratex user';}
 function initials(r){return name(r).split(/\s+/).filter(Boolean).map(function(p){return p[0];}).join('').slice(0,2).toUpperCase()||'SA';}
@@ -24,7 +51,18 @@ function num(v){return Number(v||0).toLocaleString('en-GB');}
 function path(){return(window.location.pathname||'/admin').replace(/\/+$/,'')||'/admin';}function routeId(){return BY_PATH[path()]||'dashboard';}function route(id){return BY_ID[id]||BY_ID.dashboard;}function qs(){return new URLSearchParams(location.search);}function mobile(){return matchMedia&&matchMedia('(max-width:760px)').matches;}
 function titleCase(v){return String(v||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
 function attrLabel(k){var d=state.scoring&&state.scoring.attributeDefinitions&&state.scoring.attributeDefinitions[k];return d&&(d.label||d.name)?(d.label||d.name):titleCase(k);}
-async function api(method,url,body,form){var o={method:method,credentials:'include',headers:{Authorization:'Bearer '+token()}};if(body!=null){if(form)o.body=body;else{o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}}var r=await fetch(API+url,o),ct=r.headers.get('content-type')||'',p=ct.indexOf('json')>=0?await r.json().catch(function(){return{};}):{text:await r.text().catch(function(){return'';})};if(!r.ok)throw new Error(p.error||p.message||'The request could not be completed.');return p;}
+async function api(method,url,body,form){
+  var o={method:method,credentials:'include',headers:{Authorization:'Bearer '+token()}};
+  if(body!=null){if(form)o.body=body;else{o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}}
+  var r=await fetch(API+url,o),ct=r.headers.get('content-type')||'',p=ct.indexOf('json')>=0?await r.json().catch(function(){return{};}):{text:await r.text().catch(function(){return'';})};
+  if(r.status===401){
+    if(path()!=='/admin/login')goToLogin('expired');
+    throw new Error(p.error||'Your Stratex Admin session has expired.');
+  }
+  if(r.status===403)throw new Error(p.error||'You do not have permission to perform this Admin action.');
+  if(!r.ok)throw new Error(p.error||p.message||'The request could not be completed.');
+  return p;
+}
 function btn(l,t,a){return'<button class="btn '+esc(t||'')+'" type="button" '+(a||'')+'>'+esc(l)+'</button>';}function ext(l,h,t){return'<a class="btn '+esc(t||'')+' external-link" href="'+esc(h)+'" target="_blank" rel="noopener">'+esc(l)+'</a>';}
 function hero(k,t,c,a,light){return'<section class="hero '+(light?'light':'')+'"><div><span class="eyebrow">'+esc(k)+'</span><h2>'+esc(t)+'</h2><p>'+esc(c)+'</p></div>'+(a?'<div class="hero-actions">'+a+'</div>':'')+'</section>';}
 function metric(l,v,c,t,id){return'<article class="metric '+esc(t||'')+'"><small>'+esc(l)+'</small><strong'+(id?' id="'+esc(id)+'"':'')+'>'+esc(v)+'</strong><p>'+esc(c||'')+'</p></article>';}
@@ -38,12 +76,19 @@ function record(n,s,r,img){return'<div class="record-cell"><span class="avatar-s
 function mrow(n,c,m,b,a){return'<button class="mrow" type="button" '+(a||'')+'><span class="avatar-sm">'+esc(initials({name:n}))+'</span><div><h4>'+esc(n)+'</h4><p>'+esc(c||'')+'</p><small>'+esc(m||'')+'</small></div>'+(b?pill(b):'')+'<i class="chev">›</i></button>';}
 function table(h,rs,ms,t,c,a){var d=rs.length?'<div class="table-wrap desktop-only"><table class="data-table"><thead><tr>'+h.map(function(x){return'<th>'+esc(x)+'</th>';}).join('')+'</tr></thead><tbody>'+rs.join('')+'</tbody></table></div>':'<div class="empty-state desktop-only"><div><b>No records</b><p>Nothing matches this view yet.</p></div></div>';var m=ms.length?'<div class="mrow-list mobile-only">'+ms.join('')+'</div>':'<div class="empty-state mobile-only"><div><b>No records</b><p>Nothing matches this view yet.</p></div></div>';return'<section class="data"><div class="data-head"><div><h3>'+esc(t)+'</h3><p>'+esc(c||'')+'</p></div><div style="display:flex;align-items:center;gap:10px"><div class="data-count"><b>'+num(rs.length)+'</b><span>Records</span></div>'+(a||'')+'</div></div>'+d+m+'</section>';}
 function loading(){return'<div class="loading-state">Loading live records</div>';}function empty(c){return'<div class="empty-state"><div><b>No records</b><p>'+esc(c||'Nothing here yet.')+'</p></div></div>';}function message(id){return'<div class="state-message" id="'+esc(id)+'" hidden></div>';}function msg(id,c,ok){var n=document.getElementById(id);if(n){n.hidden=false;n.textContent=c||'';n.className='state-message '+(ok?'success':'error');}}
+function renderStartupError(copy){
+  document.body.className='stratex-admin-centre-v2';
+  document.body.innerHTML='<main class="login-screen"><section class="login-card"><span class="admin-logo"></span><span class="eyebrow">Stratex Analytics · Admin Centre</span><h1>Could not open Admin Centre</h1><p class="sub">'+esc(copy||'The secure Admin service is temporarily unavailable.')+'</p><div class="hero-actions"><button class="btn" type="button" id="adminRetry">Retry</button><button class="btn secondary" type="button" id="adminFreshLogin">Sign in again</button></div><p class="footnote">No Admin data has been changed.</p></section></main>';
+  document.getElementById('adminRetry').onclick=function(){location.reload();};
+  document.getElementById('adminFreshLogin').onclick=function(){goToLogin('retry');};
+}
+
 function overlay(t,b){closeOverlay(false);state.modalReturn=document.activeElement;var r=document.getElementById('adminOverlay');r.innerHTML=mobile()?'<div class="sheet-host"><section class="sheet" role="dialog" aria-modal="true"><div class="sheet-grip"></div><header><h2>'+esc(t)+'</h2><button class="modal-close" type="button" data-close-overlay>×</button></header><div class="sheet-body">'+b+'</div></section></div>':'<div class="modal-host"><section class="modal" role="dialog" aria-modal="true"><header><h2>'+esc(t)+'</h2><button class="modal-close" type="button" data-close-overlay>×</button></header><div class="modal-body">'+b+'</div></section></div>';document.body.classList.add('modal-open');r.querySelector('[data-close-overlay]').addEventListener('click',closeOverlay);}
 function closeOverlay(rest){var r=document.getElementById('adminOverlay');if(r)r.innerHTML='';document.body.classList.remove('modal-open');if(rest!==false&&state.modalReturn&&state.modalReturn.focus)state.modalReturn.focus();state.modalReturn=null;}
 function debounce(fn,d){var t;return function(){var a=arguments;clearTimeout(t);t=setTimeout(function(){fn.apply(null,a);},d);};}
 function renderLogin(){document.body.className='stratex-admin-centre-v2';var p=qs(),mode=p.get('code')?'code':'password';document.body.innerHTML='<main class="login-screen'+(mobile()?' mobile-login':'')+'"><section class="login-card"><span class="admin-logo"></span><span class="eyebrow">Stratex Analytics · Internal</span><h1>Admin Centre</h1><p class="sub">Secure access for authorised Stratex staff.</p><form id="loginForm" data-mode="'+mode+'">'+field('Work email','email','email',p.get('email')||'',null,'',true,'required')+'<div id="pw"'+(mode==='code'?' hidden':'')+'>'+field('Password','password','password','',null,'',true)+'</div><div id="code"'+(mode!=='code'?' hidden':'')+'>'+field('Login code','loginCode','text',p.get('code')||'',null,'',true)+'</div>'+message('loginMessage')+'<button class="btn full" id="loginSubmit" type="submit">'+(mode==='code'?'Verify code':'Sign in')+'</button></form><div class="row-between"><button class="btn secondary small" id="loginMode" type="button">'+(mode==='code'?'Use password':'Use login code')+'</button><a href="/">Back to Stratex</a></div><p class="footnote">Authorised internal staff only. Admin actions may be audited.</p></section></main>';bindLogin();}
-function bindLogin(){var f=document.getElementById('loginForm');function mode(m){f.dataset.mode=m;document.getElementById('pw').hidden=m!=='password';document.getElementById('code').hidden=m!=='code';document.getElementById('loginMode').textContent=m==='code'?'Use password':'Use login code';document.getElementById('loginSubmit').textContent=m==='code'?'Verify code':'Sign in';}document.getElementById('loginMode').onclick=function(){mode(f.dataset.mode==='code'?'password':'code');};f.onsubmit=async function(e){e.preventDefault();var d=new FormData(f),m=f.dataset.mode,s=document.getElementById('loginSubmit');s.disabled=true;try{var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(d.get('email')||'').trim().toLowerCase(),password:m==='password'?String(d.get('password')||''):undefined,loginCode:m==='code'?String(d.get('loginCode')||'').trim().toUpperCase():undefined,accountType:'Stratex'})}),p=await r.json().catch(function(){return{};});if(!r.ok)throw new Error(p.error||'The Stratex credentials were not accepted.');setSession(p);if(m==='code'&&p.needsRegistration)return setup();location.replace('/admin');}catch(x){msg('loginMessage',x.message,false);s.disabled=false;s.textContent=m==='code'?'Verify code':'Sign in';}};}
-function setup(){document.body.innerHTML='<main class="login-screen'+(mobile()?' mobile-login':'')+'"><section class="login-card"><span class="admin-logo"></span><span class="eyebrow">Secure password setup</span><h1>Finish setup</h1><form id="setup">'+field('New password','password','password','',null,'At least eight characters.',true,'required')+field('Confirm password','confirm','password','',null,'',true,'required')+message('setupMessage')+'<button class="btn full" type="submit">Create password</button></form></section></main>';document.getElementById('setup').onsubmit=async function(e){e.preventDefault();var d=new FormData(e.currentTarget),pw=String(d.get('password')||'');if(pw.length<8)return msg('setupMessage','Password must contain at least eight characters.',false);if(pw!==String(d.get('confirm')||''))return msg('setupMessage','The passwords do not match.',false);try{await api('POST','/api/auth/complete-registration',{newPassword:pw,accountType:'Stratex'});location.replace('/admin');}catch(x){msg('setupMessage',x.message,false);}};}
+function bindLogin(){var f=document.getElementById('loginForm');function mode(m){f.dataset.mode=m;document.getElementById('pw').hidden=m!=='password';document.getElementById('code').hidden=m!=='code';document.getElementById('loginMode').textContent=m==='code'?'Use password':'Use login code';document.getElementById('loginSubmit').textContent=m==='code'?'Verify code':'Sign in';}document.getElementById('loginMode').onclick=function(){mode(f.dataset.mode==='code'?'password':'code');};f.onsubmit=async function(e){e.preventDefault();var d=new FormData(f),m=f.dataset.mode,s=document.getElementById('loginSubmit');s.disabled=true;try{var r=await fetch(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:String(d.get('email')||'').trim().toLowerCase(),password:m==='password'?String(d.get('password')||''):undefined,loginCode:m==='code'?String(d.get('loginCode')||'').trim().toUpperCase():undefined,accountType:'Stratex'})}),p=await r.json().catch(function(){return{};});if(!r.ok)throw new Error(p.error||'The Stratex credentials were not accepted.');setSession(p);if(m==='code'&&p.needsRegistration)return setup();location.replace(safeNext());}catch(x){msg('loginMessage',x.message,false);s.disabled=false;s.textContent=m==='code'?'Verify code':'Sign in';}};}
+function setup(){document.body.innerHTML='<main class="login-screen'+(mobile()?' mobile-login':'')+'"><section class="login-card"><span class="admin-logo"></span><span class="eyebrow">Secure password setup</span><h1>Finish setup</h1><form id="setup">'+field('New password','password','password','',null,'At least eight characters.',true,'required')+field('Confirm password','confirm','password','',null,'',true,'required')+message('setupMessage')+'<button class="btn full" type="submit">Create password</button></form></section></main>';document.getElementById('setup').onsubmit=async function(e){e.preventDefault();var d=new FormData(e.currentTarget),pw=String(d.get('password')||'');if(pw.length<8)return msg('setupMessage','Password must contain at least eight characters.',false);if(pw!==String(d.get('confirm')||''))return msg('setupMessage','The passwords do not match.',false);try{await api('POST','/api/auth/complete-registration',{newPassword:pw,accountType:'Stratex'});location.replace(safeNext());}catch(x){msg('setupMessage',x.message,false);}};}
 
 function nav(){var groups=['Overview','Growth','Content','ScoutLink Control','Company','People Ops','Operations','Events','System'];return groups.map(function(g){var a=ROUTES.filter(function(r){return r[3]===g;});return'<section class="side-group"><small>'+esc(g)+'</small>'+a.map(function(r){return'<a class="side-link'+(state.route===r[0]?' active':'')+'" href="'+r[1]+'" data-nav="'+r[0]+'"><span class="ic">'+esc(r[4])+'</span><span class="label">'+esc(r[2])+'</span></a>';}).join('')+'</section>';}).join('');}
 function bottom(){var a=[['dashboard','☉','Home'],['scoutlink','⚽','ScoutLink'],['crm','📊','CRM'],['trust','🔒','Trust'],['more','⋮','More']];return a.map(function(x){var on=x[0]==='more'?!['dashboard','scoutlink','players','coaches','teams','scouts','crm','trust'].includes(state.route):x[0]==='scoutlink'?['scoutlink','players','coaches','teams','scouts'].includes(state.route):state.route===x[0];return x[0]==='more'?'<a class="'+(on?'active':'')+'" href="#" data-menu><b>'+x[1]+'</b>'+x[2]+'</a>':'<a class="'+(on?'active':'')+'" href="'+route(x[0])[1]+'" data-nav="'+x[0]+'"><b>'+x[1]+'</b>'+x[2]+'</a>';}).join('');}
@@ -57,7 +102,7 @@ var R={},L={};function render(id){var root=document.getElementById('adminMain');
 
 /* Dashboard */
 R.dashboard=function(){var links=[['registrations','R','Registrations','Review Coach and Scout access.'],['contact','L','Website Leads','Triage public submissions.'],['crm','C','CRM','Connected relationship records.'],['activity','A','Website Activity','Public-site traffic.'],['blog','B','Blog / Learning','Publish public articles.'],['scoutlink','S','ScoutLink Control','Players, coaches, teams and scouts.'],['leadership','L','Leadership','Manage public leadership.'],['hiring','H','Hiring','Roles and applicants.'],['trust','!','Trust & Concerns','Restricted cases.'],['showcase','E','Showcase Event','Public event and registrations.'],['awards','A','Award Ceremonies','Honours and nominations.'],['audit','≡','Audit Log','Permanent admin actions.']];return hero('Stratex Analytics','Company administration.','One control centre for the public company site, ScoutLink operations, people, trust and events.',ext('Open Stratex site',SITE,'ghost')+btn('Search Admin','volt','data-focus-search'),false)+'<section class="metrics">'+metric('Players','—','Live ScoutLink records','','dashP')+metric('Coaches','—','Active grassroots coaches','blue','dashC')+metric('Scouts','—','Active reviewed scouts','gold','dashS')+metric('Needs attention','—','Registrations, usage and concerns','red','dashA')+'</section><section class="quicklinks">'+links.map(function(x){return'<button class="qlink" data-nav="'+x[0]+'"><span class="ic">'+x[1]+'</span><b>'+esc(x[2])+'</b><small>'+esc(x[3])+'</small><i>Open area →</i></button>';}).join('')+'</section>';};
-L.dashboard=async function(){var b=document.querySelector('[data-focus-search]');if(b)b.onclick=function(){document.getElementById('search').focus();};try{var d=(await api('GET','/api/stratex-admin-centre/overview')).data||{};[['dashP',d.players],['dashC',d.coaches],['dashS',d.scouts],['dashA',(d.pendingRegistrations||0)+(d.pendingUsageRequests||0)+(d.openConcerns||0)]].forEach(function(x){var n=document.getElementById(x[0]);if(n)n.textContent=num(x[1]);});}catch(_){}};
+L.dashboard=async function(){var b=document.querySelector('[data-focus-search]');if(b)b.onclick=function(){document.getElementById('search').focus();};try{var d=(await api('GET','/api/stratex-admin-centre/overview')).data||{};[['dashP',d.players],['dashC',d.coaches],['dashS',d.scouts],['dashA',(d.pendingRegistrations||0)+(d.pendingUsageRequests||0)+(d.openConcerns||0)]].forEach(function(x){var n=document.getElementById(x[0]);if(n)n.textContent=num(x[1]);});}catch(e){var root=document.getElementById('adminMain');if(root&&document.body.contains(root))root.insertAdjacentHTML('afterbegin',note('Live data unavailable',e.message||'The Admin API could not be reached.','red'));}};
 
 /* Registrations */
 function regStage(r){var s=String(r.status||'').toLowerCase(),v=String(r.verification_status||'').toLowerCase(),t=String(r.account_type||'').toLowerCase();if(s==='declined')return'declined';if(s==='approved'||v==='activated')return'account_created';if(t==='coach')return'admin_review';if(v==='verified_awaiting_payment')return'awaiting_payment';if(v==='documents_submitted')return'documents_ready';return'awaiting_documents';}
@@ -248,6 +293,34 @@ L.settings=async function(){try{var d=(await api('GET','/api/stratex-publishing/
 R.audit=function(){return hero('System','Audit Log.','Permanent record of sensitive Admin Centre actions and affected records.',null,true)+'<div id="auditRows">'+loading()+'</div>';};
 L.audit=async function(){try{var rows=(await api('GET','/api/stratex-admin-centre/audit-log?limit=500')).data||[],rs=rows.map(function(r){return'<tr><td>'+esc(date(r.created_at,true))+'</td><td>'+esc(r.actor_role||'—')+'</td><td><b>'+esc(r.action||'—')+'</b></td><td>'+esc((r.affected_table||'')+(r.affected_record_id?' · '+r.affected_record_id:''))+'</td><td><pre class="audit-json">'+esc(JSON.stringify(r.metadata||{},null,2))+'</pre></td></tr>';}),ms=rows.map(function(r){return mrow(r.action||'Audit event',(r.affected_table||'')+' · '+(r.actor_role||''),date(r.created_at,true),'Recorded','');});document.getElementById('auditRows').innerHTML=table(['Time','Actor','Action','Record','Metadata'],rs,ms,'Audit log','Newest admin events first.');}catch(e){document.getElementById('auditRows').innerHTML=empty(e.message);}};
 
-async function start(){try{['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_seed_players','sl_public_demo_started_at'].forEach(function(k){sessionStorage.removeItem(k);});}catch(_){}if(path()==='/admin/login')return renderLogin();if(!logged()){location.replace('/admin/login?next='+encodeURIComponent(location.pathname+location.search));return;}shell();}
+async function validateSession(){
+  if(!token()||type()!=='Stratex')return{ok:false,reason:'missing'};
+  try{
+    var r=await fetch(API+'/api/stratex-admin-centre/session',{
+      method:'GET',
+      credentials:'include',
+      headers:{Authorization:'Bearer '+token(),'Cache-Control':'no-store'}
+    });
+    var p=await r.json().catch(function(){return{};});
+    if(r.status===401||r.status===403)return{ok:false,reason:r.status===401?'expired':'access'};
+    if(!r.ok)throw new Error(p.error||'The secure Admin service is unavailable.');
+    if(!p.authenticated||p.accountType!=='Stratex'||!p.user)return{ok:false,reason:'invalid'};
+    localStorage.setItem('sl_user',JSON.stringify(p.user));
+    localStorage.setItem('sl_type','Stratex');
+    return{ok:true,user:p.user};
+  }catch(e){return{ok:false,reason:'service',error:e};}
+}
+async function start(){
+  try{['sl_public_demo','sl_public_demo_role','sl_public_demo_state','sl_public_demo_seed_players','sl_public_demo_started_at'].forEach(function(k){sessionStorage.removeItem(k);});}catch(_){}
+  if(path()==='/admin/login')return renderLogin();
+  if(!token()||type()!=='Stratex')return location.replace(loginUrl('signin'));
+  var session=await validateSession();
+  if(!session.ok){
+    if(session.reason==='service')return renderStartupError(session.error&&session.error.message);
+    clearSession();
+    return location.replace(loginUrl(session.reason||'expired'));
+  }
+  shell();
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 }());
