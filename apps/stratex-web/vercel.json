@@ -6,6 +6,116 @@
       "source": "/scoutlink-for-coaches",
       "destination": "/scoutlink",
       "permanent": true
+    },
+    {
+      "source": "/stratex/dashboard",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/company-site",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/registrations",
+      "destination": "/admin/registrations",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/users",
+      "destination": "/admin/admin-users",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/org",
+      "destination": "/admin/org-charts",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/hiring",
+      "destination": "/admin/hiring",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/leave",
+      "destination": "/admin/leave-sick-leave",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/meetings",
+      "destination": "/admin/meetings",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/contracts-pay",
+      "destination": "/admin/contracts-pay",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/players",
+      "destination": "/admin/scoutlink/players",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/scouts",
+      "destination": "/admin/scoutlink/scouts",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/usage-requests",
+      "destination": "/admin/usage-requests",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/coaches",
+      "destination": "/admin/scoutlink/coaches",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/messages",
+      "destination": "/admin/crm",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/scout-teams",
+      "destination": "/admin/scoutlink/scouts",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/school-teams",
+      "destination": "/admin/scoutlink/teams",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/non-pro-academies",
+      "destination": "/admin/scoutlink/teams",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/award-nominations",
+      "destination": "/admin/award-ceremonies",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/showcase-events",
+      "destination": "/admin/showcase-event",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/notifications",
+      "destination": "/admin",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/concerns",
+      "destination": "/admin/trust-concerns",
+      "permanent": false
+    },
+    {
+      "source": "/stratex/settings",
+      "destination": "/admin/settings",
+      "permanent": false
     }
   ],
   "functions": {
@@ -118,112 +228,20 @@
       "destination": "/pages/stratex-company-admin"
     },
     {
+      "source": "/admin/login",
+      "destination": "/pages/stratex-company-admin"
+    },
+    {
       "source": "/admin",
       "destination": "/pages/stratex-company-admin"
     },
     {
-      "source": "/admin/usage-requests",
-      "destination": "/pages/stratex-usage-requests"
-    },
-    {
-      "source": "/admin/showcase-event",
-      "destination": "/pages/stratex-showcase-events"
-    },
-    {
-      "source": "/admin/:module",
+      "source": "/admin/:path*",
       "destination": "/pages/stratex-company-admin"
     },
     {
       "source": "/company/admin",
       "destination": "/pages/stratex-company-admin"
-    },
-    {
-      "source": "/stratex/dashboard",
-      "destination": "/pages/stratex-dashboard"
-    },
-    {
-      "source": "/stratex/company-site",
-      "destination": "/pages/stratex-company-admin"
-    },
-    {
-      "source": "/stratex/registrations",
-      "destination": "/pages/stratex-registrations"
-    },
-    {
-      "source": "/stratex/users",
-      "destination": "/pages/stratex-users"
-    },
-    {
-      "source": "/stratex/org",
-      "destination": "/pages/stratex-org"
-    },
-    {
-      "source": "/stratex/hiring",
-      "destination": "/pages/stratex-hiring"
-    },
-    {
-      "source": "/stratex/leave",
-      "destination": "/pages/stratex-leave"
-    },
-    {
-      "source": "/stratex/meetings",
-      "destination": "/pages/stratex-meetings"
-    },
-    {
-      "source": "/stratex/contracts-pay",
-      "destination": "/pages/stratex-contracts-pay"
-    },
-    {
-      "source": "/stratex/players",
-      "destination": "/pages/stratex-players"
-    },
-    {
-      "source": "/stratex/scouts",
-      "destination": "/pages/stratex-scouts"
-    },
-    {
-      "source": "/stratex/usage-requests",
-      "destination": "/pages/stratex-usage-requests"
-    },
-    {
-      "source": "/stratex/coaches",
-      "destination": "/pages/stratex-coaches"
-    },
-    {
-      "source": "/stratex/messages",
-      "destination": "/pages/stratex-messages"
-    },
-    {
-      "source": "/stratex/scout-teams",
-      "destination": "/pages/stratex-scout-teams"
-    },
-    {
-      "source": "/stratex/school-teams",
-      "destination": "/pages/stratex-school-teams"
-    },
-    {
-      "source": "/stratex/non-pro-academies",
-      "destination": "/pages/stratex-school-teams"
-    },
-    {
-      "source": "/stratex/award-nominations",
-      "destination": "/pages/stratex-award-nominations"
-    },
-    {
-      "source": "/stratex/showcase-events",
-      "destination": "/pages/stratex-showcase-events"
-    },
-    {
-      "source": "/stratex/notifications",
-      "destination": "/pages/stratex-notifications"
-    },
-    {
-      "source": "/stratex/concerns",
-      "destination": "/pages/stratex-concerns"
-    },
-    {
-      "source": "/stratex/settings",
-      "destination": "/pages/stratex-settings"
     },
     {
       "source": "/404",
