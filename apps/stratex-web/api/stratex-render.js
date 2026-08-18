@@ -7,6 +7,17 @@ const { URL } = require('url');
 const SITE = 'https://www.stratexanalytics.co.uk';
 const OG_IMAGE = SITE + '/images/og/stratex-og.png';
 
+const ABOUT_PARAGRAPHS = [
+  'Stratex Analytics builds professional technology for non professional grassroots players, coaches and organisations. We create products that give grassroots football access to tools, structure and visibility that are usually only available in academy or professional environments.',
+  'Our work is focused on improving player development and creating clearer pathways for talent to be seen by scouts, agents and decision makers. We build tools that help coaches properly understand, track and support their players, while giving serious grassroots players stronger ways to showcase who they are, how they play and what they could become.',
+  'Stratex was created by a team that understands the reality of non professional grassroots football: limited resources, limited exposure, and too many players relying on chance. We exist to help grassroots football leverage better technology, better data and better visibility, so talent is not held back by the level it starts at.'
+];
+
+const TRUST_PARAGRAPHS = [
+  'ScoutLink works with grassroots players, so safeguarding, access and data controls are part of how the platform is built.',
+  'From coach verification to player information and account access, the platform is designed to make sure young players can be represented properly, while keeping responsibility, protection and trust at the centre of the experience.'
+];
+
 function esc(value) {
   return String(value == null ? '' : value)
     .replace(/&/g, '&amp;')
@@ -149,6 +160,133 @@ function awardCeremoniesPage() {
   };
 }
 
+function removeDashCharactersFromVisibleText(html) {
+  return String(html || '')
+    .split(/(<[^>]+>)/g)
+    .map(part => {
+      if (!part || part.charAt(0) === '<') return part;
+      return part
+        .replace(/[—–-]+/g, ' ')
+        .replace(/[ \t]{2,}/g, ' ');
+    })
+    .join('');
+}
+
+function replaceLeadershipEmail(html, personName, emailAddress) {
+  const escapedName = personName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    '(<h3>' + escapedName + '<\\/h3>[\\s\\S]*?<div class="acts"><a class="s-btn line sm" href="mailto:)[^"]+',
+    'i'
+  );
+  return html.replace(pattern, '$1' + emailAddress);
+}
+
+function applyAboutOverride(page) {
+  let html = String(page.html || '');
+
+  html = html.replace(
+    /<h1 class="s-h1">[\s\S]*?<\/h1>/i,
+    '<h1 class="s-h1">STRATEX STARTED ON TOUCHLINES FROM <span class="accent">GRASSROOTS FOOTBALL PROFESSIONALS.</span></h1>'
+  );
+
+  html = html.replace(
+    /<p class="s-sub">[\s\S]*?<\/p>/i,
+    '<p class="s-sub">Stratex Analytics builds professional technology for non professional grassroots players, coaches and organisations.</p>'
+  );
+
+  const storyCopy = ABOUT_PARAGRAPHS.map((paragraph, index) => {
+    const margin = index < ABOUT_PARAGRAPHS.length - 1 ? 'margin-bottom:12px' : '';
+    const style = 'font-size:12.8px;line-height:1.75' + (margin ? ';' + margin : '');
+    return '<p style="' + style + '">' + paragraph + '</p>';
+  }).join('\n');
+
+  html = html.replace(
+    /(<span class="s-eb dk">The actual story<\/span>)[\s\S]*?(?=<\/div>\s*<div>\s*<p class="s-quote">)/i,
+    '$1\n' + storyCopy + '\n'
+  );
+
+  /*
+   * This is deliberately applied to visible text only. It removes the dash
+   * heavy editorial punctuation the About page previously used without
+   * touching hrefs, file names, CSS classes or other HTML attributes.
+   */
+  html = removeDashCharactersFromVisibleText(html);
+
+  return {
+    ...page,
+    description: 'Stratex Analytics builds professional technology for grassroots players, coaches and organisations, improving development, visibility and pathways into football.',
+    html
+  };
+}
+
+function applyLeadershipOverride(page) {
+  let html = String(page.html || '');
+
+  html = replaceLeadershipEmail(
+    html,
+    'Richdhin Inaba',
+    'richdhin@stratexanalytics.co.uk'
+  );
+
+  html = replaceLeadershipEmail(
+    html,
+    'Lucy Ali',
+    'lucy.ali@stratexanalytics.co.uk'
+  );
+
+  html = replaceLeadershipEmail(
+    html,
+    'Alexandro Ilioaie',
+    'alexandro.ilioaie@stratexanalytics.co.uk'
+  );
+
+  return {
+    ...page,
+    html
+  };
+}
+
+function applyTrustOverride(page) {
+  let html = String(page.html || '');
+
+  html = html.replace(
+    /<h1 class="s-h1 s-fluid-title">[\s\S]*?<\/h1>/i,
+    '<h1 class="s-h1 s-fluid-title">Built with young players in mind.</h1>'
+  );
+
+  html = html.replace(
+    /<p class="s-sub">[\s\S]*?<\/p>/i,
+    '<div class="s-sub">' +
+      '<p style="margin:0 0 12px">' + TRUST_PARAGRAPHS[0] + '</p>' +
+      '<p style="margin:0">' + TRUST_PARAGRAPHS[1] + '</p>' +
+    '</div>'
+  );
+
+  return {
+    ...page,
+    description: 'ScoutLink is built with young players in mind, with safeguarding, access, data controls and responsible representation at the centre of the platform.',
+    html
+  };
+}
+
+function applyEditorialOverrides(page, routeKey) {
+  if (!page || !routeKey) return page;
+
+  if (routeKey === '/about') {
+    return applyAboutOverride(page);
+  }
+
+  if (routeKey === '/leadership') {
+    return applyLeadershipOverride(page);
+  }
+
+  if (routeKey === '/trust') {
+    return applyTrustOverride(page);
+  }
+
+  return page;
+}
+
 function schemaFor(page, canonical) {
   const pieces = canonical.replace(SITE, '').split('/').filter(Boolean);
   const items = [{ '@type':'ListItem', position:1, name:'Home', item:SITE + '/' }];
@@ -224,6 +362,8 @@ module.exports = function handler(req, res) {
       res.end(notFoundPath ? fs.readFileSync(notFoundPath, 'utf8') : 'Not found');
       return;
     }
+
+    page = applyEditorialOverrides(page, route.key);
 
     let html = readBundleFile('pages', 'stratex-public-v5.html');
     const canonical = SITE + (route.canonicalPath === '/' ? '/' : route.canonicalPath);
