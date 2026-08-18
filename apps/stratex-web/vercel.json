@@ -108,6 +108,10 @@
       "destination": "/pages/showcase-professional-registration"
     },
     {
+      "source": "/admin-demo",
+      "destination": "/pages/stratex-company-admin"
+    },
+    {
       "source": "/admin",
       "destination": "/pages/stratex-company-admin"
     },
