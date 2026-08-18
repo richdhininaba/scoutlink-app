@@ -1,10 +1,89 @@
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: bingbot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /company/admin
+Disallow: /api/
+Disallow: /stratex/
+Disallow: /pages/
+
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /company/admin
 Disallow: /api/
 Disallow: /stratex/
-Disallow: /showcase-event/player-registration
-Disallow: /showcase-event/coach-scout-registration
+Disallow: /pages/
 
 Sitemap: https://www.stratexanalytics.co.uk/sitemap.xml
