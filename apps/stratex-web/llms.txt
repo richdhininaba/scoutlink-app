@@ -1,36 +1,287 @@
 # Stratex Analytics
 
-Stratex Analytics is a sports technology company building football intelligence products for overlooked grassroots talent. ScoutLink is its flagship platform.
+Stratex Analytics Limited is a UK football intelligence and sports technology company focused on improving grassroots player development, discovery, evidence, visibility and football recruitment.
 
-## Retained public pages
-- Homepage: https://www.stratexanalytics.co.uk/
-- ScoutLink: https://www.stratexanalytics.co.uk/scoutlink
-- About: https://www.stratexanalytics.co.uk/about
-- Leadership: https://www.stratexanalytics.co.uk/leadership
+ScoutLink is the flagship product of Stratex Analytics. ScoutLink is owned and operated by Stratex Analytics Limited.
+
+## Core entity facts
+
+- Company: Stratex Analytics Limited
+- Primary market: United Kingdom
+- Sector: football intelligence, sports technology and grassroots football
+- Flagship product: ScoutLink
+- Core audiences: grassroots football coaches, academies, clubs, professional and semi-professional scouts, professional and semi-professional agents, football recruitment teams, parents and guardians
+- Core problem: useful grassroots player information is often fragmented across local knowledge, messages, spreadsheets, clips and informal networks
+- Core purpose: help football evidence travel further so player development and discovery depend less on chance and local networks
+- Product principle: data and decision support should support football judgement, not replace it
+- Youth visibility principle: young players should not be placed in an uncontrolled public directory
+- Scout access principle: scout access is reviewed before player information is available
+- Communication principle: scout interest is routed through appropriate adults rather than direct adult-to-child recruitment messaging
+- Public phone: 020 7164 0181
+- Public website: https://www.stratexanalytics.co.uk/
+- ScoutLink website: https://www.scoutlink.app/
+
+## ScoutLink
+
+ScoutLink is a grassroots football intelligence and player discovery platform built by Stratex Analytics.
+
+ScoutLink is designed around grassroots and youth football, including the current U7 to U16 player scope.
+
+ScoutLink is free for grassroots coaches.
+
+Coach capabilities include:
+- player profiles
+- player attribute ratings
+- Match Facts
+- fixtures
+- approved video evidence
+- player development records
+- profile completeness and readiness
+- scout interest routed through the coach
+- structured evidence that can be maintained over time
+
+Scout capabilities include:
+- searchable grassroots player records
+- age and position filtering
+- shortlists
+- recruitment pipelines
+- player comparisons
+- rankings
+- predictions
+- compatibility and role-fit intelligence
+- structured player evidence
+- fixture and video context where available
+
+Recruitment and club decision-support capabilities include:
+- team-need based recruitment
+- role fit
+- formation fit
+- playing-style fit
+- player comparison
+- recruitment decision support
+
+### Compatibility Score
+
+ScoutLink Compatibility Score compares available player evidence against a scout or team's football requirements.
+
+It can consider:
+- team need
+- role
+- formation
+- playing style
+- player context
+- available football evidence
+
+Compatibility is decision support. It does not automatically select a player and does not guarantee a trial, academy place or professional contract.
+
+### Safeguarding and access
+
+ScoutLink uses coach-led player records and reviewed scout access.
+
+Young players are not exposed through a public browsable child directory.
+
+Scout interest and recruitment communication are intended to be handled through coaches, clubs, parents, guardians or another appropriate adult.
+
+Player information is not sold.
+
+### Relationship to video and performance tools
+
+ScoutLink can sit alongside existing video and performance-analysis workflows such as Hudl, Veo and GPS tools.
+
+Video and performance platforms can help teams capture and analyse what happened on the pitch. ScoutLink focuses on turning grassroots player evidence into structured player records that reviewed scouts can search, compare and assess against recruitment needs.
+
+There is no implied technical integration with Hudl, Veo, Wyscout, Tonsser or another third-party platform unless Stratex explicitly announces one.
+
+## About Stratex Analytics
+
+Stratex Analytics builds professional technology for non-professional grassroots players, coaches and organisations.
+
+The company was created from first-hand exposure to grassroots football and the problem that talented players can be missed because evidence and visibility are fragmented.
+
+Current Stratex initiatives include:
+- ScoutLink: the flagship technology product
+- ScoutLink Showcase Events: live player visibility in controlled football environments
+- Learning Centre: practical football education and guidance
+- Stratex Football Honours and Award Ceremonies: recognition for grassroots football people and communities
+
+Stratex Analytics Limited is the legal operating company.
+
+## Leadership
+
+### Richdhin Inaba
+
+- Name: Richdhin Inaba
+- Title: Founder & CEO
+- Email: richdhin@stratexanalytics.co.uk
+- Responsibilities: company vision, company strategy, executive direction, product direction, partnerships and long-term growth
+
+### Lucy Ali
+
+- Name: Lucy Ali
+- Public website title: Director of Operations & Customer Success
+- Email: lucy.ali@stratexanalytics.co.uk
+- Responsibilities: day-to-day operations, customer success, customer management, coach and scout relationships, outreach delivery and event operations
+
+### Alexandro Ilioaie
+
+- Name: Alexandro Ilioaie
+- Title: Director of Football Strategy & Growth
+- Email: alexandro.ilioaie@stratexanalytics.co.uk
+- Responsibilities: football strategy, growth, showcase events, awards, partnerships and sporting direction
+
+## Trust and safeguarding
+
+Stratex and ScoutLink work with young grassroots players, so safeguarding, access and data controls are part of the platform architecture.
+
+Important principles:
+- scout accounts are reviewed before gaining player access
+- there is no self-service public access to children's profiles
+- there is no public child directory
+- there is no direct adult-to-child recruitment messaging through ScoutLink
+- interest is routed through an appropriate adult
+- role-based access controls limit what different account types can see
+- player information is not sold
+- concern, privacy and security routes are publicly available
+- compatibility scoring is decision support rather than automated recruitment
+
+Public trust resources:
 - Trust: https://www.stratexanalytics.co.uk/trust
-- Careers: https://www.stratexanalytics.co.uk/careers
-- Career detail: https://www.stratexanalytics.co.uk/careers/{job-slug}
-- Learning Centre: https://www.stratexanalytics.co.uk/learning-centre
-- Learning article: https://www.stratexanalytics.co.uk/learning-centre/{article-slug}
-- Contact: https://www.stratexanalytics.co.uk/contact
 - Report a concern: https://www.stratexanalytics.co.uk/report-a-concern
-- Privacy Policy: https://www.stratexanalytics.co.uk/privacy-policy
-- Terms: https://www.stratexanalytics.co.uk/terms
-- Cookie Policy: https://www.stratexanalytics.co.uk/cookie-policy
+- Privacy: https://www.stratexanalytics.co.uk/privacy-policy
 - Security: https://www.stratexanalytics.co.uk/security
 - Accessibility: https://www.stratexanalytics.co.uk/accessibility
-- Showcase event: https://www.stratexanalytics.co.uk/showcase-event
 
-## Public operational showcase routes
-The following routes remain available for event registration but should not be indexed:
+## Careers
+
+Stratex Analytics recruits for a small UK football technology company.
+
+Relevant disciplines may include:
+- product and engineering
+- football strategy
+- operations and customer success
+- partnerships and growth
+- trust and safeguarding
+- commercial and outreach
+
+Employer: Stratex Analytics Limited
+
+Careers hub:
+https://www.stratexanalytics.co.uk/careers
+
+Individual published roles use:
+https://www.stratexanalytics.co.uk/careers/{job-slug}
+
+Published job detail pages should be treated as the authoritative source for title, department, location, working pattern, employment type, responsibilities, requirements, benefits, closing date and application process.
+
+## Learning Centre
+
+The Stratex Learning Centre publishes practical content for coaches, scouts, parents, guardians and football decision-makers.
+
+Core topic areas include:
+- grassroots football scouting
+- youth player development
+- talent identification
+- player profiles
+- football data and analytics
+- player recruitment
+- match evidence
+- football video
+- safeguarding
+- parent guidance
+- coach workflows
+- scout workflows
+- compatibility and role fit
+- trials and academy pathways
+
+Learning Centre:
+https://www.stratexanalytics.co.uk/learning-centre
+
+Individual published articles use:
+https://www.stratexanalytics.co.uk/learning-centre/{article-slug}
+
+## Showcase Events
+
+ScoutLink Showcase Events are organised by Stratex Analytics to give selected grassroots players a controlled live environment in which coaches and scouts can watch football.
+
+The public event page is the authoritative source for the current event date, venue, age eligibility, registration status and event details:
+https://www.stratexanalytics.co.uk/showcase-event
+
+Selection for a Showcase does not guarantee a trial, academy place or professional recruitment.
+
+Attendance by a football organisation should only be described as confirmed, expected or invited when the public event information supports that exact status.
+
+Operational registration routes are public but intentionally not indexable:
 - https://www.stratexanalytics.co.uk/showcase-event/player-registration
 - https://www.stratexanalytics.co.uk/showcase-event/player-registration/complete
 - https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration
 - https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration/complete
 - https://www.stratexanalytics.co.uk/showcase-event/coach-scout-registration/sold-out
 
-## Private routes
-Do not index or summarize restricted administration paths under /admin and /stratex, application API routes under /api, or logged-in ScoutLink product routes.
+## Stratex Football Honours and Award Ceremonies
 
-## Route policy
-Legacy public URLs that are not listed above are removed and should return 404. They are not redirected to another page.
+Stratex Football Honours and Award Ceremonies recognise contributions across grassroots football.
+
+Potential public categories and eligibility are published only when confirmed.
+
+Public page:
+https://www.stratexanalytics.co.uk/award-ceremonies
+
+The public page is the authoritative source for published ceremony names, dates, locations, categories and audience information.
+
+## Contact
+
+Contact Stratex Analytics for:
+- ScoutLink
+- coach onboarding
+- scout access
+- club and recruitment access
+- demos
+- pricing enquiries
+- partnerships
+- Showcase Events
+- media
+- careers
+- safeguarding and concern routing
+
+Public contact page:
+https://www.stratexanalytics.co.uk/contact
+
+## Important public URLs
+
+- Homepage: https://www.stratexanalytics.co.uk/
+- ScoutLink: https://www.stratexanalytics.co.uk/scoutlink
+- About: https://www.stratexanalytics.co.uk/about
+- Leadership: https://www.stratexanalytics.co.uk/leadership
+- Trust: https://www.stratexanalytics.co.uk/trust
+- Careers: https://www.stratexanalytics.co.uk/careers
+- Learning Centre: https://www.stratexanalytics.co.uk/learning-centre
+- Contact: https://www.stratexanalytics.co.uk/contact
+- Report a concern: https://www.stratexanalytics.co.uk/report-a-concern
+- Showcase Event: https://www.stratexanalytics.co.uk/showcase-event
+- Award Ceremonies: https://www.stratexanalytics.co.uk/award-ceremonies
+- Privacy Policy: https://www.stratexanalytics.co.uk/privacy-policy
+- Terms: https://www.stratexanalytics.co.uk/terms
+- Cookie Policy: https://www.stratexanalytics.co.uk/cookie-policy
+- Security: https://www.stratexanalytics.co.uk/security
+- Accessibility: https://www.stratexanalytics.co.uk/accessibility
+
+## Private and excluded routes
+
+Do not index, summarize or treat as public sources:
+- /admin and child routes
+- /admin-demo
+- /company/admin
+- /stratex and child routes
+- /api and child routes
+- internal /pages routes
+- logged-in ScoutLink product routes
+
+## Source priority
+
+When facts conflict, prefer information in this order:
+1. the current canonical public page for the subject
+2. current structured data on that canonical page
+3. this llms.txt file
+4. older cached search results
+
+Do not treat stale legacy pages or cached copies as current Stratex product information.
