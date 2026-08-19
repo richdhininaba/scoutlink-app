@@ -1,7 +1,4 @@
-/* ============================================================
-   TOKENS -- the real Stratex brand (pitch/turf/volt), plus
-   legacy alias names so existing component code recolours for free.
-   ============================================================ */
+/* Stratex Admin Centre — V2 design-faithful production stylesheet */
 :root{
   /* -- real brand tokens -- */
   --pitch:#075F48;
@@ -54,64 +51,6 @@
   --font-display:'Anton',Impact,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
 }
-
-/* ============================================================
-   BASE / SPEC-DOCUMENT CHROME (not part of the mocked product)
-   ============================================================ */
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{
-  background:#eef1ec;
-  font-family:var(--font);
-  color:var(--ink);
-  -webkit-font-smoothing:antialiased;
-}
-.spec-doc{max-width:1680px;margin:0 auto;padding:0 0 140px}
-.spec-cover{padding:96px 64px 68px;background:linear-gradient(150deg,var(--turf) 0%,var(--turf2) 58%,#03231c 100%);color:var(--chalk);position:relative;overflow:hidden}
-.spec-cover::before{content:"";position:absolute;top:-60px;right:-40px;width:420px;height:420px;background:
-  repeating-linear-gradient(-45deg,var(--pitch) 0 14px,transparent 14px 30px);
-  opacity:.28;-webkit-mask-image:radial-gradient(circle,#000 0%,transparent 72%);mask-image:radial-gradient(circle,#000 0%,transparent 72%)}
-.spec-cover .cover-logo{position:relative;z-index:1;margin-bottom:34px}
-.spec-cover .eyebrow{position:relative;z-index:1;display:block;font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--volt)}
-.spec-cover h1{position:relative;z-index:1;margin:16px 0 0;font-family:var(--font-display);font-weight:400;text-transform:uppercase;font-size:50px;line-height:1.05;letter-spacing:.01em;max-width:920px}
-.spec-cover p.lede{position:relative;z-index:1;margin:20px 0 0;max-width:760px;font-size:15.5px;line-height:1.7;color:rgba(247,246,240,.86)}
-.spec-cover .meta-row{position:relative;z-index:1;display:flex;gap:36px;flex-wrap:wrap;margin-top:44px;padding-top:28px;border-top:1px solid rgba(247,246,240,.16)}
-.spec-cover .meta-row div{min-width:150px}
-.spec-cover .meta-row small{display:block;font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(216,245,71,.85)}
-.spec-cover .meta-row b{display:block;margin-top:8px;font-size:14.5px;font-weight:600;color:var(--chalk)}
-
-.spec-toc{padding:48px 64px;background:#fff;border-bottom:1px solid var(--line)}
-.spec-toc h2{margin:0 0 6px;font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.spec-toc-grid{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:34px 40px}
-.spec-toc-group b{display:block;font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--pitch)}
-.spec-toc-group ul{margin:13px 0 0;padding:0;list-style:none}
-.spec-toc-group li{padding:7px 0;font-size:13.5px;color:var(--ink);display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--line)}
-.spec-toc-group li span{color:var(--muted);font-size:11px;font-family:var(--font-mono)}
-
-.spec-note-band{padding:32px 64px;background:var(--warn-bg);border-bottom:1px solid var(--warn-border)}
-.spec-note-band h3{margin:0;font-family:var(--font-mono);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--warn-text)}
-.spec-note-band ol{margin:16px 0 0;padding-left:22px}
-.spec-note-band li{font-size:13.5px;line-height:1.7;margin-bottom:9px;color:#5c4413}
-.spec-note-band li b{color:#3d2d00}
-
-.section-divider{margin:72px 64px 0;padding-bottom:18px;border-bottom:2px solid var(--ink)}
-.section-divider small{display:block;font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--pitch)}
-.section-divider h2{margin:10px 0 0;font-family:var(--font-display);font-weight:400;text-transform:uppercase;font-size:30px;letter-spacing:.005em}
-.section-divider p{margin:10px 0 0;max-width:760px;font-size:14px;line-height:1.65;color:var(--muted)}
-
-.frame-block{margin:48px 64px 0}
-.frame-caption{max-width:980px;margin-bottom:20px}
-.frame-caption .frame-index{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--pitch)}
-.frame-caption .frame-index code{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0;padding:3px 9px;border-radius:20px;background:var(--mist);color:var(--pitch)}
-.frame-caption h3{margin:10px 0 0;font-size:20px;font-weight:700;letter-spacing:-.1px}
-.frame-caption p{margin:7px 0 0;font-size:13.5px;line-height:1.7;color:var(--muted)}
-.frame-caption .frame-tags{margin-top:12px;display:flex;gap:7px;flex-wrap:wrap}
-.frame-caption .frame-tag{font-family:var(--font-mono);font-size:9.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:20px;background:#eef1ee;color:var(--muted-2)}
-.frame-shell-wrap{position:relative;display:block}
-.frame-shell-wrap.desktop{width:1440px}
-.frame-shell-wrap.mobile{width:390px}
-.frame-tray{background:#dbe2dc;border-radius:24px;padding:32px;display:inline-block}
-.frame-tray.mobile-tray{padding:24px 24px 36px}
 
 /* ============================================================
    PRODUCT SHELL -- this is the mocked application chrome
@@ -517,15 +456,24 @@ table.data-table tr.clickable:hover td{background:var(--mist)}
 .login-screen.mobile-login{min-height:844px;padding:0}
 .login-screen.mobile-login .login-card{width:100%;height:100%;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;padding:32px 26px}
 
-@media print{ .frame-block{page-break-inside:avoid} }
-
 /* ============================================================
    PRODUCTION ADMIN MOUNT
-   The source design above is copied from the supplied V2 product kit.
-   The specification-document chrome is intentionally unused in production.
+   Uses the supplied V2 product CSS unchanged for product components.
+   Only viewport mounting, live-state helpers and responsive scoping
+   are added below.
    ============================================================ */
-html,body{min-height:100%;background:var(--mist)}
-body.stratex-admin-centre-v2{margin:0;background:var(--mist);color:var(--ink);font-family:var(--font);font-size:13.5px;overflow-x:hidden}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--mist)}
+body.stratex-admin-centre-v2{
+  margin:0;
+  min-height:100vh;
+  overflow-x:hidden;
+  background:var(--mist);
+  color:var(--ink);
+  font-family:var(--font);
+  font-size:13.5px;
+  -webkit-font-smoothing:antialiased;
+}
 body.stratex-admin-centre-v2 button,
 body.stratex-admin-centre-v2 input,
 body.stratex-admin-centre-v2 select,
@@ -534,24 +482,51 @@ body.stratex-admin-centre-v2 a{font-family:var(--font)}
 body.stratex-admin-centre-v2 a{text-decoration:none;color:inherit}
 body.stratex-admin-centre-v2 button{cursor:pointer}
 body.stratex-admin-centre-v2 [hidden]{display:none!important}
-.skip-link{position:fixed;left:-9999px;top:8px;z-index:1000;background:var(--volt);color:var(--ink);padding:10px 14px;font-weight:800}
+body.modal-open{overflow:hidden}
+
+.skip-link{
+  position:fixed;left:-9999px;top:8px;z-index:1000;
+  padding:10px 14px;background:var(--volt);color:var(--ink);font-weight:800
+}
 .skip-link:focus{left:8px}
-#stratexAdminApp{min-height:100vh}
-.admin-app{min-height:100vh;display:grid;grid-template-columns:var(--sidebar-w) minmax(0,1fr);background:var(--mist)}
-.admin-app .side{min-height:100vh;position:sticky;top:0;height:100vh;overflow:auto;border-radius:0}
+
+.admin-app.app-shell{
+  width:100%;
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:var(--sidebar-w) minmax(0,1fr);
+  border-radius:0;
+  box-shadow:none;
+  background:var(--mist);
+  overflow:visible;
+}
+.admin-app .side{
+  position:sticky;top:0;
+  min-height:100vh;height:100vh;
+  overflow:auto;border-radius:0;
+}
 .admin-app .workspace{min-width:0;min-height:100vh}
-.admin-app .main{max-width:1440px}
+.admin-app .main{width:100%;max-width:1440px;margin:0 auto}
 .admin-app .m-topbar,.admin-app .m-bottom-bar{display:none}
-.admin-logo{display:block;width:132px;height:52px;background:url('/images/redesign/stratex-header.png') left center/contain no-repeat}
+.admin-logo{
+  display:block;width:132px;height:58px;
+  background:url('/images/redesign/stratex-header.png') left center/contain no-repeat
+}
 .admin-logo.white{filter:brightness(0) invert(1)}
-.side-brand .admin-logo{width:132px;height:46px}
+.side-brand .admin-logo{width:132px;height:58px}
 .side-switch-btn{cursor:pointer}
 .side-switch-btn.is-locked{cursor:default}
 .side-link{text-decoration:none}
 .side-link .label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .side-foot .side-user{flex:1}
-.topbar-search{cursor:pointer}
-.topbar-search input{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font:inherit}
+.side-foot>[data-signout]{
+  width:34px;height:34px;min-width:34px;border-color:rgba(247,246,240,.16);
+  background:rgba(247,246,240,.04);color:rgba(247,246,240,.78)
+}
+.topbar-search{cursor:text}
+.topbar-search input{
+  width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit
+}
 .topbar-icon-btn{cursor:pointer}
 .main .hero:first-child{margin-top:0}
 .btn{text-decoration:none}
@@ -559,24 +534,57 @@ body.stratex-admin-centre-v2 [hidden]{display:none!important}
 .btn.link:hover{background:var(--mist)}
 .data-table .btn{min-height:32px;padding:0 11px;font-size:10px}
 .data-table td.actions-cell{white-space:nowrap;text-align:right}
-.record-cell .avatar-sm img,.avatar-lg img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
-.state-message{padding:14px 16px;border-left:3px solid var(--pitch);background:var(--mist);font-size:12px;line-height:1.55}
+.avatar-sm{
+  width:42px;height:42px;border-radius:9px;background:var(--pitch);color:var(--volt);
+  display:grid;place-items:center;font-family:var(--font-mono);font-size:10.5px;font-weight:600;
+  flex:0 0 auto;overflow:hidden
+}
+.record-cell .avatar-sm{width:36px;height:36px}
+.record-cell .avatar-sm img,.avatar-lg img,.avatar-sm img{
+  width:100%;height:100%;object-fit:cover;border-radius:inherit
+}
+.mrow{
+  appearance:none;-webkit-appearance:none;
+  border:0;border-bottom:1px solid var(--line);
+  background:#fff;color:var(--ink);font:inherit;text-align:left
+}
+.mrow:last-child{border-bottom:0}
+.state-message{
+  margin-top:12px;padding:14px 16px;border-left:3px solid var(--pitch);
+  background:var(--mist);font-size:12px;line-height:1.55
+}
 .state-message.error{border-color:var(--red);background:var(--redsoft);color:var(--err-text)}
 .state-message.success{border-color:var(--pitch);background:var(--mist);color:var(--pitch)}
-.loading-state{min-height:140px;display:grid;place-items:center;color:var(--muted);font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
-.loading-state::before{content:"";width:28px;height:28px;border:3px solid rgba(7,95,72,.16);border-top-color:var(--pitch);border-radius:50%;animation:adminSpin .75s linear infinite;margin-right:9px}
+.loading-state{
+  min-height:140px;display:flex;align-items:center;justify-content:center;gap:10px;
+  color:var(--muted);font-family:var(--font-mono);font-size:10px;
+  text-transform:uppercase;letter-spacing:.08em
+}
+.loading-state::before{
+  content:"";width:28px;height:28px;border:3px solid rgba(7,95,72,.16);
+  border-top-color:var(--pitch);border-radius:50%;animation:adminSpin .75s linear infinite
+}
 @keyframes adminSpin{to{transform:rotate(360deg)}}
 .search-overlay-list{display:grid;gap:8px;margin-top:14px}
-.search-result{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.search-result{
+  width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:#fff;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:12px
+}
 .search-result:hover{background:var(--mist)}
 .search-result b{display:block;font-size:12px}
 .search-result small{display:block;margin-top:3px;color:var(--muted);font-size:10px}
 .attr-groups{display:grid;gap:14px;margin-top:16px}
 .attr-group{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:#fff}
-.attr-group>header{padding:13px 15px;background:var(--mist);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.attr-group>header{
+  padding:13px 15px;background:var(--mist);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:12px
+}
 .attr-group>header h4{margin:0;font-size:13px}
 .attr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;padding:4px 15px 15px}
-.rating-field{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.rating-field{
+  display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--line)
+}
 .rating-field:nth-last-child(-n+2){border-bottom:0}
 .rating-field label{font-size:11.5px;font-weight:600}
 .rating-field small{display:block;margin-top:3px;color:var(--muted);font-size:9.5px;font-weight:400}
@@ -593,30 +601,72 @@ body.stratex-admin-centre-v2 [hidden]{display:none!important}
 .mobile-only{display:none!important}
 .desktop-only{display:block!important}
 .external-link::after{content:" ↗";font-family:var(--font-mono);font-size:.9em}
-body.modal-open{overflow:hidden}
 
-/* Source desktop spec uses a rounded mock application. Production fills the viewport. */
-.app-shell{border-radius:0;box-shadow:none}
-.app-shell.desktop{width:auto;min-height:100vh}
-.workspace{min-height:100vh}
+/* Design-fidelity additions used by the live renderer. */
+.fidelity-toolbar{
+  display:flex;justify-content:space-between;align-items:end;gap:14px;flex-wrap:wrap
+}
+.fidelity-toolbar .tabs{flex:1;min-width:0}
+.fidelity-stack{display:grid!important;grid-template-columns:1fr!important;gap:20px}
+.fidelity-section-action{display:flex;justify-content:flex-end;gap:10px}
+.fidelity-dashboard-panels{align-items:start}
+.fidelity-muted{color:var(--muted)}
+.side-link .badge{margin-left:auto}
+.permission-lock{opacity:.62;pointer-events:none}
+.profile-identity{
+  display:flex;align-items:center;gap:16px;padding:22px
+}
+.profile-identity .side-avatar{width:54px;height:54px}
+.profile-identity h3{margin:0;font-family:var(--font-display);font-weight:400;text-transform:uppercase;font-size:22px}
+.profile-identity p{margin:5px 0 0;color:var(--muted)}
+.fidelity-login-forgot{
+  font-family:var(--font-mono);font-size:10.5px;font-weight:600;letter-spacing:.04em;
+  color:var(--pitch);text-decoration:underline;text-underline-offset:3px
+}
 
-/* Mobile is a deliberately separate composition, not a squeezed desktop shell. */
+/* Mobile is a separate composition, matching the supplied 390px frame. */
 @media(max-width:760px){
   body.stratex-admin-centre-v2{background:var(--mist)}
-  .admin-app{display:block!important;min-height:100vh}
+  .admin-app.app-shell{display:block!important;width:100%;min-height:100vh}
   .admin-app>.side,.admin-app>.workspace>.topbar{display:none!important}
   .admin-app .workspace{min-height:100vh}
   .admin-app .m-topbar{display:flex!important;position:sticky;top:0;z-index:100}
-  .admin-app .m-main{display:block;min-height:calc(100vh - 62px);padding:20px 16px 94px}
-  .admin-app .m-bottom-bar{display:grid!important;position:fixed;left:0;right:0;bottom:0;z-index:90;height:70px;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -8px 24px rgba(4,53,42,.08)}
+  .admin-app .main.m-main{
+    display:block!important;min-height:calc(100vh - 62px);
+    width:100%;max-width:none;margin:0;padding:20px 16px 94px
+  }
+  .admin-app .m-bottom-bar{
+    display:grid!important;position:fixed;left:0;right:0;bottom:0;z-index:90;
+    height:70px;padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -8px 24px rgba(4,53,42,.08)
+  }
   .admin-app .m-bottom-bar a{cursor:pointer;text-decoration:none}
   .admin-app .m-bottom-bar a b{font-family:var(--font)}
+
+  /* Re-scope every `.app-shell.mobile` rule from the supplied design to production. */
+  .admin-app .two-col,
+  .admin-app .three-col,
+  .admin-app .form-grid,
+  .admin-app .metrics,
+  .admin-app .detail-grid,
+  .admin-app .grid-70-30,
+  .admin-app .kanban{grid-template-columns:1fr!important}
+  .admin-app .filters{grid-template-columns:1fr!important}
+  .admin-app .hero{grid-template-columns:1fr}
+  .admin-app .hero-actions{width:100%;display:grid;grid-template-columns:1fr;gap:9px}
+  .admin-app .hero-actions .btn{width:100%}
+  .admin-app .card>header{flex-direction:column;align-items:flex-start;gap:11px}
+  .admin-app .workflow{grid-template-columns:1fr!important}
+  .admin-app .workflow article{border-right:0;border-bottom:1px solid var(--line)}
+  .admin-app .workflow article:last-child{border-bottom:0}
+  .admin-app .org-level{flex-direction:column;align-items:center}
+  .admin-app .org-person{width:100%;max-width:280px}
+  .admin-app .quicklinks{grid-template-columns:1fr 1fr!important}
+
   .admin-app .hero{padding:23px 20px;min-height:0}
   .admin-app .hero h2{font-size:25px}
-  .admin-app .metrics{display:grid;grid-template-columns:1fr 1fr!important;gap:10px}
   .admin-app .metric{min-height:112px;padding:17px}
   .admin-app .metric strong{font-size:27px}
-  .admin-app .quicklinks{grid-template-columns:1fr 1fr!important}
   .admin-app .data{border-radius:var(--radius)}
   .admin-app .data-head{padding:16px}
   .admin-app .data-head h3{font-size:15px}
@@ -632,39 +682,24 @@ body.modal-open{overflow:hidden}
   .admin-app .rating-field:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
   .admin-app .rating-field:last-child{border-bottom:0}
   .admin-app .modal-host{padding:0;align-items:end}
-  .admin-app .modal{display:none}
   .admin-app .sheet-host{position:fixed}
   .m-drawer{position:fixed;top:0;bottom:0;left:0;height:100vh;overflow:auto}
   .m-drawer-backdrop{position:fixed}
   .mobile-only{display:block!important}
   .desktop-only{display:none!important}
-  .form-grid{grid-template-columns:1fr}
   .field.full{grid-column:auto}
-  .detail-grid{grid-template-columns:1fr 1fr}
   .detail-grid div:nth-child(2n){border-right:0}
-  .detail-grid div:nth-child(4n){border-right:0}
   .role-card{grid-template-columns:1fr;gap:12px}
   .role-card>.btn{width:100%}
+  .fidelity-toolbar{display:block}
+  .fidelity-toolbar>*+*{margin-top:10px}
+  .profile-identity{padding:17px}
 }
 @media(max-width:390px){
-  .admin-app .m-main{padding-left:14px;padding-right:14px}
-  .admin-app .metrics{grid-template-columns:1fr 1fr!important}
+  .admin-app .main.m-main{padding-left:16px;padding-right:16px}
 }
 @media(max-width:340px){
-  .admin-app .metrics,.admin-app .quicklinks,.admin-app .kpi-strip{grid-template-columns:1fr!important}
-}
-
-/* Single production shell: desktop uses sidebar/topbar; phone uses the exact V2 mobile topbar/bottom bar. */
-.admin-app .m-main{display:none}
-.admin-app .m-drawer-frame{position:fixed;inset:0;z-index:250;pointer-events:none}
-.admin-app .m-drawer-frame[hidden]{display:none!important}
-.admin-app .m-drawer-frame:not([hidden]){pointer-events:auto}
-.admin-app .m-drawer{overflow:auto}
-.admin-app .m-drawer .side-brand{padding-top:20px}
-.admin-app .m-drawer .side-nav{overflow:visible}
-.admin-app .m-drawer .side-foot{margin-top:24px}
-@media(max-width:760px){
-  .admin-app .m-main{display:block}
+  .admin-app .quicklinks,.admin-app .kpi-strip{grid-template-columns:1fr!important}
 }
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
