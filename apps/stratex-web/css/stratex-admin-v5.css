@@ -1,4 +1,4 @@
-/* Stratex Admin Centre — V2 design-faithful production stylesheet */
+/* Stratex Admin Centre — V2 design-faithful production stylesheet · fidelity repair 2026-08-20 */
 :root{
   /* -- real brand tokens -- */
   --pitch:#075F48;
@@ -624,6 +624,58 @@ body.modal-open{overflow:hidden}
   color:var(--pitch);text-decoration:underline;text-underline-offset:3px
 }
 
+
+/* Production resilience: every design cell owns its text and every dynamic state keeps the
+   spacing defined by the supplied desktop/mobile frames. */
+.detail-grid>div{min-width:0;overflow:hidden}
+.detail-grid b,
+.detail-grid span,
+.detail-grid a{
+  max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal;hyphens:auto
+}
+.record-cell{min-width:0}
+.record-cell>div{min-width:0}
+.record-cell b,
+.record-cell small{
+  max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal
+}
+.data-table td{overflow-wrap:anywhere;word-break:normal}
+.mrow>div{min-width:0}
+.mrow h4,.mrow p,.mrow small{overflow-wrap:anywhere;word-break:normal}
+.mono-id{font-family:var(--font-mono);font-size:10.5px;overflow-wrap:anywhere}
+
+.main>[id$="Detail"]>*+*,
+.main>[id$="Rows"]>.fidelity-stack>*+*,
+.fidelity-showcase-state>*+*{margin-top:24px}
+
+.data-head-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.fidelity-crm-data .data-table th:first-child,
+.fidelity-crm-data .data-table td:first-child{width:118px}
+.fidelity-crm-data .data-table th:nth-child(2){min-width:220px}
+
+.fidelity-user-identity-body{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:22px
+}
+.fidelity-user-heading{flex:1;min-width:220px}
+.fidelity-user-heading h3{margin:0;font-size:19px;line-height:1.2}
+.fidelity-user-heading p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.fidelity-user-grid{margin-top:0}
+.fidelity-user-linked{align-items:start}
+.fidelity-linked-button{
+  appearance:none;text-align:left;font-family:var(--font);cursor:pointer;color:var(--ink)
+}
+.fidelity-linked-button:hover{border-color:rgba(7,95,72,.35);background:var(--mist)}
+
+.fidelity-showcase-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap
+}
+.fidelity-showcase-summary{box-shadow:var(--shadow-card)}
+.fidelity-showcase-summary-footer{
+  padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end
+}
+#showcaseDetail .tabs + #shview,
+#showcaseDetail .tabs + .data{margin-top:24px}
+
 /* Mobile is a separate composition, matching the supplied 390px frame. */
 @media(max-width:760px){
   body.stratex-admin-centre-v2{background:var(--mist)}
@@ -691,6 +743,16 @@ body.modal-open{overflow:hidden}
   .detail-grid div:nth-child(2n){border-right:0}
   .role-card{grid-template-columns:1fr;gap:12px}
   .role-card>.btn{width:100%}
+  .admin-app .main.m-main>*+*,
+  .admin-app .main.m-main>[id$="Detail"]>*+*,
+  .admin-app .fidelity-showcase-state>*+*{margin-top:18px}
+  .data-head-actions{width:100%;justify-content:space-between}
+  .fidelity-user-identity-body{padding:17px;align-items:flex-start}
+  .fidelity-user-heading{min-width:0;width:100%;order:2}
+  .fidelity-user-identity-body>.pill{order:3}
+  .fidelity-user-identity-body>[data-user-detail-back]{order:4;width:100%}
+  .fidelity-showcase-actions{display:grid;grid-template-columns:1fr;width:100%}
+  .fidelity-showcase-actions .btn,.fidelity-showcase-actions a{width:100%}
   .fidelity-toolbar{display:block}
   .fidelity-toolbar>*+*{margin-top:10px}
   .profile-identity{padding:17px}
