@@ -1,7 +1,7 @@
 'use strict';
 (function () {
-  if (window.__stratexAdminDesignFidelityV3) return;
-  window.__stratexAdminDesignFidelityV3 = true;
+  if (window.__stratexAdminDesignFidelityV4) return;
+  window.__stratexAdminDesignFidelityV4 = true;
 
   var API = 'https://scoutlink-api.vercel.app';
   var state = {
@@ -13,6 +13,9 @@
     crmLoading: false,
     crmRendered: false,
     crmRows: [],
+    orgLoading: false,
+    orgRendered: false,
+    orgPeople: [],
     showcaseIndex: null,
     showcaseEventId: null,
     showcaseView: 'overview',
@@ -1217,6 +1220,154 @@
     if (view === 'players') renderShowcasePlayersExact();
   }
 
+
+  /* ---------------- Org Directory: hierarchy-first production state ---------------- */
+  function orgPeopleFromPayload(payload) {
+    var rows = Array.isArray(payload) ? payload : (payload.admins || payload.data || payload.users || []);
+    return rows.filter(function (person) { return person && person.is_active !== false; });
+  }
+
+  function orgLevels(people) {
+    var byId = {};
+    (people || []).forEach(function (person) {
+      byId[String(person.id)] = person;
+    });
+
+    var roots = (people || []).filter(function (person) {
+      return !person.manager_id || !byId[String(person.manager_id)];
+    });
+    if (!roots.length && people && people.length) roots = [people[0]];
+
+    var seen = new Set();
+    var levels = [];
+    var current = roots.slice();
+
+    while (current.length) {
+      var level = current.filter(function (person) {
+        var key = String(person.id);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      if (!level.length) break;
+
+      levels.push(level);
+      var parentIds = new Set(level.map(function (person) { return String(person.id); }));
+      current = (people || []).filter(function (person) {
+        return !seen.has(String(person.id)) &&
+          person.manager_id &&
+          parentIds.has(String(person.manager_id));
+      });
+    }
+
+    var remaining = (people || []).filter(function (person) {
+      return !seen.has(String(person.id));
+    });
+    if (remaining.length) levels.push(remaining);
+
+    return levels;
+  }
+
+  function orgManagerLabel(person, people) {
+    if (!person || !person.manager_id) return 'Company lead';
+    var manager = (people || []).find(function (candidate) {
+      return String(candidate.id) === String(person.manager_id);
+    });
+    return manager ? 'Reports to ' + fullName(manager) : 'Reporting line not assigned';
+  }
+
+  function orgPersonCard(person, people, levelIndex) {
+    var emailAddress = String(person.email || '').trim();
+    var adminRole = person.admin_role || person.role || 'Employee';
+    var roleTone = /super|management/i.test(String(adminRole)) ? 'green' : 'grey';
+    var mail = emailAddress
+      ? '<a class="btn secondary small fidelity-org-email" href="mailto:' + esc(emailAddress) + '">✉&nbsp; Send email</a>'
+      : '<span class="fidelity-org-no-email">No email available</span>';
+
+    return (
+      '<article class="fidelity-org-person ' + (levelIndex === 0 ? 'is-root' : '') + '">' +
+        '<div class="fidelity-org-person-top">' +
+          '<div class="fidelity-org-avatar">' + esc(initials(person)) + '</div>' +
+          pill(adminRole, roleTone) +
+        '</div>' +
+        '<div class="fidelity-org-person-copy">' +
+          '<h4>' + esc(fullName(person)) + '</h4>' +
+          '<p>' + esc(person.job_title || 'Stratex Analytics') + '</p>' +
+          '<small>' + esc(orgManagerLabel(person, people)) + '</small>' +
+        '</div>' +
+        '<div class="fidelity-org-person-actions">' + mail + '</div>' +
+      '</article>'
+    );
+  }
+
+  function paintOrgDirectory(host, people) {
+    people = people || [];
+    var levels = orgLevels(people);
+    var management = people.filter(function (person) {
+      return /management|super admin/i.test(String(person.admin_role || person.role || ''));
+    }).length;
+    var reportingLines = people.filter(function (person) { return !!person.manager_id; }).length;
+
+    host.innerHTML =
+      '<div class="fidelity-org-page">' +
+        '<section class="fidelity-org-summary" aria-label="Organisation summary">' +
+          '<div><small>Active team</small><strong>' + num(people.length) + '</strong><span>people</span></div>' +
+          '<div><small>Leadership</small><strong>' + num(management) + '</strong><span>management accounts</span></div>' +
+          '<div><small>Reporting lines</small><strong>' + num(reportingLines) + '</strong><span>assigned relationships</span></div>' +
+        '</section>' +
+        '<section class="card fidelity-org-directory">' +
+          '<header><div><h3>Reporting structure</h3><p>Clear ownership and reporting lines across Stratex Analytics.</p></div>' +
+            '<div class="data-count"><b>' + num(people.length) + '</b><span>People</span></div></header>' +
+          '<div class="fidelity-org-chart">' +
+            (levels.length
+              ? levels.map(function (level, levelIndex) {
+                  return '<div class="fidelity-org-level" data-org-level="' + levelIndex + '">' +
+                    level.map(function (person) {
+                      return orgPersonCard(person, people, levelIndex);
+                    }).join('') +
+                  '</div>';
+                }).join('')
+              : empty('No active Stratex staff records are available.')) +
+          '</div>' +
+        '</section>' +
+      '</div>';
+
+    host.dataset.fidelityOrg = '1';
+    state.orgRendered = true;
+  }
+
+  async function enhanceOrgDirectory() {
+    if (path() !== '/admin/org-charts') return;
+    var root = document.getElementById('adminMain');
+    var host = document.getElementById('orgRows');
+    if (!root || !host) return;
+
+    extractHeroActions(root, false);
+
+    if (state.orgPeople.length) {
+      if (!host.querySelector('.fidelity-org-directory')) {
+        paintOrgDirectory(host, state.orgPeople);
+      }
+      return;
+    }
+
+    /* Wait for the legacy loader to finish its own request before taking ownership,
+       which avoids a race where the old org markup could overwrite this design. */
+    if (!host.querySelector('.org-wrap') && host.querySelector('.loading-state')) return;
+    if (state.orgLoading) return;
+
+    state.orgLoading = true;
+    try {
+      var payload = await api('/api/stratex/org');
+      state.orgPeople = orgPeopleFromPayload(payload);
+      paintOrgDirectory(host, state.orgPeople);
+    } catch (x) {
+      host.innerHTML = empty(x.message || 'The organisation directory could not be loaded.');
+    } finally {
+      state.orgLoading = false;
+    }
+  }
+
   /* ---------------- Admin user detail: dedicated design state ---------------- */
   function managerName(person, people) {
     if (!person) return '—';
@@ -1542,6 +1693,9 @@
       state.crmLoading = false;
       state.crmRendered = false;
       state.crmRows = [];
+      state.orgLoading = false;
+      state.orgRendered = false;
+      state.orgPeople = [];
       state.userDetailOpen = false;
       state.showcaseView = 'overview';
       state.showcasePlayersLoading = false;
@@ -1572,6 +1726,11 @@
     }
     if (p === '/admin/crm') {
       renderCrm();
+      return;
+    }
+    if (p === '/admin/org-charts') {
+      applyListLayout();
+      enhanceOrgDirectory();
       return;
     }
     if (p === '/admin/admin-users' && root.dataset.fidelityUserDetail === '1') {
