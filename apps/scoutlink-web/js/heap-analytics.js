@@ -3,7 +3,7 @@
 /* Shared ScoutLink runtime loader and Heap identity bridge. */
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260804-2';
+  var ASSET_VERSION = '20260820-1';
   var UNSAFE_IDS = {'':true,user:true,guest:true,coach:true,scout:true,player:true,stratex:true,'marcus reed':true,'noah patel':true};
 
   function safe(value) {
@@ -37,27 +37,34 @@
     } catch (_) { return ''; }
   }
   function routePath() { return String(window.location.pathname || '').toLowerCase(); }
+  function publicDemoRouteRole() {
+    var path = routePath();
+    if (path.indexOf('/public-demo/coach') === 0) return 'coach';
+    if (path.indexOf('/public-demo/scout') === 0) return 'scout';
+    return '';
+  }
   function isExperienceRoute() {
     var path = routePath(), role = experienceRole();
     return /\/(coach|scout|player|admin|stratex)(\/|$)/.test(path) || path.indexOf('/company/admin') === 0 ||
       /(?:coach|scout|player|stratex)-/.test(path) || ['coach','scout','player','stratex'].indexOf(role) >= 0;
   }
   function isCoachRuntimeRoute() {
-    var path = routePath(), role = experienceRole();
-    return path.indexOf('/coach') === 0 || path.indexOf('coach-') > -1 ||
+    var path = routePath(), role = experienceRole(), demoRouteRole = publicDemoRouteRole();
+    return demoRouteRole === 'coach' || path.indexOf('/coach') === 0 || path.indexOf('coach-') > -1 ||
       ((path.indexOf('/player/profile') === 0 || path.indexOf('player-profile') > -1 || path.indexOf('/admin') === 0 ||
         path.indexOf('/company/admin') === 0 || path.indexOf('/stratex') === 0 || path.indexOf('stratex-') > -1) && role === 'coach');
   }
   function isScoutRuntimeRoute() {
-    var path = routePath(), role = experienceRole();
-    return isPublicDemo() || path.indexOf('/scout') === 0 || path.indexOf('scout-') > -1 ||
+    var path = routePath(), role = experienceRole(), demoRouteRole = publicDemoRouteRole();
+    return demoRouteRole === 'scout' || path.indexOf('/scout') === 0 || path.indexOf('scout-') > -1 ||
       path.indexOf('/player/profile') === 0 || path.indexOf('player-profile') > -1 ||
       path.indexOf('/admin') === 0 || path.indexOf('/company/admin') === 0 || path.indexOf('/stratex') === 0 ||
       path.indexOf('stratex-') > -1 || path.indexOf('/experience-select') === 0 || role === 'scout' || role === 'stratex';
   }
   function isProfileRoute() {
     var path = routePath();
-    return path.indexOf('/player/profile') === 0 || path.indexOf('player-profile') > -1;
+    return path.indexOf('/player/profile') === 0 || path.indexOf('/public-demo/coach/player/profile') === 0 ||
+      path.indexOf('/public-demo/scout/player/profile') === 0 || path.indexOf('player-profile') > -1;
   }
 
   function resolve(relativePath, fallback) {
@@ -82,6 +89,9 @@
   }
 
   function loadAll() {
+    /* Public-demo route guard is deliberately loaded on every ScoutLink page. */
+    loadScript('publicDemoRoutingV2Script','public-demo-routing-v2.js','/js/public-demo-routing-v2.js');
+
     loadScript('dataMediaGuardV1Script','data-media-guard-v1.js','/js/data-media-guard-v1.js');
     loadScript('scoringV4ClientScript','scoring-v4-client.js','/js/scoring-v4-client.js');
     loadScript('playerInitialsV1Script','player-initials-v1.js','/js/player-initials-v1.js');
@@ -126,6 +136,9 @@
   function selectedExperience(role) {
     if (role) return String(role);
     var path = routePath();
+    var demoRole = publicDemoRouteRole();
+    if (demoRole === 'coach') return 'Coach';
+    if (demoRole === 'scout') return 'Scout';
     if (path.indexOf('/admin') === 0 || path.indexOf('/company/admin') === 0 || path.indexOf('/stratex') === 0) return 'Stratex';
     if (path.indexOf('/coach') === 0) return 'Coach';
     if (path.indexOf('/scout') === 0) return 'Scout';
