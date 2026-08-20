@@ -1,7 +1,7 @@
 'use strict';
 (function () {
-  if (window.__stratexAdminDesignFidelityV4) return;
-  window.__stratexAdminDesignFidelityV4 = true;
+  if (window.__stratexAdminDesignFidelityV5) return;
+  window.__stratexAdminDesignFidelityV5 = true;
 
   var API = 'https://scoutlink-api.vercel.app';
   var state = {
@@ -23,7 +23,8 @@
     showcasePlayersEventId: null,
     showcasePlayers: [],
     userDetailOpen: false,
-    timer: null
+    enhanceQueued: false,
+    enhancing: false
   };
 
   var EMPLOYEE_ALLOWED = new Set(['dashboard','contact','crm','activity','profile','settings']);
@@ -196,14 +197,15 @@
     }
 
     document.querySelectorAll('.side-link[data-nav="scoutlink"] .label').forEach(function (n) {
-      n.textContent = 'Overview';
+      if (n.textContent !== 'Overview') n.textContent = 'Overview';
     });
     document.querySelectorAll('.side-link[data-nav="awards"] .ic').forEach(function (n) {
-      n.textContent = '🏅';
+      if (n.textContent !== '🏅') n.textContent = '🏅';
     });
 
+    var shellRole = role();
     document.querySelectorAll('.side-foot .side-user small').forEach(function (n) {
-      n.textContent = role();
+      if (n.textContent !== shellRole) n.textContent = shellRole;
     });
 
     applyAccess();
@@ -1221,6 +1223,15 @@
   }
 
 
+  /* ---------------- Route paint lock: prevent legacy-frame flashes ---------------- */
+  function setOrgRoutePending(pending) {
+    document.documentElement.classList.toggle('stratex-org-fidelity-pending', !!pending);
+  }
+
+  function orgLoadingMarkup() {
+    return '<div class="loading-state fidelity-org-loading" data-fidelity-org-loading>Loading organisation directory</div>';
+  }
+
   /* ---------------- Org Directory: hierarchy-first production state ---------------- */
   function orgPeopleFromPayload(payload) {
     var rows = Array.isArray(payload) ? payload : (payload.admins || payload.data || payload.users || []);
@@ -1334,6 +1345,7 @@
 
     host.dataset.fidelityOrg = '1';
     state.orgRendered = true;
+    setOrgRoutePending(false);
   }
 
   async function enhanceOrgDirectory() {
@@ -1342,27 +1354,35 @@
     var host = document.getElementById('orgRows');
     if (!root || !host) return;
 
+    /* Take ownership before the browser can paint the legacy R.org/L.org state. */
+    setOrgRoutePending(true);
     extractHeroActions(root, false);
 
     if (state.orgPeople.length) {
       if (!host.querySelector('.fidelity-org-directory')) {
         paintOrgDirectory(host, state.orgPeople);
+      } else {
+        setOrgRoutePending(false);
       }
       return;
     }
 
-    /* Wait for the legacy loader to finish its own request before taking ownership,
-       which avoids a race where the old org markup could overwrite this design. */
-    if (!host.querySelector('.org-wrap') && host.querySelector('.loading-state')) return;
-    if (state.orgLoading) return;
+    /* The core loader may complete while our request is still in flight. If it writes
+       the old .org-wrap back into #orgRows, immediately replace it with our loader. */
+    if (state.orgLoading) {
+      if (!host.querySelector('[data-fidelity-org-loading]')) host.innerHTML = orgLoadingMarkup();
+      return;
+    }
 
     state.orgLoading = true;
+    host.innerHTML = orgLoadingMarkup();
     try {
       var payload = await api('/api/stratex/org');
       state.orgPeople = orgPeopleFromPayload(payload);
       paintOrgDirectory(host, state.orgPeople);
     } catch (x) {
       host.innerHTML = empty(x.message || 'The organisation directory could not be loaded.');
+      setOrgRoutePending(false);
     } finally {
       state.orgLoading = false;
     }
@@ -1458,6 +1478,9 @@
 
   /* ---------------- Event delegation ---------------- */
   function onCaptureClick(e) {
+    var orgNav = e.target.closest('[data-nav="org"], a[href="/admin/org-charts"]');
+    if (orgNav) setOrgRoutePending(true);
+
     var userButton = e.target.closest('[data-admin-user]');
     if (userButton && path() === '/admin/admin-users') {
       e.preventDefault();
@@ -1686,6 +1709,8 @@
     applyShell();
 
     var p = path();
+    if (p === '/admin/org-charts') setOrgRoutePending(true);
+    else setOrgRoutePending(false);
     var root = document.getElementById('adminMain');
     if (!root) return;
     if (state.lastPath !== p) {
@@ -1748,8 +1773,18 @@
   }
 
   function scheduleEnhance() {
-    clearTimeout(state.timer);
-    state.timer = setTimeout(enhance, 20);
+    if (state.enhanceQueued || state.enhancing) return;
+    state.enhanceQueued = true;
+    queueMicrotask(function () {
+      state.enhanceQueued = false;
+      if (state.enhancing) return;
+      state.enhancing = true;
+      try {
+        enhance();
+      } finally {
+        state.enhancing = false;
+      }
+    });
   }
 
   function boot() {
@@ -1764,8 +1799,11 @@
     document.addEventListener('submit', onSubmit);
 
     var observer = new MutationObserver(scheduleEnhance);
-    observer.observe(document.documentElement, {subtree:true, childList:true, characterData:true});
-    window.addEventListener('popstate', scheduleEnhance);
+    observer.observe(document.documentElement, {subtree:true, childList:true});
+    window.addEventListener('popstate', function () {
+      if (path() === '/admin/org-charts') setOrgRoutePending(true);
+      scheduleEnhance();
+    });
     window.addEventListener('resize', scheduleEnhance);
     scheduleEnhance();
   }
