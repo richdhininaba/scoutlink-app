@@ -1,7 +1,7 @@
 'use strict';
 (function () {
-  if (window.__stratexAdminDesignFidelityV2) return;
-  window.__stratexAdminDesignFidelityV2 = true;
+  if (window.__stratexAdminDesignFidelityV3) return;
+  window.__stratexAdminDesignFidelityV3 = true;
 
   var API = 'https://scoutlink-api.vercel.app';
   var state = {
@@ -10,6 +10,16 @@
     dashboardLoading: false,
     scoutlinkLoading: false,
     profileLoading: false,
+    crmLoading: false,
+    crmRendered: false,
+    crmRows: [],
+    showcaseIndex: null,
+    showcaseEventId: null,
+    showcaseView: 'overview',
+    showcasePlayersLoading: false,
+    showcasePlayersEventId: null,
+    showcasePlayers: [],
+    userDetailOpen: false,
     timer: null
   };
 
@@ -535,6 +545,255 @@
     }
   }
 
+
+  /* ---------------- CRM: exact combined pipeline, backed by live source APIs ---------------- */
+  function crmId(prefix, row) {
+    var explicit = row && (row.recordId || row.lead_code || row.registration_reference || row.coach_id || row.scout_id || row.application_ref);
+    if (explicit) return String(explicit);
+    var id = String(row && row.id || '').replace(/-/g,'').toUpperCase();
+    return prefix + '-' + (id ? id.slice(-6) : '—');
+  }
+  function crmTypeTone(category) {
+    if (category === 'lead') return 'blue';
+    if (category === 'registration') return 'gold';
+    if (category === 'account') return 'green';
+    if (category === 'job') return 'purple';
+    return 'grey';
+  }
+  function crmNormalise(results) {
+    var rows = [];
+    var leads = results[0] && results[0].data || [];
+    var registrations = results[1] && results[1].data || [];
+    var coaches = results[2] && results[2].data || [];
+    var scoutPayload = results[3] && results[3].data || {};
+    var scouts = Array.isArray(scoutPayload) ? scoutPayload : (scoutPayload.scouts || []);
+    var applications = results[4] && results[4].data || [];
+    var central = results[5] && results[5].data || [];
+
+    function add(row) {
+      var email = String(row.email || '').toLowerCase();
+      var duplicate = rows.some(function (x) {
+        if (row.id && x.id === row.id) return true;
+        return email && email === String(x.email || '').toLowerCase() &&
+          row.category === x.category && row.typeLabel === x.typeLabel;
+      });
+      if (!duplicate) rows.push(row);
+    }
+
+    central.forEach(function (r) {
+      var typeText = String(r.type || r.source || '').toLowerCase();
+      var category = /registration/.test(typeText) ? 'registration'
+        : /job|candidate|career/.test(typeText) ? 'job'
+        : /lead|contact|form|enquiry/.test(typeText) ? 'lead'
+        : 'account';
+      var typeLabel = category === 'job' ? 'Job application'
+        : category === 'registration' ? 'ScoutLink registration'
+        : category === 'lead' ? 'Lead'
+        : /coach/.test(typeText) ? 'ScoutLink Coach account'
+        : /scout/.test(typeText) ? 'ScoutLink Scout account'
+        : (r.type || 'ScoutLink account');
+      add({
+        id: String(r.recordId || r.id || crmId(category === 'lead' ? 'LD' : category === 'registration' ? 'REG' : category === 'job' ? 'JA' : 'ACC', r)),
+        raw: r,
+        category: category,
+        typeLabel: typeLabel,
+        product: r.product || (/scoutlink/i.test(String(r.source || '') + ' ' + typeText) ? 'ScoutLink' : 'Stratex'),
+        name: r.name || r.full_name || r.email || '—',
+        email: r.email || '',
+        organisation: r.organisation || '—',
+        status: r.status || 'Active',
+        created: r.createdAt || r.created_at,
+        source: r.source || r.type || 'CRM'
+      });
+    });
+
+    leads.forEach(function (r) {
+      var scoutLink = /scoutlink/i.test(String(r.product || '') + ' ' + String(r.source_page || '') + ' ' + String(r.lead_type || ''));
+      add({
+        id: crmId('LD', r),
+        raw: r,
+        category: 'lead',
+        typeLabel: 'Lead',
+        product: scoutLink ? 'ScoutLink' : 'Stratex',
+        name: r.full_name || fullName(r),
+        email: r.email || '',
+        organisation: r.organisation || '—',
+        status: r.status || 'New',
+        created: r.created_at,
+        source: r.lead_type || r.reason || 'Website lead'
+      });
+    });
+
+    registrations.forEach(function (r) {
+      add({
+        id: crmId('REG', r),
+        raw: r,
+        category: 'registration',
+        typeLabel: 'ScoutLink registration',
+        product: 'ScoutLink',
+        name: fullName(r),
+        email: r.email || '',
+        organisation: r.team_name || r.scout_club || '—',
+        status: r.status || r.verification_status || 'Pending',
+        created: r.created_at,
+        source: String(r.account_type || 'Registration')
+      });
+    });
+
+    coaches.forEach(function (r) {
+      add({
+        id: crmId('CHC', r),
+        raw: r,
+        category: 'account',
+        typeLabel: 'ScoutLink Coach account',
+        product: 'ScoutLink',
+        name: fullName(r),
+        email: r.email || '',
+        organisation: r.team_name || '—',
+        status: r.is_active === false ? 'Inactive' : 'Active',
+        created: r.created_at,
+        source: r.role_at_club || 'Coach'
+      });
+    });
+
+    scouts.forEach(function (r) {
+      add({
+        id: crmId('SCT', r),
+        raw: r,
+        category: 'account',
+        typeLabel: 'ScoutLink Scout account',
+        product: 'ScoutLink',
+        name: fullName(r),
+        email: r.email || '',
+        organisation: r.club_name || '—',
+        status: r.is_active === false ? 'Inactive' : 'Active',
+        created: r.created_at,
+        source: 'Scout'
+      });
+    });
+
+    applications.forEach(function (r) {
+      var job = r.job_posts || {};
+      add({
+        id: crmId('JA', r),
+        raw: r,
+        category: 'job',
+        typeLabel: 'Job application',
+        product: 'Stratex',
+        name: fullName(r),
+        email: r.email || '',
+        organisation: job.department || r.department || '—',
+        status: r.status || 'Submitted',
+        created: r.submitted_at || r.created_at,
+        source: job.job_title || r.job_title || 'Careers'
+      });
+    });
+
+    rows.sort(function (a,b) {
+      return new Date(b.created || 0).getTime() - new Date(a.created || 0).getTime();
+    });
+    return rows;
+  }
+  function crmTableRows(rows) {
+    return rows.map(function (r) {
+      return '<tr class="clickable" data-crm-record="' + esc(r.id) + '">' +
+        '<td><span class="mono-id">' + esc(r.id) + '</span></td>' +
+        '<td><div class="record-cell">' + avatar({name:r.name}) + '<div><b>' + esc(r.name || '—') + '</b><small>' + esc(r.email || '') + '</small></div></div></td>' +
+        '<td>' + esc(r.organisation || '—') + '</td>' +
+        '<td>' + pill(r.typeLabel, crmTypeTone(r.category)) + '</td>' +
+        '<td>' + esc(r.product || 'Stratex') + '</td>' +
+        '<td>' + esc(r.status || '—') + '</td>' +
+        '<td>' + esc(fmtDate(r.created)) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+  function crmMobileRows(rows) {
+    return rows.map(function (r) {
+      return '<button class="mrow" type="button" data-crm-record="' + esc(r.id) + '">' +
+        avatar({name:r.name}) +
+        '<div><h4>' + esc(r.name || '—') + '</h4><p>' + esc(r.organisation || '—') + '</p><small>' +
+        esc(r.id + ' · ' + fmtDate(r.created)) + '</small></div>' +
+        pill(r.typeLabel, crmTypeTone(r.category)) + '<i class="chev">›</i></button>';
+    }).join('');
+  }
+  function crmFiltered(tab) {
+    var rows = state.crmRows || [];
+    if (!tab || tab === 'all') return rows;
+    return rows.filter(function (r) { return r.category === tab; });
+  }
+  function paintCrm(tab) {
+    var rows = crmFiltered(tab);
+    var tbody = document.getElementById('fidelityCrmBody');
+    var mobileRows = document.getElementById('fidelityCrmMobile');
+    var count = document.getElementById('fidelityCrmCount');
+    if (tbody) tbody.innerHTML = crmTableRows(rows);
+    if (mobileRows) mobileRows.innerHTML = crmMobileRows(rows);
+    if (count) count.textContent = num(rows.length);
+    document.querySelectorAll('[data-crm-tab]').forEach(function (b) {
+      b.classList.toggle('active', (b.dataset.crmTab || 'all') === (tab || 'all'));
+    });
+  }
+  function crmDetail(recordId) {
+    var r = (state.crmRows || []).find(function (x) { return x.id === recordId; });
+    if (!r) return;
+    var raw = r.raw || {};
+    dialog('CRM · ' + (r.name || 'Record'),
+      '<div class="detail-grid n2">' +
+        '<div><small>Record ID</small><b>' + esc(r.id) + '</b></div>' +
+        '<div><small>Type</small><b>' + esc(r.typeLabel) + '</b></div>' +
+        '<div><small>Email</small><b>' + esc(r.email || '—') + '</b></div>' +
+        '<div><small>Organisation</small><b>' + esc(r.organisation || '—') + '</b></div>' +
+        '<div><small>Product</small><b>' + esc(r.product || '—') + '</b></div>' +
+        '<div><small>Status</small><b>' + esc(r.status || '—') + '</b></div>' +
+        '<div><small>Source</small><b>' + esc(r.source || '—') + '</b></div>' +
+        '<div><small>Created</small><b>' + esc(fmtDate(r.created, true)) + '</b></div>' +
+      '</div>' +
+      '<div class="linked-rail" style="margin-top:18px"><b>Connected source record</b><div class="linked-chip-row">' +
+        '<span class="linked-chip"><span class="ic c-lead">' + esc(r.category === 'account' ? 'A' : r.category === 'registration' ? 'R' : r.category === 'job' ? 'J' : 'L') +
+        '</span><b>' + esc(r.typeLabel) + '</b><span>' + esc(raw.id || r.id) + '</span></span>' +
+      '</div></div>');
+  }
+  async function renderCrm() {
+    var root = document.getElementById('adminMain');
+    if (!root || state.crmLoading || state.crmRendered) return;
+
+    /* Let the core route initialise first so its async loader cannot race a removed DOM. */
+    var coreRows = document.getElementById('crmRows');
+    if (coreRows && coreRows.querySelector('.loading-state')) return;
+
+    state.crmLoading = true;
+    try {
+      var results = await Promise.all([
+        api('/api/stratex-website/leads?limit=500').catch(function () { return {data:[]}; }),
+        api('/api/registrations?limit=500&status=').catch(function () { return {data:[]}; }),
+        api('/api/stratex-admin-centre/coaches').catch(function () { return {data:[]}; }),
+        api('/api/stratex-admin-centre/scouts').catch(function () { return {data:{scouts:[]}}; }),
+        api('/api/stratex/job-applications').catch(function () { return {data:[]}; }),
+        api('/api/stratex-website/crm').catch(function () { return {data:[]}; })
+      ]);
+      state.crmRows = crmNormalise(results);
+      state.crmRendered = true;
+      root.dataset.fidelityLayout = path();
+      root.innerHTML =
+        '<div class="tabs fidelity-crm-tabs">' +
+          '<button class="active" type="button" data-crm-tab="all">All records (' + num(state.crmRows.length) + ')</button>' +
+          '<button type="button" data-crm-tab="lead">Leads</button>' +
+          '<button type="button" data-crm-tab="registration">Registrations</button>' +
+          '<button type="button" data-crm-tab="account">ScoutLink accounts</button>' +
+          '<button type="button" data-crm-tab="job">Job applications</button>' +
+        '</div>' +
+        '<section class="data fidelity-crm-data"><div class="data-head"><div><h3>CRM</h3><p>Leads, registrations, ScoutLink accounts and job applications in one pipeline</p></div>' +
+          '<div class="data-head-actions"><div class="data-count"><b id="fidelityCrmCount">' + num(state.crmRows.length) + '</b><span>Records</span></div>' +
+          '<button class="btn small" type="button" data-crm-export>Export to Excel</button></div></div>' +
+          '<div class="table-wrap desktop-only"><table class="data-table"><thead><tr><th>Record ID</th><th>Name</th><th>Organisation</th><th>Type</th><th>Product</th><th>Status</th><th>Created</th></tr></thead>' +
+          '<tbody id="fidelityCrmBody">' + crmTableRows(state.crmRows) + '</tbody></table></div>' +
+          '<div class="mrow-list mobile-only" id="fidelityCrmMobile">' + crmMobileRows(state.crmRows) + '</div>' +
+        '</section>';
+    } finally {
+      state.crmLoading = false;
+    }
+  }
+
   /* ---------------- Compact list-page composition ---------------- */
   function extractHeroActions(root, keep) {
     var hero = root.querySelector(':scope > .hero');
@@ -763,6 +1022,273 @@
     }
   }
 
+
+
+
+  async function ensureShowcaseEventId() {
+    if (state.showcaseEventId) return state.showcaseEventId;
+    if (state.showcaseIndex == null) return null;
+    try {
+      var payload = await api('/api/stratex-publishing/admin/showcase-events');
+      var events = payload.data || [];
+      var ev = events[Number(state.showcaseIndex)];
+      state.showcaseEventId = ev && ev.id || null;
+      return state.showcaseEventId;
+    } catch (_) {
+      return null;
+    }
+  }
+  function showcasePlayerStatus(r) {
+    return r.selected_for_showcase ? 'Selected' : (r.status || 'Submitted');
+  }
+  function showcasePlayerRows(rows) {
+    return rows.map(function (r) {
+      return '<tr class="clickable">' +
+        '<td><div class="record-cell">' + avatar({name:fullName(r)}) + '<div><b>' + esc(fullName(r)) + '</b><small>' + esc(r.team_name || 'No team') + '</small></div></div></td>' +
+        '<td>' + pill(showcasePlayerStatus(r), statusTone(showcasePlayerStatus(r))) + '</td>' +
+        '<td>' + esc(fmtDate(r.submitted_at || r.created_at)) + '</td>' +
+        '<td><button class="btn secondary small" type="button" data-showcase-player-review="' + esc(r.id) + '">Review</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+  function showcasePlayerMobileRows(rows) {
+    return rows.map(function (r) {
+      return '<button class="mrow" type="button" data-showcase-player-review="' + esc(r.id) + '">' +
+        avatar({name:fullName(r)}) +
+        '<div><h4>' + esc(fullName(r)) + '</h4><p>' + esc(r.team_name || 'No team') + '</p><small>' +
+          esc(fmtDate(r.submitted_at || r.created_at)) + '</small></div>' +
+        pill(showcasePlayerStatus(r), statusTone(showcasePlayerStatus(r))) + '<i class="chev">›</i></button>';
+    }).join('');
+  }
+  async function renderShowcasePlayersExact() {
+    if (path() !== '/admin/showcase-event' || state.showcaseView !== 'players' || state.showcasePlayersLoading) return;
+    var host = document.getElementById('shview');
+    if (!host) return;
+    var eventId = await ensureShowcaseEventId();
+    if (!eventId) return;
+    var exactTable = host.querySelector('[data-fidelity-player-table]');
+    if (exactTable && String(exactTable.dataset.fidelityPlayerTable) === String(eventId)) return;
+    state.showcasePlayersLoading = true;
+    try {
+      var rows;
+      if (state.showcasePlayersEventId === eventId && state.showcasePlayers.length) {
+        rows = state.showcasePlayers;
+      } else {
+        rows = (await api('/api/stratex-publishing/admin/showcase-events/' + encodeURIComponent(eventId) + '/players')).data || [];
+        state.showcasePlayersEventId = eventId;
+        state.showcasePlayers = rows;
+      }
+      host.innerHTML =
+        '<section class="data" data-fidelity-player-table="' + esc(eventId) + '"><div class="data-head"><div><h3>Player applications</h3>' +
+        '<p>submitted / reviewing / selected / declined</p></div><div class="data-head-actions"><div class="data-count"><b>' +
+        num(rows.length) + '</b><span>Total</span></div></div></div>' +
+        '<div class="table-wrap desktop-only"><table class="data-table"><thead><tr><th>Player</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>' +
+        showcasePlayerRows(rows) + '</tbody></table></div>' +
+        '<div class="mrow-list mobile-only">' + showcasePlayerMobileRows(rows) + '</div></section>';
+    } catch (x) {
+      host.innerHTML = empty(x.message || 'Player applications could not be loaded.');
+    } finally {
+      state.showcasePlayersLoading = false;
+    }
+  }
+  function reviewShowcasePlayer(playerId) {
+    var player = (state.showcasePlayers || []).find(function (r) { return String(r.id) === String(playerId); });
+    if (!player || !state.showcaseEventId) return;
+    var status = String(showcasePlayerStatus(player) || 'Submitted').toLowerCase();
+    dialog('Review · ' + fullName(player),
+      '<div class="detail-grid n2">' +
+        '<div><small>Player</small><b>' + esc(fullName(player)) + '</b></div>' +
+        '<div><small>Team</small><b>' + esc(player.team_name || '—') + '</b></div>' +
+        '<div><small>Age</small><b>' + esc(player.age_on_event_date == null ? '—' : player.age_on_event_date) + '</b></div>' +
+        '<div><small>Positions</small><b>' + esc((player.positions || []).join(', ') || '—') + '</b></div>' +
+        '<div><small>Reference</small><b>' + esc(player.registration_reference || '—') + '</b></div>' +
+        '<div><small>Submitted</small><b>' + esc(fmtDate(player.submitted_at || player.created_at, true)) + '</b></div>' +
+      '</div>' +
+      '<form id="fidelityShowcasePlayerReview" data-player-id="' + esc(player.id) + '" style="margin-top:18px">' +
+        '<label class="field full"><span>Status</span><select class="select" name="status">' +
+          '<option value="submitted"' + (status === 'submitted' || status === 'new' ? ' selected' : '') + '>Submitted</option>' +
+          '<option value="reviewing"' + (status === 'reviewing' ? ' selected' : '') + '>Reviewing</option>' +
+          '<option value="selected"' + (status === 'selected' ? ' selected' : '') + '>Selected</option>' +
+          '<option value="declined"' + (status === 'declined' ? ' selected' : '') + '>Declined</option>' +
+        '</select></label>' +
+        '<label class="field full"><span>Internal notes</span><textarea class="textarea" name="internalNotes">' + esc(player.internal_notes || '') + '</textarea></label>' +
+        '<div class="state-message" id="fidelityShowcasePlayerMsg" hidden></div>' +
+        '<button class="btn full" type="submit">Save review</button>' +
+      '</form>');
+  }
+
+  /* ---------------- Showcase: match each supplied screen state, not one permanent overview ---------------- */
+  function enhanceShowcaseState() {
+    if (path() !== '/admin/showcase-event') return;
+    var root = document.getElementById('adminMain');
+    var detail = document.getElementById('showcaseDetail');
+    var rowsHost = document.getElementById('showcaseRows');
+    if (!root || !detail || !detail.children.length) return;
+
+    detail.classList.add('fidelity-showcase-state');
+
+    var hero = detail.querySelector(':scope > .hero');
+    if (hero) {
+      var heroActions = hero.querySelector('.hero-actions');
+      var actions = document.createElement('div');
+      actions.className = 'fidelity-showcase-actions';
+      if (heroActions) {
+        while (heroActions.firstChild) actions.appendChild(heroActions.firstChild);
+      }
+      hero.remove();
+      if (actions.children.length) detail.insertBefore(actions, detail.firstChild);
+    }
+
+    var tabs = detail.querySelector(':scope > .tabs');
+    if (tabs) {
+      tabs.querySelectorAll('[data-shview]').forEach(function (b) {
+        if (b.dataset.shview === 'overview') b.textContent = 'Event details';
+        if (b.dataset.shview === 'pros') b.textContent = 'Professional registrations';
+      });
+    }
+
+    var active = tabs && tabs.querySelector('[data-shview].active');
+    var view = active ? active.dataset.shview : 'overview';
+    state.showcaseView = view || 'overview';
+
+    var metrics = detail.querySelector(':scope > .metrics');
+    if (metrics) {
+      metrics.classList.add('n3');
+      var cards = Array.from(metrics.querySelectorAll(':scope > .metric'));
+      if (cards[0]) {
+        var s0 = cards[0].querySelector('small');
+        if (s0) s0.textContent = 'Player applications';
+      }
+      if (cards[1]) {
+        var s1 = cards[1].querySelector('small');
+        if (s1) s1.textContent = 'Professional registrations';
+      }
+      if (cards[2]) {
+        var s2 = cards[2].querySelector('small');
+        if (s2) s2.textContent = 'Waitlist';
+      }
+      cards.slice(3).forEach(function (x) { x.remove(); });
+      metrics.hidden = view !== 'overview';
+    }
+
+    var summary = detail.querySelector(':scope > .fidelity-showcase-summary');
+    if (!summary && rowsHost && state.showcaseIndex != null) {
+      var cardsInList = rowsHost.querySelectorAll('.event-card');
+      var sourceCard = cardsInList[Number(state.showcaseIndex)];
+      if (sourceCard) {
+        summary = sourceCard.cloneNode(true);
+        summary.classList.add('fidelity-showcase-summary');
+        var footer = summary.querySelector('footer');
+        if (footer) footer.remove();
+        detail.insertBefore(summary, detail.firstChild);
+      }
+    }
+
+    var actionHost = detail.querySelector(':scope > .fidelity-showcase-actions');
+    if (actionHost) {
+      var edit = Array.from(actionHost.children).find(function (x) { return /edit event/i.test(x.textContent || ''); });
+      if (summary && edit && !summary.querySelector('[data-showcase-edit]')) {
+        var foot = document.createElement('footer');
+        foot.className = 'fidelity-showcase-summary-footer';
+        foot.appendChild(edit);
+        summary.appendChild(foot);
+      }
+      actionHost.hidden = view !== 'overview' || !actionHost.children.length;
+    }
+
+    if (summary) summary.hidden = view !== 'overview';
+    if (rowsHost) rowsHost.hidden = true;
+    var sectionAction = root.querySelector(':scope > .fidelity-section-action');
+    if (sectionAction) sectionAction.hidden = true;
+
+    var title = document.getElementById('title');
+    var mobileTitle = document.getElementById('mtitle');
+    if (view === 'players') {
+      if (title) title.textContent = 'Player applications';
+      if (mobileTitle) mobileTitle.textContent = 'Player applications';
+    } else if (view === 'pros') {
+      if (title) title.textContent = 'Professional registrations';
+      if (mobileTitle) mobileTitle.textContent = 'Pro registrations';
+    } else {
+      if (title) title.textContent = 'Showcase Event';
+      if (mobileTitle) mobileTitle.textContent = 'Showcase Event';
+    }
+
+    if (view === 'players') renderShowcasePlayersExact();
+  }
+
+  /* ---------------- Admin user detail: dedicated design state ---------------- */
+  function managerName(person, people) {
+    if (!person) return '—';
+    if (person.manager_name) return person.manager_name;
+    if (!person.manager_id) return 'No manager';
+    var manager = (people || []).find(function (x) { return String(x.id) === String(person.manager_id); });
+    return manager ? fullName(manager) : 'Manager not available';
+  }
+  function permissionChips(person) {
+    var permissions = Array.isArray(person && person.permissions) ? person.permissions : [];
+    if (!permissions.length) return '<span class="linked-chip"><b>No explicit permission keys</b><span>Role defaults apply</span></span>';
+    return permissions.map(function (x) {
+      return '<span class="linked-chip"><b>' + esc(String(x).replace(/_/g,' ')) + '</b></span>';
+    }).join('');
+  }
+  async function openAdminUserDetail(index) {
+    if (path() !== '/admin/admin-users') return;
+    var root = document.getElementById('adminMain');
+    if (!root) return;
+    state.userDetailOpen = true;
+    root.innerHTML = '<div class="loading-state">Loading user record</div>';
+    try {
+      var payload = await api('/api/stratex/org');
+      var people = Array.isArray(payload) ? payload : (payload.admins || payload.data || payload.users || []);
+      var person = people[Number(index)];
+      if (!person) throw new Error('That Stratex user could not be found.');
+      var manager = managerName(person, people);
+      var userRole = person.admin_role || person.role || 'Employee';
+      var title = document.getElementById('title');
+      var mobileTitle = document.getElementById('mtitle');
+      var crumb = document.getElementById('crumb');
+      if (title) title.textContent = 'User - ' + fullName(person);
+      if (mobileTitle) mobileTitle.textContent = fullName(person);
+      if (crumb) crumb.textContent = 'Company · Stratex Admin Centre';
+
+      root.dataset.fidelityUserDetail = '1';
+      root.innerHTML =
+        '<section class="card fidelity-user-identity"><div class="card-body fidelity-user-identity-body">' +
+          '<div class="avatar-lg">' + esc(initials(person)) + '</div>' +
+          '<div class="fidelity-user-heading"><h3>' + esc(fullName(person)) + '</h3><p>' +
+            esc((person.job_title || 'Stratex') + ' · reports to ' + manager) + '</p></div>' +
+          pill(userRole, /management|super/i.test(String(userRole)) ? 'blue' : 'grey') +
+          '<button class="btn secondary small" type="button" data-user-detail-back>Back to users</button>' +
+        '</div></section>' +
+        '<div class="detail-grid fidelity-user-grid">' +
+          '<div><small>Email</small><b>' + esc(person.email || '—') + '</b></div>' +
+          '<div><small>Role</small><b>' + esc(userRole) + '</b></div>' +
+          '<div><small>Last login</small><b>' + esc(fmtDate(person.last_login, true)) + '</b></div>' +
+          '<div><small>Created</small><b>' + esc(fmtDate(person.created_at)) + '</b></div>' +
+          '<div><small>Job title</small><b>' + esc(person.job_title || '—') + '</b></div>' +
+          '<div><small>Manager</small><b>' + esc(manager) + '</b></div>' +
+          '<div><small>Annual leave</small><b>' + esc(person.annual_leave_days == null ? '—' : person.annual_leave_days + ' days') + '</b></div>' +
+          '<div><small>Status</small><b>' + esc(person.is_active === false ? 'Inactive' : 'Active') + '</b></div>' +
+        '</div>' +
+        '<div class="two-col fidelity-user-linked">' +
+          '<section class="card"><header><div><h3>Linked records</h3><p>Private people records connected to this staff account</p></div></header><div class="card-body">' +
+            '<div class="linked-rail"><b>People Ops</b><div class="linked-chip-row">' +
+              '<button class="linked-chip fidelity-linked-button" type="button" data-nav="contracts"><span class="ic c-app">CP</span><b>Contract & pay</b><span>Open permissioned record</span><span class="go">Open →</span></button>' +
+              '<button class="linked-chip fidelity-linked-button" type="button" data-nav="leave"><span class="ic c-coach">LV</span><b>Leave balance</b><span>' +
+                esc(person.annual_leave_days == null ? 'Balance unavailable' : person.annual_leave_days + ' days annual allowance') +
+                '</span><span class="go">Open →</span></button>' +
+            '</div></div>' +
+          '</div></section>' +
+          '<section class="card"><header><div><h3>Permissions</h3><p>Current permission keys</p></div></header><div class="card-body"><div class="linked-chip-row">' +
+            permissionChips(person) +
+          '</div></div></section>' +
+        '</div>';
+    } catch (x) {
+      root.innerHTML = empty(x.message || 'The user record could not be loaded.');
+    }
+  }
+
   /* ---------------- Settings tabs ---------------- */
   function enhanceSettingsTabs() {
     if (path() !== '/admin/settings') return;
@@ -780,7 +1306,76 @@
   }
 
   /* ---------------- Event delegation ---------------- */
+  function onCaptureClick(e) {
+    var userButton = e.target.closest('[data-admin-user]');
+    if (userButton && path() === '/admin/admin-users') {
+      e.preventDefault();
+      e.stopPropagation();
+      openAdminUserDetail(userButton.dataset.adminUser);
+      return;
+    }
+
+    var showcaseButton = e.target.closest('[data-showcase]');
+    if (showcaseButton && path() === '/admin/showcase-event') {
+      state.showcaseIndex = Number(showcaseButton.dataset.showcase);
+      state.showcaseEventId = null;
+      state.showcasePlayersEventId = null;
+      state.showcasePlayers = [];
+    }
+  }
+
   function onClick(e) {
+    var crmTab = e.target.closest('[data-crm-tab]');
+    if (crmTab) {
+      e.preventDefault();
+      paintCrm(crmTab.dataset.crmTab || 'all');
+      return;
+    }
+    var crmRecord = e.target.closest('[data-crm-record]');
+    if (crmRecord) {
+      e.preventDefault();
+      crmDetail(crmRecord.dataset.crmRecord);
+      return;
+    }
+    if (e.target.closest('[data-crm-export]')) {
+      e.preventDefault();
+      (async function () {
+        try {
+          var r = await fetch(API + '/api/stratex-website/crm/export', {
+            credentials:'include',
+            headers:{Authorization:'Bearer ' + token()}
+          });
+          if (!r.ok) throw new Error('CRM export could not be created.');
+          var blob = await r.blob();
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'stratex-crm-export.xlsx';
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        } catch (x) {
+          dialog('CRM export', '<div class="state-message error">' + esc(x.message) + '</div>');
+        }
+      }());
+      return;
+    }
+    if (e.target.closest('[data-user-detail-back]')) {
+      e.preventDefault();
+      location.href = '/admin/admin-users';
+      return;
+    }
+
+    var showcaseReview = e.target.closest('[data-showcase-player-review]');
+    if (showcaseReview) {
+      e.preventDefault();
+      reviewShowcasePlayer(showcaseReview.dataset.showcasePlayerReview);
+      return;
+    }
+
+    if (path() === '/admin/showcase-event' && e.target.closest('[data-shview]')) {
+      setTimeout(enhanceShowcaseState, 0);
+    }
+
     var close = e.target.closest('[data-fidelity-close]');
     if (close) { e.preventDefault(); closeDialog(); return; }
 
@@ -845,6 +1440,45 @@
       return;
     }
 
+    if (e.target.id === 'fidelityShowcasePlayerReview') {
+      e.preventDefault();
+      var sf = new FormData(e.target);
+      var playerId = e.target.dataset.playerId;
+      var status = String(sf.get('status') || 'submitted');
+      var messageNode = document.getElementById('fidelityShowcasePlayerMsg');
+      try {
+        await apiWrite('PATCH',
+          '/api/stratex-publishing/admin/showcase-events/' + encodeURIComponent(state.showcaseEventId) +
+          '/players/' + encodeURIComponent(playerId),
+          {
+            status: status,
+            selected: status === 'selected',
+            internalNotes: String(sf.get('internalNotes') || '')
+          }
+        );
+        if (messageNode) {
+          messageNode.hidden = false;
+          messageNode.className = 'state-message success';
+          messageNode.textContent = 'Player review saved.';
+        }
+        state.showcasePlayersEventId = null;
+        state.showcasePlayers = [];
+        setTimeout(function () {
+          closeDialog();
+          var host = document.getElementById('shview');
+          if (host) host.innerHTML = '<div class="loading-state">Refreshing applications</div>';
+          renderShowcasePlayersExact();
+        }, 350);
+      } catch (x) {
+        if (messageNode) {
+          messageNode.hidden = false;
+          messageNode.className = 'state-message error';
+          messageNode.textContent = x.message;
+        }
+      }
+      return;
+    }
+
     if (e.target.id === 'fidelityPassword') {
       e.preventDefault();
       var fd = new FormData(e.target);
@@ -905,10 +1539,23 @@
     if (!root) return;
     if (state.lastPath !== p) {
       state.lastPath = p;
+      state.crmLoading = false;
+      state.crmRendered = false;
+      state.crmRows = [];
+      state.userDetailOpen = false;
+      state.showcaseView = 'overview';
+      state.showcasePlayersLoading = false;
+      state.showcasePlayersEventId = null;
+      state.showcasePlayers = [];
+      if (p !== '/admin/showcase-event') {
+        state.showcaseIndex = null;
+        state.showcaseEventId = null;
+      }
       root.removeAttribute('data-fidelity-layout');
       root.removeAttribute('data-fidelity-dashboard');
       root.removeAttribute('data-fidelity-scoutlink');
       root.removeAttribute('data-fidelity-tab');
+      root.removeAttribute('data-fidelity-user-detail');
     }
 
     if (p === '/admin') {
@@ -923,6 +1570,18 @@
       enhanceProfile();
       return;
     }
+    if (p === '/admin/crm') {
+      renderCrm();
+      return;
+    }
+    if (p === '/admin/admin-users' && root.dataset.fidelityUserDetail === '1') {
+      return;
+    }
+    if (p === '/admin/showcase-event') {
+      applyListLayout();
+      enhanceShowcaseState();
+      return;
+    }
 
     applyListLayout();
     enhanceSettingsTabs();
@@ -935,6 +1594,7 @@
   }
 
   function boot() {
+    document.addEventListener('click', onCaptureClick, true);
     document.addEventListener('click', function (e) {
       var complete = e.target.closest('[data-complete-reset]');
       if (complete) { e.preventDefault(); completeReset(complete); return; }
