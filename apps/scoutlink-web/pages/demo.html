@@ -18,20 +18,27 @@
 <meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.1.0">
 </head>
 <body>
 <a class="slv5-skip" href="#demoMain">Skip to demo choices</a>
+
 <div class="site">
-  <header class="slv5-demo-head">
-    <a class="sl-mark" href="/login">ScoutLink<small>by Stratex Analytics</small></a>
-    <div class="actions">
-      <a href="/register#plans">Plans</a>
-      <a href="/login">Sign in</a>
-      <a class="sl-btn chalk sm" href="/register">Register</a>
+  <header class="gnav">
+    <div class="gnav-left">
+      <a class="sl-mark" href="/login" aria-label="ScoutLink sign in">
+        <span class="sl-logo-mark white logo" style="width:128px;height:41px" aria-hidden="true"></span>
+        <small>by Stratex Analytics</small>
+      </a>
+    </div>
+    <div class="gnav-cta">
+      <a class="sl-btn ghostw sm" href="/demo" aria-current="page">See demo</a>
+      <a class="sl-btn volt sm" href="/register">Register</a>
+      <a class="signin" href="/login">Sign in</a>
     </div>
   </header>
+
   <main id="demoMain">
     <section class="demo-hero">
       <span class="sl-eb">Fictional product demo</span>
@@ -39,42 +46,48 @@
       <p class="sl-sub">Use isolated fictional data to explore the coach and scout workflows. Nothing changes a live customer record.</p>
     </section>
 
-    <section class="demo-band coach">
-      <div>
-        <span class="sl-eb" style="color:rgba(247,246,240,.6)">Coach demo</span>
+    <section class="demo-cards" aria-label="Demo experiences">
+      <article class="demo-card coach">
         <h2>Build the evidence.</h2>
         <p>Manage a fictional squad, add players, create fixtures, record Match Facts and review scout interest.</p>
-      </div>
-      <div class="demo-chips">
-        <span>Player profiles</span><span>Fixtures</span><span>Match Facts</span>
-        <span>Video evidence</span><span>Scout communication</span>
-      </div>
-      <button class="sl-btn chalk" type="button" data-start-demo="Coach">Start coach demo</button>
-    </section>
+        <div class="demo-chips">
+          <span>Player profiles</span>
+          <span>Fixtures</span>
+          <span>Match Facts</span>
+          <span>Video evidence</span>
+          <span>Scout communication</span>
+        </div>
+        <button class="sl-btn volt" type="button" data-start-demo="Coach">Start coach demo</button>
+      </article>
 
-    <section class="demo-band scout">
-      <div>
-        <span class="sl-eb" style="color:rgba(247,246,240,.6)">Scout demo</span>
+      <article class="demo-card scout">
         <h2>Find the fit.</h2>
         <p>Search and compare fictional players, review compatibility and move decisions through a recruitment pipeline.</p>
-      </div>
-      <div class="demo-chips">
-        <span>Player search</span><span>Comparison</span><span>Compatibility</span>
-        <span>Predictions</span><span>Pipeline</span>
-      </div>
-      <button class="sl-btn chalk" type="button" data-start-demo="Scout">Start scout demo</button>
+        <div class="demo-chips">
+          <span>Player search</span>
+          <span>Comparison</span>
+          <span>Compatibility</span>
+          <span>Predictions</span>
+          <span>Pipeline</span>
+        </div>
+        <button class="sl-btn volt" type="button" data-start-demo="Scout">Start scout demo</button>
+      </article>
     </section>
   </main>
+
   <footer class="sl-foot">
-    <a class="sl-mark" href="/login">ScoutLink</a>
+    <a class="sl-mark" href="/login" aria-label="ScoutLink">
+      <span class="sl-logo-mark white logo" style="width:100px;height:32px" aria-hidden="true"></span>
+    </a>
     <div class="links">
-      <a href="/register">Register</a>
+      <a href="/demo">Demo</a>
       <a href="https://www.stratexanalytics.co.uk/trust">Safeguarding</a>
       <a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a>
     </div>
     <span>A Stratex Analytics product</span>
   </footer>
 </div>
+
 <script src="/js/demo-session-boundary-v1.js?v=20260730-1"></script>
 <script src="/js/main.js?v=20260730-5"></script>
 <script>
@@ -86,8 +99,10 @@
         alert('The demo could not be started. Please reload the page.');
         return;
       }
+
       button.disabled = true;
       button.textContent = 'Opening ' + role.toLowerCase() + ' demo…';
+
       Promise.resolve(window.startPublicDemo(role)).catch(function () {
         button.disabled = false;
         button.textContent = role === 'Scout' ? 'Start scout demo' : 'Start coach demo';
