@@ -17,16 +17,26 @@
 <meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.1.0">
 </head>
 <body>
 <a class="slv5-skip" href="#registerMain">Skip to registration choices</a>
+
 <div class="site">
-  <header class="roomband">
-    <a class="sl-mark" href="/login">ScoutLink<small style="opacity:.5">by Stratex Analytics</small></a>
-    <span class="tag">Registration</span>
-    <a class="sl-btn ghostw sm" href="/login">Sign in</a>
+  <header class="gnav">
+    <div class="gnav-left">
+      <a class="sl-mark" href="/login" aria-label="ScoutLink sign in">
+        <span class="sl-logo-mark white logo" style="width:128px;height:41px" aria-hidden="true"></span>
+        <small>by Stratex Analytics</small>
+      </a>
+      <span class="tag">Registration</span>
+    </div>
+    <div class="gnav-cta">
+      <a class="sl-btn ghostw sm" href="/demo">See demo</a>
+      <a class="sl-btn volt sm" href="/register" aria-current="page">Register</a>
+      <a class="signin" href="/login">Sign in</a>
+    </div>
   </header>
 
   <main id="registerMain" class="register-shell">
@@ -35,68 +45,104 @@
       <h1 class="sl-h">Choose how you'll<br>use ScoutLink.</h1>
     </header>
 
-    <section class="register-lanes">
+    <section class="register-lanes" aria-label="ScoutLink account types">
       <article class="register-lane coach">
         <span class="chipl">Coach</span>
         <h2>Build the evidence.</h2>
         <p>A team workspace for squads, fixtures, Match Facts and approved video. Evidence that follows your players.</p>
         <p class="register-price">Free for grassroots coaches · £0</p>
-        <a class="sl-btn pitch full center" href="/register/coach">Register as a coach</a>
+        <a class="sl-btn volt full center" href="/register/coach">Register as a coach</a>
       </article>
 
       <article class="register-lane scout">
-        <span class="chip">Scout</span>
+        <span class="chipl">Scout</span>
         <h2>Search with permission.</h2>
         <p>Reviewed access to player search, comparison, compatibility and pipelines. Identity-checked — it's youth football.</p>
         <p class="register-price">Plans from £599/year · payment after approval</p>
-        <a class="sl-btn chalk full center" href="/register/scout">Apply for scout access</a>
+        <a class="sl-btn volt full center" href="/register/scout">Apply for scout access</a>
       </article>
     </section>
 
     <section class="plans-block" id="plans">
       <span class="sl-eb">Scout plans — chosen during the application, paid only after approval</span>
 
-      <article class="planrow">
-        <span class="radio"></span>
-        <div>
+      <div class="plancards">
+        <button class="plancard" type="button" data-register-plan="Core" aria-label="Start a Scout application with Core selected">
+          <span class="seats-line">1 seat</span>
           <h4>Core</h4>
-          <p class="who">£599/year · £69/month</p>
-          <p class="fts">U7 to U16 player database search · player profile access · compatibility scoring · shortlisting · basic pipeline · 20 exports/year · 60 predictions/year · 30 coach-mediated interest requests/year</p>
-        </div>
-        <span class="seat">1 seat</span>
-      </article>
+          <div class="price-big">£599/year</div>
+          <div class="price-monthly">£69/month</div>
+          <span class="per-seat-chip">£599 / seat / year</span>
+          <ul>
+            <li>U7 to U16 player database search</li>
+            <li>player profile access</li>
+            <li>compatibility scoring</li>
+            <li>shortlisting</li>
+            <li>basic pipeline.</li>
+            <li>20 exports/year</li>
+            <li>60 predictions/year</li>
+            <li>30 coach-mediated interest requests/year</li>
+          </ul>
+          <div class="radio-row"><span class="radio"></span><span>Select Core</span></div>
+        </button>
 
-      <article class="planrow on">
-        <span class="radio"></span>
-        <div>
+        <button class="plancard popular on" type="button" data-register-plan="Plus" aria-label="Start a Scout application with Plus selected">
+          <span class="badge-pop">Most teams pick this</span>
+          <span class="seats-line">5 seats</span>
           <h4>Plus</h4>
-          <p class="who">£1,999/year · £219/month</p>
-          <p class="fts">Everything in Core · shared team usage · stronger team workflow · more player dossier exports · more prediction usage · 100 exports/year · 300 predictions/year · 120 coach-mediated interest requests/year</p>
-        </div>
-        <span class="seat">5 seats</span>
-      </article>
+          <div class="price-big">£1,999/year</div>
+          <div class="price-monthly">£219/month</div>
+          <span class="per-seat-chip">£400 / seat / year</span>
+          <ul>
+            <li>Everything in Core</li>
+            <li>shared team usage</li>
+            <li>stronger team workflow</li>
+            <li>more player dossier exports</li>
+            <li>more prediction usage.</li>
+            <li>100 exports/year</li>
+            <li>300 predictions/year</li>
+            <li>120 coach-mediated interest requests/year</li>
+          </ul>
+          <div class="radio-row"><span class="radio"></span><span>Select Plus</span></div>
+        </button>
 
-      <article class="planrow">
-        <span class="radio"></span>
-        <div>
+        <button class="plancard" type="button" data-register-plan="Elite" aria-label="Start a Scout application with Elite selected">
+          <span class="seats-line">10 seats</span>
           <h4>Elite</h4>
-          <p class="who">£4,999/year · £549/month</p>
-          <p class="fts">Everything in Plus · advanced recruitment workflow · team reporting · stronger admin controls · priority onboarding · higher usage limits · 300 exports/year · 900 predictions/year · 300 coach-mediated interest requests/year</p>
-        </div>
-        <span class="seat">10 seats</span>
-      </article>
+          <div class="price-big">£4,999/year</div>
+          <div class="price-monthly">£549/month</div>
+          <span class="per-seat-chip">£500 / seat / year</span>
+          <ul>
+            <li>Everything in Plus</li>
+            <li>advanced recruitment workflow</li>
+            <li>team reporting</li>
+            <li>stronger admin controls</li>
+            <li>priority onboarding</li>
+            <li>higher usage limits.</li>
+            <li>300 exports/year</li>
+            <li>900 predictions/year</li>
+            <li>300 coach-mediated interest requests/year</li>
+          </ul>
+          <div class="radio-row"><span class="radio"></span><span>Select Elite</span></div>
+        </button>
 
-      <article class="planrow">
-        <span class="radio"></span>
-        <div>
+        <button class="plancard" type="button" data-register-plan="Enterprise" aria-label="Start a Scout application with Enterprise selected">
+          <span class="seats-line">Custom seats</span>
           <h4>Enterprise</h4>
-          <p class="who">From £10,000/year · monthly pricing custom</p>
-          <p class="fts">Custom seats · custom limits · organisation-level onboarding · custom reporting · procurement support · bespoke account management · custom exports · custom predictions · custom coach-mediated interest request limits</p>
-        </div>
-        <span class="seat">Custom seats</span>
-      </article>
+          <div class="price-big">From £10,000/year</div>
+          <div class="price-monthly">Custom</div>
+          <ul>
+            <li>Custom limits</li>
+            <li>organisation-level onboarding</li>
+            <li>custom reporting</li>
+            <li>procurement support</li>
+            <li>bespoke account management.</li>
+          </ul>
+          <div class="radio-row"><span class="radio"></span><span>Select Enterprise</span></div>
+        </button>
+      </div>
 
-      <p class="sl-help" style="margin-top:12px">
+      <p class="sl-help" style="margin-top:20px">
         Plan selection is a preference. The price, seat allowance and plan benefits shown above are the current standard ScoutLink plans; payment begins only after access has been reviewed and approved.
         Youth-player data is never an open directory —
         <a class="parent-link" href="https://www.stratexanalytics.co.uk/trust">how we protect players</a>.
@@ -107,7 +153,9 @@
   </main>
 
   <footer class="sl-foot">
-    <a class="sl-mark" href="/login">ScoutLink</a>
+    <a class="sl-mark" href="/login" aria-label="ScoutLink">
+      <span class="sl-logo-mark white logo" style="width:100px;height:32px" aria-hidden="true"></span>
+    </a>
     <div class="links">
       <a href="/demo">Demo</a>
       <a href="https://www.stratexanalytics.co.uk/trust">Safeguarding</a>
@@ -116,6 +164,17 @@
     <span>A Stratex Analytics product</span>
   </footer>
 </div>
+
+<script>
+(function () {
+  document.querySelectorAll('[data-register-plan]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var plan = button.getAttribute('data-register-plan') || 'Plus';
+      window.location.href = '/register/scout?plan=' + encodeURIComponent(plan);
+    });
+  });
+}());
+</script>
 <script src="/js/heap-analytics.js"></script>
 </body>
 </html>
