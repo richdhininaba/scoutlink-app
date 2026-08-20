@@ -12,19 +12,29 @@
 <meta name="theme-color" content="#06201A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.0.0">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/scoutlink-public-v5.css?v=5.1.0">
 </head>
 <body>
 <a class="slv5-skip" href="#loginPanel">Skip to sign in</a>
-<div class="site door">
-  <header class="door-top">
-    <a class="sl-mark" href="/login">ScoutLink<small>by Stratex Analytics</small></a>
-    <a href="/demo">See the demo</a>
+
+<div class="site">
+  <header class="gnav">
+    <div class="gnav-left">
+      <a class="sl-mark" href="/login" aria-label="ScoutLink sign in">
+        <span class="sl-logo-mark white logo" style="width:128px;height:41px" aria-hidden="true"></span>
+        <small>by Stratex Analytics</small>
+      </a>
+    </div>
+    <div class="gnav-cta">
+      <a class="sl-btn ghostw sm" href="/demo">See demo</a>
+      <a class="sl-btn volt sm" href="/register">Register</a>
+      <a class="signin" href="/login" aria-current="page">Sign in</a>
+    </div>
   </header>
 
-  <main class="door-mid">
-    <section class="door-panel" id="loginPanel" aria-live="polite">
+  <main class="login-wrap">
+    <section class="login-card" id="loginPanel" aria-live="polite">
       <div class="sl-message err" id="loginError" role="alert" aria-live="assertive"></div>
       <div class="sl-message ok" id="loginOk" role="status"></div>
 
@@ -32,9 +42,10 @@
         <span class="sl-eb">Sign in</span>
         <h1 class="door-h">Welcome back.</h1>
         <p class="door-sub">Your workspace is where you left it.</p>
+
         <form id="passwordLoginForm" novalidate>
           <div class="sl-field">
-            <label class="sl-lab" for="email">Email address</label>
+            <label class="sl-lab" for="email">Email address <em>Required</em></label>
             <input class="sl-in" id="email" type="email" autocomplete="email" required>
           </div>
           <div class="sl-field">
@@ -44,17 +55,15 @@
               <button class="password-toggle" type="button" data-toggle-password="password">Show</button>
             </div>
           </div>
-          <button class="sl-btn chalk full" id="loginBtn" type="submit">
+          <button class="sl-btn volt full" id="loginBtn" type="submit">
             <span>Sign in</span><i class="sl-spinner" aria-hidden="true"></i>
           </button>
         </form>
+
         <div class="door-links">
-          <a href="#reset" data-login-link="reset">Forgot password?</a><span>·</span>
+          <a href="#reset" data-login-link="reset">Forgot password?</a>
+          <span>·</span>
           <a href="#code" data-login-link="code">Use a login code</a>
-        </div>
-        <div class="door-div">New to ScoutLink</div>
-        <div class="door-links" style="margin-top:0">
-          <a href="/register">Create an account</a><span>·</span><a href="/demo">See it working first</a>
         </div>
       </div>
 
@@ -64,14 +73,14 @@
         <p class="door-sub">Enter the six characters from your approval or invitation email.</p>
         <form id="codeLoginForm" novalidate>
           <div class="sl-field">
-            <label class="sl-lab" for="codeEmail">Email address</label>
+            <label class="sl-lab" for="codeEmail">Email address <em>Required</em></label>
             <input class="sl-in" id="codeEmail" type="email" autocomplete="email" required>
           </div>
           <div class="sl-field">
-            <label class="sl-lab" for="loginCode">Login code</label>
+            <label class="sl-lab" for="loginCode">Login code <em>Required</em></label>
             <input class="sl-in sl-code" id="loginCode" type="text" maxlength="6" autocomplete="one-time-code" autocapitalize="characters" required>
           </div>
-          <button class="sl-btn chalk full" id="codeBtn" type="submit">
+          <button class="sl-btn volt full" id="codeBtn" type="submit">
             <span>Continue</span><i class="sl-spinner" aria-hidden="true"></i>
           </button>
         </form>
@@ -84,14 +93,14 @@
         <p class="door-sub">Enter your email and we'll send a six-character reset code.</p>
         <form id="resetRequestForm" novalidate>
           <div class="sl-field">
-            <label class="sl-lab" for="resetRequestEmail">Email address</label>
+            <label class="sl-lab" for="resetRequestEmail">Email address <em>Required</em></label>
             <input class="sl-in" id="resetRequestEmail" type="email" autocomplete="email" required>
           </div>
-          <button class="sl-btn chalk full" id="resetRequestBtn" type="submit">
+          <button class="sl-btn volt full" id="resetRequestBtn" type="submit">
             <span>Send reset code</span><i class="sl-spinner" aria-hidden="true"></i>
           </button>
         </form>
-        <div class="door-links"><a href="/login" data-login-link="password">Back to sign-in</a></div>
+        <div class="door-links"><a href="/login" data-login-link="password">Back to sign in</a></div>
       </div>
 
       <div class="door-view" data-login-view="reset-confirm">
@@ -100,11 +109,11 @@
         <p class="door-sub">Use the code from your email and a password of eight characters or more.</p>
         <form id="resetConfirmForm" novalidate>
           <div class="sl-field">
-            <label class="sl-lab" for="resetEmail">Email address</label>
+            <label class="sl-lab" for="resetEmail">Email address <em>Required</em></label>
             <input class="sl-in" id="resetEmail" type="email" autocomplete="email" required>
           </div>
           <div class="sl-field">
-            <label class="sl-lab" for="resetCode">Reset code</label>
+            <label class="sl-lab" for="resetCode">Reset code <em>Required</em></label>
             <input class="sl-in sl-code" id="resetCode" type="text" maxlength="6" autocomplete="one-time-code" autocapitalize="characters" required>
           </div>
           <div class="sl-field">
@@ -115,18 +124,22 @@
             </div>
           </div>
           <div class="sl-field">
-            <label class="sl-lab" for="confirmResetPassword">Confirm password</label>
+            <label class="sl-lab" for="confirmResetPassword">Confirm password <em>Required</em></label>
             <div class="password-wrap">
               <input class="sl-in" id="confirmResetPassword" type="password" autocomplete="new-password" required>
               <button class="password-toggle" type="button" data-toggle-password="confirmResetPassword">Show</button>
             </div>
           </div>
           <div id="resetRoleChooser" class="activation-role-grid" hidden></div>
-          <button class="sl-btn chalk full" id="resetConfirmBtn" type="submit">
+          <button class="sl-btn volt full" id="resetConfirmBtn" type="submit">
             <span>Set password &amp; sign in</span><i class="sl-spinner" aria-hidden="true"></i>
           </button>
         </form>
-        <div class="door-links"><a href="#reset" data-login-link="reset">Resend code</a><span>·</span><a href="/login" data-login-link="password">Back</a></div>
+        <div class="door-links">
+          <a href="#reset" data-login-link="reset">Resend code</a>
+          <span>·</span>
+          <a href="/login" data-login-link="password">Back</a>
+        </div>
       </div>
 
       <div class="door-view" data-login-view="role">
@@ -137,17 +150,31 @@
         <div class="door-links"><a href="/login" id="cancelRoleChoice">Back</a></div>
       </div>
     </section>
+
+    <aside class="new-here">
+      <span class="sl-eb">New to ScoutLink</span>
+      <h2>Free for coaches. Reviewed for scouts.</h2>
+      <p>See it working first, or start whichever application fits you.</p>
+      <div class="new-here-ctas">
+        <a class="sl-btn ghostw" href="/demo">See the demo</a>
+        <a class="sl-btn volt" href="/register">Register</a>
+      </div>
+    </aside>
   </main>
 
-  <footer class="door-foot">
-    <span>ScoutLink · A Stratex Analytics product</span>
-    <div>
+  <footer class="sl-foot">
+    <a class="sl-mark" href="/login" aria-label="ScoutLink">
+      <span class="sl-logo-mark white logo" style="width:100px;height:32px" aria-hidden="true"></span>
+    </a>
+    <div class="links">
+      <a href="/demo">Demo</a>
       <a href="https://www.stratexanalytics.co.uk/trust">Safeguarding</a>
       <a href="https://www.stratexanalytics.co.uk/privacy-policy">Privacy</a>
-      <a href="https://www.stratexanalytics.co.uk/terms">Terms</a>
     </div>
+    <span>A Stratex Analytics product</span>
   </footer>
 </div>
+
 <script src="/js/login-v5.js?v=5.0.3"></script>
 <script src="/js/heap-analytics.js"></script>
 </body>
