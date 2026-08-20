@@ -8,6 +8,11 @@
       "permanent": true
     },
     {
+      "source": "/demo",
+      "destination": "/public-demo",
+      "permanent": false
+    },
+    {
       "source": "/coaches",
       "destination": "/register",
       "permanent": true
@@ -69,12 +74,168 @@
       "destination": "https://scoutlink-api.vercel.app/api/:path*"
     },
     {
-      "source": "/demo",
+      "source": "/public-demo",
       "destination": "/pages/demo"
     },
     {
-      "source": "/public-demo",
-      "destination": "/pages/demo"
+      "source": "/public-demo/coach/dashboard",
+      "destination": "/pages/coach-dashboard"
+    },
+    {
+      "source": "/public-demo/coach/onboarding",
+      "destination": "/pages/coach-onboarding"
+    },
+    {
+      "source": "/public-demo/coach/my-players",
+      "destination": "/pages/coach-my-players"
+    },
+    {
+      "source": "/public-demo/coach/usage-requests",
+      "destination": "/pages/coach-usage-requests"
+    },
+    {
+      "source": "/public-demo/coach/add-player",
+      "destination": "/pages/add-player"
+    },
+    {
+      "source": "/public-demo/coach/bulk-add-players",
+      "destination": "/pages/bulk-add-players"
+    },
+    {
+      "source": "/public-demo/coach/match-facts",
+      "destination": "/pages/match-facts"
+    },
+    {
+      "source": "/public-demo/coach/fixtures",
+      "destination": "/pages/coach-fixtures"
+    },
+    {
+      "source": "/public-demo/coach/video-reels",
+      "destination": "/pages/coach-video-reels"
+    },
+    {
+      "source": "/public-demo/coach/chat",
+      "destination": "/pages/coach-chat"
+    },
+    {
+      "source": "/public-demo/coach/notifications",
+      "destination": "/pages/coach-notifications"
+    },
+    {
+      "source": "/public-demo/coach/report-a-concern",
+      "destination": "/pages/coach-report-concern"
+    },
+    {
+      "source": "/public-demo/coach/settings",
+      "destination": "/pages/coach-settings"
+    },
+    {
+      "source": "/public-demo/scout/dashboard",
+      "destination": "/pages/scout-dashboard"
+    },
+    {
+      "source": "/public-demo/scout/onboarding",
+      "destination": "/pages/scout-onboarding"
+    },
+    {
+      "source": "/public-demo/scout/player-search",
+      "destination": "/pages/player-search"
+    },
+    {
+      "source": "/public-demo/scout/pipeline",
+      "destination": "/pages/scout-pipeline"
+    },
+    {
+      "source": "/public-demo/scout/rankings",
+      "destination": "/pages/scout-rankings"
+    },
+    {
+      "source": "/public-demo/scout/fixtures",
+      "destination": "/pages/scout-fixtures"
+    },
+    {
+      "source": "/public-demo/scout/predictions",
+      "destination": "/pages/scout-predictions"
+    },
+    {
+      "source": "/public-demo/scout/usage-requests",
+      "destination": "/pages/scout-usage-requests"
+    },
+    {
+      "source": "/public-demo/scout/exports",
+      "destination": "/pages/scout-exports"
+    },
+    {
+      "source": "/public-demo/scout/compare-players",
+      "destination": "/pages/compare-players"
+    },
+    {
+      "source": "/public-demo/scout/setup",
+      "destination": "/pages/scout-setup"
+    },
+    {
+      "source": "/public-demo/scout/events",
+      "destination": "/pages/scout-events"
+    },
+    {
+      "source": "/public-demo/scout/chat",
+      "destination": "/pages/scout-chat"
+    },
+    {
+      "source": "/public-demo/scout/notifications",
+      "destination": "/pages/scout-notifications"
+    },
+    {
+      "source": "/public-demo/scout/report-a-concern",
+      "destination": "/pages/scout-report-concern"
+    },
+    {
+      "source": "/public-demo/scout/settings",
+      "destination": "/pages/scout-settings"
+    },
+    {
+      "source": "/public-demo/scout/preferences",
+      "destination": "/pages/scout-preferences"
+    },
+    {
+      "source": "/public-demo/coach/player/profile",
+      "destination": "/pages/player-profile"
+    },
+    {
+      "source": "/public-demo/coach/player/edit-profile",
+      "destination": "/pages/player-profile-edit"
+    },
+    {
+      "source": "/public-demo/coach/player/video-reels",
+      "destination": "/pages/player-video-reels"
+    },
+    {
+      "source": "/public-demo/coach/player/notifications",
+      "destination": "/pages/player-notifications"
+    },
+    {
+      "source": "/public-demo/coach/player/settings",
+      "destination": "/pages/player-settings"
+    },
+    {
+      "source": "/public-demo/scout/player/profile",
+      "destination": "/pages/player-profile"
+    },
+    {
+      "source": "/public-demo/scout/player/edit-profile",
+      "destination": "/pages/player-profile-edit"
+    },
+    {
+      "source": "/public-demo/scout/player/video-reels",
+      "destination": "/pages/player-video-reels"
+    },
+    {
+      "source": "/public-demo/scout/player/notifications",
+      "destination": "/pages/player-notifications"
+    },
+    {
+      "source": "/public-demo/scout/player/settings",
+      "destination": "/pages/player-settings"
     },
     {
       "source": "/login",
