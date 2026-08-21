@@ -114,12 +114,12 @@
      * source of the profile render/fetch race.
      */
     await addScript(
-      '/js/scout-experience-v9.js?v=20260821-bugsweep-2',
+      '/js/scout-experience-v9.js?v=20260821-placeholder-root-3',
       'scoutExperienceV9ProfileScript'
     );
 
     addScript(
-      '/js/heap-analytics.js?v=20260821-bugsweep-2',
+      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
@@ -160,7 +160,7 @@
     );
 
     addScript(
-      '/js/heap-analytics.js?v=20260821-bugsweep-2',
+      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
@@ -178,7 +178,7 @@
     );
 
     addScript(
-      '/js/heap-analytics.js?v=20260821-bugsweep-2',
+      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
