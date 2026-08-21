@@ -248,6 +248,19 @@ app.use(
   require('./routes/scoutIntelligenceV64')
 );
 
+/*
+ * Scout Desk/Field V9 repair facade.
+ *
+ * This route is intentionally separate from the legacy Scout routes. It gives
+ * the exact V7/V8 visual experience one stable API surface for profile context,
+ * coherent usage, seats/invitations, event planning and saved searches without
+ * changing the contracts still used by older ScoutLink surfaces.
+ */
+app.use(
+  '/api/scout-experience-v9',
+  require('./routes/scoutExperienceV9')
+);
+
 app.use(
   '/api/scout-workflow-actions',
   require('./routes/scoutWorkflowNotifications')
