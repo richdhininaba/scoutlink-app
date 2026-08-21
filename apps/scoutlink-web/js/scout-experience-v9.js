@@ -218,16 +218,7 @@
     });
     return exact||partial;
   }
-  function proxy(label,alternatives){
-    var labels=[label].concat(alternatives||[]);
-    for(var i=0;i<labels.length;i++){
-      var el=legacyControlByLabel(labels[i]);
-      if(el){
-        try{el.click();return true;}catch(_){}
-      }
-    }
-    return false;
-  }
+
   function routeFromPath(){
     var p=location.pathname.replace(/^\/public-demo/,'');
     if(/\/player\/profile\/?$/i.test(p)||p==='/player/profile')return'profile';
@@ -483,7 +474,7 @@
     var card=template.closest('.card'),body=card.querySelector('.card-b');
     var posSel=labelSelect(root,'Position'),ageSel=labelSelect(root,'Age group'),regionSel=labelSelect(root,'Region'),availabilitySel=labelSelect(root,'Availability'),footSel=labelSelect(root,'Foot'),minSel=labelSelect(root,'Min. overall');
     try{
-      var savedFilters=JSON.parse(sessionStorage.getItem('sl_scout_v8_search_filters')||'{}')||{};
+      var savedFilters=JSON.parse(sessionStorage.getItem('sl_scout_v9_search_filters')||'{}')||{};
       [[posSel,'position'],[ageSel,'age group'],[regionSel,'region'],[availabilitySel,'availability'],[footSel,'foot'],[minSel,'min. overall']].forEach(function(pair){
         if(pair[0]&&savedFilters[pair[1]]&&Array.prototype.some.call(pair[0].options,function(o){return o.value===savedFilters[pair[1]];}))pair[0].value=savedFilters[pair[1]];
       });
@@ -981,7 +972,7 @@
     }else if(view==='onboarding3'){
       var setup=setupPayload(root);Object.assign(S.onboarding,setup);
     }
-    try{sessionStorage.setItem('sl_scout_v8_onboarding',JSON.stringify(S.onboarding));}catch(_){}
+    try{sessionStorage.setItem('sl_scout_v9_onboarding',JSON.stringify(S.onboarding));}catch(_){}
   }
   async function completeOnboarding(root){
     captureOnboarding('onboarding4',root);
@@ -1017,8 +1008,17 @@
       hydrate(S.view);
       return;
     }
-    if(proxy('Add to pipeline',['Express interest','Add player'])){toast('Adding '+playerName(p)+' to your pipeline…');setTimeout(function(){S.pipeline=[];loadPipeline(true).then(function(){hydrate(S.view);});},900);return;}
-    toast('Open the player profile to add this player to the pipeline.',true);
+    try{
+      var response=await request('POST','/api/scout-workflow-actions/interest',{playerId:p.id,interestLevel:8});
+      S.pipeline=[];
+      await loadPipeline(true);
+      S.usage=null;
+      await loadUsage(true).catch(function(){});
+      toast(response.message||playerName(p)+' added to your pipeline.');
+      render(S.view,true);
+    }catch(error){
+      toast(error.message||'The player could not be added to your pipeline.',true);
+    }
   }
   async function savePipelineStage(root){
     if(!S.activePipeline)return;
@@ -1093,6 +1093,40 @@
       render(insufficient?'predictionsInsufficient':'predictionsResult');
     }catch(e){toast(e.message||'Prediction could not be run.',true);}
   }
+  async function savePredictionToPlayerNotes(){
+    var playerId=S.predictionPlayerId;
+    var p=S.players.find(function(x){return String(x.id)===String(playerId);})||{};
+    if(!playerId){toast('Choose a player first.',true);return;}
+    if(!S.predictionResult||!Object.keys(S.predictionResult).length){toast('Run a prediction before saving it to player notes.',true);return;}
+    if(isDemo()){toast('Prediction note saved for this demo session.');return;}
+    var score=predictionScore(S.predictionResult);
+    var summary=S.predictionResult.summary||S.predictionResult.recommendation||'Prediction completed.';
+    var content=[
+      'ScoutLink prediction: '+S.predictionType,
+      'Player: '+playerName(p),
+      score==null?'Score: not produced':'Score: '+Math.round(score)+'/100',
+      summary
+    ].filter(Boolean).join('\n');
+    try{
+      var response=await request(
+        'POST',
+        '/api/scout-workflow-actions/players/'+encodeURIComponent(playerId)+'/workflow',
+        {
+          entryType:'note',
+          content:content,
+          metadata:{
+            source:'scoutlink_prediction',
+            predictionType:S.predictionType,
+            predictionResult:S.predictionResult
+          }
+        }
+      );
+      toast(response.message||'Prediction saved to player notes.');
+    }catch(error){
+      toast(error.message||'Prediction could not be saved to player notes.',true);
+    }
+  }
+
   function exportPrediction(){
     var p=S.players.find(function(x){return String(x.id)===String(S.predictionPlayerId);})||{};
     var payload={player:playerName(p),predictionType:S.predictionType,generatedAt:new Date().toISOString(),result:S.predictionResult};
@@ -1121,28 +1155,30 @@
   }
   async function markNotificationsRead(){
     if(isDemo()){
-      try{sessionStorage.setItem('sl_scout_v8_demo_notifications_read','true');}catch(_){}
+      try{sessionStorage.setItem('sl_scout_v9_demo_notifications_read','true');}catch(_){}
       toast('Notifications marked as read.');return;
     }
-    try{await request('POST','/api/notifications/mark-all-read',{});}catch(e){if(!proxy('Mark all as read',['Mark all read']))throw e;}
+    await request('PATCH','/api/notifications/mark-all-read',{});
+    S.notifications.forEach(function(notification){notification.is_read=true;});
+    S.notificationTab='new';
     toast('Notifications marked as read.');
+    render('notifications',true);
   }
   async function sendChat(root){
     var ta=root.querySelector('textarea'),body=ta&&ta.value.trim();
     if(!body){toast('Write a message first.',true);return;}
     if(isDemo()){
       var list=[];
-      try{list=JSON.parse(sessionStorage.getItem('sl_scout_v8_demo_chat_messages')||'[]')||[];}catch(_){}
+      try{list=JSON.parse(sessionStorage.getItem('sl_scout_v9_demo_chat_messages')||'[]')||[];}catch(_){}
       list.push({body:body,sent_at:new Date().toISOString(),direction:'out'});
-      try{sessionStorage.setItem('sl_scout_v8_demo_chat_messages',JSON.stringify(list));}catch(_){}
+      try{sessionStorage.setItem('sl_scout_v9_demo_chat_messages',JSON.stringify(list));}catch(_){}
       ta.value='';toast('Demo message sent for this session.');return;
     }
     if(S.activeThread&&S.activeThread.id){
       await request('POST','/api/scout-intelligence-v64/chat/threads/'+encodeURIComponent(S.activeThread.id)+'/messages',{body:body});
       ta.value='';await loadMessages();hydrateChat(root);toast('Message sent.');return;
     }
-    if(proxy('Send')){ta.value='';return;}
-    toast('Open a conversation first.',true);
+    toast('Open a permitted pipeline conversation first.',true);
   }
 
   function visibleButtonAction(root,button){
@@ -1175,7 +1211,7 @@
     if(n==='continue' && S.view==='predictionsChoose')return function(){if(!S.predictionType){toast('Choose a prediction type.',true);return;}render('predictionsPosition');};
     if(n==='run prediction')return function(){runPrediction(root);};
     if(n==='run another')return function(){S.predictionResult=null;render('predictionsChoose');};
-    if(n==='save to player notes')return function(){if(!proxy('Save to player notes',['Save prediction']))toast('Prediction saved in prediction history.');};
+    if(n==='save to player notes')return function(){savePredictionToPlayerNotes();};
     if(n==='export prediction')return exportPrediction;
     if(n==='message the coach'||n==='message coach')return function(){go('/scout/chat'+(S.predictionPlayerId?'?player='+encodeURIComponent(S.predictionPlayerId):''));};
     if(n==='compare')return function(){runCompare(root);};
@@ -1185,7 +1221,7 @@
     if(n==='new export')return function(){render('exportNew');};
     if(n==='download')return function(){
       if(isDemo()){download('ScoutLink-export-history-demo.csv','text/csv;charset=utf-8','Export,Status\nScoutLink demo export,Ready');toast('Demo export downloaded.');}
-      else if(!proxy('Download'))toast('Open Exports again to refresh the download link.',true);
+      else toast('This export does not have a downloadable file yet. Refresh Export history after it finishes generating.',true);
     };
     if(n==='generate export')return function(){generateExport(root).catch(function(e){toast(e.message,true);});};
     if(n==='mark all as read')return function(){markNotificationsRead().catch(function(e){toast(e.message,true);});};
@@ -1194,8 +1230,8 @@
     if(n==='save compatibility setup')return function(){saveSetup(root).catch(function(e){toast(e.message,true);});};
     if(n==='details')return function(){go('/scout/events/showcase-bluewater');};
     if(n.indexOf('back to events')>=0)return function(){go('/scout/events');};
-    if(n==='add to calendar'||n==='plan'||n==='notes'||n==='open')return function(){if(!proxy(label))toast(label+' opened.');};
-    if(n==='invite scout'||n==='remove'||n==='update password'||n==='apply'||n==='edit'||n==='set default'||n==='create saved search'||n==='submit report')return function(){if(!proxy(label))toast(label+' is available from the connected Scout workflow.');};
+    if(n==='add to calendar'||n==='plan'||n==='notes'||n==='open')return function(){toast('Event details are still loading. Open the event and try again.',true);};
+    if(n==='invite scout'||n==='remove'||n==='update password'||n==='apply'||n==='edit'||n==='set default'||n==='create saved search'||n==='submit report')return function(){toast(label+' is not available until the current page data has finished loading.',true);};
     if(n.indexOf('player search')===0)return function(){go('/scout/player-search');};
     if(n.indexOf('pipeline')===0)return function(){go('/scout/pipeline');};
     if(n.indexOf('predictions')===0)return function(){go('/scout/predictions');};
@@ -1204,7 +1240,7 @@
     if(n.indexOf('exports')===0)return function(){go('/scout/exports');};
     if(n.indexOf('chat')===0)return function(){go('/scout/chat');};
     if(n.indexOf('usage requests')===0)return function(){go('/scout/usage-requests');};
-    if(n==='add to pipeline')return function(){var id=button.dataset.addPipeline||query().get('id');if(id)addPipeline(id);else if(!proxy('Add to pipeline'))toast('Choose a player first.',true);};
+    if(n==='add to pipeline')return function(){var id=button.dataset.addPipeline||query().get('id');if(id)addPipeline(id);else toast('Choose a player first.',true);};
     if(n==='run a prediction')return function(){var id=query().get('id');go('/scout/predictions'+(id?'?player='+encodeURIComponent(id):''));};
     if(n==='update stage')return function(){
       var id=query().get('id'),row=S.pipeline.find(function(x){return String(x.player_id)===String(id);});
@@ -1271,7 +1307,7 @@
         if(S.view==='searchFilters'){
           var values={};
           root.querySelectorAll('.field').forEach(function(f){var l=f.querySelector('label'),s=f.querySelector('select,input');if(l&&s)values[norm(l.textContent)]=s.value;});
-          try{sessionStorage.setItem('sl_scout_v8_search_filters',JSON.stringify(values));}catch(_){}
+          try{sessionStorage.setItem('sl_scout_v9_search_filters',JSON.stringify(values));}catch(_){}
           render('search');return;
         }
         hydrateSearch(root);
@@ -1420,7 +1456,7 @@
       foot:row.foot||'Any',
       'min. overall':row.minOverall?String(row.minOverall):''
     };
-    try{sessionStorage.setItem('sl_scout_v8_search_filters',JSON.stringify(payload));}catch(_){}
+    try{sessionStorage.setItem('sl_scout_v9_search_filters',JSON.stringify(payload));}catch(_){}
   }
 
   loadProfile=async function(force){
@@ -1790,7 +1826,7 @@
     v9RuntimeModal(existing.name?'Edit saved search':'Create saved search',html,function(modal,close){modal.querySelector('[data-v9-ss-avail]').value=existing.availability||'Any';modal.querySelector('[data-v9-ss-foot]').value=existing.foot||'Any';modal.querySelector('[data-v9-save-search]').onclick=async function(){var pref=v9Discovery();var row={id:existing.id||'saved-'+Date.now(),name:modal.querySelector('[data-v9-ss-name]').value.trim(),positions:modal.querySelector('[data-v9-ss-positions]').value.split(',').map(function(x){return x.trim().toUpperCase();}).filter(Boolean),ageGroups:modal.querySelector('[data-v9-ss-ages]').value.split(',').map(function(x){return x.trim().toUpperCase();}).filter(Boolean),region:modal.querySelector('[data-v9-ss-region]').value.trim(),availability:modal.querySelector('[data-v9-ss-avail]').value,foot:modal.querySelector('[data-v9-ss-foot]').value,minOverall:Number(modal.querySelector('[data-v9-ss-min]').value)||0};if(!row.name){toast('Search name is required.',true);return;}var next=(pref.savedSearches||[]).filter(function(x){return String(x.id)!==String(row.id);});next.push(row);try{var r=isDemo()?{discoveryPreferences:Object.assign({},pref,{savedSearches:next})}:await request('PATCH','/api/scout-experience-v9/preferences',{savedSearches:next,defaultSavedSearchId:pref.defaultSavedSearchId,defaultEnabled:pref.defaultEnabled});S.discoveryPreferences=r.discoveryPreferences;toast('Saved search updated.');close();render('preferences',true);}catch(e){toast(e.message,true);}};});
   }
   async function v9SetDefaultSaved(id){var pref=v9Discovery();try{var r=isDemo()?{discoveryPreferences:Object.assign({},pref,{defaultSavedSearchId:id,defaultEnabled:true})}:await request('PATCH','/api/scout-experience-v9/preferences',{savedSearches:pref.savedSearches||[],defaultSavedSearchId:id,defaultEnabled:true});S.discoveryPreferences=r.discoveryPreferences;toast('Default saved search updated.');render('preferences',true);}catch(e){toast(e.message,true);}}
-  function v9ApplySaved(id){var row=(v9Discovery().savedSearches||[]).find(function(x){return String(x.id)===String(id);});if(!row)return;try{sessionStorage.setItem('sl_scout_v8_search_filters',JSON.stringify({position:(row.positions||[])[0]||'Any position','age group':(row.ageGroups||[])[0]||'Any age',region:row.region||'Any region',availability:row.availability||'Any',foot:row.foot||'Any','min. overall':row.minOverall?String(row.minOverall):''}));}catch(_){}go('/scout/player-search');}
+  function v9ApplySaved(id){var row=(v9Discovery().savedSearches||[]).find(function(x){return String(x.id)===String(id);});if(!row)return;try{sessionStorage.setItem('sl_scout_v9_search_filters',JSON.stringify({position:(row.positions||[])[0]||'Any position','age group':(row.ageGroups||[])[0]||'Any age',region:row.region||'Any region',availability:row.availability||'Any',foot:row.foot||'Any','min. overall':row.minOverall?String(row.minOverall):''}));}catch(_){}go('/scout/player-search');}
 
   async function v9SubmitConcern(root){
     var type=labelSelect(root,'This concerns'),person=labelSelect(root,'Player or person involved'),what=labelInput(root,'What happened'),urgent=labelSelect(root,'How urgent');var scout=v9CurrentScout();if(!type||!type.value||!what||!what.value.trim()||!urgent||!urgent.value){toast('Concern type, what happened and urgency are required.',true);return;}if(!scout.email){toast('Your Scout account needs a valid contact email before a concern can be submitted.',true);return;}
@@ -1898,6 +1934,7 @@
     if(n==='create saved search')return function(){v9SavedSearchModal(null);};
     if(n==='change')return function(){v9SavedSearchModal(null);};
     if(n==='submit report')return function(){v9SubmitConcern(root);};
+    if(n==='save to player notes')return function(){savePredictionToPlayerNotes();};
     if(n==='message coach'||n==='message the coach'||n==='add to pipeline to message coach')return function(){v9MessageCoach(query().get('id')||S.predictionPlayerId);};
     if(n==='add to calendar')return function(){var event=S.activeEvent&&S.activeEvent.data&&S.activeEvent.data.event;if(event)v9CalendarEvent(event);else toast('Event details are still loading.',true);};
     if(n==='open'&&S.view==='eventDetail')return function(){var d=S.activeEvent&&S.activeEvent.data;if(d)v9OpenEventPlayers(d.event,(d.players||[]).map(function(row){return row.player||row;}).filter(Boolean),d.planning||{},false);};
@@ -1927,7 +1964,7 @@
 
   async function prehydrateInitial(){
     try{
-      var saved=sessionStorage.getItem('sl_scout_v8_onboarding');if(saved)Object.assign(S.onboarding,JSON.parse(saved)||{});
+      var saved=sessionStorage.getItem('sl_scout_v9_onboarding');if(saved)Object.assign(S.onboarding,JSON.parse(saved)||{});
     }catch(_){}
     try{await loadProfile();}catch(_){}
     if(S.route==='profile'){
