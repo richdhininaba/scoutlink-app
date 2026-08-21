@@ -8,6 +8,16 @@ const { applyRealDataFilter } = require('../utils/demo');
 const engines = require('../engines');
 const scoringService = require('../services/playerScoringService');
 
+const COACH_FORMATIONS = {
+  5: ['1-2-1','2-1-1','1-1-2'],
+  6: ['2-2-1','1-3-1','2-1-2'],
+  7: ['2-3-1','3-2-1','2-2-2'],
+  8: ['3-3-1','2-3-2','3-2-2'],
+  9: ['3-3-2','3-2-3','4-3-1'],
+  10: ['3-4-2','4-3-2','4-4-1'],
+  11: ['4-3-3','4-2-3-1','4-4-2','3-5-2','3-4-3']
+};
+
 function requestError(message, status = 400) {
   const error = new Error(message);
   error.status = status;
@@ -49,21 +59,50 @@ function flattenRatings(value, output = {}) {
   return output;
 }
 
-function formatName(value) {
+function supportedFormatNumber(value) {
   const raw = String(value || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '');
 
   const match = raw.match(
-    /^(3|5|7|9|11)(?:v|x|-a-side)?(3|5|7|9|11)?$/
+    /^(3|5|6|7|8|9|10|11)(?:v|x|-a-side)?(3|5|6|7|8|9|10|11)?$/
   );
 
   if (!match) return null;
 
-  const first = match[1];
-  const second = match[2] || first;
-  return first === second ? `${first}v${second}` : null;
+  const first = Number(match[1]);
+  const second = Number(match[2] || match[1]);
+
+  return first === second ? first : null;
+}
+
+function formatName(value) {
+  const number = supportedFormatNumber(value);
+  return number ? `${number}v${number}` : null;
+}
+
+function normaliseCoachFormation(value, formatNumber, required) {
+  const formation = String(value || '').trim();
+
+  if (!formation) {
+    if (required) {
+      throw requestError(
+        'Formation is required for Coach Match Facts.'
+      );
+    }
+    return null;
+  }
+
+  const allowed = COACH_FORMATIONS[Number(formatNumber)] || [];
+
+  if (!allowed.includes(formation)) {
+    throw requestError(
+      `Formation ${formation} is not supported for ${formatNumber || 'this'}-a-side Match Facts.`
+    );
+  }
+
+  return formation;
 }
 
 function positionFromSlot(key) {
@@ -583,14 +622,23 @@ router.post(
         fixture?.format ||
         null;
 
-      const matchFormat =
-        formatName(rawFormat) ||
-        (
-          rawFormat &&
-          String(rawFormat).replace(/\D/g, '')
-            ? `${String(rawFormat).replace(/\D/g, '')}v${String(rawFormat).replace(/\D/g, '')}`
-            : null
+      const formatNumber = supportedFormatNumber(rawFormat);
+      const matchFormat = formatName(rawFormat);
+
+      if (
+        req.user.accountType === 'Coach' &&
+        (!formatNumber || formatNumber < 5 || formatNumber > 11)
+      ) {
+        throw requestError(
+          'Coach Match Facts format must be between 5-a-side and 11-a-side.'
         );
+      }
+
+      const formation = normaliseCoachFormation(
+        body.formation,
+        formatNumber,
+        req.user.accountType === 'Coach'
+      );
 
       const context = {
         teamId,
@@ -601,9 +649,9 @@ router.post(
         fixtureId:body.fixtureId || body.fixture_id || null,
         matchDate:finalDate,
         opponent:finalOpponent,
-        formatValue:rawFormat,
+        formatValue:formatNumber ? String(formatNumber) : rawFormat,
         matchFormat,
-        formation:body.formation || null,
+        formation,
         mode:body.mode || 'post',
         homeScore:
           body.homeScore === undefined || body.homeScore === null
