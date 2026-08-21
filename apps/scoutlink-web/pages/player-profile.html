@@ -13,49 +13,48 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/scout-v1.css">
-  <link rel="stylesheet" href="/css/scout-experience-exact-v3.css">
-  <link rel="stylesheet" href="/css/scout-intelligence-v4.css">
-  <link rel="stylesheet" href="/css/scout-experience-v8.css?v=20260821-desk7-field8-literal-1">
-  <link rel="stylesheet" href="/css/scout-hydration-gate-v1.css?v=20260804-3">
-  <link rel="stylesheet" href="/css/coach-desk-field-v1.css?v=20260821-v6-literal-1">
   <style>
-    html,body{min-height:100%;margin:0}
+    html,body{min-height:100%;margin:0;background:#FBFCFB}
+    #profileRouteRoot{min-height:100vh}
     #profileRouteRoot.profile-route-loading{visibility:hidden}
-    body.coach-player-profile-v8 #profileRouteRoot{visibility:hidden}
-    body.coach-player-profile-v8.coach-profile-ready #profileRouteRoot{visibility:visible}
-    .profile-simple-modal{position:fixed;z-index:13000;inset:0;display:none;place-items:center;padding:20px;background:rgba(7,17,31,.68)}
+    .profile-route-loading>div{min-height:58vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:24px;font-family:Archivo,Arial,sans-serif;color:#0C201A}
+    .profile-route-loading span{color:#7C8A82;font-size:13px}
+    .profile-simple-modal{position:fixed;z-index:13000;inset:0;display:none;place-items:center;padding:20px;background:rgba(6,32,26,.68)}
     .profile-simple-modal.open{display:grid}
-    .profile-simple-modal-box{width:min(700px,100%);max-height:calc(100vh - 40px);overflow:auto;border:1px solid #dbe4e9;background:#fff;box-shadow:0 24px 70px rgba(7,17,31,.28)}
-    .profile-simple-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #dbe4e9}
-    .profile-simple-modal-head h2{margin:0;font-size:18px}.profile-simple-modal-body{padding:18px;color:#33475b;font-size:13px;line-height:1.55}
-    .profile-simple-modal-close{min-height:36px;padding:0 12px;border:1px solid #dbe4e9;background:#fff;font-weight:800}
-    body.player-own-profile{margin:0;background:#f2f5f9;color:#07111f;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .profile-simple-modal-box{width:min(700px,100%);max-height:calc(100vh - 40px);overflow:auto;border:1px solid #DCE3DE;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(6,32,26,.28)}
+    .profile-simple-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid #DCE3DE}
+    .profile-simple-modal-head h2{margin:0;font-size:18px}
+    .profile-simple-modal-body{padding:18px;color:#48584F;font-size:13px;line-height:1.55}
+    .profile-simple-modal-close{min-height:36px;padding:0 12px;border:1px solid #DCE3DE;border-radius:10px;background:#fff;font-weight:800}
+    body.player-own-profile{background:#f2f5f9;color:#07111f;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body.player-own-profile .player-own-shell{max-width:1180px;margin:0 auto;padding:24px}
     body.player-own-profile .player-own-topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
-    body.player-own-profile .player-own-brand{font-size:22px;font-weight:950}body.player-own-profile .player-own-brand span{color:#0fa37f}
-    body.player-own-profile .player-own-actions{display:flex;gap:8px;flex-wrap:wrap}body.player-own-profile .player-own-actions a{min-height:38px;padding:0 13px;border:1px solid #dce5ee;background:#fff;color:#193046;display:inline-flex;align-items:center;font-weight:850;text-decoration:none}
+    body.player-own-profile .player-own-brand{font-size:22px;font-weight:950}
+    body.player-own-profile .player-own-brand span{color:#0fa37f}
+    body.player-own-profile .player-own-actions{display:flex;gap:8px;flex-wrap:wrap}
+    body.player-own-profile .player-own-actions a{min-height:38px;padding:0 13px;border:1px solid #dce5ee;background:#fff;color:#193046;display:inline-flex;align-items:center;font-weight:850;text-decoration:none}
     @media(max-width:760px){body.player-own-profile .player-own-shell{padding:12px}}
   </style>
 </head>
 <body>
-  <div id="profileRouteRoot" class="profile-route-loading" role="status" aria-live="polite"><div><strong>Loading player profile</strong><span>Preparing the correct ScoutLink experience.</span></div></div>
-  <div class="profile-simple-modal" id="profileSimpleModal" aria-hidden="true"><div class="profile-simple-modal-box" role="dialog" aria-modal="true" aria-labelledby="profileSimpleModalTitle"><header class="profile-simple-modal-head"><h2 id="profileSimpleModalTitle">Details</h2><button class="profile-simple-modal-close" type="button" data-close-simple-modal>Close</button></header><div class="profile-simple-modal-body" id="profileSimpleModalBody"></div></div></div>
-  <script id="scoutHydrationGateV1Script" src="/js/scout-hydration-gate-v1.js?v=20260804-3"></script>
-  <script src="/js/main.js?v=20260731-5"></script>
-  <script id="dataMediaGuardV1Script" src="/js/data-media-guard-v1.js?v=20260804-2"></script>
-  <script src="/js/player-initials-v1.js?v=20260731-5"></script>
-  <script src="/js/scout-nav.js?v=20260730-2"></script>
-  <script src="/js/coach-design-v6.js?v=20260821-v6-literal-1"></script>
-  <script src="/js/coach-v2.js?v=20260821-v6-literal-1"></script>
-  <script src="/js/scoring-v4-client.js?v=20260808-1"></script>
-  <script src="/js/player-profile-router-v2.js?v=20260808-5"></script>
-  <script src="/js/coach-player-profile-v4.js?v=20260821-v6-literal-1"></script>
-  <script src="/js/scout-v1.js"></script>
-  <script src="/js/scout-experience-exact-v3.js"></script>
-  <script id="scoutProfileRuntimeV1Script" src="/js/scout-profile-runtime-v1.js?v=20260804-3"></script>
-  <script src="/js/scout-intelligence-v4.js?v=20260804-3"></script>
-  <script src="/js/scout-experience-v8.js?v=20260821-desk7-field8-literal-1"></script>
-  <script src="/js/heap-analytics.js?v=20260821-v6-literal-1"></script>
+  <div id="profileRouteRoot" class="profile-route-loading" role="status" aria-live="polite">
+    <div>
+      <strong>Loading player profile</strong>
+      <span>Preparing the correct ScoutLink experience.</span>
+    </div>
+  </div>
+
+  <div class="profile-simple-modal" id="profileSimpleModal" aria-hidden="true">
+    <div class="profile-simple-modal-box" role="dialog" aria-modal="true" aria-labelledby="profileSimpleModalTitle">
+      <header class="profile-simple-modal-head">
+        <h2 id="profileSimpleModalTitle">Details</h2>
+        <button class="profile-simple-modal-close" type="button" data-close-simple-modal>Close</button>
+      </header>
+      <div class="profile-simple-modal-body" id="profileSimpleModalBody"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js?v=20260821-bugsweep-2"></script>
+  <script src="/js/player-profile-bootstrap-v3.js?v=20260821-bugsweep-2"></script>
 </body>
 </html>
