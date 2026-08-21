@@ -5,9 +5,9 @@
  *
  * Visual rule: the supplied HTML boards own markup and appearance. This file
  * mounts the literal app-shell from those boards inside Shadow DOM so older
- * Scout CSS cannot alter it. Existing Scout Intelligence V3/V4 remains in the
- * light DOM as a compatibility/action bridge while the visible experience uses
- * current API data and the source-of-truth interactions.
+ * Scout CSS cannot alter it. The literal boards are staging templates only:
+ * production data must hydrate successfully before anything becomes visible.
+ * No legacy Scout runtime or source-board sample data is allowed to paint first.
  */
 (function(){
   if(window.__scoutDeskFieldV9)return;
@@ -113,7 +113,9 @@
     demoPipeline:[],
     demoPredictions:[],
     busy:false,
-    mounted:false
+    mounted:false,
+    renderSerial:0,
+    cssReadyPromise:null
   };
 
   function text(v){return String(v==null?'':v).trim();}
@@ -243,19 +245,105 @@
     return text(document.body&&document.body.dataset&&document.body.dataset.scoutRoute)||'dashboard';
   }
   function sourceWrap(id,html){return'<div id="'+esc(id)+'">'+html+'</div>';}
+
+  function requiredResourceKeys(view){
+    var keys=['profile'];
+    if(['dashboard','search','searchFilters','rankings','pipeline','pipelineStage','compare','predictionsChoose','predictionsPosition','predictionsResult','predictionsInsufficient','exports','exportNew','profileGeneral','profilePosition','concern','preferences'].indexOf(view)>=0)keys.push('players');
+    if(['dashboard','pipeline','pipelineStage','profileGeneral','profilePosition'].indexOf(view)>=0)keys.push('pipeline');
+    if(['dashboard','predictionsChoose','usage','usageRequest','exports','exportNew'].indexOf(view)>=0)keys.push('usage');
+    if(['predictionsChoose','predictionsPosition','predictionsResult','predictionsInsufficient'].indexOf(view)>=0)keys.push('predictions');
+    if(view==='fixtures'||view==='dashboard')keys.push('fixtures');
+    if(view==='events')keys.push('events');
+    if(view==='eventDetail')keys.push('eventDetail');
+    if(view==='notifications'||view==='dashboard')keys.push('notifications');
+    if(view==='chatList'||view==='chatThread'||view==='dashboard')keys.push('chat');
+    if(view==='chatThread'&&S.activeThread)keys.push('messages');
+    if(view==='exports')keys.push('exports');
+    if(view==='profileGeneral'||view==='profilePosition')keys.push('playerDetail');
+    return keys;
+  }
+
+  function currentRouteDataError(view){
+    var keys=requiredResourceKeys(view);
+    for(var i=0;i<keys.length;i+=1){
+      if(S.resourceErrors&&S.resourceErrors[keys[i]])return S.resourceErrors[keys[i]];
+    }
+    return null;
+  }
+
+  function setRouteBusy(){
+    if(S.content)S.content.style.visibility='hidden';
+    if(S.host){
+      S.host.style.visibility='hidden';
+      S.host.classList.add('is-loading');
+      S.host.setAttribute('aria-busy','true');
+    }
+  }
+
+  function revealRoute(token,keepScroll,y){
+    if(token!==S.renderSerial)return;
+    Promise.resolve(S.cssReadyPromise).catch(function(){}).then(function(){
+      if(token!==S.renderSerial)return;
+      if(S.content)S.content.style.visibility='visible';
+      if(S.host){
+        S.host.style.visibility='visible';
+        S.host.classList.remove('is-loading');
+        S.host.classList.remove('profile-route-loading');
+        S.host.removeAttribute('aria-busy');
+      }
+      if(keepScroll)setTimeout(function(){window.scrollTo(0,y);},0);
+    });
+  }
+
+  function showRouteDataError(view,error,token){
+    if(token!==S.renderSerial||!S.content)return;
+    var message=(error&&error.message)||'Live ScoutLink data could not be loaded.';
+    S.content.innerHTML=
+      '<main style="min-height:100vh;display:grid;place-items:center;padding:28px;background:#FBFCFB;font-family:Archivo,Arial,sans-serif;color:#0C201A">'+
+        '<section style="width:min(560px,100%);background:#fff;border:1px solid #DCE3DE;border-radius:18px;padding:24px;box-shadow:0 18px 45px rgba(6,32,26,.08)">'+
+          '<div style="font-family:IBM Plex Mono,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#075F48;font-weight:700">ScoutLink</div>'+
+          '<h1 style="margin:8px 0 8px;font-size:24px">Couldn\'t load this page</h1>'+
+          '<p style="margin:0;color:#48584F;line-height:1.55">'+esc(message)+'</p>'+
+          '<button type="button" data-v9-retry style="margin-top:18px;min-height:42px;padding:0 16px;border:0;border-radius:12px;background:#D8F547;color:#0C201A;font-weight:800;cursor:pointer">Retry</button>'+
+        '</section>'+
+      '</main>';
+    var retry=S.content.querySelector('[data-v9-retry]');
+    if(retry)retry.onclick=function(){Object.keys(S.resourceErrors||{}).forEach(function(k){delete S.resourceErrors[k];});render(view,false);};
+    revealRoute(token,false,0);
+  }
+
   function render(view,keepScroll){
     if(!SOURCE[view])view=VIEW_BY_ROUTE[S.route]||'dashboard';
     S.view=view;
-    if(!S.content)return;
+    if(!S.content)return Promise.resolve();
     var d=SOURCE[view];
     var y=keepScroll?window.scrollY:0;
+    var token=++S.renderSerial;
+
+    /*
+     * SOURCE contains the literal Desk/Field boards so exact markup is kept,
+     * but it is now a hidden staging template only. It is never revealed until
+     * the live route resources have finished hydrating.
+     */
+    setRouteBusy();
     S.content.innerHTML=
       '<div class="slv8-desktop-copy" data-slv8-visible="desk">'+sourceWrap(d.deskId,d.desk)+'</div>'+
       '<div class="slv8-mobile-copy" data-slv8-visible="field">'+sourceWrap(d.fieldId,d.field)+'</div>';
-    syncIdentity();
-    bindVisible();
-    hydrate(view).catch(function(e){console.error('[Scout Desk/Field hydrate]',e);});
-    if(keepScroll)setTimeout(function(){window.scrollTo(0,y);},0);
+
+    return Promise.resolve(hydrate(view)).then(function(){
+      if(token!==S.renderSerial)return;
+      syncIdentity();
+      var dataError=currentRouteDataError(view);
+      if(dataError){
+        showRouteDataError(view,dataError,token);
+        return;
+      }
+      bindVisible();
+      revealRoute(token,keepScroll,y);
+    }).catch(function(error){
+      console.error('[Scout V9 render]',error);
+      showRouteDataError(view,error,token);
+    });
   }
   function copies(){return Array.prototype.slice.call(S.content.querySelectorAll('.slv8-desktop-copy,.slv8-mobile-copy'));}
   function eachCopy(fn){copies().forEach(fn);}
@@ -321,13 +409,33 @@
         var b=f.querySelector('.txt b');if(b)b.textContent=nm;
         var role=f.querySelector('.role-txt');if(role)role.textContent=org;
       });
-      root.querySelectorAll('.top .eyebrow').forEach(function(e){if(e.textContent.trim()==='AV Recruitment'&&org)e.textContent=org;});
+      root.querySelectorAll('.top .eyebrow').forEach(function(e){
+        var current=text(e.textContent);
+        if(/^good morning\b/i.test(current)){
+          e.textContent='GOOD MORNING, '+((nm.split(/\s+/)[0]||'SCOUT').toUpperCase());
+        }else if(current==='AV Recruitment'&&org){
+          e.textContent=org;
+        }
+      });
+      root.querySelectorAll('[data-scout-identity-name]').forEach(function(e){e.textContent=nm;});
+      root.querySelectorAll('[data-scout-identity-org]').forEach(function(e){e.textContent=org;});
     });
   }
   async function loadProfile(){
     if(S.profile)return S.profile;
     if(isDemo()){
-      S.profile={scout:{first_name:'Jordan',last_name:'Carty',club_name:'AV Recruitment',scout_preferences:{}},scoutTeam:{team_name:'AV Recruitment'}};
+      var auth=(window.Auth&&window.Auth.user)||{};
+      var demo=await request('GET','/api/scouts/profile').catch(function(){return{};});
+      var scout=demo&&demo.scout?demo.scout:{};
+      S.profile={
+        scout:Object.assign({
+          first_name:auth.firstName||auth.first_name||'Scout',
+          last_name:auth.lastName||auth.last_name||'',
+          club_name:auth.teamName||auth.team_name||'Scout workspace',
+          scout_preferences:{}
+        },scout),
+        scoutTeam:{team_name:(scout.team_name||auth.teamName||auth.team_name||'Scout workspace')}
+      };
       S.scoutTeam=S.profile.scoutTeam;
       return S.profile;
     }
@@ -346,7 +454,7 @@
   }
   function demoPipelineLoad(){
     try{
-      var raw=sessionStorage.getItem('sl_scout_v8_demo_pipeline');
+      var raw=sessionStorage.getItem('sl_scout_v9_demo_pipeline');
       if(raw)S.demoPipeline=JSON.parse(raw)||[];
     }catch(_){}
     if(!S.demoPipeline.length){
@@ -357,7 +465,7 @@
     }
     return S.demoPipeline;
   }
-  function demoPipelineSave(){try{sessionStorage.setItem('sl_scout_v8_demo_pipeline',JSON.stringify(S.demoPipeline));}catch(_){}}
+  function demoPipelineSave(){try{sessionStorage.setItem('sl_scout_v9_demo_pipeline',JSON.stringify(S.demoPipeline));}catch(_){}}
   async function loadPipeline(force){
     if(S.pipeline.length&&!force)return S.pipeline;
     await loadPlayers();
@@ -373,10 +481,10 @@
     return S.usage;
   }
   function demoPredictionLoad(){
-    try{S.demoPredictions=JSON.parse(sessionStorage.getItem('sl_scout_v8_demo_predictions')||'[]')||[];}catch(_){S.demoPredictions=[];}
+    try{S.demoPredictions=JSON.parse(sessionStorage.getItem('sl_scout_v9_demo_predictions')||'[]')||[];}catch(_){S.demoPredictions=[];}
     return S.demoPredictions;
   }
-  function demoPredictionSave(){try{sessionStorage.setItem('sl_scout_v8_demo_predictions',JSON.stringify(S.demoPredictions));}catch(_){}}
+  function demoPredictionSave(){try{sessionStorage.setItem('sl_scout_v9_demo_predictions',JSON.stringify(S.demoPredictions));}catch(_){}}
   async function loadPredictions(force){
     if(S.predictions.length&&!force)return S.predictions;
     if(isDemo()){S.predictions=demoPredictionLoad();return S.predictions;}
@@ -629,7 +737,7 @@
     var cards=root.querySelectorAll('.pred-card');
     cards.forEach(function(c){var b=c.querySelector('b');if(!b)return;c.classList.toggle('on',b.textContent.trim()===S.predictionType);c.dataset.predType=b.textContent.trim();});
     var hist=Array.prototype.find.call(root.querySelectorAll('.card'),function(c){var h=c.querySelector('.card-h h3');return h&&/prediction history/i.test(h.textContent);});
-    if(hist&&S.predictions.length){
+    if(hist){
       var sample=hist.querySelector('.list-row'),body=hist.querySelector('.card-b');
       if(sample&&body){
         var tpl=sample.cloneNode(true);body.innerHTML='';
@@ -643,6 +751,7 @@
           body.appendChild(row);
         });
         var h=hist.querySelector('.card-h h3');if(h)h.textContent='Prediction history ('+S.predictions.length+')';
+        if(!S.predictions.length)body.innerHTML='<div class="empty"><b>No predictions yet</b><p>Run a prediction to create your history.</p></div>';
       }
     }
   }
@@ -721,13 +830,59 @@
     if(copy)copy.textContent=r.noScoreReason||r.reason||((playerName(p)||'This player')+' does not currently have enough relevant observed data to produce a reliable '+predictionTypeLabel()+' score. Add more assessment or Match Facts evidence and try again.');
   }
   function hydrateFixtures(root){
-    if(!S.fixtures.length)return;
-    var rows=root.querySelectorAll('.fixture-card-row,.cal-event');
-    rows.forEach(function(row,i){
-      var f=S.fixtures[i];if(!f)return;row.dataset.fixtureId=f.id||'';
-      var who=row.querySelector('.who');if(who){var b=who.querySelector('b');if(b)b.textContent=(f.team_name?f.team_name+' vs ':'')+(f.opponent_name||f.opponent||'Opponent');var sp=who.querySelector('span');if(sp)sp.textContent=[f.venue_name||f.venue,f.fixture_time].filter(Boolean).join(' · ');}
-      if(row.classList.contains('cal-event')){var b2=row.querySelector('b');if(b2)b2.textContent=f.opponent_name||f.opponent||'Fixture';var s2=row.querySelector('span');if(s2)s2.textContent=f.fixture_time||'';}
-    });
+    var all=S.fixtures||[];
+    var priority=all.filter(fixtureIsPriority);
+
+    var desktopEvents=root.querySelectorAll('.cal-event');
+    if(desktopEvents.length){
+      var parent=desktopEvents[0].parentNode,template=desktopEvents[0].cloneNode(true);
+      Array.prototype.slice.call(desktopEvents).forEach(function(row){row.remove();});
+      all.slice(0,12).forEach(function(f){
+        var row=template.cloneNode(true);row.dataset.fixtureId=f.id||'';
+        var b=row.querySelector('b');if(b)b.textContent=f.opponent_name||f.opponent||'Fixture';
+        var span=row.querySelector('span');if(span)span.textContent=f.fixture_time||dateOnly(f.fixture_date||f.date);
+        row.onclick=function(){go('/scout/fixtures?fixture='+encodeURIComponent(f.id||''));};
+        parent.appendChild(row);
+      });
+      if(!all.length){
+        var empty=document.createElement('div');empty.className='empty';empty.innerHTML='<b>No upcoming fixtures</b><p>Pipeline-related fixtures will appear here.</p>';parent.appendChild(empty);
+      }
+    }
+
+    var allCard=cardByTitle(root,'All fixtures');
+    if(allCard){
+      var body=allCard.querySelector('.card-b'),sample=body&&body.querySelector('.fixture-card-row');
+      if(body&&sample){
+        var tpl=sample.cloneNode(true);body.innerHTML='';
+        all.forEach(function(f){
+          var row=tpl.cloneNode(true);row.dataset.fixtureId=f.id||'';
+          var plate=row.querySelector('.dateplate');
+          if(plate){var db=plate.querySelector('b'),ds=plate.querySelector('span');var dt=new Date(f.fixture_date||f.date||'');if(db)db.textContent=Number.isNaN(dt.getTime())?'—':String(dt.getDate()).padStart(2,'0');if(ds)ds.textContent=Number.isNaN(dt.getTime())?'':dt.toLocaleDateString('en-GB',{month:'short'}).toUpperCase();}
+          var who=row.querySelector('.who');if(who){var b=who.querySelector('b');if(b)b.textContent=[f.team_name,f.opponent_name||f.opponent].filter(Boolean).join(' vs ')||(f.opponent_name||f.opponent||'Fixture');var sp=who.querySelector('span');if(sp)sp.textContent=[f.venue_name||f.venue,f.fixture_time].filter(Boolean).join(' · ');}
+          var pill=row.querySelector('.pill');if(pill){pill.textContent=fixtureIsPriority(f)?'Priority':'Scheduled';pill.className='pill '+(fixtureIsPriority(f)?'a':'n');}
+          row.onclick=function(){go('/scout/fixtures?fixture='+encodeURIComponent(f.id||''));};
+          body.appendChild(row);
+        });
+        if(!all.length)body.innerHTML='<div class="empty"><b>No upcoming fixtures</b><p>Pipeline-related fixtures will appear here.</p></div>';
+      }
+    }
+
+    var priorityCard=cardByTitle(root,'Priority this week (2)')||cardByTitle(root,'Priority visits');
+    if(priorityCard){
+      var pBody=priorityCard.querySelector('.card-b'),pSample=pBody&&pBody.querySelector('.list-row');
+      if(pBody&&pSample){
+        var pTpl=pSample.cloneNode(true);pBody.innerHTML='';
+        priority.slice(0,5).forEach(function(f){
+          var row=pTpl.cloneNode(true);row.dataset.fixtureId=f.id||'';
+          var who=row.querySelector('.who');if(who){var b=who.querySelector('b');if(b)b.textContent=[f.team_name,f.opponent_name||f.opponent].filter(Boolean).join(' vs ')||(f.opponent_name||f.opponent||'Fixture');var sp=who.querySelector('span');if(sp)sp.textContent=f.objective||f.plan_notes||[dateOnly(f.fixture_date||f.date),f.fixture_time].filter(Boolean).join(' · ');}
+          var pill=row.querySelector('.pill');if(pill){pill.textContent='Priority';pill.className='pill a';}
+          row.onclick=function(){go('/scout/fixtures?fixture='+encodeURIComponent(f.id||''));};
+          pBody.appendChild(row);
+        });
+        var ph=priorityCard.querySelector('.card-h h3');if(ph)ph.textContent='Priority this week ('+priority.length+')';
+        if(!priority.length)pBody.innerHTML='<div class="empty"><b>No priority visits</b><p>Mark a fixture as a priority when you plan an observation.</p></div>';
+      }
+    }
   }
   function hydrateProfile(root){
     var p=profilePlayer();if(!p)return;
@@ -741,17 +896,160 @@
     }
     root.querySelectorAll('[data-player-id]').forEach(function(x){x.dataset.playerId=p.id;});
   }
+  function fixtureIsPriority(fixture){
+    if(!fixture)return false;
+    if(fixture.is_priority===true||fixture.priority===true)return true;
+    if(Number(fixture.priority)>0||Number(fixture.plan_priority)>0)return true;
+    var status=norm(fixture.plan_status||fixture.visit_status||fixture.status||'');
+    return status.indexOf('priority')>=0;
+  }
+
+  function dashboardUnreadCount(){
+    var notificationUnread=(S.notifications||[]).filter(function(n){return !n.is_read;}).length;
+    var chatUnread=(S.chatThreads||[]).reduce(function(total,thread){
+      return total+num(thread.unread_count!=null?thread.unread_count:(thread.unreadCount!=null?thread.unreadCount:thread.unread));
+    },0);
+    return notificationUnread+chatUnread;
+  }
+
+  function dashboardPrefs(){
+    var scout=S.profile&&S.profile.scout?S.profile.scout:(S.profile||{});
+    var prefs=scout.scout_preferences||{};
+    var team=S.scoutTeam||{};
+    return{
+      weaknesses:prefs.teamWeaknesses||prefs.team_weaknesses||team.team_weaknesses||[],
+      roles:prefs.roleExpectations||prefs.role_expectations||team.role_expectations||[],
+      style:prefs.playingStyle||prefs.playing_style||team.playing_style||'',
+      formation:prefs.formation||team.formation||'',
+      goals:prefs.longTermGoals||prefs.long_term_goals||team.long_term_goals||[],
+      updatedAt:prefs.updatedAt||prefs.updated_at||team.updated_at||''
+    };
+  }
+
   function hydrateDashboard(root){
     hydrateUsage(root);
-    var stats=root.querySelectorAll('.bento .stat .v');
-    if(stats[0])stats[0].textContent=S.players.length;
-    if(stats[1])stats[1].textContent=S.pipeline.length;
+
+    var priorityFixtures=(S.fixtures||[]).filter(fixtureIsPriority);
+    var predictionUsage=usagePart('predictions');
+    var exportUsage=usagePart('exports');
+    var unread=dashboardUnreadCount();
+
+    root.querySelectorAll('.stat').forEach(function(stat){
+      var key=stat.querySelector('.k'),value=stat.querySelector('.v'),detail=stat.querySelector('.d');
+      if(!key||!value)return;
+      var label=norm(key.textContent);
+      if(label==='in pipeline'){
+        value.textContent=S.pipeline.length;
+        if(detail)detail.textContent=S.pipeline.filter(function(row){return norm(row.stage)==='shortlisted';}).length+' shortlisted';
+      }else if(label==='priority fixtures'){
+        value.textContent=priorityFixtures.length;
+        if(detail){
+          var next=(priorityFixtures[0]||S.fixtures[0]);
+          detail.textContent=next?'next: '+dateOnly(next.fixture_date||next.date)+' · '+(next.opponent_name||next.opponent||'Fixture'):'No priority visits scheduled';
+        }
+      }else if(label==='predictions used'){
+        var used=num(predictionUsage.used);
+        var limit=num(predictionUsage.limit||predictionUsage.total);
+        value.textContent=used;
+        if(detail)detail.textContent=limit?'of '+limit+' this year':'Current plan usage';
+      }else if(label==='unread'){
+        value.textContent=unread;
+        if(detail)detail.textContent='messages & notifications';
+      }
+    });
+
+    root.querySelectorAll('.quick-card,.action-card').forEach(function(card){
+      var b=card.querySelector('b,h3'),mut=card.querySelector('.mut,.help,p');
+      if(!b||!mut)return;
+      var label=norm(b.textContent);
+      if(label==='pipeline')mut.textContent=S.pipeline.length+' active';
+      else if(label==='fixtures')mut.textContent=priorityFixtures.length+' priority';
+      else if(label==='exports')mut.textContent=num(exportUsage.used)+' used this year';
+      else if(label==='chat')mut.textContent=(S.chatThreads||[]).reduce(function(total,thread){return total+num(thread.unread_count||thread.unreadCount||thread.unread);},0)+' unread';
+    });
+
+    var priorities=cardByTitle(root,'Your recruitment priorities');
+    if(priorities){
+      var prefs=dashboardPrefs();
+      priorities.querySelectorAll('.brief-row').forEach(function(row){
+        var b=row.querySelector('b'),p=row.querySelector('p');
+        if(!b||!p)return;
+        var label=norm(b.textContent);
+        if(label.indexOf('team weaknesses')>=0)p.textContent=(prefs.weaknesses||[]).join(' · ')||'Not set';
+        else if(label.indexOf('role expectations')>=0)p.textContent=(prefs.roles||[]).join(' · ')||'Not set';
+        else if(label.indexOf('playing style')>=0)p.textContent=prefs.style||'Not set';
+        else if(label==='formation')p.textContent=prefs.formation||'Not set';
+        else if(label.indexOf('long-term goals')>=0)p.textContent=(prefs.goals||[]).join(' · ')||'Not set';
+      });
+      var footer=priorities.querySelector('.mut:last-child,.hint:last-child');
+      if(footer&&prefs.updatedAt)footer.textContent='Last updated '+v9SafeDateTime(prefs.updatedAt);
+    }
+
+    var pipelineCard=cardByTitle(root,'Pipeline priorities');
+    if(pipelineCard){
+      var pBody=pipelineCard.querySelector('.card-b');
+      var pSample=pBody&&pBody.querySelector('.list-row');
+      if(pBody&&pSample){
+        var pTpl=pSample.cloneNode(true);
+        pBody.innerHTML='';
+        S.pipeline.slice(0,5).forEach(function(row){
+          var player=pipelinePlayer(row),item=pTpl.cloneNode(true);
+          item.dataset.pipelineId=row.id||'';
+          item.dataset.playerId=player.id||row.player_id||'';
+          var av=item.querySelector('.avatar');if(av)av.textContent=initials(playerName(player));
+          var who=item.querySelector('.who');
+          if(who){
+            var b=who.querySelector('b');if(b)b.textContent=playerName(player);
+            var sp=who.querySelector('span');if(sp)sp.textContent=row.next_action||row.notes||[playerPos(player),age(player),team(player)].filter(Boolean).join(' · ');
+          }
+          var pill=item.querySelector('.pill');if(pill){pill.textContent=stageLabel(row.stage);pill.className='pill '+(norm(row.stage)==='shortlisted'?'g':'n');}
+          var stamp=item.querySelector('.time,.mut:last-child');if(stamp)stamp.textContent=dateOnly(row.updated_at||row.created_at);
+          item.onclick=function(){go('/player/profile?id='+encodeURIComponent(player.id||row.player_id));};
+          pBody.appendChild(item);
+        });
+        if(!S.pipeline.length)pBody.innerHTML='<div class="empty"><b>No pipeline priorities yet</b><p>Add a player from Player Search to start your recruitment pipeline.</p></div>';
+      }
+    }
+
     var ranked=cardByTitle(root,'Top 5 ranked against your brief');
-    if(ranked&&S.players.length){
+    if(ranked){
       var sample=ranked.querySelector('.list-row'),body=ranked.querySelector('.card-b');
       if(sample&&body){
-        var tpl=sample.cloneNode(true),list=S.players.slice().sort(function(a,b){return(playerCompat(b)||playerOverall(b))-(playerCompat(a)||playerOverall(a));}).slice(0,5);body.innerHTML='';
-        list.forEach(function(p,i){var r=tpl.cloneNode(true);var rn=r.querySelector('.rank-num');if(rn)rn.textContent=i+1;var who=r.querySelector('.who');if(who){var b=who.querySelector('b');if(b)b.textContent=playerName(p);var s=who.querySelector('span');if(s)s.textContent=[playerPos(p),age(p),team(p)].filter(Boolean).join(' · ');}var rc=r.querySelector('.rate-chip');if(rc)rc.innerHTML=Math.round(playerCompat(p)||playerOverall(p))+' <small>/100</small>';r.onclick=function(){go('/player/profile?id='+encodeURIComponent(p.id));};body.appendChild(r);});
+        var tpl=sample.cloneNode(true),list=S.players.slice().sort(function(a,b){return(playerCompat(b)||playerOverall(b))-(playerCompat(a)||playerOverall(a));}).slice(0,5);
+        body.innerHTML='';
+        list.forEach(function(p,i){
+          var r=tpl.cloneNode(true);
+          var rn=r.querySelector('.rank-num');if(rn)rn.textContent=i+1;
+          var av=r.querySelector('.avatar');if(av)av.textContent=initials(playerName(p));
+          var who=r.querySelector('.who');if(who){var b=who.querySelector('b');if(b)b.textContent=playerName(p);var s=who.querySelector('span');if(s)s.textContent=[playerPos(p),age(p),team(p)].filter(Boolean).join(' · ');}
+          var rc=r.querySelector('.rate-chip');if(rc)rc.innerHTML=Math.round(playerCompat(p)||playerOverall(p))+' <small>/100</small>';
+          r.onclick=function(){go('/player/profile?id='+encodeURIComponent(p.id));};
+          body.appendChild(r);
+        });
+        if(!list.length)body.innerHTML='<div class="empty"><b>No ranked players yet</b><p>Players will appear when live ScoutLink data is available.</p></div>';
+      }
+    }
+
+    var fixtureCard=cardByTitle(root,'Upcoming fixtures');
+    if(fixtureCard){
+      var fBody=fixtureCard.querySelector('.card-b');
+      var fSample=fBody&&fBody.querySelector('.list-row');
+      if(fBody&&fSample){
+        var fTpl=fSample.cloneNode(true);
+        fBody.innerHTML='';
+        (S.fixtures||[]).slice(0,5).forEach(function(f){
+          var row=fTpl.cloneNode(true);
+          row.dataset.fixtureId=f.id||'';
+          var who=row.querySelector('.who');
+          if(who){
+            var b=who.querySelector('b');if(b)b.textContent=[f.team_name,f.opponent_name||f.opponent].filter(Boolean).join(' vs ')||(f.opponent_name||f.opponent||'Fixture');
+            var sp=who.querySelector('span');if(sp)sp.textContent=[dateOnly(f.fixture_date||f.date),f.fixture_time,f.venue_name||f.venue].filter(Boolean).join(' · ');
+          }
+          var pill=row.querySelector('.pill');if(pill){pill.textContent=fixtureIsPriority(f)?'Priority':'Scheduled';pill.className='pill '+(fixtureIsPriority(f)?'a':'n');}
+          row.onclick=function(){go('/scout/fixtures?fixture='+encodeURIComponent(f.id||''));};
+          fBody.appendChild(row);
+        });
+        if(!S.fixtures.length)fBody.innerHTML='<div class="empty"><b>No upcoming fixtures</b><p>Fixtures connected to your pipeline will appear here.</p></div>';
       }
     }
   }
@@ -772,37 +1070,56 @@
     });
   }
   function hydrateChat(root){
-    if(S.chatThreads.length){
-      var sample=root.querySelector('.thread-row');
-      if(sample){
-        var parent=sample.parentNode,tpl=sample.cloneNode(true);
-        Array.prototype.slice.call(parent.querySelectorAll('.thread-row')).forEach(function(x){x.remove();});
-        S.chatThreads.slice(0,30).forEach(function(th,i){
-          var row=tpl.cloneNode(true);row.dataset.threadId=th.id||'';
-          var nm=th.coach_name||th.coachName||th.contact_name||th.name||'Coach';
-          var org=th.organisation_name||th.club_name||th.team_name||'';
-          var av=row.querySelector('.avatar');if(av)av.textContent=initials(nm);
-          var tx=row.querySelector('.tx');if(tx){var b=tx.querySelector('b');if(b)b.textContent=nm;var o=tx.querySelector('.org');if(o)o.textContent=org;var pv=tx.querySelector('.pv');if(pv)pv.textContent=th.last_message||th.preview||'Open conversation';}
-          row.onclick=function(){S.activeThread=th;render('chatThread');};
-          parent.appendChild(row);
-        });
+    var sample=root.querySelector('.thread-row');
+    if(sample){
+      var parent=sample.parentNode,tpl=sample.cloneNode(true);
+      Array.prototype.slice.call(parent.querySelectorAll('.thread-row')).forEach(function(x){x.remove();});
+      (S.chatThreads||[]).slice(0,30).forEach(function(th){
+        var row=tpl.cloneNode(true);row.dataset.threadId=th.id||'';
+        var nm=th.coach_name||th.coachName||th.contact_name||th.name||'Coach';
+        var org=th.organisation_name||th.club_name||th.team_name||'';
+        var av=row.querySelector('.avatar');if(av)av.textContent=initials(nm);
+        var tx=row.querySelector('.tx');if(tx){var b=tx.querySelector('b');if(b)b.textContent=nm;var o=tx.querySelector('.org');if(o)o.textContent=org;var pv=tx.querySelector('.pv');if(pv)pv.textContent=th.last_message||th.preview||'Open conversation';}
+        row.onclick=function(){S.activeThread=th;render('chatThread');};
+        parent.appendChild(row);
+      });
+      if(!S.chatThreads.length){
+        var empty=document.createElement('div');
+        empty.className='empty';
+        empty.innerHTML='<b>No permitted conversations yet</b><p>Add a player to your pipeline before opening a coach conversation.</p>';
+        parent.appendChild(empty);
       }
     }
-    if(S.view==='chatThread'&&S.activeThread){
-      var title=root.querySelector('.main .top h1,.ptop h1');if(title)title.textContent=S.activeThread.coach_name||S.activeThread.coachName||S.activeThread.contact_name||'Conversation';
-      if(S.activeMessages.length){
-        var bubbles=root.querySelectorAll('.msg-bubble'),container=bubbles[0]&&bubbles[0].parentNode;
-        if(container){
-          var inTpl=Array.prototype.find.call(bubbles,function(x){return x.classList.contains('in');})||bubbles[0];
-          var outTpl=Array.prototype.find.call(bubbles,function(x){return x.classList.contains('out');})||bubbles[0];
-          bubbles.forEach(function(x){x.remove();});
-          S.activeMessages.slice(-50).forEach(function(m){
+
+    if(S.view==='chatThread'){
+      var title=root.querySelector('.main .top h1,.ptop h1');
+      if(title)title.textContent=S.activeThread?(S.activeThread.coach_name||S.activeThread.coachName||S.activeThread.contact_name||'Conversation'):'Chat';
+
+      var bubbles=root.querySelectorAll('.msg-bubble');
+      var container=bubbles[0]&&bubbles[0].parentNode;
+      if(container){
+        var inTpl=Array.prototype.find.call(bubbles,function(x){return x.classList.contains('in');})||bubbles[0];
+        var outTpl=Array.prototype.find.call(bubbles,function(x){return x.classList.contains('out');})||bubbles[0];
+        Array.prototype.slice.call(bubbles).forEach(function(x){x.remove();});
+
+        if(S.activeThread){
+          (S.activeMessages||[]).slice(-50).forEach(function(m){
             var outgoing=String(m.sender_type||m.direction||'').toLowerCase().indexOf('scout')>=0||m.direction==='out';
             var b=(outgoing?outTpl:inTpl).cloneNode(true);
-            var body=m.body||m.message||m.text||'';b.childNodes.forEach(function(node){if(node.nodeType===3)node.nodeValue='';});
-            var mt=b.querySelector('.mt');b.insertBefore(document.createTextNode(body),mt||null);if(mt)mt.textContent=dateOnly(m.sent_at||m.created_at);
+            var body=m.body||m.message||m.text||'';
+            b.childNodes.forEach(function(node){if(node.nodeType===3)node.nodeValue='';});
+            var mt=b.querySelector('.mt');
+            b.insertBefore(document.createTextNode(body),mt||null);
+            if(mt)mt.textContent=v9SafeDateTime(m.sent_at||m.created_at);
             container.appendChild(b);
           });
+        }
+
+        if(!S.activeThread||!S.activeMessages.length){
+          var emptyMessages=document.createElement('div');
+          emptyMessages.className='empty';
+          emptyMessages.innerHTML=S.activeThread?'<b>No messages yet</b><p>Start the permitted conversation with this coach.</p>':'<b>Select a conversation</b><p>Choose a permitted pipeline conversation to view messages.</p>';
+          container.appendChild(emptyMessages);
         }
       }
     }
@@ -878,12 +1195,13 @@
       if(['dashboard','pipeline','pipelineStage'].indexOf(view)>=0)await loadPipeline();
       if(['dashboard','predictionsChoose','usage','usageRequest','exports','exportNew'].indexOf(view)>=0)await loadUsage().catch(function(){});
       if(['predictionsChoose','predictionsPosition','predictionsResult','predictionsInsufficient'].indexOf(view)>=0)await loadPredictions().catch(function(){});
-      if(view==='fixtures'||view==='dashboard')await loadFixtures().catch(function(){});
-      if(view==='notifications')await loadNotifications().catch(function(){});
+      if(view==='fixtures'||view==='dashboard')await loadFixtures().catch(function(e){v9RememberError('fixtures',e);});
+      if(view==='notifications')await loadNotifications().catch(function(e){v9RememberError('notifications',e);});
       if(view==='chatList'||view==='chatThread'){await loadChat().catch(function(){});if(view==='chatThread')await loadMessages().catch(function(){});}
       if(view==='profileGeneral'||view==='profilePosition')await loadPipeline().catch(function(){});
       syncIdentity();
       eachCopy(function(root){
+        if(/^onboarding/.test(view))hydrateOnboarding(root,view);
         if(view==='dashboard')hydrateDashboard(root);
         if(view==='search'||view==='searchFilters')hydrateSearch(root);
         if(view==='rankings')hydrateRankings(root);
@@ -954,7 +1272,7 @@
   async function saveSetup(root){
     var payload=setupPayload(root);
     if(isDemo()){
-      try{sessionStorage.setItem('sl_scout_v8_demo_setup',JSON.stringify(payload));}catch(_){}
+      try{sessionStorage.setItem('sl_scout_v9_demo_setup',JSON.stringify(payload));}catch(_){}
       toast('Compatibility setup saved for this demo session.');
       return;
     }
@@ -962,6 +1280,65 @@
     if(S.profile&&S.profile.scout)S.profile.scout.scout_preferences=payload;
     toast('Compatibility setup saved.');
   }
+  function setSelectIfAvailable(select,value){
+    if(!select||value==null||value==='')return;
+    var wanted=String(value);
+    var option=Array.prototype.find.call(select.options,function(o){return String(o.value)===wanted||text(o.textContent)===wanted;});
+    if(option)select.value=option.value;
+  }
+
+  function hydrateOnboarding(root,view){
+    var scout=S.profile&&S.profile.scout?S.profile.scout:(S.profile||{});
+    var prefs=scout.scout_preferences||{};
+    var team=S.scoutTeam||{};
+
+    if(!S.onboarding.fullName)S.onboarding.fullName=[scout.first_name,scout.last_name].filter(Boolean).join(' ');
+    if(!S.onboarding.email)S.onboarding.email=scout.email||'';
+    if(!S.onboarding.phone)S.onboarding.phone=scout.phone||'';
+    if(!S.onboarding.organisation)S.onboarding.organisation=team.team_name||team.club_name||scout.club_name||'';
+    if(!S.onboarding.region)S.onboarding.region=prefs.scoutRegion||prefs.scout_region||team.scout_region||'';
+    if(!S.onboarding.website)S.onboarding.website=team.team_website_url||team.team_website||'';
+    if(!(S.onboarding.teamWeaknesses||[]).length)S.onboarding.teamWeaknesses=(prefs.teamWeaknesses||prefs.team_weaknesses||team.team_weaknesses||[]).slice();
+    if(!(S.onboarding.roleExpectations||[]).length)S.onboarding.roleExpectations=(prefs.roleExpectations||prefs.role_expectations||team.role_expectations||[]).slice();
+    if(!(S.onboarding.longTermGoals||[]).length)S.onboarding.longTermGoals=(prefs.longTermGoals||prefs.long_term_goals||team.long_term_goals||[]).slice();
+    S.onboarding.playingStyle=prefs.playingStyle||prefs.playing_style||team.playing_style||S.onboarding.playingStyle||'';
+    S.onboarding.formation=prefs.formation||team.formation||S.onboarding.formation||'';
+
+    if(view==='onboarding1'){
+      var full=labelInput(root,'Full name'),email=labelInput(root,'Email address'),phone=labelInput(root,'Phone number'),country=labelSelect(root,'Country'),role=labelSelect(root,'Scouting role');
+      if(full)full.value=S.onboarding.fullName||'';
+      if(email)email.value=S.onboarding.email||'';
+      if(phone)phone.value=S.onboarding.phone||'';
+      setSelectIfAvailable(country,S.onboarding.country);
+      setSelectIfAvailable(role,S.onboarding.role);
+    }else if(view==='onboarding2'){
+      var org=labelInput(root,'Organisation name'),type=labelSelect(root,'Organisation type'),region=labelInput(root,'Region covered'),website=labelInput(root,'Website'),users=labelSelect(root,'Expected number of scouts');
+      if(org)org.value=S.onboarding.organisation||'';
+      if(region)region.value=S.onboarding.region||'';
+      if(website)website.value=S.onboarding.website||'';
+      setSelectIfAvailable(type,S.onboarding.organisationType);
+      setSelectIfAvailable(users,S.onboarding.users);
+    }else if(view==='onboarding3'){
+      hydrateSetup(root);
+    }else if(view==='onboarding4'){
+      root.querySelectorAll('.brief-row').forEach(function(row){
+        var b=row.querySelector('b'),p=row.querySelector('p');if(!b||!p)return;
+        var label=norm(b.textContent);
+        if(label.indexOf('team weaknesses')>=0)p.textContent=(S.onboarding.teamWeaknesses||[]).join(' · ')||'Not set';
+        else if(label.indexOf('role expectations')>=0)p.textContent=(S.onboarding.roleExpectations||[]).join(' · ')||'Not set';
+        else if(label.indexOf('playing style')>=0)p.textContent=S.onboarding.playingStyle||'Not set';
+        else if(label==='formation')p.textContent=S.onboarding.formation||'Not set';
+        else if(label.indexOf('long-term goals')>=0)p.textContent=(S.onboarding.longTermGoals||[]).join(' · ')||'Not set';
+      });
+      root.querySelectorAll('.who').forEach(function(who){
+        var b=who.querySelector('b'),span=who.querySelector('span');if(!b)return;
+        var label=norm(b.textContent);
+        if(label.indexOf('jordan carty')>=0||label.indexOf('scout details')>=0){b.textContent=S.onboarding.fullName||'Scout';if(span)span.textContent=S.onboarding.email||'';}
+        if(label.indexOf('av recruitment')>=0||label.indexOf('organisation')>=0){b.textContent=S.onboarding.organisation||'Organisation';if(span)span.textContent=S.onboarding.region||'';}
+      });
+    }
+  }
+
   function captureOnboarding(view,root){
     if(view==='onboarding1'){
       var full=labelInput(root,'Full name'),email=labelInput(root,'Email address'),phone=labelInput(root,'Phone number'),country=labelSelect(root,'Country'),role=labelSelect(root,'Scouting role');
@@ -1462,8 +1839,39 @@
   loadProfile=async function(force){
     if(S.profile&&!force)return S.profile;
     if(isDemo()){
-      if(!S.profile)S.profile={scout:{first_name:'Jordan',last_name:'Carty',club_name:'AV Recruitment',email:'demo.scout@scoutlink.app',scout_preferences:{}},scoutTeam:{team_name:'AV Recruitment'},usage:S.usage||null,seats:{plan:'Elite',used:1,limit:10,remaining:9,canInvite:true},teamScouts:[]};
-      S.scoutTeam=S.profile.scoutTeam;S.seats=S.profile.seats;S.teamScouts=S.profile.teamScouts||[];return S.profile;
+      try{
+        var auth=(window.Auth&&window.Auth.user)||{};
+        var profileResponse=await request('GET','/api/scouts/profile');
+        var setupResponse=await request('GET','/api/scouts/setup').catch(function(){return{};});
+        var scout=(profileResponse&&profileResponse.scout)||{};
+        var setupTeam=(setupResponse&&setupResponse.scoutTeam)||{};
+        var prefs=(setupResponse&&setupResponse.preferences)||scout.scout_preferences||{};
+        scout=Object.assign({
+          first_name:auth.firstName||auth.first_name||'Scout',
+          last_name:auth.lastName||auth.last_name||'',
+          email:auth.email||'',
+          club_name:auth.teamName||auth.team_name||setupTeam.team_name||'Scout workspace',
+          scout_preferences:prefs
+        },scout,{scout_preferences:prefs});
+        var teamName=setupTeam.team_name||scout.team_name||auth.teamName||auth.team_name||scout.club_name||'Scout workspace';
+        var plan=scout.subscription_plan||'Elite';
+        var seatLimit=plan==='Core'?1:plan==='Plus'?5:plan==='Elite'?10:10;
+        S.profile={
+          scout:scout,
+          scoutTeam:Object.assign({team_name:teamName},setupTeam),
+          usage:S.usage||null,
+          seats:{plan:plan,used:1,limit:seatLimit,remaining:Math.max(0,seatLimit-1),canInvite:seatLimit>1},
+          teamScouts:[]
+        };
+        S.scoutTeam=S.profile.scoutTeam;
+        S.seats=S.profile.seats;
+        S.teamScouts=[];
+        v9ClearError('profile');
+        return S.profile;
+      }catch(e){
+        v9RememberError('profile',e);
+        throw e;
+      }
     }
     try{
       var r=await request('GET','/api/scout-experience-v9/workspace');
@@ -1758,6 +2166,23 @@
       var rows=card.querySelectorAll('.kv,.stat');rows.forEach(function(row){var key=row.querySelector('.k,label,b'),val=row.querySelector('.v,span,p');if(!key||!val)return;var lab=norm(key.textContent);if(lab.indexOf('date')>=0)val.textContent=v9SafeDateTime(event.event_date);else if(lab.indexOf('venue')>=0)val.textContent=[event.venue_name,event.venue_address].filter(Boolean).join(', ');else if(lab.indexOf('format')>=0)val.textContent=event.description||event.summary||val.textContent;else if(lab.indexOf('attendance')>=0)val.textContent=data.attendance&&data.attendance.status?data.attendance.status.replace(/_/g,' '):'Not confirmed';});
     }});
     root.querySelectorAll('.list-row').forEach(function(row){var name=norm(row.textContent);if(name.indexOf('view player list')>=0){row.style.cursor='pointer';row.onclick=function(){v9OpenEventPlayers(event,players,planning,false);};}else if(name.indexOf('plan who to watch')>=0){row.style.cursor='pointer';row.onclick=function(){v9OpenEventPlayers(event,players,planning,true);};}else if(name.indexOf('event notes')>=0){row.style.cursor='pointer';row.onclick=function(){v9OpenEventNotes(event,planning);};}});
+
+    var schedule=data.schedule||event.schedule||event.schedule_items||[];
+    var scheduleCard=Array.prototype.find.call(root.querySelectorAll('.card'),function(card){var h=card.querySelector('.card-h h3');return h&&/^event schedule$|^schedule$/i.test(text(h.textContent));});
+    if(scheduleCard){
+      var scheduleBody=scheduleCard.querySelector('.card-b');
+      var sample=scheduleBody&&scheduleBody.querySelector('.list-row,.fixture-card-row');
+      if(scheduleBody&&sample){
+        var tpl=sample.cloneNode(true);scheduleBody.innerHTML='';
+        (Array.isArray(schedule)?schedule:[]).forEach(function(item){
+          var row=tpl.cloneNode(true);
+          var plate=row.querySelector('.dateplate');if(plate){var b=plate.querySelector('b'),s=plate.querySelector('span');if(b)b.textContent=item.time||item.start_time||'—';if(s)s.textContent=item.label||item.block||'';}
+          var who=row.querySelector('.who');if(who){var wb=who.querySelector('b'),ws=who.querySelector('span');if(wb)wb.textContent=item.title||item.name||'Event activity';if(ws)ws.textContent=item.description||item.notes||'';}
+          scheduleBody.appendChild(row);
+        });
+        if(!Array.isArray(schedule)||!schedule.length)scheduleBody.innerHTML='<div class="empty"><b>Schedule not published yet</b><p>The event schedule will appear here when it is available.</p></div>';
+      }
+    }
   }
   function v9OpenEventPlayers(event,players,planning,planningMode){
     var watched=new Set((planning.watchlistPlayerIds||[]).map(String));var rows=players.map(function(p){return'<div class="list-row" style="padding:12px 0"><span class="avatar">'+esc(initials(playerName(p)))+'</span><div class="who"><b>'+esc(playerName(p))+'</b><span>'+esc([playerPos(p),age(p),team(p)].filter(Boolean).join(' · '))+'</span></div><span class="sp"></span>'+(planningMode?'<button type="button" class="btn '+(watched.has(String(p.id))?'outline':'volt')+' sm" data-v9-watch="'+esc(p.id)+'">'+(watched.has(String(p.id))?'Remove':'Watch')+'</button>':'<button type="button" class="btn outline sm" data-v9-open-player="'+esc(p.id)+'">Open</button>')+'</div>';}).join('');
@@ -1881,17 +2306,18 @@
       if(needsPlayers.indexOf(view)>=0)await loadPlayers().catch(function(e){v9RememberError('players',e);});
       if(['dashboard','pipeline','pipelineStage','profileGeneral','profilePosition'].indexOf(view)>=0)await loadPipeline().catch(function(e){v9RememberError('pipeline',e);});
       if(['dashboard','predictionsChoose','usage','usageRequest','exports','exportNew'].indexOf(view)>=0)await loadUsage().catch(function(e){v9RememberError('usage',e);});
-      if(['predictionsChoose','predictionsPosition','predictionsResult','predictionsInsufficient'].indexOf(view)>=0){await loadPredictions().catch(function(){});await v9LoadPredictionScenarios().catch(function(){});}
-      if(view==='fixtures'||view==='dashboard')await loadFixtures().catch(function(){});
-      if(view==='events')await v9LoadEvents().catch(function(){});
-      if(view==='eventDetail')await v9LoadEventDetail().catch(function(e){toast(e.message,true);});
-      if(view==='notifications')await loadNotifications().catch(function(){});
-      if(view==='chatList'||view==='chatThread'){await loadChat().catch(function(){});if(S.activeThread){S.view='chatThread';await loadMessages().catch(function(){});}}
-      if(view==='exports')await v9LoadExports().catch(function(){});
-      if(view==='profileGeneral'||view==='profilePosition')await v9LoadPlayerDetail().catch(function(e){toast(e.message||'Player profile could not be loaded.',true);});
+      if(['predictionsChoose','predictionsPosition','predictionsResult','predictionsInsufficient'].indexOf(view)>=0){await loadPredictions().catch(function(e){v9RememberError('predictions',e);});await v9LoadPredictionScenarios().catch(function(e){v9RememberError('predictionScenarios',e);});}
+      if(view==='fixtures'||view==='dashboard')await loadFixtures().catch(function(e){v9RememberError('fixtures',e);});
+      if(view==='events')await v9LoadEvents().catch(function(e){v9RememberError('events',e);});
+      if(view==='eventDetail')await v9LoadEventDetail().catch(function(e){v9RememberError('eventDetail',e);toast(e.message,true);});
+      if(view==='notifications'||view==='dashboard')await loadNotifications().catch(function(e){v9RememberError('notifications',e);});
+      if(view==='chatList'||view==='chatThread'||view==='dashboard'){await loadChat().catch(function(e){v9RememberError('chat',e);});if((view==='chatList'||view==='chatThread')&&S.activeThread){S.view='chatThread';await loadMessages().catch(function(e){v9RememberError('messages',e);});}}
+      if(view==='exports')await v9LoadExports().catch(function(e){v9RememberError('exports',e);});
+      if(view==='profileGeneral'||view==='profilePosition')await v9LoadPlayerDetail().catch(function(e){v9RememberError('playerDetail',e);toast(e.message||'Player profile could not be loaded.',true);});
       syncIdentity();
       eachCopy(function(root){
         v9RepairRail(root);
+        if(/^onboarding/.test(view))hydrateOnboarding(root,view);
         if(view==='dashboard')hydrateDashboard(root);
         if(view==='search'||view==='searchFilters')hydrateSearch(root);
         if(view==='rankings')hydrateRankings(root);
@@ -1966,7 +2392,22 @@
     try{
       var saved=sessionStorage.getItem('sl_scout_v9_onboarding');if(saved)Object.assign(S.onboarding,JSON.parse(saved)||{});
     }catch(_){}
-    try{await loadProfile();}catch(_){}
+    try{
+      await loadProfile();
+      var scout=S.profile&&S.profile.scout?S.profile.scout:(S.profile||{});
+      var prefs=scout.scout_preferences||{};
+      var team=S.scoutTeam||{};
+      if(!S.onboarding.fullName)S.onboarding.fullName=[scout.first_name,scout.last_name].filter(Boolean).join(' ');
+      if(!S.onboarding.email)S.onboarding.email=scout.email||'';
+      if(!S.onboarding.phone)S.onboarding.phone=scout.phone||'';
+      if(!S.onboarding.organisation)S.onboarding.organisation=team.team_name||team.club_name||scout.club_name||'';
+      if(!S.onboarding.region)S.onboarding.region=prefs.scoutRegion||prefs.scout_region||team.scout_region||'';
+      if(!(S.onboarding.teamWeaknesses||[]).length)S.onboarding.teamWeaknesses=(prefs.teamWeaknesses||prefs.team_weaknesses||team.team_weaknesses||[]).slice();
+      if(!(S.onboarding.roleExpectations||[]).length)S.onboarding.roleExpectations=(prefs.roleExpectations||prefs.role_expectations||team.role_expectations||[]).slice();
+      if(!(S.onboarding.longTermGoals||[]).length)S.onboarding.longTermGoals=(prefs.longTermGoals||prefs.long_term_goals||team.long_term_goals||[]).slice();
+      S.onboarding.playingStyle=prefs.playingStyle||prefs.playing_style||team.playing_style||S.onboarding.playingStyle||'';
+      S.onboarding.formation=prefs.formation||team.formation||S.onboarding.formation||'';
+    }catch(_){}
     if(S.route==='profile'){
       var p=profilePlayer();
       if(p&&!S.players.some(function(x){return String(x.id)===String(p.id);})){S.players=[p];}
@@ -1978,24 +2419,52 @@
     S.host=document.getElementById('scoutExperienceApp')||document.getElementById('profileRouteRoot');
     if(!S.host)return;
     if(S.host.shadowRoot){S.shadow=S.host.shadowRoot;S.shadow.innerHTML='';}else S.shadow=S.host.attachShadow({mode:'open'});
+
     var link=document.createElement('link');
-    link.rel='stylesheet';link.href='/css/scout-experience-v8.css?v=20260821-bugsweep-1';
+    link.rel='stylesheet';
+    link.href='/css/scout-experience-v8.css?v=20260821-placeholder-root-3';
+
     var boot=document.createElement('style');
-    boot.textContent=':host{display:block;min-height:100vh;background:#FBFCFB}';
+    boot.textContent=':host{display:block;min-height:100vh;background:#FBFCFB}.slv8-production-root{visibility:hidden}';
+
     S.content=document.createElement('div');
     S.content.className='slv8-production-root';
     S.content.style.visibility='hidden';
-    S.shadow.appendChild(boot);S.shadow.appendChild(link);S.shadow.appendChild(S.content);
-    var reveal=function(){S.content.style.visibility='visible';S.host.style.visibility='visible';S.host.classList.remove('is-loading');S.host.classList.remove('profile-route-loading');S.host.removeAttribute('aria-busy');};
-    link.onload=reveal;link.onerror=reveal;setTimeout(reveal,900);
+
+    S.shadow.appendChild(boot);
+    S.shadow.appendChild(link);
+    S.shadow.appendChild(S.content);
+
+    /*
+     * CSS readiness is only one prerequisite. It is NOT permission to reveal
+     * the route. The old implementation revealed on link.onload or after
+     * 900ms, which exposed literal source-board data while API requests were
+     * still running.
+     */
+    S.cssReadyPromise=new Promise(function(resolve){
+      var done=false;
+      function finish(){if(done)return;done=true;resolve();}
+      link.onload=finish;
+      link.onerror=finish;
+      setTimeout(finish,1800);
+    });
+
     S.view=VIEW_BY_ROUTE[S.route]||'dashboard';
     var q=query();
     if(S.route==='profile'&&q.get('attributes')==='position')S.view='profilePosition';
     if(S.route==='predictions'&&q.get('player'))S.predictionPlayerId=q.get('player');
-    render(S.view);
-    prehydrateInitial().then(function(){hydrate(S.view);});
+
     S.mounted=true;
     document.body.classList.add('scout-desk-field-v8');
+
+    /*
+     * Load identity first, then perform one route hydration. The previous
+     * install path called render()->hydrate() and then hydrated a second time
+     * after prehydrateInitial(), creating duplicate requests and a race.
+     */
+    prehydrateInitial()
+      .catch(function(error){v9RememberError('profile',error);})
+      .then(function(){return render(S.view,false);});
   }
 
   function start(){
