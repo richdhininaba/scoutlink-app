@@ -178,6 +178,10 @@
       "destination": "/pages/scout-events"
     },
     {
+      "source": "/public-demo/scout/events/:slug",
+      "destination": "/pages/scout-events"
+    },
+    {
       "source": "/public-demo/scout/chat",
       "destination": "/pages/scout-chat"
     },
@@ -371,6 +375,10 @@
     },
     {
       "source": "/scout/events",
+      "destination": "/pages/scout-events"
+    },
+    {
+      "source": "/scout/events/:slug",
       "destination": "/pages/scout-events"
     },
     {
