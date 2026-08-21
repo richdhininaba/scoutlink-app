@@ -1,205 +1,445 @@
 'use strict';
+
 const express = require('express');
 const router = express.Router();
 const { supabase } = require('../db/supabase');
-const { requireAuth, requireRole, generateLoginCode, generateId } = require('../utils/auth');
+const { requireAuth, requireRole, generateId } = require('../utils/auth');
 const email = require('../services/email');
 const config = require('../config');
 const { isDemoSession, applyRealDataFilter, demoWriteFields } = require('../utils/demo');
 const { sendDbError } = require('../utils/dbErrors');
 const { maybeRunSeasonalAgeGroupRollover } = require('../services/playerAgeGroups');
 
-const COACH_PROFILE_SELECT = 'id,coach_id,first_name,last_name,email,phone,team_id,team_name,role_at_club,data_policy_agreed,last_login,is_active,created_at,updated_at,registration_complete,is_super_user';
+const COACH_PROFILE_SELECT = [
+  'id','coach_id','first_name','last_name','email','phone',
+  'team_id','team_name','team_county','team_league','team_age_groups',
+  'team_home_venue','team_website','team_contact_email',
+  'role_at_club','data_policy_agreed','last_login','is_active',
+  'created_at','updated_at','registration_complete','is_super_user',
+  'notification_preferences','is_demo'
+].join(',');
 
-function isValidEmail(emailAddr) {
-return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(emailAddr || '').trim());
+function requestError(message, status = 400) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
-// My players - coaches only see players assigned to them (assigned_coach_id)
-// NOTE: coaches table requires is_super_user column (boolean, default false) - added via migration
-// Super user coaches see ALL players on their team
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+function sameTeam(a, b) {
+  if (!a || !b) return false;
+  if (a.team_id && b.team_id) return String(a.team_id) === String(b.team_id);
+  return !!(a.team_name && b.team_name && String(a.team_name) === String(b.team_name));
+}
+
+async function coachRecord(id) {
+  const { data, error } = await supabase
+    .from('coaches')
+    .select(COACH_PROFILE_SELECT)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw requestError('Coach not found', 404);
+  return data;
+}
+
+async function uniqueLoginCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    let code = '';
+    for (let i = 0; i < 6; i += 1) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const checks = await Promise.all(
+      ['scouts','coaches','players','stratex'].map(table =>
+        supabase.from(table).select('id').eq('login_code', code).maybeSingle()
+      )
+    );
+    if (!checks.some(result => result.data)) return code;
+  }
+  throw requestError('Could not generate unique login code', 500);
+}
+
+async function markInvitedCoachOnboardingComplete(newCoach, inviterId) {
+  const now = new Date().toISOString();
+  const row = {
+    account_type: 'Coach',
+    user_id: newCoach.id,
+    setup_wizard_completed: true,
+    wizard_data: {
+      joinedExistingTeam: true,
+      invitedBy: inviterId,
+      teamId: newCoach.team_id || null,
+      teamName: newCoach.team_name || null,
+      completedAt: now,
+      onboardingVersion: 16
+    },
+    updated_at: now
+  };
+  const { error } = await supabase
+    .from('onboarding_progress')
+    .upsert(row, { onConflict: 'account_type,user_id' });
+  if (error) throw error;
+}
+
 router.get('/my-players', requireAuth, requireRole('Coach'), async (req, res) => {
-try {
-await maybeRunSeasonalAgeGroupRollover();
-const { data: coach } = await supabase.from('coaches').select('id,team_name,team_id,is_super_user').eq('id', req.user.id).single();
-if (!coach) return res.status(404).json({ error: 'Coach not found' });
+  try {
+    await maybeRunSeasonalAgeGroupRollover();
+    const coach = await coachRecord(req.user.id);
 
-let q = supabase.from('players')
-.select('id,first_name,last_name,age,age_group,position_group,specific_position,primary_position,overall_rating,transfer_value,predicted_salary_weekly,height_category,build_category,foot,team_name,assigned_coach_id,avatar_config,appearances,goals,assists,clean_sheets,yellow_cards,red_cards')
-.eq('is_active', true)
-.order('last_name');
-q = applyRealDataFilter(q, req);
+    let query = supabase
+      .from('players')
+      .select([
+        'id','first_name','last_name','age','age_group','position_group',
+        'specific_position','primary_position','overall_rating','transfer_value',
+        'predicted_salary_weekly','height_category','build_category','foot',
+        'team_id','team_name','assigned_coach_id','avatar_config',
+        'appearances','goals','assists','clean_sheets','yellow_cards','red_cards',
+        'availability','attribute_ratings'
+      ].join(','))
+      .eq('is_active', true)
+      .order('last_name');
 
-if (coach.is_super_user) {
-// Super user sees all players on the team
-if (coach.team_id) q = q.eq('team_id', coach.team_id);
-else if (coach.team_name) q = q.eq('team_name', coach.team_name);
-else return res.json({ data: [], teamName: null, isSuperUser: true });
-} else {
-// Regular coach only sees their directly assigned players
-q = q.eq('assigned_coach_id', req.user.id);
-}
+    query = applyRealDataFilter(query, req);
 
-const { data, error } = await q;
-if (error) throw error;
-res.json({ data: data||[], teamName: coach.team_name, isSuperUser: coach.is_super_user||false });
-} catch(err) { console.error('[Coaches] my-players:', err); res.status(500).json({ error: 'Internal server error' }); }
+    if (coach.is_super_user) {
+      if (coach.team_id) query = query.eq('team_id', coach.team_id);
+      else if (coach.team_name) query = query.eq('team_name', coach.team_name);
+      else return res.json({ data: [], teamName: null, isSuperUser: true });
+    } else {
+      query = query.eq('assigned_coach_id', req.user.id);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({
+      data: data || [],
+      teamName: coach.team_name || null,
+      isSuperUser: !!coach.is_super_user
+    });
+  } catch (error) {
+    console.error('[Coaches my-players]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
+  }
 });
 
 router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
-try {
-const { data, error } = await supabase.from('coaches').select(COACH_PROFILE_SELECT).eq('id', req.user.id).single();
-if (error||!data) return res.status(404).json({ error: 'Not found' });
-res.json({ coach: data });
-} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
-});
-
-// Super user coach: list all coaches on same team
-router.get('/team-coaches', requireAuth, requireRole('Coach'), async (req, res) => {
-try {
-const { data: me } = await supabase.from('coaches').select('id,team_id,team_name,is_super_user').eq('id', req.user.id).single();
-if (!me) return res.status(404).json({ error: 'Not found' });
-if (!me.is_super_user) return res.status(403).json({ error: 'Only super user coaches can view team coaches' });
-let q = supabase.from('coaches').select('id,first_name,last_name,email,role_at_club,is_super_user,registration_complete').eq('is_active', true).neq('id', req.user.id);
-q = applyRealDataFilter(q, req);
-if (me.team_id) q = q.eq('team_id', me.team_id);
-else if (me.team_name) q = q.eq('team_name', me.team_name);
-const { data, error } = await q;
-if (error) throw error;
-res.json({ data: data||[] });
-} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
-});
-
-// Super user coach: add another coach to their team
-router.post('/add-coach', requireAuth, requireRole('Coach'), async (req, res) => {
-try {
-const { data: me } = await supabase.from('coaches').select('id,team_id,team_name,is_super_user').eq('id', req.user.id).single();
-if (!me || !me.is_super_user) return res.status(403).json({ error: 'Only super user coaches can add coaches' });
-const { firstName, lastName, emailAddr, phone, isSuperUser } = req.body;
-if (!firstName||!lastName||!emailAddr) return res.status(400).json({ error: 'firstName, lastName, email required' });
-if (!isValidEmail(emailAddr)) return res.status(400).json({ error: 'Please enter a valid email address.' });
-
-// Check duplicates
-const tables = ['scouts','coaches','players','stratex'];
-for (const t of tables) {
-const { data: eRow } = await supabase.from(t).select('id').eq('email', emailAddr.toLowerCase().trim()).maybeSingle();
-if (eRow) return res.status(409).json({ error: t === 'coaches' ? 'A coach with this email already exists.' : 'This email is already registered on ScoutLink.' });
-}
-if (phone) {
-for (const t of ['scouts','coaches']) {
-const { data: pRow } = await supabase.from(t).select('id').eq('phone', phone.trim()).maybeSingle();
-if (pRow) return res.status(409).json({ error: t === 'coaches' ? 'A coach with this phone number already exists.' : 'This phone number is already registered.' });
-}
-}
-
-// Generate unique login code
-const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-let loginCode = '', attempts = 0;
-while (attempts < 20) {
-let c = '';
-for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random()*chars.length)];
-const [s,co,p,stx] = await Promise.all([
-supabase.from('scouts').select('id').eq('login_code',c).maybeSingle(),
-supabase.from('coaches').select('id').eq('login_code',c).maybeSingle(),
-supabase.from('players').select('id').eq('login_code',c).maybeSingle(),
-supabase.from('stratex').select('id').eq('login_code',c).maybeSingle()
-]);
-if (!s.data && !co.data && !p.data && !stx.data) { loginCode = c; break; }
-attempts++;
-}
-if (!loginCode) return res.status(500).json({ error: 'Could not generate unique login code' });
-
-const expires = new Date(Date.now() + 7*24*60*60*1000);
-const { data: newCoach, error } = await supabase.from('coaches').insert({
-coach_id: generateId('CHC'), first_name: firstName.trim(), last_name: lastName.trim(),
-email: emailAddr.toLowerCase().trim(), phone: phone||null,
-team_name: me.team_name, team_id: me.team_id,
-role_at_club: 'Coach',
-data_policy_agreed: true, login_code: loginCode, login_code_expires: expires,
-is_active: true, is_super_user: !!isSuperUser, registration_complete: false,
-...demoWriteFields(req)
-}).select().single();
-if (error) throw error;
-
-const baseUrl = config.brandUrl||'https://scoutlink.app';
-const completeLink = baseUrl + '/complete-registration?code=' + loginCode + '&email=' + encodeURIComponent(emailAddr.toLowerCase()) + '&type=Coach';
-const emailResult = isDemoSession(req) ? { success: true, template: 'demo-no-email' } : await email.sendCompleteSignup({ to: emailAddr, email: emailAddr, firstName, loginCode, accountType: 'Coach', completeLink }).catch(e => {
-  console.error('[Email]', e.message);
-  return { success: false, error: e.message };
-});
-if (!emailResult || !emailResult.success) {
-await supabase.from('coaches').delete().eq('id', newCoach.id);
-return res.status(502).json({ error: 'SendGrid did not accept the coach invite email. Coach was not created.', details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error' });
-}
-
-res.status(201).json({ message: 'Coach added. Complete-registration email sent.', coachId: newCoach.id, loginCode, completeLink, emailSent: true, emailTemplate: emailResult.template || null });
-} catch(err) { console.error(err); sendDbError(res, err); }
-});
-
-// Assign a player to this coach (coach assigns themselves to a player, or super user assigns)
-router.post('/assign-player/:playerId', requireAuth, requireRole('Coach'), async (req, res) => {
-try {
-const { data: coach } = await supabase.from('coaches').select('id,team_id,team_name,is_super_user').eq('id', req.user.id).single();
-if (!coach) return res.status(404).json({ error: 'Coach not found' });
-const targetCoachId = req.body.coachId || req.user.id;
-// Super user can assign to any coach on team; regular coach can only self-assign
-if (!coach.is_super_user && targetCoachId !== req.user.id) return res.status(403).json({ error: 'Only super user coaches can reassign players' });
-const { data: targetCoach } = await supabase.from('coaches').select('id,team_id,team_name').eq('id', targetCoachId).eq('is_active', true).single();
-if (!targetCoach) return res.status(404).json({ error: 'Target coach not found' });
-const targetSameTeam = (coach.team_id && targetCoach.team_id === coach.team_id) || (!coach.team_id && coach.team_name && targetCoach.team_name === coach.team_name) || targetCoach.id === coach.id;
-if (!targetSameTeam) return res.status(403).json({ error: 'Target coach must be on your team' });
-// Verify player is on same team
-const { data: player } = await supabase.from('players').select('id,team_id,team_name').eq('id', req.params.playerId).single();
-if (!player) return res.status(404).json({ error: 'Player not found' });
-const playerSameTeam = (coach.team_id && player.team_id === coach.team_id) || (!coach.team_id && coach.team_name && player.team_name === coach.team_name);
-if (!playerSameTeam) return res.status(403).json({ error: 'Player must be on your team' });
-const { error } = await supabase.from('players').update({ assigned_coach_id: targetCoachId }).eq('id', req.params.playerId);
-if (error) throw error;
-res.json({ message: 'Player assigned to coach' });
-} catch(err) { res.status(500).json({ error: 'Internal server error' }); }
-});
-
-
-// GET /api/coaches/dashboard - coach dashboard stats
-// GET /api/coaches/dashboard - coach dashboard stats
-router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => {
   try {
-    const coachId = req.user.id;
+    res.json({ coach: await coachRecord(req.user.id) });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
+  }
+});
 
-    // Use the same visibility rules as /api/coaches/my-players so every
-    // dashboard KPI describes the same squad shown in the table.
-    const { data: coach, error: coachErr } = await supabase
+/*
+ * Every Coach may see the people who belong to the same Coach workspace.
+ * Mutating the team remains Head-Coach-only.
+ *
+ * Returning the signed-in Coach as part of this list is important: the
+ * Settings screen must append invited coaches rather than visually replacing
+ * the person who sent the invitation.
+ */
+router.get('/team-coaches', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const me = await coachRecord(req.user.id);
+
+    let query = supabase
       .from('coaches')
-      .select('id,team_id,team_name,is_super_user')
-      .eq('id', coachId)
-      .single();
+      .select([
+        'id','first_name','last_name','email','phone','role_at_club',
+        'is_super_user','registration_complete','team_id','team_name','is_demo'
+      ].join(','))
+      .eq('is_active', true)
+      .order('is_super_user', { ascending: false })
+      .order('last_name', { ascending: true });
 
-    if (coachErr || !coach) {
-      return res.status(404).json({ error: 'Coach not found' });
+    query = applyRealDataFilter(query, req);
+
+    if (me.team_id) query = query.eq('team_id', me.team_id);
+    else if (me.team_name) query = query.eq('team_name', me.team_name);
+    else query = query.eq('id', me.id);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const list = data || [];
+    if (!list.some(coach => String(coach.id) === String(me.id))) {
+      list.unshift(me);
     }
 
-    let playerQ = supabase
+    res.json({
+      data: list,
+      currentCoachId: me.id,
+      isSuperUser: !!me.is_super_user
+    });
+  } catch (error) {
+    console.error('[Coaches team-coaches]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
+  }
+});
+
+router.post('/add-coach', requireAuth, requireRole('Coach'), async (req, res) => {
+  let newCoach = null;
+
+  try {
+    const me = await coachRecord(req.user.id);
+    if (!me.is_super_user) {
+      return res.status(403).json({ error: 'Only the Head Coach can add coaches.' });
+    }
+
+    const firstName = String(req.body?.firstName || '').trim();
+    const lastName = String(req.body?.lastName || '').trim();
+    const emailAddr = String(req.body?.emailAddr || '').trim().toLowerCase();
+    const phone = String(req.body?.phone || '').trim();
+    const isSuperUser = req.body?.isSuperUser === true;
+
+    if (!firstName || !lastName || !emailAddr) {
+      return res.status(400).json({ error: 'firstName, lastName, email required' });
+    }
+    if (!isValidEmail(emailAddr)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+
+    for (const table of ['scouts','coaches','players','stratex']) {
+      const { data: existing, error } = await supabase
+        .from(table)
+        .select('id')
+        .eq('email', emailAddr)
+        .maybeSingle();
+      if (error) throw error;
+      if (existing) {
+        return res.status(409).json({
+          error: table === 'coaches'
+            ? 'A coach with this email already exists.'
+            : 'This email is already registered on ScoutLink.'
+        });
+      }
+    }
+
+    if (phone) {
+      for (const table of ['scouts','coaches']) {
+        const { data: existing, error } = await supabase
+          .from(table)
+          .select('id')
+          .eq('phone', phone)
+          .maybeSingle();
+        if (error) throw error;
+        if (existing) {
+          return res.status(409).json({
+            error: table === 'coaches'
+              ? 'A coach with this phone number already exists.'
+              : 'This phone number is already registered.'
+          });
+        }
+      }
+    }
+
+    const loginCode = await uniqueLoginCode();
+    const expires = new Date(Date.now() + (7 * 24 * 60 * 60 * 1000));
+
+    const { data, error } = await supabase
+      .from('coaches')
+      .insert({
+        coach_id: generateId('CHC'),
+        first_name: firstName,
+        last_name: lastName,
+        email: emailAddr,
+        phone: phone || null,
+        team_name: me.team_name || null,
+        team_id: me.team_id || null,
+        team_county: me.team_county || null,
+        team_league: me.team_league || null,
+        team_age_groups: me.team_age_groups || [],
+        team_home_venue: me.team_home_venue || null,
+        team_website: me.team_website || null,
+        team_contact_email: me.team_contact_email || null,
+        role_at_club: isSuperUser ? 'Head Coach' : 'Assistant Coach',
+        data_policy_agreed: true,
+        login_code: loginCode,
+        login_code_expires: expires,
+        is_active: true,
+        is_super_user: isSuperUser,
+        registration_complete: false,
+        ...demoWriteFields(req)
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    newCoach = data;
+
+    /*
+     * This person is joining an existing workspace. Their account still needs
+     * activation/password creation, but it must not run the team-creation
+     * wizard afterwards.
+     */
+    await markInvitedCoachOnboardingComplete(newCoach, req.user.id);
+
+    const baseUrl = config.brandUrl || 'https://scoutlink.app';
+    const completeLink =
+      baseUrl +
+      '/complete-registration?code=' + encodeURIComponent(loginCode) +
+      '&email=' + encodeURIComponent(emailAddr) +
+      '&type=Coach';
+
+    const emailResult = isDemoSession(req)
+      ? { success: true, template: 'demo-no-email' }
+      : await email.sendCompleteSignup({
+          to: emailAddr,
+          email: emailAddr,
+          firstName,
+          loginCode,
+          accountType: 'Coach',
+          completeLink
+        }).catch(mailError => {
+          console.error('[Coach invite email]', mailError.message);
+          return { success: false, error: mailError.message };
+        });
+
+    if (!emailResult || !emailResult.success) {
+      await Promise.all([
+        supabase.from('onboarding_progress')
+          .delete()
+          .eq('account_type', 'Coach')
+          .eq('user_id', newCoach.id),
+        supabase.from('coaches').delete().eq('id', newCoach.id)
+      ]);
+
+      return res.status(502).json({
+        error: 'SendGrid did not accept the coach invite email. Coach was not created.',
+        details: emailResult && (emailResult.error || emailResult.details) || 'Unknown email error'
+      });
+    }
+
+    res.status(201).json({
+      message: 'Coach added. Complete-registration email sent.',
+      coachId: newCoach.id,
+      coach: newCoach,
+      loginCode,
+      completeLink,
+      emailSent: !isDemoSession(req),
+      emailTemplate: emailResult.template || null
+    });
+  } catch (error) {
+    console.error('[Coaches add-coach]', error);
+
+    /*
+     * If a failure happens after the Coach row exists but before the endpoint
+     * completes, avoid leaving a half-created invitation behind.
+     */
+    if (newCoach?.id) {
+      try {
+        await supabase
+          .from('onboarding_progress')
+          .delete()
+          .eq('account_type', 'Coach')
+          .eq('user_id', newCoach.id);
+      } catch (_) {}
+
+      try {
+        await supabase
+          .from('coaches')
+          .delete()
+          .eq('id', newCoach.id);
+      } catch (_) {}
+    }
+
+    sendDbError(res, error);
+  }
+});
+
+router.post('/assign-player/:playerId', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const coach = await coachRecord(req.user.id);
+    const targetCoachId = req.body?.coachId || req.user.id;
+
+    if (!coach.is_super_user && String(targetCoachId) !== String(req.user.id)) {
+      return res.status(403).json({
+        error: 'Only the Head Coach can reassign players.'
+      });
+    }
+
+    let targetQuery = supabase
+      .from('coaches')
+      .select('id,team_id,team_name,is_active,is_demo')
+      .eq('id', targetCoachId)
+      .eq('is_active', true);
+    targetQuery = applyRealDataFilter(targetQuery, req);
+
+    const { data: targetCoach, error: targetError } = await targetQuery.maybeSingle();
+    if (targetError) throw targetError;
+    if (!targetCoach) return res.status(404).json({ error: 'Target coach not found' });
+    if (!sameTeam(coach, targetCoach) && String(targetCoach.id) !== String(coach.id)) {
+      return res.status(403).json({ error: 'Target coach must be on your team' });
+    }
+
+    let playerQuery = supabase
+      .from('players')
+      .select('id,team_id,team_name,assigned_coach_id,is_demo')
+      .eq('id', req.params.playerId)
+      .eq('is_active', true);
+    playerQuery = applyRealDataFilter(playerQuery, req);
+
+    const { data: player, error: playerError } = await playerQuery.maybeSingle();
+    if (playerError) throw playerError;
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    if (!sameTeam(coach, player)) {
+      return res.status(403).json({ error: 'Player must be on your team' });
+    }
+
+    const { error } = await supabase
+      .from('players')
+      .update({
+        assigned_coach_id: targetCoach.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', player.id);
+    if (error) throw error;
+
+    res.json({ message: 'Player assigned to coach', coachId: targetCoach.id });
+  } catch (error) {
+    console.error('[Coaches assign-player]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
+  }
+});
+
+router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => {
+  try {
+    const coach = await coachRecord(req.user.id);
+
+    let playerQuery = supabase
       .from('players')
       .select('id,first_name,last_name,overall_rating,transfer_value')
       .eq('is_active', true);
-
-    playerQ = applyRealDataFilter(playerQ, req);
+    playerQuery = applyRealDataFilter(playerQuery, req);
 
     if (coach.is_super_user) {
-      if (coach.team_id) playerQ = playerQ.eq('team_id', coach.team_id);
-      else if (coach.team_name) playerQ = playerQ.eq('team_name', coach.team_name);
-      else playerQ = playerQ.eq('assigned_coach_id', coachId);
+      if (coach.team_id) playerQuery = playerQuery.eq('team_id', coach.team_id);
+      else if (coach.team_name) playerQuery = playerQuery.eq('team_name', coach.team_name);
+      else playerQuery = playerQuery.eq('assigned_coach_id', coach.id);
     } else {
-      playerQ = playerQ.eq('assigned_coach_id', coachId);
+      playerQuery = playerQuery.eq('assigned_coach_id', coach.id);
     }
 
-    const { data: players, error: playerErr } = await playerQ;
-    if (playerErr) throw playerErr;
+    const { data: players, error: playerError } = await playerQuery;
+    if (playerError) throw playerError;
 
     const playerList = players || [];
     const totalPlayers = playerList.length;
     const sorted = [...playerList].sort(
-      (a, b) => (parseFloat(b.overall_rating) || 0) - (parseFloat(a.overall_rating) || 0)
+      (a, b) => (Number(b.overall_rating) || 0) - (Number(a.overall_rating) || 0)
     );
     const topRated = sorted[0] || null;
     const totalSquadValue = playerList.reduce(
@@ -211,24 +451,22 @@ router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => 
     let newInterestCount = 0;
 
     if (playerList.length) {
-      const playerIds = playerList.map((player) => player.id);
-      const { data: pipeline, error: pipelineErr } = await supabase
+      const playerIds = playerList.map(player => player.id);
+      const { data: pipeline, error: pipelineError } = await supabase
         .from('recruitment_pipeline')
         .select('scout_id,created_at')
         .in('player_id', playerIds)
         .eq('is_active', true);
+      if (pipelineError) throw pipelineError;
 
-      if (pipelineErr) throw pipelineErr;
-
-      const pipelineRows = pipeline || [];
       scoutsInterested = new Set(
-        pipelineRows.map((row) => row.scout_id).filter(Boolean)
+        (pipeline || []).map(row => row.scout_id).filter(Boolean)
       ).size;
 
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      newInterestCount = pipelineRows.filter((row) => {
-        const createdAt = new Date(row.created_at || 0).getTime();
-        return Number.isFinite(createdAt) && createdAt >= sevenDaysAgo;
+      newInterestCount = (pipeline || []).filter(row => {
+        const time = new Date(row.created_at || 0).getTime();
+        return Number.isFinite(time) && time >= sevenDaysAgo;
       }).length;
     }
 
@@ -247,32 +485,58 @@ router.get('/dashboard', requireAuth, requireRole('Coach'), async (req, res) => 
       teamName: coach.team_name || '',
       isSuperUser: !!coach.is_super_user
     });
-  } catch (err) {
-    console.error('[CoachDashboard]', err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
+  } catch (error) {
+    console.error('[Coach dashboard]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
   }
 });
 
-
-// GET /api/coaches/profile - coach profile
-router.get('/profile', requireAuth, requireRole('Coach'), async (req, res) => {
-  try {
-    const { data: coach, error } = await supabase.from('coaches').select(COACH_PROFILE_SELECT).eq('id', req.user.id).single();
-    if (error || !coach) return res.status(404).json({ error: 'Coach not found' });
-    res.json({ coach });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-// DELETE /api/coaches/players/:playerId - delete a player
+/*
+ * Legacy removal endpoint retained for compatibility, but brought under the
+ * same workspace permission rules as the V6 archive flow.
+ */
 router.delete('/players/:playerId', requireAuth, requireRole('Coach'), async (req, res) => {
   try {
-    const { data: player } = await supabase.from('players').select('team_id').eq('id', req.params.playerId).single();
-    const { data: coach } = await supabase.from('coaches').select('team_id').eq('id', req.user.id).single();
-    if (!player || !coach || player.team_id !== coach.team_id) return res.status(403).json({ error: 'Not authorised' });
-    const { error } = await supabase.from('players').update({ is_active: false }).eq('id', req.params.playerId);
+    const coach = await coachRecord(req.user.id);
+
+    let playerQuery = supabase
+      .from('players')
+      .select('id,team_id,team_name,assigned_coach_id,is_demo')
+      .eq('id', req.params.playerId)
+      .eq('is_active', true);
+    playerQuery = applyRealDataFilter(playerQuery, req);
+
+    const { data: player, error } = await playerQuery.maybeSingle();
     if (error) throw error;
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    const allowed = coach.is_super_user
+      ? sameTeam(coach, player)
+      : String(player.assigned_coach_id || '') === String(coach.id);
+
+    if (!allowed) return res.status(403).json({ error: 'Not authorised' });
+
+    const stamp = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from('players')
+      .update({
+        is_active: false,
+        archived_at: stamp,
+        archived_reason: 'Removed by coach',
+        updated_at: stamp
+      })
+      .eq('id', player.id);
+    if (updateError) throw updateError;
+
     res.json({ message: 'Player removed from squad' });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch (error) {
+    console.error('[Coaches legacy player removal]', error);
+    res.status(error.status || 500).json({
+      error: error.status ? error.message : 'Internal server error'
+    });
+  }
 });
 
 module.exports = router;
