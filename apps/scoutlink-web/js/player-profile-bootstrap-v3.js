@@ -107,15 +107,14 @@
   async function startScout() {
     setupScoutHost();
 
-    /*
-     * The Scout profile has exactly one owner: Scout Desk/Field V9.
-     * Do not load player-profile-router-v2, scout-v1, Scout V3/V4, the old
-     * profile runtime, or Scout V8 here. Those competing runtimes were the
-     * source of the profile render/fetch race.
-     */
     await addScript(
       '/js/scout-experience-v9.js?v=20260821-placeholder-root-3',
       'scoutExperienceV9ProfileScript'
+    );
+
+    await addScript(
+      '/js/scout-functional-repairs-v1.js?v=20260821-functional-repairs-2',
+      'scoutFunctionalRepairsV2ProfileScript'
     );
 
     addScript(
@@ -134,10 +133,6 @@
       )
     ]);
 
-    /*
-     * Coach keeps its approved V6 profile runtime. Only the Scout runtimes
-     * are removed from the shared page.
-     */
     await addScript(
       '/js/coach-design-v6.js?v=20260821-v6-literal-1',
       'coachDesignV6ProfileScript'
@@ -168,10 +163,6 @@
   async function startPlayer() {
     document.body.className = '';
 
-    /*
-     * Player self-profile still uses the shared router, but none of the Scout
-     * or Coach experience scripts need to be loaded around it.
-     */
     await addScript(
       '/js/player-profile-router-v2.js?v=20260821-role-safe-1',
       'profileRouterV2RoleSafeScript'
