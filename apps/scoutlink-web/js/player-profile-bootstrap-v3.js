@@ -108,17 +108,16 @@
     setupScoutHost();
 
     await addScript(
-      '/js/scout-experience-v9.js?v=20260821-placeholder-root-3',
+      '/js/scout-experience-v9.js?v=20260822-predeploy-safety-1',
       'scoutExperienceV9ProfileScript'
     );
 
-    await addScript(
-      '/js/scout-functional-repairs-v1.js?v=20260821-functional-repairs-2',
-      'scoutFunctionalRepairsV2ProfileScript'
-    );
-
+    /*
+     * scout-functional-repairs-v1.js is deliberately gone. The final repair
+     * modules are loaded by heap-analytics.js and are the only repair owners.
+     */
     addScript(
-      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
+      '/js/heap-analytics.js?v=20260822-predeploy-safety-1',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
@@ -155,7 +154,7 @@
     );
 
     addScript(
-      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
+      '/js/heap-analytics.js?v=20260822-predeploy-safety-1',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
@@ -169,7 +168,7 @@
     );
 
     addScript(
-      '/js/heap-analytics.js?v=20260821-placeholder-root-3',
+      '/js/heap-analytics.js?v=20260822-predeploy-safety-1',
       'heapAnalyticsProfileScript'
     ).catch(function () {});
   }
