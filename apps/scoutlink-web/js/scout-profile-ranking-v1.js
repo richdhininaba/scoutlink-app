@@ -635,7 +635,13 @@
       if (node.hasAttribute('data-spr-section')) return;
       var heading = q(node, 'h1,h2,h3,h4,.card-h,.card-title');
       var copy = normal(heading ? heading.textContent : '');
-      if (/^(goalkeeper|defender|midfielder|attacker) attributes$/.test(copy) || copy === 'attribute profile') {
+      if (
+        /^(goalkeeper|defender|midfielder|attacker) attributes$/.test(copy) ||
+        copy === 'evidence' ||
+        copy === 'your pipeline status' ||
+        copy === 'pipeline status' ||
+        copy === 'recruitment stage'
+      ) {
         node.setAttribute('data-spr-hidden', '1');
         node.setAttribute('aria-hidden', 'true');
       }
@@ -749,33 +755,31 @@
     return result;
   }
 
-  function renderCompatibility(root, player, bundle) {
-    var items = compatibilityItems(player, bundle);
-    if (!items.length) return;
-
-    qa(root, '.card,section').forEach(function (node) {
-      if (node.hasAttribute('data-spr-section')) return;
-      var heading = q(node, 'h1,h2,h3,h4,.card-h,.card-title');
-      var copy = normal(heading ? heading.textContent : '');
-      if (copy.indexOf('compatibility breakdown') >= 0) {
-        node.setAttribute('data-spr-hidden', '1');
-        node.setAttribute('aria-hidden', 'true');
-      }
+  function renderCompatibility(root) {
+    qa(root, '[data-spr-section="compatibility"]').forEach(function (node) {
+      node.remove();
     });
+  }
 
-    section(
-      root,
-      'compatibility',
-      'Compatibility breakdown',
-      'Scored out of 100',
-      items.map(function (item) { return meterRow(item.label, item.score, item.status); }).join('')
-    );
+  function findOriginalAttributeCard(root) {
+    return qa(root, '.card,section').find(function (node) {
+      if (node.hasAttribute('data-spr-section')) return false;
+      var heading = q(node, 'h1,h2,h3,h4,.card-h,.card-title');
+      return heading && normal(heading.textContent).indexOf('attribute profile') >= 0;
+    }) || null;
   }
 
   function renderAttributes(root, player) {
-    hideLegacyRepairSections(root);
+    qa(root, '[data-spr-section="attributes"]').forEach(function (node) {
+      node.remove();
+    });
+
+    var card = findOriginalAttributeCard(root);
+    if (!card) return;
+
     var group = positionGroup(player);
     var position = playerPosition(player);
+    var body = q(card, '.card-b,.card-body,.section-body') || card;
 
     var generalRows = GENERAL_ATTRIBUTES.map(function (key) {
       return meterRow(titleCaseKey(key), valueFromContainers(player, key), '');
@@ -785,14 +789,43 @@
       return meterRow(titleCaseKey(key), valueFromContainers(player, key), '');
     }).join('');
 
-    section(
-      root,
-      'attributes',
-      'Attribute profile',
-      (position ? position + ' · ' : '') + group,
-      '<h4 class="spr-sub">Overall attributes</h4>' + generalRows +
-      '<h4 class="spr-sub" style="margin-top:20px">' + esc(group) + ' attributes</h4>' + positionRows
-    );
+    var positionLabel = (position || group || 'Position') + ' attributes';
+    var host = q(body, '[data-spr-attribute-toggle]');
+    if (!host) {
+      host = document.createElement('div');
+      host.setAttribute('data-spr-attribute-toggle', '1');
+      body.innerHTML = '';
+      body.appendChild(host);
+    }
+
+    host.innerHTML =
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+        '<button type="button" class="spr-btn primary" data-spr-attr-tab="overall">Overall attributes</button>' +
+        '<button type="button" class="spr-btn" data-spr-attr-tab="position">' +
+          esc(positionLabel) +
+        '</button>' +
+      '</div>' +
+      '<div data-spr-attr-panel="overall">' + generalRows + '</div>' +
+      '<div data-spr-attr-panel="position" hidden>' + positionRows + '</div>';
+
+    function setTab(name) {
+      qa(host, '[data-spr-attr-tab]').forEach(function (button) {
+        var active = button.getAttribute('data-spr-attr-tab') === name;
+        button.classList.toggle('primary', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      qa(host, '[data-spr-attr-panel]').forEach(function (panel) {
+        panel.hidden = panel.getAttribute('data-spr-attr-panel') !== name;
+      });
+    }
+
+    qa(host, '[data-spr-attr-tab]').forEach(function (button) {
+      button.onclick = function () {
+        setTab(button.getAttribute('data-spr-attr-tab'));
+      };
+    });
+
+    setTab('overall');
   }
 
   function safeArray(value) {
@@ -1006,24 +1039,20 @@
     };
   }
 
-  function replacePipelineWidget(root, videos) {
-    var candidate = qa(root, '.card,section').find(function (node) {
-      if (node.hasAttribute('data-spr-section') || node.hasAttribute('data-slfr2-profile-section')) return false;
+  function replacePipelineWidget(root) {
+    qa(root, '.card,section').forEach(function (node) {
+      if (node.hasAttribute('data-spr-section')) return;
       var heading = q(node, 'h1,h2,h3,h4,.card-h,.card-title,b,strong');
       var copy = normal(heading ? heading.textContent : '');
-      return copy === 'pipeline status' || copy === 'recruitment stage';
+      if (
+        copy === 'your pipeline status' ||
+        copy === 'pipeline status' ||
+        copy === 'recruitment stage'
+      ) {
+        node.setAttribute('data-spr-hidden', '1');
+        node.setAttribute('aria-hidden', 'true');
+      }
     });
-    if (!candidate || candidate.dataset.sprVideoWidget === '1') return;
-    candidate.dataset.sprVideoWidget = '1';
-    var heading = q(candidate, 'h1,h2,h3,h4,.card-h,.card-title,b,strong');
-    if (heading) heading.textContent = 'Video reels';
-    var body = q(candidate, '.card-b,.body,.card-body') || candidate;
-    var preservedHeading = heading && body.contains(heading) ? heading.outerHTML : '';
-    body.innerHTML = preservedHeading + '<div style="padding:' + (body === candidate ? '12px 0 0' : '0') + '"><b style="font:800 13px Archivo,Arial,sans-serif;color:#0C201A">' +
-      videos.length + ' video' + (videos.length === 1 ? '' : 's') + '</b><p style="margin:5px 0 10px;font:500 11px/1.45 Archivo,Arial,sans-serif;color:#7C8A82">Watch the player evidence without leaving the profile.</p>' +
-      '<button class="spr-btn" type="button" data-spr-widget-video>Open video reels</button></div>';
-    var button = q(body, '[data-spr-widget-video]');
-    if (button) button.onclick = function () { openVideos(videos); };
   }
 
   function addTeamLink(root, player) {
@@ -1072,7 +1101,7 @@
 
     removeSpuriousNotFound(root);
     fixOverallSuffix(root, player);
-    renderCompatibility(root, player, bundle);
+    renderCompatibility(root);
     renderAttributes(root, player);
 
     var id = String(playerId(player));
@@ -1087,7 +1116,7 @@
     hideLegacyRepairSections(root);
     evidenceSection(root, player, matches, videos, notes);
     notesSection(root, id, notes);
-    replacePipelineWidget(root, videos);
+    replacePipelineWidget(root);
     addTeamLink(root, player);
   }
 
@@ -1122,7 +1151,28 @@
     if (metric === 'Appearances') return matches;
     if (metric === 'Financial value') {
       var finances = player.player_financials || player.playerFinancials || {};
-      return num(player.transfer_value != null ? player.transfer_value : player.transferValue != null ? player.transferValue : finances.current_value != null ? finances.current_value : finances.market_value, 0);
+      var analysis = player.valueAnalysis || player.value_analysis ||
+        (player._analysis && player._analysis.valueAnalysis) || {};
+      var currency = player.transfer_value != null ? player.transfer_value :
+        player.transferValue != null ? player.transferValue :
+        finances.current_value != null ? finances.current_value :
+        finances.market_value != null ? finances.market_value :
+        analysis.currentValue != null ? analysis.currentValue :
+        analysis.current_value != null ? analysis.current_value :
+        analysis.value != null ? analysis.value : null;
+
+      if (Number.isFinite(Number(currency)) && Number(currency) > 0) {
+        return Number(currency);
+      }
+
+      var fvi = analysis.footballValueIndex != null ? analysis.footballValueIndex :
+        analysis.football_value_index != null ? analysis.football_value_index :
+        analysis.valueIndex != null ? analysis.valueIndex :
+        analysis.value_index != null ? analysis.value_index :
+        analysis.score != null ? analysis.score : null;
+
+      if (Number.isFinite(Number(fvi))) return -1000 - Number(fvi);
+      return -999999;
     }
     return num(player.overall_rating, 0);
   }
@@ -1131,7 +1181,20 @@
     var value = rankingValue(player, metric);
     if (metric === 'Overall rating' || metric === 'Development potential') return Math.round(value) + ' <small>/100</small>';
     if (/per game$/i.test(metric)) return value.toFixed(2);
-    if (metric === 'Financial value') return '£' + Math.round(value).toLocaleString('en-GB');
+    if (metric === 'Financial value') {
+      if (value > 0) return '£' + Math.round(value).toLocaleString('en-GB');
+
+      var analysis = player.valueAnalysis || player.value_analysis ||
+        (player._analysis && player._analysis.valueAnalysis) || {};
+      var formatted = analysis.valueFormatted || analysis.value_formatted ||
+        analysis.formattedValue || analysis.formatted_value || '';
+      if (formatted) return String(formatted).replace(/^GBP\s*/i, '£');
+
+      if (value <= -1000 && value > -2000) {
+        return 'FVI ' + (Math.round((-value - 1000) * 10) / 10);
+      }
+      return 'Not available';
+    }
     return Math.round(value).toLocaleString('en-GB');
   }
 
