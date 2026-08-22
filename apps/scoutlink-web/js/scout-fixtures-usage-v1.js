@@ -1,3 +1,6 @@
+
+
+
 'use strict';
 
 (function () {
@@ -15,6 +18,7 @@
   var usageCache = null;
   var fixturesPromise = null;
   var usagePromise = null;
+  var pipelineCache = null;
 
   function normal(value) {
     return String(value == null ? '' : value)
@@ -203,6 +207,27 @@
     return fixturesPromise;
   }
 
+  async function loadPipeline(force) {
+    if (pipelineCache && !force) return pipelineCache;
+
+    if (isDemo()) {
+      try {
+        var state = typeof window.getDemoState === 'function'
+          ? window.getDemoState()
+          : JSON.parse(sessionStorage.getItem('sl_public_demo_state') || '{}');
+        pipelineCache = Array.isArray(state.pipeline) ? state.pipeline : [];
+      } catch (_) {
+        pipelineCache = [];
+      }
+      return pipelineCache;
+    }
+
+    var payload = await request('GET', '/api/scouts/pipeline?limit=100');
+    pipelineCache = unwrapFixtures(payload);
+    return pipelineCache;
+  }
+
+
   function fixtureId(fixture) {
     return String(fixture && (fixture.id || fixture.fixture_id || fixture.fixtureId) || '');
   }
@@ -298,24 +323,25 @@
     return card && (q(card, '.card-b,.card-body,.section-body') || card);
   }
 
-  function bookedFixtures(fixtures) {
+  function upcomingFixtures(fixtures) {
     var seen = {};
+    var today = new Date();
+    today.setHours(0,0,0,0);
+
     return (fixtures || []).filter(function (fixture) {
       var id = fixtureId(fixture);
-      if (!id || seen[id] || !isBookedFixture(fixture)) return false;
+      var when = fixtureDateValue(fixture);
+      if (!id || seen[id]) return false;
+      if (when != null && when < today.getTime()) return false;
       seen[id] = true;
       return true;
     }).sort(function (a, b) {
-      var now = Date.now();
       var ad = fixtureDateValue(a);
       var bd = fixtureDateValue(b);
-      var aFuture = ad == null || ad >= now;
-      var bFuture = bd == null || bd >= now;
-      if (aFuture !== bFuture) return aFuture ? -1 : 1;
       if (ad == null && bd == null) return fixtureTitle(a).localeCompare(fixtureTitle(b));
       if (ad == null) return 1;
       if (bd == null) return -1;
-      return aFuture ? ad - bd : bd - ad;
+      return ad - bd;
     });
   }
 
@@ -362,28 +388,37 @@
     setTimeout(function () { event.classList.remove('sfu-calendar-highlight'); }, 3200);
   }
 
-  function renderBookedVisits(root, fixtures) {
-    var card = findCard(root, ['Priority visits', 'Priority this week', 'Booked visits']);
+  function renderUpcomingFixtures(root, fixtures, pipeline) {
+    var card = findCard(
+      root,
+      ['Priority visits','Priority this week','Booked visits','Upcoming fixtures']
+    );
     if (!card) return;
-    renameCard(card, 'Booked visits');
+
+    renameCard(card, 'Upcoming fixtures');
     var body = cardBody(card);
     if (!body) return;
-    var booked = bookedFixtures(fixtures);
-    var signature = booked.map(function (fixture) {
-      return [fixtureId(fixture), attendanceStatus(fixture), fixtureDateValue(fixture)].join(':');
-    }).join('|');
-    if (body.dataset.sfuBookedSignature === signature) return;
-    body.dataset.sfuBookedSignature = signature;
 
+    var upcoming = upcomingFixtures(fixtures);
     body.innerHTML = '';
-    if (!booked.length) {
-      body.innerHTML = '<div class="sfu-empty">No booked visits.</div>';
+
+    if (!(pipeline || []).length) {
+      body.innerHTML =
+        '<div class="sfu-empty">Add a player to your pipeline to see upcoming fixtures.</div>';
+      return;
+    }
+
+    if (!upcoming.length) {
+      body.innerHTML =
+        '<div class="sfu-empty">No upcoming fixtures for your pipeline teams.</div>';
       return;
     }
 
     var list = document.createElement('div');
     list.className = 'sfu-booked-list';
-    booked.slice(0, 12).forEach(function (fixture) {
+
+    upcoming.slice(0,20).forEach(function (fixture) {
+      var status = attendanceStatus(fixture);
       var row = document.createElement('div');
       row.className = 'list-row sfu-booked-row';
       row.dataset.sfuFixtureId = fixtureId(fixture);
@@ -391,31 +426,118 @@
         '<div class="sfu-copy"><b>' + esc(fixtureTitle(fixture)) + '</b><span>' +
           esc(fixtureMeta(fixture) || 'Fixture details available') +
         '</span></div>' +
-        '<div class="sfu-actions"><span class="sfu-status">Booked</span>' +
+        '<div class="sfu-actions">' +
+          (status ? '<span class="sfu-status">' + esc(titleCase(status)) + '</span>' : '') +
           '<button type="button" class="sfu-action" data-sfu-calendar>See on calendar</button>' +
-          '<a class="sfu-action" href="/scout/fixtures?fixture=' + encodeURIComponent(fixtureId(fixture)) + '">Open fixture</a>' +
+          '<a class="sfu-action" href="/scout/fixtures?fixture=' +
+            encodeURIComponent(fixtureId(fixture)) +
+          '">Open fixture</a>' +
         '</div>';
+
       var calendarButton = q(row, '[data-sfu-calendar]');
-      calendarButton.onclick = function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        showOnCalendar(root, fixture);
-      };
+      if (calendarButton) {
+        calendarButton.onclick = function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          showOnCalendar(root, fixture);
+        };
+      }
+
       list.appendChild(row);
     });
+
     body.appendChild(list);
+  }
+
+  async function setAttendance(fixture, status) {
+    if (isDemo()) {
+      fixture.attendance = { status: status };
+      return fixture.attendance;
+    }
+
+    var payload = await request(
+      'POST',
+      '/api/scouts/fixtures/' + encodeURIComponent(fixtureId(fixture)) + '/attendance',
+      { status: status }
+    );
+
+    fixture.attendance = payload.attendance || payload.data || { status: status };
+    return fixture.attendance;
+  }
+
+  function enhanceFixtureOverlay(root, fixtures) {
+    qa(root, '.modal,.overlay,.sheet,[role="dialog"]').forEach(function (overlay) {
+      if (overlay.querySelector('[data-sfu-attendance-controls]')) return;
+
+      var copy = textOf(overlay);
+      if (
+        copy.indexOf('fixture') < 0 &&
+        copy.indexOf('venue') < 0 &&
+        copy.indexOf('visit status') < 0
+      ) return;
+
+      var fixture = (fixtures || []).find(function (candidate) {
+        var id = normal(fixtureId(candidate));
+        var title = normal(fixtureTitle(candidate));
+        var opponent = normal(
+          candidate.opponent_name ||
+          candidate.opponentName ||
+          candidate.opponent ||
+          ''
+        );
+
+        return (id && copy.indexOf(id) >= 0) ||
+          (title && copy.indexOf(title) >= 0) ||
+          (opponent && copy.indexOf(opponent) >= 0);
+      });
+
+      if (!fixture) return;
+
+      var controls = document.createElement('div');
+      controls.setAttribute('data-sfu-attendance-controls', '1');
+      controls.style.cssText =
+        'display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;' +
+        'padding-top:14px;border-top:1px solid #EBEFEC';
+      controls.innerHTML =
+        '<button type="button" class="sfu-action" data-sfu-attendance="attending">I’m attending</button>' +
+        '<button type="button" class="sfu-action" data-sfu-attendance="maybe">Maybe</button>' +
+        '<button type="button" class="sfu-action" data-sfu-attendance="not_attending">Not attending</button>';
+
+      qa(controls, '[data-sfu-attendance]').forEach(function (button) {
+        button.onclick = async function () {
+          var status = button.getAttribute('data-sfu-attendance');
+          button.disabled = true;
+          try {
+            await setAttendance(fixture, status);
+            toast(status === 'attending' ? 'Attendance booked.' : 'Attendance updated.');
+            scheduleRepair(false);
+          } catch (error) {
+            toast(error.message || 'Attendance could not be updated.', true);
+          } finally {
+            button.disabled = false;
+          }
+        };
+      });
+
+      overlay.appendChild(controls);
+    });
   }
 
   async function repairFixtures(root) {
     var fixtures;
+    var pipeline;
+
     try {
       fixtures = await loadFixtures(false);
+      pipeline = await loadPipeline(false);
     } catch (error) {
       toast(error.message || 'Fixtures could not be loaded.', true);
       return;
     }
+
     markCalendarEvents(root, fixtures);
-    renderBookedVisits(root, fixtures);
+    renderUpcomingFixtures(root, fixtures, pipeline);
+    enhanceFixtureOverlay(root, fixtures);
   }
 
   function unwrapUsage(payload) {
@@ -617,9 +739,43 @@
     button.disabled = true;
     button.textContent = 'Sending…';
     try {
-      var response = await request('POST', '/api/usage-requests', body);
-      usageCache = null;
-      await loadUsageHistory(true);
+      var response;
+
+      if (isDemo()) {
+        var demoRow = {
+          id: 'demo-usage-' + Date.now(),
+          request_code: 'DEMO-' + String(Date.now()).slice(-6),
+          allowance_type: body.allowanceType,
+          quantity_requested: body.quantity,
+          reason: body.reason,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        };
+
+        var demoRows = demoUsageRequests();
+        demoRows.unshift(demoRow);
+        try {
+          localStorage.setItem(DEMO_USAGE_KEY, JSON.stringify(demoRows));
+        } catch (_) {}
+
+        response = { request: demoRow };
+        usageCache = demoRows;
+      } else {
+        response = await request('POST', '/api/usage-requests', body);
+        var created = response && (response.request || response.data);
+        usageCache = null;
+
+        var refreshed = await loadUsageHistory(true);
+        if (
+          created &&
+          !refreshed.some(function (row) {
+            return String(row.id) === String(created.id);
+          })
+        ) {
+          refreshed.unshift(created);
+        }
+        usageCache = refreshed;
+      }
       if (quantity) quantity.value = '';
       if (reason) reason.value = '';
       toast('Usage request sent.');
@@ -627,11 +783,6 @@
       var current = visibleRoot(shadow());
       if (current) renderUsageHistory(current, usageCache || []);
 
-      setTimeout(function () {
-        if (String(location.pathname).toLowerCase().indexOf('usage-requests') >= 0) {
-          location.href = '/scout/usage-requests';
-        }
-      }, 120);
       return response;
     } catch (error) {
       button.disabled = false;
@@ -653,7 +804,7 @@
       var current = visibleRoot(root);
       if (!current || !current.contains(target)) return;
 
-      if (route() === 'usage' && !isDemo() && isSendRequestTarget(target)) {
+      if (route() === 'usage' && isSendRequestTarget(target)) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
