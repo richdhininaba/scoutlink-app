@@ -11,6 +11,24 @@ function pipelineLimit(value) {
   return Math.max(1, Math.min(100, Math.trunc(parsed)));
 }
 
+function firstRelation(value) {
+  if (Array.isArray(value)) return value[0] || null;
+  return value || null;
+}
+
+function normaliseRow(row) {
+  const player = firstRelation(row?.players);
+  const scout = firstRelation(row?.scouts);
+
+  return {
+    ...row,
+    player,
+    scout,
+    players: row?.players || null,
+    scouts: row?.scouts || null
+  };
+}
+
 router.get(
   '/pipeline',
   requireAuth,
@@ -41,6 +59,8 @@ router.get(
             'specific_position,',
             'primary_position,',
             'overall_rating,',
+            'overall_breakdown,',
+            'value_analysis,',
             'transfer_value,',
             'team_name,',
             'age,',
@@ -60,13 +80,8 @@ router.get(
           { count: 'exact' }
         );
 
-      if (scoutId) {
-        query = query.eq('scout_id', scoutId);
-      }
-
-      if (req.query.stage) {
-        query = query.eq('stage', req.query.stage);
-      }
+      if (scoutId) query = query.eq('scout_id', scoutId);
+      if (req.query.stage) query = query.eq('stage', req.query.stage);
 
       query = query
         .order('updated_at', { ascending: false })
@@ -81,20 +96,18 @@ router.get(
           details: error.details,
           hint: error.hint
         });
-        return res.status(500).json({
-          error: 'Internal server error'
-        });
+        return res.status(500).json({ error: 'Internal server error' });
       }
 
+      const rows = (data || []).map(normaliseRow);
+
       return res.json({
-        data: data || [],
-        total: count || 0
+        data: rows,
+        total: count || rows.length
       });
     } catch (error) {
       console.error('[Scout Pipeline GET]', error);
-      return res.status(500).json({
-        error: 'Internal server error'
-      });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 );
@@ -135,9 +148,7 @@ router.patch(
         query = query.eq('scout_id', req.user.id);
       }
 
-      const { data, error } = await query
-        .select()
-        .single();
+      const { data, error } = await query.select().single();
 
       if (error) {
         console.error('[Scout Pipeline PATCH]', {
@@ -146,17 +157,13 @@ router.patch(
           details: error.details,
           hint: error.hint
         });
-        return res.status(500).json({
-          error: 'Internal server error'
-        });
+        return res.status(500).json({ error: 'Internal server error' });
       }
 
       return res.json({ data });
     } catch (error) {
       console.error('[Scout Pipeline PATCH]', error);
-      return res.status(500).json({
-        error: 'Internal server error'
-      });
+      return res.status(500).json({ error: 'Internal server error' });
     }
   }
 );
