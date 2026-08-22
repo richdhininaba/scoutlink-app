@@ -3,7 +3,7 @@
 /* Shared ScoutLink runtime loader and Heap identity bridge. */
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260822-compare-predictions-1';
+  var ASSET_VERSION = '20260822-fixtures-usage-1';
   var UNSAFE_IDS = {'':true,user:true,guest:true,coach:true,scout:true,player:true,stratex:true,'marcus reed':true,'noah patel':true};
   var LOADING_ID = 'scoutPageLoadingStatus';
   var loadingObserver = null;
@@ -216,6 +216,7 @@
       loadScript('scoutDashboardSearchV1Script','scout-dashboard-search-v1.js','/js/scout-dashboard-search-v1.js');
       loadScript('scoutProfileRankingV1Script','scout-profile-ranking-v1.js','/js/scout-profile-ranking-v1.js');
       loadScript('scoutComparePredictionsV1Script','scout-compare-predictions-v1.js','/js/scout-compare-predictions-v1.js');
+      loadScript('scoutFixturesUsageV1Script','scout-fixtures-usage-v1.js','/js/scout-fixtures-usage-v1.js');
     }
     if (isDemo()) {
       loadScript('demoScoringV4AuthoritativeScript','demo-scoring-v4-authoritative.js','/js/demo-scoring-v4-authoritative.js');
