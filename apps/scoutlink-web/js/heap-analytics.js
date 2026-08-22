@@ -3,7 +3,7 @@
 /* Shared ScoutLink runtime loader and Heap identity bridge. */
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260822-predeploy-safety-1';
+  var ASSET_VERSION = '20260822-screenshot-fixes-1';
   var UNSAFE_IDS = {'':true,user:true,guest:true,coach:true,scout:true,player:true,stratex:true,'marcus reed':true,'noah patel':true};
   var LOADING_ID = 'scoutPageLoadingStatus';
   var loadingObserver = null;
