@@ -3,8 +3,10 @@
 /* Shared ScoutLink runtime loader and Heap identity bridge. */
 (function () {
   var CURRENT_SCRIPT = document.currentScript;
-  var ASSET_VERSION = '20260820-1';
+  var ASSET_VERSION = '20260822-dashboard-search-1';
   var UNSAFE_IDS = {'':true,user:true,guest:true,coach:true,scout:true,player:true,stratex:true,'marcus reed':true,'noah patel':true};
+  var LOADING_ID = 'scoutPageLoadingStatus';
+  var loadingObserver = null;
 
   function safe(value) {
     if (value === undefined || value === null || value === '') return null;
@@ -67,6 +69,109 @@
       path.indexOf('/public-demo/scout/player/profile') === 0 || path.indexOf('player-profile') > -1;
   }
 
+  function isScoutLoadingRoute() {
+    var path = routePath();
+    var declared = document.body && document.body.getAttribute('data-scout-route');
+    var hasScoutBody = document.body && document.body.classList.contains('scout-experience-body');
+    if (publicDemoRouteRole() === 'scout') return true;
+    if (path.indexOf('/scout') === 0) return true;
+    if (declared && hasScoutBody) return true;
+    if (isProfileRoute() && experienceRole() === 'scout') return true;
+    return false;
+  }
+
+  function scoutPageName() {
+    var declared = document.body && document.body.getAttribute('data-scout-route');
+    var names = {
+      dashboard: 'Dashboard',
+      onboarding: 'Scout Setup',
+      search: 'Player Search',
+      pipeline: 'Pipeline',
+      rankings: 'Rankings',
+      fixtures: 'Fixtures',
+      predictions: 'Predictions',
+      usage: 'Usage Requests',
+      exports: 'Exports',
+      compare: 'Compare Players',
+      setup: 'Setup',
+      events: 'Events',
+      chat: 'Chat',
+      notifications: 'Notifications',
+      settings: 'Settings',
+      preferences: 'Preferences',
+      concern: 'Report a Concern',
+      profile: 'Player Profile'
+    };
+    if (declared && names[declared]) return names[declared];
+
+    var path = routePath();
+    if (path.indexOf('player-search') >= 0) return 'Player Search';
+    if (path.indexOf('compare-players') >= 0) return 'Compare Players';
+    if (path.indexOf('/player/profile') >= 0) return 'Player Profile';
+    if (path.indexOf('/dashboard') >= 0) return 'Dashboard';
+    if (path.indexOf('/pipeline') >= 0) return 'Pipeline';
+    if (path.indexOf('/rankings') >= 0) return 'Rankings';
+    if (path.indexOf('/fixtures') >= 0) return 'Fixtures';
+    if (path.indexOf('/predictions') >= 0) return 'Predictions';
+    if (path.indexOf('usage-requests') >= 0) return 'Usage Requests';
+    if (path.indexOf('/exports') >= 0) return 'Exports';
+    if (path.indexOf('/events') >= 0) return 'Events';
+    if (path.indexOf('/chat') >= 0) return 'Chat';
+    if (path.indexOf('/notifications') >= 0) return 'Notifications';
+    if (path.indexOf('/settings') >= 0) return 'Settings';
+    if (path.indexOf('/preferences') >= 0) return 'Preferences';
+    if (path.indexOf('/setup') >= 0 || path.indexOf('/onboarding') >= 0) return 'Scout Setup';
+    if (path.indexOf('report-a-concern') >= 0) return 'Report a Concern';
+    return 'ScoutLink';
+  }
+
+  function installScoutLoadingStatus() {
+    if (!isScoutLoadingRoute()) return;
+    var app = document.getElementById('scoutExperienceApp') || document.getElementById('profileRouteRoot');
+    if (!app || !app.parentNode) return;
+
+    var loading = document.getElementById(LOADING_ID);
+    if (!loading) {
+      loading = document.createElement('div');
+      loading.id = LOADING_ID;
+      loading.setAttribute('role', 'status');
+      loading.setAttribute('aria-live', 'polite');
+      loading.style.cssText = [
+        'min-height:100vh',
+        'box-sizing:border-box',
+        'display:grid',
+        'place-items:center',
+        'padding:24px',
+        'background:#FBFCFB',
+        'color:#48584F',
+        'font:600 13px Archivo,Arial,sans-serif',
+        'letter-spacing:.01em',
+        'text-align:center'
+      ].join(';');
+      app.parentNode.insertBefore(loading, app);
+    }
+    loading.textContent = 'Loading ' + scoutPageName();
+
+    function syncLoading() {
+      if (!loading || !app) return;
+      var computedVisibility = '';
+      try { computedVisibility = window.getComputedStyle(app).visibility; } catch (_) {}
+      var busy = app.getAttribute('aria-busy') === 'true' ||
+        app.classList.contains('is-loading') ||
+        app.classList.contains('profile-route-loading') ||
+        computedVisibility === 'hidden';
+      loading.style.display = busy ? 'grid' : 'none';
+    }
+
+    if (loadingObserver) loadingObserver.disconnect();
+    loadingObserver = new MutationObserver(syncLoading);
+    loadingObserver.observe(app, {
+      attributes: true,
+      attributeFilter: ['aria-busy', 'class', 'style']
+    });
+    syncLoading();
+  }
+
   function resolve(relativePath, fallback) {
     try { return CURRENT_SCRIPT && CURRENT_SCRIPT.src ? new URL(relativePath, CURRENT_SCRIPT.src).href : fallback; }
     catch (_) { return fallback; }
@@ -108,6 +213,7 @@
       loadStylesheet('scoutExperienceCoreV2Css','../css/scout-experience-core-v2.css','/css/scout-experience-core-v2.css');
       loadScript('scoutExperienceCoreV2Script','scout-experience-core-v2.js','/js/scout-experience-core-v2.js');
       loadScript('scoutScoringV4Script','scout-scoring-v4.js','/js/scout-scoring-v4.js');
+      loadScript('scoutDashboardSearchV1Script','scout-dashboard-search-v1.js','/js/scout-dashboard-search-v1.js');
     }
     if (isDemo()) {
       loadScript('demoScoringV4AuthoritativeScript','demo-scoring-v4-authoritative.js','/js/demo-scoring-v4-authoritative.js');
@@ -175,9 +281,18 @@
     }
   }
 
+  installScoutLoadingStatus();
   loadAll();
   window.applyScoutLinkHeapContext = applyHeapContext;
-  document.addEventListener('DOMContentLoaded',function () { loadAll(); setTimeout(applyHeapContext,0); });
-  window.addEventListener('pageshow',function () { loadAll(); setTimeout(applyHeapContext,0); });
+  document.addEventListener('DOMContentLoaded',function () {
+    installScoutLoadingStatus();
+    loadAll();
+    setTimeout(applyHeapContext,0);
+  });
+  window.addEventListener('pageshow',function () {
+    installScoutLoadingStatus();
+    loadAll();
+    setTimeout(applyHeapContext,0);
+  });
   window.addEventListener('storage',loadAll);
 }());
