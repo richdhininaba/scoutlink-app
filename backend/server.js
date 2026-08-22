@@ -208,6 +208,26 @@ app.use(
   require('./routes/stratexAdminCentreV2')
 );
 
+/*
+ * Stable Scout Pipeline route.
+ *
+ * recruitment_pipeline has two foreign-key relationships to scouts:
+ * scout_id and interest_registered_by. The legacy /pipeline selector embeds
+ * scouts without naming the relationship, which makes PostgREST reject the
+ * query as ambiguous. This router is mounted first so every Scout Pipeline GET
+ * and PATCH uses the explicit scout_id relationship while the rest of the
+ * legacy Scout routes remain unchanged.
+ */
+app.use(
+  '/api/scouts',
+  require('./routes/scoutPipelineStable')
+);
+
+app.use(
+  '/api/scout',
+  require('./routes/scoutPipelineStable')
+);
+
 app.use(
   '/api/scouts',
   require('./routes/scouts')
