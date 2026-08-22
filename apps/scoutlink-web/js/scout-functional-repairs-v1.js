@@ -1,271 +1,1825 @@
-
 'use strict';
 
-/*
- * ScoutLink functional repairs V1.
- *
- * This file deliberately leaves the approved V10 and Coach profile markup
- * untouched. It binds the existing controls inside the V10 Shadow DOM and
- * corrects value presentation without changing page structure.
- */
 (function () {
-  var VERSION = '20260730.1-functional-repairs';
-  var API_FALLBACK = 'https://scoutlink-api.vercel.app';
-  var STYLE_ID = 'slFunctionalRepairsStyle';
-  var boundRoots = new WeakSet();
-  var playerCache = null;
-  var profileCache = null;
+  if (window.__SCOUTLINK_FUNCTIONAL_REPAIRS_V2__) return;
+  window.__SCOUTLINK_FUNCTIONAL_REPAIRS_V2__ = true;
 
-  function path() {
-    return String(location.pathname || '/').replace(/\/+$/, '') || '/';
-  }
+  var VERSION = '20260821.2';
+  var API_FALLBACK = 'https://scoutlink-api.vercel.app';
+  var STYLE_ID = 'slScoutFunctionalRepairsV2Style';
+  var COMPARE_KEY = 'sl_scout_compare_state_v2';
+  var CHAT_KEY = 'sl_scout_chat_cache_v2';
+  var USAGE_KEY = 'sl_demo_usage_requests_v2';
+  var NOTES_KEY = 'sl_demo_player_notes_v2';
+  var NOTIFICATION_TAB_KEY = 'sl_scout_notification_tab_v2';
+
+  var observer = null;
+  var scheduled = false;
+  var playersCache = null;
+  var profileCache = null;
+  var notificationCache = null;
+  var chatThreadCache = null;
+  var activeChatId = '';
+  var repairing = false;
+
+  var POSITION_GROUPS = {
+    Goalkeeper: ['GK'],
+    Defender: ['RB', 'CB', 'LB', 'RWB', 'LWB'],
+    Midfielder: ['DM', 'CM', 'AM', 'RM', 'LM'],
+    Attacker: ['RW', 'LW', 'CF', 'ST']
+  };
+
+  var POSITION_ALIASES = {
+    CDM: 'DM',
+    CAM: 'AM',
+    RCM: 'CM',
+    LCM: 'CM',
+    RDM: 'DM',
+    LDM: 'DM',
+    RAM: 'AM',
+    LAM: 'AM',
+    LS: 'ST',
+    RS: 'ST',
+    SS: 'CF',
+    B2B: 'CM',
+    BPD: 'CB',
+    RCB: 'CB',
+    LCB: 'CB',
+    SW: 'CB'
+  };
+
+  var GENERAL_ATTRIBUTES = [
+    'first_touch',
+    'passing',
+    'dribbling',
+    'weak_foot',
+    'awareness',
+    'decision_making',
+    'pace',
+    'agility_balance',
+    'strength',
+    'stamina',
+    'composure',
+    'coachability',
+    'response_to_mistakes'
+  ];
+
+  var POSITION_ATTRIBUTES = {
+    Goalkeeper: [
+      'gk_positioning',
+      'gk_shot_stopping',
+      'gk_reflexes',
+      'gk_handling',
+      'gk_one_v_one',
+      'gk_aerial_command',
+      'gk_sweeping',
+      'gk_distribution',
+      'gk_communication',
+      'gk_decision_making',
+      'gk_composure',
+      'gk_agility_explosiveness'
+    ],
+    Defender: [
+      'one_v_one_defending',
+      'tackling',
+      'defensive_positioning',
+      'marking_covering',
+      'anticipation_interceptions',
+      'aerial_defending',
+      'recovery_defending',
+      'pressing_defensive_transition',
+      'communication_organisation',
+      'progression_from_defence',
+      'crossing_attacking_support'
+    ],
+    Midfielder: [
+      'receiving_under_pressure',
+      'ball_retention',
+      'progressive_passing',
+      'long_passing_switching',
+      'tempo_control',
+      'chance_creation',
+      'anticipation_interceptions',
+      'defensive_positioning_covering',
+      'pressing_counter_pressing',
+      'off_ball_movement_box_arrivals'
+    ],
+    Attacker: [
+      'finishing',
+      'shooting',
+      'attacking_movement',
+      'one_v_one_attacking',
+      'runs_in_behind',
+      'chance_creation',
+      'crossing',
+      'link_up_play',
+      'hold_up_play',
+      'aerial_ability',
+      'pressing_from_front'
+    ]
+  };
+
+  var ATTRIBUTE_LABELS = {
+    first_touch: 'First touch',
+    passing: 'Passing',
+    dribbling: 'Dribbling',
+    weak_foot: 'Weak foot',
+    awareness: 'Awareness',
+    decision_making: 'Decision making',
+    pace: 'Pace',
+    agility_balance: 'Agility & balance',
+    strength: 'Strength',
+    stamina: 'Stamina',
+    composure: 'Composure',
+    coachability: 'Coachability',
+    response_to_mistakes: 'Response to mistakes',
+    gk_positioning: 'Positioning',
+    gk_shot_stopping: 'Shot stopping',
+    gk_reflexes: 'Reflexes',
+    gk_handling: 'Handling',
+    gk_one_v_one: '1v1',
+    gk_aerial_command: 'Aerial command',
+    gk_sweeping: 'Sweeping',
+    gk_distribution: 'Distribution',
+    gk_communication: 'Communication',
+    gk_decision_making: 'Decision making',
+    gk_composure: 'Composure',
+    gk_agility_explosiveness: 'Agility & explosiveness',
+    one_v_one_defending: '1v1 defending',
+    tackling: 'Tackling',
+    defensive_positioning: 'Defensive positioning',
+    marking_covering: 'Marking & covering',
+    anticipation_interceptions: 'Anticipation & interceptions',
+    aerial_defending: 'Aerial defending',
+    recovery_defending: 'Recovery defending',
+    pressing_defensive_transition: 'Pressing & defensive transition',
+    communication_organisation: 'Communication & organisation',
+    progression_from_defence: 'Progression from defence',
+    crossing_attacking_support: 'Crossing & attacking support',
+    receiving_under_pressure: 'Receiving under pressure',
+    ball_retention: 'Ball retention',
+    progressive_passing: 'Progressive passing',
+    long_passing_switching: 'Long passing & switching',
+    tempo_control: 'Tempo control',
+    chance_creation: 'Chance creation',
+    defensive_positioning_covering: 'Defensive positioning & covering',
+    pressing_counter_pressing: 'Pressing & counter-pressing',
+    off_ball_movement_box_arrivals: 'Off-ball movement & box arrivals',
+    finishing: 'Finishing',
+    shooting: 'Shooting',
+    attacking_movement: 'Attacking movement',
+    one_v_one_attacking: '1v1 attacking',
+    runs_in_behind: 'Runs in behind',
+    crossing: 'Crossing',
+    link_up_play: 'Link-up play',
+    hold_up_play: 'Hold-up play',
+    aerial_ability: 'Aerial ability',
+    pressing_from_front: 'Pressing from front'
+  };
+
   function normal(value) {
-    return String(value == null ? '' : value).trim().toLowerCase().replace(/\s+/g, ' ');
+    return String(value == null ? '' : value)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
   }
+
   function esc(value) {
-    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[character];
     });
   }
-  function num(value, fallback) {
-    var n = Number(value);
-    return Number.isFinite(n) ? n : (fallback == null ? 0 : fallback);
-  }
+
   function token() {
-    try { return localStorage.getItem('sl_token') || ''; } catch (_) { return ''; }
-  }
-  function isPublicDemo() {
     try {
-      return sessionStorage.getItem('sl_public_demo') === '1' || token() === 'public-demo-session';
-    } catch (_) { return token() === 'public-demo-session'; }
+      return localStorage.getItem('sl_token') || '';
+    } catch (_) {
+      return '';
+    }
   }
-  function isCoach() {
-    try {
-      return String((window.Auth && window.Auth.type) || localStorage.getItem('sl_type') || '').toLowerCase() === 'coach';
-    } catch (_) { return false; }
-  }
+
   function apiBase() {
-    try { return String(window.API || localStorage.getItem('sl_api_url') || API_FALLBACK).replace(/\/+$/, ''); }
-    catch (_) { return API_FALLBACK; }
+    try {
+      return String(window.API || localStorage.getItem('sl_api_url') || API_FALLBACK).replace(/\/+$/, '');
+    } catch (_) {
+      return API_FALLBACK;
+    }
   }
+
+  function isDemo() {
+    try {
+      return sessionStorage.getItem('sl_public_demo') === '1' ||
+        token() === 'public-demo-session' ||
+        normal(sessionStorage.getItem('sl_public_demo_role')) === 'scout';
+    } catch (_) {
+      return token() === 'public-demo-session';
+    }
+  }
+
   async function request(method, pathname, body, auth) {
-    var headers = {Accept:'application/json'};
-    var access = token();
-    if (auth !== false && access) headers.Authorization = 'Bearer ' + access;
-    if (body != null) headers['Content-Type'] = 'application/json';
+    var headers = { Accept: 'application/json' };
+    var accessToken = token();
+
+    if (auth !== false && accessToken) headers.Authorization = 'Bearer ' + accessToken;
+    if (body !== undefined && body !== null) headers['Content-Type'] = 'application/json';
+
     var response = await fetch(apiBase() + pathname, {
-      method:method,
-      headers:headers,
-      credentials:'include',
-      cache:'no-store',
-      body:body == null ? undefined : JSON.stringify(body)
+      method: method,
+      headers: headers,
+      credentials: 'include',
+      cache: 'no-store',
+      body: body === undefined || body === null ? undefined : JSON.stringify(body)
     });
+
     var payload = await response.json().catch(function () { return {}; });
-    if (!response.ok) throw new Error(payload.error || payload.message || 'The request could not be completed.');
+    if (!response.ok) {
+      throw new Error(payload.error || payload.message || 'The request could not be completed.');
+    }
     return payload;
   }
-  function rootHost() { return document.getElementById('scoutExperienceApp'); }
-  function shadow() { var host = rootHost(); return host && host.shadowRoot; }
-  function q(root, selector) { return (root || shadow() || document).querySelector(selector); }
-  function qa(root, selector) { return Array.prototype.slice.call((root || shadow() || document).querySelectorAll(selector)); }
-  function visibleCopy(root) {
-    return matchMedia('(max-width:767px)').matches
-      ? q(root, '.slv10-mobile-copy')
-      : q(root, '.slv10-desktop-copy');
+
+  function host() {
+    return document.getElementById('scoutExperienceApp');
   }
-  function currentRoute() {
+
+  function shadow() {
+    var app = host();
+    return app && app.shadowRoot;
+  }
+
+  function qa(root, selector) {
+    return Array.prototype.slice.call((root || shadow() || document).querySelectorAll(selector));
+  }
+
+  function q(root, selector) {
+    return (root || shadow() || document).querySelector(selector);
+  }
+
+  function visibleRoot(root) {
+    root = root || shadow();
+    if (!root) return null;
+
+    var mobile = window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+    var selectors = mobile
+      ? ['.slv9-mobile-copy', '.slv10-mobile-copy', '.field-copy', '[data-layout="mobile"]']
+      : ['.slv9-desktop-copy', '.slv10-desktop-copy', '.desk-copy', '[data-layout="desktop"]'];
+
+    for (var index = 0; index < selectors.length; index += 1) {
+      var match = q(root, selectors[index]);
+      if (match) return match;
+    }
+
+    var candidates = qa(root, 'main, .screen, .page, .shell, .slv9-exact-root, .slv10-exact-root');
+    for (var i = 0; i < candidates.length; i += 1) {
+      var style = getComputedStyle(candidates[i]);
+      if (style.display !== 'none' && style.visibility !== 'hidden') return candidates[i];
+    }
+
+    return root;
+  }
+
+  function route() {
     var declared = document.body && document.body.getAttribute('data-scout-route');
     if (declared) return declared;
-    var p = path();
-    if (p.indexOf('/player/profile') === 0) return 'profile';
-    if (p.indexOf('/scout/rankings') === 0) return 'rankings';
-    if (p.indexOf('/scout/fixtures') === 0) return 'fixtures';
-    if (p.indexOf('/scout/predictions') === 0) return 'predictions';
-    if (p.indexOf('/scout/exports') === 0) return 'exports';
-    if (p.indexOf('/scout/compare-players') === 0) return 'compare';
-    if (p.indexOf('/scout/setup') === 0) return 'setup';
-    if (p.indexOf('/scout/usage-requests') === 0) return 'usage';
+    var pathname = String(location.pathname || '').replace(/\/+$/, '');
+    if (/\/player\/profile$/.test(pathname)) return 'profile';
+    if (/compare-players$/.test(pathname)) return 'compare';
+    if (/predictions$/.test(pathname)) return 'predictions';
+    if (/chat$/.test(pathname)) return 'chat';
+    if (/notifications$/.test(pathname)) return 'notifications';
+    if (/usage-requests$/.test(pathname)) return 'usage';
     return '';
   }
-  function playerName(p) {
-    return [p && p.first_name, p && p.last_name].filter(Boolean).join(' ') || (p && p.name) || 'Player';
+
+  function textOf(element) {
+    return normal(element && element.textContent);
   }
-  function playerLine(p) {
-    return [p && (p.specific_position || p.primary_position || p.position_group), p && p.age_group, p && (p.team_name || (p.team && p.team.team_name))].filter(Boolean).join(' · ');
+
+  function closestField(element) {
+    if (!element) return null;
+    return element.closest('label, .field, .form-field, .control, .select-wrap, .input-wrap, .filter, .row, .card');
   }
-  function playerIdFromUrl() { return new URLSearchParams(location.search).get('id') || ''; }
-  function demoKey(name) { return 'sl_functional_demo_' + name; }
-  function demoRows(name) {
-    try { return JSON.parse(sessionStorage.getItem(demoKey(name)) || '[]') || []; } catch (_) { return []; }
+
+  function labelledControl(root, names, selector) {
+    names = Array.isArray(names) ? names : [names];
+    var controls = qa(root, selector || 'select,input,textarea');
+    var normalNames = names.map(normal);
+
+    for (var i = 0; i < controls.length; i += 1) {
+      var control = controls[i];
+      var field = closestField(control);
+      var labelText = textOf(field || control.parentElement);
+      if (normalNames.some(function (name) { return labelText.indexOf(name) >= 0; })) {
+        return control;
+      }
+    }
+    return null;
   }
-  function saveDemo(name, row) {
-    var rows = demoRows(name); rows.unshift(row);
-    try { sessionStorage.setItem(demoKey(name), JSON.stringify(rows.slice(0, 100))); } catch (_) {}
-    return row;
+
+  function findButton(root, labels) {
+    labels = Array.isArray(labels) ? labels : [labels];
+    var wanted = labels.map(normal);
+    return qa(root, 'button,a[role="button"],a.btn').find(function (element) {
+      return wanted.indexOf(textOf(element)) >= 0;
+    }) || null;
+  }
+
+  function toast(message, isError) {
+    var root = shadow();
+    if (!root) return;
+
+    var old = q(root, '.slfr2-toast');
+    if (old) old.remove();
+
+    var node = document.createElement('div');
+    node.className = 'slfr2-toast' + (isError ? ' error' : '');
+    node.setAttribute('role', isError ? 'alert' : 'status');
+    node.textContent = message;
+    root.appendChild(node);
+
+    window.setTimeout(function () {
+      if (node.parentNode) node.remove();
+    }, 4200);
+  }
+
+  function readJson(storage, key, fallback) {
+    try {
+      var value = storage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function writeJson(storage, key, value) {
+    try {
+      storage.setItem(key, JSON.stringify(value));
+    } catch (_) {}
+  }
+
+  function unwrapList(payload) {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.players)) return payload.players;
+    if (Array.isArray(payload.notifications)) return payload.notifications;
+    if (Array.isArray(payload.threads)) return payload.threads;
+    if (Array.isArray(payload.messages)) return payload.messages;
+    if (payload.data && Array.isArray(payload.data.items)) return payload.data.items;
+    return [];
+  }
+
+  function canonicalPosition(value) {
+    var position = String(value || '').trim().toUpperCase();
+    return POSITION_ALIASES[position] || position;
+  }
+
+  function playerPosition(player) {
+    return canonicalPosition(
+      player && (
+        player.specific_position ||
+        player.primary_position ||
+        player.position ||
+        player.primaryPosition
+      )
+    );
+  }
+
+  function positionGroup(player) {
+    var position = playerPosition(player);
+    var groups = Object.keys(POSITION_GROUPS);
+    for (var i = 0; i < groups.length; i += 1) {
+      if (POSITION_GROUPS[groups[i]].indexOf(position) >= 0) return groups[i];
+    }
+    var raw = player && (player.position_group || player.positionGroup);
+    if (raw && POSITION_ATTRIBUTES[raw]) return raw;
+    return 'Attacker';
+  }
+
+  function playerName(player) {
+    if (!player) return 'Player';
+    return [player.first_name, player.last_name].filter(Boolean).join(' ') ||
+      player.name ||
+      player.full_name ||
+      player.display_name ||
+      'Player';
+  }
+
+  function playerId(player) {
+    return player && (player.id || player.player_id || player.playerId);
+  }
+
+  function attributeValue(player, key) {
+    if (!player) return null;
+
+    var containers = [
+      player.attribute_ratings,
+      player.attributeRatings,
+      player.attributes,
+      player.ratings,
+      player.assessments,
+      player
+    ].filter(Boolean);
+
+    for (var i = 0; i < containers.length; i += 1) {
+      var container = containers[i];
+      var raw = container[key];
+
+      if (raw && typeof raw === 'object') {
+        raw = raw.rating !== undefined ? raw.rating :
+          raw.value !== undefined ? raw.value :
+          raw.score !== undefined ? raw.score :
+          raw.overall !== undefined ? raw.overall : null;
+      }
+
+      var numeric = Number(raw);
+      if (Number.isFinite(numeric)) {
+        if (numeric > 10 && numeric <= 100) numeric = numeric / 10;
+        return Math.max(0, Math.min(10, numeric));
+      }
+    }
+
+    return null;
+  }
+
+  function formatRating(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+    var numeric = Number(value);
+    return (Math.round(numeric * 10) / 10).toString();
+  }
+
+  function attributeLabel(key) {
+    if (ATTRIBUTE_LABELS[key]) return ATTRIBUTE_LABELS[key];
+    return String(key || '')
+      .replace(/^gk_/, '')
+      .split('_')
+      .map(function (part, index) {
+        return index === 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part;
+      })
+      .join(' ');
   }
 
   async function loadPlayers(force) {
-    if (playerCache && !force) return playerCache;
-    var endpoint = isPublicDemo() ? '/api/players/public-demo' : '/api/scout-intelligence-v64/players';
-    var response;
-    try { response = await request('GET', endpoint, null, !isPublicDemo()); }
-    catch (error) {
-      if (!isPublicDemo()) throw error;
-      response = await request('GET', '/api/scout-intelligence-v64/players', null, true);
-    }
-    playerCache = response.data || response.players || [];
-    return playerCache;
-  }
-  async function loadProfile() {
-    var id = playerIdFromUrl();
-    if (profileCache && (!id || String(profileCache.player && profileCache.player.id) === String(id))) return profileCache;
-    if (!id) {
-      var players = await loadPlayers();
-      id = players[0] && players[0].id;
-    }
-    if (!id) throw new Error('No player is available.');
-    try {
-      profileCache = await request('GET', '/api/players/' + encodeURIComponent(id), null, true);
-    } catch (_) {
-      var rows = await loadPlayers();
-      profileCache = {player:rows.find(function (p) { return String(p.id) === String(id); }) || rows[0], videos:[], upcomingFixtures:[], recentMatches:[]};
-    }
-    return profileCache;
+    if (playersCache && !force) return playersCache;
+    var endpoint = isDemo() ? '/api/players/public-demo' : '/api/scout-intelligence-v64/players';
+    var payload = await request('GET', endpoint, null, !isDemo());
+    playersCache = unwrapList(payload).filter(Boolean);
+    return playersCache;
   }
 
-  function addStyle(root) {
-    if (!root || root.getElementById(STYLE_ID)) return;
+  function playerFromCache(id) {
+    return (playersCache || []).find(function (player) {
+      return String(playerId(player)) === String(id);
+    }) || null;
+  }
+
+  function ensureStyle(root) {
+    if (!root || q(root, '#' + STYLE_ID)) return;
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = [
-      '.slv10-exact-root .blurred-role-output,.slv10-exact-root .sl-role-locked{filter:blur(7px)!important;user-select:none!important;pointer-events:none!important}',
-      '.slv10-exact-root .sl-role-revealed{filter:none!important;user-select:text!important;pointer-events:auto!important}',
-      '.slv10-exact-root .slfr-modal{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(6,22,37,.68)}',
-      '.slv10-exact-root .slfr-modal-box{width:min(720px,100%);max-height:calc(100dvh - 36px);overflow:auto;border:1px solid #dbe4e9;background:#fff;color:#07141f;box-shadow:0 24px 70px rgba(6,22,37,.25)}',
-      '.slv10-exact-root .slfr-modal-head{min-height:62px;padding:14px 17px;border-bottom:1px solid #dbe4e9;display:flex;align-items:center;justify-content:space-between;gap:12px}',
-      '.slv10-exact-root .slfr-modal-head h3{margin:0;font-size:17px}.slv10-exact-root .slfr-close{min-height:36px;padding:0 11px;border:1px solid #dbe4e9;background:#fff;font-weight:900}',
-      '.slv10-exact-root .slfr-modal-body{padding:17px}.slv10-exact-root .slfr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}',
-      '.slv10-exact-root .slfr-field{display:grid;gap:6px}.slv10-exact-root .slfr-field.wide{grid-column:1/-1}.slv10-exact-root .slfr-field span{font-size:9px;font-weight:900}',
-      '.slv10-exact-root .slfr-field input,.slv10-exact-root .slfr-field select,.slv10-exact-root .slfr-field textarea{width:100%;min-height:42px;padding:9px;border:1px solid #c8d4da;background:#fff;color:#07141f;font:inherit}',
-      '.slv10-exact-root .slfr-field textarea{min-height:92px;resize:vertical}.slv10-exact-root .slfr-actions{margin-top:16px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}',
-      '.slv10-exact-root .slfr-video-list{display:grid;gap:9px}.slv10-exact-root .slfr-video{padding:12px;border:1px solid #dbe4e9;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}',
-      '.slv10-exact-root .slfr-select{width:100%;min-height:39px;border:0;background:transparent;color:inherit;font:inherit;font-weight:800;outline:none}',
-      '.slv10-exact-root .slfr-empty-selection{color:#71818a!important;font-style:normal!important}',
-      '@media(max-width:767px){.slv10-exact-root .slfr-grid{grid-template-columns:1fr}.slv10-exact-root .slfr-modal{padding:10px}.slv10-exact-root .slfr-actions{display:grid;grid-template-columns:1fr}.slv10-exact-root .slfr-actions .btn{width:100%}}'
+      '.slfr2-toast{position:fixed;right:20px;bottom:20px;z-index:999999;max-width:min(430px,calc(100vw - 40px));padding:12px 14px;border-radius:12px;background:#06201A;color:#fff;font:700 13px Archivo,Arial,sans-serif;box-shadow:0 18px 48px rgba(6,32,26,.22)}',
+      '.slfr2-toast.error{background:#96382D}',
+      '.slfr2-hidden{display:none!important}',
+      '.slfr2-compare-attributes{display:grid;gap:16px;margin-top:18px}',
+      '.slfr2-attribute-card{border:1px solid #DCE3DE;border-radius:16px;background:#fff;overflow:hidden}',
+      '.slfr2-attribute-head{display:grid;grid-template-columns:minmax(0,1fr) 88px 88px;gap:12px;align-items:end;padding:15px 16px;border-bottom:1px solid #EBEFEC}',
+      '.slfr2-attribute-head h3{margin:0;font:800 15px Archivo,Arial,sans-serif;color:#0C201A}',
+      '.slfr2-attribute-head span{font:700 10px "IBM Plex Mono",monospace;color:#7C8A82;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.slfr2-attribute-row{display:grid;grid-template-columns:minmax(120px,1fr) 88px 88px;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid #EBEFEC}',
+      '.slfr2-attribute-row:last-child{border-bottom:0}',
+      '.slfr2-attribute-name{font:700 12px Archivo,Arial,sans-serif;color:#48584F}',
+      '.slfr2-meter{display:grid;grid-template-columns:minmax(32px,1fr) 27px;gap:7px;align-items:center}',
+      '.slfr2-track{height:5px;border-radius:99px;background:#EEF4F0;overflow:hidden}',
+      '.slfr2-fill{height:100%;border-radius:99px;background:#075F48}',
+      '.slfr2-value{font:700 10px "IBM Plex Mono",monospace;color:#0C201A;text-align:right}',
+      '.slfr2-profile-section{margin-top:16px;border:1px solid #DCE3DE;border-radius:16px;background:#fff;overflow:hidden}',
+      '.slfr2-profile-head{padding:16px;border-bottom:1px solid #EBEFEC;display:flex;align-items:center;justify-content:space-between;gap:12px}',
+      '.slfr2-profile-head h3{margin:0;font:800 15px Archivo,Arial,sans-serif;color:#0C201A}',
+      '.slfr2-profile-body{padding:16px}',
+      '.slfr2-profile-attribute-row{display:grid;grid-template-columns:minmax(140px,1fr) minmax(90px,220px) 34px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #EBEFEC}',
+      '.slfr2-profile-attribute-row:last-child{border-bottom:0}',
+      '.slfr2-profile-attribute-row span{font:700 12px Archivo,Arial,sans-serif;color:#48584F}',
+      '.slfr2-profile-attribute-row b{font:700 10px "IBM Plex Mono",monospace;color:#0C201A;text-align:right}',
+      '.slfr2-actions{display:flex;gap:8px;flex-wrap:wrap}',
+      '.slfr2-action{appearance:none;border:1px solid #DCE3DE;border-radius:10px;background:#fff;color:#0C201A;padding:10px 12px;font:800 11px Archivo,Arial,sans-serif;cursor:pointer}',
+      '.slfr2-action.primary{background:#075F48;border-color:#075F48;color:#fff}',
+      '.slfr2-list{display:grid;gap:9px}',
+      '.slfr2-list-item{border:1px solid #EBEFEC;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}',
+      '.slfr2-list-copy{min-width:0}',
+      '.slfr2-list-copy b{display:block;font:800 12px Archivo,Arial,sans-serif;color:#0C201A}',
+      '.slfr2-list-copy span{display:block;margin-top:3px;font:500 11px Archivo,Arial,sans-serif;color:#7C8A82}',
+      '.slfr2-empty{padding:10px 0;font:600 12px Archivo,Arial,sans-serif;color:#7C8A82}',
+      '.slfr2-note-form{display:grid;gap:9px;margin-bottom:14px}',
+      '.slfr2-note-form textarea{width:100%;min-height:88px;box-sizing:border-box;border:1px solid #DCE3DE;border-radius:10px;padding:11px;font:500 13px Archivo,Arial,sans-serif;resize:vertical}',
+      '.slfr2-modal{position:fixed;inset:0;z-index:999998;background:rgba(6,32,26,.66);display:grid;place-items:center;padding:18px}',
+      '.slfr2-modal-box{width:min(760px,100%);max-height:calc(100dvh - 36px);overflow:auto;border-radius:18px;background:#fff;box-shadow:0 28px 80px rgba(0,0,0,.28)}',
+      '.slfr2-modal-head{position:sticky;top:0;z-index:2;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;border-bottom:1px solid #EBEFEC}',
+      '.slfr2-modal-head h3{margin:0;font:800 16px Archivo,Arial,sans-serif;color:#0C201A}',
+      '.slfr2-modal-body{padding:16px}',
+      '.slfr2-video{width:100%;border-radius:12px;background:#000;margin-top:10px}',
+      '.slfr2-notification-tabs{display:flex;gap:8px;margin-bottom:14px}',
+      '.slfr2-notification-tab{border:1px solid #DCE3DE;border-radius:999px;background:#fff;padding:8px 12px;font:800 11px Archivo,Arial,sans-serif;color:#48584F;cursor:pointer}',
+      '.slfr2-notification-tab.on{background:#06201A;color:#fff;border-color:#06201A}',
+      '.slfr2-demo-history{margin-top:16px;padding-top:16px;border-top:1px solid #EBEFEC}',
+      '.slfr2-demo-history h3{margin:0 0 10px;font:800 14px Archivo,Arial,sans-serif;color:#0C201A}',
+      '@media(max-width:767px){.slfr2-attribute-head,.slfr2-attribute-row{grid-template-columns:minmax(0,1fr) 72px 72px;padding-left:12px;padding-right:12px}.slfr2-meter{grid-template-columns:1fr 22px}.slfr2-profile-attribute-row{grid-template-columns:minmax(120px,1fr) minmax(60px,120px) 30px}.slfr2-actions{display:grid;grid-template-columns:1fr}.slfr2-action{width:100%}.slfr2-modal{padding:8px}}'
     ].join('');
     root.appendChild(style);
   }
-  function toast(root, message, error) {
-    var old = q(root, '.slfr-toast'); if (old) old.remove();
-    var node = document.createElement('div');
-    node.className = 'slv10-toast slfr-toast' + (error ? ' error' : '');
-    node.setAttribute('role', error ? 'alert' : 'status'); node.textContent = message;
-    (q(root, '.slv10-exact-root') || root).appendChild(node);
-    setTimeout(function () { node.remove(); }, 3800);
-  }
-  function modal(root, title, html, bind) {
-    var old = q(root, '.slfr-modal'); if (old) old.remove();
-    var wrap = document.createElement('div'); wrap.className='slfr-modal';
-    wrap.innerHTML='<section class="slfr-modal-box" role="dialog" aria-modal="true"><header class="slfr-modal-head"><h3>'+esc(title)+'</h3><button class="slfr-close" type="button">Close</button></header><div class="slfr-modal-body">'+html+'</div></section>';
-    (q(root, '.slv10-exact-root') || root).appendChild(wrap);
-    function close(){ wrap.remove(); }
-    q(wrap,'.slfr-close').onclick=close;
-    wrap.addEventListener('click',function(e){if(e.target===wrap)close();});
-    if(bind) bind(wrap,close);
-    return wrap;
-  }
-  function field(label, control, wide) { return '<label class="slfr-field'+(wide?' wide':'')+'"><span>'+esc(label)+'</span>'+control+'</label>'; }
-  function actionButton(label, attr) { return '<button class="btn primary" type="button" '+attr+'>'+esc(label)+'</button>'; }
-  function download(filename, mime, content) {
-    var blob = new Blob([content],{type:mime||'text/plain'}); var url=URL.createObjectURL(blob); var a=document.createElement('a');
-    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
-  }
-  function downloadBase64(filename,mime,base64){
-    var binary=atob(base64||''), bytes=new Uint8Array(binary.length); for(var i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    var url=URL.createObjectURL(new Blob([bytes],{type:mime||'application/octet-stream'})); var a=document.createElement('a');a.href=url;a.download=filename||'download';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+
+  function removeUnsupportedAgainstFields(root) {
+    qa(root, 'select').forEach(function (select) {
+      var field = closestField(select);
+      var copy = textOf(field || select.parentElement);
+      var optionCopy = qa(select, 'option').map(function (option) { return normal(option.textContent); }).join(' | ');
+      var unsupported = copy.indexOf('compare against') >= 0 ||
+        copy.indexOf('predict against') >= 0 ||
+        copy.indexOf('recruitment brief') >= 0 ||
+        optionCopy.indexOf('position average') >= 0 ||
+        optionCopy.indexOf('age group average') >= 0 ||
+        optionCopy.indexOf('your recruitment brief') >= 0 ||
+        optionCopy.indexOf('your scout setup') >= 0;
+
+      if (unsupported) {
+        (field || select).classList.add('slfr2-hidden');
+        (field || select).setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    qa(root, 'label,span,p,div').forEach(function (node) {
+      if (node.children && node.children.length > 3) return;
+      var copy = textOf(node);
+      if (copy === 'compare against' || copy === 'predict against') {
+        var wrapper = closestField(node) || node;
+        wrapper.classList.add('slfr2-hidden');
+        wrapper.setAttribute('aria-hidden', 'true');
+      }
+    });
   }
 
-  function roleOutputNodes(root) {
-    return qa(root,'.role-results>div').filter(function (box) {
-      var label=normal(q(box,'span') && q(box,'span').textContent);
-      return label==='best current role'||label==='best future role'||label==='target role'||label==='role-fit score';
-    }).map(function(box){return q(box,'b');}).filter(Boolean);
+  function compareState() {
+    return readJson(sessionStorage, COMPARE_KEY, { a: '', b: '' }) || { a: '', b: '' };
   }
-  function lockRoles(root, playerId) {
-    var revealed=false; try{revealed=sessionStorage.getItem('sl_position_fit_revealed_'+playerId)==='1';}catch(_){}
-    roleOutputNodes(root).forEach(function(node){node.classList.toggle('sl-role-revealed',revealed);node.classList.toggle('sl-role-locked',!revealed);node.classList.toggle('blurred-role-output',!revealed);});
+
+  function saveCompareState(state) {
+    writeJson(sessionStorage, COMPARE_KEY, {
+      a: state.a || '',
+      b: state.b || ''
+    });
   }
-  function revealRoles(root, result, player, target) {
-    var outputs=roleOutputNodes(root);
-    var current=result.bestCurrentRole||result.currentRole||result.position||player.specific_position||player.primary_position||'Current role';
-    var future=result.bestFutureRole||result.futureRole||result.projectedRole||current;
-    var score=Math.round(num(result.roleFitScore||result.targetScore||result.score||player.overall_rating,0));
-    var values=[current,future,target||current,score+' / 100'];
-    outputs.forEach(function(node,index){node.textContent=values[index]||'—';node.classList.remove('blurred-role-output','sl-role-locked');node.classList.add('sl-role-revealed');});
-    try{sessionStorage.setItem('sl_position_fit_revealed_'+player.id,'1');}catch(_){}
+
+  function compareControls(root) {
+    var a = labelledControl(root, ['player 1', 'player a', 'first player'], 'select');
+    var b = labelledControl(root, ['player 2', 'player b', 'second player'], 'select');
+    var selects = qa(root, 'select').filter(function (select) {
+      return !select.closest('.slfr2-hidden');
+    });
+
+    if (!a && selects.length) a = selects[0];
+    if (!b && selects.length > 1) b = selects[1];
+
+    return { a: a, b: b };
   }
-  function displayAttribute(raw) {
-    var n=num(raw,0); if(n>0&&n<=10) return {bar:Math.max(0,Math.min(100,n*10)),label:Number.isInteger(n)?String(n):n.toFixed(1)};
-    var scaled=Math.max(0,Math.min(100,n)); return {bar:scaled,label:(scaled/10).toFixed(scaled%10===0?0:1)};
+
+  function setPlayerOptions(select, players, selectedId, otherSelectedId, placeholder) {
+    if (!select) return;
+
+    var previous = String(selectedId || select.value || '');
+    var html = '<option value="">' + esc(placeholder || 'Choose player') + '</option>';
+
+    players.forEach(function (player) {
+      var id = String(playerId(player) || '');
+      if (!id) return;
+      var disabled = otherSelectedId && String(otherSelectedId) === id;
+      html += '<option value="' + esc(id) + '"' +
+        (id === previous ? ' selected' : '') +
+        (disabled ? ' disabled' : '') +
+        '>' + esc(playerName(player)) +
+        (playerPosition(player) ? ' · ' + esc(playerPosition(player)) : '') +
+        '</option>';
+    });
+
+    select.innerHTML = html;
+    select.value = previous;
+    select.dataset.slfr2CompareSelect = '1';
   }
+
+  async function repairCompare(root) {
+    removeUnsupportedAgainstFields(root);
+
+    var players = await loadPlayers().catch(function (error) {
+      toast(error.message || 'Players could not be loaded.', true);
+      return [];
+    });
+    if (!players.length) return;
+
+    var controls = compareControls(root);
+    if (!controls.a || !controls.b) return;
+
+    var state = compareState();
+
+    if (controls.a.value && !state.a) state.a = controls.a.value;
+    if (controls.b.value && !state.b) state.b = controls.b.value;
+
+    setPlayerOptions(controls.a, players, state.a, state.b, 'Choose Player 1');
+    setPlayerOptions(controls.b, players, state.b, state.a, 'Choose Player 2');
+
+    controls.a.onchange = function () {
+      var next = compareState();
+      next.a = controls.a.value;
+      if (next.a && next.a === next.b) next.b = '';
+      saveCompareState(next);
+      setPlayerOptions(controls.b, players, next.b, next.a, 'Choose Player 2');
+      controls.b.value = next.b || '';
+    };
+
+    controls.b.onchange = function () {
+      var next = compareState();
+      next.b = controls.b.value;
+      if (next.b && next.a === next.b) next.a = '';
+      saveCompareState(next);
+      setPlayerOptions(controls.a, players, next.a, next.b, 'Choose Player 1');
+      controls.a.value = next.a || '';
+    };
+
+    var button = findButton(root, ['Compare']);
+    if (button) button.dataset.slfr2CompareAction = '1';
+
+    renderCompareAttributesIfResult(root, state);
+  }
+
+  function meter(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) {
+      return '<div class="slfr2-meter"><div class="slfr2-track"><div class="slfr2-fill" style="width:0"></div></div><div class="slfr2-value">—</div></div>';
+    }
+    var numeric = Math.max(0, Math.min(10, Number(value)));
+    return '<div class="slfr2-meter"><div class="slfr2-track"><div class="slfr2-fill" style="width:' +
+      (numeric * 10) + '%"></div></div><div class="slfr2-value">' + esc(formatRating(numeric)) + '</div></div>';
+  }
+
+  function attributeSection(title, keys, playerA, playerB, applicableA, applicableB) {
+    var nameA = playerName(playerA);
+    var nameB = playerName(playerB);
+    var html = '<section class="slfr2-attribute-card">' +
+      '<header class="slfr2-attribute-head"><h3>' + esc(title) + '</h3><span>' +
+      esc(nameA) + '</span><span>' + esc(nameB) + '</span></header>';
+
+    keys.forEach(function (key) {
+      var valueA = applicableA === false ? null : attributeValue(playerA, key);
+      var valueB = applicableB === false ? null : attributeValue(playerB, key);
+      html += '<div class="slfr2-attribute-row"><div class="slfr2-attribute-name">' +
+        esc(attributeLabel(key)) + '</div>' + meter(valueA) + meter(valueB) + '</div>';
+    });
+
+    return html + '</section>';
+  }
+
+  function renderCompareAttributes(root, playerA, playerB) {
+    if (!playerA || !playerB) return;
+
+    var old = q(root, '.slfr2-compare-attributes');
+    if (old) old.remove();
+
+    var groupA = positionGroup(playerA);
+    var groupB = positionGroup(playerB);
+    var generalA = groupA !== 'Goalkeeper';
+    var generalB = groupB !== 'Goalkeeper';
+
+    var container = document.createElement('div');
+    container.className = 'slfr2-compare-attributes';
+    container.setAttribute('data-slfr2-owned', 'compare-attributes');
+
+    container.innerHTML =
+      attributeSection('General attributes', GENERAL_ATTRIBUTES, playerA, playerB, generalA, generalB) +
+      attributeSection(playerName(playerA) + ' · ' + groupA + ' attributes', POSITION_ATTRIBUTES[groupA] || [], playerA, playerB, true, groupA === groupB) +
+      attributeSection(playerName(playerB) + ' · ' + groupB + ' attributes', POSITION_ATTRIBUTES[groupB] || [], playerA, playerB, groupA === groupB, true);
+
+    var anchor = qa(root, '.card,section').filter(function (card) {
+      var copy = textOf(card);
+      return copy.indexOf('recommendation') >= 0 ||
+        copy.indexOf('compatibility') >= 0 ||
+        copy.indexOf('overall') >= 0;
+    }).pop();
+
+    (anchor && anchor.parentNode ? anchor.parentNode : root).appendChild(container);
+  }
+
+  function comparisonResultData(response) {
+    return response && (response.result || response.data || response.comparison || response) || {};
+  }
+
+  function firstValue(object, keys, fallback) {
+    object = object || {};
+    for (var i = 0; i < keys.length; i += 1) {
+      var value = object[keys[i]];
+      if (value !== undefined && value !== null && value !== '') return value;
+    }
+    return fallback;
+  }
+
+  function renderCompareResult(root, response, playerA, playerB) {
+    var result = comparisonResultData(response);
+    var old = q(root, '[data-slfr2-owned="compare-result"]');
+    if (old) old.remove();
+
+    var scoreA = firstValue(result, [
+      'playerAScore', 'player_a_score', 'scoreA', 'score_a',
+      'playerAOverall', 'player_a_overall'
+    ], firstValue(playerA, ['overall_rating', 'overallRating'], null));
+
+    var scoreB = firstValue(result, [
+      'playerBScore', 'player_b_score', 'scoreB', 'score_b',
+      'playerBOverall', 'player_b_overall'
+    ], firstValue(playerB, ['overall_rating', 'overallRating'], null));
+
+    function asTen(value) {
+      var numeric = Number(value);
+      if (!Number.isFinite(numeric)) return null;
+      if (numeric > 10 && numeric <= 100) numeric = numeric / 10;
+      return Math.max(0, Math.min(10, numeric));
+    }
+
+    var compatibilityA = firstValue(result, [
+      'playerACompatibility', 'player_a_compatibility', 'compatibilityA',
+      'playerACompatibilityScore'
+    ], null);
+    var compatibilityB = firstValue(result, [
+      'playerBCompatibility', 'player_b_compatibility', 'compatibilityB',
+      'playerBCompatibilityScore'
+    ], null);
+
+    var recommendation = firstValue(result, [
+      'recommendation', 'overallRecommendation', 'overall_recommendation',
+      'summary', 'verdict'
+    ], '');
+
+    if (recommendation && typeof recommendation === 'object') {
+      recommendation = recommendation.summary ||
+        recommendation.text ||
+        recommendation.verdict ||
+        JSON.stringify(recommendation);
+    }
+
+    var section = document.createElement('section');
+    section.className = 'slfr2-profile-section';
+    section.setAttribute('data-slfr2-owned', 'compare-result');
+    section.innerHTML =
+      '<header class="slfr2-profile-head"><h3>Comparison result</h3></header>' +
+      '<div class="slfr2-profile-body">' +
+        '<div class="slfr2-list">' +
+          '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' + esc(playerName(playerA)) +
+          '</b><span>Overall ' + esc(asTen(scoreA) == null ? '—' : formatRating(asTen(scoreA)) + '/10') +
+          (compatibilityA != null ? ' · Compatibility ' + esc(String(compatibilityA)) : '') +
+          '</span></div></div>' +
+          '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' + esc(playerName(playerB)) +
+          '</b><span>Overall ' + esc(asTen(scoreB) == null ? '—' : formatRating(asTen(scoreB)) + '/10') +
+          (compatibilityB != null ? ' · Compatibility ' + esc(String(compatibilityB)) : '') +
+          '</span></div></div>' +
+        '</div>' +
+        (recommendation
+          ? '<div style="margin-top:14px"><b style="font:800 12px Archivo,Arial,sans-serif;color:#0C201A">Overall recommendation</b><p style="margin:6px 0 0;font:500 12px/1.55 Archivo,Arial,sans-serif;color:#48584F">' +
+            esc(String(recommendation)) + '</p></div>'
+          : '') +
+      '</div>';
+
+    var anchor = qa(root, '.card,section').filter(function (node) {
+      var copy = textOf(node);
+      return copy.indexOf('compare') >= 0 || copy.indexOf('player 1') >= 0 || copy.indexOf('player a') >= 0;
+    })[0];
+
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(section, anchor.nextSibling);
+    } else {
+      root.appendChild(section);
+    }
+  }
+
+  function renderCompareAttributesIfResult(root, state) {
+    if (!state.a || !state.b) return;
+    var playerA = playerFromCache(state.a);
+    var playerB = playerFromCache(state.b);
+    if (!playerA || !playerB) return;
+
+    var copy = textOf(root);
+    var likelyResult = copy.indexOf('recommendation') >= 0 ||
+      copy.indexOf('compatibility') >= 0 ||
+      copy.indexOf('comparison') >= 0;
+
+    if (likelyResult) renderCompareAttributes(root, playerA, playerB);
+  }
+
+  async function runCompare(root) {
+    var controls = compareControls(root);
+    var state = compareState();
+
+    state.a = controls.a ? controls.a.value : state.a;
+    state.b = controls.b ? controls.b.value : state.b;
+    saveCompareState(state);
+
+    if (!state.a || !state.b) {
+      toast('Choose two players before comparing.', true);
+      return;
+    }
+    if (String(state.a) === String(state.b)) {
+      toast('Choose two different players before comparing.', true);
+      return;
+    }
+
+    var endpoint = isDemo()
+      ? '/api/scout-intelligence-v64/public-demo/compare'
+      : '/api/scout-intelligence-v64/compare';
+
+    try {
+      var response = await request('POST', endpoint, {
+        playerAId: state.a,
+        playerBId: state.b,
+        contextKey: 'immediate_starter'
+      }, !isDemo());
+
+      try {
+        sessionStorage.setItem('sl_scout_compare_result_v2', JSON.stringify(
+          response.result || response.data || response
+        ));
+      } catch (_) {}
+
+      var playerA = playerFromCache(state.a);
+      var playerB = playerFromCache(state.b);
+      renderCompareResult(root, response, playerA, playerB);
+      renderCompareAttributes(root, playerA, playerB);
+      removeUnsupportedAgainstFields(root);
+      toast('Comparison updated.');
+    } catch (error) {
+      toast(error.message || 'Comparison could not be run.', true);
+    }
+  }
+
+  function repairPredictions(root) {
+    removeUnsupportedAgainstFields(root);
+
+    qa(root, 'select').forEach(function (select) {
+      var field = closestField(select);
+      if (!field) return;
+      var copy = textOf(field);
+      if (copy.indexOf('compare against') >= 0 ||
+          copy.indexOf('predict against') >= 0 ||
+          copy.indexOf('scout setup') >= 0 ||
+          copy.indexOf('recruitment brief') >= 0) {
+        field.classList.add('slfr2-hidden');
+      }
+    });
+
+    qa(root, 'option').forEach(function (option) {
+      var copy = normal(option.textContent);
+      if (copy === 'your recruitment brief' ||
+          copy === 'your scout setup' ||
+          copy === 'position average' ||
+          copy === 'age group average') {
+        option.remove();
+      }
+    });
+  }
+
+  function installPredictionRequestSanitizer() {
+    if (window.__SLFR2_FETCH_SANITIZER__) return;
+    window.__SLFR2_FETCH_SANITIZER__ = true;
+
+    var originalFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+      try {
+        var url = typeof input === 'string' ? input : input && input.url;
+        if (url && /\/api\/predictions\/run(?:\?|$)/.test(url) && init && typeof init.body === 'string') {
+          var payload = JSON.parse(init.body);
+          if (payload && payload.inputParams && typeof payload.inputParams === 'object') {
+            delete payload.inputParams.compareAgainst;
+            delete payload.inputParams.predictAgainst;
+            delete payload.inputParams.recruitmentBrief;
+            delete payload.inputParams.brief;
+            init = Object.assign({}, init, { body: JSON.stringify(payload) });
+          }
+        }
+      } catch (_) {}
+      return originalFetch(input, init);
+    };
+  }
+
+  function demoUsageRequests() {
+    return readJson(localStorage, USAGE_KEY, []) || [];
+  }
+
+  function saveDemoUsageRequest(requestRow) {
+    var rows = demoUsageRequests();
+    rows.unshift(requestRow);
+    writeJson(localStorage, USAGE_KEY, rows.slice(0, 100));
+  }
+
+  function renderDemoUsageHistory(root) {
+    if (!isDemo()) return;
+
+    var rows = demoUsageRequests();
+    var old = q(root, '.slfr2-demo-history');
+    if (old) old.remove();
+
+    var target = qa(root, '.card,section').find(function (node) {
+      var copy = textOf(node);
+      return copy.indexOf('usage') >= 0 ||
+        copy.indexOf('allowance') >= 0 ||
+        copy.indexOf('request') >= 0;
+    }) || root;
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'slfr2-demo-history';
+    wrapper.innerHTML = '<h3>Request history</h3>';
+
+    if (!rows.length) {
+      wrapper.innerHTML += '<div class="slfr2-empty">No additional usage requests have been submitted in this demo yet.</div>';
+    } else {
+      var list = '<div class="slfr2-list">';
+      rows.forEach(function (row) {
+        list += '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' +
+          esc(row.allowanceLabel || row.allowanceType || 'Additional usage') +
+          ' · +' + esc(row.quantity) +
+          '</b><span>' + esc(row.reason || '') +
+          (row.createdAt ? ' · ' + esc(new Date(row.createdAt).toLocaleString()) : '') +
+          '</span></div><span class="pill n">' + esc(row.status || 'Pending') + '</span></div>';
+      });
+      wrapper.innerHTML += list + '</div>';
+    }
+
+    target.appendChild(wrapper);
+  }
+
+  function usageFormValues(root) {
+    var type = labelledControl(root, ['allowance type'], 'select');
+    var quantity = labelledControl(root, ['how many more'], 'input');
+    var reason = labelledControl(root, ['why do you need'], 'textarea,input');
+
+    return {
+      type: type,
+      quantity: quantity,
+      reason: reason,
+      allowanceType: type ? String(type.value || '').trim() : '',
+      allowanceLabel: type && type.selectedOptions && type.selectedOptions[0]
+        ? String(type.selectedOptions[0].textContent || '').trim()
+        : '',
+      amount: quantity ? Number(quantity.value) : 0,
+      reasonValue: reason ? String(reason.value || '').trim() : ''
+    };
+  }
+
+  function handleDemoUsageSubmit(root) {
+    var values = usageFormValues(root);
+
+    if (!values.allowanceType) {
+      toast('Allowance type is required.', true);
+      return;
+    }
+    if (!values.amount || values.amount < 1) {
+      toast('How many more you need is required.', true);
+      return;
+    }
+    if (!values.reasonValue) {
+      toast('Please explain why you need the additional usage.', true);
+      return;
+    }
+
+    saveDemoUsageRequest({
+      id: 'demo-usage-' + Date.now(),
+      allowanceType: values.allowanceType,
+      allowanceLabel: values.allowanceLabel,
+      quantity: values.amount,
+      reason: values.reasonValue,
+      status: 'Pending',
+      createdAt: new Date().toISOString()
+    });
+
+    toast('Demo usage request saved.');
+    renderDemoUsageHistory(root);
+
+    if (values.quantity) values.quantity.value = '';
+    if (values.reason) values.reason.value = '';
+  }
+
+  function repairUsage(root) {
+    renderDemoUsageHistory(root);
+    var send = findButton(root, ['Send request']);
+    if (send && isDemo()) send.dataset.slfr2DemoUsage = '1';
+  }
+
+  function notificationTab() {
+    try {
+      return sessionStorage.getItem(NOTIFICATION_TAB_KEY) || 'new';
+    } catch (_) {
+      return 'new';
+    }
+  }
+
+  function setNotificationTab(value) {
+    try {
+      sessionStorage.setItem(NOTIFICATION_TAB_KEY, value === 'old' ? 'old' : 'new');
+    } catch (_) {}
+  }
+
+  async function loadNotifications(force) {
+    if (notificationCache && !force) return notificationCache;
+    var payload = await request('GET', '/api/notifications?limit=100');
+    notificationCache = unwrapList(payload);
+    return notificationCache;
+  }
+
+  function notificationRow(notification) {
+    var title = notification.title || 'ScoutLink update';
+    var body = notification.body || notification.message || '';
+    var date = notification.created_at || notification.createdAt;
+    var timestamp = date ? new Date(date).toLocaleString() : '';
+    var status = notification.is_read ? 'Old' : 'New';
+
+    return '<div class="slfr2-list-item" data-slfr2-notification="' + esc(notification.id || '') + '">' +
+      '<div class="slfr2-list-copy"><b>' + esc(title) + '</b><span>' +
+      esc([body, timestamp].filter(Boolean).join(' · ')) +
+      '</span></div><span class="pill ' + (notification.is_read ? 'n' : 'g') + '">' +
+      status + '</span></div>';
+  }
+
+  async function repairNotifications(root) {
+    var notifications;
+    try {
+      notifications = await loadNotifications(false);
+    } catch (error) {
+      return;
+    }
+
+    var existingV9Tabs = q(root, '.slv9-notification-tabs');
+    if (existingV9Tabs) existingV9Tabs.classList.add('slfr2-hidden');
+
+    var card = qa(root, '.card,section').find(function (node) {
+      return textOf(node).indexOf('notification') >= 0 || q(node, '.list-row');
+    });
+    if (!card) return;
+
+    var body = q(card, '.card-b') || card;
+    var oldTabs = q(body, '.slfr2-notification-tabs');
+    if (oldTabs) oldTabs.remove();
+
+    var tabs = document.createElement('div');
+    tabs.className = 'slfr2-notification-tabs';
+    tabs.innerHTML =
+      '<button type="button" class="slfr2-notification-tab" data-slfr2-notification-tab="new">New</button>' +
+      '<button type="button" class="slfr2-notification-tab" data-slfr2-notification-tab="old">Old</button>';
+    body.insertBefore(tabs, body.firstChild);
+
+    qa(body, '.list-row,.slfr2-notification-list').forEach(function (node) {
+      node.remove();
+    });
+
+    var selected = notificationTab();
+    qa(tabs, '[data-slfr2-notification-tab]').forEach(function (button) {
+      button.classList.toggle('on', button.dataset.slfr2NotificationTab === selected);
+    });
+
+    var list = notifications.filter(function (notification) {
+      return selected === 'new' ? !notification.is_read : !!notification.is_read;
+    });
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'slfr2-notification-list slfr2-list';
+
+    if (!list.length) {
+      wrapper.innerHTML = '<div class="slfr2-empty">' +
+        (selected === 'new' ? 'No new notifications.' : 'No old notifications.') +
+        '</div>';
+    } else {
+      wrapper.innerHTML = list.slice(0, 100).map(notificationRow).join('');
+    }
+
+    body.appendChild(wrapper);
+  }
+
+  function threadId(thread) {
+    return String(thread && (thread.id || thread.thread_id || thread.threadId || thread.conversation_id || '') || '');
+  }
+
+  function coachNameFromThread(thread) {
+    if (!thread) return '';
+    return thread.coach_name ||
+      thread.coachName ||
+      thread.contact_name ||
+      thread.contactName ||
+      thread.other_user_name ||
+      thread.otherUserName ||
+      (thread.coach && (thread.coach.name || [thread.coach.first_name, thread.coach.last_name].filter(Boolean).join(' '))) ||
+      '';
+  }
+
+  async function loadChatThreads(force) {
+    if (chatThreadCache && !force) return chatThreadCache;
+    var payload = await request('GET', '/api/scout-intelligence-v64/chat/threads');
+    chatThreadCache = unwrapList(payload);
+    return chatThreadCache;
+  }
+
+  async function loadChatMessages(id) {
+    if (!id) return [];
+    if (isDemo()) {
+      var cache = readJson(sessionStorage, CHAT_KEY, { threads: {} }) || { threads: {} };
+      return cache.threads && cache.threads[id] && Array.isArray(cache.threads[id].messages)
+        ? cache.threads[id].messages
+        : [];
+    }
+    var payload = await request('GET', '/api/scout-intelligence-v64/chat/threads/' + encodeURIComponent(id) + '/messages');
+    return unwrapList(payload);
+  }
+
+  function chatCache() {
+    return readJson(sessionStorage, CHAT_KEY, { activeId: '', threads: {} }) ||
+      { activeId: '', threads: {} };
+  }
+
+  function saveChatSnapshot(id, coachName, messages) {
+    if (!id) return;
+    var cache = chatCache();
+    cache.activeId = id;
+    cache.threads = cache.threads || {};
+    cache.threads[id] = {
+      coachName: coachName || (cache.threads[id] && cache.threads[id].coachName) || 'Coach',
+      messages: Array.isArray(messages) ? messages : (cache.threads[id] && cache.threads[id].messages) || [],
+      updatedAt: new Date().toISOString()
+    };
+    writeJson(sessionStorage, CHAT_KEY, cache);
+  }
+
+  function messageAuthor(message) {
+    return message.sender_name ||
+      message.senderName ||
+      message.author_name ||
+      message.authorName ||
+      message.from_name ||
+      message.fromName ||
+      message.sender_role ||
+      message.senderRole ||
+      '';
+  }
+
+  function messageBody(message) {
+    return message.body || message.message || message.content || message.text || '';
+  }
+
+  function messageTime(message) {
+    var raw = message.created_at || message.createdAt || message.sent_at || message.sentAt;
+    if (!raw) return '';
+    try { return new Date(raw).toLocaleString(); } catch (_) { return ''; }
+  }
+
+  function renderStableChatThread(root, id, coachName, messages) {
+    var threadArea = qa(root, '.card,section,main,div').find(function (node) {
+      var copy = textOf(node);
+      return q(node, 'textarea') && (
+        copy.indexOf('send') >= 0 ||
+        copy.indexOf('message') >= 0 ||
+        copy.indexOf('coach') >= 0
+      );
+    });
+
+    if (!threadArea) return;
+
+    var heading = qa(threadArea, 'h1,h2,h3,h4,b,strong').find(function (node) {
+      var copy = textOf(node);
+      return copy === 'coach' ||
+        copy.indexOf('conversation') >= 0 ||
+        copy.indexOf('chat with') >= 0 ||
+        copy.indexOf('message coach') >= 0;
+    });
+
+    if (heading && coachName) heading.textContent = coachName;
+
+    var existing = q(threadArea, '.slfr2-chat-stable-messages');
+    if (existing) existing.remove();
+
+    var container = document.createElement('div');
+    container.className = 'slfr2-chat-stable-messages slfr2-list';
+    container.setAttribute('data-thread-id', id);
+
+    if (!messages.length) {
+      container.innerHTML = '<div class="slfr2-empty">No messages in this conversation yet.</div>';
+    } else {
+      container.innerHTML = messages.map(function (message) {
+        var author = messageAuthor(message) || coachName || 'ScoutLink';
+        return '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' +
+          esc(author) + '</b><span>' + esc(messageBody(message)) +
+          (messageTime(message) ? ' · ' + esc(messageTime(message)) : '') +
+          '</span></div></div>';
+      }).join('');
+    }
+
+    var textarea = q(threadArea, 'textarea');
+    if (textarea && textarea.parentNode) {
+      textarea.parentNode.insertBefore(container, textarea);
+    } else {
+      threadArea.appendChild(container);
+    }
+  }
+
+  async function repairChat(root) {
+    var threads;
+    try {
+      threads = await loadChatThreads(false);
+    } catch (_) {
+      threads = [];
+    }
+
+    var cache = chatCache();
+    var sessionActive = '';
+    try { sessionActive = sessionStorage.getItem('sl_scout_v9_active_thread') || ''; } catch (_) {}
+    var queryActive = new URLSearchParams(location.search).get('thread') || '';
+    activeChatId = queryActive || sessionActive || cache.activeId || activeChatId;
+
+    if (!activeChatId && threads.length === 1) activeChatId = threadId(threads[0]);
+    if (!activeChatId) return;
+
+    var thread = threads.find(function (item) {
+      return threadId(item) === String(activeChatId);
+    }) || null;
+    var cachedThread = cache.threads && cache.threads[activeChatId];
+    var coachName = coachNameFromThread(thread) || (cachedThread && cachedThread.coachName) || 'Coach';
+
+    var messages;
+    try {
+      messages = await loadChatMessages(activeChatId);
+    } catch (_) {
+      messages = cachedThread && Array.isArray(cachedThread.messages) ? cachedThread.messages : [];
+    }
+
+    if (!messages.length && cachedThread && Array.isArray(cachedThread.messages) && cachedThread.messages.length) {
+      messages = cachedThread.messages;
+    }
+
+    saveChatSnapshot(activeChatId, coachName, messages);
+    renderStableChatThread(root, activeChatId, coachName, messages);
+  }
+
+  function playerProfileId() {
+    var params = new URLSearchParams(location.search);
+    return params.get('id') || params.get('player') || params.get('playerId') || '';
+  }
+
+  async function loadPlayerProfile(force) {
+    var id = playerProfileId();
+    if (!id) throw new Error('Player ID is missing.');
+    if (profileCache && !force && String(playerId(profileCache.player || profileCache)) === String(id)) {
+      return profileCache;
+    }
+
+    var endpoint = isDemo()
+      ? '/api/scout-intelligence-v64/public-demo/player/' + encodeURIComponent(id)
+      : '/api/scout-intelligence-v64/player/' + encodeURIComponent(id);
+
+    var payload = await request('GET', endpoint, null, !isDemo());
+    profileCache = payload.data || payload;
+    if (!profileCache.player) profileCache.player = profileCache;
+    return profileCache;
+  }
+
+  function removeWrongProfileSections(root) {
+    qa(root, '.card,section').forEach(function (node) {
+      var heading = q(node, 'h2,h3,h4,.card-h');
+      var copy = textOf(heading || node);
+
+      if (copy.indexOf('linked records') >= 0) {
+        node.classList.add('slfr2-hidden');
+        node.setAttribute('aria-hidden', 'true');
+      }
+
+      if (/^(midfielder|defender|attacker|goalkeeper) attributes/.test(copy)) {
+        node.classList.add('slfr2-hidden');
+        node.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    qa(root, 'span,p,b,strong,h3,h4').forEach(function (node) {
+      if (textOf(node) === 'pipeline status') {
+        node.textContent = 'Recruitment stage';
+      }
+    });
+  }
+
+  function profileAttributeRows(player, keys) {
+    if (!keys.length) return '<div class="slfr2-empty">No applicable attributes.</div>';
+
+    return keys.map(function (key) {
+      var value = attributeValue(player, key);
+      var width = value == null ? 0 : Math.max(0, Math.min(100, Number(value) * 10));
+      return '<div class="slfr2-profile-attribute-row"><span>' +
+        esc(attributeLabel(key)) +
+        '</span><div class="slfr2-track"><div class="slfr2-fill" style="width:' +
+        width + '%"></div></div><b>' + esc(value == null ? '—' : formatRating(value) + '/10') +
+        '</b></div>';
+    }).join('');
+  }
+
+  function appendOrReplaceProfileSection(root, key, title, bodyHtml, actionsHtml) {
+    var existing = q(root, '[data-slfr2-profile-section="' + key + '"]');
+    if (existing) existing.remove();
+
+    var section = document.createElement('section');
+    section.className = 'slfr2-profile-section';
+    section.setAttribute('data-slfr2-profile-section', key);
+    section.innerHTML =
+      '<header class="slfr2-profile-head"><h3>' + esc(title) + '</h3>' +
+      (actionsHtml ? '<div class="slfr2-actions">' + actionsHtml + '</div>' : '') +
+      '</header><div class="slfr2-profile-body">' + bodyHtml + '</div>';
+
+    var profileBody = qa(root, 'main,.main,.content,.page,.screen').find(function (node) {
+      return textOf(node).indexOf('player profile') >= 0 || textOf(node).indexOf('overall') >= 0;
+    }) || root;
+
+    profileBody.appendChild(section);
+    return section;
+  }
+
+  function videoUrl(video) {
+    return video.url || video.video_url || video.videoUrl || video.file_url || video.fileUrl || video.src || '';
+  }
+
+  function videoTitle(video, index) {
+    return video.title || video.name || video.label || ('Video ' + (index + 1));
+  }
+
+  function matchTitle(match, index) {
+    var opponent = match.opponent_name || match.opponentName || match.opponent || '';
+    var competition = match.competition_name || match.competitionName || match.competition || '';
+    return opponent ? 'vs ' + opponent : competition || ('Match ' + (index + 1));
+  }
+
+  function matchMeta(match) {
+    var parts = [];
+    var date = match.match_date || match.matchDate || match.date || match.played_at || match.playedAt;
+    if (date) {
+      try { parts.push(new Date(date).toLocaleDateString()); } catch (_) {}
+    }
+    if (match.score || match.result) parts.push(match.score || match.result);
+    if (match.position || match.played_position) parts.push(match.position || match.played_position);
+    if (match.overall_rating != null || match.overallRating != null) {
+      var rating = match.overall_rating != null ? match.overall_rating : match.overallRating;
+      if (Number(rating) > 10) rating = Number(rating) / 10;
+      parts.push(formatRating(Number(rating)) + '/10');
+    }
+    return parts.join(' · ');
+  }
+
+  function openModal(title, html) {
+    var root = shadow();
+    if (!root) return null;
+    var old = q(root, '.slfr2-modal');
+    if (old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'slfr2-modal';
+    overlay.innerHTML =
+      '<section class="slfr2-modal-box" role="dialog" aria-modal="true">' +
+      '<header class="slfr2-modal-head"><h3>' + esc(title) + '</h3>' +
+      '<button class="slfr2-action" type="button" data-slfr2-close>Close</button></header>' +
+      '<div class="slfr2-modal-body">' + html + '</div></section>';
+
+    root.appendChild(overlay);
+    q(overlay, '[data-slfr2-close]').onclick = function () { overlay.remove(); };
+    overlay.addEventListener('click', function (event) {
+      if (event.target === overlay) overlay.remove();
+    });
+    return overlay;
+  }
+
+  function openVideos(videos) {
+    if (!videos.length) {
+      toast('No video evidence is available for this player yet.');
+      return;
+    }
+
+    var html = '<div class="slfr2-list">';
+    videos.forEach(function (video, index) {
+      var url = videoUrl(video);
+      html += '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' +
+        esc(videoTitle(video, index)) + '</b><span>' +
+        esc([video.fixture_name, video.fixtureName, video.category, video.created_at || video.createdAt].filter(Boolean).join(' · ')) +
+        '</span></div>' +
+        (url ? '<button class="slfr2-action primary" type="button" data-slfr2-video="' + esc(url) + '">Watch</button>' : '') +
+        '</div>';
+    });
+    html += '</div>';
+
+    var modal = openModal('Video evidence', html);
+    if (!modal) return;
+
+    qa(modal, '[data-slfr2-video]').forEach(function (button) {
+      button.onclick = function () {
+        var url = button.dataset.slfr2Video;
+        var body = q(modal, '.slfr2-modal-body');
+        var oldVideo = q(body, 'video.slfr2-video');
+        if (oldVideo) oldVideo.remove();
+
+        if (/^(https?:|blob:|data:|\/)/i.test(url)) {
+          var video = document.createElement('video');
+          video.className = 'slfr2-video';
+          video.controls = true;
+          video.playsInline = true;
+          video.src = url;
+          body.insertBefore(video, body.firstChild);
+          video.play().catch(function () {});
+        } else {
+          window.open(url, '_blank', 'noopener');
+        }
+      };
+    });
+  }
+
+  function openMatches(matches) {
+    if (!matches.length) {
+      toast('No played matches are available for this player yet.');
+      return;
+    }
+
+    var html = '<div class="slfr2-list">';
+    matches.forEach(function (match, index) {
+      html += '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>' +
+        esc(matchTitle(match, index)) + '</b><span>' + esc(matchMeta(match)) +
+        '</span></div></div>';
+    });
+    html += '</div>';
+    openModal('All matches played', html);
+  }
+
+  function demoNotesForPlayer(id) {
+    var all = readJson(localStorage, NOTES_KEY, {}) || {};
+    return Array.isArray(all[id]) ? all[id] : [];
+  }
+
+  function saveDemoNote(id, row) {
+    var all = readJson(localStorage, NOTES_KEY, {}) || {};
+    all[id] = Array.isArray(all[id]) ? all[id] : [];
+    all[id].unshift(row);
+    writeJson(localStorage, NOTES_KEY, all);
+  }
+
+  async function loadNotes(id) {
+    if (isDemo()) return demoNotesForPlayer(id);
+    var payload = await request(
+      'GET',
+      '/api/scout-workflow-actions/players/' + encodeURIComponent(id) + '/workflow'
+    );
+    var rows = payload.workflow || payload.data || [];
+    return Array.isArray(rows) ? rows.filter(function (row) {
+      return normal(row.entry_type || row.entryType || 'note') === 'note';
+    }) : [];
+  }
+
+  async function createNote(id, content) {
+    if (isDemo()) {
+      var demoRow = {
+        id: 'demo-note-' + Date.now(),
+        entry_type: 'note',
+        content: content,
+        created_at: new Date().toISOString()
+      };
+      saveDemoNote(id, demoRow);
+      return demoRow;
+    }
+
+    return request(
+      'POST',
+      '/api/scout-workflow-actions/players/' + encodeURIComponent(id) + '/workflow',
+      {
+        entryType: 'note',
+        content: content,
+        metadata: { source: 'scout_player_profile' }
+      }
+    );
+  }
+
+  function notesHtml(notes) {
+    if (!notes.length) return '<div class="slfr2-empty">No Scout notes have been added yet.</div>';
+    return '<div class="slfr2-list">' + notes.map(function (note) {
+      var created = note.created_at || note.createdAt;
+      var when = created ? new Date(created).toLocaleString() : '';
+      return '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>Scout note</b><span>' +
+        esc(note.content || note.note || '') +
+        (when ? ' · ' + esc(when) : '') +
+        '</span></div></div>';
+    }).join('') + '</div>';
+  }
+
+  async function addToPipeline(player) {
+    var id = playerId(player);
+    if (!id) throw new Error('Player ID is missing.');
+
+    var endpoint = isDemo()
+      ? '/api/scout-intelligence-v64/public-demo/interest'
+      : '/api/scout-workflow-actions/interest';
+
+    return request('POST', endpoint, {
+      playerId: id,
+      status: 'active'
+    }, !isDemo());
+  }
+
   async function repairProfile(root) {
-    var bundle=await loadProfile(); var player=bundle.player||{}; lockRoles(root,player.id);
-    var attrs={pace:player.pace,agility:player.agility,strength:player.strength,stamina:player.stamina,shooting:player.shooting,passing:player.passing,dribbling:player.dribbling,defending:player.defending,composure:player.composure,crossing:player.crossing,vision:player.vision,positioning:player.positioning,heading:player.heading,tackling:player.tackling,jumping:player.jumping};
-    qa(root,'.bar-row').forEach(function(row){var label=normal(q(row,'span')&&q(row,'span').textContent);if(!(label in attrs)||attrs[label]==null)return;var v=displayAttribute(attrs[label]);var bar=q(row,'em');var out=q(row,'b');if(bar)bar.style.width=v.bar+'%';if(out)out.textContent=v.label;});
+    var bundle;
+    try {
+      bundle = await loadPlayerProfile(false);
+    } catch (error) {
+      toast(error.message || 'Player profile data could not be loaded.', true);
+      return;
+    }
 
-    var selected='Position fit';
-    function selectPrediction(button){selected=String(button.textContent||'').split(/Test|Assess|Model|Review/)[0].trim()||'Position fit';qa(root,'.prediction-type').forEach(function(x){x.classList.toggle('active',x===button);});renderPredictionInputs();}
-    function predictionPanel(){return qa(root,'.prediction-analysis-panel').find(function(p){return p.offsetParent!==null;})||q(root,'.prediction-analysis-panel');}
-    function renderPredictionInputs(){var panel=predictionPanel();if(!panel)return;var controls=qa(panel,'.field');var definitions={
-      'Position fit':[['Target role','select',['Centre Forward','Striker','Left Winger','Right Winger','Attacking Midfielder','Central Midfielder','Defensive Midfielder','Centre Back','Full Back','Goalkeeper']]],
-      'Match scenario':[['Target scenario','select',['High press against low block','Protect a one-goal lead','Chasing a goal','Counter-attacking transition','Defending wide overloads']]],
-      'Development projection':[['Development focus','select',['Balanced growth','Technical quality','Physical development','Tactical intelligence','Match output']]],
-      'ROI and value':[['Budget','number',[]]]
-    }[selected]||[];
-    controls.forEach(function(c,i){if(i>=definitions.length){c.style.display='none';return;}c.style.display='grid';var d=definitions[i], label=q(c,'span');if(label)label.textContent=d[0];var ctl=q(c,'.control');if(!ctl)return;if(d[1]==='select')ctl.innerHTML='<select class="slfr-select">'+d[2].map(function(v){return'<option>'+esc(v)+'</option>';}).join('')+'</select><i>⌄</i>';else ctl.innerHTML='<input class="slfr-select" type="number" min="0" step="1000" value="350000">';});}
-    qa(root,'.prediction-type').forEach(function(btn){btn.dataset.slfr='1';btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();selectPrediction(btn);},true);});
-    renderPredictionInputs();
+    var sourcePlayer = bundle.player || bundle.data && bundle.data.player || bundle;
+    if (!sourcePlayer) return;
+    var player = Object.assign({}, sourcePlayer);
+    player.attribute_ratings = player.attribute_ratings ||
+      bundle.attribute_ratings ||
+      bundle.attributeRatings ||
+      (bundle.data && (bundle.data.attribute_ratings || bundle.data.attributeRatings)) ||
+      player.attributeRatings;
+    player.attributes = player.attributes ||
+      bundle.attributes ||
+      (bundle.data && bundle.data.attributes);
+    player.ratings = player.ratings ||
+      bundle.ratings ||
+      (bundle.data && bundle.data.ratings);
 
-    qa(root,'button').forEach(function(btn){var label=normal(btn.textContent);if(label==='run prediction analysis'){
-      btn.dataset.slfr='1';btn.addEventListener('click',async function(e){e.preventDefault();e.stopImmediatePropagation();var panel=predictionPanel(), selects=qa(panel,'select,input'), input={};if(selected==='Position fit')input.targetPosition=selects[0]&&selects[0].value||player.specific_position;if(selected==='Match scenario')input.scenarioKey=selects[0]&&selects[0].value;if(selected==='Development projection')input.focus=selects[0]&&selects[0].value;if(selected==='ROI and value')input.budget=num(selects[0]&&selects[0].value,350000);var original=btn.textContent;btn.disabled=true;btn.textContent='Running…';try{var result;if(isPublicDemo()){result={recommendation:'Validate this output through live football evidence.',summary:selected+' completed from the current demo evidence.',score:Math.max(55,num(player.overall_rating,75)),bestCurrentRole:player.specific_position||player.primary_position||'Centre Forward',bestFutureRole:input.targetPosition||player.specific_position||'Left Winger',roleFitScore:Math.max(55,num(player.overall_rating,75))};saveDemo('predictions',{id:'demo-'+Date.now(),player_id:player.id,prediction_type:selected,result:result,created_at:new Date().toISOString()});}else{var apiType={'Position fit':'Position Fit Projection','Match scenario':'Match Scenario Prediction','Development projection':'Attribute Development','ROI and value':'ROI Analysis'}[selected]||selected;var response=await request('POST','/api/predictions/run',{playerId:player.id,predictionType:apiType,inputParams:input});result=response.result||response;}if(selected==='Position fit')revealRoles(root,result,player,input.targetPosition);modal(root,selected+' result','<h3 style="margin:0">'+esc(result.recommendation||'Prediction completed')+'</h3><p style="margin-top:9px">'+esc(result.summary||'Review the output with live football evidence.')+'</p><div class="slfr-actions">'+actionButton('Record decision','data-prediction-decision')+'</div>',function(m){q(m,'[data-prediction-decision]').onclick=function(){m.remove();openDecision(root,player);};});toast(root,selected+' completed.');}catch(error){toast(root,error.message,true);}finally{btn.disabled=false;btn.textContent=original;}},true);
-    }});
+    removeWrongProfileSections(root);
 
-    bindProfileButtons(root,bundle);
+    var group = positionGroup(player);
+    var position = playerPosition(player);
+    var generalKeys = group === 'Goalkeeper' ? [] : GENERAL_ATTRIBUTES;
+    var positionKeys = POSITION_ATTRIBUTES[group] || [];
+
+    appendOrReplaceProfileSection(
+      root,
+      'attributes',
+      'Player attributes',
+      (group === 'Goalkeeper'
+        ? '<div class="slfr2-empty">Goalkeepers use the goalkeeper assessment set rather than the outfield General attribute set.</div>'
+        : '<h4 style="margin:0 0 10px;font:800 12px Archivo,Arial,sans-serif;color:#48584F">General attributes</h4>' +
+          profileAttributeRows(player, generalKeys)) +
+      '<h4 style="margin:18px 0 10px;font:800 12px Archivo,Arial,sans-serif;color:#48584F">' +
+      esc((position || group) + ' · ' + group + ' attributes') +
+      '</h4>' + profileAttributeRows(player, positionKeys),
+      ''
+    );
+
+    var videos = bundle.videos || bundle.videoEvidence || bundle.video_evidence || player.videos || [];
+    var matches = bundle.recentMatches || bundle.recent_matches || bundle.matches || player.recentMatches || player.matches || [];
+
+    appendOrReplaceProfileSection(
+      root,
+      'evidence',
+      'Evidence & matches',
+      '<div class="slfr2-list">' +
+      '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>Video evidence</b><span>' +
+      esc(String(videos.length)) + ' video' + (videos.length === 1 ? '' : 's') +
+      '</span></div><button class="slfr2-action" type="button" data-slfr2-watch-videos>Watch videos</button></div>' +
+      '<div class="slfr2-list-item"><div class="slfr2-list-copy"><b>Matches played</b><span>' +
+      esc(String(matches.length)) + ' match' + (matches.length === 1 ? '' : 'es') +
+      '</span></div><button class="slfr2-action" type="button" data-slfr2-view-matches>View all matches</button></div>' +
+      '</div>',
+      ''
+    );
+
+    var evidenceSection = q(root, '[data-slfr2-profile-section="evidence"]');
+    if (evidenceSection) {
+      var watch = q(evidenceSection, '[data-slfr2-watch-videos]');
+      var allMatches = q(evidenceSection, '[data-slfr2-view-matches]');
+      if (watch) watch.onclick = function () { openVideos(videos); };
+      if (allMatches) allMatches.onclick = function () { openMatches(matches); };
+    }
+
+    var notes = [];
+    try { notes = await loadNotes(String(playerId(player))); } catch (_) {}
+
+    appendOrReplaceProfileSection(
+      root,
+      'notes',
+      'Notes',
+      '<form class="slfr2-note-form" data-slfr2-note-form><textarea maxlength="2000" placeholder="Add a private Scout note about this player" aria-label="Scout note"></textarea>' +
+      '<div class="slfr2-actions"><button class="slfr2-action primary" type="submit">Save note</button></div></form>' +
+      '<div data-slfr2-note-list>' + notesHtml(notes) + '</div>',
+      ''
+    );
+
+    var noteSection = q(root, '[data-slfr2-profile-section="notes"]');
+    var noteForm = noteSection && q(noteSection, '[data-slfr2-note-form]');
+    if (noteForm) {
+      noteForm.onsubmit = async function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var textarea = q(noteForm, 'textarea');
+        var content = textarea ? String(textarea.value || '').trim() : '';
+        if (!content) {
+          toast('Write a note before saving.', true);
+          return;
+        }
+
+        try {
+          await createNote(String(playerId(player)), content);
+          textarea.value = '';
+          var updated = await loadNotes(String(playerId(player)));
+          q(noteSection, '[data-slfr2-note-list]').innerHTML = notesHtml(updated);
+          toast('Note saved.');
+        } catch (error) {
+          toast(error.message || 'The note could not be saved.', true);
+        }
+      };
+    }
+
+    var pipelineButtons = qa(root, 'button,a[role="button"]').filter(function (button) {
+      var copy = textOf(button);
+      return copy === 'add to pipeline' || copy === 'added to pipeline';
+    });
+
+    pipelineButtons.forEach(function (button) {
+      if (textOf(button) === 'added to pipeline') return;
+      button.dataset.slfr2AddPipeline = String(playerId(player) || '');
+    });
   }
 
-  function openVideos(root,bundle){var rows=bundle.videos||bundle.playerVideos||[];var html=rows.length?'<div class="slfr-video-list">'+rows.map(function(v){var url=v.video_url||v.signed_url||v.url||v.file_url||'';return'<article class="slfr-video"><div><b>'+esc(v.title||'Video reel')+'</b><p>'+esc(v.category||v.description||'Approved player video')+'</p></div>'+(url?'<a class="btn primary" target="_blank" rel="noopener" href="'+esc(url)+'">Watch</a>':'<button class="btn" type="button" disabled>No playable link</button>')+'</article>';}).join('')+'</div>':'<p>No approved video reels are connected to this player yet.</p>';modal(root,'Player video reels',html);}
-  function openWatch(root,p){modal(root,'Watch meaningful player changes','<div class="slfr-grid">'+field('Reason','<textarea id="slWatchReason" placeholder="What change would affect the decision?"></textarea>',true)+field('Minimum overall','<input id="slWatchOverall" type="number" min="0" max="100" value="80">')+field('Minimum evidence','<input id="slWatchEvidence" type="number" min="0" max="100" value="70">')+'</div><div class="slfr-actions">'+actionButton('Save player watch','data-save-watch')+'</div>',function(m,close){q(m,'[data-save-watch]').onclick=async function(){var payload={playerId:p.id,reason:q(m,'#slWatchReason').value.trim()||'Monitor meaningful player changes.',thresholds:{minOverall:num(q(m,'#slWatchOverall').value),minEvidence:num(q(m,'#slWatchEvidence').value),anyProfileUpdate:true,newMatchFacts:true}};try{if(isPublicDemo())saveDemo('watches',Object.assign({id:'demo-'+Date.now()},payload));else await request('POST','/api/scout-intelligence/watches',payload);close();toast(root,'Player watch saved.');}catch(error){toast(root,error.message,true);}};});}
-  function openObservation(root,p){modal(root,'Add live observation','<div class="slfr-grid">'+field('Observation date','<input id="slObsDate" type="datetime-local">')+field('Recommendation','<select id="slObsRec"><option>Prioritise</option><option>Shortlist</option><option>Monitor</option><option>Do not progress</option></select>')+field('Objective','<textarea id="slObsObjective"></textarea>',true)+field('Technical and tactical notes','<textarea id="slObsNotes"></textarea>',true)+field('Follow-up action','<input id="slObsFollow" placeholder="Example: observe the next fixture">',true)+'</div><div class="slfr-actions">'+actionButton('Save observation','data-save-observation')+'</div>',function(m,close){q(m,'[data-save-observation]').onclick=async function(){var payload={playerId:p.id,observationDate:q(m,'#slObsDate').value||new Date().toISOString(),objective:q(m,'#slObsObjective').value,technicalNotes:q(m,'#slObsNotes').value,recommendation:q(m,'#slObsRec').value,followUpAction:q(m,'#slObsFollow').value,structuredRatings:{}};try{if(isPublicDemo())saveDemo('observations',Object.assign({id:'demo-'+Date.now()},payload));else await request('POST','/api/scout-intelligence/observations',payload);close();toast(root,'Live observation saved.');}catch(error){toast(root,error.message,true);}};});}
-  function openDecision(root,p){modal(root,'Record recruitment decision','<div class="slfr-grid">'+field('Decision','<select id="slDecision"><option>Prioritise</option><option>Shortlist</option><option>Trial before deciding</option><option>Monitor</option><option>Do not progress</option></select>')+field('Primary reason','<select id="slReason"><option value="team_fit">Team fit</option><option value="position_fit">Position fit</option><option value="evidence">Evidence confidence</option><option value="financial">Financial fit</option><option value="risk">Recruitment risk</option></select>')+field('Decision rationale','<textarea id="slRationale"></textarea>',true)+field('Next action','<input id="slNext">')+field('Due date','<input id="slDue" type="date">')+'</div><div class="slfr-actions">'+actionButton('Save decision','data-save-decision')+'</div>',function(m,close){q(m,'[data-save-decision]').onclick=async function(){var rationale=q(m,'#slRationale').value.trim();if(!rationale)return toast(root,'Add a decision rationale.',true);var payload={playerId:p.id,decision:q(m,'#slDecision').value,reasonCode:q(m,'#slReason').value,rationale:rationale,nextAction:q(m,'#slNext').value,dueAt:q(m,'#slDue').value||null,context:{source:'profile'}};try{if(isPublicDemo())saveDemo('decisions',Object.assign({id:'demo-'+Date.now()},payload));else await request('POST','/api/scout-intelligence/decisions',payload);close();toast(root,'Recruitment decision saved.');}catch(error){toast(root,error.message,true);}};});}
-  function bindProfileButtons(root,bundle){var p=bundle.player||{};qa(root,'button').forEach(function(btn){var label=normal(btn.textContent);var fn=null;if(/watch all videos|watch videos|watch video reels/.test(label))fn=function(){openVideos(root,bundle);};else if(label==='watch player')fn=function(){openWatch(root,p);};else if(label==='add observation')fn=function(){openObservation(root,p);};else if(label==='record decision')fn=function(){openDecision(root,p);};if(fn){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();fn();},true);}});}
+  function installCaptureHandlers(root) {
+    if (!root || root.__SLFR2_CAPTURE_BOUND__) return;
+    root.__SLFR2_CAPTURE_BOUND__ = true;
 
-  function optionsForRanking(){return {types:['Top goalscorers','Goals per game','Top assists','Assists per game','Most clean sheets','Clean sheets per game','Most sought after','Overall rating','Current readiness','Development potential','Evidence confidence','Financial value','Team fit'],positions:['All positions','GK','CB','RB','LB','CDM','CM','CAM','LW','RW','CF','ST'],ages:['All ages','U7','U8','U9','U10','U11','U12','U13','U14','U15','U16'],regions:['All regions','London','Manchester']};}
-  function installSelect(control,values){if(!control)return null;var select=document.createElement('select');select.className='slfr-select';select.innerHTML=values.map(function(v){return'<option>'+esc(v)+'</option>';}).join('');control.innerHTML='';control.appendChild(select);return select;}
-  async function repairRankings(root){var players=await loadPlayers();var opt=optionsForRanking();qa(root,'.rank-filters').forEach(function(bar){var controls=qa(bar,'.control');var selects=[installSelect(controls[0],opt.types),installSelect(controls[1],opt.positions),installSelect(controls[2],opt.ages),installSelect(controls[3],opt.regions)];function metric(p,type){var apps=Math.max(1,num(p.appearances,0));if(type==='Top goalscorers')return num(p.goals);if(type==='Goals per game')return num(p.goals)/apps;if(type==='Top assists')return num(p.assists);if(type==='Assists per game')return num(p.assists)/apps;if(type==='Most clean sheets')return num(p.clean_sheets);if(type==='Clean sheets per game')return num(p.clean_sheets)/apps;if(type==='Financial value')return num(p.transfer_value);if(type==='Evidence confidence')return num(p.evidence_score,50);if(type==='Development potential')return Math.min(100,num(p.overall_rating,70)+7);if(type==='Current readiness')return num(p.overall_rating,70);if(type==='Team fit')return num(p.compatibilityScore,0);return num(p.overall_rating,0);}function render(){var type=selects[0].value,pos=selects[1].value,age=selects[2].value,region=selects[3].value;var rows=players.filter(function(p){return(pos==='All positions'||String(p.specific_position||p.primary_position||p.position_group).toUpperCase()===pos)&&(age==='All ages'||p.age_group===age)&&(region==='All regions'||String(p.region||p.team_city||'')===region);}).sort(function(a,b){return metric(b,type)-metric(a,type);}).slice(0,20);var copy=bar.closest('.slv10-desktop-copy,.slv10-mobile-copy');var podium=q(copy,'.podium');if(podium)podium.innerHTML=rows.slice(0,3).map(function(p){return'<article data-open-player="'+esc(p.id)+'"><span class="initials-box">'+esc(playerName(p).split(/\s+/).map(function(x){return x[0]}).slice(0,2).join(''))+'</span><h4>'+esc(playerName(p))+'</h4><p>'+esc(playerLine(p))+'</p><strong>'+esc(Math.round(metric(p,type)*100)/100)+' '+esc(type.replace(/^Top /,''))+'</strong></article>';}).join('');var list=q(copy,'.rank-list,.ranking-mobile-list');if(list)list.innerHTML=rows.map(function(p,i){return'<button class="rank-row mobile-list-row" type="button" data-open-player="'+esc(p.id)+'"><span class="rank-no">'+(i+1)+'</span><div><b>'+esc(playerName(p))+'</b><small>'+esc(playerLine(p))+'</small></div><strong>'+esc(Math.round(metric(p,type)*100)/100)+'</strong><i>›</i></button>';}).join('');qa(copy,'[data-open-player]').forEach(function(n){n.onclick=function(){location.href='/player/profile?id='+encodeURIComponent(n.dataset.openPlayer);};});}selects.forEach(function(s){s.onchange=render;});var update=qa(bar.closest('.slv10-desktop-copy,.slv10-mobile-copy'),'button').find(function(b){return normal(b.textContent)==='update ranking';});if(update)update.onclick=render;render();});}
+    root.addEventListener('click', function (event) {
+      var target = event.target && event.target.closest
+        ? event.target.closest('button,a,[role="button"]')
+        : null;
+      if (!target) return;
 
-  async function loadFixtures(){try{var r=await request('GET','/api/scout-intelligence/fixtures');return r.data||[];}catch(_){return [];}}
-  function fixtureRecord(row){return row.fixture||row;}
-  function fixturePlayer(row,players){return row.player||players.find(function(p){return String(p.id)===String(row.player_id||fixtureRecord(row).player_id);})||players[0]||{};}
-  async function fixtureWorkflow(root,row,assignOnly){var players=await loadPlayers(),f=fixtureRecord(row),p=fixturePlayer(row,players),members=[];try{members=(await request('GET','/api/scout-intelligence-v64/team-members')).data||[];}catch(_){}if(!members.length)members=[{id:'current',first_name:'Current',last_name:'scout'}];modal(root,assignOnly?'Assign scout':'Plan live-scouting visit','<div class="slfr-grid">'+field('Fixture','<input value="'+esc((f.opponent_name||f.opponent||'Opponent')+' · '+(f.fixture_date||'Date TBC'))+'" readonly>',true)+field('Assigned scout','<select id="slFixtureScout">'+members.map(function(m){return'<option value="'+esc(m.id)+'">'+esc([m.first_name,m.last_name].filter(Boolean).join(' ')||'Scout')+'</option>';}).join('')+'</select>')+field('Observation objective','<textarea id="slFixtureObjective">'+(assignOnly?'Observe the agreed player evidence objective.':'Test the player against the current recruitment question.')+'</textarea>',true)+field('Priority','<select id="slFixturePriority"><option value="90">High</option><option value="60" selected>Medium</option><option value="30">Low</option></select>')+'</div><div class="slfr-actions">'+actionButton(assignOnly?'Assign scout and notify':'Save plan and notify coach','data-save-fixture')+'</div>',function(m,close){q(m,'[data-save-fixture]').onclick=async function(){var payload={fixtureId:f.id,playerId:p.id,assignedScoutId:q(m,'#slFixtureScout').value==='current'?null:q(m,'#slFixtureScout').value,priority:num(q(m,'#slFixturePriority').value,60),objective:q(m,'#slFixtureObjective').value,status:'planned'};try{if(isPublicDemo())saveDemo('fixture-plans',Object.assign({id:'demo-'+Date.now()},payload));else await request('POST','/api/scout-workflow-actions/fixture-plan',payload);close();toast(root,assignOnly?'Scout assigned and notified.':'Visit planned and the player coach will be notified.');}catch(error){toast(root,error.message,true);}};});}
-  async function repairFixtures(root){var rows=await loadFixtures();var copies=qa(root,'.slv10-desktop-copy,.slv10-mobile-copy');copies.forEach(function(copy){var planButtons=qa(copy,'button').filter(function(b){return normal(b.textContent)==='plan visit';});planButtons.forEach(function(btn,index){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();fixtureWorkflow(root,rows[index%Math.max(1,rows.length)]||{},false);},true);});var assignButtons=qa(copy,'button').filter(function(b){return normal(b.textContent)==='assign scout';});assignButtons.forEach(function(btn,index){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();fixtureWorkflow(root,rows[index%Math.max(1,rows.length)]||{},true);},true);});var settings=qa(copy,'button').find(function(b){return normal(b.textContent)==='calendar settings';});if(settings)settings.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();modal(root,'Calendar settings','<div class="slfr-grid">'+field('Week starts','<select id="slWeekStart"><option>Monday</option><option>Sunday</option></select>')+field('Default view','<select id="slCalView"><option>Month</option><option>Agenda</option></select>')+field('Fixture notifications','<select id="slCalAlerts"><option>On</option><option>Off</option></select>')+'</div><div class="slfr-actions">'+actionButton('Save settings','data-save-calendar')+'</div>',function(m,close){q(m,'[data-save-calendar]').onclick=function(){try{localStorage.setItem('sl_scout_calendar_settings',JSON.stringify({weekStart:q(m,'#slWeekStart').value,view:q(m,'#slCalView').value,alerts:q(m,'#slCalAlerts').value}));}catch(_){}close();toast(root,'Calendar settings saved.');};});},true);});}
+      var current = visibleRoot(root);
+      if (!current || !current.contains(target)) return;
 
-  async function predictionRows(){if(isPublicDemo())return demoRows('predictions');try{var r=await request('GET','/api/scouts/predictions');return r.data||[];}catch(_){return [];}}
-  async function repairPredictions(root){var rows=await predictionRows();qa(root,'button').forEach(function(btn){var label=normal(btn.textContent);if(label==='export history'){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();var csv=['Player,Prediction,Result,Date'].concat(rows.map(function(r){var result=r.result||{};return[JSON.stringify(playerName(r.players||{})),JSON.stringify(r.prediction_type||'Prediction'),JSON.stringify(result.recommendation||result.summary||''),JSON.stringify(r.created_at||r.run_at||'')].join(',');})).join('\n');download('scoutlink-prediction-history.csv','text/csv',csv);toast(root,'Prediction history downloaded.');},true);}});var opens=qa(root,'button').filter(function(b){return normal(b.textContent)==='open'||normal(b.textContent)==='open result';});opens.forEach(function(btn,index){btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();var r=rows[index]||{},result=r.result||{};modal(root,r.prediction_type||'Prediction result','<h3 style="margin:0">'+esc(result.recommendation||result.summary||'Prediction result')+'</h3><p style="margin-top:9px">'+esc(result.summary||'Review the saved prediction evidence and context.')+'</p><div class="slfr-actions">'+actionButton('Export prediction','data-export-result')+'</div>',function(m){q(m,'[data-export-result]').onclick=function(){download('prediction-'+(index+1)+'.txt','text/plain',(r.prediction_type||'Prediction')+'\n\n'+(result.recommendation||result.summary||''));};});},true);});}
+      var currentRoute = route();
+      var label = textOf(target);
 
-  async function reportRows(){if(isPublicDemo())return demoRows('reports');try{var r=await request('GET','/api/scout-intelligence/reports');return r.data||[];}catch(_){return [];}}
-  async function repairExports(root){var rows=await reportRows();var buttons=qa(root,'button').filter(function(b){return normal(b.textContent)==='download';});buttons.forEach(function(btn,index){btn.addEventListener('click',async function(e){e.preventDefault();e.stopImmediatePropagation();var row=rows[index]||{};try{if(isPublicDemo()){download((row.file_name||'scoutlink-demo-export-'+(index+1)+'.txt'),'text/plain',(row.title||'ScoutLink demo export')+'\nGenerated from the public demo.');toast(root,'Demo export downloaded.');return;}var playerId=row.subject_id||row.player_id||(row.player&&row.player.id);if(!playerId)throw new Error('This report is not connected to a player.');var response=await request('POST','/api/exports/player',{playerId:playerId,format:(row.config&&row.config.format)||row.format||'PDF',source:'report_history',existingReportId:row.id||null});if(!response.contentBase64)throw new Error('The export file was not returned.');downloadBase64(response.filename,response.mime,response.contentBase64);toast(root,'Export downloaded.');}catch(error){toast(root,error.message,true);}},true);});}
+      if (currentRoute === 'compare' && label === 'compare') {
+        if (target.dataset.slfr2AllowNativeOnce === '1') return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        runCompare(current);
+        return;
+      }
 
-  async function repairCompare(root){var players=await loadPlayers();qa(root,'.compare-selection').forEach(function(section){var controls=qa(section,'.field .control');controls.slice(0,2).forEach(function(control,index){var sel=document.createElement('select');sel.className='slfr-select';sel.innerHTML='<option value="">Choose a player</option>'+players.map(function(p){return'<option value="'+esc(p.id)+'">'+esc(playerName(p))+'</option>';}).join('');control.innerHTML='';control.appendChild(sel);control.dataset.side=index===0?'a':'b';});qa(section,'.selected-player').forEach(function(box){box.innerHTML='<span class="slfr-empty-selection">Choose a player</span>';box.classList.add('empty-selection');delete box.dataset.playerId;});});var results=qa(root,'[data-comparison-results],.comparison-results,.comparison-output');results.forEach(function(r){r.hidden=true;r.classList.add('is-hidden');});var selectors=qa(root,'.compare-selection select');var run=qa(root,'button').find(function(b){return normal(b.textContent)==='compare and explain';});if(run)run.addEventListener('click',async function(e){e.preventDefault();e.stopImmediatePropagation();var a=selectors[0]&&selectors[0].value,b=selectors[1]&&selectors[1].value;if(!a||!b||a===b)return toast(root,'Choose two different players.',true);try{var endpoint=isPublicDemo()?'/api/scout-intelligence-v64/public-demo/compare':'/api/scout-intelligence-v64/compare';var response=await request('POST',endpoint,{playerAId:a,playerBId:b,contextKey:'immediate_starter'});modal(root,'Player comparison','<h3 style="margin:0">'+esc(response.result&&response.result.recommendation||'Comparison completed')+'</h3><p style="margin-top:9px">Decision margin: '+esc(response.result&&response.result.decisionScoreMargin||0)+'</p>');toast(root,'Comparison completed.');}catch(error){toast(root,error.message,true);}},true);var fresh=qa(root,'button').find(function(b){return normal(b.textContent)==='new comparison';});if(fresh)fresh.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();selectors.forEach(function(s){s.value='';});qa(root,'.selected-player').forEach(function(box){box.innerHTML='<span class="slfr-empty-selection">Choose a player</span>';});results.forEach(function(r){r.hidden=true;r.classList.add('is-hidden');});history.replaceState(null,'',location.pathname);},true);}
+      if (currentRoute === 'usage' && isDemo() && label === 'send request') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        handleDemoUsageSubmit(current);
+        return;
+      }
 
-  function setupGroup(button){var grid=button.closest('.choice-grid');return grid||button.parentElement;}
-  function repairSetup(root){qa(root,'.choice').forEach(function(btn){btn.disabled=false;btn.removeAttribute('aria-disabled');btn.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();var group=setupGroup(btn),selected=qa(group,'.choice.selected');if(!btn.classList.contains('selected')&&selected.length>=3)return toast(root,'Select up to three options in this section.',true);btn.classList.toggle('selected');var marker=q(btn,'span');if(marker)marker.textContent=btn.classList.contains('selected')?'✓':'';},true);});qa(root,'button').forEach(function(btn){var label=normal(btn.textContent);if(label==='save changes'||label==='save and apply'){btn.addEventListener('click',async function(e){e.preventDefault();e.stopImmediatePropagation();var data={choices:qa(root,'.choice.selected').map(function(x){var b=q(x,'b');return b?b.textContent.trim():x.textContent.replace('✓','').trim();}),fields:{}};qa(root,'.field').forEach(function(f){var l=q(f,'span'),c=q(f,'select,input');if(l&&c)data.fields[l.textContent.trim()]=c.value;});try{localStorage.setItem('sl_scout_setup_v6_4',JSON.stringify(data));if(!isPublicDemo())await request('POST','/api/scouts/setup',data);toast(root,'Scout setup saved and applied.');}catch(error){toast(root,error.message,true);}},true);}});}
+      if (currentRoute === 'notifications' && target.dataset.slfr2NotificationTab) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        setNotificationTab(target.dataset.slfr2NotificationTab);
+        repairNotifications(current);
+        return;
+      }
 
-  function refreshCoachProfileAssets(){if(path().indexOf('/player/profile')!==0||!isCoach())return;var cssId='coachProfileV4Css';if(!document.getElementById(cssId)){var link=document.createElement('link');link.id=cssId;link.rel='stylesheet';link.href='/css/coach-player-profile-v3.css?v=20260730-4';document.head.appendChild(link);}if(document.readyState==='loading'&&!document.getElementById('coachProfileV4Script')){var script=document.createElement('script');script.id='coachProfileV4Script';script.src='/js/coach-player-profile-v3.js?v=20260730-4';document.head.appendChild(script);}}
-  function repairCoachUpload(){if(path().indexOf('/player/profile')!==0||!isCoach())return;document.addEventListener('click',async function(e){var btn=e.target.closest('#btnGenerateVideoUploadLink,[data-scroll-video]');if(!btn)return;e.preventDefault();e.stopImmediatePropagation();var playerId=playerIdFromUrl()||(window._profilePlayer&&window._profilePlayer.id);var output=document.getElementById('videoUploadLinkResult');if(!output){var section=document.getElementById('cp3Video');output=document.createElement('div');output.id='videoUploadLinkResult';if(section)section.appendChild(output);}var original=btn.textContent;btn.disabled=true;btn.textContent='Generating…';try{var url;if(isPublicDemo()){url=location.origin+'/video-upload?demo=1&playerId='+encodeURIComponent(playerId||'demo-player');}else{var response=await request('POST','/api/videos/upload-link',{playerId:playerId});url=(response.data||response).uploadUrl||(response.data||response).url;}if(!url)throw new Error('The upload link was not returned.');output.style.display='block';output.innerHTML='<label style="display:block;margin:10px 0 6px;font-size:10px;font-weight:900">Private upload link</label><div style="display:flex;gap:8px;flex-wrap:wrap"><input id="generatedVideoUploadUrl" value="'+esc(url)+'" readonly style="flex:1;min-width:220px;padding:10px;border:1px solid #dce5ee"><button class="cp3-btn is-primary" type="button" data-copy-upload>Copy link</button></div>';output.querySelector('[data-copy-upload]').onclick=async function(){try{await navigator.clipboard.writeText(url);}catch(_){var i=document.getElementById('generatedVideoUploadUrl');i.select();document.execCommand('copy');}this.textContent='Copied';};}catch(error){if(output){output.style.display='block';output.innerHTML='<div style="color:#d94a5b;font-weight:800">'+esc(error.message)+'</div>';}}finally{btn.disabled=false;btn.textContent=original;}},true);}
+      if (currentRoute === 'profile' && target.dataset.slfr2AddPipeline) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
 
-  async function bindRoot(root){if(!root||boundRoots.has(root))return;boundRoots.add(root);addStyle(root);var route=currentRoute();try{if(route==='profile')await repairProfile(root);else if(route==='rankings')await repairRankings(root);else if(route==='fixtures')await repairFixtures(root);else if(route==='predictions')await repairPredictions(root);else if(route==='exports')await repairExports(root);else if(route==='compare')await repairCompare(root);else if(route==='setup')repairSetup(root);}catch(error){toast(root,error.message||'This control could not be prepared.',true);}}
-  function waitForScout(){var attempts=0;(function check(){attempts++;var s=shadow();if(s&&q(s,'.slv10-exact-root')){bindRoot(s);return;}if(attempts<240)setTimeout(check,50);})();}
-  function start(){refreshCoachProfileAssets();repairCoachUpload();waitForScout();}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-  window.addEventListener('pageshow',start);
+        var player = profileCache && (profileCache.player || profileCache);
+        if (!player) return;
+
+        target.disabled = true;
+        addToPipeline(player).then(function () {
+          target.textContent = 'Added to pipeline';
+          target.removeAttribute('data-slfr2-add-pipeline');
+          toast('Player added to pipeline.');
+        }).catch(function (error) {
+          target.disabled = false;
+          toast(error.message || 'Player could not be added to pipeline.', true);
+        });
+        return;
+      }
+
+      if (currentRoute === 'chat') {
+        var row = target.closest('[data-thread-id],[data-thread],[data-conversation-id],.list-row,.thread,.conversation');
+        if (row) {
+          var id = row.getAttribute('data-thread-id') ||
+            row.getAttribute('data-thread') ||
+            row.getAttribute('data-conversation-id') ||
+            row.dataset.id ||
+            '';
+          if (id) {
+            activeChatId = String(id);
+            var cache = chatCache();
+            cache.activeId = activeChatId;
+            writeJson(sessionStorage, CHAT_KEY, cache);
+          }
+        }
+      }
+    }, true);
+  }
+
+  function scheduleRepair() {
+    if (scheduled) return;
+    scheduled = true;
+
+    window.requestAnimationFrame(function () {
+      scheduled = false;
+      runRepairs();
+    });
+  }
+
+  async function runRepairs() {
+    if (repairing) return;
+    var root = shadow();
+    if (!root) return;
+
+    repairing = true;
+    if (observer) observer.disconnect();
+
+    try {
+      ensureStyle(root);
+      installCaptureHandlers(root);
+
+      var current = visibleRoot(root);
+      if (!current) return;
+
+      var currentRoute = route();
+
+      if (currentRoute === 'compare') {
+        await repairCompare(current);
+      } else if (currentRoute === 'predictions') {
+        repairPredictions(current);
+      } else if (currentRoute === 'usage') {
+        repairUsage(current);
+      } else if (currentRoute === 'notifications') {
+        await repairNotifications(current);
+      } else if (currentRoute === 'chat') {
+        await repairChat(current);
+      } else if (currentRoute === 'profile') {
+        await repairProfile(current);
+      }
+    } catch (error) {
+      console.error('[Scout functional repairs V2]', error);
+    } finally {
+      repairing = false;
+      if (observer && root) {
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+      }
+    }
+  }
+
+  function attachObserver() {
+    var app = host();
+    if (!app) return;
+
+    function watchShadow() {
+      var root = shadow();
+      if (!root) {
+        window.setTimeout(watchShadow, 25);
+        return;
+      }
+
+      ensureStyle(root);
+      installCaptureHandlers(root);
+
+      if (observer) observer.disconnect();
+      observer = new MutationObserver(scheduleRepair);
+      observer.observe(root, { childList: true, subtree: true, characterData: true });
+      scheduleRepair();
+    }
+
+    watchShadow();
+  }
+
+  installPredictionRequestSanitizer();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachObserver, { once: true });
+  } else {
+    attachObserver();
+  }
+
+  window.addEventListener('resize', scheduleRepair);
+  window.addEventListener('popstate', scheduleRepair);
+
+  window.ScoutFunctionalRepairsV2 = {
+    version: VERSION,
+    refresh: scheduleRepair,
+    clearCaches: function () {
+      playersCache = null;
+      profileCache = null;
+      notificationCache = null;
+      chatThreadCache = null;
+      scheduleRepair();
+    }
+  };
 }());
