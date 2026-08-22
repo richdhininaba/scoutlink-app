@@ -105,11 +105,12 @@
     if (/\/scout\/dashboard$/.test(pathname)) return 'dashboard';
     if (/\/scout\/player-search$/.test(pathname)) return 'search';
     if (/\/scout\/fixtures$/.test(pathname)) return 'fixtures';
+    if (/\/scout\/pipeline$/.test(pathname)) return 'pipeline';
     return '';
   }
 
   function relevantRoute() {
-    return ['dashboard', 'search', 'fixtures'].indexOf(route()) >= 0;
+    return ['dashboard', 'search', 'fixtures', 'pipeline'].indexOf(route()) >= 0;
   }
 
   async function request(method, pathname, body) {
@@ -243,7 +244,7 @@
         return groups[i];
       }
     }
-    return supplied || 'Attacker';
+    return supplied || '';
   }
 
   function displayPosition(player) {
@@ -318,8 +319,7 @@
         player.status
       )
     );
-    if (!raw && player && player.is_active !== false) return 'Available';
-    if (!raw) return 'Unavailable';
+    if (!raw) return 'Unknown';
     var n = normal(raw);
     if (n === 'active' || n === 'open' || n === 'available') return 'Available';
     if (n.indexOf('unavailable') >= 0 || n.indexOf('injur') >= 0 || n === 'inactive') return 'Unavailable';
@@ -387,6 +387,158 @@
       fixturesCache = [];
     }
     return fixturesCache;
+  }
+
+
+  function demoState() {
+    try {
+      if (typeof window.getDemoState === 'function') return window.getDemoState() || {};
+      return JSON.parse(sessionStorage.getItem('sl_public_demo_state') || '{}') || {};
+    } catch (_) { return {}; }
+  }
+
+  function normalisePipelineRow(row, players) {
+    row = row || {};
+    var nested = row.player || row.players || null;
+    if (Array.isArray(nested)) nested = nested[0] || null;
+    if (!nested && row.player_id) {
+      nested = (players || []).find(function (player) {
+        return String(playerId(player)) === String(row.player_id);
+      }) || null;
+    }
+    return Object.assign({}, row, { player: nested || null });
+  }
+
+  async function pipelineRows(force) {
+    var players = [];
+    try { players = await loadPlayers(force); } catch (_) {}
+
+    if (isDemo()) {
+      var state = demoState();
+      var rows = Array.isArray(state.pipeline) ? state.pipeline : demoPipeline();
+      return (rows || []).map(function (row) {
+        return normalisePipelineRow(row, state.players || players);
+      });
+    }
+
+    var payload = await request('GET', '/api/scouts/pipeline?limit=100');
+    return unwrapList(payload).map(function (row) {
+      return normalisePipelineRow(row, players);
+    });
+  }
+
+  function stageLabel(value) {
+    var key = normal(value).replace(/\s+/g, '_');
+    return {
+      watching: 'Watching',
+      interested: 'Monitoring',
+      shortlisted: 'Shortlisted',
+      approached: 'Approached',
+      trial_pending: 'Trial pending',
+      negotiating: 'Negotiating'
+    }[key] || titleCaseStage(key);
+  }
+
+  function titleCaseStage(value) {
+    return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, function (c) {
+      return c.toUpperCase();
+    });
+  }
+
+  function findPipelineList(root) {
+    var headings = Array.prototype.slice.call(
+      root.querySelectorAll('h1,h2,h3,h4,.card-h,.card-title')
+    );
+    for (var i = 0; i < headings.length; i += 1) {
+      if (normal(headings[i].textContent).indexOf('all pipeline entries') >= 0) {
+        return headings[i].closest('.card,section') || headings[i].parentElement;
+      }
+    }
+    return null;
+  }
+
+  function renderPipelineRows(root, rows) {
+    var card = findPipelineList(root);
+    if (!card) return;
+    var body = card.querySelector('.card-b,.card-body,.section-body') || card;
+    var heading = card.querySelector('h1,h2,h3,h4');
+    if (heading) heading.textContent = 'All pipeline entries (' + rows.length + ')';
+
+    var old = body.querySelector('[data-slds-pipeline-list]');
+    if (old) old.remove();
+
+    Array.prototype.slice.call(body.children).forEach(function (child) {
+      if (child !== heading) {
+        var copy = normal(child.textContent);
+        if (
+          copy.indexOf('player') >= 0 ||
+          child.classList.contains('list-row') ||
+          child.classList.contains('pipeline-row')
+        ) child.style.display = 'none';
+      }
+    });
+
+    var list = document.createElement('div');
+    list.setAttribute('data-slds-pipeline-list', '1');
+    list.style.cssText = 'display:grid';
+
+    if (!rows.length) {
+      list.innerHTML =
+        '<div style="padding:22px 0;font:600 12px Archivo,Arial,sans-serif;color:#7C8A82">' +
+          'No players in your pipeline yet.' +
+        '</div>';
+      body.appendChild(list);
+      return;
+    }
+
+    rows.forEach(function (row) {
+      var player = row.player || {};
+      var id = playerId(player) || row.player_id || '';
+      var name = playerName(player) || 'Player';
+      var meta = [
+        displayPosition(player),
+        ageGroup(player),
+        teamName(player),
+        stageLabel(row.stage)
+      ].filter(Boolean).join(' · ');
+      var when = row.updated_at || row.created_at
+        ? safeDateTime(row.updated_at || row.created_at)
+        : '';
+
+      var item = document.createElement('a');
+      item.href = id ? '/player/profile?id=' + encodeURIComponent(id) : '#';
+      item.style.cssText =
+        'display:flex;align-items:center;gap:14px;padding:14px 4px;' +
+        'border-bottom:1px solid #EBEFEC;color:inherit;text-decoration:none';
+      item.innerHTML =
+        '<span style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;' +
+        'background:#075F48;color:#D3FF2D;font:800 11px Archivo,Arial,sans-serif">' +
+          esc(initials(name)) +
+        '</span>' +
+        '<span style="min-width:0;flex:1">' +
+          '<b style="display:block;font:800 13px Archivo,Arial,sans-serif;color:#0C201A">' +
+            esc(name) +
+          '</b>' +
+          '<span style="display:block;margin-top:4px;font:500 11px Archivo,Arial,sans-serif;color:#7C8A82">' +
+            esc(meta || 'Pipeline player') +
+          '</span>' +
+        '</span>' +
+        '<span style="font:500 10px Archivo,Arial,sans-serif;color:#7C8A82">' +
+          esc(when) +
+        '</span><span aria-hidden="true">›</span>';
+
+      list.appendChild(item);
+    });
+
+    body.appendChild(list);
+  }
+
+  async function repairPipeline(root) {
+    try {
+      renderPipelineRows(root, await pipelineRows(false));
+    } catch (error) {
+      console.error('[Scout pipeline repair]', error);
+    }
   }
 
   function ensureStyle(root) {
@@ -933,390 +1085,3 @@
         return normal(teamCity(player)) === normal(state.region);
       });
     }
-
-    if (state.availability && normal(state.availability).indexOf('any') !== 0) {
-      list = list.filter(function (player) {
-        return normal(availability(player)) === normal(state.availability);
-      });
-    }
-
-    if (state.foot && normal(state.foot) !== 'any') {
-      list = list.filter(function (player) {
-        return normal(foot(player)) === normal(state.foot);
-      });
-    }
-
-    if (state.minOverall > 0) {
-      list = list.filter(function (player) {
-        return overall(player) >= state.minOverall;
-      });
-    }
-
-    list.sort(function (a, b) {
-      var ac = compatibility(a);
-      var bc = compatibility(b);
-      var aScore = ac == null ? -1 : ac;
-      var bScore = bc == null ? -1 : bc;
-      var diff = bScore - aScore;
-      if (diff) return diff;
-      diff = overall(b) - overall(a);
-      if (diff) return diff;
-      return playerName(a).localeCompare(playerName(b), 'en-GB', { sensitivity: 'base' });
-    });
-
-    return list;
-  }
-
-  function pipelinePlayerIds(pipeline) {
-    var map = {};
-    (pipeline || []).forEach(function (row) {
-      var id = row && (row.player_id || row.playerId || row.players && row.players.id);
-      if (id) map[String(id)] = true;
-    });
-    return map;
-  }
-
-  function searchResultsCard(root) {
-    return Array.prototype.slice.call(root.querySelectorAll('.card')).find(function (card) {
-      var heading = card.querySelector('.card-h h3');
-      return heading && /results/i.test(heading.textContent);
-    }) || null;
-  }
-
-  function searchSignature(players, pipeline, state) {
-    return JSON.stringify(state) + '||' +
-      (players || []).map(function (player) {
-        return [playerId(player), compatibility(player), overall(player), positionGroup(player), ageGroup(player), teamCity(player), availability(player), foot(player)].join(':');
-      }).join('|') + '||' +
-      (pipeline || []).map(function (row) { return [row.id, row.player_id, row.stage].join(':'); }).join('|');
-  }
-
-  function renderSearchRoot(root, players, pipeline) {
-    var state = searchState();
-    var signature = searchSignature(players, pipeline, state);
-    if (root.dataset && root.dataset.sldsSearchSignature === signature) return;
-    syncSearchControls(root, players, state);
-
-    var card = searchResultsCard(root);
-    if (!card) return;
-    var body = card.querySelector('.card-b');
-    if (!body) return;
-    var sample = body.querySelector('.list-row');
-    var list = filterPlayers(players, state);
-    var inPipeline = pipelinePlayerIds(pipeline);
-
-    var heading = card.querySelector('.card-h h3');
-    if (heading) heading.textContent = list.length + ' results';
-
-    if (!sample) {
-      if (!list.length) body.innerHTML = '<div class="empty"><b>No players match those filters</b><p>Change one or more discovery filters and search again.</p></div>';
-      return;
-    }
-
-    var template = sample.cloneNode(true);
-    body.innerHTML = '';
-
-    list.slice(0, 50).forEach(function (player) {
-      var row = template.cloneNode(true);
-      var id = playerId(player);
-      row.dataset.playerId = id;
-      row.dataset.sldsSearchResult = '1';
-
-      var avatar = row.querySelector('.avatar');
-      if (avatar) avatar.textContent = initials(playerName(player));
-
-      var who = row.querySelector('.who');
-      if (who) {
-        var name = who.querySelector('b');
-        var detail = who.querySelector('span');
-        if (name) name.textContent = playerName(player) || 'Unnamed player';
-        if (detail) {
-          detail.textContent = [
-            displayPosition(player),
-            ageGroup(player),
-            teamName(player),
-            teamCity(player),
-            availability(player)
-          ].filter(Boolean).join(' · ');
-        }
-      }
-
-      var chip = row.querySelector('.rate-chip');
-      if (chip) {
-        var score = compatibility(player);
-        chip.classList.add('slds-compat-chip');
-        chip.innerHTML = score == null
-          ? '— <small>compatibility</small>'
-          : Math.round(score) + ' <small>compatibility</small>';
-        chip.setAttribute('aria-label', score == null ? 'Compatibility not available' : Math.round(score) + ' out of 100 compatibility');
-      }
-
-      var button = findButton(row, ['Add to pipeline', 'Added to pipeline']);
-      if (button) {
-        button.type = 'button';
-        button.dataset.sldsPlayerId = id;
-        if (inPipeline[String(id)]) {
-          button.textContent = 'Added to pipeline';
-          button.classList.add('slds-added');
-          button.disabled = true;
-          button.setAttribute('aria-disabled', 'true');
-        } else {
-          button.textContent = 'Add to pipeline';
-          button.classList.remove('slds-added');
-          button.disabled = false;
-          button.removeAttribute('aria-disabled');
-          button.onclick = function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            addToPipeline(id, player);
-          };
-        }
-      }
-
-      row.style.cursor = 'pointer';
-      row.onclick = function (event) {
-        if (event.target.closest('button,a')) return;
-        location.href = playerProfileUrl(id);
-      };
-      body.appendChild(row);
-    });
-
-    if (!list.length) {
-      body.innerHTML = '<div class="empty"><b>No players match those filters</b><p>Change one or more discovery filters and search again.</p></div>';
-    }
-    if (root.dataset) root.dataset.sldsSearchSignature = signature;
-  }
-
-  function renderSearchAll(players, pipeline) {
-    var root = shadow();
-    if (!root || route() !== 'search') return;
-    ensureStyle(root);
-    copies(root).forEach(function (copy) {
-      renderSearchRoot(copy, players || [], pipeline || []);
-    });
-  }
-
-  async function addToPipeline(id, player) {
-    if (!id) return;
-    try {
-      if (isDemo()) {
-        var rows = demoPipeline();
-        if (!rows.some(function (row) { return String(row.player_id) === String(id); })) {
-          rows.unshift({
-            id: 'demo-pipe-' + Date.now(),
-            player_id: id,
-            stage: 'watching',
-            interest_level: 8,
-            players: player,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          writeJson(sessionStorage, DEMO_PIPELINE_KEY, rows);
-        }
-        pipelineCache = rows;
-      } else {
-        await request('POST', '/api/scout-workflow-actions/interest', { playerId: id, interestLevel: 8 });
-        pipelineCache = null;
-        await loadPipeline(true);
-      }
-      renderSearchAll(playersCache || [], pipelineCache || []);
-    } catch (error) {
-      showToast(error.message || 'The player could not be added to your pipeline.', true);
-    }
-  }
-
-  function showToast(message, isError) {
-    var root = shadow();
-    if (!root) return;
-    var old = root.querySelector('.slds-toast');
-    if (old) old.remove();
-    var node = document.createElement('div');
-    node.className = 'slds-toast';
-    node.setAttribute('role', isError ? 'alert' : 'status');
-    node.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:70000;max-width:min(420px,calc(100vw - 36px));padding:12px 14px;border-radius:12px;background:' + (isError ? '#96382D' : '#06201A') + ';color:#fff;font:700 12px Archivo,Arial,sans-serif;box-shadow:0 18px 45px rgba(6,32,26,.22)';
-    node.textContent = message;
-    root.appendChild(node);
-    setTimeout(function () { if (node.parentNode) node.remove(); }, 4000);
-  }
-
-  function fixtureById(fixtures, id) {
-    return (fixtures || []).find(function (fixture) {
-      return String(fixture.id || fixture.fixture_id) === String(id);
-    }) || null;
-  }
-
-  function fixtureFact(label, value) {
-    if (!text(value)) return '';
-    return '<div class="slds-fixture-fact"><span>' + esc(label) + '</span><b>' + esc(value) + '</b></div>';
-  }
-
-  function removeFixtureQuery() {
-    try {
-      var url = new URL(location.href);
-      url.searchParams.delete('fixture');
-      history.replaceState(history.state, '', url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash);
-    } catch (_) {}
-  }
-
-  function openFixtureModal(fixture) {
-    var root = shadow();
-    if (!root || !fixture) return;
-    ensureStyle(root);
-    var id = String(fixture.id || fixture.fixture_id || '');
-    var existing = root.querySelector('.slds-fixture-overlay');
-    if (existing) existing.remove();
-
-    var overlay = document.createElement('div');
-    overlay.className = 'slds-fixture-overlay';
-    overlay.dataset.fixtureId = id;
-    overlay.innerHTML =
-      '<section class="slds-fixture-modal" role="dialog" aria-modal="true" aria-label="Fixture details">' +
-        '<header class="slds-fixture-head">' +
-          '<h3>' + esc(fixtureTitle(fixture)) + '</h3>' +
-          '<button type="button" class="btn outline sm" data-slds-close-fixture>Close</button>' +
-        '</header>' +
-        '<div class="slds-fixture-body">' +
-          '<div class="slds-fixture-grid">' +
-            fixtureFact('Date', safeDate(fixture.fixture_date || fixture.date || fixture.kickoff_at || fixture.start_at)) +
-            fixtureFact('Time', text(fixture.fixture_time || fixture.time)) +
-            fixtureFact('Venue', text(fixture.venue_name || fixture.venue)) +
-            fixtureFact('Competition', text(fixture.competition_name || fixture.competition || fixture.league_name)) +
-            fixtureFact('Visit status', fixtureIsPriority(fixture) ? 'Priority visit' : text(fixture.visit_status || fixture.plan_status || fixture.status || 'Scheduled')) +
-            fixtureFact('Fixture ID', id) +
-          '</div>' +
-          (text(fixture.objective || fixture.plan_notes || fixture.notes) ? '<div class="slds-fixture-notes"><b>Observation plan</b><br>' + esc(fixture.objective || fixture.plan_notes || fixture.notes) + '</div>' : '') +
-        '</div>' +
-      '</section>';
-
-    root.appendChild(overlay);
-    lastFixtureModalId = id;
-
-    function close() {
-      if (overlay.parentNode) overlay.remove();
-      lastFixtureModalId = '';
-      removeFixtureQuery();
-    }
-
-    overlay.querySelector('[data-slds-close-fixture]').onclick = close;
-    overlay.addEventListener('click', function (event) {
-      if (event.target === overlay) close();
-    });
-  }
-
-  function bindFixtureRows(root, fixtures) {
-    root.querySelectorAll('[data-fixture-id]').forEach(function (row) {
-      var id = row.dataset.fixtureId;
-      if (!id || row.dataset.sldsFixtureBound) return;
-      row.dataset.sldsFixtureBound = '1';
-      row.addEventListener('click', function (event) {
-        if (event.target.closest('button,a')) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-        var fixture = fixtureById(fixtures, id);
-        if (!fixture) return;
-        try {
-          var url = new URL(location.href);
-          url.searchParams.set('fixture', id);
-          history.replaceState(history.state, '', url.pathname + '?' + url.searchParams.toString() + url.hash);
-        } catch (_) {}
-        openFixtureModal(fixture);
-      }, true);
-    });
-  }
-
-  function repairFixtureRoute(fixtures) {
-    var root = shadow();
-    if (!root || route() !== 'fixtures') return;
-    ensureStyle(root);
-    copies(root).forEach(function (copy) {
-      bindFixtureRows(copy, fixtures);
-    });
-
-    var wanted = '';
-    try { wanted = new URLSearchParams(location.search).get('fixture') || ''; } catch (_) {}
-    if (!wanted || wanted === lastFixtureModalId) return;
-    var fixture = fixtureById(fixtures, wanted);
-    if (fixture) openFixtureModal(fixture);
-  }
-
-  async function repairDashboard() {
-    var results = await Promise.all([
-      loadPlayers().catch(function () { return []; }),
-      loadPipeline().catch(function () { return []; }),
-      loadFixtures().catch(function () { return []; })
-    ]);
-    var root = shadow();
-    if (!root || route() !== 'dashboard') return;
-    ensureStyle(root);
-    var signature = dashboardSignature(results[0], results[1], results[2]);
-    copies(root).forEach(function (copy) {
-      if (copy.dataset && copy.dataset.sldsDashboardSignature === signature) return;
-      renderDashboardPipeline(copy, results[0], results[1]);
-      renderDashboardFixtures(copy, results[2]);
-      if (copy.dataset) copy.dataset.sldsDashboardSignature = signature;
-    });
-  }
-
-  async function repairSearch() {
-    var results = await Promise.all([
-      loadPlayers().catch(function () { return []; }),
-      loadPipeline().catch(function () { return []; })
-    ]);
-    renderSearchAll(results[0], results[1]);
-  }
-
-  async function repairFixtures() {
-    var fixtures = await loadFixtures().catch(function () { return []; });
-    repairFixtureRoute(fixtures);
-  }
-
-  async function repair() {
-    if (repairing || !relevantRoute()) return;
-    var root = shadow();
-    if (!root) return;
-    repairing = true;
-    try {
-      ensureStyle(root);
-      if (route() === 'dashboard') await repairDashboard();
-      else if (route() === 'search') await repairSearch();
-      else if (route() === 'fixtures') await repairFixtures();
-    } finally {
-      repairing = false;
-    }
-  }
-
-  function scheduleRepair() {
-    if (scheduled || repairing || !relevantRoute()) return;
-    scheduled = true;
-    requestAnimationFrame(function () {
-      scheduled = false;
-      repair().catch(function (error) {
-        if (window.console && console.warn) console.warn('[Scout dashboard/search repair]', error);
-      });
-    });
-  }
-
-  function attach() {
-    if (!relevantRoute()) return;
-    var root = shadow();
-    if (!root) {
-      setTimeout(attach, 60);
-      return;
-    }
-
-    if (shadowObserver) shadowObserver.disconnect();
-    shadowObserver = new MutationObserver(function () {
-      scheduleRepair();
-    });
-    shadowObserver.observe(root, { childList: true, subtree: true });
-    scheduleRepair();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attach, { once: true });
-  } else {
-    attach();
-  }
-  window.addEventListener('pageshow', scheduleRepair);
-}());
