@@ -66,6 +66,16 @@
       "source": "/admin-demo",
       "destination": "https://www.stratexanalytics.co.uk/admin-demo",
       "permanent": false
+    },
+    {
+      "source": "/scout/preferences",
+      "destination": "/scout/settings",
+      "permanent": false
+    },
+    {
+      "source": "/public-demo/scout/preferences",
+      "destination": "/public-demo/scout/settings",
+      "permanent": false
     }
   ],
   "rewrites": [
@@ -196,10 +206,6 @@
     {
       "source": "/public-demo/scout/settings",
       "destination": "/pages/scout-settings"
-    },
-    {
-      "source": "/public-demo/scout/preferences",
-      "destination": "/pages/scout-preferences"
     },
     {
       "source": "/public-demo/coach/player/profile",
@@ -396,10 +402,6 @@
     {
       "source": "/scout/settings",
       "destination": "/pages/scout-settings"
-    },
-    {
-      "source": "/scout/preferences",
-      "destination": "/pages/scout-preferences"
     },
     {
       "source": "/player/dashboard",
