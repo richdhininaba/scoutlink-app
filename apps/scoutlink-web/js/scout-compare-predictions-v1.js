@@ -474,9 +474,8 @@
   }
 
   function hideOldCompareResults(root) {
-    qa(root, '[data-slcp-owned="compare-result"],.slfr2-compare-attributes,[data-slfr2-owned="compare-result"]').forEach(function (node) {
-      if (node.getAttribute('data-slcp-owned') === 'compare-result') node.remove();
-      else node.classList.add('slcp-hidden');
+    qa(root, '.slfr2-compare-attributes,[data-slfr2-owned="compare-result"]').forEach(function (node) {
+      node.classList.add('slcp-hidden');
     });
 
     qa(root, '.card,section').forEach(function (node) {
@@ -627,8 +626,14 @@
     var controls = compareControls(root);
     var anchor = controls.context && closestField(controls.context);
     var card = anchor && anchor.closest('.card,section');
+    var existing = q(root, '[data-slcp-owned="compare-result"]');
+    if (existing) existing.remove();
     if (card && card.parentNode) card.parentNode.insertBefore(section, card.nextSibling);
-    else root.appendChild(section);
+    else {
+      var main = q(root, 'main,.main,.content,.page,.screen') || root;
+      main.appendChild(section);
+    }
+    try { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
   }
 
   async function runCompare(root) {
@@ -742,7 +747,7 @@
   }
 
   function predictionControls(root) {
-    var player = labelledControl(root, ['player'], 'select');
+    var player = q(root, '[data-slcp-player-select]') || labelledControl(root, ['player'], 'select');
     var type = labelledControl(root, ['prediction type', 'prediction'], 'select');
     var selects = qa(root, 'select').filter(function (select) { return !select.closest('.slcp-hidden'); });
     if (!player && selects[0]) player = selects[0];
@@ -1174,15 +1179,58 @@
     }
   }
 
+
+  function ensurePredictionPlayerControl(root, players) {
+    var controls = predictionControls(root);
+    if (controls.player && controls.player !== controls.type) return controls.player;
+
+    var typeControl = controls.type;
+    if (!typeControl) return null;
+
+    var typeField = closestField(typeControl);
+    var wrapper = q(root, '[data-slcp-player-field]');
+    if (!wrapper) {
+      wrapper = document.createElement('label');
+      wrapper.setAttribute('data-slcp-player-field', '1');
+      wrapper.style.cssText = 'display:grid;gap:7px;min-width:0;margin-bottom:12px';
+      wrapper.innerHTML =
+        '<span style="font:800 11px Archivo,Arial,sans-serif;color:#48584F">Player</span>' +
+        '<select data-slcp-player-select aria-label="Player"></select>';
+      if (typeField && typeField.parentNode) typeField.parentNode.insertBefore(wrapper, typeField);
+      else root.appendChild(wrapper);
+    }
+
+    return q(wrapper, 'select');
+  }
+
   async function repairPredictions(root) {
     var players = [];
     try { players = await loadPlayers(false); } catch (_) {}
     var controls = predictionControls(root);
     if (!controls.type) return;
+
+    var stablePlayer = ensurePredictionPlayerControl(root, players);
+    controls = predictionControls(root);
+    if (stablePlayer) controls.player = stablePlayer;
+
     populatePredictionTypes(controls.type);
+
     if (controls.player && players.length) {
-      var currentPlayer = controls.player.value;
-      populatePlayerSelect(controls.player, players, currentPlayer, '', 'Choose player');
+      var query = new URLSearchParams(location.search);
+      var queryPlayer = query.get('playerId') || query.get('player') || '';
+      var currentPlayer = controls.player.value || queryPlayer;
+      populatePlayerSelect(
+        controls.player,
+        players,
+        currentPlayer,
+        '',
+        'Choose player'
+      );
+
+      controls.player.onchange = function () {
+        var result = q(root, '[data-slcp-owned="prediction-result"]');
+        if (result) result.remove();
+      };
     }
 
     var typeItem = canonicalPredictionType(controls.type.value);
