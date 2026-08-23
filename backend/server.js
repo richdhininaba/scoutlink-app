@@ -72,6 +72,16 @@ app.use(
   )
 );
 
+/*
+ * Stripe must receive the exact raw request body for signature verification.
+ * Keep this route before express.json() and before the general API limiter.
+ */
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type:'application/json', limit:'2mb' }),
+  require('./routes/stripeWebhook')
+);
+
 app.use(express.json({ limit:'20mb' }));
 app.use(express.urlencoded({
   extended:true,
@@ -141,16 +151,6 @@ async function healthHandler(_, res) {
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 
-/*
- * API routes.
- *
- * playerRatingsSecure is deliberately mounted before the main Player router.
- * It protects the legacy PATCH /api/players/:id/ratings contract while the
- * rest of routes/players.js remains unchanged.
- *
- * Scoring remains available before the other Player/Match Facts workflows so
- * frontends can obtain the canonical safe position/attribute schema first.
- */
 app.use(
   '/api/auth',
   authLimiter,
@@ -208,16 +208,6 @@ app.use(
   require('./routes/stratexAdminCentreV2')
 );
 
-/*
- * Stable Scout Pipeline route.
- *
- * recruitment_pipeline has two foreign-key relationships to scouts:
- * scout_id and interest_registered_by. The legacy /pipeline selector embeds
- * scouts without naming the relationship, which makes PostgREST reject the
- * query as ambiguous. This router is mounted first so every Scout Pipeline GET
- * and PATCH uses the explicit scout_id relationship while the rest of the
- * legacy Scout routes remain unchanged.
- */
 app.use(
   '/api/scouts',
   require('./routes/scoutPipelineStable')
@@ -269,12 +259,9 @@ app.use(
 );
 
 /*
- * Scout Desk/Field V9 repair facade.
- *
- * This route is intentionally separate from the legacy Scout routes. It gives
- * the exact V7/V8 visual experience one stable API surface for profile context,
- * coherent usage, seats/invitations, event planning and saved searches without
- * changing the contracts still used by older ScoutLink surfaces.
+ * Existing Scout data facade. The frontend file name remains V9 so all
+ * existing Scout pages continue to load one renderer, but its visual source
+ * is replaced by the supplied V6 Desk/Field boards.
  */
 app.use(
   '/api/scout-experience-v9',
@@ -284,6 +271,15 @@ app.use(
 app.use(
   '/api/scout-workflow-actions',
   require('./routes/scoutWorkflowNotifications')
+);
+
+/*
+ * New direct Stripe top-up API. The old usage-request API stays mounted for
+ * historic/admin compatibility, but the new Scout UI does not use it.
+ */
+app.use(
+  '/api/scout-usage',
+  require('./routes/scoutUsageCheckout')
 );
 
 app.use(
