@@ -3,17 +3,42 @@
 const CUSTOM_LIMIT = 999999999;
 
 const SCOUT_PLAN_LIMITS = Object.freeze({
-  Core: Object.freeze({ seats: 1, exports: 20, predictions: 60, interests: 30 }),
-  Plus: Object.freeze({ seats: 5, exports: 100, predictions: 300, interests: 120 }),
-  Elite: Object.freeze({ seats: 10, exports: 300, predictions: 900, interests: 300 }),
-  Enterprise: Object.freeze({ seats: CUSTOM_LIMIT, exports: CUSTOM_LIMIT, predictions: CUSTOM_LIMIT, interests: CUSTOM_LIMIT })
+  Core: Object.freeze({
+    seats: 1,
+    exports: 20,
+    predictions: 60,
+    interests: 30,
+    radar: 0
+  }),
+  Plus: Object.freeze({
+    seats: 5,
+    exports: 100,
+    predictions: 300,
+    interests: 120,
+    radar: 600
+  }),
+  Elite: Object.freeze({
+    seats: 10,
+    exports: 300,
+    predictions: 900,
+    interests: 300,
+    radar: 0
+  }),
+  Enterprise: Object.freeze({
+    seats: CUSTOM_LIMIT,
+    exports: CUSTOM_LIMIT,
+    predictions: CUSTOM_LIMIT,
+    interests: CUSTOM_LIMIT,
+    radar: CUSTOM_LIMIT
+  })
 });
 
 const INTEREST_REQUEST_LABEL = 'coach-mediated interest requests';
 
 function normalizePlan(plan) {
   const raw = String(plan || 'Core').trim();
-  const match = Object.keys(SCOUT_PLAN_LIMITS).find(key => key.toLowerCase() === raw.toLowerCase());
+  const match = Object.keys(SCOUT_PLAN_LIMITS)
+    .find(key => key.toLowerCase() === raw.toLowerCase());
   return match || 'Core';
 }
 
@@ -30,7 +55,7 @@ function numberOrNull(value) {
 function parseLimitOverrides(overrides) {
   const src = overrides && typeof overrides === 'object' ? overrides : {};
   const out = {};
-  ['seats', 'exports', 'predictions', 'interests'].forEach(key => {
+  ['seats', 'exports', 'predictions', 'interests', 'radar'].forEach(key => {
     const n = numberOrNull(src[key]);
     if (n !== null) out[key] = n;
   });
