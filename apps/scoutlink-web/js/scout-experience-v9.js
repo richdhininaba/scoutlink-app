@@ -87,10 +87,16 @@
     .sl-toast{position:fixed;right:18px;bottom:18px;z-index:999999;max-width:340px;padding:13px 16px;border-radius:14px;background:var(--coal);color:#fff;box-shadow:var(--shadow-2);font-size:12px;line-height:1.45}
     .sl-toast.error{background:#6f2925}
     @media(max-width:800px){
-      .app-shell{width:100%;overflow:visible}
-      .scr{width:100%}
-      .pbody{overflow:visible}
-      .sl-toast{left:14px;right:14px;bottom:76px;max-width:none}
+      :host{height:100dvh;min-height:100dvh;overflow:hidden;background:var(--paper)}
+      #slV6Mount{height:100%;min-height:0;overflow:hidden}
+      #slV6Mount>.m{height:100%;min-height:0;overflow:hidden}
+      .m>.app-shell{width:100%;height:100%;min-height:0;overflow:hidden;border-radius:0;box-shadow:none}
+      .m .scr{width:100%;height:100%;min-height:0;overflow:hidden}
+      .m .ptop{flex:0 0 auto;padding-top:calc(16px + env(safe-area-inset-top))}
+      .m .pbody{min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+      .m .ptabs{flex:0 0 auto;position:relative;z-index:6;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+      .m .actbar{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+      .sl-toast{left:14px;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:none}
     }
   `;
 
@@ -328,10 +334,13 @@
   function render() {
     var view = currentView();
     var markup = templateFor(view);
+    var mountedMarkup = state.mode === 'field'
+      ? '<div class="m">' + markup + '</div>'
+      : markup;
 
     shadow.innerHTML =
       '<style>' + SOURCE_CSS + '\n' + PROD_CSS + '</style>' +
-      '<div id="slV6Mount">' + markup + '</div>';
+      '<div id="slV6Mount">' + mountedMarkup + '</div>';
 
     hydrateIdentity();
     hydrateCurrentRoute();
@@ -480,6 +489,136 @@
     );
   }
 
+  function relativeLabel(value) {
+    if (!value) return '';
+    var stamp = new Date(value).getTime();
+    if (!Number.isFinite(stamp)) return '';
+    var delta = Math.max(0, Date.now() - stamp);
+    var minutes = Math.floor(delta / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return minutes + ' min ago';
+    var hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+    var days = Math.floor(hours / 24);
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + ' days ago';
+    var weeks = Math.floor(days / 7);
+    if (weeks < 5) return weeks + (weeks === 1 ? ' week ago' : ' weeks ago');
+    return new Date(value).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  }
+
+  function fieldSearchRow(player) {
+    return (
+      '<div class="list-row" data-player-id="' + escapeHtml(player.id) + '">' +
+        '<span class="avatar">' + escapeHtml(initials(player.name)) + '</span>' +
+        '<span class="who"><b>' + escapeHtml(player.name) + '</b><span>' +
+          escapeHtml([player.position, player.ageGroup, player.team].filter(Boolean).join(' · ')) +
+        '</span></span>' +
+        '<span style="font-family:var(--mono);font-weight:700">' +
+          escapeHtml(Math.round(player.overall || 0)) +
+          '<small style="color:var(--ink3)">/100</small>' +
+        '</span>' +
+      '</div>'
+    );
+  }
+
+  function fieldRankRow(player, index, useCompatibility) {
+    var score = useCompatibility
+      ? (player.compatibility || player.overall || 0)
+      : (player.overall || player.compatibility || 0);
+    return (
+      '<div class="rank-row" data-player-id="' + escapeHtml(player.id) + '">' +
+        '<span class="rank-num ' + (index === 0 ? 'n1' : '') + '">' + (index + 1) + '</span>' +
+        '<span class="who"><b>' + escapeHtml(player.name) + '</b><span>' +
+          escapeHtml([player.position, player.ageGroup, player.team].filter(Boolean).join(' · ')) +
+        '</span></span>' +
+        '<b style="font-family:var(--display);font-size:17px">' +
+          escapeHtml(Math.round(score)) + (useCompatibility ? '%' : '<small style="font-family:var(--mono);font-size:10px;color:var(--ink3)">/100</small>') +
+        '</b>' +
+        '<span class="chev">›</span>' +
+      '</div>'
+    );
+  }
+
+  function pipelineStageLabel(value) {
+    var raw = String(value || 'watching').trim().toLowerCase().replace(/[ -]+/g, '_');
+    if (raw === 'trial_pending') return 'Trial Pending';
+    if (raw === 'shortlisted') return 'Shortlisted';
+    if (raw === 'monitoring' || raw === 'interested') return 'Monitoring';
+    return 'Watching';
+  }
+
+  function pipelineStageClass(value) {
+    var label = pipelineStageLabel(value);
+    if (label === 'Shortlisted') return 'g';
+    if (label === 'Trial Pending') return 'a';
+    return 'n';
+  }
+
+  function fieldPipelineRow(row) {
+    var p = pipelinePlayer(row);
+    var stage = pipelineStageLabel(row.stage || row.pipeline_stage);
+    var note = row.notes || row.decision_summary || row.next_action ||
+      [p.ageGroup, p.position, p.team].filter(Boolean).join(' · ') ||
+      'Recruitment review in progress';
+    var updated = row.updated_at || row.last_reviewed_at || row.created_at;
+    return (
+      '<div class="list-row" data-pipeline-id="' + escapeHtml(row.id || '') + '" data-player-id="' + escapeHtml(p.id || '') + '">' +
+        '<span class="avatar">' + escapeHtml(initials(p.name)) + '</span>' +
+        '<span class="who"><b>' + escapeHtml(p.name) + '</b><span>' + escapeHtml(note) + '</span></span>' +
+        '<div style="text-align:right">' +
+          '<span class="pill ' + pipelineStageClass(stage) + '">' + escapeHtml(stage) + '</span>' +
+          '<div class="mut" style="font-size:10px;margin-top:4px">' + escapeHtml(relativeLabel(updated)) + '</div>' +
+        '</div>' +
+        '<span class="chev">›</span>' +
+      '</div>'
+    );
+  }
+
+  function fieldNotificationRow(item) {
+    var unread = !item.read_at && !item.is_read;
+    var meta = [
+      item.notification_type || item.type || 'System',
+      relativeLabel(item.created_at || item.timestamp)
+    ].filter(Boolean).join(' · ');
+    return (
+      '<div class="list-row" style="cursor:default">' +
+        '<span style="width:7px;height:7px;border-radius:999px;background:' +
+          (unread ? 'var(--pitch)' : 'var(--line2)') + ';flex:0 0 7px"></span>' +
+        '<span class="who"><b style="font-weight:' + (unread ? '700' : '500') + '">' +
+          escapeHtml(item.title || item.message || item.body || 'Notification') +
+        '</b><span>' + escapeHtml(meta) + '</span></span>' +
+        (unread ? '<span class="pill g">New</span>' : '') +
+      '</div>'
+    );
+  }
+
+  function fieldFixtureRow(fixture, index) {
+    var rawDate = fixture.fixture_date || fixture.date || fixture.kickoff_at || fixture.kickoff || '';
+    var date = rawDate ? new Date(rawDate) : null;
+    var validDate = date && !Number.isNaN(date.getTime());
+    var home = fixture.home_team_name || fixture.home_team || fixture.team_name || '';
+    var away = fixture.away_team_name || fixture.away_team || fixture.opponent_name || fixture.opponent || '';
+    var title = home && away ? home + ' vs ' + away : (away || home || 'Fixture');
+    var detail = [
+      validDate ? date.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '',
+      fixture.fixture_time || fixture.time || (validDate ? date.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false }) : ''),
+      fixture.venue_name || fixture.venue || fixture.address || ''
+    ].filter(Boolean).join(' · ');
+    var priority = fixture.priority || fixture.is_priority || fixture.scout_priority;
+    var priorityText = priority && String(priority).toLowerCase() !== 'scheduled' ? 'Priority' : 'Scheduled';
+    return (
+      '<div class="list-row" data-fixture-id="' + escapeHtml(fixture.id || '') + '">' +
+        '<div class="dateplate ' + (priorityText === 'Priority' ? 'g' : '') + '"><b>' +
+          escapeHtml(validDate ? date.getDate() : '—') + '</b><span>' +
+          escapeHtml(validDate ? date.toLocaleDateString('en-GB', { month:'short' }).toUpperCase() : '') +
+        '</span></div>' +
+        '<span class="who"><b>' + escapeHtml(title) + '</b><span>' + escapeHtml(detail) + '</span></span>' +
+        '<span class="pill ' + (priorityText === 'Priority' ? 'a' : 'n') + '">' + priorityText + '</span>' +
+      '</div>'
+    );
+  }
+
   function rankingRows(players) {
     if (!players.length) {
       return '<div class="sl-empty">No ranked players match the current filters.</div>';
@@ -566,12 +705,26 @@
         .slice(0, 5);
 
       body.innerHTML = players.length
-        ? players.map(function (p) { return playerRow(p); }).join('')
+        ? (state.mode === 'field'
+          ? players.map(function (p, index) { return fieldRankRow(p, index, true); }).join('')
+          : players.map(function (p) { return playerRow(p); }).join(''))
         : '<div class="sl-empty">No player matches are available yet.</div>';
     }
   }
 
   function hydrateSearch() {
+    if (state.mode === 'field') {
+      var body = shadow.querySelector('.pbody .card .card-b');
+      var countPill = shadow.querySelector('.pbody > .flex .pill');
+      if (countPill) countPill.textContent = state.players.length + ' results';
+      if (body) {
+        body.innerHTML = state.players.length
+          ? state.players.map(fieldSearchRow).join('')
+          : '<div class="sl-empty">No players match the current filters.</div>';
+      }
+      return;
+    }
+
     var cards = Array.from(shadow.querySelectorAll('.card'));
     var resultsCard = cards.find(function (card) {
       var h = card.querySelector('.card-h h3');
@@ -609,7 +762,13 @@
     var h = target.querySelector('.card-h h3');
     if (h) h.textContent = 'Ranked by Overall rating (' + sorted.length + ')';
     var body = target.querySelector('.card-b');
-    if (body) body.innerHTML = rankingRows(sorted);
+    if (body) {
+      body.innerHTML = state.mode === 'field'
+        ? sorted.slice(0, 100).map(function (player, index) {
+            return fieldRankRow(player, index, false);
+          }).join('')
+        : rankingRows(sorted);
+    }
   }
 
   function pipelinePlayer(row) {
@@ -621,25 +780,45 @@
     if (!target) return;
     var heading = target.querySelector('.card-h h3');
     if (heading) heading.textContent = 'All pipeline entries (' + state.pipeline.length + ')';
+
+    if (state.mode === 'field') {
+      var stageCounts = { Watching:0, Monitoring:0, Shortlisted:0, 'Trial Pending':0 };
+      state.pipeline.forEach(function (row) {
+        var label = pipelineStageLabel(row.stage || row.pipeline_stage);
+        stageCounts[label] = (stageCounts[label] || 0) + 1;
+      });
+      Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function (cell) {
+        var label = cell.querySelector('.lbl');
+        var strong = cell.querySelector('strong');
+        if (!label || !strong) return;
+        var key = label.textContent.trim();
+        if (Object.prototype.hasOwnProperty.call(stageCounts, key)) {
+          strong.textContent = stageCounts[key];
+        }
+      });
+    }
+
     var body = target.querySelector('.card-b');
     if (!body) return;
 
     body.innerHTML = state.pipeline.length
-      ? state.pipeline.map(function (row) {
-          var p = pipelinePlayer(row);
-          var stage = row.stage || row.pipeline_stage || 'Watching';
-          return (
-            '<div class="list-row" data-pipeline-id="' + escapeHtml(row.id || '') + '">' +
-              '<span class="avatar">' + escapeHtml(initials(p.name)) + '</span>' +
-              '<span class="who"><b>' + escapeHtml(p.name) + '</b><span>' +
-                escapeHtml([p.ageGroup, p.position, p.team].filter(Boolean).join(' · ')) +
-              '</span></span>' +
-              '<span class="pill n">' + escapeHtml(stage) + '</span>' +
-              '<button class="btn outline sm" data-action="pipeline-update" data-pipeline-id="' +
-                escapeHtml(row.id || '') + '">Update</button>' +
-            '</div>'
-          );
-        }).join('')
+      ? (state.mode === 'field'
+        ? state.pipeline.map(fieldPipelineRow).join('')
+        : state.pipeline.map(function (row) {
+            var p = pipelinePlayer(row);
+            var stage = row.stage || row.pipeline_stage || 'Watching';
+            return (
+              '<div class="list-row" data-pipeline-id="' + escapeHtml(row.id || '') + '">' +
+                '<span class="avatar">' + escapeHtml(initials(p.name)) + '</span>' +
+                '<span class="who"><b>' + escapeHtml(p.name) + '</b><span>' +
+                  escapeHtml([p.ageGroup, p.position, p.team].filter(Boolean).join(' · ')) +
+                '</span></span>' +
+                '<span class="pill n">' + escapeHtml(stage) + '</span>' +
+                '<button class="btn outline sm" data-action="pipeline-update" data-pipeline-id="' +
+                  escapeHtml(row.id || '') + '">Update</button>' +
+              '</div>'
+            );
+          }).join(''))
       : '<div class="sl-empty">Your recruitment pipeline is empty.</div>';
   }
 
@@ -855,6 +1034,11 @@
     var body = list.querySelector('.card-b');
     if (!body) return;
 
+    if (state.mode === 'field') {
+      body.innerHTML = state.fixtures.slice(0, 50).map(fieldFixtureRow).join('');
+      return;
+    }
+
     body.innerHTML = state.fixtures.slice(0, 50).map(function (fixture) {
       var date = fixture.fixture_date || fixture.date || fixture.kickoff_at || '';
       return '<div class="list-row" data-fixture-id="' + escapeHtml(fixture.id || '') + '">' +
@@ -902,16 +1086,18 @@
     var body = target.querySelector('.card-b');
     if (!body) return;
     body.innerHTML = state.notifications.length
-      ? state.notifications.map(function (item) {
-          return '<div class="list-row">' +
-            '<span class="who"><b>' +
-              escapeHtml(item.title || item.type || 'Notification') +
-            '</b><span>' +
-              escapeHtml(item.message || item.body || '') +
-            '</span></span>' +
-            (!item.read_at && !item.is_read ? '<span class="pill a">New</span>' : '') +
-          '</div>';
-        }).join('')
+      ? (state.mode === 'field'
+        ? state.notifications.map(fieldNotificationRow).join('')
+        : state.notifications.map(function (item) {
+            return '<div class="list-row">' +
+              '<span class="who"><b>' +
+                escapeHtml(item.title || item.type || 'Notification') +
+              '</b><span>' +
+                escapeHtml(item.message || item.body || '') +
+              '</span></span>' +
+              (!item.read_at && !item.is_read ? '<span class="pill a">New</span>' : '') +
+            '</div>';
+          }).join(''))
       : '<div class="sl-empty">You have no notifications.</div>';
   }
 
