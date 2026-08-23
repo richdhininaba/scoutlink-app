@@ -103,1690 +103,347 @@
   var root = document.getElementById('scoutExperienceApp');
   if (!root) return;
 
-  var shadow = root.shadowRoot || root.attachShadow({ mode: 'open' });
+  var shadow = root.shadowRoot || root.attachShadow({ mode:'open' });
+  var EXTRA_CSS = `
+    .sl-toast{position:fixed;z-index:999999;right:18px;bottom:18px;max-width:380px;padding:13px 16px;border-radius:14px;background:var(--coal);color:#fff;box-shadow:var(--shadow-2);font-size:12px;line-height:1.45}.sl-toast.error{background:#6f2925}
+    .sl-runtime-message{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:var(--mint);border:1px solid var(--line);font-size:12px;line-height:1.45}.sl-runtime-message.error{background:#fff1ef;border-color:#e3b7b1;color:#7b211b}
+    .sl-empty{padding:22px;text-align:center;color:var(--ink3);font-size:12px;line-height:1.55}
+    .sl-modal-backdrop{position:fixed;inset:0;z-index:99990;background:rgba(6,32,26,.48);display:flex;align-items:center;justify-content:center;padding:20px}.sl-modal{width:min(640px,100%);max-height:min(780px,90vh);overflow:auto;background:#fff;border-radius:var(--r-lg);box-shadow:var(--shadow-2);border:1px solid var(--line)}.sl-modal-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.sl-modal-h h3{margin:0;font-size:16px}.sl-modal-b{padding:20px}.sl-modal-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+    .sl-more-sheet{position:fixed;z-index:99991;left:50%;bottom:0;transform:translateX(-50%);width:min(520px,100%);background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(6,32,26,.2);padding:10px 18px calc(18px + env(safe-area-inset-bottom));max-height:78vh;overflow:auto}.sl-sheet-handle{width:42px;height:4px;border-radius:99px;background:var(--line2);margin:2px auto 14px}.sl-more-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sl-more-item{display:flex;align-items:center;gap:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff;font-weight:700;font-size:12px;text-align:left;cursor:pointer}.sl-more-item small{display:block;color:var(--ink3);font-weight:500;margin-top:2px}
+    .sl-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sl-compat-row{display:grid;grid-template-columns:minmax(135px,1fr) 1.4fr 52px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.sl-compat-row:last-child{border-bottom:0}.sl-compat-row b{font-size:12px}.sl-compat-row strong{font-family:var(--mono);font-size:11px;text-align:right}.sl-score-bar{height:7px;border-radius:99px;background:var(--mist);overflow:hidden}.sl-score-bar i{display:block;height:100%;background:var(--pitch);border-radius:inherit}
+    .sl-chat-shell{display:grid;grid-template-rows:1fr auto;min-height:420px}.sl-chat-messages{padding:16px;overflow:auto;display:flex;flex-direction:column;gap:10px;max-height:520px}.sl-bubble{max-width:78%;padding:10px 12px;border-radius:14px;background:var(--mist);font-size:12px;line-height:1.45}.sl-bubble.me{align-self:flex-end;background:var(--pitch);color:#fff}.sl-chat-compose{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.sl-chat-compose input{flex:1}
+    .sl-attr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sl-attr{padding:12px;border:1px solid var(--line);border-radius:12px}.sl-attr .flex{justify-content:space-between}.sl-attr b{font-size:11.5px}.sl-attr strong{font-family:var(--display);font-size:20px;font-weight:400}.sl-note{padding:14px 0;border-bottom:1px solid var(--line)}.sl-note:last-child{border-bottom:0}.sl-note-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:5px}.sl-note-head b{font-size:12px}.sl-note-head span{font-size:10px;color:var(--ink3)}.sl-note p{font-size:12px;line-height:1.55;margin:0;color:var(--ink2)}
+    .sl-result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sl-result-stat{padding:14px;border-radius:14px;background:var(--mist)}.sl-result-stat span{display:block;font:700 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}.sl-result-stat strong{display:block;margin-top:6px;font-family:var(--display);font-size:27px;font-weight:400}.sl-result-copy{font-size:12.5px;line-height:1.65;color:var(--ink2)}
+    .sl-click{cursor:pointer}.sl-disabled{opacity:.55;pointer-events:none}.sl-prepared{padding:14px;border-radius:14px;background:var(--mint);border:1px solid var(--line);font-size:12px;line-height:1.55;margin-top:14px}
+    @media(max-width:800px){.sl-toast{left:14px;right:14px;bottom:84px;max-width:none}.sl-modal-backdrop{align-items:flex-end;padding:0}.sl-modal{width:100%;max-height:86vh;border-radius:22px 22px 0 0}.sl-filter-grid,.sl-attr-grid{grid-template-columns:1fr}.sl-more-grid{grid-template-columns:1fr 1fr}.sl-result-grid{grid-template-columns:1fr 1fr}.sl-compat-row{grid-template-columns:1fr 1fr 44px}}
+  `;
+
   var state = {
     route: routeName(),
     view: null,
-    mode: window.matchMedia('(max-width: 800px)').matches ? 'field' : 'desk',
+    mode: window.matchMedia('(max-width:800px)').matches ? 'field' : 'desk',
     workspace: null,
     usage: null,
     packs: [],
     purchases: [],
-    players: [],
-    pipeline: [],
-    predictions: [],
-    fixtures: [],
-    events: [],
-    notifications: [],
-    threads: [],
-    exports: [],
+    stripeReady: false,
+    paymentLaunchAllowed: false,
     selectedPack: null,
+    preparedCheckout: null,
+    players: [],
+    filterOptions: { regions:[], positions:[], ageGroups:[] },
+    filters: { q:'', position:'', ageGroup:'', region:'', availability:'', foot:'', minOverall:'' },
+    rankMetric: 'overall',
+    rankAge: '',
+    pipeline: [],
+    activePipelineId: query('pipelineId') || '',
+    compareResult: null,
+    compareMode: 'decision',
+    predictions: [],
+    scenarios: [],
     selectedPlayerId: query('playerId') || query('id') || '',
     selectedPredictionType: '',
     predictionInput: {},
     predictionResult: null,
-    checkoutStatus: null,
+    predictionLogId: null,
+    fixtures: [],
+    activeFixtureId: query('fixtureId') || '',
+    fixtureDetail: null,
+    events: [],
+    activeEventId: query('eventId') || '',
+    eventDetail: null,
+    notifications: [],
+    notificationFilter: 'all',
+    threads: [],
+    activeThreadId: query('threadId') || '',
+    messages: [],
+    exports: [],
+    settings: null,
+    setup: null,
+    setupDraft: { teamNeeds:[], roleExpectations:[], developmentPriorities:[], formation:'', playingStyle:'' },
+    onboardingDraft: {},
+    profileData: null,
+    profileShareTeam: true,
+    profileAttributeMode: 'general',
+    activeVideo: null,
+    activeGame: null,
     error: null
   };
 
-  function query(name) {
-    try {
-      return new URLSearchParams(window.location.search).get(name) || '';
-    } catch (_) {
-      return '';
+  function query(name){try{return new URLSearchParams(window.location.search).get(name)||'';}catch(_){return '';}}
+  function routeName(){
+    var path=window.location.pathname.replace(/\/+$/,'');
+    if(path==='/player/profile'||/player-profile/i.test(path)) return 'profile';
+    var explicit=document.body&&document.body.getAttribute('data-scout-route');
+    if(explicit) explicit=explicit.replace(/^scout-/,'').replace(/_/g,'-');
+    var slug=path.split('/').filter(Boolean).pop()||explicit||'dashboard';
+    var map={'dashboard':'dashboard','onboarding':'onboarding','player-search':'search','rankings':'rankings','pipeline':'pipeline','compare-players':'compare','predictions':'predictions','radar':'radar','fixtures':'fixtures','events':'events','usage':'usage','usage-requests':'usage','exports':'exports','chat':'chat','notifications':'notifications','settings':'settings','setup':'setup','report-a-concern':'concern','profile':'profile'};
+    return map[slug]||map[explicit]||'dashboard';
+  }
+  function defaultView(route){if(route==='onboarding')return'onboarding1';if(route==='setup')return'setup1';return route;}
+  function currentView(){return state.view||defaultView(state.route);}
+  function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+  function number(value,fallback){var n=Number(value);return Number.isFinite(n)?n:(fallback==null?0:fallback);}
+  function pct(remaining,limit){return limit?Math.max(0,Math.min(100,Math.round(remaining/limit*100))):0;}
+  function initials(name){return String(name||'Scout').split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x.charAt(0).toUpperCase();}).join('')||'SC';}
+  function apiBase(){return window.API||localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}
+  function authToken(){try{return(window.Auth&&window.Auth.token)||localStorage.getItem('sl_token')||'';}catch(_){return '';}}
+  async function request(path,options){
+    options=options||{};var headers=Object.assign({},options.headers||{});var token=authToken();if(token)headers.Authorization='Bearer '+token;
+    if(options.body&&typeof options.body!=='string'){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body);}
+    var res=await fetch(apiBase()+path,Object.assign({},options,{headers:headers}));var type=res.headers.get('content-type')||'';var payload=type.indexOf('application/json')!==-1?await res.json():await res.text();
+    if(!res.ok){var err=new Error(payload&&payload.error?payload.error:'Request failed ('+res.status+')');err.status=res.status;err.payload=payload;throw err;}return payload;
+  }
+  function unwrap(payload){return payload&&Object.prototype.hasOwnProperty.call(payload,'data')?payload.data:payload;}
+  async function safe(path,fallback){try{return unwrap(await request(path));}catch(error){console.warn('[Scout V6]',path,error);return fallback;}}
+  function normalizeRows(payload){if(Array.isArray(payload))return payload;if(payload&&Array.isArray(payload.data))return payload.data;if(payload&&Array.isArray(payload.players))return payload.players;if(payload&&Array.isArray(payload.results))return payload.results;return [];}
+  function relative(value){if(!value)return'';var t=new Date(value).getTime();if(!Number.isFinite(t))return'';var d=Math.max(0,Date.now()-t),m=Math.floor(d/60000);if(m<1)return'just now';if(m<60)return m+' min ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';var day=Math.floor(h/24);if(day<7)return day+'d ago';return new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+  function dateLabel(value){if(!value)return'';var d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+  function fullDateTime(fixture){var raw=fixture.fixture_date||fixture.event_date||fixture.date||'';var d=raw?new Date(raw):null;var date=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';return [date,fixture.fixture_time||fixture.time||'',fixture.venue_name||fixture.venue||fixture.location||fixture.address||''].filter(Boolean).join(' · ');}
+  function templateFor(view){var item=SOURCE[view]||SOURCE[defaultView(state.route)]||SOURCE.dashboard;return state.mode==='field'?item.field:item.desk;}
+  function render(){
+    var markup=templateFor(currentView());var mounted=state.mode==='field'?'<div class="m">'+markup+'</div>':markup;
+    shadow.innerHTML='<style>'+SOURCE_CSS+'\n'+PROD_CSS+'\n'+EXTRA_CSS+'</style><div id="slV6Mount">'+mounted+'</div>';
+    hydrateIdentity();hydrateCurrentRoute();wireNavigation();wireChromeControls();wireActions();
+    root.classList.remove('is-loading');root.removeAttribute('aria-busy');root.style.visibility='visible';
+  }
+  function walkText(rootNode,replacements){if(!rootNode)return;var walker=document.createTreeWalker(rootNode,NodeFilter.SHOW_TEXT,null),node;while((node=walker.nextNode())){var next=node.nodeValue;Object.keys(replacements).forEach(function(from){next=next.split(from).join(replacements[from]);});node.nodeValue=next;}}
+  function workspaceParts(){var w=state.workspace||{};return{scout:w.scout||w.user||w.profile||w.me||(window.Auth&&window.Auth.user)||{},team:w.scoutTeam||w.team||w.scout_team||{}};}
+  function setRuntimeMessage(message,isError){if(!message)return;var body=shadow.querySelector('.body')||shadow.querySelector('.pbody')||shadow.querySelector('.wizard-body');if(!body)return;var note=document.createElement('div');note.className='sl-runtime-message'+(isError?' error':'');note.textContent=message;body.insertBefore(note,body.firstChild);}
+  function toast(message,isError){var old=shadow.querySelector('.sl-toast');if(old)old.remove();var node=document.createElement('div');node.className='sl-toast'+(isError?' error':'');node.textContent=message;shadow.appendChild(node);setTimeout(function(){if(node.parentNode)node.remove();},4200);}
+  function modal(title,body,footer){closeModal();var back=document.createElement('div');back.className='sl-modal-backdrop';back.innerHTML='<div class="sl-modal"><div class="sl-modal-h"><h3>'+escapeHtml(title)+'</h3><span class="sp"></span><button class="icon-btn" data-sl-modal-close style="width:34px;height:34px">×</button></div><div class="sl-modal-b">'+body+'</div>'+(footer?'<div class="sl-modal-f">'+footer+'</div>':'')+'</div>';shadow.appendChild(back);back.addEventListener('click',function(e){if(e.target===back||e.target.closest('[data-sl-modal-close]'))closeModal();});return back;}
+  function closeModal(){var node=shadow.querySelector('.sl-modal-backdrop');if(node)node.remove();}
+  function navigate(path){window.location.href=path;}
+  function setView(view){state.view=view;render();}
+  function buttons(pattern){return Array.from(shadow.querySelectorAll('button,a')).filter(function(b){return pattern.test(b.textContent.trim());});}
+  function findField(label){var field=Array.from(shadow.querySelectorAll('.field')).find(function(x){var l=x.querySelector('label');return l&&l.textContent.toLowerCase().indexOf(String(label).toLowerCase())!==-1;});return field&&field.querySelector('input,select,textarea');}
+  function setOptions(select,items,selected,includeAny){if(!select)return;var options=[];if(includeAny)options.push(includeAny);(items||[]).forEach(function(item){options.push(item);});select.innerHTML=options.map(function(item){var value=typeof item==='object'?item.value:item;var label=typeof item==='object'?item.label:item;return'<option value="'+escapeHtml(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+escapeHtml(label)+'</option>';}).join('');}
+  function cardByHeading(text){return Array.from(shadow.querySelectorAll('.card')).find(function(card){var h=card.querySelector('.card-h h3');return h&&h.textContent.toLowerCase().indexOf(String(text).toLowerCase())!==-1;})||null;}
+  function cardBody(text){var card=cardByHeading(text);return card&&card.querySelector('.card-b');}
+  function normalizePlayer(row){
+    if(!row)return null;var p=row.player||row.players||row;var attrs=p.attributeProfile||row.attributeProfile||{};var analysis=p.predictionDetails||p.prediction_analysis||{};
+    return{id:p.id||row.player_id||'',name:[p.first_name,p.last_name].filter(Boolean).join(' ')||p.name||'Unnamed player',ageGroup:p.age_group||'',position:p.specific_position||p.primary_position||p.position_group||'',team:p.team_name||p.team?.team_name||'',overall:number(p.overall_rating||p.overallRating,0),compatibility:p.compatibilityScore==null?number(row.compatibilityScore,0):number(p.compatibilityScore,0),potential:number(analysis.potentialOverall||p.potential_rating||p.overall_rating,0),valueIndex:number(p.footballValueIndex||p.valueAnalysis?.footballValueIndex||p.value_analysis?.footballValueIndex,0),availability:p.availability||'',foot:p.foot||'',region:p.team_city||p.team?.city||p.team?.county||'',attributes:attrs,raw:p,source:row};
+  }
+  function profilePlayer(){return state.profileData?normalizePlayer(state.profileData.player||state.profileData):null;}
+  function pipelinePlayer(row){return normalizePlayer(row.player||row.players||row);}
+  function stageLabel(value){var raw=String(value||'watching').toLowerCase().replace(/[ -]+/g,'_');if(raw==='trial_pending')return'Trial Pending';if(raw==='shortlisted')return'Shortlisted';if(raw==='interested'||raw==='monitoring')return'Monitoring';if(['approached','negotiating','signed'].indexOf(raw)!==-1)return'Progressed';if(['rejected','closed'].indexOf(raw)!==-1)return'Closed';return'Watching';}
+  function stageClass(value){var label=stageLabel(value);return label==='Shortlisted'?'g':label==='Trial Pending'?'a':label==='Closed'?'r':'n';}
+  function playerRow(player,action,label){return'<div class="list-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="avatar">'+escapeHtml(initials(player.name))+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.ageGroup,player.position,player.team].filter(Boolean).join(' · '))+'</span></span>'+(player.compatibility?'<span class="pill g">'+Math.round(player.compatibility)+'% fit</span>':'')+(player.overall?'<b style="font-family:var(--mono);font-size:11px">'+Math.round(player.overall)+'</b>':'')+(action?'<button class="btn outline sm" data-action="'+action+'" data-player-id="'+escapeHtml(player.id)+'">'+escapeHtml(label||'Open')+'</button>':'<span class="chev">›</span>')+'</div>';}
+  function rankRow(player,index,metric){var score=metric==='compatibility'?player.compatibility:metric==='potential'?player.potential:metric==='value'?player.valueIndex:player.overall;return'<div class="rank-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="rank-num '+(index===0?'n1':'')+'">'+(index+1)+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.position,player.ageGroup,player.team].filter(Boolean).join(' · '))+'</span></span><b style="font-family:var(--display);font-size:17px">'+Math.round(score||0)+(metric==='compatibility'?'%':'<small style="font-family:var(--mono);font-size:10px;color:var(--ink3)">/100</small>')+'</b><span class="chev">›</span></div>';}
+
+  function hydrateIdentity(){
+    var parts=workspaceParts(),scout=parts.scout,team=parts.team,user=(window.Auth&&window.Auth.user)||{};var name=[scout.first_name,scout.last_name].filter(Boolean).join(' ')||[user.first_name,user.last_name].filter(Boolean).join(' ')||user.name||'Scout';var org=team.team_name||team.club_name||scout.club_name||'Scout Workspace';var role=scout.scout_preferences?.scoutingRole||scout.scouting_role||(scout.is_super_user?'Lead Scout':'Scout');
+    walkText(shadow,{'Jordan Carty':name,'JC':initials(name),'AV Recruitment':org,'Lead Scout · AV Recruitment':role+' · '+org,'Lead Scout':role});
+    var unread=state.notifications.filter(function(n){return !n.is_read&&!n.read_at;}).length;Array.from(shadow.querySelectorAll('.icon-btn u')).forEach(function(u){u.textContent=unread;});
+  }
+  function usageParts(){var u=state.usage||{};return[['Coach interests',u.interests],['Predictions',u.predictions],['Exports',u.exports],['Ask Radar',u.radar]];}
+  function hydrateUsageStrip(){var strip=Array.from(shadow.querySelectorAll('.usage-strip-item')),pairs=usageParts();strip.forEach(function(item,i){var pair=pairs[i];if(!pair||!pair[1])return;var x=pair[1],l=item.querySelector('.lbl'),s=item.querySelector('strong'),small=item.querySelector('small'),bar=item.querySelector('.bar-track i');if(l)l.textContent=pair[0];if(s)s.textContent=x.remaining;if(small)small.textContent='of '+x.limit+(pair[0]==='Ask Radar'?' credits left':' left');if(bar)bar.style.width=pct(x.remaining,x.limit)+'%';});}
+  function hydrateDashboard(){
+    hydrateUsageStrip();var shortlisted=state.pipeline.filter(function(r){return String(r.stage).toLowerCase()==='shortlisted';}).length,unread=state.notifications.filter(function(n){return !n.is_read&&!n.read_at;}).length;
+    Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),s=cell.querySelector('strong'),small=cell.querySelector('small');if(!l||!s)return;var t=l.textContent.toLowerCase();if(t.indexOf('pipeline')!==-1){s.textContent=state.pipeline.length;if(small)small.textContent=shortlisted+' shortlisted';}if(t.indexOf('unread')!==-1)s.textContent=unread;});
+    var body=cardBody('Top 5 compatible players');if(body){var top=state.players.slice().sort(function(a,b){return(b.compatibility||0)-(a.compatibility||0);}).slice(0,5);body.innerHTML=top.length?top.map(function(p,i){return rankRow(p,i,'compatibility');}).join(''):'<div class="sl-empty">No compatible players are available yet.</div>';}
+  }
+  function filteredPlayers(){var f=state.filters;return state.players.filter(function(p){var q=String(f.q||'').toLowerCase();if(q&&[p.name,p.team,p.position,p.ageGroup].join(' ').toLowerCase().indexOf(q)===-1)return false;if(f.position&&p.position!==f.position)return false;if(f.ageGroup&&p.ageGroup!==f.ageGroup)return false;if(f.region&&String(p.region)!==String(f.region))return false;if(f.availability&&String(p.availability).toLowerCase()!==String(f.availability).toLowerCase())return false;if(f.foot&&String(p.foot).toLowerCase()!==String(f.foot).toLowerCase())return false;if(f.minOverall&&p.overall<number(f.minOverall,0))return false;return true;});}
+  function populateSearchFields(){
+    var position=findField('Position'),age=findField('Age group'),region=findField('Region'),availability=findField('Availability'),foot=findField('Foot'),min=findField('Min. overall');
+    if(position)setOptions(position,state.filterOptions.positions,state.filters.position,{value:'',label:'Any position'});if(age)setOptions(age,state.filterOptions.ageGroups,state.filters.ageGroup,{value:'',label:'Any age group'});if(region)setOptions(region,state.filterOptions.regions,state.filters.region,{value:'',label:'Any region'});if(availability)setOptions(availability,['Available','Unavailable'],state.filters.availability,{value:'',label:'Any'});if(foot)setOptions(foot,['Right','Left','Both'],state.filters.foot,{value:'',label:'Any'});if(min)min.value=state.filters.minOverall||'';
+  }
+  function captureSearchFields(){var p=findField('Position'),a=findField('Age group'),r=findField('Region'),av=findField('Availability'),f=findField('Foot'),m=findField('Min. overall');state.filters.position=p?p.value:'';state.filters.ageGroup=a?a.value:'';state.filters.region=r?r.value:'';state.filters.availability=av?av.value:'';state.filters.foot=f?f.value:'';state.filters.minOverall=m?m.value:'';}
+  function hydrateSearch(){
+    populateSearchFields();var rows=filteredPlayers();
+    if(state.mode==='field'&&currentView()==='search'){var input=shadow.querySelector('.pbody > input.in');if(input){input.value=state.filters.q||'';input.setAttribute('data-action','search-query');}var pill=shadow.querySelector('.pbody > .flex .pill');if(pill)pill.textContent=rows.length+' results';var body=shadow.querySelector('.pbody .card .card-b');if(body)body.innerHTML=rows.length?rows.map(function(p){return playerRow(p);}).join(''):'<div class="sl-empty">No players match the current filters.</div>';return;}
+    if(currentView()==='searchFilters')return;
+    var target=Array.from(shadow.querySelectorAll('.card')).find(function(c){var h=c.querySelector('.card-h h3');return h&&/results/i.test(h.textContent);});if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent=rows.length+' results';if(b)b.innerHTML=rows.length?rows.map(function(p){var inPipe=state.pipeline.some(function(x){return String(x.player_id||x.player?.id)===String(p.id);});return playerRow(p,inPipe?'':'pipeline-add',inPipe?'':'Add to pipeline');}).join(''):'<div class="sl-empty">No players match the current filters.</div>';}
+  }
+  function hydrateRankings(){var rank=findField('Rank by'),age=findField('Age group');if(rank){rank.value=state.rankMetric==='compatibility'?'Compatibility score':state.rankMetric==='potential'?'Development potential':state.rankMetric==='value'?'Football Value Index':'Overall rating';}if(age){setOptions(age,state.filterOptions.ageGroups,state.rankAge,{value:'',label:'Any age group'});}var rows=state.players.filter(function(p){return!state.rankAge||p.ageGroup===state.rankAge;}).sort(function(a,b){var av=state.rankMetric==='compatibility'?a.compatibility:state.rankMetric==='potential'?a.potential:state.rankMetric==='value'?a.valueIndex:a.overall;var bv=state.rankMetric==='compatibility'?b.compatibility:state.rankMetric==='potential'?b.potential:state.rankMetric==='value'?b.valueIndex:b.overall;return bv-av;});var target=cardByHeading('Ranked by');if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent='Ranked by '+(state.rankMetric==='compatibility'?'Compatibility':state.rankMetric==='potential'?'Development potential':state.rankMetric==='value'?'Football Value Index':'Overall rating')+' ('+rows.length+')';if(b)b.innerHTML=rows.length?rows.slice(0,100).map(function(p,i){return rankRow(p,i,state.rankMetric);}).join(''):'<div class="sl-empty">No players match the ranking criteria.</div>';}}
+  function hydratePipeline(){
+    var target=cardByHeading('All pipeline entries');if(!target)return;var h=target.querySelector('.card-h h3');if(h)h.textContent='All pipeline entries ('+state.pipeline.length+')';
+    if(state.mode==='field'){var counts={'Watching':0,'Monitoring':0,'Shortlisted':0,'Trial Pending':0};state.pipeline.forEach(function(row){var label=stageLabel(row.stage);if(Object.prototype.hasOwnProperty.call(counts,label))counts[label]+=1;});Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),s=cell.querySelector('strong');if(l&&s&&Object.prototype.hasOwnProperty.call(counts,l.textContent.trim()))s.textContent=counts[l.textContent.trim()];});}
+    var body=target.querySelector('.card-b');if(body)body.innerHTML=state.pipeline.length?state.pipeline.map(function(row){var p=pipelinePlayer(row);return'<div class="list-row sl-click" data-pipeline-id="'+escapeHtml(row.id)+'" data-player-id="'+escapeHtml(p.id)+'"><span class="avatar">'+escapeHtml(initials(p.name))+'</span><span class="who"><b>'+escapeHtml(p.name)+'</b><span>'+escapeHtml(row.notes||row.latestWorkflow?.content||[p.ageGroup,p.position,p.team].filter(Boolean).join(' · '))+'</span></span><span class="pill '+stageClass(row.stage)+'">'+escapeHtml(row.displayStage||stageLabel(row.stage))+'</span>'+(state.mode==='desk'?'<button class="btn outline sm" data-action="pipeline-update" data-pipeline-id="'+escapeHtml(row.id)+'">Update</button>':'<span class="chev">›</span>')+'</div>';}).join(''):'<div class="sl-empty">Your recruitment pipeline is empty.</div>';
+  }
+  function hydratePipelineUpdate(){var row=state.pipeline.find(function(x){return String(x.id)===String(state.activePipelineId);});if(!row)return;var p=pipelinePlayer(row);walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name)});var stage=findField('Stage'),note=findField('Note');if(stage){var desired=stageLabel(row.stage);Array.from(stage.options).forEach(function(o){if(stageLabel(o.value)===desired||o.textContent.trim()===desired)stage.value=o.value;});}if(note)note.value=row.notes||'';}
+  function hydrateCompare(){var a=findField('Player A'),b=findField('Player B');if(a)setOptions(a,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.team};}),a.value||'',null);if(b)setOptions(b,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.team};}),b.value||'',null);if(!state.compareResult)return;var card=cardByHeading('Overall attributes comparison');if(!card)return;var h=card.querySelector('.card-h h3'),body=card.querySelector('.card-b');if(h)h.textContent=state.compareMode==='decision'?'Decision comparison':'Overall attributes comparison';if(body){var r=state.compareResult;body.innerHTML='<div class="sl-result-grid"><div class="sl-result-stat"><span>'+escapeHtml(r.playerA.name)+'</span><strong>'+escapeHtml(r.playerA.totalScore)+'</strong></div><div class="sl-result-stat"><span>'+escapeHtml(r.playerB.name)+'</span><strong>'+escapeHtml(r.playerB.totalScore)+'</strong></div><div class="sl-result-stat"><span>Margin</span><strong>'+escapeHtml(r.decisionScoreMargin)+'</strong></div></div><div style="margin-top:14px">'+r.categories.map(function(c){return'<div class="sl-compat-row"><b>'+escapeHtml(c.category)+'</b><div class="sl-score-bar"><i style="width:'+Math.max(c.playerA,c.playerB)+'%"></i></div><strong>'+escapeHtml(c.playerA)+' / '+escapeHtml(c.playerB)+'</strong></div>';}).join('')+'</div><p class="sl-result-copy" style="margin-top:14px">'+escapeHtml(r.recommendation)+'</p>';}}
+  function hydratePredictions(){var history=cardBody('Prediction history');if(history)history.innerHTML=state.predictions.length?state.predictions.map(function(row){var p=normalizePlayer(row.players||{});return'<div class="list-row"><span class="who"><b>'+escapeHtml(p.name||'Prediction')+'</b><span>'+escapeHtml([row.prediction_type,dateLabel(row.run_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="prediction-history" data-log-id="'+escapeHtml(row.id)+'">Open</button></div>';}).join(''):'<div class="sl-empty">No predictions have been run yet.</div>';}
+  function populatePredictionPlayer(){var select=findField('Player');if(select)setOptions(select,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.ageGroup+' · '+p.position};}),state.selectedPlayerId,null);}
+  function hydratePredictionWizard(){if(currentView()==='prediction1')populatePredictionPlayer();if(currentView()==='prediction3'){var p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);});if(p)walkText(shadow,{'Ruby Okafor':p.name,'Attribute Development':state.selectedPredictionType||'Attribute Development'});}}
+  function resultValue(value){return value===null||value===undefined||value===''?'—':value;}
+  function hydratePredictionResult(){if(!state.predictionResult)return;var r=state.predictionResult,p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);})||{name:'Player'};walkText(shadow,{'Ruby Okafor':p.name});var body=shadow.querySelector('.wizard-body')||shadow.querySelector('.pbody')||shadow.querySelector('.body');if(!body)return;var summary=body.querySelector('.callout')||body.querySelector('.card-b');if(summary&&r.summary)summary.setAttribute('title',r.summary);var marker=document.createElement('div');marker.className='sl-runtime-message';marker.innerHTML='<b>'+escapeHtml(r.summary||r.recommendation||'Prediction complete.')+'</b>'+(Array.isArray(r.paragraphs)?'<div style="margin-top:6px">'+r.paragraphs.map(escapeHtml).join('<br>')+'</div>':'');body.insertBefore(marker,body.firstChild);}
+  function usageItem(label,usage){usage=usage||{remaining:0,limit:0};return'<div><div class="flex" style="justify-content:space-between"><b style="font-size:13px">'+escapeHtml(label)+'</b><span style="font-family:var(--display);font-size:18px">'+escapeHtml(usage.remaining)+'<small style="font-family:var(--mono);font-size:11px;color:var(--ink3)"> / '+escapeHtml(usage.limit)+'</small></span></div><div class="bar-track" style="margin-top:8px"><i style="width:'+pct(usage.remaining,usage.limit)+'%;background:var(--pitch)"></i></div></div>';}
+  function hydrateUsage(){hydrateUsageStrip();if(!state.usage){setRuntimeMessage('Usage balances could not be loaded.',true);return;}var current=cardBody('Current balances');if(current)current.innerHTML=[usageItem('Exports',state.usage.exports),usageItem('Predictions',state.usage.predictions),usageItem('Coach interests',state.usage.interests),usageItem('Ask Radar credits',state.usage.radar)].map(function(x,i){return'<div style="'+(i?'margin-top:16px':'')+'">'+x+'</div>';}).join('');var buy=cardBody('Buy extra usage');if(buy){var reqType={predictions:'prediction',prediction:'prediction',exports:'export',export:'export',interests:'interest_request',interest_request:'interest_request',radar:'ask_radar',ask_radar:'ask_radar'}[query('type')]||(state.selectedPack&&state.selectedPack.type)||'prediction';var grouped={};state.packs.forEach(function(pack){(grouped[pack.type]||(grouped[pack.type]=[])).push(pack);});var tabs=[['prediction','Predictions'],['export','Exports'],['interest_request','Coach interests'],['ask_radar','Ask Radar']].filter(function(x){return grouped[x[0]]&&grouped[x[0]].length;});if(!grouped[reqType]&&tabs[0])reqType=tabs[0][0];var active=grouped[reqType]||[];if(!state.selectedPack||state.selectedPack.type!==reqType)state.selectedPack=active[0]||null;buy.innerHTML='<div style="margin-bottom:16px"><div class="seg">'+tabs.map(function(t){return'<a class="'+(t[0]===reqType?'on':'')+'" data-action="usage-tab" data-type="'+t[0]+'">'+escapeHtml(t[1])+'</a>';}).join('')+'</div></div><div class="pack-grid">'+active.map(function(pack){var on=state.selectedPack&&state.selectedPack.priceId===pack.priceId;return'<button class="pack-card '+(on?'on':'')+'" data-action="usage-pack" data-price-id="'+escapeHtml(pack.priceId)+'"><b>'+escapeHtml(Number(pack.quantity).toLocaleString('en-GB'))+'</b><span>'+escapeHtml(pack.label)+'</span><strong>'+escapeHtml(pack.priceLabel)+'</strong></button>';}).join('')+'</div>'+(state.selectedPack?'<div style="margin-top:14px"><div class="callout g"><span><b>'+escapeHtml(state.selectedPack.quantity+' '+state.selectedPack.label)+' · '+escapeHtml(state.selectedPack.priceLabel)+'</b><br>Validated against the ScoutLink live top-up catalogue.</span></div><div class="flex" style="margin-top:12px;justify-content:flex-end"><button class="btn volt" data-action="usage-prepare">Continue to checkout</button></div></div>':'<div class="sl-empty">No top-up packs are available.</div>')+(state.preparedCheckout?'<div class="sl-prepared"><b>Checkout handoff ready</b><br>'+escapeHtml(state.preparedCheckout.message||'The selected pack has passed the server-side checkout validation.')+(state.preparedCheckout.paymentLaunchAllowed?'<div style="margin-top:10px"><button class="btn volt" data-action="usage-launch">Launch Stripe Checkout</button></div>':'<br><span class="mut">Payment launch is paused until the live Stripe key is restored.</span>')+'</div>':'');}var history=cardBody('Purchase history');if(history)history.innerHTML=state.purchases.length?state.purchases.map(function(x){return'<div class="list-row"><span class="who"><b>'+escapeHtml(x.quantity+' '+x.label)+'</b><span>'+escapeHtml(dateLabel(x.paidAt))+'</span></span><b>'+escapeHtml(x.priceLabel||'')+'</b><span class="pill '+(x.status==='paid'?'g':'n')+'">'+escapeHtml(x.status)+'</span></div>';}).join(''):'<div class="sl-empty">No usage top-ups have been purchased yet.</div>';}
+  function hydrateRadar(){var body=shadow.querySelector('.pbody')||shadow.querySelector('.body');if(body){Array.from(body.querySelectorAll('.thread-row,.bubble,.radar-msg,.radar-history-item')).forEach(function(n){n.remove();});setRuntimeMessage('Ask Radar is intentionally empty for this release. We will connect the AI workflow next; no questions are sent and no Radar credits are consumed.',false);}Array.from(shadow.querySelectorAll('input,textarea')).forEach(function(i){i.disabled=true;i.placeholder='Ask Radar will be connected next';});buttons(/^Send$/i).forEach(function(b){b.disabled=true;});}
+  function fixtureTitle(f){var home=f.home_team_name||f.home_team||f.team_name||'',away=f.away_team_name||f.away_team||f.opponent_name||f.opponent||'';return home&&away?home+' vs '+away:(away||home||'Fixture');}
+  function fieldFixtureRow(f){var d=f.fixture_date?new Date(f.fixture_date):null,att=f.attendance?.status||'',priority=(f.plans&&f.plans.length)||f.priority;return'<div class="list-row sl-click" data-fixture-id="'+escapeHtml(f.id)+'"><div class="dateplate '+(priority?'g':'')+'"><b>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.getDate():'—')+'</b><span>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{month:'short'}).toUpperCase():'')+'</span></div><span class="who"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(fullDateTime(f))+'</span></span><span class="pill '+(att==='attending'?'g':priority?'a':'n')+'">'+escapeHtml(att==='attending'?'Attending':att==='maybe'?'Maybe':priority?'Priority':'Scheduled')+'</span></div>';}
+  function hydrateFixtureCalendar(){var grid=shadow.querySelector('.cal-grid');if(!grid)return;var base=new Date(),year=base.getFullYear(),month=base.getMonth();var first=new Date(year,month,1),days=new Date(year,month+1,0).getDate(),offset=(first.getDay()+6)%7;var html='';for(var i=0;i<offset;i++)html+='<div class="cal-day muted"></div>';for(var day=1;day<=days;day++){var date=new Date(year,month,day),key=date.toISOString().slice(0,10),events=state.fixtures.filter(function(f){return String(f.fixture_date||'').slice(0,10)===key;});html+='<div class="cal-day '+(key===new Date().toISOString().slice(0,10)?'today':'')+'"><b>'+day+'</b>'+events.map(function(f){return'<div class="cal-event '+((f.plans&&f.plans.length)?'priority':'')+'" data-fixture-id="'+escapeHtml(f.id)+'"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(f.fixture_time||'')+'</span></div>';}).join('')+'</div>';}grid.innerHTML=html;}
+  function hydrateFixtures(){var body=cardBody('Fixtures for your pipeline');if(!body)return;if(state.mode==='desk'){hydrateFixtureCalendar();return;}body.innerHTML=state.fixtures.length?state.fixtures.map(fieldFixtureRow).join(''):'<div class="sl-empty">No fixtures are connected to your pipeline yet.</div>';}
+  function hydrateFixtureDetail(){var f=state.fixtureDetail;if(!f)return;walkText(shadow,{'Chorlton Colts FC vs Fallowfield Rangers':fixtureTitle(f),'23 Aug 2026, 10:00 · Chorlton Community Ground, Manchester':fullDateTime(f),'Ruby Okafor':f.pipelinePlayers?.[0]?[f.pipelinePlayers[0].first_name,f.pipelinePlayers[0].last_name].filter(Boolean).join(' '):'Tracked player','Aaliyah Brennan':f.pipelinePlayers?.[1]?[f.pipelinePlayers[1].first_name,f.pipelinePlayers[1].last_name].filter(Boolean).join(' '):'Tracked player'});buttons(/Yes, attending/i).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','attending');});buttons(/No, can.?t attend/i).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','not_attending');});var heading=Array.from(shadow.querySelectorAll('h3')).find(function(h){return/Will you attend/i.test(h.textContent);});if(heading&&f.attendance)heading.textContent='Attendance · '+String(f.attendance.status||'').replace(/_/g,' ');}
+  function eventTitle(e){return e.event_name||e.name||e.title||'ScoutLink event';}
+  function hydrateEvents(){var body=Array.from(shadow.querySelectorAll('.card')).map(function(c){return c.querySelector('.card-b');}).find(Boolean);if(!body)return;body.innerHTML=state.events.length?state.events.map(function(e){var d=e.event_date?new Date(e.event_date):null;return'<div class="list-row sl-click" data-event-id="'+escapeHtml(e.id)+'"><div class="dateplate g"><b>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.getDate():'—')+'</b><span>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{month:'short'}).toUpperCase():'')+'</span></div><span class="who"><b>'+escapeHtml(eventTitle(e))+'</b><span>'+escapeHtml([e.venue||e.location,e.city].filter(Boolean).join(' · '))+'</span></span><span class="pill '+(e.attendance?.status==='confirmed'?'g':'n')+'">'+escapeHtml(e.attendance?.status==='confirmed'?'Attending':'Details')+'</span></div>';}).join(''):'<div class="sl-empty">No ScoutLink events are currently published.</div>';}
+  function hydrateEventDetail(){if(!state.eventDetail)return;var d=state.eventDetail,e=d.event||d;walkText(shadow,{'ScoutLink Showcase — Bluewater':eventTitle(e),'ScoutLink Showcase':eventTitle(e)});buttons(/Change attendance/i).forEach(function(b){b.setAttribute('data-action','event-attendance');});buttons(/Add to calendar/i).forEach(function(b){b.setAttribute('data-action','event-calendar');});var card=cardByHeading('Players you’re tracking')||cardByHeading("Players you're tracking");if(card){var body=card.querySelector('.card-b');if(body)body.innerHTML=(d.trackedPlayers||[]).length?(d.trackedPlayers||[]).map(function(p){return playerRow(normalizePlayer(p));}).join(''):'<div class="sl-empty">None of your tracked players are currently linked to this event.</div>';}}
+  function notificationRow(item){var unread=!item.is_read&&!item.read_at;return'<div class="list-row sl-click" data-notification-id="'+escapeHtml(item.id||'')+'"><span style="width:7px;height:7px;border-radius:99px;background:'+(unread?'var(--pitch)':'var(--line2)')+'"></span><span class="who"><b>'+escapeHtml(item.title||'Notification')+'</b><span>'+escapeHtml(item.body||item.message||'')+'</span></span>'+(unread?'<span class="pill g">New</span>':'')+'</div>';}
+  function hydrateNotifications(){var target=cardByHeading('All notifications');if(!target)return;var rows=state.notifications.filter(function(n){if(state.notificationFilter==='all')return true;var g=String(n.filterGroup||n.notification_type||n.type||'').toLowerCase();return g.indexOf(state.notificationFilter)!==-1;});var h=target.querySelector('.card-h h3'),body=target.querySelector('.card-b');if(h)h.textContent='All notifications ('+rows.length+')';if(body)body.innerHTML=rows.length?rows.map(notificationRow).join(''):'<div class="sl-empty">No notifications match this filter.</div>';buttons(/Mark all as read/i).forEach(function(b){b.setAttribute('data-action','notifications-read-all');});}
+  function threadName(thread){var coach=thread.coaches||thread.coach||{};return[coach.first_name,coach.last_name].filter(Boolean).join(' ')||thread.title||thread.coach_name||'Conversation';}
+  function hydrateChat(){var target=cardBody('Team messaging');if(!target)return;target.innerHTML=state.threads.length?state.threads.map(function(t){return'<div class="thread-row sl-click" data-thread-id="'+escapeHtml(t.id)+'"><span class="avatar">'+escapeHtml(initials(threadName(t)))+'</span><div class="tx"><b>'+escapeHtml(threadName(t))+'</b><div class="org">'+escapeHtml(t.coaches?.team_name||t.players?.team_name||'')+'</div><p class="pv">'+escapeHtml(t.lastMessagePreview||'')+'</p></div>'+(t.unreadCount?'<span class="badge">'+escapeHtml(t.unreadCount)+'</span>':'')+'</div>';}).join(''):'<div class="sl-empty">No conversations yet.</div>';buttons(/^New$/i).forEach(function(b){b.setAttribute('data-action','chat-new');});}
+  function hydrateChatOpen(){var thread=state.threads.find(function(t){return String(t.id)===String(state.activeThreadId);});if(thread)walkText(shadow,{'Dan Whitfield':threadName(thread)});var body=shadow.querySelector('.chat-body')||shadow.querySelector('.card-b')||shadow.querySelector('.pbody');if(!body)return;var host=document.createElement('div');host.className='sl-chat-shell';host.innerHTML='<div class="sl-chat-messages">'+state.messages.map(function(m){var me=String(m.sender_id)==String(workspaceParts().scout.id);return'<div class="sl-bubble '+(me?'me':'')+'">'+escapeHtml(m.body||'')+'<div style="font-size:9px;opacity:.7;margin-top:4px">'+escapeHtml(relative(m.created_at))+'</div></div>';}).join('')+'</div><div class="sl-chat-compose"><input class="in" data-sl-chat-input placeholder="Write a message"><button class="btn volt" data-action="chat-send">Send</button></div>';body.innerHTML='';body.appendChild(host);setTimeout(function(){var box=shadow.querySelector('.sl-chat-messages');if(box)box.scrollTop=box.scrollHeight;},0);}
+  function hydrateExports(){var target=cardByHeading('Export history');if(!target)return;var h=target.querySelector('.card-h h3'),body=target.querySelector('.card-b');if(h)h.textContent='Export history ('+state.exports.length+')';if(body)body.innerHTML=state.exports.length?state.exports.map(function(x){return'<div class="list-row"><span class="who"><b>'+escapeHtml(x.file_name||x.export_type||'ScoutLink export')+'</b><span>'+escapeHtml(dateLabel(x.created_at))+'</span></span><button class="btn outline sm" data-action="export-download" data-export-id="'+escapeHtml(x.id)+'">Download</button></div>';}).join(''):'<div class="sl-empty">No exports have been created yet.</div>';}
+  function hydrateExportNew(){var player=findField('Player'),format=findField('Export format');if(player)setOptions(player,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position};}),state.selectedPlayerId,null);if(format&&state.usage?.exports){var note=Array.from(shadow.querySelectorAll('.callout,.hint,p')).find(function(n){return/use 1/i.test(n.textContent);});if(note)note.textContent='This will use 1 of your remaining '+state.usage.exports.remaining+' exports.';}}
+  function hydrateSettings(){if(!state.settings)return;var s=state.settings,scout=s.scout||{},team=s.team||{};var full=findField('Full name'),email=findField('Email'),org=findField('Organisation');if(full)full.value=[scout.first_name,scout.last_name].filter(Boolean).join(' ');if(email)email.value=scout.email||'';if(org)org.value=team.team_name||scout.club_name||'';walkText(shadow,{'3 of 5 used':(s.seats?.used||0)+' of '+(s.seats?.limit||0)+' used'});var teamCard=cardByHeading('Team & seats');if(teamCard){var body=teamCard.querySelector('.card-b');if(body)body.innerHTML=(s.teamScouts||[]).map(function(member){return'<div class="list-row"><span class="avatar">'+escapeHtml(initials([member.first_name,member.last_name].filter(Boolean).join(' ')))+'</span><span class="who"><b>'+escapeHtml([member.first_name,member.last_name].filter(Boolean).join(' '))+'</b><span>'+escapeHtml(member.email||'')+'</span></span>'+(member.is_super_user?'<span class="pill g">Owner</span>':'<button class="btn outline sm" data-action="team-remove" data-scout-id="'+escapeHtml(member.id)+'">Remove user</button>')+'</div>';}).join('');}buttons(/Open Scout Setup/i).forEach(function(b){b.setAttribute('data-action','setup-open');});buttons(/Save changes/i).forEach(function(b){b.setAttribute('data-action','settings-save');});buttons(/Invite scout/i).forEach(function(b){b.setAttribute('data-action','team-invite');});buttons(/Manage billing|Cancel plan/i).forEach(function(b){b.setAttribute('data-action','billing-paused');});}
+  function selectedSetupOptions(){return Array.from(shadow.querySelectorAll('.setup-opt.on,.chip-option.on')).map(function(x){return x.querySelector('b')?x.querySelector('b').textContent.trim():x.textContent.trim();}).filter(Boolean);}
+  function hydrateSetup(){var setup=state.setup?.personalSetup||state.setup||{};if(!state.setupDraft._loaded){state.setupDraft={teamNeeds:(setup.teamNeeds||setup.teamWeaknesses||[]).slice(),roleExpectations:(setup.roleExpectations||[]).slice(),developmentPriorities:(setup.developmentPriorities||setup.longTermGoals||[]).slice(),formation:setup.formation||'',playingStyle:setup.playingStyle||'',_loaded:true};}var view=currentView(),selected=view==='setup1'?state.setupDraft.teamNeeds:view==='setup2'?state.setupDraft.roleExpectations:view==='setup4'?state.setupDraft.developmentPriorities:[];Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){var label=(opt.querySelector('b')?opt.querySelector('b').textContent:opt.textContent).trim();if(selected.indexOf(label)!==-1)opt.classList.add('on');});if(view==='setup3'){var f=findField('Formation'),p=findField('Playing style');if(f&&state.setupDraft.formation)f.value=state.setupDraft.formation;if(p&&state.setupDraft.playingStyle)p.value=state.setupDraft.playingStyle;}if(view==='setupReview'){var review=cardByHeading('Review');if(review){var body=review.querySelector('.card-b');if(body)body.innerHTML='<div class="sl-kv"><span>Team needs</span><b>'+escapeHtml(state.setupDraft.teamNeeds.join(', ')||'None')+'</b></div><div class="sl-kv"><span>Role expectations</span><b>'+escapeHtml(state.setupDraft.roleExpectations.join(', ')||'None')+'</b></div><div class="sl-kv"><span>Formation</span><b>'+escapeHtml(state.setupDraft.formation||'Not set')+'</b></div><div class="sl-kv"><span>Playing style</span><b>'+escapeHtml(state.setupDraft.playingStyle||'Not set')+'</b></div><div class="sl-kv"><span>Development priorities</span><b>'+escapeHtml(state.setupDraft.developmentPriorities.join(', ')||'None')+'</b></div>';}}}
+  function profileAttrRows(items){return(items||[]).map(function(a){return'<div class="sl-attr"><div class="flex"><b>'+escapeHtml(a.label)+'</b><strong>'+escapeHtml(a.value)+'/10</strong></div><div class="bar-track" style="margin-top:8px"><i style="width:'+Math.max(0,Math.min(100,number(a.value)*10))+'%"></i></div></div>';}).join('');}
+  function hydrateProfile(){
+    var d=state.profileData,p=profilePlayer();if(!d||!p)return;
+    walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name),'AM · U12 · Chorlton Colts FC · Right foot · Available':[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · '),'Chorlton Colts FC':p.team||'Team'});
+    if(currentView()==='profileVideo'){
+      var video=state.activeVideo||(d.videos||[])[0];if(!video){setRuntimeMessage('No video evidence is available for this player.',false);return;}
+      walkText(shadow,{'Chance creation':video.title||'Video evidence','Ruby Okafor · vs Sale United · 17 Aug 2026':[p.name,video.description||video.category,dateLabel(video.created_at)].filter(Boolean).join(' · '),'02:14':video.duration||video.duration_label||''});
+      buttons(/^Play$/i).forEach(function(b){b.setAttribute('data-action','video-play');});buttons(/Download clip/i).forEach(function(b){b.setAttribute('data-action','video-download');});return;
     }
-  }
-
-  function routeName() {
-    var path = window.location.pathname.replace(/\/+$/, '');
-    if (path === '/player/profile' || /player-profile/i.test(path)) return 'profile';
-
-    var explicit = document.body && document.body.getAttribute('data-scout-route');
-    if (explicit) {
-      explicit = explicit.replace(/^scout-/, '').replace(/_/g, '-');
+    if(currentView()==='profileGame'){
+      var game=state.activeGame||(d.recentMatches||[])[0];if(!game){setRuntimeMessage('No Match Facts are available for this player.',false);return;}
+      walkText(shadow,{'vs Sale United':'vs '+(game.opponent_name||game.opponent||'Opponent'),'8.9 contextual performance':String(game.performance_score||game.overall_rating||'—')+' contextual performance','17 AUG':game.match_date?new Date(game.match_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase():'MATCH','AM · 82 minutes':[game.position_played||p.position,game.minutes_played?game.minutes_played+' minutes':''].filter(Boolean).join(' · ')});
+      buttons(/Open full Match Facts/i).forEach(function(b){b.setAttribute('data-action','game-facts');});return;
     }
-
-    var slug = path.split('/').filter(Boolean).pop() || explicit || 'dashboard';
-    var map = {
-      'dashboard':'dashboard',
-      'onboarding':'onboarding',
-      'player-search':'search',
-      'rankings':'rankings',
-      'pipeline':'pipeline',
-      'compare-players':'compare',
-      'predictions':'predictions',
-      'radar':'radar',
-      'fixtures':'fixtures',
-      'events':'events',
-      'usage':'usage',
-      'usage-requests':'usage',
-      'exports':'exports',
-      'chat':'chat',
-      'notifications':'notifications',
-      'settings':'settings',
-      'setup':'setup',
-      'report-a-concern':'concern',
-      'profile':'profile'
-    };
-    return map[slug] || map[explicit] || 'dashboard';
-  }
-
-  function defaultView(route) {
-    if (route === 'onboarding') return 'onboarding1';
-    if (route === 'setup') return 'setup1';
-    return route;
-  }
-
-  function escapeHtml(value) {
-    return String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function number(value, fallback) {
-    var n = Number(value);
-    return Number.isFinite(n) ? n : (fallback == null ? 0 : fallback);
-  }
-
-  function pct(remaining, limit) {
-    if (!limit) return 0;
-    return Math.max(0, Math.min(100, Math.round((remaining / limit) * 100)));
-  }
-
-  function initials(name) {
-    return String(name || 'Scout')
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(function (part) { return part.charAt(0).toUpperCase(); })
-      .join('') || 'SC';
-  }
-
-  function apiBase() {
-    return window.API || localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
-  }
-
-  function authToken() {
-    if (window.Auth && window.Auth.token) return window.Auth.token;
-    try {
-      return localStorage.getItem('sl_token') || '';
-    } catch (_) {
-      return '';
+    var tiles=shadow.querySelectorAll('.score-tile strong');if(tiles[0])tiles[0].textContent=Math.round(p.overall||0);if(tiles[1])tiles[1].textContent=p.compatibility?Math.round(p.compatibility):'—';if(tiles[2])tiles[2].textContent=p.valueIndex?Math.round(p.valueIndex):'—';var exp=d.compatibilityExplanation||p.raw.compatibilityExplanation;if(exp){walkText(shadow,{'87 headline compatibility':(exp.score==null?'No':Math.round(exp.score))+' headline compatibility','Why 87?':'Why '+(exp.score==null?'this score':Math.round(exp.score))+'?','Likely range 87–92 · Strong evidence':exp.uncertainty?.likelyRange?('Likely range '+exp.uncertainty.likelyRange.minimum+'–'+exp.uncertainty.likelyRange.maximum+' · evidence '+(exp.uncertainty.evidenceConfidence||'—')+'/100'):'Compatibility explanation available'});var labels=Array.from(shadow.querySelectorAll('label'));(exp.components||[]).forEach(function(c){var label=labels.find(function(l){return l.textContent.trim()===c.label;});if(label){var parent=label.parentElement;var value=parent&&parent.querySelector('b,strong,span:last-child');if(value)value.textContent=c.score==null?'—':Math.round(c.score)+'/100';}});buttons(/^Why /i).forEach(function(b){b.setAttribute('data-action','compatibility-why');});}
+    if(currentView()==='profileAttributes'||state.mode==='desk'){
+      var generalButton=buttons(/^Overall attributes$/i)[0],positionButton=buttons(/attributes$/i).find(function(b){return !/^Overall attributes$/i.test(b.textContent.trim());});
+      if(generalButton){generalButton.setAttribute('data-action','profile-attrs-general');if(state.profileAttributeMode==='general')generalButton.classList.add('on');}
+      if(positionButton){var positionGroup=d.attributes?.positionGroup||p.raw.position_group||'Position';positionButton.textContent=positionGroup+' attributes';positionButton.setAttribute('data-action','profile-attrs-positional');if(state.profileAttributeMode==='positional')positionButton.classList.add('on');}
+      var card=cardByHeading('Overall attribute profile');if(card){var body=card.querySelector('.card-b');if(body){var attrs=state.profileAttributeMode==='positional'?(d.attributes?.positional||[]):(d.attributes?.general||[]);if(!attrs.length)attrs=(d.attributes?.general||[]).concat(d.attributes?.positional||[]);body.innerHTML=attrs.length?'<div class="sl-attr-grid">'+profileAttrRows(attrs)+'</div>':'<div class="sl-empty">No assessed attributes are available for this player.</div>';}}
     }
-  }
-
-  async function request(path, options) {
-    options = options || {};
-    var headers = Object.assign({}, options.headers || {});
-    var token = authToken();
-    if (token) headers.Authorization = 'Bearer ' + token;
-
-    if (options.body && typeof options.body !== 'string') {
-      headers['Content-Type'] = 'application/json';
-      options.body = JSON.stringify(options.body);
+    if(currentView()==='profileMedia'||state.mode==='desk'){
+      var videoCard=cardByHeading('Video reels');if(videoCard){var vb=videoCard.querySelector('.card-b');if(vb)vb.innerHTML=(d.videos||[]).length?(d.videos||[]).slice(0,12).map(function(v,index){return'<div class="list-row"><span class="who"><b>'+escapeHtml(v.title||'Video evidence')+'</b><span>'+escapeHtml(v.description||v.category||'')+'</span></span><button class="btn outline sm" data-action="video-overlay" data-video-index="'+index+'">Play</button></div>';}).join(''):'<div class="sl-empty">No video evidence has been uploaded for this player.</div>';}
+      buttons(/^View all$/i).forEach(function(b){b.setAttribute('data-action','media-view-all');});buttons(/See all games/i).forEach(function(b){b.setAttribute('data-action','games-view-all');});
     }
-
-    var response = await fetch(apiBase() + path, Object.assign({}, options, {
-      headers: headers
-    }));
-
-    var payload = null;
-    var type = response.headers.get('content-type') || '';
-    if (type.indexOf('application/json') !== -1) {
-      payload = await response.json();
-    } else {
-      payload = await response.text();
-    }
-
-    if (!response.ok) {
-      var error = new Error(
-        payload && payload.error
-          ? payload.error
-          : 'Request failed (' + response.status + ')'
-      );
-      error.status = response.status;
-      error.payload = payload;
-      throw error;
-    }
-
-    return payload;
+    var gameCard=cardByHeading('Recent games');if(gameCard){var gb=gameCard.querySelector('.card-b');if(gb)gb.innerHTML=(d.recentMatches||[]).length?(d.recentMatches||[]).slice(0,10).map(function(m,index){return'<div class="list-row sl-click" data-action="game-overlay" data-game-index="'+index+'"><span class="who"><b>'+escapeHtml(m.opponent_name||m.opponent||'Match')+'</b><span>'+escapeHtml([dateLabel(m.match_date),m.position_played].filter(Boolean).join(' · '))+'</span></span><b>'+escapeHtml(m.performance_score||m.overall_rating||'')+'</b><span class="chev">›</span></div>';}).join(''):'<div class="sl-empty">No Match Facts have been recorded yet.</div>';}
+    if(currentView()==='profileNotes'||state.mode==='desk'){var notesCard=cardByHeading('Team notes & discussion');if(notesCard){var nb=notesCard.querySelector('.card-b');if(nb){var entries=(d.workflow||[]);nb.innerHTML='<div class="field"><label>Add scouting note</label><textarea class="in" data-profile-note rows="3" placeholder="Add evidence, a decision note or a live observation..."></textarea></div><div class="flex" style="margin:10px 0"><button class="btn '+(state.profileShareTeam?'volt':'outline')+' sm" data-action="profile-share-toggle">'+(state.profileShareTeam?'Visible to team':'Private to me')+'</button><button class="btn outline sm" data-action="profile-note-post">Post note</button></div>'+entries.map(function(n){var name=[n.author?.first_name,n.author?.last_name].filter(Boolean).join(' ')||'Scout';return'<div class="sl-note"><div class="sl-note-head"><b>'+escapeHtml(name)+'</b><span>'+escapeHtml(relative(n.created_at))+'</span></div><p>'+escapeHtml(n.content||'')+'</p></div>';}).join('');}}}
+    buttons(/Add to pipeline/i).forEach(function(b){b.setAttribute('data-action','profile-pipeline-add');if(d.inPipeline){b.textContent='✓ In pipeline';b.disabled=true;}});buttons(/Run prediction/i).forEach(function(b){b.setAttribute('data-action','profile-predict');});buttons(/Export profile/i).forEach(function(b){b.setAttribute('data-action','profile-export');});buttons(/Share with scouts/i).forEach(function(b){b.setAttribute('data-action','profile-share');});buttons(/External matches/i).forEach(function(b){b.setAttribute('data-action','external-matches');if(!d.externalMatchesUrl)b.disabled=true;});
   }
-
-  function unwrap(payload) {
-    if (!payload) return payload;
-    if (Object.prototype.hasOwnProperty.call(payload, 'data')) return payload.data;
-    return payload;
-  }
-
-  async function safe(path, fallback) {
-    try {
-      return unwrap(await request(path));
-    } catch (error) {
-      console.warn('[Scout V6 data]', path, error);
-      return fallback;
-    }
-  }
-
-  function normalizePlayer(row) {
-    if (!row) return null;
-    var p = row.player || row.players || row;
-    var analysis = row.analysis || row.compatibility || p.analysis || {};
-    var fullName = [p.first_name, p.last_name].filter(Boolean).join(' ') ||
-      p.full_name || p.name || 'Unnamed player';
-
-    return {
-      id: p.id || row.player_id || '',
-      name: fullName,
-      ageGroup: p.age_group || p.ageGroup || '',
-      position:
-        p.specific_position ||
-        p.primary_position ||
-        p.position_group ||
-        p.position ||
-        '',
-      team: p.team_name || p.club_name || p.team || '',
-      overall: number(p.overall_rating ?? row.overall_rating, 0),
-      compatibility: number(
-        row.compatibility_score ??
-        row.compatibilityScore ??
-        analysis.compatibilityScore ??
-        p.compatibility_score,
-        0
-      ),
-      potential: number(
-        row.development_potential ??
-        analysis.developmentPotential ??
-        p.development_potential ??
-        p.potential_rating,
-        0
-      ),
-      value: p.transfer_value ?? row.transfer_value ?? null,
-      raw: p,
-      source: row
-    };
-  }
-
-  function normalizeRows(payload) {
-    var rows = Array.isArray(payload)
-      ? payload
-      : payload && Array.isArray(payload.data)
-        ? payload.data
-        : payload && Array.isArray(payload.players)
-          ? payload.players
-          : payload && Array.isArray(payload.results)
-            ? payload.results
-            : [];
-    return rows;
-  }
-
-  function currentView() {
-    return state.view || defaultView(state.route);
-  }
-
-  function templateFor(view) {
-    var item = SOURCE[view] || SOURCE[defaultView(state.route)] || SOURCE.dashboard;
-    return state.mode === 'field' ? item.field : item.desk;
-  }
-
-  function render() {
-    var view = currentView();
-    var markup = templateFor(view);
-    var mountedMarkup = state.mode === 'field'
-      ? '<div class="m">' + markup + '</div>'
-      : markup;
-
-    shadow.innerHTML =
-      '<style>' + SOURCE_CSS + '\n' + PROD_CSS + '</style>' +
-      '<div id="slV6Mount">' + mountedMarkup + '</div>';
-
-    hydrateIdentity();
-    hydrateCurrentRoute();
-    wireNavigation();
-    wireActions();
-
-    root.classList.remove('is-loading');
-    root.removeAttribute('aria-busy');
-    root.style.visibility = 'visible';
-  }
-
-  function walkText(rootNode, replacements) {
-    if (!rootNode) return;
-    var walker = document.createTreeWalker(
-      rootNode,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
-    var node;
-    while ((node = walker.nextNode())) {
-      var next = node.nodeValue;
-      Object.keys(replacements).forEach(function (from) {
-        next = next.split(from).join(replacements[from]);
-      });
-      node.nodeValue = next;
-    }
-  }
-
-  function workspaceParts() {
-    var w = state.workspace || {};
-    var scout =
-      w.scout ||
-      w.user ||
-      w.profile ||
-      w.me ||
-      (window.Auth && window.Auth.user) ||
-      {};
-    var team = w.team || w.scoutTeam || w.scout_team || {};
-    return { scout: scout, team: team };
-  }
-
-  function hydrateIdentity() {
-    var parts = workspaceParts();
-    var scout = parts.scout || {};
-    var team = parts.team || {};
-    var user = (window.Auth && window.Auth.user) || {};
-
-    var name =
-      [scout.first_name, scout.last_name].filter(Boolean).join(' ') ||
-      [user.first_name, user.last_name].filter(Boolean).join(' ') ||
-      user.name ||
-      'Scout';
-
-    var organisation =
-      team.team_name ||
-      team.club_name ||
-      scout.club_name ||
-      'Scout Workspace';
-
-    var role =
-      scout.role ||
-      scout.scouting_role ||
-      (scout.is_super_user ? 'Lead Scout' : 'Scout');
-
-    walkText(shadow, {
-      'Jordan Carty': name,
-      'JC': initials(name),
-      'AV Recruitment': organisation,
-      'Lead Scout · AV Recruitment': role + ' · ' + organisation,
-      'Lead Scout': role
-    });
-  }
-
-  function cardByHeading(textValue) {
-    var cards = Array.from(shadow.querySelectorAll('.card'));
-    return cards.find(function (card) {
-      var heading = card.querySelector('.card-h h3');
-      return heading && heading.textContent.trim().toLowerCase().indexOf(
-        String(textValue).toLowerCase()
-      ) !== -1;
-    }) || null;
-  }
-
-  function cardBody(textValue) {
-    var card = cardByHeading(textValue);
-    return card && card.querySelector('.card-b');
-  }
-
-  function setRuntimeMessage(message, isError) {
-    if (!message) return;
-    var body =
-      shadow.querySelector('.body') ||
-      shadow.querySelector('.pbody') ||
-      shadow.querySelector('.wizard-body');
-    if (!body) return;
-
-    var note = document.createElement('div');
-    note.className = 'sl-runtime-message' + (isError ? ' error' : '');
-    note.textContent = message;
-    body.insertBefore(note, body.firstChild);
-  }
-
-  function toast(message, isError) {
-    var existing = shadow.querySelector('.sl-toast');
-    if (existing) existing.remove();
-    var node = document.createElement('div');
-    node.className = 'sl-toast' + (isError ? ' error' : '');
-    node.textContent = message;
-    shadow.appendChild(node);
-    window.setTimeout(function () {
-      if (node.parentNode) node.remove();
-    }, 4200);
-  }
-
-  function playerRow(player, options) {
-    options = options || {};
-    var action = options.action || '';
-    return (
-      '<div class="list-row" data-player-id="' + escapeHtml(player.id) + '">' +
-        '<span class="avatar">' + escapeHtml(initials(player.name)) + '</span>' +
-        '<span class="who">' +
-          '<b>' + escapeHtml(player.name) + '</b>' +
-          '<span>' +
-            escapeHtml([
-              player.ageGroup,
-              player.position,
-              player.team
-            ].filter(Boolean).join(' · ')) +
-          '</span>' +
-        '</span>' +
-        (player.compatibility
-          ? '<span class="pill g">' + Math.round(player.compatibility) + '% fit</span>'
-          : '') +
-        (player.overall
-          ? '<b style="font-family:var(--mono);font-size:11px">' +
-              Math.round(player.overall) + '</b>'
-          : '') +
-        (action
-          ? '<button class="btn outline sm" data-action="' +
-              escapeHtml(action) +
-              '" data-player-id="' + escapeHtml(player.id) + '">' +
-              escapeHtml(options.actionLabel || 'Open') +
-            '</button>'
-          : '<span class="chev">›</span>') +
-      '</div>'
-    );
-  }
-
-  function relativeLabel(value) {
-    if (!value) return '';
-    var stamp = new Date(value).getTime();
-    if (!Number.isFinite(stamp)) return '';
-    var delta = Math.max(0, Date.now() - stamp);
-    var minutes = Math.floor(delta / 60000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return minutes + ' min ago';
-    var hours = Math.floor(minutes / 60);
-    if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
-    var days = Math.floor(hours / 24);
-    if (days === 1) return 'yesterday';
-    if (days < 7) return days + ' days ago';
-    var weeks = Math.floor(days / 7);
-    if (weeks < 5) return weeks + (weeks === 1 ? ' week ago' : ' weeks ago');
-    return new Date(value).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-  }
-
-  function fieldSearchRow(player) {
-    return (
-      '<div class="list-row" data-player-id="' + escapeHtml(player.id) + '">' +
-        '<span class="avatar">' + escapeHtml(initials(player.name)) + '</span>' +
-        '<span class="who"><b>' + escapeHtml(player.name) + '</b><span>' +
-          escapeHtml([player.position, player.ageGroup, player.team].filter(Boolean).join(' · ')) +
-        '</span></span>' +
-        '<span style="font-family:var(--mono);font-weight:700">' +
-          escapeHtml(Math.round(player.overall || 0)) +
-          '<small style="color:var(--ink3)">/100</small>' +
-        '</span>' +
-      '</div>'
-    );
-  }
-
-  function fieldRankRow(player, index, useCompatibility) {
-    var score = useCompatibility
-      ? (player.compatibility || player.overall || 0)
-      : (player.overall || player.compatibility || 0);
-    return (
-      '<div class="rank-row" data-player-id="' + escapeHtml(player.id) + '">' +
-        '<span class="rank-num ' + (index === 0 ? 'n1' : '') + '">' + (index + 1) + '</span>' +
-        '<span class="who"><b>' + escapeHtml(player.name) + '</b><span>' +
-          escapeHtml([player.position, player.ageGroup, player.team].filter(Boolean).join(' · ')) +
-        '</span></span>' +
-        '<b style="font-family:var(--display);font-size:17px">' +
-          escapeHtml(Math.round(score)) + (useCompatibility ? '%' : '<small style="font-family:var(--mono);font-size:10px;color:var(--ink3)">/100</small>') +
-        '</b>' +
-        '<span class="chev">›</span>' +
-      '</div>'
-    );
-  }
-
-  function pipelineStageLabel(value) {
-    var raw = String(value || 'watching').trim().toLowerCase().replace(/[ -]+/g, '_');
-    if (raw === 'trial_pending') return 'Trial Pending';
-    if (raw === 'shortlisted') return 'Shortlisted';
-    if (raw === 'monitoring' || raw === 'interested') return 'Monitoring';
-    return 'Watching';
-  }
-
-  function pipelineStageClass(value) {
-    var label = pipelineStageLabel(value);
-    if (label === 'Shortlisted') return 'g';
-    if (label === 'Trial Pending') return 'a';
-    return 'n';
-  }
-
-  function fieldPipelineRow(row) {
-    var p = pipelinePlayer(row);
-    var stage = pipelineStageLabel(row.stage || row.pipeline_stage);
-    var note = row.notes || row.decision_summary || row.next_action ||
-      [p.ageGroup, p.position, p.team].filter(Boolean).join(' · ') ||
-      'Recruitment review in progress';
-    var updated = row.updated_at || row.last_reviewed_at || row.created_at;
-    return (
-      '<div class="list-row" data-pipeline-id="' + escapeHtml(row.id || '') + '" data-player-id="' + escapeHtml(p.id || '') + '">' +
-        '<span class="avatar">' + escapeHtml(initials(p.name)) + '</span>' +
-        '<span class="who"><b>' + escapeHtml(p.name) + '</b><span>' + escapeHtml(note) + '</span></span>' +
-        '<div style="text-align:right">' +
-          '<span class="pill ' + pipelineStageClass(stage) + '">' + escapeHtml(stage) + '</span>' +
-          '<div class="mut" style="font-size:10px;margin-top:4px">' + escapeHtml(relativeLabel(updated)) + '</div>' +
-        '</div>' +
-        '<span class="chev">›</span>' +
-      '</div>'
-    );
-  }
-
-  function fieldNotificationRow(item) {
-    var unread = !item.read_at && !item.is_read;
-    var meta = [
-      item.notification_type || item.type || 'System',
-      relativeLabel(item.created_at || item.timestamp)
-    ].filter(Boolean).join(' · ');
-    return (
-      '<div class="list-row" style="cursor:default">' +
-        '<span style="width:7px;height:7px;border-radius:999px;background:' +
-          (unread ? 'var(--pitch)' : 'var(--line2)') + ';flex:0 0 7px"></span>' +
-        '<span class="who"><b style="font-weight:' + (unread ? '700' : '500') + '">' +
-          escapeHtml(item.title || item.message || item.body || 'Notification') +
-        '</b><span>' + escapeHtml(meta) + '</span></span>' +
-        (unread ? '<span class="pill g">New</span>' : '') +
-      '</div>'
-    );
-  }
-
-  function fieldFixtureRow(fixture, index) {
-    var rawDate = fixture.fixture_date || fixture.date || fixture.kickoff_at || fixture.kickoff || '';
-    var date = rawDate ? new Date(rawDate) : null;
-    var validDate = date && !Number.isNaN(date.getTime());
-    var home = fixture.home_team_name || fixture.home_team || fixture.team_name || '';
-    var away = fixture.away_team_name || fixture.away_team || fixture.opponent_name || fixture.opponent || '';
-    var title = home && away ? home + ' vs ' + away : (away || home || 'Fixture');
-    var detail = [
-      validDate ? date.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : '',
-      fixture.fixture_time || fixture.time || (validDate ? date.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false }) : ''),
-      fixture.venue_name || fixture.venue || fixture.address || ''
-    ].filter(Boolean).join(' · ');
-    var priority = fixture.priority || fixture.is_priority || fixture.scout_priority;
-    var priorityText = priority && String(priority).toLowerCase() !== 'scheduled' ? 'Priority' : 'Scheduled';
-    return (
-      '<div class="list-row" data-fixture-id="' + escapeHtml(fixture.id || '') + '">' +
-        '<div class="dateplate ' + (priorityText === 'Priority' ? 'g' : '') + '"><b>' +
-          escapeHtml(validDate ? date.getDate() : '—') + '</b><span>' +
-          escapeHtml(validDate ? date.toLocaleDateString('en-GB', { month:'short' }).toUpperCase() : '') +
-        '</span></div>' +
-        '<span class="who"><b>' + escapeHtml(title) + '</b><span>' + escapeHtml(detail) + '</span></span>' +
-        '<span class="pill ' + (priorityText === 'Priority' ? 'a' : 'n') + '">' + priorityText + '</span>' +
-      '</div>'
-    );
-  }
-
-  function rankingRows(players) {
-    if (!players.length) {
-      return '<div class="sl-empty">No ranked players match the current filters.</div>';
-    }
-
-    return players.slice(0, 100).map(function (player, index) {
-      return (
-        '<div class="rank-row" data-player-id="' + escapeHtml(player.id) + '">' +
-          '<span class="rank-num ' + (index === 0 ? 'n1' : '') + '">' +
-            (index + 1) +
-          '</span>' +
-          '<span class="who"><b>' + escapeHtml(player.name) + '</b><span>' +
-            escapeHtml([player.ageGroup, player.position, player.team].filter(Boolean).join(' · ')) +
-          '</span></span>' +
-          '<span class="pill g">' +
-            Math.round(player.overall || player.compatibility || 0) +
-          '</span>' +
-          '<span class="chev">›</span>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  function usageItem(label, usage) {
-    usage = usage || { remaining:0, limit:0 };
-    return (
-      '<div>' +
-        '<div class="flex" style="justify-content:space-between">' +
-          '<b style="font-size:13px">' + escapeHtml(label) + '</b>' +
-          '<span style="font-family:var(--display);font-size:18px">' +
-            escapeHtml(usage.remaining) +
-            '<small style="font-family:var(--mono);font-size:11px;color:var(--ink3)"> / ' +
-              escapeHtml(usage.limit) +
-            '</small>' +
-          '</span>' +
-        '</div>' +
-        '<div class="bar-track" style="margin-top:8px">' +
-          '<i style="width:' + pct(usage.remaining, usage.limit) + '%;background:var(--pitch)"></i>' +
-        '</div>' +
-      '</div>'
-    );
-  }
-
-  function hydrateUsageCards() {
-    var usage = state.usage;
-    if (!usage) return;
-
-    var strip = Array.from(shadow.querySelectorAll('.usage-strip-item'));
-    var ordered = [
-      ['Coach interests', usage.interests],
-      ['Predictions', usage.predictions],
-      ['Exports', usage.exports],
-      ['Ask Radar', usage.radar]
-    ];
-
-    strip.forEach(function (item, index) {
-      var pair = ordered[index];
-      if (!pair) return;
-      var label = item.querySelector('.lbl');
-      var strong = item.querySelector('strong');
-      var small = item.querySelector('small');
-      var bar = item.querySelector('.bar-track i');
-      if (label) label.textContent = pair[0];
-      if (strong) strong.textContent = pair[1].remaining;
-      if (small) {
-        small.textContent =
-          'of ' + pair[1].limit +
-          (pair[0] === 'Ask Radar' ? ' credits left' : ' left');
-      }
-      if (bar) bar.style.width = pct(pair[1].remaining, pair[1].limit) + '%';
-    });
-  }
-
-  function hydrateDashboard() {
-    hydrateUsageCards();
-
-    var body = cardBody('Top 5 compatible players');
-    if (body) {
-      var players = state.players
-        .slice()
-        .sort(function (a, b) {
-          return (b.compatibility || b.overall) - (a.compatibility || a.overall);
-        })
-        .slice(0, 5);
-
-      body.innerHTML = players.length
-        ? (state.mode === 'field'
-          ? players.map(function (p, index) { return fieldRankRow(p, index, true); }).join('')
-          : players.map(function (p) { return playerRow(p); }).join(''))
-        : '<div class="sl-empty">No player matches are available yet.</div>';
-    }
-  }
-
-  function hydrateSearch() {
-    if (state.mode === 'field') {
-      var body = shadow.querySelector('.pbody .card .card-b');
-      var countPill = shadow.querySelector('.pbody > .flex .pill');
-      if (countPill) countPill.textContent = state.players.length + ' results';
-      if (body) {
-        body.innerHTML = state.players.length
-          ? state.players.map(fieldSearchRow).join('')
-          : '<div class="sl-empty">No players match the current filters.</div>';
-      }
-      return;
-    }
-
-    var cards = Array.from(shadow.querySelectorAll('.card'));
-    var resultsCard = cards.find(function (card) {
-      var h = card.querySelector('.card-h h3');
-      return h && /results/i.test(h.textContent);
-    });
-    if (!resultsCard) return;
-
-    var heading = resultsCard.querySelector('.card-h h3');
-    var body = resultsCard.querySelector('.card-b');
-    if (heading) heading.textContent = state.players.length + ' results';
-    if (body) {
-      body.innerHTML = state.players.length
-        ? state.players.map(function (p) {
-            return playerRow(p, {
-              action: 'pipeline-add',
-              actionLabel: 'Add to pipeline'
-            });
-          }).join('')
-        : '<div class="sl-empty">No players match the current filters.</div>';
-    }
-  }
-
-  function hydrateRankings() {
-    var cards = Array.from(shadow.querySelectorAll('.card'));
-    var target = cards.find(function (card) {
-      var h = card.querySelector('.card-h h3');
-      return h && /Ranked by/i.test(h.textContent);
-    });
-    if (!target) return;
-
-    var sorted = state.players.slice().sort(function (a, b) {
-      return (b.overall || 0) - (a.overall || 0);
-    });
-
-    var h = target.querySelector('.card-h h3');
-    if (h) h.textContent = 'Ranked by Overall rating (' + sorted.length + ')';
-    var body = target.querySelector('.card-b');
-    if (body) {
-      body.innerHTML = state.mode === 'field'
-        ? sorted.slice(0, 100).map(function (player, index) {
-            return fieldRankRow(player, index, false);
-          }).join('')
-        : rankingRows(sorted);
-    }
-  }
-
-  function pipelinePlayer(row) {
-    return normalizePlayer(row.players || row.player || row);
-  }
-
-  function hydratePipeline() {
-    var target = cardByHeading('All pipeline entries');
-    if (!target) return;
-    var heading = target.querySelector('.card-h h3');
-    if (heading) heading.textContent = 'All pipeline entries (' + state.pipeline.length + ')';
-
-    if (state.mode === 'field') {
-      var stageCounts = { Watching:0, Monitoring:0, Shortlisted:0, 'Trial Pending':0 };
-      state.pipeline.forEach(function (row) {
-        var label = pipelineStageLabel(row.stage || row.pipeline_stage);
-        stageCounts[label] = (stageCounts[label] || 0) + 1;
-      });
-      Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function (cell) {
-        var label = cell.querySelector('.lbl');
-        var strong = cell.querySelector('strong');
-        if (!label || !strong) return;
-        var key = label.textContent.trim();
-        if (Object.prototype.hasOwnProperty.call(stageCounts, key)) {
-          strong.textContent = stageCounts[key];
-        }
-      });
-    }
-
-    var body = target.querySelector('.card-b');
-    if (!body) return;
-
-    body.innerHTML = state.pipeline.length
-      ? (state.mode === 'field'
-        ? state.pipeline.map(fieldPipelineRow).join('')
-        : state.pipeline.map(function (row) {
-            var p = pipelinePlayer(row);
-            var stage = row.stage || row.pipeline_stage || 'Watching';
-            return (
-              '<div class="list-row" data-pipeline-id="' + escapeHtml(row.id || '') + '">' +
-                '<span class="avatar">' + escapeHtml(initials(p.name)) + '</span>' +
-                '<span class="who"><b>' + escapeHtml(p.name) + '</b><span>' +
-                  escapeHtml([p.ageGroup, p.position, p.team].filter(Boolean).join(' · ')) +
-                '</span></span>' +
-                '<span class="pill n">' + escapeHtml(stage) + '</span>' +
-                '<button class="btn outline sm" data-action="pipeline-update" data-pipeline-id="' +
-                  escapeHtml(row.id || '') + '">Update</button>' +
-              '</div>'
-            );
-          }).join(''))
-      : '<div class="sl-empty">Your recruitment pipeline is empty.</div>';
-  }
-
-  function hydratePredictions() {
-    var history = cardBody('Prediction history');
-    if (!history) return;
-
-    history.innerHTML = state.predictions.length
-      ? state.predictions.map(function (row) {
-          var p = normalizePlayer(row.players || row.player || {});
-          return (
-            '<div class="list-row">' +
-              '<span class="who"><b>' +
-                escapeHtml(p.name || 'Prediction') +
-              '</b><span>' +
-                escapeHtml([
-                  row.prediction_type || row.type,
-                  row.run_at ? new Date(row.run_at).toLocaleDateString('en-GB') : ''
-                ].filter(Boolean).join(' · ')) +
-              '</span></span>' +
-              '<button class="btn outline sm" data-action="prediction-history-open" data-log-id="' +
-                escapeHtml(row.id || '') + '">Open</button>' +
-            '</div>'
-          );
-        }).join('')
-      : '<div class="sl-empty">No predictions have been run yet.</div>';
-  }
-
-  function renderUsageRoute() {
-    var usage = state.usage;
-    if (!usage) {
-      setRuntimeMessage('Usage is loading or temporarily unavailable.', true);
-      return;
-    }
-
-    var current = cardBody('Current balances');
-    if (current) {
-      current.innerHTML = [
-        usageItem('Exports', usage.exports),
-        usageItem('Predictions', usage.predictions),
-        usageItem('Coach interests', usage.interests),
-        usageItem('Ask Radar credits', usage.radar)
-      ].map(function (part, index) {
-        return '<div style="' + (index ? 'margin-top:16px' : '') + '">' + part + '</div>';
-      }).join('');
-    }
-
-    var buy = cardBody('Buy extra usage');
-    if (buy) {
-      var requested = query('type');
-      var typeMap = {
-        predictions:'prediction',
-        prediction:'prediction',
-        exports:'export',
-        export:'export',
-        interests:'interest_request',
-        interest_request:'interest_request',
-        ask_radar:'ask_radar',
-        radar:'ask_radar'
-      };
-      var activeType = typeMap[requested] ||
-        (state.selectedPack && state.selectedPack.type) ||
-        'ask_radar';
-
-      var grouped = {};
-      state.packs.forEach(function (pack) {
-        (grouped[pack.type] || (grouped[pack.type] = [])).push(pack);
-      });
-
-      var tabs = [
-        ['prediction','Predictions'],
-        ['export','Exports'],
-        ['interest_request','Coach interests'],
-        ['ask_radar','Ask Radar']
-      ].filter(function (entry) {
-        return grouped[entry[0]] && grouped[entry[0]].length;
-      });
-
-      if (!grouped[activeType] && tabs[0]) activeType = tabs[0][0];
-      var activePacks = grouped[activeType] || [];
-
-      if (!state.selectedPack || state.selectedPack.type !== activeType) {
-        state.selectedPack = activePacks[0] || null;
-      }
-
-      buy.innerHTML =
-        '<div style="margin-bottom:16px"><div class="seg">' +
-          tabs.map(function (entry) {
-            return '<a class="' + (entry[0] === activeType ? 'on' : '') +
-              '" data-action="usage-tab" data-type="' + entry[0] + '">' +
-              escapeHtml(entry[1]) + '</a>';
-          }).join('') +
-        '</div></div>' +
-        '<div class="pack-grid">' +
-          activePacks.map(function (pack) {
-            var on = state.selectedPack && state.selectedPack.priceId === pack.priceId;
-            return '<button class="pack-card ' + (on ? 'on' : '') +
-              '" data-action="usage-pack" data-price-id="' + escapeHtml(pack.priceId) + '">' +
-              '<b>' + escapeHtml(pack.quantity.toLocaleString('en-GB')) + '</b>' +
-              '<span>' + escapeHtml(pack.label) + '</span>' +
-              '<strong>' + escapeHtml(pack.priceLabel) + '</strong>' +
-            '</button>';
-          }).join('') +
-        '</div>' +
-        (state.selectedPack
-          ? '<div style="margin-top:14px">' +
-              '<div class="callout g"><span>' +
-                '<b>' + escapeHtml(state.selectedPack.quantity + ' ' + state.selectedPack.label) +
-                ' · ' + escapeHtml(state.selectedPack.priceLabel) + '</b><br>' +
-                'One-time purchase, completed securely on Stripe Checkout.' +
-              '</span></div>' +
-              '<div class="flex" style="margin-top:12px;justify-content:flex-end">' +
-                '<button class="btn volt" data-action="usage-checkout">Continue to Stripe Checkout</button>' +
-              '</div>' +
-            '</div>'
-          : '<div class="sl-empty">No live Stripe top-up packs are available.</div>');
-    }
-
-    var history = cardBody('Purchase history');
-    if (history) {
-      history.innerHTML = state.purchases.length
-        ? state.purchases.map(function (purchase) {
-            return '<div class="list-row" style="cursor:default">' +
-              '<span class="who"><b>' +
-                escapeHtml(purchase.quantity + ' ' + purchase.label) +
-              '</b><span>' +
-                escapeHtml(purchase.paidAt
-                  ? new Date(purchase.paidAt).toLocaleDateString('en-GB')
-                  : '') +
-                ' · Stripe Checkout</span></span>' +
-              '<div class="flex" style="gap:10px">' +
-                '<b>' + escapeHtml(purchase.priceLabel || '') + '</b>' +
-                '<span class="pill ' + (purchase.status === 'paid' ? 'g' : 'n') + '">' +
-                  escapeHtml(purchase.status === 'paid' ? 'Paid & applied' : purchase.status) +
-                '</span>' +
-              '</div>' +
-            '</div>';
-          }).join('')
-        : '<div class="sl-empty">No usage top-ups have been purchased yet.</div>';
-    }
-
-    var checkout = query('checkout');
-    if (checkout === 'cancelled') {
-      setRuntimeMessage('Checkout was cancelled. You were not charged.', false);
-    } else if (checkout === 'success') {
-      if (state.checkoutStatus && state.checkoutStatus.applied) {
-        setRuntimeMessage('Payment confirmed. Your extra usage has been applied.', false);
-      } else {
-        setRuntimeMessage(
-          'Stripe has returned you to ScoutLink. Payment is being reconciled by the signed webhook; refresh shortly if the new balance is not visible yet.',
-          false
-        );
-      }
-    }
-  }
-
-  function hydrateRadar() {
-    var usage = state.usage && state.usage.radar;
-    if (!usage) return;
-
-    var remaining = usage.remaining;
-    var limit = usage.limit;
-
-    Array.from(shadow.querySelectorAll('.radar-limit-strip')).forEach(function (strip) {
-      var strong = strip.querySelector('strong');
-      if (strong) {
-        strong.innerHTML =
-          escapeHtml(remaining) +
-          '<small style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.55)"> of ' +
-          escapeHtml(limit) +
-          ' left</small>';
-      }
-      var bar = strip.querySelector('.bar-track i');
-      if (bar) bar.style.width = (100 - pct(remaining, limit)) + '%';
-    });
-
-    var sendButtons = Array.from(shadow.querySelectorAll('button')).filter(function (button) {
-      return button.textContent.trim() === 'Send';
-    });
-    sendButtons.forEach(function (button) {
-      button.setAttribute('data-action', 'radar-send');
-      button.disabled = remaining <= 0;
-    });
-
-    var inputs = Array.from(shadow.querySelectorAll('.radar-input-row input'));
-    inputs.forEach(function (input) {
-      input.placeholder = 'Ask Radar will be connected in the next phase…';
-      input.setAttribute('aria-describedby', 'radarPhaseMessage');
-    });
-
-    if (remaining <= 0 && currentView() !== 'radarZero') {
-      state.view = 'radarZero';
-      render();
-      return;
-    }
-
-    if (remaining > 0 && remaining <= Math.max(20, Math.ceil(limit * 0.05)) &&
-        currentView() === 'radar') {
-      state.view = 'radarLow';
-      render();
-      return;
-    }
-  }
-
-  function hydrateFixtures() {
-    var cards = Array.from(shadow.querySelectorAll('.card'));
-    var list = cards.find(function (card) {
-      var h = card.querySelector('.card-h h3');
-      return h && /Upcoming|fixtures|agenda/i.test(h.textContent);
-    });
-    if (!list || !state.fixtures.length) return;
-
-    var body = list.querySelector('.card-b');
-    if (!body) return;
-
-    if (state.mode === 'field') {
-      body.innerHTML = state.fixtures.slice(0, 50).map(fieldFixtureRow).join('');
-      return;
-    }
-
-    body.innerHTML = state.fixtures.slice(0, 50).map(function (fixture) {
-      var date = fixture.fixture_date || fixture.date || fixture.kickoff_at || '';
-      return '<div class="list-row" data-fixture-id="' + escapeHtml(fixture.id || '') + '">' +
-        '<span class="dateplate g"><b>' +
-          escapeHtml(date ? new Date(date).getDate() : '—') +
-        '</b><span>' +
-          escapeHtml(date ? new Date(date).toLocaleDateString('en-GB', {month:'short'}).toUpperCase() : '') +
-        '</span></span>' +
-        '<span class="who"><b>' +
-          escapeHtml(fixture.opponent_name || fixture.opponent || 'Fixture') +
-        '</b><span>' +
-          escapeHtml([
-            fixture.fixture_time || fixture.time,
-            fixture.venue_name || fixture.venue || fixture.address
-          ].filter(Boolean).join(' · ')) +
-        '</span></span><span class="chev">›</span></div>';
-    }).join('');
-  }
-
-  function hydrateEvents() {
-    var cards = Array.from(shadow.querySelectorAll('.card'));
-    var body = cards.map(function (c) { return c.querySelector('.card-b'); }).find(Boolean);
-    if (!body || !state.events.length) return;
-
-    body.innerHTML = state.events.slice(0, 50).map(function (event) {
-      return '<div class="list-row" data-event-id="' + escapeHtml(event.id || event.slug || '') + '">' +
-        '<span class="dateplate g"><b>' +
-          escapeHtml(event.event_date ? new Date(event.event_date).getDate() : '—') +
-        '</b><span>' +
-          escapeHtml(event.event_date ? new Date(event.event_date).toLocaleDateString('en-GB',{month:'short'}).toUpperCase() : '') +
-        '</span></span>' +
-        '<span class="who"><b>' +
-          escapeHtml(event.name || event.title || 'ScoutLink event') +
-        '</b><span>' +
-          escapeHtml(event.location || event.venue || '') +
-        '</span></span><span class="chev">›</span></div>';
-    }).join('');
-  }
-
-  function hydrateNotifications() {
-    var target = cardByHeading('All notifications');
-    if (!target) return;
-    var h = target.querySelector('.card-h h3');
-    if (h) h.textContent = 'All notifications (' + state.notifications.length + ')';
-    var body = target.querySelector('.card-b');
-    if (!body) return;
-    body.innerHTML = state.notifications.length
-      ? (state.mode === 'field'
-        ? state.notifications.map(fieldNotificationRow).join('')
-        : state.notifications.map(function (item) {
-            return '<div class="list-row">' +
-              '<span class="who"><b>' +
-                escapeHtml(item.title || item.type || 'Notification') +
-              '</b><span>' +
-                escapeHtml(item.message || item.body || '') +
-              '</span></span>' +
-              (!item.read_at && !item.is_read ? '<span class="pill a">New</span>' : '') +
-            '</div>';
-          }).join(''))
-      : '<div class="sl-empty">You have no notifications.</div>';
-  }
-
-  function hydrateChat() {
-    var target = cardBody('Team messaging');
-    if (!target) return;
-    target.innerHTML = state.threads.length
-      ? state.threads.map(function (thread) {
-          var title =
-            thread.title ||
-            thread.coach_name ||
-            thread.name ||
-            'Conversation';
-          return '<div class="thread-row" data-thread-id="' + escapeHtml(thread.id || '') + '">' +
-            '<span class="avatar">' + escapeHtml(initials(title)) + '</span>' +
-            '<div class="tx"><b>' + escapeHtml(title) + '</b>' +
-            '<div class="org">' + escapeHtml(thread.team_name || thread.organisation || '') + '</div>' +
-            '<p class="pv">' + escapeHtml(thread.last_message || thread.preview || '') + '</p></div>' +
-            '<span class="tm"></span>' +
-          '</div>';
-        }).join('')
-      : '<div class="sl-empty">No team conversations yet.</div>';
-  }
-
-  function hydrateExports() {
-    var target = Array.from(shadow.querySelectorAll('.card')).find(function (card) {
-      var h = card.querySelector('.card-h h3');
-      return h && /Export history/i.test(h.textContent);
-    });
-    if (!target) return;
-    var h = target.querySelector('.card-h h3');
-    if (h) h.textContent = 'Export history (' + state.exports.length + ')';
-    var body = target.querySelector('.card-b');
-    if (!body) return;
-
-    body.innerHTML = state.exports.length
-      ? state.exports.map(function (item) {
-          return '<div class="list-row">' +
-            '<span class="who"><b>' +
-              escapeHtml(item.file_name || item.export_type || 'ScoutLink export') +
-            '</b><span>' +
-              escapeHtml(item.created_at ? new Date(item.created_at).toLocaleDateString('en-GB') : '') +
-            '</span></span>' +
-            '<button class="btn outline sm" data-action="export-download" data-export-id="' +
-              escapeHtml(item.id || '') + '">Download</button>' +
-          '</div>';
-        }).join('')
-      : '<div class="sl-empty">No exports have been created yet.</div>';
-  }
-
-  function hydrateProfile() {
-    var raw = state.profileData;
-    if (!raw) return;
-    var p = normalizePlayer(raw.player || raw);
-    if (!p || !p.id) return;
-
-    walkText(shadow, {
-      'Ruby Okafor': p.name,
-      'RO': initials(p.name),
-      'U15 · AM · Northgate United': [p.ageGroup, p.position, p.team].filter(Boolean).join(' · '),
-      'Northgate United': p.team || 'Team'
-    });
-
-    var scoreTiles = shadow.querySelectorAll('.score-tile strong');
-    if (scoreTiles[0] && p.overall) scoreTiles[0].textContent = Math.round(p.overall);
-    if (scoreTiles[1] && p.compatibility) scoreTiles[1].textContent = Math.round(p.compatibility);
-    if (scoreTiles[2] && p.potential) scoreTiles[2].textContent = Math.round(p.potential);
-  }
-
-  function hydrateCurrentRoute() {
-    hydrateUsageCards();
-
-    if (state.route === 'dashboard') hydrateDashboard();
-    if (state.route === 'search') hydrateSearch();
-    if (state.route === 'rankings') hydrateRankings();
-    if (state.route === 'pipeline') hydratePipeline();
-    if (state.route === 'predictions') hydratePredictions();
-    if (state.route === 'usage') renderUsageRoute();
-    if (state.route === 'radar') hydrateRadar();
-    if (state.route === 'fixtures') hydrateFixtures();
-    if (state.route === 'events') hydrateEvents();
-    if (state.route === 'notifications') hydrateNotifications();
-    if (state.route === 'chat') hydrateChat();
-    if (state.route === 'exports') hydrateExports();
-    if (state.route === 'profile') hydrateProfile();
-
-    if (state.error) setRuntimeMessage(state.error.message || String(state.error), true);
-  }
-
-  var NAV = {
-    'Dashboard':'/scout/dashboard',
-    'Player Search':'/scout/player-search',
-    'System Rankings':'/scout/rankings',
-    'Rankings':'/scout/rankings',
-    'Pipeline':'/scout/pipeline',
-    'Compare Players':'/scout/compare-players',
-    'Predictions':'/scout/predictions',
-    'Ask Radar':'/scout/radar',
-    'Fixtures':'/scout/fixtures',
-    'Events':'/scout/events',
-    'Add Usage':'/scout/usage',
-    'Exports':'/scout/exports',
-    'Chat':'/scout/chat',
-    'Notifications':'/scout/notifications',
-    'Settings':'/scout/settings',
-    'Scout Setup':'/scout/setup',
-    'Report a Concern':'/scout/report-a-concern',
-    'Home':'/scout/dashboard',
-    'Search':'/scout/player-search',
-    'More':'/scout/settings'
-  };
-
-  function navigate(path) {
-    window.location.href = path;
-  }
-
-  function wireNavigation() {
-    Array.from(shadow.querySelectorAll('.rail-item')).forEach(function (item) {
-      var label = item.textContent.trim().replace(/\d+$/, '').trim();
-      var path = NAV[label];
-      if (!path) {
-        Object.keys(NAV).some(function (key) {
-          if (label.indexOf(key) !== -1) {
-            path = NAV[key];
-            return true;
-          }
-          return false;
+  function hydrateConcern(){/* fields are intentionally left as the source design; actions are wired below */}
+  function hydrateCurrentRoute(){hydrateUsageStrip();var v=currentView();if(state.route==='dashboard')hydrateDashboard();if(state.route==='search')hydrateSearch();if(state.route==='rankings')hydrateRankings();if(state.route==='pipeline'){if(v==='pipelineUpdate')hydratePipelineUpdate();else hydratePipeline();}if(state.route==='compare')hydrateCompare();if(state.route==='predictions'){if(/^prediction(Attribute|Position|Scenario|Roi)$/.test(v))hydratePredictionResult();else if(v==='predictions')hydratePredictions();else hydratePredictionWizard();}if(state.route==='usage')hydrateUsage();if(state.route==='radar')hydrateRadar();if(state.route==='fixtures'){if(v==='fixtureDetail')hydrateFixtureDetail();else hydrateFixtures();}if(state.route==='events'){if(v==='eventDetail')hydrateEventDetail();else hydrateEvents();}if(state.route==='notifications')hydrateNotifications();if(state.route==='chat'){if(v==='chatOpen')hydrateChatOpen();else hydrateChat();}if(state.route==='exports'){if(v==='exportNew')hydrateExportNew();else hydrateExports();}if(state.route==='settings')hydrateSettings();if(state.route==='setup')hydrateSetup();if(state.route==='profile')hydrateProfile();if(state.route==='concern')hydrateConcern();if(state.error)setRuntimeMessage(state.error.message||String(state.error),true);}
+
+  var NAV={'Dashboard':'/scout/dashboard','Home':'/scout/dashboard','Player Search':'/scout/player-search','Search':'/scout/player-search','Rankings':'/scout/rankings','System Rankings':'/scout/rankings','Pipeline':'/scout/pipeline','Compare Players':'/scout/compare-players','Predictions':'/scout/predictions','Ask Radar':'/scout/radar','Fixtures':'/scout/fixtures','Events':'/scout/events','Add Usage':'/scout/usage','Exports':'/scout/exports','Chat':'/scout/chat','Notifications':'/scout/notifications','Settings':'/scout/settings','Scout Setup':'/scout/setup','Report a Concern':'/scout/report-a-concern'};
+  function openMore(){var old=shadow.querySelector('.sl-more-sheet');if(old)old.remove();var sheet=document.createElement('div');sheet.className='sl-more-sheet';sheet.innerHTML='<div class="sl-sheet-handle"></div><div style="font-family:var(--display);font-size:21px;margin:0 0 12px">More</div><div class="sl-more-grid">'+[['Rankings','/scout/rankings','System rankings'],['Compare Players','/scout/compare-players','Decision comparison'],['Predictions','/scout/predictions','Forecasting tools'],['Ask Radar','/scout/radar','AI workspace'],['Fixtures','/scout/fixtures','Calendar & attendance'],['Events','/scout/events','Showcases & events'],['Add Usage','/scout/usage','Top-up balances'],['Exports','/scout/exports','Files & history'],['Notifications','/scout/notifications','Alerts'],['Settings','/scout/settings','Account & team'],['Scout Setup','/scout/setup','Personal recruitment brief'],['Report a Concern','/scout/report-a-concern','Safeguarding & support']].map(function(x){return'<button class="sl-more-item" data-more-path="'+x[1]+'"><span><b>'+escapeHtml(x[0])+'</b><small>'+escapeHtml(x[2])+'</small></span></button>';}).join('')+'</div>';shadow.appendChild(sheet);Array.from(sheet.querySelectorAll('[data-more-path]')).forEach(function(b){b.addEventListener('click',function(){navigate(b.getAttribute('data-more-path'));});});setTimeout(function(){document.addEventListener('click',function close(e){if(!sheet.contains(e.target)){sheet.remove();document.removeEventListener('click',close);}},true);},0);}
+  function wireNavigation(){Array.from(shadow.querySelectorAll('.rail-item')).forEach(function(item){var label=item.textContent.trim().replace(/\d+$/,'').trim(),path=Object.keys(NAV).find(function(k){return label===k||label.indexOf(k)!==-1;});if(path){item.setAttribute('role','link');item.setAttribute('tabindex','0');item.addEventListener('click',function(){navigate(NAV[path]);});}});Array.from(shadow.querySelectorAll('.ptabs a')).forEach(function(a){var label=a.textContent.trim();if(label==='More')a.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openMore();});else if(NAV[label])a.addEventListener('click',function(){navigate(NAV[label]);});});Array.from(shadow.querySelectorAll('.qlink')).forEach(function(b){Object.keys(NAV).some(function(k){if(b.textContent.indexOf(k)!==-1){b.addEventListener('click',function(){navigate(NAV[k]);});return true;}return false;});});}
+  function wireChromeControls(){
+    Array.from(shadow.querySelectorAll('button')).forEach(function(button){
+      if(button.querySelector('u')){button.addEventListener('click',function(){navigate('/scout/notifications');});return;}
+      var path=button.querySelector('path'),d=path&&path.getAttribute('d')||'';
+      var text=button.textContent.trim();
+      if(text==='Exit'||/M6 6l12 12M18 6 6 18/.test(d)){
+        button.addEventListener('click',function(){
+          var view=currentView();
+          if(state.route==='onboarding'){navigate('/experience-select');return;}
+          if(state.route==='setup'){navigate('/scout/settings');return;}
+          if(state.route==='predictions'){setView('predictions');return;}
+          if(state.route==='pipeline'&&view==='pipelineUpdate'){setView('pipeline');return;}
+          if(state.route==='fixtures'&&view==='fixtureDetail'){setView('fixtures');return;}
+          if(state.route==='profile'&&view==='profileVideo'){state.activeVideo=null;setView('profileMedia');return;}
+          if(state.route==='profile'&&view==='profileGame'){state.activeGame=null;setView('profileMedia');return;}
+        });
+      }else if(/M19\.5 12h-15M11 18l-6-6 6-6/.test(d)){
+        button.addEventListener('click',function(){
+          var view=currentView();
+          if(state.route==='profile'&&view==='profile'){if(window.history.length>1)window.history.back();else navigate('/scout/player-search');return;}
+          if(state.route==='events'&&view==='eventDetail'){setView('events');return;}
+          if(state.route==='chat'&&view==='chatOpen'){setView('chat');return;}
         });
       }
-      if (!path) return;
-      item.setAttribute('role', 'link');
-      item.setAttribute('tabindex', '0');
-      item.addEventListener('click', function () { navigate(path); });
-      item.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') navigate(path);
-      });
-    });
-
-    Array.from(shadow.querySelectorAll('.ptabs a')).forEach(function (item) {
-      var label = item.textContent.trim();
-      var path = NAV[label];
-      if (path) item.addEventListener('click', function () { navigate(path); });
-    });
-
-    Array.from(shadow.querySelectorAll('.qlink')).forEach(function (button) {
-      var label = button.textContent.trim();
-      Object.keys(NAV).some(function (key) {
-        if (label.indexOf(key) !== -1) {
-          button.addEventListener('click', function () { navigate(NAV[key]); });
-          return true;
-        }
-        return false;
-      });
     });
   }
 
-  function buttonByText(pattern) {
-    return Array.from(shadow.querySelectorAll('button')).filter(function (button) {
-      return pattern.test(button.textContent.trim());
-    });
-  }
+  async function addToPipeline(playerId,button){try{if(button)button.disabled=true;await request('/api/scout-workflow-actions/interest',{method:'POST',body:{playerId:playerId}});toast('Player added to your recruitment pipeline.');await loadPipeline();if(state.route==='search'||state.route==='profile')render();}catch(error){toast(error.status===402?'Coach interest allowance reached. Add more Coach interests from Add Usage.':error.message,true);if(button)button.disabled=false;}}
+  async function savePipeline(){var stage=findField('Stage'),note=findField('Note');try{await request('/api/scout-v6/pipeline/'+encodeURIComponent(state.activePipelineId),{method:'PATCH',body:{stage:stage?stage.value:'Watching',note:note?note.value:''}});toast('Pipeline entry updated.');await loadPipeline();setView('pipeline');}catch(error){toast(error.message,true);}}
+  function capturePredictionStepOne(){var player=findField('Player')||shadow.querySelector('select');if(player&&player.value)state.selectedPlayerId=player.value;}
+  function selectedModelButton(eventTarget){var model=eventTarget.closest('button');if(!model)return;var text=model.textContent||'';if(/Attribute Development/i.test(text))state.selectedPredictionType='Attribute Development';else if(/Position Fit/i.test(text))state.selectedPredictionType='Position Fit Projection';else if(/Match Scenario/i.test(text))state.selectedPredictionType='Match Scenario Prediction';else if(/ROI Analysis/i.test(text))state.selectedPredictionType='ROI Analysis';}
+  function capturePredictionInputs(){var obj={};Array.from(shadow.querySelectorAll('.field')).forEach(function(field){var l=field.querySelector('label'),i=field.querySelector('input,select,textarea');if(!l||!i)return;var key=l.textContent.replace(/Optional/gi,'').trim().replace(/[^a-z0-9]+(.)/gi,function(_,c){return c?c.toUpperCase():'';});if(key)obj[key.charAt(0).toLowerCase()+key.slice(1)]=i.value;});state.predictionInput=obj;}
+  async function runPrediction(button){capturePredictionStepOne();capturePredictionInputs();if(!state.selectedPlayerId){toast('Choose a player before running the prediction.',true);return;}try{if(button)button.disabled=true;var payload=await request('/api/predictions/run',{method:'POST',body:{playerId:state.selectedPlayerId,predictionType:state.selectedPredictionType||'Attribute Development',inputParams:state.predictionInput||{}}});state.predictionResult=payload.result||unwrap(payload)||payload;state.predictionLogId=payload.logId||null;var type=String(state.predictionResult.type||state.selectedPredictionType);if(/ROI/i.test(type))setView('predictionRoi');else if(/Scenario/i.test(type))setView('predictionScenario');else if(/Position/i.test(type))setView('predictionPosition');else setView('predictionAttribute');}catch(error){toast(error.status===402?'Prediction allowance reached. Add more Predictions from Add Usage.':error.message,true);if(button)button.disabled=false;}}
+  async function prepareCheckout(){if(!state.selectedPack){toast('Choose a top-up pack first.',true);return;}try{state.preparedCheckout=unwrap(await request('/api/scout-usage/prepare',{method:'POST',body:{priceId:state.selectedPack.priceId}}));render();}catch(error){toast(error.message,true);}}
+  async function launchCheckout(){if(!state.selectedPack)return;try{var payload=unwrap(await request('/api/scout-usage/checkout',{method:'POST',body:{priceId:state.selectedPack.priceId}}));if(!payload?.url)throw new Error('Stripe Checkout URL was not returned.');window.location.assign(payload.url);}catch(error){toast(error.message,true);}}
+  function downloadPayload(payload){if(!payload||!payload.contentBase64)throw new Error('The file was not returned.');var bin=atob(payload.contentBase64),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);var blob=new Blob([bytes],{type:payload.mime||'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=payload.filename||'scoutlink-export';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
+  async function downloadExport(id){try{var row=state.exports.find(function(item){return String(item.id)===String(id);});var path=row&&row.source==='comparison_v6_pdf'?'/api/scout-v6/exports/'+encodeURIComponent(id)+'/download':'/api/exports/history/'+encodeURIComponent(id)+'/download';downloadPayload(unwrap(await request(path,{method:'POST'}))||{});}catch(error){toast(error.message,true);}}
+  async function runCompare(){var a=findField('Player A'),b=findField('Player B'),ctx=findField('Decision context');if(!a||!b||!a.value||!b.value){toast('Choose two players to compare.',true);return;}if(a.value===b.value){toast('Choose two different players.',true);return;}try{var response=unwrap(await request('/api/scout-v6/compare',{method:'POST',body:{playerAId:a.value,playerBId:b.value,context:ctx?ctx.value:'Immediate starter'}}));state.compareResult=response&&response.comparison?response.comparison:response;render();}catch(error){toast(error.message,true);}}
+  async function exportComparison(){if(!state.compareResult){toast('Run the comparison first.',true);return;}try{downloadPayload(unwrap(await request('/api/scout-v6/compare/export',{method:'POST',body:{comparison:state.compareResult}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
+  async function exportPrediction(){if(!state.predictionLogId){toast('Open or run a saved prediction first.',true);return;}try{downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:state.selectedPlayerId,format:'PDF',source:'prediction',predictionLogId:state.predictionLogId}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
+  async function exportProfile(){var p=profilePlayer();if(!p)return;try{downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:p.id,format:'PDF',source:'profile'}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
+  async function generateExport(){var p=findField('Player'),fmt=findField('Export format');if(!p||!p.value){toast('Choose a player for this export.',true);return;}try{var label=fmt?fmt.value:'Full profile PDF';downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:p.value,format:'PDF',source:/Match Facts/i.test(label)?'match_facts':/Attribute/i.test(label)?'attributes':'profile'}}))||{});toast('Export generated.');await Promise.all([loadExports(),loadUsage()]);setView('exports');}catch(error){toast(error.message,true);}}
+  async function setFixtureAttendance(status){try{var data=unwrap(await request('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId)+'/attendance',{method:'POST',body:{status:status}}));state.fixtureDetail.attendance=data;toast('Fixture attendance saved.');render();}catch(error){toast(error.message,true);}}
+  async function toggleEventAttendance(){if(!state.eventDetail)return;var current=state.eventDetail.attendance?.status;var next=current==='confirmed'?'cancelled':'confirmed';try{var data=unwrap(await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)+'/attendance',{method:'POST',body:{status:next}}));state.eventDetail.attendance=data;toast(next==='confirmed'?'Attendance confirmed.':'Attendance cancelled.');render();}catch(error){toast(error.message,true);}}
+  function addEventCalendar(){var d=state.eventDetail;if(!d)return;var e=d.event||d,start=String(e.event_date||'').replace(/-/g,'')||new Date().toISOString().slice(0,10).replace(/-/g,'');var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ScoutLink//EN','BEGIN:VEVENT','UID:'+String(e.id||Date.now())+'@scoutlink.app','DTSTART;VALUE=DATE:'+start,'SUMMARY:'+eventTitle(e).replace(/[,;]/g,' '),'LOCATION:'+String(e.venue||e.location||'').replace(/[,;]/g,' '),'END:VEVENT','END:VCALENDAR'].join('\r\n');var blob=new Blob([ics],{type:'text/calendar'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='scoutlink-event.ics';a.click();URL.revokeObjectURL(url);}
+  async function markAllRead(){try{await request('/api/notifications/mark-all-read',{method:'PATCH'});await loadNotifications();render();}catch(error){toast(error.message,true);}}
+  async function markNotification(id){try{await request('/api/notifications/'+encodeURIComponent(id)+'/read',{method:'PATCH'});await loadNotifications();render();}catch(error){toast(error.message,true);}}
+  async function openThread(id){state.activeThreadId=id;state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(id)+'/messages',[]));setView('chatOpen');}
+  async function sendChat(){var input=shadow.querySelector('[data-sl-chat-input]');if(!input||!input.value.trim())return;try{await request('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',{method:'POST',body:{body:input.value.trim()}});state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',[]));render();}catch(error){toast(error.message,true);}}
+  function newChatModal(){var pipeline=state.pipeline.filter(function(r){return pipelinePlayer(r).id;});var body='<div class="field"><label>Pipeline player</label><select class="in" data-new-chat-player>'+pipeline.map(function(r){var p=pipelinePlayer(r);return'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name+' · '+p.team)+'</option>';}).join('')+'</select></div><p class="mut">ScoutLink will open the conversation with the coach connected to that pipeline player.</p>';var m=modal('New conversation',body,'<button class="btn outline" data-sl-modal-close>Cancel</button><button class="btn volt" data-action="chat-create">Open conversation</button>');}
+  async function createChat(){var select=shadow.querySelector('[data-new-chat-player]');if(!select||!select.value)return;try{var payload=await request('/api/chat/threads',{method:'POST',body:{playerId:select.value}});closeModal();await loadThreads();state.activeThreadId=payload.thread?.id||payload.id||'';if(state.activeThreadId)await openThread(state.activeThreadId);else render();}catch(error){toast(error.message,true);}}
+  async function saveSettings(){var full=findField('Full name'),email=findField('Email'),org=findField('Organisation');try{state.settings=unwrap(await request('/api/scout-v6/settings',{method:'PATCH',body:{fullName:full?full.value:'',email:email?email.value:'',organisation:org?org.value:''}}));toast('Settings saved.');render();}catch(error){toast(error.message,true);}}
+  function inviteScoutModal(){modal('Invite Scout','<div class="field"><label>First name</label><input class="in" data-invite-first></div><div class="field"><label>Last name</label><input class="in" data-invite-last></div><div class="field"><label>Email</label><input class="in" type="email" data-invite-email></div>','<button class="btn outline" data-sl-modal-close>Cancel</button><button class="btn volt" data-action="team-invite-send">Send invite</button>');}
+  async function inviteScout(){var f=shadow.querySelector('[data-invite-first]'),l=shadow.querySelector('[data-invite-last]'),e=shadow.querySelector('[data-invite-email]');try{await request('/api/scout-experience-v9/team/invite',{method:'POST',body:{firstName:f?.value||'',lastName:l?.value||'',emailAddr:e?.value||''}});closeModal();toast('Scout invite sent.');await loadSettings();render();}catch(error){toast(error.message,true);}}
+  async function removeScout(id){if(!window.confirm('Remove this Scout from the workspace?'))return;try{await request('/api/scout-experience-v9/team/scouts/'+encodeURIComponent(id),{method:'DELETE'});toast('Scout removed.');await loadSettings();render();}catch(error){toast(error.message,true);}}
+  function captureSetupStep(){var view=currentView(),selected=selectedSetupOptions();if(view==='setup1')state.setupDraft.teamNeeds=selected;if(view==='setup2')state.setupDraft.roleExpectations=selected;if(view==='setup4')state.setupDraft.developmentPriorities=selected;if(view==='setup3'){var f=findField('Formation'),p=findField('Playing style');state.setupDraft.formation=f?f.value:'';state.setupDraft.playingStyle=p?p.value:'';}}
+  async function saveSetup(){captureSetupStep();try{var payload=unwrap(await request('/api/scout-v6/setup',{method:'PATCH',body:state.setupDraft}));state.setup=payload;toast('Your personal Scout Setup has been saved.');setTimeout(function(){navigate('/scout/settings');},450);}catch(error){toast(error.message,true);}}
+  async function submitConcern(){var c=findField('This concerns'),person=findField('Player or person'),what=findField('What happened'),urgent=findField('How urgent');try{await request('/api/scout-v6/concerns',{method:'POST',body:{concerns:c?c.value:'Something else',subjectId:person?person.value:'',details:what?what.value:'',urgency:urgent?urgent.value:'No immediate risk'}});toast('Concern submitted confidentially.');setTimeout(function(){navigate('/scout/dashboard');},700);}catch(error){toast(error.message,true);}}
+  function whyCompatibility(){var exp=state.profileData?.compatibilityExplanation;if(!exp)return;modal('Why '+(exp.score==null?'this score':Math.round(exp.score))+'?', '<p class="sl-result-copy">'+escapeHtml(exp.summary||'')+'</p><div style="margin-top:14px">'+(exp.components||[]).map(function(c){return'<div class="sl-compat-row"><b>'+escapeHtml(c.label)+'</b><div class="sl-score-bar"><i style="width:'+Math.max(0,Math.min(100,number(c.score)))+'%"></i></div><strong>'+escapeHtml(c.score==null?'—':c.score+'/100')+'</strong></div>';}).join('')+'</div>'+(exp.watchouts?.length?'<div style="margin-top:14px"><b>Watchouts</b><ul>'+exp.watchouts.map(function(x){return'<li>'+escapeHtml(x)+'</li>';}).join('')+'</ul></div>':'')+'<p class="mut">Evidence confidence affects the likely range only. It does not add compatibility points.</p>');}
+  async function postProfileNote(){var p=profilePlayer(),text=shadow.querySelector('[data-profile-note]');if(!p||!text||!text.value.trim())return;var shared=[];if(state.profileShareTeam){var teamScouts=state.workspace?.teamScouts||state.settings?.teamScouts||[];shared=teamScouts.map(function(s){return s.id;}).filter(function(id){return String(id)!==String(workspaceParts().scout.id);});}try{await request('/api/scout-workflow-actions/players/'+encodeURIComponent(p.id)+'/workflow',{method:'POST',body:{entryType:'note',content:text.value.trim(),sharedWith:shared}});toast('Scouting note saved.');await loadProfile();render();}catch(error){toast(error.message,true);}}
+  function shareProfile(){var p=profilePlayer();if(!p)return;var teamScouts=state.workspace?.teamScouts||[];modal('Share '+p.name,'<p class="sl-result-copy">This player is already visible to your Scout team through the shared recruitment workspace. Use Team Notes to add evidence for specific teammates.</p><div>'+teamScouts.map(function(s){return'<div class="list-row"><span class="avatar">'+escapeHtml(initials([s.first_name,s.last_name].filter(Boolean).join(' ')))+'</span><span class="who"><b>'+escapeHtml([s.first_name,s.last_name].filter(Boolean).join(' '))+'</b><span>'+escapeHtml(s.email||'')+'</span></span></div>';}).join('')+'</div>');}
+  function openExternalMatches(){var url=state.profileData?.externalMatchesUrl;if(url)window.open(url,'_blank','noopener,noreferrer');}
 
-  function setView(view) {
-    state.view = view;
-    render();
-  }
+  function collectOnboarding(){var body=Object.assign({},state.onboardingDraft);Array.from(shadow.querySelectorAll('.field')).forEach(function(field){var l=field.querySelector('label'),i=field.querySelector('input,select,textarea');if(!l||!i)return;var key=l.textContent.toLowerCase(),value=i.value;if(/full name/.test(key)){var pieces=value.trim().split(/\s+/);body.firstName=pieces.shift()||'';body.lastName=pieces.join(' ');}else if(/phone/.test(key))body.phone=value;else if(/country/.test(key))body.scoutCountry=value;else if(/scouting role/.test(key))body.scoutingRole=value;else if(/organisation name/.test(key))body.organisationName=value;else if(/region/.test(key))body.scoutRegion=value;else if(/playing style/.test(key))body.playingStyle=value;else if(/formation/.test(key))body.formation=value;});var opts=selectedSetupOptions();if(currentView()==='onboarding3')body.teamWeaknesses=opts;state.onboardingDraft=body;return body;}
+  async function saveOnboarding(){try{collectOnboarding();await request('/api/onboarding/scout-wizard',{method:'POST',body:state.onboardingDraft});toast('Scout workspace created.');setTimeout(function(){navigate('/scout/dashboard');},500);}catch(error){toast(error.message,true);}}
 
-  function findField(labelFragment) {
-    var fields = Array.from(shadow.querySelectorAll('.field'));
-    var field = fields.find(function (candidate) {
-      var label = candidate.querySelector('label');
-      return label && label.textContent.toLowerCase().indexOf(
-        labelFragment.toLowerCase()
-      ) !== -1;
-    });
-    return field && field.querySelector('input,select,textarea');
-  }
-
-  async function addToPipeline(playerId, button) {
-    try {
-      if (button) button.disabled = true;
-      await request('/api/scout-workflow-actions/interest', {
-        method: 'POST',
-        body: { playerId: playerId }
-      });
-      toast('Player added to your recruitment pipeline.');
-      await loadPipeline();
-      if (state.route === 'search') render();
-    } catch (error) {
-      toast(error.message, true);
-      if (button) button.disabled = false;
-    }
-  }
-
-  async function updatePipeline(pipelineId, stage) {
-    try {
-      await request('/api/scouts/pipeline/' + encodeURIComponent(pipelineId), {
-        method: 'PATCH',
-        body: { stage: stage }
-      });
-      toast('Pipeline stage updated.');
-      await loadPipeline();
-      setView('pipeline');
-    } catch (error) {
-      toast(error.message, true);
-    }
-  }
-
-  function predictionTypeFromValue(value) {
-    var raw = String(value || '').toLowerCase();
-    if (/attribute|development/.test(raw)) return 'Attribute Development';
-    if (/position/.test(raw)) return 'Position Fit Projection';
-    if (/scenario|match/.test(raw)) return 'Match Scenario Prediction';
-    if (/roi|value|financial/.test(raw)) return 'ROI Analysis';
-    return value || 'Attribute Development';
-  }
-
-  function capturePredictionStepOne() {
-    var player =
-      findField('player') ||
-      shadow.querySelector('select');
-    var model =
-      findField('prediction') ||
-      findField('model') ||
-      shadow.querySelectorAll('select')[1];
-
-    state.selectedPlayerId =
-      player && player.value
-        ? player.value
-        : state.selectedPlayerId;
-    state.selectedPredictionType = predictionTypeFromValue(
-      model && model.value
-        ? model.value
-        : state.selectedPredictionType
-    );
-  }
-
-  function capturePredictionInputs() {
-    var inputs = {};
-    Array.from(shadow.querySelectorAll('.field')).forEach(function (field) {
-      var label = field.querySelector('label');
-      var input = field.querySelector('input,select,textarea');
-      if (!label || !input) return;
-      var key = label.textContent
-        .trim()
-        .replace(/Optional/gi, '')
-        .trim()
-        .replace(/[^a-z0-9]+(.)/gi, function (_, chr) {
-          return chr ? chr.toUpperCase() : '';
-        });
-      if (key) inputs[key.charAt(0).toLowerCase() + key.slice(1)] = input.value;
-    });
-    state.predictionInput = inputs;
-  }
-
-  async function runPrediction(button) {
-    capturePredictionStepOne();
-    capturePredictionInputs();
-
-    if (!state.selectedPlayerId) {
-      toast('Choose a player before running the prediction.', true);
-      return;
-    }
-
-    try {
-      if (button) button.disabled = true;
-      var payload = await request('/api/predictions/run', {
-        method: 'POST',
-        body: {
-          playerId: state.selectedPlayerId,
-          predictionType:
-            state.selectedPredictionType || 'Attribute Development',
-          inputParams: state.predictionInput || {}
-        }
-      });
-
-      var data = unwrap(payload) || payload || {};
-      state.predictionResult = data.result || data;
-      var type = String(state.predictionResult.type || state.selectedPredictionType);
-
-      if (/ROI/i.test(type)) setView('predictionRoi');
-      else if (/Scenario/i.test(type)) setView('predictionScenario');
-      else if (/Position/i.test(type)) setView('predictionPosition');
-      else setView('predictionAttribute');
-    } catch (error) {
-      if (error.status === 402) {
-        toast('Prediction allowance reached. Add more Predictions from Add Usage.', true);
-      } else {
-        toast(error.message, true);
-      }
-      if (button) button.disabled = false;
-    }
-  }
-
-  async function startCheckout() {
-    if (!state.selectedPack) {
-      toast('Choose a top-up pack first.', true);
-      return;
-    }
-
-    try {
-      var payload = unwrap(await request('/api/scout-usage/checkout', {
-        method: 'POST',
-        body: { priceId: state.selectedPack.priceId }
-      }));
-      if (!payload || !payload.url) throw new Error('Stripe Checkout URL was not returned.');
-      window.location.assign(payload.url);
-    } catch (error) {
-      toast(error.message, true);
-    }
-  }
-
-  async function downloadExport(id) {
-    try {
-      var payload = unwrap(await request(
-        '/api/exports/history/' + encodeURIComponent(id) + '/download',
-        { method: 'POST' }
-      )) || {};
-      if (!payload.contentBase64) throw new Error('The export file was not returned.');
-      var binary = atob(payload.contentBase64);
-      var bytes = new Uint8Array(binary.length);
-      for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-      var blob = new Blob([bytes], { type: payload.mime || 'application/octet-stream' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = payload.filename || 'scoutlink-export';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      toast(error.message, true);
-    }
-  }
-
-  function collectOnboarding() {
-    var body = {};
-    Array.from(shadow.querySelectorAll('.field')).forEach(function (field) {
-      var label = field.querySelector('label');
-      var input = field.querySelector('input,select,textarea');
-      if (!label || !input) return;
-      var key = label.textContent.trim().toLowerCase();
-      var value = input.value;
-      if (/full name/.test(key)) {
-        var pieces = value.trim().split(/\s+/);
-        body.firstName = pieces.shift() || '';
-        body.lastName = pieces.join(' ');
-      } else if (/phone/.test(key)) body.phone = value;
-      else if (/country/.test(key)) body.scoutCountry = value;
-      else if (/organisation name/.test(key)) body.organisationName = value;
-      else if (/region/.test(key)) body.scoutRegion = value;
+  function wireActions(){
+    shadow.addEventListener('click',function(event){var target=event.target.closest('[data-action]');if(!target)return;var action=target.getAttribute('data-action');
+      if(action==='pipeline-add'||action==='profile-pipeline-add')addToPipeline(target.getAttribute('data-player-id')||state.selectedPlayerId||profilePlayer()?.id,target);
+      if(action==='pipeline-update'){state.activePipelineId=target.getAttribute('data-pipeline-id');setView('pipelineUpdate');}
+      if(action==='usage-tab'){var type=target.getAttribute('data-type');state.selectedPack=state.packs.find(function(x){return x.type===type;})||null;state.preparedCheckout=null;render();}
+      if(action==='usage-pack'){state.selectedPack=state.packs.find(function(x){return x.priceId===target.getAttribute('data-price-id');})||null;state.preparedCheckout=null;render();}
+      if(action==='usage-prepare')prepareCheckout();if(action==='usage-launch')launchCheckout();if(action==='export-download')downloadExport(target.getAttribute('data-export-id'));if(action==='fixture-attendance')setFixtureAttendance(target.getAttribute('data-status'));if(action==='event-attendance')toggleEventAttendance();if(action==='event-calendar')addEventCalendar();if(action==='notifications-read-all')markAllRead();if(action==='chat-send')sendChat();if(action==='chat-new')newChatModal();if(action==='chat-create')createChat();if(action==='settings-save')saveSettings();if(action==='setup-open')navigate('/scout/setup');if(action==='team-invite')inviteScoutModal();if(action==='team-invite-send')inviteScout();if(action==='team-remove')removeScout(target.getAttribute('data-scout-id'));if(action==='billing-paused')toast('Billing management will be enabled when the live Stripe account is restored.');if(action==='compatibility-why')whyCompatibility();if(action==='profile-note-post')postProfileNote();if(action==='profile-share-toggle'){state.profileShareTeam=!state.profileShareTeam;render();}if(action==='profile-export')exportProfile();if(action==='profile-predict'){var p=profilePlayer();navigate('/scout/predictions?playerId='+encodeURIComponent(p?.id||''));}if(action==='profile-share')shareProfile();if(action==='external-matches')openExternalMatches();if(action==='profile-attrs-general'){state.profileAttributeMode='general';render();}if(action==='profile-attrs-positional'){state.profileAttributeMode='positional';render();}if(action==='video-overlay'){state.activeVideo=(state.profileData?.videos||[])[number(target.getAttribute('data-video-index'),0)]||null;setView('profileVideo');}if(action==='video-play'){var vu=state.activeVideo&&(state.activeVideo.video_url||state.activeVideo.url||state.activeVideo.file_url);if(vu)window.open(vu,'_blank','noopener,noreferrer');else toast('This video does not have a playable URL.',true);}if(action==='video-download'){var vd=state.activeVideo&&(state.activeVideo.video_url||state.activeVideo.url||state.activeVideo.file_url);if(vd)window.open(vd,'_blank','noopener,noreferrer');else toast('This video does not have a downloadable URL.',true);}if(action==='game-overlay'){state.activeGame=(state.profileData?.recentMatches||[])[number(target.getAttribute('data-game-index'),0)]||null;setView('profileGame');}if(action==='game-facts'){var g=state.activeGame;if(g)modal('Full Match Facts','<div class="sl-kv">'+Object.entries(g).filter(function(x){return x[1]!==null&&x[1]!==undefined&&typeof x[1]!=='object';}).slice(0,30).map(function(x){return'<span>'+escapeHtml(String(x[0]).replace(/_/g,' '))+'</span><b>'+escapeHtml(x[1])+'</b>';}).join('')+'</div>');}if(action==='media-view-all'){setView('profileMedia');}if(action==='games-view-all'){var games=state.profileData?.recentMatches||[];modal('All recorded games',games.length?games.map(function(g,index){return'<button class="list-row sl-click" data-action="game-overlay" data-game-index="'+index+'" style="width:100%;text-align:left"><span class="who"><b>'+escapeHtml(g.opponent_name||g.opponent||'Match')+'</b><span>'+escapeHtml(dateLabel(g.match_date))+'</span></span><b>'+escapeHtml(g.performance_score||'')+'</b></button>';}).join(''):'<p class="mut">No Match Facts recorded.</p>');}if(action==='prediction-history'){var row=state.predictions.find(function(x){return String(x.id)===String(target.getAttribute('data-log-id'));});if(row){state.selectedPlayerId=row.player_id;state.selectedPredictionType=row.prediction_type;state.predictionResult=row.result;state.predictionLogId=row.id;var type=String(row.prediction_type||'');setView(/ROI/i.test(type)?'predictionRoi':/Scenario/i.test(type)?'predictionScenario':/Position/i.test(type)?'predictionPosition':'predictionAttribute');}}if(action==='game-open'){state.view='profileGame';render();}
     });
 
-    body.teamWeaknesses = Array.from(shadow.querySelectorAll('.setup-opt.on b,.chip-option.on'))
-      .map(function (node) { return node.textContent.trim(); })
-      .filter(Boolean);
-
-    body.preferredPositions = body.preferredPositions || [];
-    body.ageGroups = body.ageGroups || [];
-    body.setupSummary = 'Completed Scout Desk/Field V6 onboarding';
-    return body;
-  }
-
-  async function saveOnboarding() {
-    try {
-      await request('/api/onboarding/scout-wizard', {
-        method:'POST',
-        body: collectOnboarding()
-      });
-      toast('Scout setup saved.');
-      window.setTimeout(function () {
-        navigate('/scout/dashboard');
-      }, 500);
-    } catch (error) {
-      toast(error.message, true);
+    if(state.route==='search'){
+      buttons(/^Filters$/i).forEach(function(b){b.addEventListener('click',function(){setView('searchFilters');});});
+      if(currentView()==='searchFilters'){buttons(/^Search$/i).forEach(function(b){b.addEventListener('click',function(){captureSearchFields();setView('search');});});}
+      else {buttons(/^Search$/i).forEach(function(b){b.addEventListener('click',function(){captureSearchFields();render();});});var input=shadow.querySelector('.pbody > input.in');if(input){input.addEventListener('input',function(){state.filters.q=input.value;});input.addEventListener('keydown',function(e){if(e.key==='Enter')render();});}}
     }
-  }
-
-  function wireActions() {
-    shadow.addEventListener('click', function (event) {
-      var target = event.target.closest('[data-action]');
-      if (!target) return;
-
-      var action = target.getAttribute('data-action');
-
-      if (action === 'pipeline-add') {
-        addToPipeline(target.getAttribute('data-player-id'), target);
-      }
-      if (action === 'pipeline-update') {
-        state.activePipelineId = target.getAttribute('data-pipeline-id');
-        setView('pipelineUpdate');
-      }
-      if (action === 'usage-tab') {
-        var type = target.getAttribute('data-type');
-        var pack = state.packs.find(function (item) { return item.type === type; });
-        state.selectedPack = pack || null;
-        render();
-      }
-      if (action === 'usage-pack') {
-        var priceId = target.getAttribute('data-price-id');
-        state.selectedPack = state.packs.find(function (item) {
-          return item.priceId === priceId;
-        }) || null;
-        render();
-      }
-      if (action === 'usage-checkout') startCheckout();
-      if (action === 'radar-send') {
-        toast('Ask Radar AI is intentionally not connected in this design phase. No credit has been used.');
-      }
-      if (action === 'export-download') {
-        downloadExport(target.getAttribute('data-export-id'));
-      }
-    });
-
-    buttonByText(/^Run a prediction$/i).forEach(function (button) {
-      button.addEventListener('click', function () { setView('prediction1'); });
-    });
-
-    if (currentView() === 'prediction1') {
-      buttonByText(/Continue|Next/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          capturePredictionStepOne();
-          setView('prediction2');
-        });
-      });
+    if(state.route==='rankings'){var rank=findField('Rank by'),age=findField('Age group');if(rank)rank.addEventListener('change',function(){var raw=rank.value.toLowerCase();state.rankMetric=/compat/.test(raw)?'compatibility':/potential/.test(raw)?'potential':/value/.test(raw)?'value':'overall';render();});if(age)age.addEventListener('change',function(){state.rankAge=age.value;render();});}
+    if(state.route==='pipeline'){
+      if(currentView()==='pipelineUpdate'){buttons(/Save stage|Save|Update/i).forEach(function(b){b.addEventListener('click',savePipeline);});buttons(/Cancel|Back/i).forEach(function(b){b.addEventListener('click',function(){setView('pipeline');});});}
+      Array.from(shadow.querySelectorAll('[data-pipeline-id]')).forEach(function(row){row.addEventListener('click',function(e){if(e.target.closest('button'))return;state.activePipelineId=row.getAttribute('data-pipeline-id');setView('pipelineUpdate');});});
     }
-
-    if (currentView() === 'prediction2') {
-      buttonByText(/Continue|Review|Next/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          capturePredictionInputs();
-          setView('prediction3');
-        });
-      });
-      buttonByText(/Back/i).forEach(function (button) {
-        button.addEventListener('click', function () { setView('prediction1'); });
-      });
+    if(state.route==='compare'){buttons(/^Run comparison$/i).forEach(function(b){b.addEventListener('click',runCompare);});buttons(/Export comparison/i).forEach(function(b){b.addEventListener('click',exportComparison);});buttons(/^Decision comparison$/i).forEach(function(b){b.addEventListener('click',function(){state.compareMode='decision';render();});});buttons(/^Overall attributes$/i).forEach(function(b){b.addEventListener('click',function(){state.compareMode='attributes';render();});});}
+    if(state.route==='predictions'){
+      buttons(/^Run a prediction$/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction1');});});
+      if(currentView()==='prediction1'){Array.from(shadow.querySelectorAll('button')).forEach(function(b){if(/Attribute Development|Position Fit Projection|Match Scenario Prediction|ROI Analysis/.test(b.textContent))b.addEventListener('click',function(e){selectedModelButton(e);Array.from(shadow.querySelectorAll('button')).forEach(function(x){x.classList.remove('on');});b.classList.add('on');});});buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){capturePredictionStepOne();if(!state.selectedPredictionType)state.selectedPredictionType='Attribute Development';setView('prediction2');});});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){setView('predictions');});});}
+      if(currentView()==='prediction2'){buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){capturePredictionInputs();setView('prediction3');});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction1');});});}
+      if(currentView()==='prediction3'){buttons(/Run prediction|Generate/i).forEach(function(b){b.addEventListener('click',function(){runPrediction(b);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction2');});});}
+      if(/^prediction(Attribute|Position|Scenario|Roi)$/.test(currentView())){buttons(/Export PDF/i).forEach(function(b){b.addEventListener('click',exportPrediction);});buttons(/Run another/i).forEach(function(b){b.addEventListener('click',function(){state.predictionResult=null;state.predictionLogId=null;setView('prediction1');});});buttons(/Prediction history|Done/i).forEach(function(b){b.addEventListener('click',function(){setView('predictions');});});}
     }
-
-    if (currentView() === 'prediction3') {
-      buttonByText(/Run|Generate/i).forEach(function (button) {
-        button.addEventListener('click', function () { runPrediction(button); });
-      });
-      buttonByText(/Back/i).forEach(function (button) {
-        button.addEventListener('click', function () { setView('prediction2'); });
-      });
-    }
-
-    if (state.route === 'pipeline' && currentView() === 'pipelineUpdate') {
-      var saveButtons = buttonByText(/Save|Update/i);
-      saveButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-          var select = shadow.querySelector('select');
-          updatePipeline(
-            state.activePipelineId,
-            select ? select.value : 'Watching'
-          );
-        });
-      });
-      buttonByText(/Cancel|Back/i).forEach(function (button) {
-        button.addEventListener('click', function () { setView('pipeline'); });
-      });
-    }
-
-    if (state.route === 'usage') {
-      buttonByText(/Continue to Stripe Checkout/i).forEach(function (button) {
-        if (!button.hasAttribute('data-action')) {
-          button.addEventListener('click', startCheckout);
-        }
-      });
-    }
-
-    if (state.route === 'radar') {
-      buttonByText(/Add more/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          navigate('/scout/usage?type=ask_radar');
-        });
-      });
-    }
-
-    if (state.route === 'exports') {
-      buttonByText(/New export/i).forEach(function (button) {
-        button.addEventListener('click', function () { setView('exportNew'); });
-      });
-    }
-
-    if (state.route === 'onboarding') {
-      var view = currentView();
-      var steps = ['onboarding1','onboarding2','onboarding3','onboarding4'];
-      var index = steps.indexOf(view);
-      buttonByText(/Continue/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (index < 3) setView(steps[index + 1]);
-          else saveOnboarding();
-        });
-      });
-      buttonByText(/Back/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (index > 0) setView(steps[index - 1]);
-        });
-      });
-      buttonByText(/Finish|Complete setup|Save/i).forEach(function (button) {
-        button.addEventListener('click', saveOnboarding);
-      });
-    }
-
-    if (state.route === 'setup') {
-      var setupSteps = ['setup1','setup2','setup3','setup4','setupReview'];
-      var si = setupSteps.indexOf(currentView());
-      buttonByText(/Continue|Review/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (si < setupSteps.length - 1) setView(setupSteps[si + 1]);
-        });
-      });
-      buttonByText(/Back/i).forEach(function (button) {
-        button.addEventListener('click', function () {
-          if (si > 0) setView(setupSteps[si - 1]);
-        });
-      });
-    }
-
-    Array.from(shadow.querySelectorAll('.list-row[data-player-id],.rank-row[data-player-id]'))
-      .forEach(function (row) {
-        row.addEventListener('click', function (event) {
-          if (event.target.closest('button')) return;
-          var id = row.getAttribute('data-player-id');
-          if (id) navigate('/player/profile?id=' + encodeURIComponent(id));
-        });
-      });
-
-    Array.from(shadow.querySelectorAll('[data-fixture-id]')).forEach(function (row) {
-      row.addEventListener('click', function () { setView('fixtureDetail'); });
-    });
-
-    Array.from(shadow.querySelectorAll('[data-event-id]')).forEach(function (row) {
-      row.addEventListener('click', function () { setView('eventDetail'); });
-    });
+    if(state.route==='fixtures'){Array.from(shadow.querySelectorAll('[data-fixture-id]')).forEach(function(row){row.addEventListener('click',async function(e){e.stopPropagation();state.activeFixtureId=row.getAttribute('data-fixture-id');state.fixtureDetail=unwrap(await request('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId)));setView('fixtureDetail');});});}
+    if(state.route==='events'){Array.from(shadow.querySelectorAll('[data-event-id]')).forEach(function(row){row.addEventListener('click',async function(){state.activeEventId=row.getAttribute('data-event-id');state.eventDetail=unwrap(await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)));setView('eventDetail');});});}
+    if(state.route==='notifications'){Array.from(shadow.querySelectorAll('[data-notification-id]')).forEach(function(row){row.addEventListener('click',function(){markNotification(row.getAttribute('data-notification-id'));});});Array.from(shadow.querySelectorAll('.seg a,button')).forEach(function(b){var t=b.textContent.trim().toLowerCase();if(['all','scout interest','match fact','recruitment','system','chat','fixture attendance','admin','showcase event'].indexOf(t)!==-1)b.addEventListener('click',function(){state.notificationFilter=t==='all'?'all':t.replace(/\s+/g,'_');render();});});}
+    if(state.route==='chat'&&currentView()==='chat'){Array.from(shadow.querySelectorAll('[data-thread-id]')).forEach(function(row){row.addEventListener('click',function(){openThread(row.getAttribute('data-thread-id'));});});}
+    if(state.route==='exports'){buttons(/New export/i).forEach(function(b){b.addEventListener('click',function(){setView('exportNew');});});if(currentView()==='exportNew'){buttons(/Generate export/i).forEach(function(b){b.addEventListener('click',generateExport);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){setView('exports');});});}}
+    if(state.route==='setup'){Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){opt.addEventListener('click',function(){opt.classList.toggle('on');});});var steps=['setup1','setup2','setup3','setup4','setupReview'],i=steps.indexOf(currentView());buttons(/Continue|Review/i).forEach(function(b){b.addEventListener('click',function(){captureSetupStep();if(i<steps.length-1)setView(steps[i+1]);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){captureSetupStep();if(i>0)setView(steps[i-1]);});});buttons(/Save setup/i).forEach(function(b){b.addEventListener('click',saveSetup);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){navigate('/scout/settings');});});}
+    if(state.route==='concern'){buttons(/Submit report/i).forEach(function(b){b.addEventListener('click',submitConcern);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){navigate('/scout/settings');});});}
+    if(state.route==='profile'){Array.from(shadow.querySelectorAll('button,a')).forEach(function(b){var t=b.textContent.trim();if(t==='Overview')b.addEventListener('click',function(){setView('profile');});if(t==='Attributes')b.addEventListener('click',function(){setView('profileAttributes');});if(t==='Media')b.addEventListener('click',function(){setView('profileMedia');});if(t==='Notes')b.addEventListener('click',function(){setView('profileNotes');});});}
+    if(state.route==='onboarding'){Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){opt.addEventListener('click',function(){opt.classList.toggle('on');});});var os=['onboarding1','onboarding2','onboarding3','onboarding4'],oi=os.indexOf(currentView());buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){collectOnboarding();if(oi<3)setView(os[oi+1]);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){collectOnboarding();if(oi>0)setView(os[oi-1]);});});buttons(/Create my workspace|Finish|Complete setup/i).forEach(function(b){b.addEventListener('click',saveOnboarding);});}
+    Array.from(shadow.querySelectorAll('.list-row[data-player-id],.rank-row[data-player-id]')).forEach(function(row){row.addEventListener('click',function(e){if(e.target.closest('button'))return;var id=row.getAttribute('data-player-id');if(id)navigate('/player/profile?id='+encodeURIComponent(id));});});
   }
 
-  async function loadPlayers() {
-    var payload = await safe('/api/scout-intelligence-v64/players?limit=200', []);
-    state.players = normalizeRows(payload)
-      .map(normalizePlayer)
-      .filter(function (p) { return p && p.id; });
-  }
+  async function loadWorkspace(){state.workspace=await safe('/api/scout-experience-v9/workspace',{});}
+  async function loadUsage(){try{var p=unwrap(await request('/api/scout-usage'))||{};state.usage=p.usage||null;state.packs=Array.isArray(p.packs)?p.packs:[];state.purchases=Array.isArray(p.purchases)?p.purchases:[];state.stripeReady=!!p.stripeReady;state.paymentLaunchAllowed=!!p.paymentLaunchAllowed;if(!state.selectedPack&&state.packs.length)state.selectedPack=state.packs[0];}catch(error){console.warn('[Scout usage]',error);state.usage=null;}}
+  async function loadPlayers(){try{var p=await request('/api/scout-v6/players?limit=200');state.players=normalizeRows(p).map(normalizePlayer).filter(function(x){return x&&x.id;});state.filterOptions=p&&p.filters?p.filters:{regions:[],positions:[],ageGroups:[]};}catch(error){console.warn('[Scout V6] players',error);state.players=[];state.filterOptions={regions:[],positions:[],ageGroups:[]};}}
+  async function loadPipeline(){state.pipeline=normalizeRows(await safe('/api/scout-v6/pipeline',[]));}
+  async function loadPredictions(){state.predictions=normalizeRows(await safe('/api/predictions',[]));state.scenarios=normalizeRows(await safe('/api/predictions/scenarios',[]));}
+  async function loadFixtures(){state.fixtures=normalizeRows(await safe('/api/scout-v6/fixtures',[]));if(state.activeFixtureId)state.fixtureDetail=await safe('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId),null);}
+  async function loadEvents(){state.events=normalizeRows(await safe('/api/scout-v6/events',[]));if(state.activeEventId)state.eventDetail=await safe('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId),null);}
+  async function loadNotifications(){var p=await safe('/api/notifications?limit=100',{data:[]});state.notifications=normalizeRows(p);}
+  async function loadThreads(){state.threads=normalizeRows(await safe('/api/chat/threads',[]));if(state.activeThreadId)state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',[]));}
+  async function loadExports(){state.exports=normalizeRows(await safe('/api/scout-experience-v9/exports',[]));}
+  async function loadSettings(){state.settings=await safe('/api/scout-v6/settings',null);}
+  async function loadSetup(){state.setup=await safe('/api/scout-v6/setup',null);}
+  async function loadProfile(){if(!state.selectedPlayerId)return;state.profileData=await safe('/api/scout-v6/players/'+encodeURIComponent(state.selectedPlayerId),null);}
+  async function load(){root.classList.add('is-loading');root.setAttribute('aria-busy','true');root.style.visibility='hidden';if(!authToken()){window.location.href='/login';return;}try{await loadWorkspace();await Promise.all([loadUsage(),loadNotifications()]);var jobs=[];if(['dashboard','search','rankings','compare','predictions','exports'].indexOf(state.route)!==-1)jobs.push(loadPlayers());if(['dashboard','search','pipeline','chat'].indexOf(state.route)!==-1)jobs.push(loadPipeline());if(state.route==='predictions')jobs.push(loadPredictions());if(state.route==='fixtures')jobs.push(loadFixtures());if(state.route==='events')jobs.push(loadEvents());if(state.route==='chat')jobs.push(loadThreads());if(state.route==='exports')jobs.push(loadExports());if(state.route==='settings')jobs.push(loadSettings());if(state.route==='setup')jobs.push(loadSetup());if(state.route==='profile')jobs.push(loadProfile());await Promise.all(jobs);}catch(error){console.error('[Scout V6 load]',error);state.error=error;}render();}
 
-  async function loadPipeline() {
-    var payload = await safe('/api/scouts/pipeline?limit=100', []);
-    state.pipeline = normalizeRows(payload);
-  }
-
-  async function loadPredictions() {
-    var payload = await safe('/api/predictions', []);
-    state.predictions = normalizeRows(payload);
-  }
-
-  async function loadFixtures() {
-    var payload = await safe('/api/scouts/fixtures', []);
-    state.fixtures = normalizeRows(payload);
-  }
-
-  async function loadEvents() {
-    var payload = await safe('/api/showcase', []);
-    state.events = normalizeRows(payload);
-  }
-
-  async function loadNotifications() {
-    var payload = await safe('/api/notifications?limit=100', []);
-    state.notifications = normalizeRows(payload);
-  }
-
-  async function loadThreads() {
-    var payload = await safe('/api/scout-intelligence-v64/chat/threads', []);
-    state.threads = normalizeRows(payload);
-  }
-
-  async function loadExports() {
-    var payload = await safe('/api/scout-experience-v9/exports', []);
-    state.exports = normalizeRows(payload);
-  }
-
-  async function loadProfile() {
-    var id = state.selectedPlayerId;
-    if (!id) return;
-    state.profileData = await safe(
-      '/api/scout-experience-v9/player/' + encodeURIComponent(id),
-      null
-    );
-  }
-
-  async function loadUsage() {
-    try {
-      var payload = unwrap(await request('/api/scout-usage')) || {};
-      state.usage = payload.usage || null;
-      state.packs = Array.isArray(payload.packs) ? payload.packs : [];
-      state.purchases = Array.isArray(payload.purchases) ? payload.purchases : [];
-
-      if (!state.selectedPack && state.packs.length) {
-        var requested = query('type');
-        var normalized = {
-          predictions:'prediction',
-          prediction:'prediction',
-          exports:'export',
-          export:'export',
-          interests:'interest_request',
-          interest_request:'interest_request',
-          radar:'ask_radar',
-          ask_radar:'ask_radar'
-        }[requested] || 'ask_radar';
-        state.selectedPack =
-          state.packs.find(function (item) { return item.type === normalized; }) ||
-          state.packs[0];
-      }
-    } catch (error) {
-      console.warn('[Scout V6 usage]', error);
-      state.usage = null;
-    }
-  }
-
-  async function loadCheckoutStatus() {
-    var sessionId = query('session_id');
-    if (!sessionId || query('checkout') !== 'success') return;
-    try {
-      state.checkoutStatus = unwrap(await request(
-        '/api/scout-usage/checkout/' + encodeURIComponent(sessionId)
-      ));
-    } catch (_) {
-      state.checkoutStatus = null;
-    }
-  }
-
-  async function load() {
-    root.classList.add('is-loading');
-    root.setAttribute('aria-busy', 'true');
-    root.style.visibility = 'hidden';
-
-    if (!authToken()) {
-      window.location.href = '/login';
-      return;
-    }
-
-    try {
-      state.workspace = await safe('/api/scout-experience-v9/workspace', {});
-      await loadUsage();
-
-      var loaders = [];
-      if (['dashboard','search','rankings','compare','predictions'].indexOf(state.route) !== -1) {
-        loaders.push(loadPlayers());
-      }
-      if (['dashboard','pipeline','compare'].indexOf(state.route) !== -1) {
-        loaders.push(loadPipeline());
-      }
-      if (state.route === 'predictions') loaders.push(loadPredictions());
-      if (state.route === 'fixtures') loaders.push(loadFixtures());
-      if (state.route === 'events') loaders.push(loadEvents());
-      if (state.route === 'notifications') loaders.push(loadNotifications());
-      if (state.route === 'chat') loaders.push(loadThreads());
-      if (state.route === 'exports') loaders.push(loadExports());
-      if (state.route === 'profile') loaders.push(loadProfile());
-      if (state.route === 'usage') loaders.push(loadCheckoutStatus());
-
-      await Promise.all(loaders);
-    } catch (error) {
-      console.error('[Scout V6 load]', error);
-      state.error = error;
-    }
-
-    render();
-  }
-
-  var media = window.matchMedia('(max-width: 800px)');
-  var resizeTimer = null;
-  function mediaChanged() {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(function () {
-      var next = media.matches ? 'field' : 'desk';
-      if (next === state.mode) return;
-      state.mode = next;
-      render();
-    }, 100);
-  }
-
-  if (media.addEventListener) media.addEventListener('change', mediaChanged);
-  else if (media.addListener) media.addListener(mediaChanged);
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', load, { once:true });
-  } else {
-    load();
-  }
+  var media=window.matchMedia('(max-width:800px)'),resizeTimer=null;function mediaChanged(){clearTimeout(resizeTimer);resizeTimer=setTimeout(function(){var next=media.matches?'field':'desk';if(next!==state.mode){state.mode=next;render();}},100);}if(media.addEventListener)media.addEventListener('change',mediaChanged);else if(media.addListener)media.addListener(mediaChanged);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
 }());
