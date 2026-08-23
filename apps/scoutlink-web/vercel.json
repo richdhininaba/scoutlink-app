@@ -76,6 +76,16 @@
       "source": "/public-demo/scout/preferences",
       "destination": "/public-demo/scout/settings",
       "permanent": false
+    },
+    {
+      "source": "/scout/usage-requests",
+      "destination": "/scout/usage",
+      "permanent": false
+    },
+    {
+      "source": "/public-demo/scout/usage-requests",
+      "destination": "/public-demo/scout/usage",
+      "permanent": false
     }
   ],
   "rewrites": [
@@ -168,8 +178,8 @@
       "destination": "/pages/scout-predictions"
     },
     {
-      "source": "/public-demo/scout/usage-requests",
-      "destination": "/pages/scout-usage-requests"
+      "source": "/public-demo/scout/usage",
+      "destination": "/pages/scout-usage"
     },
     {
       "source": "/public-demo/scout/exports",
@@ -188,10 +198,6 @@
       "destination": "/pages/scout-events"
     },
     {
-      "source": "/public-demo/scout/events/:slug",
-      "destination": "/pages/scout-events"
-    },
-    {
       "source": "/public-demo/scout/chat",
       "destination": "/pages/scout-chat"
     },
@@ -200,12 +206,20 @@
       "destination": "/pages/scout-notifications"
     },
     {
+      "source": "/public-demo/scout/radar",
+      "destination": "/pages/scout-radar"
+    },
+    {
       "source": "/public-demo/scout/report-a-concern",
       "destination": "/pages/scout-report-concern"
     },
     {
       "source": "/public-demo/scout/settings",
       "destination": "/pages/scout-settings"
+    },
+    {
+      "source": "/public-demo/scout/events/:slug",
+      "destination": "/pages/scout-events"
     },
     {
       "source": "/public-demo/coach/player/profile",
@@ -364,8 +378,8 @@
       "destination": "/pages/scout-predictions"
     },
     {
-      "source": "/scout/usage-requests",
-      "destination": "/pages/scout-usage-requests"
+      "source": "/scout/usage",
+      "destination": "/pages/scout-usage"
     },
     {
       "source": "/scout/exports",
@@ -384,10 +398,6 @@
       "destination": "/pages/scout-events"
     },
     {
-      "source": "/scout/events/:slug",
-      "destination": "/pages/scout-events"
-    },
-    {
       "source": "/scout/chat",
       "destination": "/pages/scout-chat"
     },
@@ -396,12 +406,20 @@
       "destination": "/pages/scout-notifications"
     },
     {
+      "source": "/scout/radar",
+      "destination": "/pages/scout-radar"
+    },
+    {
       "source": "/scout/report-a-concern",
       "destination": "/pages/scout-report-concern"
     },
     {
       "source": "/scout/settings",
       "destination": "/pages/scout-settings"
+    },
+    {
+      "source": "/scout/events/:slug",
+      "destination": "/pages/scout-events"
     },
     {
       "source": "/player/dashboard",
