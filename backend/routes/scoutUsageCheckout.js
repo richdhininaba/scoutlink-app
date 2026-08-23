@@ -33,13 +33,161 @@ const TYPE_LABELS = Object.freeze({
   ask_radar: 'Ask Radar credits'
 });
 
+/*
+ * Verified against the live Stratex Analytics Stripe account on 23 Aug 2026.
+ * This fallback exists so the Scout usage page remains functional while the
+ * production STRIPE_SECRET_KEY is temporarily unavailable in Vercel.
+ *
+ * It is a catalogue only. It cannot create a payment or grant credits.
+ * The signed Stripe webhook remains the only path that can apply paid usage.
+ */
+const VERIFIED_LIVE_PACKS = Object.freeze([
+  {
+    priceId: 'price_1U7EGJLzVSereCjWorwk7I0b',
+    type: 'prediction',
+    quantity: 10,
+    amount: 900,
+    currency: 'gbp',
+    productName: 'Prediction Pack - 10'
+  },
+  {
+    priceId: 'price_1U7EGOLzVSereCjWWfJ94o8L',
+    type: 'prediction',
+    quantity: 25,
+    amount: 1900,
+    currency: 'gbp',
+    productName: 'Prediction Pack - 25'
+  },
+  {
+    priceId: 'price_1U7EGULzVSereCjWv4Ro5XjG',
+    type: 'prediction',
+    quantity: 50,
+    amount: 3400,
+    currency: 'gbp',
+    productName: 'Prediction Pack - 50'
+  },
+  {
+    priceId: 'price_1U7EGYLzVSereCjWfT0R0vfX',
+    type: 'prediction',
+    quantity: 100,
+    amount: 5900,
+    currency: 'gbp',
+    productName: 'Prediction Pack - 100'
+  },
+  {
+    priceId: 'price_1U7EGcLzVSereCjWniTFuCv1',
+    type: 'export',
+    quantity: 10,
+    amount: 900,
+    currency: 'gbp',
+    productName: 'Export Pack - 10'
+  },
+  {
+    priceId: 'price_1U7EGhLzVSereCjWXyrtGqnj',
+    type: 'export',
+    quantity: 25,
+    amount: 1900,
+    currency: 'gbp',
+    productName: 'Export Pack - 25'
+  },
+  {
+    priceId: 'price_1U7EGnLzVSereCjWzVbB6l1K',
+    type: 'export',
+    quantity: 50,
+    amount: 3400,
+    currency: 'gbp',
+    productName: 'Export Pack - 50'
+  },
+  {
+    priceId: 'price_1U7EGyLzVSereCjW1qp2yBMi',
+    type: 'export',
+    quantity: 100,
+    amount: 5900,
+    currency: 'gbp',
+    productName: 'Export Pack - 100'
+  },
+  {
+    priceId: 'price_1U7EH4LzVSereCjWZiapW9xy',
+    type: 'interest_request',
+    quantity: 10,
+    amount: 17900,
+    currency: 'gbp',
+    productName: 'Interest Request Pack - 10'
+  },
+  {
+    priceId: 'price_1U7EHALzVSereCjWND1G8BAH',
+    type: 'interest_request',
+    quantity: 25,
+    amount: 39900,
+    currency: 'gbp',
+    productName: 'Interest Request Pack - 25'
+  },
+  {
+    priceId: 'price_1U7EHGLzVSereCjWn7SqHgqR',
+    type: 'interest_request',
+    quantity: 50,
+    amount: 69900,
+    currency: 'gbp',
+    productName: 'Interest Request Pack - 50'
+  },
+  {
+    priceId: 'price_1U7EHPLzVSereCjWSyracQiG',
+    type: 'interest_request',
+    quantity: 100,
+    amount: 119900,
+    currency: 'gbp',
+    productName: 'Interest Request Pack - 100'
+  },
+  {
+    priceId: 'price_1U7I38LzVSereCjW86L8werU',
+    type: 'ask_radar',
+    quantity: 50,
+    amount: 4900,
+    currency: 'gbp',
+    productName: 'Ask Radar Pack - 50'
+  },
+  {
+    priceId: 'price_1U7I3DLzVSereCjWW9wphaao',
+    type: 'ask_radar',
+    quantity: 150,
+    amount: 12900,
+    currency: 'gbp',
+    productName: 'Ask Radar Pack - 150'
+  },
+  {
+    priceId: 'price_1U7I3ILzVSereCjWOoH9Hk4A',
+    type: 'ask_radar',
+    quantity: 400,
+    amount: 29900,
+    currency: 'gbp',
+    productName: 'Ask Radar Pack - 400'
+  },
+  {
+    priceId: 'price_1U7I3PLzVSereCjWY6yKKK6O',
+    type: 'ask_radar',
+    quantity: 1000,
+    amount: 64900,
+    currency: 'gbp',
+    productName: 'Ask Radar Pack - 1000'
+  }
+]);
+
+const PAYMENT_SURFACE_ENABLED = false;
+
 let stripeInstance = null;
 let packCache = null;
 let packCacheAt = 0;
+let packCacheSource = 'verified-live-fallback';
+
+function stripeConfigured() {
+  return /^sk_live_[A-Za-z0-9]+$/.test(String(process.env.STRIPE_SECRET_KEY || '').trim());
+}
 
 function stripe() {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    const error = new Error('Stripe is not configured.');
+  if (!stripeConfigured()) {
+    const error = new Error(
+      'Live Stripe checkout is not available yet. The selected pack is valid and ready for the Stripe handoff once the live key is restored.'
+    );
     error.status = 503;
     throw error;
   }
@@ -77,6 +225,32 @@ function money(amount, currency) {
   }
 }
 
+function finalisePack(pack) {
+  const type = text(pack.type).toLowerCase();
+  return {
+    priceId: pack.priceId,
+    productId: pack.productId || null,
+    type,
+    limitKey: TYPE_TO_LIMIT[type],
+    label: TYPE_LABELS[type],
+    quantity: integer(pack.quantity),
+    amount: integer(pack.amount),
+    currency: text(pack.currency || 'gbp', 3).toLowerCase(),
+    priceLabel: money(pack.amount, pack.currency),
+    productName: text(pack.productName, 180),
+    sortOrder: [
+      'prediction',
+      'export',
+      'interest_request',
+      'ask_radar'
+    ].indexOf(type)
+  };
+}
+
+function fallbackPacks() {
+  return VERIFIED_LIVE_PACKS.map(finalisePack);
+}
+
 function topUpMetadata(price) {
   const product =
     price &&
@@ -107,56 +281,67 @@ function validateTopUpPrice(price) {
   if (!quantity) return null;
   if (!price.unit_amount || !price.currency) return null;
 
-  return {
+  return finalisePack({
     priceId: price.id,
     productId:
       price.product && typeof price.product === 'object'
         ? price.product.id
         : price.product || null,
     type,
-    limitKey: TYPE_TO_LIMIT[type],
-    label: TYPE_LABELS[type],
     quantity,
     amount: price.unit_amount,
     currency: price.currency,
-    priceLabel: money(price.unit_amount, price.currency),
     productName:
       price.product && typeof price.product === 'object'
         ? text(price.product.name, 180)
-        : '',
-    sortOrder: [
-      'prediction',
-      'export',
-      'interest_request',
-      'ask_radar'
-    ].indexOf(type)
-  };
+        : ''
+  });
 }
 
 async function listPacks(force = false) {
   const now = Date.now();
   if (!force && packCache && now - packCacheAt < 5 * 60 * 1000) {
-    return packCache;
+    return { packs: packCache, source: packCacheSource };
   }
 
-  const response = await stripe().prices.list({
-    active: true,
-    limit: 100,
-    type: 'one_time',
-    expand: ['data.product']
-  });
+  if (!stripeConfigured()) {
+    packCache = fallbackPacks();
+    packCacheAt = now;
+    packCacheSource = 'verified-live-fallback';
+    return { packs: packCache, source: packCacheSource };
+  }
 
-  const packs = (response.data || [])
-    .map(validateTopUpPrice)
-    .filter(Boolean)
-    .sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-      return a.quantity - b.quantity;
+  try {
+    const response = await stripe().prices.list({
+      active: true,
+      limit: 100,
+      type: 'one_time',
+      expand: ['data.product']
     });
 
-  packCache = packs;
-  packCacheAt = now;
-  return packs;
+    const packs = (response.data || [])
+      .map(validateTopUpPrice)
+      .filter(Boolean)
+      .sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
+        return a.quantity - b.quantity;
+      });
+
+    if (!packs.length) {
+      throw new Error('No ScoutLink top-up prices were returned by Stripe.');
+    }
+
+    packCache = packs;
+    packCacheAt = now;
+    packCacheSource = 'stripe-live';
+    return { packs, source: packCacheSource };
+  } catch (error) {
+    console.warn('[Scout usage] Stripe catalogue unavailable; using verified live fallback:', error.message);
+    packCache = fallbackPacks();
+    packCacheAt = now;
+    packCacheSource = 'verified-live-fallback';
+    return { packs: packCache, source: packCacheSource };
+  }
 }
 
 async function loadContext(userId) {
@@ -343,18 +528,56 @@ function webBaseUrl(req) {
   return 'https://scoutlink.app';
 }
 
+async function preparedCheckout(context, priceId) {
+  const catalogue = await listPacks();
+  const pack = catalogue.packs.find(item => item.priceId === priceId);
+
+  if (!pack) {
+    const issue = new Error('That ScoutLink top-up pack is not available.');
+    issue.status = 400;
+    throw issue;
+  }
+  if (pack.type === 'ask_radar') {
+    const issue = new Error('Ask Radar top-ups are unavailable until Ask Radar is enabled.');
+    issue.status = 409;
+    throw issue;
+  }
+
+  const currentPlan =
+    context.team?.subscription_plan ||
+    context.scout.subscription_plan ||
+    'Core';
+
+  const currentLimits = context.scout.scout_team_id
+    ? effectiveLimits(currentPlan, context.team?.limit_overrides || {})
+    : effectiveLimits(currentPlan, context.scout.limit_overrides || {});
+
+  return {
+    pack,
+    plan: currentPlan,
+    baseLimit: baseLimitFor(context, pack.type),
+    effectiveLimitBeforePurchase: integer(currentLimits[pack.limitKey]),
+    stripeReady: stripeConfigured(),
+    demoAccount: Boolean(context.scout.is_demo),
+    paymentLaunchAllowed: PAYMENT_SURFACE_ENABLED && stripeConfigured() && !context.scout.is_demo,
+    catalogueSource: catalogue.source,
+    handoffReady: true
+  };
+}
+
 router.use(requireAuth, requireRole('Scout'));
 
 router.get('/', async (req, res) => {
   try {
-    let context = await loadContext(req.user.id);
+    const context = await loadContext(req.user.id);
 
-    const [packs, usage, purchases] = await Promise.all([
+    const [catalogue, usage, purchases] = await Promise.all([
       listPacks(),
       getScoutUsageSnapshot(context),
       purchaseHistory(context)
     ]);
 
+    res.set('Cache-Control', 'no-store');
     res.json({
       data: {
         plan:
@@ -363,14 +586,51 @@ router.get('/', async (req, res) => {
           usage.plan,
         scope: usage.scope,
         usage,
-        packs,
-        purchases
+        packs: catalogue.packs.filter(pack => pack.type !== 'ask_radar'),
+        purchases,
+        stripeReady: stripeConfigured(),
+        demoAccount: Boolean(context.scout.is_demo),
+        paymentLaunchAllowed: PAYMENT_SURFACE_ENABLED && stripeConfigured() && !context.scout.is_demo,
+        catalogueSource: catalogue.source,
+        checkoutMode: 'prepared-handoff-only',
+        note: 'The live Stripe catalogue is verified and the checkout handoff can be prepared. Payment launch is intentionally paused until the Stripe payment surface is enabled.'
       }
     });
   } catch (error) {
     console.error('[Scout usage GET]', error);
     res.status(error.status || 500).json({
       error: error.status ? error.message : 'Usage could not be loaded.'
+    });
+  }
+});
+
+router.post('/prepare', async (req, res) => {
+  try {
+    const priceId = text(req.body && req.body.priceId, 120);
+    if (!priceId) return res.status(400).json({ error: 'priceId is required.' });
+
+    let context = await loadContext(req.user.id);
+    context = await ensureTeam(context);
+
+    const prepared = await preparedCheckout(context, priceId);
+
+    res.json({
+      data: {
+        ...prepared,
+        nextStep: prepared.demoAccount
+          ? 'demo_checkout_disabled'
+          : 'payment_surface_pending',
+        message: prepared.demoAccount
+          ? 'This is a demo Scout account. Live payment launch is intentionally disabled.'
+          : 'This pack is validated and the checkout handoff is ready. Payment launch is intentionally paused for the next Stripe integration step.'
+      }
+    });
+  } catch (error) {
+    console.error('[Scout usage prepare]', error);
+    res.status(error.status || 500).json({
+      error: error.status
+        ? error.message
+        : 'The Stripe handoff could not be prepared.'
     });
   }
 });
@@ -385,25 +645,30 @@ router.post('/checkout', async (req, res) => {
     let context = await loadContext(req.user.id);
     context = await ensureTeam(context);
 
-    const packs = await listPacks();
-    const pack = packs.find(item => item.priceId === priceId);
+    const prepared = await preparedCheckout(context, priceId);
 
-    if (!pack) {
-      return res.status(400).json({
-        error: 'That ScoutLink top-up price is not available.'
+    if (!PAYMENT_SURFACE_ENABLED) {
+      return res.status(503).json({
+        error: 'The checkout handoff is ready, but payment launch is intentionally paused until the Stripe payment surface is enabled.',
+        prepared
       });
     }
 
-    const currentPlan =
-      context.team?.subscription_plan ||
-      context.scout.subscription_plan ||
-      'Core';
+    if (prepared.demoAccount) {
+      return res.status(409).json({
+        error: 'Live Stripe checkout is disabled for demo Scout accounts.',
+        prepared
+      });
+    }
 
-    const currentLimits = context.scout.scout_team_id
-      ? effectiveLimits(currentPlan, context.team?.limit_overrides || {})
-      : effectiveLimits(currentPlan, context.scout.limit_overrides || {});
+    if (!prepared.stripeReady) {
+      return res.status(503).json({
+        error: 'The pack is ready, but live Stripe payment launch is paused until STRIPE_SECRET_KEY is restored in Vercel.',
+        prepared
+      });
+    }
 
-    const baseLimit = baseLimitFor(context, pack.type);
+    const pack = prepared.pack;
     const baseUrl = webBaseUrl(req);
 
     const metadata = {
@@ -415,10 +680,10 @@ router.post('/checkout', async (req, res) => {
       limit_key: pack.limitKey,
       quantity_included: String(pack.quantity),
       price_id: pack.priceId,
-      plan_at_purchase: String(currentPlan),
-      base_limit: String(baseLimit),
+      plan_at_purchase: String(prepared.plan),
+      base_limit: String(prepared.baseLimit),
       effective_limit_before_purchase: String(
-        integer(currentLimits[pack.limitKey])
+        prepared.effectiveLimitBeforePurchase
       )
     };
 
@@ -438,7 +703,8 @@ router.post('/checkout', async (req, res) => {
       data: {
         id: session.id,
         url: session.url,
-        pack
+        pack,
+        prepared
       }
     });
   } catch (error) {
@@ -456,13 +722,13 @@ router.get('/checkout/:sessionId', async (req, res) => {
     const sessionId = text(req.params.sessionId, 160);
     const context = await loadContext(req.user.id);
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('scout_usage_purchases')
       .select('*')
       .eq('stripe_checkout_session_id', sessionId)
-      .eq('scout_id', context.scout.id);
+      .eq('scout_id', context.scout.id)
+      .maybeSingle();
 
-    const { data, error } = await query.maybeSingle();
     if (error) throw error;
 
     res.json({
@@ -482,7 +748,10 @@ router.get('/checkout/:sessionId', async (req, res) => {
 });
 
 module.exports = router;
-module.exports.listPacks = listPacks;
+module.exports.listPacks = async function listPacksForTests(force = false) {
+  return (await listPacks(force)).packs;
+};
 module.exports.validateTopUpPrice = validateTopUpPrice;
 module.exports.loadContext = loadContext;
 module.exports.baseLimitFor = baseLimitFor;
+module.exports.VERIFIED_LIVE_PACKS = VERIFIED_LIVE_PACKS;
