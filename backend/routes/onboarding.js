@@ -6,6 +6,7 @@ const { supabase } = require('../db/supabase');
 const { requireAuth, requireRole } = require('../utils/auth');
 
 const COACH_ONBOARDING_VERSION = 16;
+const SCOUT_ONBOARDING_VERSION = 6;
 
 function cleanText(value, maxLength = 500) {
   return String(value || '').trim().slice(0, maxLength);
@@ -15,6 +16,18 @@ function cleanObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value
     : {};
+}
+
+function cleanList(value, maxItems = 50, maxLength = 120) {
+  const list = Array.isArray(value)
+    ? value
+    : String(value || '').split(',');
+
+  return Array.from(new Set(
+    list
+      .map(item => cleanText(item, maxLength))
+      .filter(Boolean)
+  )).slice(0, maxItems);
 }
 
 function cleanAgeGroups(value) {
@@ -60,34 +73,17 @@ function normaliseCoachDraft(raw) {
   raw = cleanObject(raw);
   const state = cleanObject(raw.state);
 
-  /*
-   * V16 is the current Coach Desk / Field setup shape. Legacy fields remain
-   * alongside it so a draft created by an older deployment can still be
-   * resumed without losing useful information.
-   */
   return {
     version: COACH_ONBOARDING_VERSION,
     step: Math.max(0, Math.min(3, Number(raw.step) || 0)),
     maxUnlocked: Math.max(0, Math.min(3, Number(raw.maxUnlocked) || 0)),
     state: {
-      firstName: cleanText(
-        state.firstName || state.coachFirst,
-        120
-      ),
-      lastName: cleanText(
-        state.lastName || state.coachLast,
-        120
-      ),
-      email: cleanText(
-        state.email || state.coachEmail,
-        240
-      ),
+      firstName: cleanText(state.firstName || state.coachFirst, 120),
+      lastName: cleanText(state.lastName || state.coachLast, 120),
+      email: cleanText(state.email || state.coachEmail, 240),
       phone: cleanText(state.phone, 80),
       country: cleanText(state.country, 120) || 'United Kingdom',
-      role: cleanText(
-        state.role || state.roleAtClub,
-        120
-      ) || 'Head coach — youth',
+      role: cleanText(state.role || state.roleAtClub, 120) || 'Head coach — youth',
 
       teamName: cleanText(state.teamName, 240),
       teamType: cleanText(state.teamType, 120) || 'Grassroots club',
@@ -96,10 +92,7 @@ function normaliseCoachDraft(raw) {
         20
       ),
       ageGroups: cleanAgeGroups(state.ageGroups || state.ageGroup),
-      region: cleanText(
-        state.region || state.homeVenue || state.city,
-        500
-      ),
+      region: cleanText(state.region || state.homeVenue || state.city, 500),
       league: cleanText(state.league, 240),
 
       squadSize: cleanText(state.squadSize, 80),
@@ -110,10 +103,6 @@ function normaliseCoachDraft(raw) {
       assistantEmail: cleanText(state.assistantEmail, 240),
       squadList: cleanText(state.squadList, 12000),
 
-      /*
-       * Older first-player fields are retained only for backwards
-       * compatibility. They are not used by the V16 design.
-       */
       pFirst: cleanText(state.pFirst, 120),
       pLast: cleanText(state.pLast, 120),
       pAgeGroup: cleanText(state.pAgeGroup, 20),
@@ -145,14 +134,29 @@ async function coachRecord(userId) {
   return data;
 }
 
+async function scoutRecord(userId) {
+  const { data, error } = await supabase
+    .from('scouts')
+    .select([
+      'id','first_name','last_name','email','phone','club_name','club_league',
+      'scout_team_id','scout_preferences','preferences_set',
+      'subscription_plan','plan_start','plan_end','is_super_user','is_demo'
+    ].join(','))
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    const e = new Error('Scout not found');
+    e.status = 404;
+    throw e;
+  }
+  return data;
+}
+
 async function ensureExistingTeamInviteCompleted(userId) {
   const coach = await coachRecord(userId);
 
-  /*
-   * An assistant already linked to a team is joining an existing workspace,
-   * not creating a new one. This also heals assistants invited before the
-   * invitation workflow began creating onboarding_progress rows.
-   */
   if (!coach.team_id || coach.is_super_user) return null;
 
   return upsertProgress('Coach', coach.id, {
@@ -192,6 +196,277 @@ async function updateCanonicalTeam(teamId, patch) {
     .eq('id', teamId);
 
   if (error) throw error;
+}
+
+function scoutWizardInput(body, scout) {
+  const person = cleanObject(body.person);
+  const organisation = cleanObject(
+    body.organisation || body.organization || body.team
+  );
+  const setup = cleanObject(
+    body.compatibilitySetup || body.setup || body.scoutSetup
+  );
+
+  const fullName = cleanText(body.fullName || body.full_name, 240);
+  const fullParts = fullName.split(/\s+/).filter(Boolean);
+
+  const firstName =
+    cleanText(person.firstName || body.firstName || body.first_name, 120) ||
+    (fullParts.length ? fullParts[0] : '') ||
+    scout.first_name;
+
+  const lastName =
+    cleanText(person.lastName || body.lastName || body.last_name, 120) ||
+    (fullParts.length > 1 ? fullParts.slice(1).join(' ') : '') ||
+    scout.last_name;
+
+  const organisationName =
+    cleanText(
+      organisation.name ||
+      organisation.teamName ||
+      organisation.organisationName ||
+      organisation.organizationName ||
+      body.organisationName ||
+      body.organizationName ||
+      body.clubName ||
+      body.club_name ||
+      scout.club_name,
+      240
+    );
+
+  const role =
+    cleanText(
+      person.role ||
+      person.scoutingRole ||
+      body.scoutingRole ||
+      body.scouting_role,
+      120
+    ) || 'Scout';
+
+  const teamWeaknesses = cleanList(
+    setup.teamWeaknesses ||
+    setup.teamNeeds ||
+    body.teamWeaknesses ||
+    body.team_weaknesses
+  );
+
+  const preferredPositions = cleanList(
+    setup.preferredPositions ||
+    setup.positions ||
+    body.preferredPositions ||
+    body.preferred_positions
+  );
+
+  const roleExpectations = cleanList(
+    setup.roleExpectations ||
+    setup.requiredRoles ||
+    body.roleExpectations ||
+    body.role_expectations
+  );
+
+  const playingStyle =
+    cleanText(
+      setup.playingStyle ||
+      body.playingStyle ||
+      body.playing_style,
+      180
+    );
+
+  const formation =
+    cleanText(
+      setup.formation ||
+      body.formation,
+      80
+    );
+
+  const developmentPathways = cleanList(
+    setup.developmentPathways ||
+    setup.longTermGoals ||
+    body.developmentPathways ||
+    body.long_term_goals
+  );
+
+  const ageGroups = cleanAgeGroups(
+    setup.ageGroups ||
+    body.ageGroups ||
+    body.age_groups
+  );
+
+  const scoutCountry =
+    cleanText(
+      person.country ||
+      body.scoutCountry ||
+      body.scout_country,
+      120
+    ) || 'United Kingdom';
+
+  const scoutRegion =
+    cleanText(
+      organisation.region ||
+      setup.scoutRegion ||
+      body.scoutRegion ||
+      body.scout_region,
+      180
+    );
+
+  const website =
+    cleanText(
+      organisation.website ||
+      organisation.teamWebsite ||
+      body.teamWebsite ||
+      body.website,
+      500
+    );
+
+  const organisationType =
+    cleanText(
+      organisation.type ||
+      organisation.organisationType ||
+      organisation.organizationType ||
+      body.organisationType ||
+      body.organizationType,
+      160
+    );
+
+  const expectedScouts =
+    cleanText(
+      organisation.expectedScouts ||
+      organisation.expectedUsers ||
+      body.expectedScouts ||
+      body.expectedUsers,
+      40
+    );
+
+  const alertPreference =
+    cleanText(
+      body.alertPreference ||
+      body.alert_preference,
+      80
+    ) || 'weekly_digest';
+
+  return {
+    person: {
+      firstName,
+      lastName,
+      phone: cleanText(person.phone || body.phone || scout.phone, 80),
+      country: scoutCountry,
+      role
+    },
+    organisation: {
+      name: organisationName,
+      type: organisationType,
+      region: scoutRegion,
+      website,
+      expectedScouts
+    },
+    setup: {
+      teamWeaknesses,
+      preferredPositions,
+      roleExpectations,
+      playingStyle,
+      formation,
+      developmentPathways,
+      ageGroups
+    },
+    alertPreference,
+    setupSummary: cleanText(body.setupSummary, 1000)
+  };
+}
+
+async function saveScoutTeam(scout, input) {
+  const organisation = input.organisation;
+  const setup = input.setup;
+  const now = new Date().toISOString();
+  let team = null;
+
+  if (scout.scout_team_id) {
+    const result = await supabase
+      .from('scout_teams')
+      .select('*')
+      .eq('id', scout.scout_team_id)
+      .maybeSingle();
+    if (result.error) throw result.error;
+    team = result.data || null;
+  }
+
+  const teamPatch = {
+    team_name:
+      organisation.name ||
+      team?.team_name ||
+      scout.club_name ||
+      `${input.person.firstName} ${input.person.lastName} Scout Workspace`.trim(),
+    club_name:
+      organisation.name ||
+      team?.club_name ||
+      scout.club_name ||
+      null,
+    country: input.person.country || team?.country || 'England',
+    scout_region: organisation.region || team?.scout_region || null,
+    preferred_positions: setup.preferredPositions,
+    age_groups: setup.ageGroups,
+    role_expectations: setup.roleExpectations,
+    long_term_goals: setup.developmentPathways,
+    formation: setup.formation || team?.formation || null,
+    playing_style: setup.playingStyle || team?.playing_style || null,
+    team_website_url: organisation.website || team?.team_website_url || null,
+    scoring_setup: {
+      version: 'v4.0.0',
+      source: 'scout-onboarding-v6',
+      teamWeaknesses: setup.teamWeaknesses,
+      preferredPositions: setup.preferredPositions,
+      roleExpectations: setup.roleExpectations,
+      playingStyle: setup.playingStyle,
+      formation: setup.formation,
+      developmentPathways: setup.developmentPathways,
+      ageGroups: setup.ageGroups
+    },
+    updated_at: now
+  };
+
+  if (team) {
+    if (scout.is_super_user) {
+      const { data, error } = await supabase
+        .from('scout_teams')
+        .update(teamPatch)
+        .eq('id', team.id)
+        .select('*')
+        .single();
+      if (error) throw error;
+      return data;
+    }
+
+    return team;
+  }
+
+  const { data, error } = await supabase
+    .from('scout_teams')
+    .insert({
+      ...teamPatch,
+      status: 'active',
+      subscription_plan: scout.subscription_plan || 'Core',
+      subscription_start_at: scout.plan_start || now,
+      subscription_renewal_at: scout.plan_end || null,
+      activated_at: now,
+      plan_limits: {},
+      limit_overrides: {}
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  const { error: scoutError } = await supabase
+    .from('scouts')
+    .update({
+      scout_team_id: data.id,
+      is_super_user: true,
+      updated_at: now
+    })
+    .eq('id', scout.id);
+
+  if (scoutError) throw scoutError;
+
+  return data;
 }
 
 const ONBOARDING_ROLES = ['Coach','Scout','Stratex','Player'];
@@ -285,10 +560,6 @@ router.post(
       const ageGroups = cleanAgeGroups(team.ageGroups || team.ageGroup);
       const squadSize = Number(body.squadSize || body.squad_size || 0) || null;
 
-      /*
-       * Personal Coach fields always belong to the signed-in Coach only.
-       * They must never be propagated across every Coach sharing team_id.
-       */
       const personalPatch = {
         first_name: cleanText(person.firstName, 120) || me.first_name,
         last_name: cleanText(person.lastName, 120) || me.last_name,
@@ -303,11 +574,6 @@ router.post(
         .eq('id', me.id);
       if (personalError) throw personalError;
 
-      /*
-       * An invited assistant is already attached to an existing team. Their
-       * setup may update their own identity but cannot rewrite the team's
-       * shared workspace configuration.
-       */
       const mayConfigureTeam = me.is_super_user || !me.team_id;
 
       let teamPatch = null;
@@ -322,10 +588,6 @@ router.post(
         };
 
         if (me.team_id) {
-          /*
-           * Only shared team_* values are mirrored to Coaches in the same
-           * workspace. Names, phone numbers and roles remain untouched.
-           */
           const { error: teamCoachError } = await supabase
             .from('coaches')
             .update(teamPatch)
@@ -418,42 +680,93 @@ router.post(
   async (req, res) => {
     try {
       const body = req.body || {};
+      const scout = await scoutRecord(req.user.id);
+      const input = scoutWizardInput(body, scout);
+      const team = await saveScoutTeam(scout, input);
+      const now = new Date().toISOString();
+
       const prefs = {
-        teamWeaknesses: body.teamWeaknesses || body.team_weaknesses || [],
-        preferredPositions: body.preferredPositions || body.preferred_positions || [],
-        ageGroups: body.ageGroups || body.age_groups || [],
-        scoutCountry: body.scoutCountry || body.scout_country || '',
-        scoutRegion: body.scoutRegion || body.scout_region || '',
-        alertPreference: body.alertPreference || body.alert_preference || 'weekly_digest',
-        setupSummary: body.setupSummary || '',
-        setupSource: 'wizard'
+        ...(scout.scout_preferences || {}),
+        teamWeaknesses: input.setup.teamWeaknesses,
+        preferredPositions: input.setup.preferredPositions,
+        ageGroups: input.setup.ageGroups,
+        scoutCountry: input.person.country,
+        scoutRegion: input.organisation.region,
+        alertPreference: input.alertPreference,
+        setupSummary: input.setupSummary,
+        scoutingRole: input.person.role,
+        organisation: {
+          name: input.organisation.name,
+          type: input.organisation.type,
+          region: input.organisation.region,
+          website: input.organisation.website,
+          expectedScouts: input.organisation.expectedScouts
+        },
+        compatibilitySetup: {
+          teamWeaknesses: input.setup.teamWeaknesses,
+          preferredPositions: input.setup.preferredPositions,
+          roleExpectations: input.setup.roleExpectations,
+          playingStyle: input.setup.playingStyle,
+          formation: input.setup.formation,
+          developmentPathways: input.setup.developmentPathways,
+          ageGroups: input.setup.ageGroups
+        },
+        setupSource: 'scout-desk-field-v6',
+        setupVersion: SCOUT_ONBOARDING_VERSION
       };
 
       const { error: scoutError } = await supabase
         .from('scouts')
         .update({
+          first_name: input.person.firstName,
+          last_name: input.person.lastName,
+          phone: input.person.phone || null,
+          club_name: input.organisation.name || scout.club_name || null,
+          scout_team_id: team.id,
           scout_preferences: prefs,
-          preferences_set: true
+          preferences_set: true,
+          is_super_user: scout.scout_team_id
+            ? scout.is_super_user
+            : true,
+          updated_at: now
         })
         .eq('id', req.user.id);
+
       if (scoutError) throw scoutError;
+
+      const wizardData = {
+        person: input.person,
+        organisation: input.organisation,
+        compatibilitySetup: input.setup,
+        scoutTeamId: team.id,
+        scoutTeamName: team.team_name,
+        onboardingVersion: SCOUT_ONBOARDING_VERSION,
+        completedAt: now
+      };
 
       const progress = await upsertProgress('Scout', req.user.id, {
         setup_wizard_completed: true,
-        wizard_data: {
-          ...prefs,
-          completedAt: new Date().toISOString()
-        }
+        wizard_data: wizardData
       });
 
       res.json({
         message: 'Scout setup saved',
         data: progress,
-        preferences: prefs
+        preferences: prefs,
+        scoutTeam: {
+          id: team.id,
+          teamName: team.team_name,
+          subscriptionPlan: team.subscription_plan,
+          isSuperUser: scout.scout_team_id
+            ? scout.is_super_user
+            : true
+        }
       });
     } catch (error) {
       console.error('[Scout onboarding]', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(error.status || 500).json({
+        error: error.status ? error.message : 'Internal server error'
+      });
     }
   }
 );
