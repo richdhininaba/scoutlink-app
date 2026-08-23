@@ -268,6 +268,17 @@ app.use(
   require('./routes/scoutExperienceV9')
 );
 
+/*
+ * Stable functionality facade for the V6 Desk/Field Scout renderer.
+ * This keeps the V6 visual source separate from older Scout route contracts
+ * and exposes modern player attributes, compatibility explanations, pipeline
+ * updates, fixtures, events, settings and personal Scout Setup.
+ */
+app.use(
+  '/api/scout-v6',
+  require('./routes/scoutV6Functional')
+);
+
 app.use(
   '/api/scout-workflow-actions',
   require('./routes/scoutWorkflowNotifications')
