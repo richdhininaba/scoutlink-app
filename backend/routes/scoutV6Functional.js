@@ -1372,7 +1372,7 @@ router.get('/players', async (req, res) => {
     ]);
     const filtered = sortPlayers(
       players.filter(player => playerMatchesFilter(player, req.query || {})),
-      req.query.metric || req.query.sort || 'overall'
+      req.query.metric || req.query.sort || 'compatibility'
     );
     const limit = Math.max(1, Math.min(200, integer(req.query.limit, 150)));
     const regions = unique(players.flatMap(player => [
