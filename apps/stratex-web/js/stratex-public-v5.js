@@ -1,6 +1,6 @@
-(function () {
-  'use strict';
+'use strict';
 
+(function () {
   var API = (function () {
     try {
       return localStorage.getItem('sl_api_url') || 'https://scoutlink-api.vercel.app';
@@ -9,12 +9,11 @@
     }
   }()).replace(/\/+$/, '');
 
-  var SITE = 'https://www.stratexanalytics.co.uk';
-  var CONTENT_URL = '/assets/stratex-public-v5-pages.json?v=20260808-4';
   var root = document.getElementById('stratexPublicRoot');
-  var route = resolveRoute();
-  var jobs = [];
   var posts = [];
+  var jobs = [];
+  var activeLearningFilter = 'All';
+  var COOKIE_PREF_KEY = 'stratex_cookie_preferences_v1';
 
   function esc(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
@@ -22,86 +21,75 @@
     });
   }
 
-  function resolveRoute() {
-    var pathname = window.location.pathname.replace(/\/+$/, '') || '/';
-    if (/^\/careers\/[^/]+/.test(pathname)) {
-      return {
-        key:'/careers/{job-slug}',
-        path:pathname,
-        slug:decodeURIComponent(pathname.split('/').slice(2).join('/'))
-      };
-    }
-    if (/^\/learning-centre\/[^/]+/.test(pathname)) {
-      return {
-        key:'/learning-centre/{article-slug}',
-        path:pathname,
-        slug:decodeURIComponent(pathname.split('/').slice(2).join('/'))
-      };
-    }
-    return { key:pathname, path:pathname, slug:'' };
+  function path() {
+    return (window.location.pathname || '/').replace(/\/+$/, '') || '/';
   }
+
+  function routeInfo() {
+    var current = path();
+    var career = current.match(/^\/careers\/([^/]+)$/);
+    var article = current.match(/^\/learning-centre\/([^/]+)$/);
+    if (career) return { path:current, key:'/careers/{job-slug}', slug:decodeURIComponent(career[1]) };
+    if (article) return { path:current, key:'/learning-centre/{article-slug}', slug:decodeURIComponent(article[1]) };
+    return { path:current, key:current, slug:'' };
+  }
+
+  var route = routeInfo();
 
   function setMeta(page) {
     if (!page) return;
-    var title = page.title || 'Stratex Analytics';
-    var description = page.description || 'Football intelligence for overlooked grassroots talent.';
-    var canonical = SITE + (route.path === '/' ? '/' : route.path);
-
-    document.title = title;
-
-    [
-      ['meta[name="description"]', description],
-      ['meta[property="og:title"]', title],
-      ['meta[property="og:description"]', description],
-      ['meta[property="og:url"]', canonical],
-      ['meta[name="twitter:title"]', title],
-      ['meta[name="twitter:description"]', description]
-    ].forEach(function (entry) {
-      var node = document.querySelector(entry[0]);
-      if (node) node.setAttribute('content', entry[1]);
-    });
-
-    var canonicalNode = document.querySelector('link[rel="canonical"]');
-    if (canonicalNode) canonicalNode.href = canonical;
-  }
-
-  function renderNotFound() {
-    if (!root || (root.dataset.serverRendered === 'true' && root.children.length)) return;
-
-    document.title = 'Page Not Found | Stratex Analytics';
-    root.innerHTML =
-      '<div class="site"><main><section class="s-hero"><div class="s-hero-in">' +
-        '<span class="s-eb">404 · Wrong route</span>' +
-        '<h1 class="s-h1">Nothing here. <span class="accent">Back to the football.</span></h1>' +
-        '<p class="s-sub">The page may have moved or the address may be incorrect.</p>' +
-        '<div class="s-cta-row"><a class="s-btn volt" href="/">Go home</a><a class="s-btn ghost" href="/contact">Contact us</a></div>' +
-      '</div></section></main></div>';
+    if (page.title) document.title = page.title;
+    var description = document.querySelector('meta[name="description"]');
+    if (description && page.description) description.setAttribute('content', page.description);
+    var canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute('href', 'https://www.stratexanalytics.co.uk' + (route.path === '/' ? '/' : route.path));
   }
 
   async function ensureContent() {
-    if (root && root.dataset.serverRendered === 'true' && root.children.length) {
-      return true;
-    }
+    if (!root) return true;
+    if (root.getAttribute('data-server-rendered') === 'true' && root.children.length) return true;
 
     try {
-      var response = await fetch(CONTENT_URL, { cache:'no-cache' });
-      if (!response.ok) throw new Error('Could not load public page content.');
+      var response = await fetch('/assets/stratex-public-v5-pages.json?v=20260824-restructure-v5', { cache:'no-store' });
       var store = await response.json();
-      var page = store.pages && store.pages[route.key];
+      var page = store && store.pages ? store.pages[route.key] : null;
 
       if (!page) {
-        renderNotFound();
-        return false;
+        page = store && store.pages ? store.pages['/404'] : null;
       }
 
+      if (!page) throw new Error('Public page bundle is incomplete.');
+
+      root.innerHTML = page.html;
       setMeta(page);
-      if (root && !root.children.length) root.innerHTML = page.html;
       return true;
     } catch (_) {
-      if (root && root.children.length) return true;
-      renderNotFound();
+      root.innerHTML =
+        '<div class="pub-page"><div class="sec"><div class="col"><div class="honest">' +
+        '<b>The page could not be loaded.</b><p>Please refresh or <a href="/contact">contact Stratex</a>.</p>' +
+        '</div></div></div></div>';
       return false;
     }
+  }
+
+  function syncViewportMode() {
+    document.querySelectorAll('.pub-page').forEach(function (page) {
+      page.classList.toggle('m', window.matchMedia('(max-width: 800px)').matches);
+    });
+  }
+
+  function bindViewportMode() {
+    syncViewportMode();
+    var query = window.matchMedia('(max-width: 800px)');
+    if (query.addEventListener) query.addEventListener('change', syncViewportMode);
+    else if (query.addListener) query.addListener(syncViewportMode);
+  }
+
+  function closeMenu(button, panel) {
+    if (!button || !panel) return;
+    button.setAttribute('aria-expanded', 'false');
+    panel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('stratex-menu-open');
   }
 
   function bindMenu() {
@@ -110,60 +98,55 @@
     if (!button || !panel || button.dataset.bound === '1') return;
 
     button.dataset.bound = '1';
-
-    function close() {
-      document.body.classList.remove('stratex-menu-open');
-      button.setAttribute('aria-expanded', 'false');
-      panel.setAttribute('aria-hidden', 'true');
-    }
-
     button.addEventListener('click', function () {
-      var open = !document.body.classList.contains('stratex-menu-open');
-      document.body.classList.toggle('stratex-menu-open', open);
+      var open = button.getAttribute('aria-expanded') !== 'true';
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
       panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+      document.body.classList.toggle('stratex-menu-open', open);
     });
 
-    panel.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', close);
+    panel.addEventListener('click', function (event) {
+      if (event.target.closest('a')) closeMenu(button, panel);
     });
 
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') close();
+      if (event.key === 'Escape') closeMenu(button, panel);
+    });
+
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 800) closeMenu(button, panel);
     });
   }
 
-  function showFormMessage(form, text, kind) {
-    var message = form.querySelector('.form-message');
-    if (!message) return;
-    message.className = 'form-message show ' + (kind || '');
-    message.textContent = text;
+  function formObject(form) {
+    var data = {};
+    new FormData(form).forEach(function (value, key) {
+      data[key] = value;
+    });
+    form.querySelectorAll('input[type="checkbox"][name]').forEach(function (input) {
+      data[input.name] = input.checked;
+    });
+    return data;
   }
 
-  function setSubmitting(form, submitting) {
+  function showFormMessage(form, text, type) {
+    var node = form.querySelector('.form-message');
+    if (!node) return;
+    node.textContent = text || '';
+    node.className = 'form-message' + (text ? ' show ' + (type === 'err' ? 'err' : 'ok') : '');
+  }
+
+  function setSubmitting(form, active, label) {
     var button = form.querySelector('button[type="submit"]');
     if (!button) return;
-    if (!button.dataset.defaultLabel) button.dataset.defaultLabel = button.textContent;
-    button.disabled = !!submitting;
-    button.textContent = submitting ? 'Submitting…' : button.dataset.defaultLabel;
-  }
-
-  function formDataObject(form) {
-    var data = {};
-
-    new FormData(form).forEach(function (value, key) {
-      if (!(value instanceof File)) data[key] = String(value || '').trim();
-    });
-
-    var consent = form.querySelector('[name="consentContact"]');
-    var marketing = form.querySelector('[name="consentMarketing"]');
-
-    data.consentContact = !!(consent && (consent.checked || String(consent.value).toLowerCase() === 'true'));
-    data.consentMarketing = !!(marketing && (marketing.checked || String(marketing.value).toLowerCase() === 'true'));
-    data.sourcePage = window.location.pathname;
-    data.consentVersion = '2026-08-stratex-public-v5';
-
-    return data;
+    if (active) {
+      if (!button.dataset.label) button.dataset.label = button.textContent;
+      button.disabled = true;
+      button.textContent = label || 'Sending…';
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.label || button.textContent;
+    }
   }
 
   function bindPublicForms() {
@@ -176,44 +159,42 @@
         if (!form.reportValidity()) return;
 
         var type = form.getAttribute('data-stx-form');
-        var endpoint = {
-          contact:'/api/stratex-website/contact',
-          concern:'/api/stratex-website/concern'
-        }[type];
+        var endpoint = type === 'concern'
+          ? '/api/stratex-website/concern'
+          : '/api/stratex-website/contact';
+        var data = formObject(form);
 
-        if (!endpoint) return;
+        data.sourcePage = window.location.pathname;
+        data.consentContact = !!form.querySelector('[name="consentContact"]:checked');
+        data.consentMarketing = !!form.querySelector('[name="consentMarketing"]:checked');
+        data.consentText = type === 'concern'
+          ? 'I give Stratex permission to contact me if follow-up is needed.'
+          : 'I agree that Stratex Analytics may use these details to respond to this enquiry.';
+        data.consentVersion = '2026-08-stratex-public-restructure-v5';
 
-        var data = formDataObject(form);
-
-        if (type === 'concern') {
-          data.name = data.contactName || data.name || '';
-          data.email = data.contactEmail || data.email || '';
-          data.concernType = data.concernType || data.category || '';
-          data.description = data.description || data.details || '';
-          data.message = data.description || data.details || data.message || '';
-        }
-
-        setSubmitting(form, true);
+        setSubmitting(form, true, type === 'concern' ? 'Submitting…' : 'Sending…');
+        showFormMessage(form, '', '');
 
         try {
           var response = await fetch(API + endpoint, {
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify(data)
+            body:JSON.stringify(data),
+            credentials:'include'
           });
           var json = await response.json().catch(function () { return {}; });
-          if (!response.ok) throw new Error(json.error || 'The submission could not be saved.');
+          if (!response.ok) throw new Error(json.error || 'The form could not be submitted.');
 
           form.reset();
           showFormMessage(
             form,
-            type === 'concern'
-              ? 'Your concern has been received for restricted review. If somebody is in immediate danger, contact emergency services first.'
-              : (json.message || 'Thanks. Your enquiry has been received.'),
+            json.message || (type === 'concern'
+              ? 'Thanks — we have received your report and will review it.'
+              : 'Thanks. Your message has been received.'),
             'ok'
           );
         } catch (error) {
-          showFormMessage(form, error.message || 'The submission could not be saved. Please try again.', 'err');
+          showFormMessage(form, error.message || 'The form could not be submitted right now.', 'err');
         } finally {
           setSubmitting(form, false);
         }
@@ -222,59 +203,31 @@
   }
 
   function jobField(job, camel, snake) {
-    return job[camel] != null ? job[camel] : job[snake];
-  }
-
-  function textValue(value) {
-    if (Array.isArray(value)) return value.filter(Boolean).join('\n');
-    return String(value || '').trim();
-  }
-
-  function paragraphBlock(title, value, ordered) {
-    var content = textValue(value);
-    if (!content) return '';
-
-    var lines = content.split(/\n+/).map(function (line) {
-      return line.trim();
-    }).filter(Boolean);
-
-    if (lines.length > 1) {
-      var tag = ordered ? 'ol' : 'ul';
-      return '<section><h2>' + esc(title) + '</h2><' + tag + '>' +
-        lines.map(function (line) {
-          return '<li>' + esc(line.replace(/^[-•]\s*/, '')) + '</li>';
-        }).join('') +
-      '</' + tag + '></section>';
-    }
-
-    return '<section><h2>' + esc(title) + '</h2><p>' + esc(content) + '</p></section>';
+    if (!job) return '';
+    return job[camel] != null ? job[camel] : (job[snake] != null ? job[snake] : '');
   }
 
   function renderJobs() {
     var container = document.getElementById('careerJobs');
     if (!container) return;
 
-    var count = document.getElementById('careerJobCount');
-    if (count) count.textContent = jobs.length + ' open role' + (jobs.length === 1 ? '' : 's');
-
     if (!jobs.length) {
-      container.innerHTML = '<div class="empty-state">No open roles right now. Good people still get remembered — email people@stratexanalytics.co.uk.</div>';
+      container.innerHTML =
+        '<div class="rowlist-item"><div><b>No open roles right now.</b>' +
+        '<p>Good people still get remembered — email people@stratexanalytics.co.uk.</p></div></div>';
       return;
     }
 
     container.innerHTML = jobs.map(function (job) {
       var title = jobField(job, 'jobTitle', 'job_title') || 'Open role';
-      var overview = jobField(job, 'roleOverview', 'role_overview') || '';
       var employment = jobField(job, 'employmentType', 'employment_type') || '';
       var working = jobField(job, 'workingType', 'working_type') || '';
+      var detail = [job.department, working, employment].filter(Boolean).join(' · ');
       var slug = job.slug || job.id || '';
 
-      return '<article><div><div class="job-tags"><span>' + esc(job.department || 'Stratex') +
-        '</span><span>' + esc(employment || 'Open role') + '</span></div><h3>' + esc(title) +
-        '</h3><p>' + esc(overview) + '</p><div class="job-meta"><span>' +
-        esc(job.location || 'Flexible') + '</span><span>' + esc(working) +
-        '</span></div></div><aside><a class="s-btn solid sm" href="/careers/' +
-        encodeURIComponent(slug) + '">View role</a></aside></article>';
+      return '<div class="rowlist-item"><div><b>' + esc(title) + '</b><p>' +
+        esc(detail || job.location || 'Stratex') + '</p></div>' +
+        '<a class="btn ink sm" href="/careers/' + encodeURIComponent(slug) + '">View role</a></div>';
     }).join('');
   }
 
@@ -282,7 +235,7 @@
     if (!document.getElementById('careerJobs')) return;
 
     try {
-      var response = await fetch(API + '/api/careers');
+      var response = await fetch(API + '/api/careers', { cache:'no-store', credentials:'include' });
       var json = await response.json().catch(function () { return {}; });
       if (!response.ok) throw new Error();
       jobs = json.data || json.jobs || [];
@@ -293,17 +246,35 @@
     renderJobs();
   }
 
+  function paragraphBlock(title, value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    var parts = raw.split(/\n{2,}/).filter(Boolean);
+    return '<section class="job-section"><h2>' + esc(title) + '</h2>' +
+      parts.map(function (part) {
+        var lines = part.split(/\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+        if (lines.length > 1 && lines.every(function (line) { return /^[-•*]/.test(line); })) {
+          return '<ul>' + lines.map(function (line) {
+            return '<li>' + esc(line.replace(/^[-•*]\s*/, '')) + '</li>';
+          }).join('') + '</ul>';
+        }
+        return '<p>' + esc(part).replace(/\n/g, '<br>') + '</p>';
+      }).join('') + '</section>';
+  }
+
   async function loadJobDetail() {
     if (route.key !== '/careers/{job-slug}') return;
 
     var hero = document.getElementById('careerHero');
     var copy = document.getElementById('careerCopy');
     var form = document.querySelector('[data-career-apply]');
-
     if (form) form.setAttribute('data-slug', route.slug);
 
     try {
-      var response = await fetch(API + '/api/careers/' + encodeURIComponent(route.slug));
+      var response = await fetch(API + '/api/careers/' + encodeURIComponent(route.slug), {
+        cache:'no-store',
+        credentials:'include'
+      });
       var json = await response.json().catch(function () { return {}; });
       if (!response.ok) throw new Error(json.error || 'Role not found.');
 
@@ -320,30 +291,32 @@
 
       if (hero) {
         hero.innerHTML =
-          '<div class="shell"><a class="back-link" href="/careers">← Back to careers</a>' +
-          '<div class="job-hero-grid"><div><span class="s-eb">Careers · ' +
-          esc(job.department || 'Open role') + '</span><h1>' + esc(title) + '</h1><p>' +
-          esc(overview) + '</p></div><dl><div><dt>Location</dt><dd>' +
-          esc(job.location || 'Flexible') + '</dd></div><div><dt>Working pattern</dt><dd>' +
-          esc(working || 'Role dependent') + '</dd></div><div><dt>Employment</dt><dd>' +
-          esc(employment || 'Role dependent') + '</dd></div><div><dt>Interview stages</dt><dd>' +
-          esc(jobField(job, 'interviewStages', 'interview_stages') || 'Role dependent') +
-          '</dd></div></dl></div></div>';
+          '<div class="col"><div class="ehero-grid no-photo"><div>' +
+          '<a class="back-link" href="/careers">← Back to careers</a>' +
+          '<span class="kicker">Careers · ' + esc(job.department || 'Stratex') + '</span>' +
+          '<h1><span class="rule"></span>' + esc(title) + '</h1>' +
+          '<p class="sub">' + esc(overview) + '</p>' +
+          '<div class="job-meta-strip"><span>' + esc(job.location || 'Flexible') + '</span>' +
+          '<span>' + esc(working || 'Role dependent') + '</span>' +
+          '<span>' + esc(employment || 'Role dependent') + '</span></div>' +
+          '</div></div></div>';
       }
 
       if (copy) {
         copy.innerHTML =
           paragraphBlock('About Stratex Analytics', jobField(job, 'aboutCompany', 'about_company')) +
           paragraphBlock('Role overview', overview) +
-          paragraphBlock('What you will be doing', jobField(job, 'whatYouWillBeDoing', 'what_you_will_be_doing') || job.responsibilities) +
+          paragraphBlock('What you will be doing', job.responsibilities || jobField(job, 'whatYouWillBeDoing', 'what_you_will_be_doing')) +
           paragraphBlock('What we are looking for', jobField(job, 'mustHaves', 'must_haves') || job.requirements) +
-          paragraphBlock('Interview process', jobField(job, 'interviewProcess', 'interview_process'), true);
+          paragraphBlock('Nice to have', jobField(job, 'niceToHaves', 'nice_to_haves')) +
+          paragraphBlock('Benefits', job.benefits) +
+          paragraphBlock('Interview process', jobField(job, 'interviewProcess', 'interview_process'));
       }
     } catch (error) {
       if (copy) {
         copy.innerHTML = '<section><h2>Role not found</h2><p>' +
           esc(error.message || 'This role is no longer available.') +
-          '</p><p><a class="s-btn solid" href="/careers">View open roles</a></p></section>';
+          '</p><p><a class="btn ink sm" href="/careers">View open roles</a></p></section>';
       }
       if (form) form.hidden = true;
     }
@@ -352,7 +325,6 @@
   function bindCareerApplication() {
     var form = document.querySelector('[data-career-apply]');
     if (!form || form.dataset.bound === '1') return;
-
     form.dataset.bound = '1';
 
     form.addEventListener('submit', async function (event) {
@@ -361,16 +333,18 @@
 
       var fileInput = form.querySelector('[name="cv"]');
       var file = fileInput && fileInput.files ? fileInput.files[0] : null;
-
       if (!file) return showFormMessage(form, 'Please attach your CV.', 'err');
-      if (file.size > 5 * 1024 * 1024) return showFormMessage(form, 'The CV must be 5MB or smaller.', 'err');
+      if (file.size > 5 * 1024 * 1024) {
+        return showFormMessage(form, 'The CV must be 5MB or smaller.', 'err');
+      }
 
-      setSubmitting(form, true);
+      setSubmitting(form, true, 'Submitting…');
+      showFormMessage(form, '', '');
 
       try {
         var response = await fetch(
           API + '/api/careers/' + encodeURIComponent(form.getAttribute('data-slug') || route.slug) + '/apply',
-          { method:'POST', body:new FormData(form) }
+          { method:'POST', body:new FormData(form), credentials:'include' }
         );
         var json = await response.json().catch(function () { return {}; });
         if (!response.ok) throw new Error(json.error || 'The application could not be submitted.');
@@ -389,42 +363,6 @@
     });
   }
 
-  function renderPosts() {
-    var container = document.getElementById('learningPosts');
-    if (!container) return;
-
-    if (!posts.length) {
-      container.innerHTML = '<div class="empty-state">No published guides right now.</div>';
-      return;
-    }
-
-    container.innerHTML = posts.map(function (post, index) {
-      var featured = index === 0 ? ' featured-article' : '';
-      return '<article class="' + featured.trim() + '"><span>' +
-        esc(post.category || 'Learning') + '</span><h3>' +
-        esc(post.title || 'Stratex guide') + '</h3><p>' +
-        esc(post.excerpt || '') + '</p><div><span>' +
-        esc(Number(post.view_count || 0).toLocaleString('en-GB')) +
-        ' views</span><a href="/learning-centre/' +
-        encodeURIComponent(post.slug || '') + '">Read guide →</a></div></article>';
-    }).join('');
-  }
-
-  async function loadPosts() {
-    if (!document.getElementById('learningPosts')) return;
-
-    try {
-      var response = await fetch(API + '/api/stratex-website/blog?published=true');
-      var json = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error();
-      posts = json.data || [];
-    } catch (_) {
-      posts = [];
-    }
-
-    renderPosts();
-  }
-
   function safePublicImageUrl(value) {
     var raw = String(value || '').trim();
     if (!raw) return '';
@@ -437,54 +375,99 @@
     if (!value) return 'Read guide';
     var parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return 'Read guide';
-    return parsed.toLocaleDateString('en-GB', {
-      day:'numeric',
-      month:'short',
-      year:'numeric'
-    });
+    return parsed.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
   }
 
-  function homepageLearningSection() {
-    if (route.path !== '/') return null;
-
-    var headings = Array.from(document.querySelectorAll('.s-h2'));
-    var heading = headings.find(function (node) {
-      return String(node.textContent || '').trim().toLowerCase() === 'useful football thinking';
-    });
-
-    return heading ? heading.closest('.s-sec') : null;
+  function postMeta(post) {
+    return publishedLabel(post.published_at || post.created_at);
   }
 
-  function homepageArticleCard(post) {
-    var slug = String(post.slug || '').trim();
-    if (!slug) return '';
-
+  function featuredPost(post) {
     var image = safePublicImageUrl(post.featured_image_url);
-    var imageStyle = image
-      ? ' style="background-image:url(&quot;' + esc(image) + '&quot;);background-size:cover;background-position:center"'
+    var style = image
+      ? ' style="background-image:url(&quot;' + esc(image) + '&quot;)"'
       : '';
-
-    return (
-      '<a class="s-artcard" href="/learning-centre/' + encodeURIComponent(slug) + '">' +
-        '<div class="thumb"' + imageStyle + '></div>' +
-        '<div class="pad">' +
-          '<span class="s-chip">' + esc(post.category || 'Learning') + '</span>' +
-          '<h4>' + esc(post.title || 'Stratex guide') + '</h4>' +
-          '<span class="meta">' + esc(publishedLabel(post.published_at)) + '</span>' +
-        '</div>' +
-      '</a>'
-    );
+    return '<a href="/learning-centre/' + encodeURIComponent(post.slug || '') +
+      '" style="text-decoration:none;color:inherit"><div><div class="feat-photo' +
+      (image ? ' has-image' : '') + '"' + style + '></div>' +
+      '<span class="feat-tag">' + esc(post.category || 'Learning') + '</span>' +
+      '<div class="feat-item"><h3>' + esc(post.title || 'Stratex guide') + '</h3>' +
+      '<span class="meta">' + esc(postMeta(post)) + '</span></div></div></a>';
   }
 
-  async function loadHomepageLatestPosts() {
-    var section = homepageLearningSection();
-    if (!section) return;
+  function listPost(post) {
+    return '<a class="art-row" href="/learning-centre/' + encodeURIComponent(post.slug || '') + '">' +
+      '<span class="l"><span class="feat-tag">' + esc(post.category || 'Learning') + '</span>' +
+      '<h4>' + esc(post.title || 'Stratex guide') + '</h4></span>' +
+      '<span class="meta">' + esc(postMeta(post)) + '</span></a>';
+  }
 
-    /*
-     * Hide the old static sample cards immediately.
-     * The section only becomes visible again when genuine published posts exist.
-     */
-    section.hidden = true;
+  function normaliseFilter(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function filteredPosts(filter) {
+    if (!filter || normaliseFilter(filter) === 'all') return posts.slice();
+    var target = normaliseFilter(filter);
+    return posts.filter(function (post) {
+      return normaliseFilter(post.category) === target;
+    });
+  }
+
+  function renderLearningPosts() {
+    var container = document.getElementById('learningPosts');
+    if (!container) return;
+
+    var selected = filteredPosts(activeLearningFilter);
+    if (!selected.length) {
+      container.innerHTML =
+        '<div class="honest learning-empty"><b>No published guides in this category yet.</b>' +
+        '<p>Try another topic or check back later.</p></div>';
+      return;
+    }
+
+    var first = selected[0];
+    var rest = selected.slice(1, 6);
+    container.innerHTML =
+      featuredPost(first) +
+      '<div>' + (rest.length
+        ? rest.map(listPost).join('')
+        : '<div class="honest"><b>That is the only published guide here for now.</b></div>') +
+      '</div>';
+  }
+
+  function renderHomepagePosts() {
+    var container = document.getElementById('homepageLearningPosts');
+    if (!container) return;
+
+    var latest = posts.slice(0, 3);
+    if (!latest.length) {
+      var section = container.closest('.sec');
+      if (section) section.remove();
+      return;
+    }
+
+    container.innerHTML =
+      featuredPost(latest[0]) +
+      '<div>' + latest.slice(1).map(listPost).join('') + '</div>';
+  }
+
+  function bindLearningFilters() {
+    document.querySelectorAll('[data-learning-filter]').forEach(function (button) {
+      if (button.dataset.bound === '1') return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', function () {
+        activeLearningFilter = button.getAttribute('data-learning-filter') || 'All';
+        document.querySelectorAll('[data-learning-filter]').forEach(function (item) {
+          item.classList.toggle('on', item === button);
+        });
+        renderLearningPosts();
+      });
+    });
+  }
+
+  async function loadPosts() {
+    if (!document.getElementById('learningPosts') && !document.getElementById('homepageLearningPosts')) return;
 
     try {
       var response = await fetch(API + '/api/stratex-website/blog?published=true', {
@@ -492,50 +475,24 @@
         credentials:'include'
       });
       var json = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw new Error('Latest learning posts could not be loaded.');
-
-      var latest = (json.data || [])
-        .filter(function (post) {
-          return String(post.status || '').toLowerCase() === 'published' &&
-            String(post.slug || '').trim() &&
-            String(post.title || '').trim();
-        })
-        .sort(function (a, b) {
-          return new Date(b.published_at || b.created_at || 0).getTime() -
-            new Date(a.published_at || a.created_at || 0).getTime();
-        })
-        .slice(0, 3);
-
-      if (!latest.length) {
-        section.remove();
-        return;
-      }
-
-      var grid = section.querySelector('.s-grid3');
-      if (!grid) {
-        section.remove();
-        return;
-      }
-
-      grid.innerHTML = latest.map(homepageArticleCard).filter(Boolean).join('');
-
-      if (!grid.children.length) {
-        section.remove();
-        return;
-      }
-
-      section.hidden = false;
+      if (!response.ok) throw new Error();
+      posts = (json.data || []).filter(function (post) {
+        return String(post.status || 'published').toLowerCase() === 'published' &&
+          String(post.slug || '').trim() && String(post.title || '').trim();
+      }).sort(function (a, b) {
+        return new Date(b.published_at || b.created_at || 0).getTime() -
+          new Date(a.published_at || a.created_at || 0).getTime();
+      });
     } catch (_) {
-      /*
-       * Never fall back to fabricated/sample article cards.
-       * If live published content cannot be confirmed, remove the section.
-       */
-      section.remove();
+      posts = [];
     }
+
+    renderLearningPosts();
+    renderHomepagePosts();
   }
 
   function bodyParagraphs(value) {
-    return String(value || '').split(/\n{2,}/).map(function (paragraph) {
+    return String(value || '').split(/\n{2,}/).filter(Boolean).map(function (paragraph) {
       return '<p class="body">' + esc(paragraph).replace(/\n/g, '<br>') + '</p>';
     }).join('');
   }
@@ -547,27 +504,31 @@
     var copy = document.getElementById('articleCopy');
 
     try {
-      var response = await fetch(API + '/api/stratex-website/blog/' + encodeURIComponent(route.slug));
+      var response = await fetch(API + '/api/stratex-website/blog/' + encodeURIComponent(route.slug), {
+        cache:'no-store',
+        credentials:'include'
+      });
       var json = await response.json().catch(function () { return {}; });
       if (!response.ok) throw new Error(json.error || 'Article not found.');
 
       var post = json.data || {};
-
       setMeta({
-        title:(post.title || 'Learning Centre') + ' | Stratex Analytics',
-        description:post.excerpt || 'Read practical football intelligence guidance.'
+        title:(function () { var base = post.seo_title || post.title || 'Learning Centre'; return /Stratex Analytics/i.test(base) ? base : base + ' | Stratex Analytics'; }()),
+        description:post.meta_description || post.excerpt || 'Read practical football intelligence guidance.'
       });
 
       if (hero) {
         hero.innerHTML =
-          '<div class="shell"><a class="back-link" href="/learning-centre">← Back to Learning Centre</a>' +
-          '<span class="s-eb">' + esc(post.category || 'Learning') + '</span><h1>' +
-          esc(post.title || 'Learning Centre') + '</h1><p>' + esc(post.excerpt || '') +
-          '</p><div class="article-meta"><span>' +
-          esc(Number(post.view_count || 0).toLocaleString('en-GB')) +
-          ' views</span><span id="articleLikeCount">' +
-          esc(Number(post.like_count || 0).toLocaleString('en-GB')) +
-          ' likes</span></div></div>';
+          '<div class="col"><div class="ehero-grid no-photo"><div>' +
+          '<a class="back-link" href="/learning-centre">← Back to Learning Centre</a>' +
+          '<span class="kicker">' + esc(post.category || 'Learning') + '</span>' +
+          '<h1><span class="rule"></span>' + esc(post.title || 'Learning Centre') + '</h1>' +
+          '<p class="sub">' + esc(post.excerpt || '') + '</p>' +
+          '<div class="article-meta"><span>' +
+          esc(Number(post.view_count || 0).toLocaleString('en-GB')) + ' views</span>' +
+          '<span id="articleLikeCount">' +
+          esc(Number(post.like_count || 0).toLocaleString('en-GB')) + ' likes</span></div>' +
+          '</div></div></div>';
       }
 
       if (copy) {
@@ -584,10 +545,8 @@
           like.addEventListener('click', async function () {
             like.disabled = true;
             try {
-              var r = await fetch(
-                API + '/api/stratex-website/blog/' + encodeURIComponent(route.slug) + '/like',
-                { method:'POST' }
-              );
+              var r = await fetch(API + '/api/stratex-website/blog/' +
+                encodeURIComponent(route.slug) + '/like', { method:'POST', credentials:'include' });
               var j = await r.json().catch(function () { return {}; });
               if (!r.ok) throw new Error();
 
@@ -604,10 +563,7 @@
           share.addEventListener('click', async function () {
             try {
               if (navigator.share) {
-                await navigator.share({
-                  title:post.title || 'Stratex guide',
-                  url:window.location.href
-                });
+                await navigator.share({ title:post.title || 'Stratex guide', url:window.location.href });
               } else if (navigator.clipboard) {
                 await navigator.clipboard.writeText(window.location.href);
                 share.textContent = 'Link copied';
@@ -618,10 +574,8 @@
       }
     } catch (error) {
       if (copy) {
-        copy.innerHTML =
-          '<section><h2>Article not found</h2><p>' +
-          esc(error.message || 'This guide is no longer available.') +
-          '</p></section>';
+        copy.innerHTML = '<section><h2>Article not found</h2><p>' +
+          esc(error.message || 'This guide is no longer available.') + '</p></section>';
       }
     }
   }
@@ -630,26 +584,20 @@
     if (!value) return '';
     var d = new Date(String(value).length === 10 ? value + 'T12:00:00Z' : value);
     if (Number.isNaN(d.getTime())) return String(value);
-
     return d.toLocaleDateString('en-GB', {
-      weekday:'short',
-      day:'numeric',
-      month:'short',
-      year:'numeric',
-      timeZone:'UTC'
+      weekday:'short', day:'numeric', month:'short', year:'numeric', timeZone:'UTC'
     }).toUpperCase();
   }
 
   function timeLabel(value) {
     var match = String(value || '').match(/^(\d{1,2}):(\d{2})/);
     if (!match) return '';
-
     var hour = Number(match[1]);
     return (hour % 12 || 12) + ':' + match[2] + ' ' + (hour >= 12 ? 'PM' : 'AM');
   }
 
   async function hydrateShowcase() {
-    if (route.path !== '/showcase-event') return;
+    if (!document.querySelector('[data-showcase-fixture]') && route.path !== '/showcase-event') return;
 
     try {
       var response = await fetch(
@@ -663,40 +611,32 @@
       var event = events.find(function (row) { return row.featured; }) || events[0];
       if (!event) return;
 
-      var fixture = document.getElementById('showcaseEventFixture');
-      var age = document.getElementById('showcaseEventAge');
-      var venue = document.getElementById('showcaseEventVenue');
+      var eventDate = event.eventDate || event.event_date;
+      var arrival = event.playerArrivalTime || event.player_arrival_time || event.startTime || event.start_time;
+      var venueName = event.venueName || event.venue_name || 'Venue TBC';
+      var minAge = event.playerMinAge || event.player_min_age || 12;
+      var maxAge = event.playerMaxAge || event.player_max_age || 16;
 
-      if (fixture) {
-        fixture.innerHTML =
-          'SCOUTLINK SHOWCASE EVENT <i>·</i> ' + esc(dateLabel(event.eventDate)) +
-          ' <i>·</i> ARRIVAL ' + esc(timeLabel(event.playerArrivalTime)) +
-          ' <i>·</i> ' + esc(String(event.venueName || 'Venue TBC').toUpperCase()) +
-          ' <i>·</i> AGES ' + esc(String(event.playerMinAge || 12)) +
-          '–' + esc(String(event.playerMaxAge || 16));
-      }
+      document.querySelectorAll('[data-showcase-fixture]').forEach(function (fixture) {
+        fixture.textContent =
+          'SCOUTLINK SHOWCASE EVENT · ' + dateLabel(eventDate) +
+          (arrival ? ' · ARRIVAL ' + timeLabel(arrival) : '') +
+          ' · ' + String(venueName).toUpperCase() +
+          ' · AGES ' + minAge + '–' + maxAge;
+      });
 
-      if (age) {
-        age.textContent =
-          'Ages ' + (event.playerMinAge || 12) + ' to ' + (event.playerMaxAge || 16) +
-          ' on the event date, grouped and scheduled by age band on the day.';
-      }
+      var open = event.professionalRegistrationOpen;
+      if (open === undefined) open = event.professional_registration_open;
+      var remaining = event.remainingProfessionalPlaces;
+      if (remaining === undefined) remaining = event.remaining_professional_places;
 
-      if (venue) {
-        venue.textContent =
-          (event.venueName || 'Venue to be confirmed') +
-          (event.venueAddress ? ' — ' + event.venueAddress : '') + '.';
-      }
-
-      if (!event.professionalRegistrationOpen || Number(event.remainingProfessionalPlaces || 0) <= 0) {
+      if (open === false || Number(remaining || 0) <= 0) {
         document.querySelectorAll('a[href="/showcase-event/coach-scout-registration"]').forEach(function (link) {
           link.href = '/showcase-event/coach-scout-registration/sold-out';
         });
       }
     } catch (_) {}
   }
-
-  var COOKIE_PREF_KEY = 'stratex_cookie_preferences_v1';
 
   function readCookiePreferences() {
     try {
@@ -710,15 +650,13 @@
     var payload = Object.assign({
       essential:true,
       savedAt:new Date().toISOString(),
-      consentVersion:'2026-08-stratex-public-v5'
+      consentVersion:'2026-08-stratex-public-restructure-v5'
     }, preferences || {});
 
     window.localStorage.setItem(COOKIE_PREF_KEY, JSON.stringify(payload));
-
     try {
       document.dispatchEvent(new CustomEvent('stratexCookiePreferences', { detail:payload }));
     } catch (_) {}
-
     return payload;
   }
 
@@ -729,12 +667,10 @@
 
   function cookiePreferencesFromDom() {
     var preferences = { essential:true };
-
     document.querySelectorAll('[data-cookie-toggle]').forEach(function (button) {
       preferences[button.getAttribute('data-cookie-toggle')] =
         button.getAttribute('aria-pressed') === 'true';
     });
-
     return preferences;
   }
 
@@ -742,7 +678,7 @@
     var message = document.querySelector('[data-cookie-message]');
     if (!message) return;
     message.textContent = text;
-    message.className = 'form-message ok';
+    message.className = 'form-message show ok';
   }
 
   function bindCookieToggles() {
@@ -750,14 +686,11 @@
 
     document.querySelectorAll('[data-cookie-toggle]').forEach(function (button) {
       var key = button.getAttribute('data-cookie-toggle');
-
       if (Object.prototype.hasOwnProperty.call(stored, key)) {
         setCookieToggle(button, !!stored[key]);
       }
-
       if (button.dataset.bound === '1') return;
       button.dataset.bound = '1';
-
       button.addEventListener('click', function () {
         setCookieToggle(button, button.getAttribute('aria-pressed') !== 'true');
       });
@@ -766,7 +699,6 @@
     document.querySelectorAll('[data-cookie-save]').forEach(function (button) {
       if (button.dataset.bound === '1') return;
       button.dataset.bound = '1';
-
       button.addEventListener('click', function () {
         writeCookiePreferences(cookiePreferencesFromDom());
         showCookieMessage('Your cookie preferences have been saved.');
@@ -776,19 +708,11 @@
     document.querySelectorAll('[data-cookie-reject]').forEach(function (button) {
       if (button.dataset.bound === '1') return;
       button.dataset.bound = '1';
-
       button.addEventListener('click', function () {
-        var preferences = {
-          essential:true,
-          functional:false,
-          analytics:false,
-          marketing:false
-        };
-
+        var preferences = { essential:true, functional:false, analytics:false, marketing:false };
         document.querySelectorAll('[data-cookie-toggle]').forEach(function (toggle) {
           setCookieToggle(toggle, !!preferences[toggle.getAttribute('data-cookie-toggle')]);
         });
-
         writeCookiePreferences(preferences);
         showCookieMessage('Optional cookies have been rejected.');
       });
@@ -816,21 +740,22 @@
     var ready = await ensureContent();
     if (!ready) return;
 
+    bindViewportMode();
     bindMenu();
     bindPublicForms();
     bindCareerApplication();
+    bindLearningFilters();
     bindCookieToggles();
 
     await Promise.all([
       loadJobs(),
       loadPosts(),
-      loadHomepageLatestPosts(),
       hydrateShowcase()
     ]);
 
     await loadJobDetail();
     await loadArticleDetail();
-
+    syncViewportMode();
     trackPage();
   }
 
