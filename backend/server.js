@@ -218,6 +218,16 @@ app.use(
   require('./routes/stratexAdminCentreV2')
 );
 
+/*
+ * Secure Stratex employment-contract workflow. Admin routes require the
+ * contracts permission; recipient routes are protected by a one-time-style
+ * high-entropy secure token whose raw value is never stored in Supabase.
+ */
+app.use(
+  '/api/stratex-contracts',
+  require('./routes/stratexContracts')
+);
+
 app.use(
   '/api/scouts',
   require('./routes/scoutPipelineStable')
@@ -328,6 +338,16 @@ app.use(
   require('./routes/showcase')
 );
 
+/*
+ * V8 public transactional Showcase flow. This uses the same live event and
+ * registration tables as the existing Showcase admin, while adding the V8
+ * fields shown in the supplied desktop/mobile designs.
+ */
+app.use(
+  '/api/showcase-v8',
+  require('./routes/showcaseV8')
+);
+
 app.use(
   '/api/fixtures',
   require('./routes/fixtures')
@@ -398,5 +418,3 @@ if (require.main === module) {
     );
   });
 }
-
-module.exports = app;
