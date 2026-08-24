@@ -119,8 +119,8 @@
   `;
 
   var RUNTIME_CSS = `
-    .rail-brand{min-height:72px!important;display:flex!important;align-items:center!important;overflow:visible!important}
-    .rail-brand .sl-logo-mark.colour{display:block!important;flex:0 0 auto!important;width:154px!important;height:50px!important;background-size:contain!important;background-position:left center!important;background-repeat:no-repeat!important}
+    .rail-brand{width:100%!important;min-height:74px!important;padding:4px 8px 18px!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important}
+    .sl-rail-logo-img{display:block!important;width:168px!important;height:auto!important;max-width:100%!important;object-fit:contain!important;object-position:left center!important;flex:0 0 auto!important}
     .sl-hidden{display:none!important}
     .sl-global-search{position:relative;margin-bottom:14px}
     .sl-global-search .rail-search{margin-bottom:0}
@@ -431,10 +431,31 @@
     return'<div class="rank-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="rank-num '+(index===0?'n1':'')+'">'+(index+1)+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.position,player.ageGroup,player.team].filter(Boolean).join(' · '))+'</span></span><b style="font-family:var(--display);font-size:17px">'+escapeHtml(shown)+suffix+'</b><span class="chev">›</span></div>';
   }
 
+  function colourRailLogoDataUri(){
+    var match=String(SOURCE_CSS||'').match(/\.sl-logo-mark\.colour\{background-image:url\((data:image\/png;base64,[^)]+)\)\}/);
+    return match&&match[1]?match[1]:'';
+  }
+
+  function hydrateRailLogo(){
+    if(state.mode==='field')return;
+    var src=colourRailLogoDataUri();
+    if(!src)return;
+    shadow.querySelectorAll('.rail-brand').forEach(function(brand){
+      var oldMark=brand.querySelector('.sl-logo-mark.colour');
+      if(!oldMark)return;
+      var img=document.createElement('img');
+      img.className='sl-rail-logo-img';
+      img.alt='ScoutLink';
+      img.src=src;
+      img.setAttribute('decoding','async');
+      brand.replaceChildren(img);
+    });
+  }
+
   function render(){
     var markup=templateFor(currentView()),mounted=state.mode==='field'?'<div class="m">'+markup+'</div>':markup;
     shadow.innerHTML='<style>'+SOURCE_CSS+'\n'+PROD_CSS+'\n'+EXTRA_CSS+'\n'+RUNTIME_CSS+'</style><div id="slV6Mount">'+mounted+'</div>';
-    hydrateIdentity();hydrateCurrentRoute();hydrateGlobalSearch();markNavigation();
+    hydrateIdentity();hydrateRailLogo();hydrateCurrentRoute();hydrateGlobalSearch();markNavigation();
     if(state.overlay) renderOverlay();
     if(state.error)setRuntimeMessage(state.error.message||String(state.error),true);
     root.classList.remove('is-loading');root.removeAttribute('aria-busy');root.style.visibility='visible';
