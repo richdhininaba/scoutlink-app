@@ -157,6 +157,16 @@ app.use(
   require('./routes/auth')
 );
 
+/*
+ * Public ScoutLink demo session issuer.
+ * Only the fixed seeded Scout and Coach personas can be opened here.
+ */
+app.use(
+  '/api/public-demo',
+  authLimiter,
+  require('./routes/publicDemoSession')
+);
+
 app.use(
   '/api/registrations',
   publicFormLimiter,
