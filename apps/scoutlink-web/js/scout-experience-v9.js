@@ -130,7 +130,7 @@
     .sl-search-result:hover{background:var(--mist)}
     .sl-search-result b{display:block;font-size:12px}.sl-search-result small{display:block;margin-top:2px;font-size:10.5px;color:var(--ink3)}
     .sl-inline-metric{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--pitch)}
-    .sl-overlay-runtime{z-index:950!important}
+    .sl-overlay-runtime{position:fixed!important;inset:0!important;z-index:9950!important}
     .sl-overlay-runtime .sl-overlay-scroll{max-height:min(70vh,720px);overflow:auto}
     .sl-game-list .list-row{padding:12px 0}
     .sl-game-score{font-family:var(--display);font-size:19px;font-weight:400}
@@ -168,7 +168,7 @@
     systemTotal: 0,
     filterOptions: { regions:[], positions:[], ageGroups:[], availability:[], feet:[] },
     filters: { q:'', position:'', ageGroup:'', region:'', availability:'', foot:'', minOverall:'' },
-    globalSearch: { query:'', results:{players:[],fixtures:[],events:[]}, open:false, timer:null },
+    globalSearch: { query:'', results:{pages:[],players:[],fixtures:[],events:[]}, open:false, timer:null },
     rankMetric: 'overall',
     rankAge: '',
     pipeline: [],
@@ -204,7 +204,7 @@
     settings: null,
     setup: null,
     setupOptions: null,
-    setupDraft: { teamNeeds:[], roleExpectations:[], developmentPriorities:[], formation:'', playingStyle:'', _loaded:false },
+    setupDraft: { teamNeeds:[], requiredRole:'', formation:'', playingStyle:'', developmentPlan:'', _loaded:false },
     onboardingDraft: {},
     profileData: null,
     profileAttributeMode: 'general',
@@ -476,7 +476,7 @@
     var rail=shadow.querySelector('.rail-search');if(!rail)return;
     var wrap=document.createElement('div');wrap.className='sl-global-search';
     rail.parentNode.insertBefore(wrap,rail);wrap.appendChild(rail);
-    rail.innerHTML='<span aria-hidden="true">⌕</span><input aria-label="Search ScoutLink" data-action="global-search-input" placeholder="Search players, fixtures..." value="'+escapeHtml(state.globalSearch.query)+'">';
+    rail.innerHTML='<span aria-hidden="true">⌕</span><input aria-label="Search ScoutLink" data-action="global-search-input" placeholder="Search players, pages, fixtures..." value="'+escapeHtml(state.globalSearch.query)+'">';
     if(!state.globalSearch.open||state.globalSearch.query.trim().length<2)return;
     var pop=document.createElement('div');pop.className='sl-search-pop';
     var r=state.globalSearch.results||{},html='';
@@ -484,26 +484,35 @@
       if(!items||!items.length)return;
       html+='<div class="sl-search-group">'+escapeHtml(title)+'</div>';
       items.forEach(function(item){
-        var titleText=type==='player'?[item.first_name,item.last_name].filter(Boolean).join(' '):(type==='fixture'?(item.home_team_name||item.team_name||'Fixture')+' vs '+(item.opponent_name||item.away_team_name||item.opponent||'Opponent'):(item.event_name||item.name||item.title||'Event'));
-        var sub=type==='player'?[item.primary_position||item.specific_position,item.age_group,item.team_name].filter(Boolean).join(' · '):(type==='fixture'?fullDateTime(item):[dateLabel(item.event_date),item.venue||item.location].filter(Boolean).join(' · '));
-        html+='<button class="sl-search-result" data-action="global-search-open" data-result-type="'+type+'" data-result-id="'+escapeHtml(item.id)+'"><span class="avatar">'+escapeHtml(initials(titleText))+'</span><span><b>'+escapeHtml(titleText)+'</b><small>'+escapeHtml(sub)+'</small></span></button>';
+        var titleText='',sub='',id=item.id||'';
+        if(type==='page'){titleText=item.title||item.name||'Page';sub=item.path||'';id=item.path||item.id||'';}
+        else if(type==='player'){titleText=item.name||[item.first_name,item.last_name].filter(Boolean).join(' ')||'Player';sub=[item.primary_position||item.specific_position||item.position,item.age_group||item.ageGroup,item.team_name||item.team].filter(Boolean).join(' · ');}
+        else if(type==='fixture'){titleText=(item.home_team_name||item.team_name||'Fixture')+' vs '+(item.opponent_name||item.away_team_name||item.opponent||'Opponent');sub=fullDateTime(item);}
+        else{titleText=item.event_name||item.name||item.title||'Event';sub=[dateLabel(item.event_date),item.venue||item.location].filter(Boolean).join(' · ');}
+        html+='<button class="sl-search-result" data-action="global-search-open" data-result-type="'+type+'" data-result-id="'+escapeHtml(id)+'"'+(type==='page'?' data-result-path="'+escapeHtml(item.path||id)+'"':'')+'><span class="avatar">'+escapeHtml(type==='page'?'↗':initials(titleText))+'</span><span><b>'+escapeHtml(titleText)+'</b><small>'+escapeHtml(sub)+'</small></span></button>';
       });
     }
-    group('Players',r.players,'player');group('Fixtures',r.fixtures,'fixture');group('Events',r.events,'event');
+    group('Pages',r.pages,'page');group('Players',r.players,'player');group('Fixtures',r.fixtures,'fixture');group('Events',r.events,'event');
     if(!html)html='<div class="sl-empty">No ScoutLink results.</div>';
     pop.innerHTML=html;wrap.appendChild(pop);
   }
-
   async function runGlobalSearch(value){
     state.globalSearch.query=value;clearTimeout(state.globalSearch.timer);
-    if(String(value).trim().length<2){state.globalSearch.results={players:[],fixtures:[],events:[]};state.globalSearch.open=false;render();return;}
-    state.globalSearch.open=true;
+    var q=String(value||'').trim().toLowerCase();
+    if(q.length<2){state.globalSearch.results={pages:[],players:[],fixtures:[],events:[]};state.globalSearch.open=false;render();return;}
+    var pages=[
+      ['Dashboard','/scout/dashboard','home overview usage compatible players'],['Player Search','/scout/player-search','players discover search filters'],['Rankings','/scout/rankings','rank players overall development value'],['Pipeline','/scout/pipeline','recruitment watching shortlist trial'],['Compare Players','/scout/compare-players','compare decision'],['Predictions','/scout/predictions','forecast development position fit match scenario roi'],['Ask Radar','/scout/radar','radar ai'],['Fixtures','/scout/fixtures','calendar matches attendance'],['Events','/scout/events','showcase attendance'],['Add Usage','/scout/usage','usage top up'],['Exports','/scout/exports','download export pdf'],['Chat','/scout/chat','messages coaches'],['Notifications','/scout/notifications','alerts unread'],['Settings','/scout/settings','account team seats'],['Scout Setup','/scout/setup','compatibility team needs role formation playing style long term goal'],['Report a Concern','/scout/report-a-concern','support safeguarding']
+    ].filter(function(x){return(x[0]+' '+x[2]).toLowerCase().indexOf(q)!==-1;}).slice(0,8).map(function(x){return{id:x[1],title:x[0],path:x[1]};});
+    var localPlayers=(state.players||[]).filter(function(p){return[p.name,p.team,p.position,p.ageGroup,p.region].filter(Boolean).join(' ').toLowerCase().indexOf(q)!==-1;}).slice(0,10);
+    state.globalSearch.open=true;state.globalSearch.results={pages:pages,players:localPlayers,fixtures:[],events:[]};render();
     state.globalSearch.timer=setTimeout(async function(){
-      try{state.globalSearch.results=unwrap(await request('/api/scout-v6/global-search?q='+encodeURIComponent(value)))||{players:[],fixtures:[],events:[]};render();var input=shadow.querySelector('[data-action="global-search-input"]');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}}
-      catch(error){toast(error.message,true);}
-    },250);
+      try{
+        var remote=unwrap(await request('/api/scout-v6/global-search?q='+encodeURIComponent(value)))||{};
+        state.globalSearch.results={pages:(remote.pages&&remote.pages.length?remote.pages:pages),players:(remote.players&&remote.players.length?remote.players:localPlayers),fixtures:remote.fixtures||[],events:remote.events||[]};
+      }catch(error){console.warn('[Scout global search]',error);state.globalSearch.results={pages:pages,players:localPlayers,fixtures:[],events:[]};}
+      render();var input=shadow.querySelector('[data-action="global-search-input"]');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}
+    },180);
   }
-
   function openMore(){
     var old=shadow.querySelector('.sl-more-sheet');if(old)old.remove();
     var sheet=document.createElement('div');sheet.className='sl-more-sheet';
@@ -708,9 +717,50 @@
     return'<div style="max-width:920px;width:100%"><h1 style="font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:24px;margin:0 0 6px">Result</h1><div class="profile-hero" style="margin-top:18px"><div><span class="lbl" style="color:rgba(255,255,255,.58)">ScoutLink Intelligence Report · '+escapeHtml(type)+'</span><h2 style="margin-top:8px">'+escapeHtml(heroTitle)+'</h2><p>'+escapeHtml(heroCopy)+'</p></div></div><div class="bento" style="margin-top:14px">'+tiles.map(function(t,i){return'<div class="bento-cell '+(i===0?'dark':'')+'"><span class="lbl">'+escapeHtml(t[0])+'</span><strong>'+escapeHtml(t[1]==null?'—':t[1])+'</strong></div>';}).join('')+'</div><div class="card sl-result-section"><div class="card-h"><h3>Executive summary</h3></div><div class="card-b"><p class="sl-result-copy">'+escapeHtml(summary)+'</p>'+paragraphs+'</div></div>'+sections+(r.disclaimer?'<div class="callout a sl-result-section"><span>'+escapeHtml(r.disclaimer)+'</span></div>':'')+'<div class="flex" style="justify-content:flex-end;margin-top:18px"><button class="btn outline" data-action="prediction-history-back">← Prediction history</button><button class="btn outline" data-action="prediction-run-another">Run another</button><button class="btn volt" data-action="prediction-export">Export PDF</button></div></div>';
   }
   function hydratePredictionResult(){
-    var body=shadow.querySelector('.wizard-body');if(body)body.innerHTML=predictionResultMarkup();
-    else{var pbody=shadow.querySelector('.pbody');if(pbody)pbody.innerHTML=predictionResultMarkup();}
-    buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-action','prediction-history-back');});
+    var r=state.predictionResult||{},p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);})||{name:'Player'},type=String(r.type||state.selectedPredictionType||'Prediction');
+    function setHero(title,copy){var hero=shadow.querySelector('.profile-hero');if(!hero)return;var h=hero.querySelector('h2');if(h)h.textContent=title;var ps=hero.querySelectorAll('p');if(ps[0]&&copy)ps[0].textContent=copy;var meta=hero.querySelector('.mut[style*="font-family"]');if(meta)meta.textContent='Generated '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · Scoring v4.0.0';}
+    function bento(values){Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),strong=cell.querySelector('strong');if(!l||!strong)return;var key=l.textContent.trim().toLowerCase();if(Object.prototype.hasOwnProperty.call(values,key))strong.textContent=values[key]==null?'—':values[key];});}
+    function listBody(title,rows){var body=cardBody(title);if(!body)return;body.innerHTML=(rows||[]).map(function(row){return'<div class="list-row" style="cursor:default"><span class="who"><b>'+escapeHtml(row[0]||'')+'</b><span>'+escapeHtml(row[1]||'')+'</span></span></div>';}).join('')||'<div class="sl-empty">No additional output was produced for this section.</div>';}
+    function barsBody(title,rows){var body=cardBody(title);if(!body)return;body.innerHTML=(rows||[]).map(function(row){var n=nullableNumber(row[1]),w=n==null?0:clamp(n,0,100);return'<div class="breakdown-row"><label>'+escapeHtml(row[0]||'')+'</label><div class="track"><i style="width:'+w+'%"></i></div><strong>'+(n==null?'—':escapeHtml(Math.round(n)))+'</strong></div>';}).join('')||'<div class="sl-empty">No scored evidence was produced.</div>';}
+    function tableBody(title,headers,rows){var body=cardBody(title);if(!body)return;var head='<thead><tr>'+headers.map(function(x){return'<th style="text-align:left;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;color:var(--ink3);padding:8px 10px;border-bottom:1.5px solid var(--ink)">'+escapeHtml(x)+'</th>';}).join('')+'</tr></thead>';var trs=(rows||[]).map(function(row){return'<tr>'+row.map(function(x){return'<td style="padding:10px;border-bottom:1px solid var(--line);font-size:12px">'+escapeHtml(x==null?'—':x)+'</td>';}).join('')+'</tr>';}).join('');body.innerHTML='<table style="width:100%;border-collapse:collapse">'+head+'<tbody>'+trs+'</tbody></table>';}
+    function chartBody(title,points){var body=cardBody(title);if(!body)return;var vals=(points||[]).map(function(x){return nullableNumber(x[1]);}).filter(function(x){return x!=null;});var min=vals.length?Math.min.apply(null,vals):0,max=vals.length?Math.max.apply(null,vals):100,span=Math.max(1,max-min);body.innerHTML='<div style="display:flex;gap:10px;align-items:flex-end;padding-top:10px">'+(points||[]).map(function(x){var v=nullableNumber(x[1]),height=v==null?8:Math.round(30+((v-min)/span)*50);return'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1"><div style="width:100%;height:120px;display:flex;align-items:flex-end"><div style="width:100%;height:'+height+'%;background:var(--pitch);border-radius:6px 6px 0 0"></div></div><b style="font-family:var(--mono);font-size:10px">'+escapeHtml(v==null?'—':Math.round(v))+'</b><span class="mut" style="font-size:9.5px">'+escapeHtml(x[0])+'</span></div>';}).join('')+'</div>';}
+    function summary(text,implication){var card=Array.from(shadow.querySelectorAll('.card')).find(function(c){return /Executive summary/i.test(c.textContent);});if(!card)return;var para=card.querySelector('p');if(para)para.textContent=text||r.summary||r.recommendation||'Prediction complete.';var call=card.querySelector('.callout span');if(call)call.innerHTML='<b>Recruitment implication</b><br>'+escapeHtml(implication||r.recommendation||'Use this result alongside live observation and the underlying evidence.');}
+    if(type==='Attribute Development'){
+      setHero(p.name+' · Development Outlook','A bounded development scenario built from the current overall assessment, selected development plan and recorded evidence. This is decision support, not a promise of future performance.');
+      bento({'current overall':formatScore(r.currentOverall),'projected overall':formatScore(r.potentialOverall),'likely range':rangeText(r.likelyRange),'trajectory':r.trajectory||((r.potentialOverall||0)>(r.currentOverall||0)?'Rising':'Stable')});
+      summary(r.summary||(r.paragraphs||[])[0],r.recommendation);
+      var seasons=Array.isArray(r.seasons)?r.seasons:[];chartBody('Projected overall by season',[['Current',r.currentOverall]].concat(seasons.slice(0,5).map(function(x,i){return['Y'+(x.year||i+1),x.overall!=null?x.overall:(x.projectedOverall!=null?x.projectedOverall:x.rating)];})));
+      var effects=Array.isArray(r.attributeEffects)?r.attributeEffects:[];listBody('What moves most',effects.slice(0,3).map(function(x){return[x.attribute||x.label||x.key||'Attribute',x.explanation||x.reason||('Projected five-season change '+((number(x.deltaFiveYear,0)>=0?'+':'')+number(x.deltaFiveYear,0)))];}));
+      tableBody('Attribute movement',['Attribute','Current','Yr 3','Yr 5','Change'],effects.slice(0,10).map(function(x){var cur=x.current!=null?x.current:x.currentRating,y3=x.year3!=null?x.year3:x.projectedYear3,y5=x.year5!=null?x.year5:x.projectedYear5,delta=x.deltaFiveYear!=null?x.deltaFiveYear:(y5!=null&&cur!=null?number(y5)-number(cur):null);return[x.attribute||x.label||x.key||'Attribute',cur,y3,y5,delta==null?'—':((delta>=0?'+':'')+Math.round(delta*10)/10)];}));
+      listBody('Evidence, confidence & next checks',[["Confidence: "+confidenceText(r.confidence),r.confidence&&r.confidence.explanation||'Use the likely range rather than treating the point estimate as a guarantee.'],['Live check',r.recommendation||'Observe the priority behaviours under repeated match pressure.'],['Model limitation',r.disclaimer||'No future health, maturation, minutes or coaching environment is assumed.']]);
+    }else if(type==='Position Fit Projection'){
+      setHero(p.name+' · '+(r.targetPosition||'Target position')+' Conversion Review','A position-specific projection using the V4 current-position and role evidence model.');
+      bento({'best current position':r.bestCurrentPosition?String(r.bestCurrentPosition)+' · '+formatScore(r.bestCurrentScore)+'/100':'—','target position':r.targetPosition?String(r.targetPosition)+' · '+formatScore(r.targetScore)+'/100':'—','gap vs best':r.targetGapVsBest==null?'—':((r.targetGapVsBest>0?'+':'')+r.targetGapVsBest),'verdict':r.targetVerdict||'—'});
+      summary(r.summary||(r.paragraphs||[])[0],r.recommendation);
+      barsBody('Position rating comparison',Object.keys(r.positionRatings||{}).sort(function(a,b){return number(r.positionRatings[b])-number(r.positionRatings[a]);}).map(function(k){return[k,r.positionRatings[k]];}));
+      listBody('Top '+String(r.targetPosition||'').trim()+' role fits',(r.topRoles||[]).slice(0,6).map(function(x){return[(x.role||x.position||'Role')+' · '+formatScore(x.score),x.status||'Role fit generated from the recorded position attributes.'];}));
+      var conv=(r.conversionCandidates||[]).slice(0,8);tableBody('Conversion evidence',['Requirement','Score','Interpretation'],conv.length?conv.map(function(x){return[x.role||x.position||x.label||'Conversion evidence',x.score==null?'—':formatScore(x.score),x.reason||x.status||'Supported by the position model'];}):[['Target position',formatScore(r.targetScore),r.targetVerdict||'Review the live role demands']]);
+      listBody('Live observation brief',(r.liveProof||r.selectionGuidance||[]).slice(0,4).map(function(x,i){return[typeof x==='object'?(x.title||('Live check '+(i+1))):('Live check '+(i+1)),typeof x==='object'?(x.note||x.text||''):String(x)];}).concat((r.recommendation?[['Decision threshold',r.recommendation]]:[])));
+    }else if(type==='Match Scenario Prediction'){
+      var scenario=r.scenarioLabel||r.scenario||r.scenarioDetails&&r.scenarioDetails.scenarioLabel||'Match Scenario';
+      setHero(p.name+' · '+scenario,'ScoutLink assessed the attributes and evidence required for the selected repeated tactical demand.');
+      bento({'scenario score':formatScore(r.score!=null?r.score:r.scenarioScore),'likely range':rangeText(r.likelyRange),'current risk':r.risk||'—','recommendation':r.recommendation||'Review'});
+      summary(r.summary||(r.paragraphs||[])[0],r.recommendation);
+      barsBody('Scenario evidence',(r.evidence||[]).slice(0,10).map(function(x){return[typeof x==='object'?(x.label||x.attribute||x.key||'Evidence'):String(x),typeof x==='object'?(x.score!=null?x.score:x.value):null];}));
+      listBody('Predicted behaviour',[['Predicted behaviour',r.predictedBehaviour||r.recommendation||'Review the player against the selected tactical demand.'],['Tactical note',r.tacticalNote||'Verify repeatability through live observation.'],['Primary risk',r.risk||'No additional risk label returned.']]);
+      var proof=(r.liveProof||[]).slice(0,5);tableBody('Live proof checklist',['Live behaviour','Why it matters','Evidence status'],proof.map(function(x){return[typeof x==='object'?(x.title||x.label||'Live behaviour'):String(x),typeof x==='object'?(x.note||x.reason||'Confirms the prediction under live pressure'):'Confirms the prediction under live pressure','Priority check'];}));
+    }else{
+      var va=r.valueAnalysis||{},current=r.currentTransferValue||{},projection=Array.isArray(r.projection)?r.projection:[];
+      setHero(p.name+' · Football Value Outlook','An index-first value report. Currency and ROI are shown only when the backend has verified financial anchors.');
+      var fvi=current.footballValueIndex!=null?current.footballValueIndex:(va.footballValueIndex!=null?va.footballValueIndex:r.footballValueIndex),last=projection.length?projection[projection.length-1]:{};
+      bento({'football value index':formatScore(fvi),'likely index range':rangeText(va.footballValueIndexRange||r.likelyRange),'5-season index':formatScore(last.footballValueIndex!=null?last.footballValueIndex:last.index),'currency value':current.formatted||va.valueFormatted||'—'});
+      summary(r.summary||(r.paragraphs||[])[0],r.recommendation);
+      chartBody('Football Value Index projection',[['Current',fvi]].concat(projection.slice(0,5).map(function(x,i){return['Y'+(x.year||i+1),x.footballValueIndex!=null?x.footballValueIndex:x.index];})));
+      var drivers=r.valueDrivers||va.components||{};var driverRows=Array.isArray(drivers)?drivers.map(function(x){return[x.label||x.title||'Value driver',x.explanation||x.note||String(x.value||'')];}):Object.keys(drivers).slice(0,6).map(function(k){var v=drivers[k];return[k.replace(/([A-Z])/g,' $1'),typeof v==='object'?(v.explanation||v.label||JSON.stringify(v)):String(v)];});listBody('Value drivers',driverRows);
+      var assumptions=r.assumptions||{};tableBody('Financial scenario readiness',['Input','Status','Report behaviour'],Object.keys(assumptions).length?Object.keys(assumptions).map(function(k){var v=assumptions[k];return[k.replace(/([A-Z])/g,' $1'),v==null?'Not supplied':String(v),v==null?'No financial output from this input':'Included in the scenario'];}):[['Verified market anchors','Not supplied','No currency value shown'],['Acquisition cost','Not supplied','No ROI calculation'],['Annual development cost','Not supplied','No investment total'],['Scouting cost','Not supplied','No cost-adjusted scenario']]);
+      listBody('Risk & governance',[['Index ≠ transfer fee','The Football Value Index is an internal decision-support score, not a claim that a youth player has a tradable market price.'],['Rules remain external',r.disclaimer||'Any payment, registration or employment decision must be checked against governing rules and jurisdiction.']]);
+    }
+    buttons(/^Exit$|^Back$|^Done$/i).forEach(function(b){b.setAttribute('data-action','prediction-history-back');});buttons(/Prediction history/i).forEach(function(b){b.setAttribute('data-action','prediction-history-back');});buttons(/Run another/i).forEach(function(b){b.setAttribute('data-action','prediction-run-another');});buttons(/Export PDF/i).forEach(function(b){b.setAttribute('data-action','prediction-export');});
   }
   function hydratePredictionWizard(){var v=currentView();if(v==='prediction1')hydratePredictionStepOne();else if(v==='prediction2')hydratePredictionStepTwo();else if(v==='prediction3')hydratePredictionReview();}
 
@@ -852,25 +902,26 @@
   function ensureSetupDraft(){
     var data=state.setup||{},setup=data.personalSetup||data;if(state.setupDraft._loaded)return;
     state.setupOptions=data.options||state.setupOptions||{};
-    state.setupDraft={teamNeeds:list(setup.teamNeeds||setup.teamWeaknesses),roleExpectations:list(setup.roleExpectations),developmentPriorities:list(setup.developmentPriorities||setup.longTermGoals),formation:setup.formation||'',playingStyle:setup.playingStyle||'',_loaded:true};
+    state.setupDraft={teamNeeds:list(setup.teamNeeds||setup.teamWeaknesses).slice(0,3),requiredRole:setup.requiredRole||'',formation:setup.formation||'',playingStyle:setup.playingStyle||'',developmentPlan:setup.developmentPlan||'',_loaded:true};
   }
   function hydrateSetup(){
-    ensureSetupDraft();var opts=state.setupOptions||{},v=currentView();
-    var grid=shadow.querySelector('.setup-opt-grid');
-    if(grid&&v==='setup1')grid.innerHTML=setupOptionMarkup(opts.teamNeeds||[],state.setupDraft.teamNeeds,'teamNeeds');
-    if(grid&&v==='setup2')grid.innerHTML=setupOptionMarkup(opts.roleExpectations||[],state.setupDraft.roleExpectations,'roleExpectations');
-    if(grid&&v==='setup4')grid.innerHTML=setupOptionMarkup(opts.developmentPriorities||[],state.setupDraft.developmentPriorities,'developmentPriorities');
-    if(v==='setup3'){
-      var f=findField('Formation'),p=findField('Playing style');
-      if(f){setOptions(f,opts.formations||[],state.setupDraft.formation,{value:'',label:'Choose one formation'});f.setAttribute('data-action','setup-formation');}
-      if(p){setOptions(p,opts.playingStyles||[],state.setupDraft.playingStyle,{value:'',label:'Choose one playing style'});p.setAttribute('data-action','setup-style');}
-    }
-    if(v==='setupReview'){
-      var review=cardByHeading('Review');if(review){var b=review.querySelector('.card-b');if(b)b.innerHTML='<div class="sl-result-row"><span>Team needs</span><b>'+escapeHtml(state.setupDraft.teamNeeds.join(', ')||'None')+'</b></div><div class="sl-result-row"><span>Role</span><b>'+escapeHtml(state.setupDraft.roleExpectations.join(', ')||'None')+'</b></div><div class="sl-result-row"><span>Shape & style</span><b>'+escapeHtml([state.setupDraft.formation,state.setupDraft.playingStyle].filter(Boolean).join(' · ')||'Not set')+'</b></div><div class="sl-result-row"><span>Development</span><b>'+escapeHtml(state.setupDraft.developmentPriorities.join(', ')||'None')+'</b></div>';}
-    }
-    buttons(/^Continue$|^Review$/i).forEach(function(b){b.setAttribute('data-action','setup-next');});buttons(/^Back$/i).forEach(function(b){b.setAttribute('data-action','setup-back');});buttons(/Save setup/i).forEach(function(b){b.setAttribute('data-action','setup-save');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});
+    ensureSetupDraft();var opts=state.setupOptions||{},v=currentView(),step=setupStepIndex();
+    var host=shadow.querySelector('.wizard-body');if(host){host=host.firstElementChild||host;}else host=shadow.querySelector('.pbody');if(!host)return;
+    function ov(item){return typeof item==='object'?item.value:item;}function ol(item){return typeof item==='object'?item.label:item;}
+    function selectOptions(items,selected,placeholder){return'<option value="">'+escapeHtml(placeholder)+'</option>'+(items||[]).map(function(item){var value=ov(item),label=ol(item);return'<option value="'+escapeHtml(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+escapeHtml(label)+'</option>';}).join('');}
+    var labels=['Team weaknesses','Required role','Formation','Playing style','Long-term goal'];
+    var stepper='<div class="stepper">'+labels.map(function(label,i){var cls=i<step?'dn':i===step?'on':'';return'<div class="sp-i '+cls+'"><b>'+(i<step?'✓':(i+1))+'</b><span>'+escapeHtml(label)+'</span></div>'+(i<labels.length-1?'<div class="ln '+(i<step?'dn':'')+'"></div>':'');}).join('')+'</div>';
+    var warning='<div class="setup-warning"><span><b>Compatibility, not ranking.</b> These five inputs change this Scout’s compatibility scores. They do not change System Rankings or a player’s Overall Rating.</span></div>';
+    var heading='',copy='',content='',footer='';
+    if(step===0){heading='What problem must recruitment solve?';copy='Step 1 of 5 · Team weaknesses';var max=number((opts.limits||{}).teamNeedsMax,3);content='<div class="card"><div class="card-h"><h3>Team weaknesses</h3><span class="sp"></span><span class="hint">'+state.setupDraft.teamNeeds.length+' of '+max+' selected · required</span></div><div class="card-b"><div class="callout g"><span>Choose up to three squad problems the player should help solve.</span></div><div class="chip-picker" style="margin-top:14px">'+(opts.teamNeeds||[]).map(function(item){var value=ov(item),on=state.setupDraft.teamNeeds.indexOf(value)!==-1;return'<button class="chip-option '+(on?'on':'')+'" type="button" data-action="setup-need-toggle" data-value="'+escapeHtml(value)+'"><span class="ck">'+(on?'✓':'')+'</span>'+escapeHtml(ol(item))+'</button>';}).join('')+'</div></div></div>';}
+    if(step===1){heading='What role must the player deliver?';copy='Step 2 of 5 · Required role';content='<div class="card"><div class="card-h"><h3>Required role</h3><span class="sp"></span><span class="hint">Single choice · required</span></div><div class="card-b"><div class="callout g" style="margin-bottom:14px"><span>This is the role profile used by the compatibility engine for role-fit evidence.</span></div><div class="field" style="margin-bottom:0"><label>Required role</label><select class="in" data-action="setup-required-role">'+selectOptions(opts.requiredRoles||[],state.setupDraft.requiredRole,'Choose one required role')+'</select></div></div></div>';}
+    if(step===2){heading='What shape are you recruiting into?';copy='Step 3 of 5 · Formation';content='<div class="card"><div class="card-h"><h3>Formation</h3><span class="sp"></span><span class="hint">Single choice · required</span></div><div class="card-b"><div class="field" style="margin-bottom:0"><label>Formation</label><select class="in" data-action="setup-formation">'+selectOptions(opts.formations||[],state.setupDraft.formation,'Choose one supported formation')+'</select><div class="help">Every formation currently configured by the compatibility engine is available here.</div></div></div></div>';}
+    if(step===3){heading='How do you want to play?';copy='Step 4 of 5 · Playing style';content='<div class="card"><div class="card-h"><h3>Playing style</h3><span class="sp"></span><span class="hint">Single choice · required</span></div><div class="card-b"><div class="field" style="margin-bottom:0"><label>Playing style</label><select class="in" data-action="setup-style">'+selectOptions(opts.playingStyles||[],state.setupDraft.playingStyle,'Choose one supported playing style')+'</select><div class="help">This feeds the tactical-style fit component of compatibility.</div></div></div></div>';}
+    if(step===4){heading='What is the long-term recruitment outcome?';copy='Step 5 of 5 · Long-term goal';content='<div class="card"><div class="card-h"><h3>Long-term goal</h3><span class="sp"></span><span class="hint">Single choice · required</span></div><div class="card-b"><div class="callout" style="margin-bottom:14px"><span>Select the one development pathway the recruitment decision should prioritise.</span></div><div class="field" style="margin-bottom:0"><label>Long-term goal</label><select class="in" data-action="setup-development-plan">'+selectOptions(opts.developmentPlans||[],state.setupDraft.developmentPlan,'Choose one long-term goal')+'</select></div></div></div><div class="card" style="margin-top:14px"><div class="card-h"><h3>Setup summary</h3></div><div class="card-b"><div class="sl-result-row"><span>Team weaknesses</span><b>'+escapeHtml(state.setupDraft.teamNeeds.map(function(v){var x=(opts.teamNeeds||[]).find(function(i){return String(ov(i))===String(v);});return x?ol(x):v;}).join(', '))+'</b></div><div class="sl-result-row"><span>Required role</span><b>'+escapeHtml((function(){var x=(opts.requiredRoles||[]).find(function(i){return String(ov(i))===String(state.setupDraft.requiredRole);});return x?ol(x):state.setupDraft.requiredRole;})())+'</b></div><div class="sl-result-row"><span>Formation</span><b>'+escapeHtml(state.setupDraft.formation)+'</b></div><div class="sl-result-row"><span>Playing style</span><b>'+escapeHtml((function(){var x=(opts.playingStyles||[]).find(function(i){return String(ov(i))===String(state.setupDraft.playingStyle);});return x?ol(x):state.setupDraft.playingStyle;})())+'</b></div></div></div>';}
+    footer='<div class="flex" style="margin-top:22px;justify-content:flex-end">'+(step>0?'<button class="btn outline" type="button" data-action="setup-back">← Back</button>':'')+(step<4?'<button class="btn volt" type="button" data-action="setup-next">Continue →</button>':'<button class="btn volt" type="button" data-action="setup-save">Save setup</button>')+'</div>';
+    host.innerHTML=stepper+warning+'<h1 style="font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:'+(state.mode==='field'?'24':'22')+'px;margin:0 0 4px">'+escapeHtml(heading)+'</h1><p class="mut" style="margin:0 0 20px">'+escapeHtml(copy)+' <span class="pill a">Required</span></p>'+content+footer;
+    buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});
   }
-
   function profileAttrRows(attrs){
     return (attrs||[]).map(function(a){
       var v=score10(a.value);var width=v==null?0:clamp(v*10,0,100);
@@ -928,9 +979,8 @@
     if(!card||!state.profileData)return;var body=card.querySelector('.card-b');if(!body)return;
     var workflow=(state.profileData.workflow||[]).filter(function(x){return x.entry_type==='note'||!x.entry_type;});
     var notes=workflow.map(function(n){var author=n.author||{};var name=[author.first_name,author.last_name].filter(Boolean).join(' ')||'Scout';var vis=(n.metadata&&n.metadata.visibility)==='private'?'Private':'Team';return '<div class="list-row" style="align-items:flex-start"><span class="avatar">'+escapeHtml(initials(name))+'</span><span class="who"><b>'+escapeHtml(name)+'</b><span>'+escapeHtml(relative(n.created_at))+' · '+escapeHtml(vis)+'</span><span style="color:var(--ink);margin-top:6px;white-space:normal;line-height:1.5">'+escapeHtml(n.content||'')+'</span></span></div>';}).join('');
-    body.innerHTML='<div class="field"><label>Add scouting note</label><textarea class="in" data-profile-note rows="3" placeholder="Add evidence, a decision note or a live observation..."></textarea></div><div class="flex" style="margin:10px 0 18px;align-items:center"><select class="in" data-action="profile-note-visibility" style="max-width:190px;height:38px"><option value="team"'+(state.profileNoteVisibility==='team'?' selected':'')+'>Visible to team</option><option value="private"'+(state.profileNoteVisibility==='private'?' selected':'')+'>Private to me</option></select><span class="sp"></span><button class="btn outline sm" data-action="profile-share">Share with scouts</button><button class="btn volt sm" data-action="profile-note-post">Post note</button></div><div class="lbl" style="margin-bottom:8px">Linked notes from other scouts</div>'+(notes||'<div class="sl-empty">No scouting notes have been posted yet.</div>');
+    body.innerHTML='<div class="field"><label>Add scouting note</label><textarea class="in" data-profile-note rows="3" placeholder="Add evidence, a decision note or a live observation..."></textarea></div><div class="flex" style="margin:10px 0 18px;align-items:center"><select class="in" data-action="profile-note-visibility" style="max-width:190px;height:38px"><option value="team"'+(state.profileNoteVisibility==='team'?' selected':'')+'>Visible to team</option><option value="private"'+(state.profileNoteVisibility==='private'?' selected':'')+'>Private to me</option></select><span class="sp"></span><button class="btn volt sm" data-action="profile-note-post">Post note</button></div><div class="lbl" style="margin-bottom:8px">Linked notes from other scouts</div>'+(notes||'<div class="sl-empty">No scouting notes have been posted yet.</div>');
   }
-
   function hydrateProfileMedia(){
     var d=state.profileData;if(!d)return;
     var videoCard=cardByHeading('Video reels');if(videoCard){var body=videoCard.querySelector('.card-b');if(body)body.innerHTML=(d.videos||[]).length?(d.videos||[]).slice(0,12).map(function(v,i){return '<div class="list-row"><span class="who"><b>'+escapeHtml(v.title||v.category||'Video evidence')+'</b><span>'+escapeHtml([v.description,dateLabel(v.created_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="profile-video" data-index="'+i+'">Play</button></div>';}).join(''):'<div class="sl-empty">No video evidence has been uploaded for this player.</div>';buttons(/^View all$/i,videoCard).forEach(function(b){b.setAttribute('data-action','profile-media-all');});}
@@ -941,19 +991,18 @@
   function hydrateProfile(){
     var d=state.profileData,p=profilePlayer();if(!d||!p)return;
     walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name),'Chorlton Colts FC':p.team||'Team','AM · U12 · Chorlton Colts FC · Right foot · Available':[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · ')});
-    var hero=shadow.querySelector('.profile-hero');if(hero){var name=hero.querySelector('h2');if(name)name.textContent=p.name;var meta=hero.querySelector('p');if(meta)meta.textContent=[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · ');var av=hero.querySelector('.avatar');if(av)av.textContent=initials(p.name);var scores=Array.from(hero.querySelectorAll('.score-tile strong'));if(scores[0])scores[0].textContent=p.overall==null?'—':Math.round(p.overall);if(scores[1])scores[1].textContent=p.compatibility==null?'—':Math.round(p.compatibility);if(scores[2])scores[2].textContent=p.valueIndex==null?'—':Math.round(p.valueIndex);}
+    var hero=shadow.querySelector('.profile-hero');if(hero){var name=hero.querySelector('h2');if(name)name.textContent=p.name;var meta=hero.querySelector('p');if(meta)meta.textContent=[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · ');var av=hero.querySelector('.avatar');if(av)av.textContent=initials(p.name);var scores=Array.from(hero.querySelectorAll('.score-tile strong'));if(scores[0])scores[0].textContent=p.overall==null?'—':Math.round(p.overall);if(scores[1])scores[1].textContent=p.compatibility==null?'—':Math.round(p.compatibility);if(scores[2])scores[2].textContent=p.valueIndex==null?'—':Math.round(p.valueIndex);var chips=hero.querySelector('.chips');if(chips){chips.innerHTML=d.inPipeline?'<span class="pill g">✓ In pipeline</span>':'';}}
     var compatCard=cardByHeading('Compatibility breakdown');if(compatCard)hydrateCompatibility(compatCard,d.compatibilityExplanation||{});
     var attrCard=cardByHeading('Overall attribute profile');if(attrCard)hydrateAttributeCard(attrCard,d.attributes||{});
     hydrateProfileMedia();
     var noteCard=cardByHeading('Team notes & discussion');if(noteCard)hydrateProfileNotes(noteCard);
-    buttons(/Add to pipeline/i).forEach(function(b){b.setAttribute('data-action','profile-pipeline-add');if(d.inPipeline){b.textContent='✓ In pipeline';b.disabled=true;}});
+    var candidates=buttons(/^(Add to pipeline|Share with scouts)$/i).filter(function(b){return !(noteCard&&noteCard.contains(b));});
+    candidates.forEach(function(b,i){if(d.inPipeline||i>0){b.style.display='none';b.removeAttribute('data-action');}else{b.style.display='';b.disabled=false;b.textContent='Add to pipeline';b.setAttribute('data-action','profile-pipeline-add');}});
     buttons(/Run prediction/i).forEach(function(b){b.setAttribute('data-action','profile-predict');});
     buttons(/Export profile/i).forEach(function(b){b.setAttribute('data-action','profile-export');});
-    buttons(/Share with scouts/i).forEach(function(b){b.setAttribute('data-action','profile-share');});
     buttons(/External matches/i).forEach(function(b){b.setAttribute('data-action','profile-external');b.disabled=!d.externalMatchesUrl;});
     Array.from(shadow.querySelectorAll('button,a')).forEach(function(b){var t=b.textContent.trim();if(t==='Overview')b.setAttribute('data-action','profile-tab-overview');if(t==='Attributes')b.setAttribute('data-action','profile-tab-attributes');if(t==='Media')b.setAttribute('data-action','profile-tab-media');if(t==='Notes')b.setAttribute('data-action','profile-tab-notes');});
   }
-
   function hydrateConcern(){
     var person=findField('Player or person involved');if(person){setOptions(person,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.team};}),'',{value:'',label:'Not applicable'});}
     buttons(/Submit report/i).forEach(function(b){b.setAttribute('data-action','concern-submit');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});
@@ -983,15 +1032,15 @@
   function overlayNodeFromSource(view){
     var html=templateFor(view),tpl=document.createElement('template');tpl.innerHTML=html;var nodes=Array.from(tpl.content.querySelectorAll('div[style*="position:absolute"]'));var node=nodes.find(function(n){return (n.getAttribute('style')||'').indexOf('inset:0')!==-1;})||nodes[nodes.length-1];return node?node.cloneNode(true):null;
   }
-  function overlayHost(){var app=shadow.querySelector('.app')||shadow.querySelector('.scr')||shadow.querySelector('#slV6Mount');if(app&&window.getComputedStyle(app).position==='static')app.style.position='relative';return app;}
+  function overlayHost(){return shadow;}
   function closeOverlay(){state.overlay=null;var node=shadow.querySelector('.sl-overlay-runtime');if(node)node.remove();}
   function renderOverlay(){
     if(!state.overlay)return;var o=state.overlay,node,existing=shadow.querySelector('.sl-overlay-runtime');if(existing)existing.remove();
     if(o.kind==='games-all'||o.kind==='attrs-all'||o.kind==='share')node=customOverlay(o);else node=overlayNodeFromSource(o.source||o.kind);
-    if(!node)return;node.classList.add('sl-overlay-runtime');overlayHost().appendChild(node);hydrateOverlay(node,o);
+    if(!node)return;node.classList.add('sl-overlay-runtime');node.style.position='fixed';node.style.inset='0';node.style.zIndex='9950';overlayHost().appendChild(node);hydrateOverlay(node,o);
   }
   function customOverlay(o){
-    var wrap=document.createElement('div');wrap.style.cssText='position:absolute;inset:0;background:rgba(6,32,26,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:18px';
+    var wrap=document.createElement('div');wrap.style.cssText='position:fixed;inset:0;background:rgba(6,32,26,.6);display:flex;align-items:center;justify-content:center;z-index:9950;padding:18px';
     var title=o.kind==='games-all'?'All recorded games':o.kind==='attrs-all'?'All assessed attributes':'Share with scouts';
     wrap.innerHTML='<div style="background:#fff;border-radius:18px;padding:22px;width:760px;max-width:94%;max-height:86vh;overflow:auto"><div class="flex" style="justify-content:space-between;margin-bottom:14px"><b style="font-size:16px">'+escapeHtml(title)+'</b><button class="btn outline sm" data-action="overlay-close">×</button></div><div class="sl-overlay-scroll" data-overlay-body></div></div>';
     return wrap;
@@ -1096,7 +1145,7 @@
   function inviteScoutModal(){modal('Invite Scout','<div class="two"><div class="field"><label>First name</label><input class="in" data-invite-first></div><div class="field"><label>Last name</label><input class="in" data-invite-last></div></div><div class="field"><label>Email address</label><input class="in" type="email" data-invite-email></div><div class="field"><label>Phone number <em>Optional</em></label><input class="in" type="tel" data-invite-phone></div>','<button class="btn outline" data-action="modal-close">Cancel</button><button class="btn volt" data-action="team-invite-submit">Send invite</button>');}
   async function inviteScout(button){var first=(shadow.querySelector('[data-invite-first]')||{}).value||'',last=(shadow.querySelector('[data-invite-last]')||{}).value||'',email=(shadow.querySelector('[data-invite-email]')||{}).value||'',phone=(shadow.querySelector('[data-invite-phone]')||{}).value||'';if(!first.trim()||!last.trim()||!email.trim()){toast('First name, last name and email are required.',true);return;}setBusy(button,true);try{var result=await request('/api/scout-experience-v9/team/invite',{method:'POST',body:{firstName:first,lastName:last,email:email,phone:phone}});closeModal();await Promise.all([loadSettings(),loadWorkspace()]);toast(result.message||'Scout invite sent.');render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
   async function saveSetup(button){
-    var d=state.setupDraft;if(!d.teamNeeds.length||!d.roleExpectations.length||!d.formation||!d.playingStyle||!d.developmentPriorities.length){toast('Complete all four Scout Setup steps before saving.',true);return;}setBusy(button,true);try{var p=unwrap(await request('/api/scout-v6/setup',{method:'PATCH',body:{teamNeeds:d.teamNeeds,roleExpectations:d.roleExpectations,formation:d.formation,playingStyle:d.playingStyle,developmentPriorities:d.developmentPriorities}}));state.setup=p;state.setupDraft._loaded=false;await Promise.all([loadSetup(),loadPlayers()]);toast('Scout Setup saved. Compatibility has been recalculated using your personal recruitment brief.');navigate('/scout/settings');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+    var d=state.setupDraft;if(!d.teamNeeds.length||!d.requiredRole||!d.formation||!d.playingStyle||!d.developmentPlan){toast('Complete all five Scout Setup inputs before saving.',true);return;}if(d.teamNeeds.length>3){toast('Choose no more than three team weaknesses.',true);return;}setBusy(button,true);try{var p=unwrap(await request('/api/scout-v6/setup',{method:'PATCH',body:{teamNeeds:d.teamNeeds,requiredRole:d.requiredRole,formation:d.formation,playingStyle:d.playingStyle,developmentPlan:d.developmentPlan}}));state.setup=p;state.setupDraft._loaded=false;await Promise.all([loadSetup(),loadPlayers()]);toast('Scout Setup saved. Compatibility has been recalculated using the five-input recruitment brief.');navigate('/scout/settings');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
   }
   function collectOnboarding(){
     var v=currentView(),d=state.onboardingDraft;
@@ -1124,7 +1173,7 @@
     if(!action&&target.getAttribute('data-player-id')){navigate('/player/profile?id='+encodeURIComponent(target.getAttribute('data-player-id')));return;}
     event.preventDefault();
     if(action==='modal-close'){closeModal();return;}if(action==='more-open'){openMore();return;}if(action==='overlay-close'){closeOverlay();return;}
-    if(action==='global-search-open'){var type=target.getAttribute('data-result-type'),id=target.getAttribute('data-result-id');if(type==='player')navigate('/player/profile?id='+encodeURIComponent(id));if(type==='fixture')navigate('/scout/fixtures?fixtureId='+encodeURIComponent(id));if(type==='event')navigate('/scout/events?eventId='+encodeURIComponent(id));return;}
+    if(action==='global-search-open'){var type=target.getAttribute('data-result-type'),id=target.getAttribute('data-result-id');if(type==='page')navigate(target.getAttribute('data-result-path')||id);if(type==='player')navigate('/player/profile?id='+encodeURIComponent(id));if(type==='fixture')navigate('/scout/fixtures?fixtureId='+encodeURIComponent(id));if(type==='event')navigate('/scout/events?eventId='+encodeURIComponent(id));return;}
     if(action==='search-filters-open'){setView('searchFilters');return;}if(action==='search-run'){if(currentView()==='searchFilters')setView('search');else render();return;}
     if(action==='pipeline-add'){addPipeline(target.getAttribute('data-player-id'),target);return;}
     if(action==='pipeline-open'){state.activePipelineId=target.getAttribute('data-pipeline-id');state.overlay={kind:'pipeline',source:'pipelineUpdate',id:state.activePipelineId};render();return;}
@@ -1146,8 +1195,8 @@
     if(action==='chat-open'){openThread(target.getAttribute('data-thread-id'));return;}if(action==='chat-create'){var sel=shadow.querySelector('[data-new-chat-player]');if(!sel||!sel.value){toast('Choose a pipeline player.',true);return;}closeModal();createChat(sel.value,target);return;}if(action==='chat-back'){state.activeThreadId='';state.messages=[];setView('chat');return;}if(action==='chat-send'){sendChat(target);return;}if(action==='chat-new'){newChatModal();return;}if(action==='chat-new-player'){createChat(target.getAttribute('data-player-id'),target);return;}
     if(action==='notification-open'){markNotification(target.getAttribute('data-notification-id'));return;}if(action==='notifications-read-all'){markAllNotifications();return;}if(action==='notification-filter'){state.notificationFilter=target.getAttribute('data-filter')||'all';render();return;}
     if(action==='settings-save'){saveSettings(target);return;}if(action==='team-invite'){inviteScoutModal();return;}if(action==='team-invite-submit'){inviteScout(target);return;}if(action==='team-remove'){removeTeamScout(target.getAttribute('data-scout-id'),target);return;}if(action==='billing-paused'){toast('Billing management is currently handled through the existing account workflow.');return;}
-    if(action==='setup-toggle'){var kind=target.getAttribute('data-setup-kind'),value=target.getAttribute('data-value'),arr=state.setupDraft[kind]||[],idx=arr.indexOf(value);if(idx===-1)arr.push(value);else arr.splice(idx,1);state.setupDraft[kind]=arr;render();return;}
-    if(action==='setup-next'){var si=setupStepIndex();if(si===0&&!state.setupDraft.teamNeeds.length){toast('Choose at least one team need.',true);return;}if(si===1&&!state.setupDraft.roleExpectations.length){toast('Choose at least one role expectation.',true);return;}if(si===2&&(!state.setupDraft.formation||!state.setupDraft.playingStyle)){toast('Choose one formation and one playing style.',true);return;}if(si===3&&!state.setupDraft.developmentPriorities.length){toast('Choose at least one development priority.',true);return;}if(si>=0&&si<4)setView(['setup1','setup2','setup3','setup4','setupReview'][si+1]);return;}
+    if(action==='setup-need-toggle'){var value=target.getAttribute('data-value'),arr=state.setupDraft.teamNeeds||[],idx=arr.indexOf(value),max=number((state.setupOptions&&state.setupOptions.limits||{}).teamNeedsMax,3);if(idx===-1){if(arr.length>=max){toast('Choose no more than '+max+' team weaknesses.',true);return;}arr.push(value);}else arr.splice(idx,1);state.setupDraft.teamNeeds=arr;render();return;}
+    if(action==='setup-next'){var si=setupStepIndex();if(si===0&&!state.setupDraft.teamNeeds.length){toast('Choose at least one team weakness.',true);return;}if(si===1&&!state.setupDraft.requiredRole){toast('Choose one required role.',true);return;}if(si===2&&!state.setupDraft.formation){toast('Choose one formation.',true);return;}if(si===3&&!state.setupDraft.playingStyle){toast('Choose one playing style.',true);return;}if(si>=0&&si<4)setView(['setup1','setup2','setup3','setup4','setupReview'][si+1]);return;}
     if(action==='setup-back'){var sb=setupStepIndex();if(sb>0)setView(['setup1','setup2','setup3','setup4','setupReview'][sb-1]);return;}if(action==='setup-save'){saveSetup(target);return;}
     if(action==='onboarding-toggle'){var ok=target.getAttribute('data-onboarding-kind'),ov=target.getAttribute('data-value'),oa=state.onboardingDraft[ok]||[],oi=oa.indexOf(ov);if(oi===-1)oa.push(ov);else oa.splice(oi,1);state.onboardingDraft[ok]=oa;render();return;}
     if(action==='onboarding-next'){collectOnboarding();var os=onboardingStepIndex();if(os>=0&&os<3)setView(['onboarding1','onboarding2','onboarding3','onboarding4'][os+1]);return;}if(action==='onboarding-back'){collectOnboarding();var ob=onboardingStepIndex();if(ob>0)setView(['onboarding1','onboarding2','onboarding3','onboarding4'][ob-1]);return;}if(action==='onboarding-save'){saveOnboarding(target);return;}
@@ -1163,10 +1212,10 @@
   function handleChange(event){
     var target=event.target,action=target.getAttribute('data-action'),filter=target.getAttribute('data-filter-key');if(filter){state.filters[filter]=target.value;render();return;}
     if(action==='rank-metric'){state.rankMetric=target.value;render();return;}if(action==='rank-age'){state.rankAge=target.value;render();return;}if(action==='compare-a'){state.compareA=target.value;state.compareResult=null;render();return;}if(action==='compare-b'){state.compareB=target.value;state.compareResult=null;render();return;}if(action==='compare-context'){state.compareContext=target.value;state.compareResult=null;render();return;}
-    if(action==='prediction-player'){state.selectedPlayerId=target.value;return;}if(action==='profile-note-visibility'){state.profileNoteVisibility=target.value==='private'?'private':'team';return;}if(action==='setup-formation'){state.setupDraft.formation=target.value;return;}if(action==='setup-style'){state.setupDraft.playingStyle=target.value;return;}
+    if(action==='prediction-player'){state.selectedPlayerId=target.value;return;}if(action==='profile-note-visibility'){state.profileNoteVisibility=target.value==='private'?'private':'team';return;}if(action==='setup-required-role'){state.setupDraft.requiredRole=target.value;return;}if(action==='setup-formation'){state.setupDraft.formation=target.value;return;}if(action==='setup-style'){state.setupDraft.playingStyle=target.value;return;}if(action==='setup-development-plan'){state.setupDraft.developmentPlan=target.value;return;}
   }
   function handleInput(event){
-    var target=event.target,action=target.getAttribute('data-action');if(action==='global-search-input'){state.globalSearch.query=target.value;clearTimeout(state.globalSearch.timer);state.globalSearch.timer=setTimeout(function(){runGlobalSearch(state.globalSearch.query);},220);return;}if(action==='player-search-query'){state.filters.q=target.value;return;}if(action==='radar-input'){state.radarDraft=target.value;return;}
+    var target=event.target,action=target.getAttribute('data-action');if(action==='global-search-input'){runGlobalSearch(target.value);return;}if(action==='player-search-query'){state.filters.q=target.value;return;}if(action==='radar-input'){state.radarDraft=target.value;return;}
   }
   function handleKeydown(event){
     var target=event.target;if(target&&target.getAttribute('data-action')==='global-search-input'&&event.key==='Escape'){state.globalSearch.open=false;render();return;}
