@@ -49,6 +49,123 @@ const INPUT_STAGE_MAP = Object.freeze({
   closed: 'closed'
 });
 
+
+const LEGACY_SETUP_OPTIONS = Object.freeze({
+  teamNeeds: Object.freeze([
+    'Insufficient Game Pace & Speed',
+    'Physical Fragility & Injury Risk',
+    'Lack of Physical Presence',
+    'Weak Defensive Base',
+    'Poor Defensive Output',
+    'Low Team Chemistry & Leadership',
+    'Technical Deficiencies Under Pressure',
+    'Tactical Awareness Gaps',
+    'Poor Goal Output'
+  ]),
+  roleExpectations: Object.freeze([
+    'Aerial Dominance',
+    'Vision & Creativity',
+    'Speed & Agility',
+    'Tactical Intelligence',
+    'Ball Retention Under Pressure',
+    'Physical Resilience (Work Rate)',
+    'Defensive Impact',
+    'Offensive Impact',
+    'Progression & Carrying',
+    'Leadership & Communication'
+  ]),
+  playingStyles: Object.freeze([
+    'Possession-Based Play',
+    'Counter-Attacking',
+    'High Press',
+    'Low Block',
+    'Direct Play',
+    'Total Football',
+    'Compact Defence',
+    'Vertical Play'
+  ]),
+  formations: Object.freeze([
+    '4-3-3',
+    '4-4-2',
+    '4-2-3-1',
+    '3-5-2',
+    '3-4-3',
+    '5-3-2',
+    '4-1-4-1',
+    '5-4-1',
+    '4-1-2-1-2'
+  ]),
+  developmentPriorities: Object.freeze([
+    'Physical Growth Potential',
+    'Tactical Role Maturity',
+    'Leadership & Coachability',
+    'Injury Risk & Physical Resilience',
+    'Positional Depth Advantage',
+    'Goal Contribution Potential',
+    'Financial Viability'
+  ])
+});
+
+function catalogueLabels(catalogue) {
+  return Object.values(catalogue || {})
+    .map(item => clean(item && item.label, 180))
+    .filter(Boolean);
+}
+
+/*
+ * Scout Setup keeps the supplied V6 wording while also exposing every option
+ * from the active V4 scoring catalogue. This prevents the UI from silently
+ * hiding a compatibility input merely because the scoring engine gained a new
+ * style, team-need, role or development profile.
+ */
+const SCOUT_SETUP_OPTIONS = Object.freeze({
+  teamNeeds: Object.freeze(unique([
+    ...LEGACY_SETUP_OPTIONS.teamNeeds,
+    ...catalogueLabels(config.TEAM_NEED_PROFILES)
+  ])),
+  roleExpectations: Object.freeze(unique([
+    ...LEGACY_SETUP_OPTIONS.roleExpectations,
+    ...catalogueLabels(config.ROLE_PROFILES)
+  ])),
+  playingStyles: Object.freeze(unique([
+    ...LEGACY_SETUP_OPTIONS.playingStyles,
+    ...catalogueLabels(config.STYLE_PROFILES)
+  ])),
+  formations: Object.freeze(unique([
+    ...LEGACY_SETUP_OPTIONS.formations,
+    ...Object.keys((config.FORMATION_POSITIONS || {})['11v11'] || {})
+  ])),
+  developmentPriorities: Object.freeze(unique([
+    ...LEGACY_SETUP_OPTIONS.developmentPriorities,
+    ...catalogueLabels(config.DEVELOPMENT_PLANS)
+  ]))
+});
+
+function setupOptionsFor(currentSetup = {}) {
+  return {
+    teamNeeds: unique([
+      ...SCOUT_SETUP_OPTIONS.teamNeeds,
+      ...list(currentSetup.teamNeeds).map(value => clean(value, 180))
+    ]),
+    roleExpectations: unique([
+      ...SCOUT_SETUP_OPTIONS.roleExpectations,
+      ...list(currentSetup.roleExpectations).map(value => clean(value, 180))
+    ]),
+    playingStyles: unique([
+      ...SCOUT_SETUP_OPTIONS.playingStyles,
+      clean(currentSetup.playingStyle, 180)
+    ]),
+    formations: unique([
+      ...SCOUT_SETUP_OPTIONS.formations,
+      clean(currentSetup.formation, 80)
+    ]),
+    developmentPriorities: unique([
+      ...SCOUT_SETUP_OPTIONS.developmentPriorities,
+      ...list(currentSetup.developmentPriorities).map(value => clean(value, 180))
+    ])
+  };
+}
+
 const COMPARISON_CONTEXTS = Object.freeze({
   'immediate starter': {
     readiness: 0.22,
@@ -391,8 +508,28 @@ async function loadTeamsForPlayers(players) {
 }
 
 function safeAnalysis(player, context, facts) {
+  /*
+   * Scout Setup describes the recruiting team's target shape. It is not the
+   * player's current youth match format. Supplying an explicit 11v11 target
+   * context prevents a U7-U12 player's present-day format from incorrectly
+   * invalidating a perfectly legitimate recruitment formation such as 4-3-3.
+   *
+   * engines/index.js still performs all canonical style/need/role mapping and
+   * falls back to the player's recorded primary position plus the configured
+   * default role when the V6 Setup uses broad capability expectations.
+   */
+  const prefs = {
+    ...(context.prefs || {}),
+    matchFormat:
+      context.prefs?.matchFormat ||
+      context.prefs?.match_format ||
+      context.team?.scoring_setup?.matchFormat ||
+      context.team?.scoring_setup?.match_format ||
+      '11v11'
+  };
+
   try {
-    return analysePlayer(player, context.team || {}, facts || [], context.prefs || {}) || {};
+    return analysePlayer(player, context.team || {}, facts || [], prefs) || {};
   } catch (error) {
     console.warn('[Scout V6 analysis skipped]', player?.id, error.message);
     return {
@@ -619,6 +756,7 @@ function normalisePlayer(player, team, facts, analysis, context) {
     compatibilityScore: compatibility === null ? null : round(compatibility, 1),
     compatibility: analysis.compatibility || null,
     compatibilityBreakdown: analysis.compatibilityBreakdown || analysis.compatibility || null,
+    compatibilityContext: analysis.compatibilityContext || null,
     overallBreakdown: analysis.overallBreakdown || player.overall_breakdown || {},
     positionRatings: analysis.positionRatings || player.position_ratings || {},
     predictionDetails: analysis.predictionDetails || player.prediction_analysis || {},
@@ -630,6 +768,17 @@ function normalisePlayer(player, team, facts, analysis, context) {
     recentMatchCount: facts.length,
     _facts: facts
   };
+}
+
+async function countSystemPlayers(req) {
+  let query = supabase
+    .from('players')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_active', true);
+  query = applyRealDataFilter(query, req);
+  const { count, error } = await query;
+  if (error) throw error;
+  return count || 0;
 }
 
 async function enrichedPlayerList(req, context) {
@@ -789,11 +938,12 @@ async function loadPipelineRows(context) {
     .order('updated_at', { ascending: false })
     .limit(200);
 
-  if (context.scout.is_super_user && context.scout.scout_team_id) {
-    query = query.eq('scout_team_id', context.scout.scout_team_id);
-  } else {
-    query = query.eq('scout_id', context.scout.id);
-  }
+  /*
+   * The Pipeline page is a personal working list. Team collaboration is
+   * surfaced through shared notes/observations, not by multiplying every
+   * colleague's pipeline rows into this Scout's headline count.
+   */
+  query = query.eq('scout_id', context.scout.id);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -1064,21 +1214,76 @@ async function uniqueEmailAvailable(email, currentScoutId) {
   return true;
 }
 
-function personalSetupFromPrefs(prefs = {}) {
+function personalSetupFromPrefs(prefs = {}, team = {}) {
   const setup = prefs.setup && typeof prefs.setup === 'object' ? prefs.setup : {};
+  const teamSetup = team?.scoring_setup && typeof team.scoring_setup === 'object'
+    ? team.scoring_setup
+    : {};
+
   return {
-    teamNeeds: list(setup.teamWeaknesses || prefs.teamWeaknesses),
-    roleExpectations: list(setup.roleExpectations || prefs.roleExpectations),
-    formation: clean(setup.formation || prefs.formation, 60),
-    playingStyle: clean(setup.playingStyle || prefs.playingStyle, 120),
-    developmentPriorities: list(setup.longTermGoals || prefs.longTermGoals),
-    preferredPositions: list(setup.preferredPositions || prefs.preferredPositions),
-    priorityAgeGroups: list(setup.ageGroups || prefs.priorityAgeGroups || prefs.ageGroups),
-    scoutRegion: clean(setup.scoutRegion || prefs.scoutRegion, 180),
+    teamNeeds: list(
+      setup.teamWeaknesses ||
+      prefs.teamWeaknesses ||
+      teamSetup.teamWeaknesses ||
+      teamSetup.team_needs ||
+      []
+    ),
+    roleExpectations: list(
+      setup.roleExpectations ||
+      prefs.roleExpectations ||
+      teamSetup.roleExpectations ||
+      team.role_expectations ||
+      []
+    ),
+    formation: clean(
+      setup.formation ||
+      prefs.formation ||
+      teamSetup.formation ||
+      team.formation,
+      60
+    ),
+    playingStyle: clean(
+      setup.playingStyle ||
+      prefs.playingStyle ||
+      teamSetup.playingStyle ||
+      team.playing_style,
+      120
+    ),
+    developmentPriorities: list(
+      setup.longTermGoals ||
+      prefs.longTermGoals ||
+      teamSetup.longTermGoals ||
+      team.long_term_goals ||
+      []
+    ),
+    preferredPositions: list(
+      setup.preferredPositions ||
+      prefs.preferredPositions ||
+      team.preferred_positions ||
+      []
+    ),
+    priorityAgeGroups: list(
+      setup.ageGroups ||
+      prefs.priorityAgeGroups ||
+      prefs.ageGroups ||
+      team.age_groups ||
+      []
+    ),
+    scoutRegion: clean(
+      setup.scoutRegion ||
+      prefs.scoutRegion ||
+      team.scout_region,
+      180
+    ),
     scoutingRole: clean(prefs.scoutingRole, 120),
     personalFocus: clean(prefs.personalFocus, 600),
     reportingStyle: clean(prefs.reportingStyle, 300),
-    minimumAppearances: integer(prefs.minimumAppearances || prefs.minAppearances, 0),
+    minimumAppearances: integer(
+      prefs.minimumAppearances ||
+      prefs.minAppearances ||
+      team.min_appearances,
+      0
+    ),
     updatedAt: prefs.updatedAt || setup.updatedAt || null
   };
 }
@@ -1088,7 +1293,10 @@ router.use(requireAuth, requireRole('Scout'));
 router.get('/players', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
-    const players = await enrichedPlayerList(req, context);
+    const [players, systemTotal] = await Promise.all([
+      enrichedPlayerList(req, context),
+      countSystemPlayers(req)
+    ]);
     const filtered = sortPlayers(
       players.filter(player => playerMatchesFilter(player, req.query || {})),
       req.query.metric || req.query.sort || 'overall'
@@ -1104,19 +1312,101 @@ router.get('/players', async (req, res) => {
     res.json({
       data: filtered.slice(0, limit),
       total: filtered.length,
+      systemTotal,
       filters: {
         regions,
         positions: unique(players.flatMap(player => [
           player.primary_position,
           player.specific_position
         ]).filter(Boolean)).sort(),
-        ageGroups: unique(players.map(player => player.age_group).filter(Boolean)).sort()
+        ageGroups: unique(players.map(player => player.age_group).filter(Boolean)).sort(),
+        availability: unique(players.map(player => player.availability).filter(Boolean)).sort(),
+        feet: unique(players.map(player => player.foot).filter(Boolean)).sort()
       }
     });
   } catch (error) {
     console.error('[Scout V6 players]', error);
     res.status(error.status || 500).json({
       error: error.message || 'Players could not be loaded.'
+    });
+  }
+});
+
+
+router.get('/global-search', async (req, res) => {
+  try {
+    const context = await loadContext(req.user.id);
+    const q = clean(req.query.q, 180).toLowerCase();
+
+    if (!q || q.length < 2) {
+      return res.json({ data: { players: [], fixtures: [], events: [] } });
+    }
+
+    const [players, fixtureBundle, eventResult] = await Promise.all([
+      enrichedPlayerList(req, context),
+      loadFixtureBundle(context),
+      supabase
+        .from('showcase_events')
+        .select('*')
+        .in('status', ['published', 'confirmed'])
+        .order('event_date', { ascending: true })
+        .limit(100)
+    ]);
+    if (eventResult.error) throw eventResult.error;
+
+    const playerRows = players.filter(player => {
+      const haystack = [
+        playerName(player),
+        player.team_name,
+        player.age_group,
+        player.primary_position,
+        player.specific_position,
+        player.position_group
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    }).slice(0, 8);
+
+    const fixtureRows = (fixtureBundle.fixtures || []).filter(fixture => {
+      const haystack = [
+        fixture.home_team_name,
+        fixture.home_team,
+        fixture.team_name,
+        fixture.away_team_name,
+        fixture.away_team,
+        fixture.opponent_name,
+        fixture.opponent,
+        fixture.venue_name,
+        fixture.venue,
+        fixture.address,
+        fixture.city
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    }).slice(0, 8);
+
+    const eventRows = (eventResult.data || []).filter(event => {
+      const haystack = [
+        event.event_name,
+        event.name,
+        event.title,
+        event.venue,
+        event.location,
+        event.city
+      ].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    }).slice(0, 6);
+
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      data: {
+        players: playerRows,
+        fixtures: fixtureRows,
+        events: eventRows
+      }
+    });
+  } catch (error) {
+    console.error('[Scout V6 global search]', error);
+    res.status(error.status || 500).json({
+      error: error.message || 'ScoutLink search could not be completed.'
     });
   }
 });
@@ -1263,6 +1553,145 @@ router.get('/players/:id', async (req, res) => {
     console.error('[Scout V6 player detail]', error);
     res.status(error.status || 500).json({
       error: error.message || 'Player profile could not be loaded.'
+    });
+  }
+});
+
+
+router.post('/players/:id/notes', async (req, res) => {
+  try {
+    const context = await loadContext(req.user.id);
+    const content = clean(req.body.content || req.body.body, 5000);
+    const visibility = clean(req.body.visibility, 30).toLowerCase() === 'private'
+      ? 'private'
+      : 'team';
+
+    if (!content) {
+      return res.status(400).json({ error: 'Write a scouting note before posting.' });
+    }
+
+    await latestPlayerAnalysis(req, context, req.params.id);
+
+    let sharedWith = [];
+    if (visibility === 'team' && context.scout.scout_team_id) {
+      const teamScouts = await loadTeamScouts(context);
+      sharedWith = teamScouts
+        .map(scout => scout.id)
+        .filter(id => String(id) !== String(context.scout.id));
+    }
+
+    const { data: entry, error } = await supabase
+      .from('scout_player_workflow_entries')
+      .insert({
+        scout_id: context.scout.id,
+        scout_team_id: context.scout.scout_team_id || null,
+        player_id: req.params.id,
+        pipeline_id: null,
+        entry_type: 'note',
+        content,
+        decision_value: null,
+        shared_with: sharedWith,
+        metadata: {
+          visibility,
+          source: 'scout_v6_player_profile'
+        },
+        is_deleted: false,
+        created_by: context.scout.id
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    res.status(201).json({
+      data: entry,
+      message: visibility === 'team'
+        ? 'Note posted to your Scout team.'
+        : 'Private note saved.'
+    });
+  } catch (error) {
+    console.error('[Scout V6 player note]', error);
+    res.status(error.status || 500).json({
+      error: error.message || 'The scouting note could not be posted.'
+    });
+  }
+});
+
+router.post('/players/:id/share', async (req, res) => {
+  try {
+    const context = await loadContext(req.user.id);
+    const player = await latestPlayerAnalysis(req, context, req.params.id);
+    const requestedIds = unique(list(req.body.scoutIds).map(value => clean(value, 120)))
+      .filter(Boolean)
+      .filter(id => String(id) !== String(context.scout.id));
+
+    if (!requestedIds.length) {
+      return res.status(400).json({ error: 'Choose at least one Scout to share this player with.' });
+    }
+
+    const teamScouts = await loadTeamScouts(context);
+    const allowedById = Object.fromEntries(teamScouts.map(scout => [scout.id, scout]));
+    const selected = requestedIds.map(id => allowedById[id]).filter(Boolean);
+
+    if (selected.length !== requestedIds.length) {
+      return res.status(400).json({ error: 'Every selected Scout must belong to your Scout team.' });
+    }
+
+    const content = clean(req.body.message, 1200) ||
+      `${scoutName(context.scout)} shared ${playerName(player)} for team review.`;
+
+    const { data: entry, error } = await supabase
+      .from('scout_player_workflow_entries')
+      .insert({
+        scout_id: context.scout.id,
+        scout_team_id: context.scout.scout_team_id || null,
+        player_id: player.id,
+        pipeline_id: null,
+        entry_type: 'share',
+        content,
+        decision_value: null,
+        shared_with: requestedIds,
+        metadata: {
+          source: 'scout_v6_player_share',
+          playerName: playerName(player)
+        },
+        is_deleted: false,
+        created_by: context.scout.id
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    await createNotifications(selected.map(scout => ({
+      recipient_id: scout.id,
+      recipient_type: 'Scout',
+      notification_type: 'recruitment',
+      title: `${scoutName(context.scout)} shared a player`,
+      body: `${playerName(player)} was shared with you for recruitment review.`,
+      data: {
+        source: 'scout_v6_player_share',
+        playerId: player.id,
+        sharedBy: context.scout.id
+      }
+    }))).catch(errorValue => {
+      console.warn('[Scout V6 share notifications skipped]', errorValue.message);
+    });
+
+    res.status(201).json({
+      data: {
+        entry,
+        sharedWith: selected.map(scout => ({
+          id: scout.id,
+          first_name: scout.first_name,
+          last_name: scout.last_name,
+          email: scout.email
+        }))
+      },
+      message: `Player shared with ${selected.length} Scout${selected.length === 1 ? '' : 's'}.`
+    });
+  } catch (error) {
+    console.error('[Scout V6 share player]', error);
+    res.status(error.status || 500).json({
+      error: error.message || 'The player could not be shared.'
     });
   }
 });
@@ -1981,12 +2410,14 @@ router.get('/setup', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
     res.set('Cache-Control', 'no-store');
+    const personalSetup = personalSetupFromPrefs(context.prefs, context.team || {});
     res.json({
       data: {
-        personalSetup: personalSetupFromPrefs(context.prefs),
+        personalSetup,
         scoutPreferences: context.prefs,
         team: context.team,
-        note: 'This is the current Scout’s personal compatibility setup. Saving it does not overwrite another Scout’s personal setup.'
+        options: setupOptionsFor(personalSetup),
+        note: 'This is the current Scout’s personal compatibility setup. Formation and playing style are single-select; team needs, role expectations and development priorities are multi-select. Saving it does not overwrite another Scout’s personal setup.'
       }
     });
   } catch (error) {
@@ -2001,19 +2432,78 @@ router.patch('/setup', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
     const current = context.prefs || {};
+    const currentResolved = personalSetupFromPrefs(current, context.team || {});
+    const allowedOptions = setupOptionsFor(currentResolved);
 
-    const teamNeeds = unique(list(req.body.teamNeeds).map(value => clean(value, 180))).slice(0, 8);
-    const roleExpectations = unique(list(req.body.roleExpectations).map(value => clean(value, 180))).slice(0, 10);
-    const developmentPriorities = unique(list(req.body.developmentPriorities).map(value => clean(value, 180))).slice(0, 8);
-    const preferredPositions = unique(list(req.body.preferredPositions || current.preferredPositions).map(value => clean(value, 20).toUpperCase())).slice(0, 10);
-    const priorityAgeGroups = unique(list(req.body.priorityAgeGroups || current.priorityAgeGroups).map(value => clean(value, 20).toUpperCase())).slice(0, 10);
-    const formation = clean(req.body.formation ?? current.formation, 60);
-    const playingStyle = clean(req.body.playingStyle ?? current.playingStyle, 120);
-    const scoutRegion = clean(req.body.scoutRegion ?? current.scoutRegion, 180);
-    const scoutingRole = clean(req.body.scoutingRole ?? current.scoutingRole, 120);
-    const personalFocus = clean(req.body.personalFocus ?? current.personalFocus, 600);
-    const reportingStyle = clean(req.body.reportingStyle ?? current.reportingStyle, 300);
-    const minimumAppearances = integer(req.body.minimumAppearances ?? current.minimumAppearances, 0);
+    if (Array.isArray(req.body.formation) || Array.isArray(req.body.playingStyle)) {
+      return res.status(400).json({
+        error: 'Formation and playing style each allow one selection only.'
+      });
+    }
+
+    const teamNeeds = unique(list(req.body.teamNeeds ?? currentResolved.teamNeeds)
+      .map(value => clean(value, 180)))
+      .filter(value => allowedOptions.teamNeeds.includes(value));
+    const roleExpectations = unique(list(req.body.roleExpectations ?? currentResolved.roleExpectations)
+      .map(value => clean(value, 180)))
+      .filter(value => allowedOptions.roleExpectations.includes(value));
+    const developmentPriorities = unique(list(req.body.developmentPriorities ?? currentResolved.developmentPriorities)
+      .map(value => clean(value, 180)))
+      .filter(value => allowedOptions.developmentPriorities.includes(value));
+
+    const formation = clean(
+      req.body.formation ?? currentResolved.formation,
+      60
+    );
+    const playingStyle = clean(
+      req.body.playingStyle ?? currentResolved.playingStyle,
+      120
+    );
+
+    if (!teamNeeds.length) {
+      return res.status(400).json({ error: 'Choose at least one team need.' });
+    }
+    if (!roleExpectations.length) {
+      return res.status(400).json({ error: 'Choose at least one role expectation.' });
+    }
+    if (!allowedOptions.formations.includes(formation)) {
+      return res.status(400).json({ error: 'Choose one supported formation.' });
+    }
+    if (!allowedOptions.playingStyles.includes(playingStyle)) {
+      return res.status(400).json({ error: 'Choose one supported playing style.' });
+    }
+    if (!developmentPriorities.length) {
+      return res.status(400).json({ error: 'Choose at least one development priority.' });
+    }
+
+    const preferredPositions = unique(
+      list(req.body.preferredPositions || currentResolved.preferredPositions)
+        .map(value => clean(value, 20).toUpperCase())
+    ).slice(0, 10);
+    const priorityAgeGroups = unique(
+      list(req.body.priorityAgeGroups || currentResolved.priorityAgeGroups)
+        .map(value => clean(value, 20).toUpperCase())
+    ).slice(0, 10);
+    const scoutRegion = clean(
+      req.body.scoutRegion ?? currentResolved.scoutRegion,
+      180
+    );
+    const scoutingRole = clean(
+      req.body.scoutingRole ?? currentResolved.scoutingRole,
+      120
+    );
+    const personalFocus = clean(
+      req.body.personalFocus ?? currentResolved.personalFocus,
+      600
+    );
+    const reportingStyle = clean(
+      req.body.reportingStyle ?? currentResolved.reportingStyle,
+      300
+    );
+    const minimumAppearances = integer(
+      req.body.minimumAppearances ?? currentResolved.minimumAppearances,
+      0
+    );
     const updatedAt = new Date().toISOString();
 
     const setup = {
@@ -2026,6 +2516,7 @@ router.patch('/setup', async (req, res) => {
       preferredPositions,
       ageGroups: priorityAgeGroups,
       scoutRegion,
+      matchFormat: '11v11',
       updatedAt
     };
 
@@ -2062,10 +2553,14 @@ router.patch('/setup', async (req, res) => {
 
     res.json({
       data: {
-        personalSetup: personalSetupFromPrefs(data.scout_preferences || next),
-        scoutPreferences: data.scout_preferences || next
+        personalSetup: personalSetupFromPrefs(
+          data.scout_preferences || next,
+          context.team || {}
+        ),
+        scoutPreferences: data.scout_preferences || next,
+        options: setupOptionsFor(personalSetupFromPrefs(data.scout_preferences || next, context.team || {}))
       },
-      message: 'Your personal Scout Setup has been saved. Other Scouts in the same team keep their own personal setup.',
+      message: 'Your personal Scout Setup has been saved and will be used for Scout-specific compatibility.',
       compatibilityRecalculationRequired: true
     });
   } catch (error) {
@@ -2149,5 +2644,64 @@ router.post('/concerns', async (req, res) => {
     });
   }
 });
+
+router.delete('/chat/messages/:id', async (req, res) => {
+  try {
+    const context = await loadContext(req.user.id);
+
+    const { data: message, error: messageError } = await supabase
+      .from('chat_messages')
+      .select('id,thread_id,sender_id,sender_type,created_at')
+      .eq('id', req.params.id)
+      .maybeSingle();
+    if (messageError) throw messageError;
+    if (!message) return res.status(404).json({ error: 'Message not found.' });
+
+    if (String(message.sender_id) !== String(context.scout.id) || message.sender_type !== 'Scout') {
+      return res.status(403).json({ error: 'You can only delete messages you sent.' });
+    }
+
+    const { data: thread, error: threadError } = await supabase
+      .from('chat_threads')
+      .select('id,scout_id,created_at')
+      .eq('id', message.thread_id)
+      .maybeSingle();
+    if (threadError) throw threadError;
+    if (!thread || String(thread.scout_id) !== String(context.scout.id)) {
+      return res.status(403).json({ error: 'You do not have access to this conversation.' });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('id', message.id);
+    if (deleteError) throw deleteError;
+
+    const { data: latest, error: latestError } = await supabase
+      .from('chat_messages')
+      .select('created_at')
+      .eq('thread_id', thread.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latestError) throw latestError;
+
+    await supabase
+      .from('chat_threads')
+      .update({
+        last_message_at: latest?.created_at || thread.created_at,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', thread.id);
+
+    res.json({ data: { id: message.id }, message: 'Message deleted.' });
+  } catch (error) {
+    console.error('[Scout V6 delete chat message]', error);
+    res.status(error.status || 500).json({
+      error: error.message || 'The message could not be deleted.'
+    });
+  }
+});
+
 
 module.exports = router;
