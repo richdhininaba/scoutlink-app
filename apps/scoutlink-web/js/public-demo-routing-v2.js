@@ -1,16 +1,22 @@
 'use strict';
 
 /*
- * ScoutLink Public Demo Routing v2
+ * ScoutLink Public Demo Routing v3
  *
- * Keeps the isolated public demo inside /public-demo/* URLs, prevents the
- * demo banner/session from leaking onto public registration/auth pages, and
- * keeps internal Coach/Scout/Player navigation inside the public-demo prefix.
+ * The public demo now uses a short-lived signed backend token for a fixed
+ * seeded demo Scout / Coach instead of the old browser-only fake identity.
+ * The URL boundary remains /public-demo/* and all genuine signed-in sessions
+ * continue to be kept separate by demo-session-boundary-v1.js.
  */
 (function () {
   var DEMO_FLAG = 'sl_public_demo';
   var DEMO_ROLE = 'sl_public_demo_role';
   var DEMO_PREFIX = '/public-demo';
+  var API =
+    window.API ||
+    localStorage.getItem('sl_api_url') ||
+    'https://scoutlink-api.vercel.app';
+
   var DEMO_KEYS = [
     'sl_public_demo',
     'sl_public_demo_role',
@@ -20,14 +26,31 @@
     'sl_heap_demo_sid'
   ];
 
+  var sessionPromise = null;
+
   function safeGet(storage, key) {
     try { return storage.getItem(key); }
     catch (_) { return null; }
   }
 
+  function safeSet(storage, key, value) {
+    try {
+      if (value === null || value === undefined) storage.removeItem(key);
+      else storage.setItem(key, value);
+    } catch (_) {}
+  }
+
   function safeRemove(storage, key) {
     try { storage.removeItem(key); }
     catch (_) {}
+  }
+
+  function parseUser() {
+    try {
+      return JSON.parse(safeGet(localStorage, 'sl_user') || 'null');
+    } catch (_) {
+      return null;
+    }
   }
 
   function normalPath(value) {
@@ -40,16 +63,34 @@
     return normalPath(window.location.pathname || '/');
   }
 
+  function publicDemoRoleFromPath(path) {
+    path = normalPath(path);
+    if (path === '/public-demo/scout' || path.indexOf('/public-demo/scout/') === 0) return 'Scout';
+    if (path === '/public-demo/coach' || path.indexOf('/public-demo/coach/') === 0) return 'Coach';
+    return '';
+  }
+
+  function isSignedDemoUser(user) {
+    if (!user) return false;
+    if (user.publicDemo === true || user.isDemo === true || user.demoMode === true) return true;
+    var id = user.id || user.userId || user.user_id;
+    return /^demo-/i.test(String(id || ''));
+  }
+
   function demoActive() {
     return safeGet(sessionStorage, DEMO_FLAG) === '1';
   }
 
   function demoRole() {
+    var pathRole = publicDemoRoleFromPath(currentPath());
+    if (pathRole) return pathRole.toLowerCase();
+
     var role = String(
       safeGet(sessionStorage, DEMO_ROLE) ||
       safeGet(localStorage, 'sl_type') ||
       ''
     ).toLowerCase();
+
     return role === 'scout' ? 'scout' : 'coach';
   }
 
@@ -65,27 +106,104 @@
     if (role === 'scout' && (path === '/scout' || path.indexOf('/scout/') === 0)) return true;
     if (role === 'coach' && (path === '/coach' || path.indexOf('/coach/') === 0)) return true;
 
-    /* Player profile surfaces can be opened from either demo experience. */
     if (path === '/player' || path.indexOf('/player/') === 0) return true;
     return false;
+  }
+
+  function hasCorrectSignedSession(role) {
+    var token = safeGet(localStorage, 'sl_token');
+    var user = parseUser();
+    var type = String(safeGet(localStorage, 'sl_type') || '');
+
+    if (!token || token === 'public-demo-session') return false;
+    if (!isSignedDemoUser(user)) return false;
+    if (String(type).toLowerCase() !== String(role || '').toLowerCase()) return false;
+
+    return true;
+  }
+
+  function storeSignedSession(payload, role) {
+    var accountType = role === 'Scout' ? 'Scout' : 'Coach';
+    var user = payload && payload.user ? payload.user : {};
+
+    user.isDemo = true;
+    user.publicDemo = true;
+    user.accountType = accountType;
+
+    safeSet(sessionStorage, DEMO_FLAG, '1');
+    safeSet(sessionStorage, DEMO_ROLE, accountType);
+    safeSet(sessionStorage, 'sl_public_demo_started_at', new Date().toISOString());
+    safeSet(sessionStorage, 'sl_public_demo_state', null);
+    safeSet(sessionStorage, 'sl_public_demo_seed_players', null);
+
+    safeSet(localStorage, 'sl_token', payload.token);
+    safeSet(localStorage, 'sl_user', JSON.stringify(user));
+    safeSet(localStorage, 'sl_type', accountType);
+    safeSet(localStorage, 'sl_demo_mode', '1');
+  }
+
+  async function requestSignedSession(role) {
+    role = role === 'Scout' ? 'Scout' : 'Coach';
+
+    if (hasCorrectSignedSession(role)) {
+      safeSet(sessionStorage, DEMO_FLAG, '1');
+      safeSet(sessionStorage, DEMO_ROLE, role);
+      safeSet(localStorage, 'sl_demo_mode', '1');
+      return {
+        token: safeGet(localStorage, 'sl_token'),
+        accountType: role,
+        user: parseUser()
+      };
+    }
+
+    if (sessionPromise) return sessionPromise;
+
+    sessionPromise = fetch(API + '/api/public-demo/session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ accountType: role })
+    }).then(async function (response) {
+      var payload = {};
+      try { payload = await response.json(); }
+      catch (_) {}
+
+      if (!response.ok || !payload.token || !payload.user) {
+        throw new Error(payload.error || 'The public demo could not be started.');
+      }
+
+      storeSignedSession(payload, role);
+      return payload;
+    }).finally(function () {
+      sessionPromise = null;
+    });
+
+    return sessionPromise;
+  }
+
+  async function startPublicDemo(role) {
+    var accountType = role === 'Scout' ? 'Scout' : 'Coach';
+    await requestSignedSession(accountType);
+
+    var destination = accountType === 'Scout'
+      ? '/public-demo/scout/dashboard'
+      : '/public-demo/coach/dashboard';
+
+    window.location.href = destination;
   }
 
   function clearPublicDemoState() {
     DEMO_KEYS.forEach(function (key) { safeRemove(sessionStorage, key); });
 
-    /* Only remove the temporary demo identity, never a genuine real session. */
     var token = safeGet(localStorage, 'sl_token');
-    var rawUser = safeGet(localStorage, 'sl_user');
+    var user = parseUser();
     var isDemoToken = token === 'public-demo-session';
-    var isDemoUser = false;
+    var isDemoIdentity = isSignedDemoUser(user);
+    var isDemoMode = safeGet(localStorage, 'sl_demo_mode') === '1';
 
-    try {
-      var user = rawUser ? JSON.parse(rawUser) : null;
-      var id = user && (user.id || user.userId || user.user_id);
-      isDemoUser = /^demo-/i.test(String(id || ''));
-    } catch (_) {}
-
-    if (isDemoToken || isDemoUser) {
+    if (isDemoToken || isDemoIdentity || isDemoMode) {
       ['sl_token','sl_user','sl_type','sl_demo_mode'].forEach(function (key) {
         safeRemove(localStorage, key);
       });
@@ -147,11 +265,6 @@
       return;
     }
 
-    /*
-     * Once the user leaves the actual demo experience for Register, Login,
-     * Complete Registration, etc., demo mode ends. This is what prevents the
-     * public-demo banner from leaking onto those pages.
-     */
     if (path !== '/demo' && path !== '/public-demo') {
       clearPublicDemoState();
     }
@@ -192,7 +305,7 @@
   }
 
   function installNavigatePatch() {
-    if (window.__scoutLinkPublicDemoNavigatePatchV2) return;
+    if (window.__scoutLinkPublicDemoNavigatePatchV3) return;
     if (typeof window.navigateClean !== 'function') return;
 
     var originalNavigateClean = window.navigateClean;
@@ -206,7 +319,7 @@
       return originalNavigateClean.apply(this, arguments);
     };
 
-    window.__scoutLinkPublicDemoNavigatePatchV2 = true;
+    window.__scoutLinkPublicDemoNavigatePatchV3 = true;
   }
 
   function removeStrayBanner() {
@@ -222,13 +335,56 @@
     observer.observe(document.documentElement, { childList:true, subtree:true });
   }
 
+  function exposeSignedLauncher() {
+    window.startPublicDemo = startPublicDemo;
+  }
+
+  function bootstrapDirectPublicDemo() {
+    var role = publicDemoRoleFromPath(currentPath());
+    if (!role) return;
+
+    if (hasCorrectSignedSession(role)) {
+      safeSet(sessionStorage, DEMO_FLAG, '1');
+      safeSet(sessionStorage, DEMO_ROLE, role);
+      safeSet(localStorage, 'sl_demo_mode', '1');
+      return;
+    }
+
+    /*
+     * Direct links such as /public-demo/scout/dashboard are supported too.
+     * Hide the incomplete shell, obtain the real signed demo identity, then
+     * reload the exact URL once so all application scripts start authenticated.
+     */
+    if (document.documentElement) {
+      document.documentElement.style.visibility = 'hidden';
+    }
+
+    requestSignedSession(role)
+      .then(function () {
+        window.location.replace(
+          window.location.pathname +
+          window.location.search +
+          window.location.hash
+        );
+      })
+      .catch(function (error) {
+        if (document.documentElement) {
+          document.documentElement.style.visibility = '';
+        }
+        console.error('[Public demo bootstrap]', error);
+      });
+  }
+
   function boot() {
+    exposeSignedLauncher();
+    bootstrapDirectPublicDemo();
+
     normaliseCurrentDemoUrl();
     removeStrayBanner();
     guardBannerPlacement();
 
     if (demoActive() && isPublicDemoPath(currentPath())) {
-      document.body && document.body.classList.add('public-demo-route-v2');
+      document.body && document.body.classList.add('public-demo-route-v3');
       installNavigatePatch();
       installAnchorBoundary();
       rewriteAnchors(document);
@@ -246,6 +402,7 @@
   }
 
   window.addEventListener('pageshow', function () {
+    exposeSignedLauncher();
     normaliseCurrentDemoUrl();
     removeStrayBanner();
     installNavigatePatch();
@@ -256,6 +413,7 @@
     active: demoActive,
     role: demoRole,
     toPublicDemoPath: publicDemoPathFor,
-    clear: clearPublicDemoState
+    clear: clearPublicDemoState,
+    start: startPublicDemo
   };
 }());
