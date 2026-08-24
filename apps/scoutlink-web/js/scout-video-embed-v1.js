@@ -4,19 +4,12 @@
  * Target path:
  * apps/scoutlink-web/js/scout-video-embed-v1.js
  *
- * Adds provider-aware inline playback to the existing ScoutLink Video reel
- * overlay without replacing or redesigning the overlay.
+ * Provider-aware playback for the existing ScoutLink V9 Video reel overlay.
  *
- * Supported inline sources:
- * - ScoutLink/direct video files
- * - YouTube / youtu.be
- * - Vimeo
- * - Google Drive preview links
- * - Dropbox shared files (converted to raw media)
- *
- * Providers that do not provide a reliable public embed route (for example
- * Veo, Wyscout or Tonsser links that block framing) retain the existing
- * ScoutLink play surface and open their source in a new tab.
+ * This file deliberately does not build or restyle the modal. It waits for
+ * ScoutLink V9 to render the existing rounded dark-green reel surface and then
+ * places the provider player inside that surface only after the scout presses
+ * the existing play button.
  */
 
 (function () {
@@ -24,12 +17,12 @@
   window.__SCOUTLINK_VIDEO_EMBED_V1__ = true;
 
   var nativeFetch = window.fetch.bind(window);
-  var cachedVideos = [];
+  var profileVideos = [];
   var activeVideo = null;
-  var observer = null;
+  var shadowObserver = null;
   var refreshQueued = false;
 
-  function asText(value) {
+  function text(value) {
     return String(value == null ? '' : value).trim();
   }
 
@@ -39,26 +32,48 @@
     return '';
   }
 
-  function isPlayerIntelligenceRequest(url) {
-    return /\/api\/scout-intelligence\/player\/[^/?]+(?:\?|$)/i.test(
-      String(url || '')
-    );
+  function requestMethod(input, init) {
+    return String(
+      (init && init.method) ||
+      (input && input.method) ||
+      'GET'
+    ).toUpperCase();
+  }
+
+  function isScoutProfileRequest(url, method) {
+    return method === 'GET' &&
+      /\/api\/scout-v6\/players\/[^/?]+(?:\?|$)/i.test(
+        String(url || '')
+      );
+  }
+
+  function unwrap(payload) {
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      payload.data &&
+      typeof payload.data === 'object' &&
+      !Array.isArray(payload.data)
+    ) {
+      return payload.data;
+    }
+
+    return payload;
   }
 
   function videosFromPayload(payload) {
-    if (!payload || typeof payload !== 'object') return [];
+    var value = unwrap(payload);
+
+    if (!value || typeof value !== 'object') return [];
 
     var candidates = [
-      payload.videos,
-      payload.data && payload.data.videos,
-      payload.player && payload.player.videos,
-      payload.data &&
-        payload.data.player &&
-        payload.data.player.videos,
-      payload.profile && payload.profile.videos,
-      payload.data &&
-        payload.data.profile &&
-        payload.data.profile.videos
+      value.videos,
+      value.player && value.player.videos,
+      value.profile && value.profile.videos,
+      payload && payload.videos,
+      payload &&
+        payload.data &&
+        payload.data.videos
     ];
 
     for (var index = 0; index < candidates.length; index += 1) {
@@ -72,80 +87,111 @@
 
   window.fetch = async function (input, init) {
     var url = requestUrl(input);
+    var method = requestMethod(input, init);
     var response = await nativeFetch(input, init);
 
     if (
       response &&
       response.ok &&
-      isPlayerIntelligenceRequest(url)
+      isScoutProfileRequest(url, method)
     ) {
       try {
-        response.clone().json().then(function (payload) {
-          var videos = videosFromPayload(payload);
-          if (videos.length) cachedVideos = videos;
-        }).catch(function () {});
+        response
+          .clone()
+          .json()
+          .then(function (payload) {
+            var videos = videosFromPayload(payload);
+
+            if (videos.length) {
+              profileVideos = videos;
+            }
+          })
+          .catch(function () {});
       } catch (_) {}
     }
 
     return response;
   };
 
-  function appShadow() {
-    var host = document.getElementById('scoutExperienceApp');
-    return host && host.shadowRoot ? host.shadowRoot : null;
+  function host() {
+    return document.getElementById('scoutExperienceApp');
+  }
+
+  function shadow() {
+    var node = host();
+    return node && node.shadowRoot ? node.shadowRoot : null;
   }
 
   function videoUrl(video) {
     if (!video || typeof video !== 'object') return '';
 
-    return asText(
+    return text(
       video.signed_url ||
       video.video_url ||
       video.url ||
+      video.file_url ||
       ''
     );
   }
 
-  function safeUrl(raw) {
+  function safeHttpsUrl(raw) {
+    var value = text(raw);
+
+    if (/^blob:/i.test(value) || /^data:video\//i.test(value)) {
+      return value;
+    }
+
     try {
-      var parsed = new URL(asText(raw), window.location.href);
-      return parsed.protocol === 'https:' ? parsed : null;
+      var parsed = new URL(value, window.location.href);
+
+      if (parsed.protocol !== 'https:') return '';
+      return parsed.toString();
     } catch (_) {
-      return null;
+      return '';
     }
   }
 
-  function directVideo(raw) {
-    var value = asText(raw);
+  function isDirectVideo(raw) {
+    var value = text(raw);
 
     return (
       /^blob:/i.test(value) ||
       /^data:video\//i.test(value) ||
-      /\.(?:mp4|webm|ogg|ogv|mov|m4v)(?:[?#].*)?$/i.test(value)
+      /\.(?:mp4|webm|ogg|ogv|m4v|mov)(?:[?#].*)?$/i.test(value)
     );
   }
 
   function youtubeId(parsed) {
     if (!parsed) return '';
 
-    var host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    var hostname = parsed.hostname
+      .toLowerCase()
+      .replace(/^www\./, '');
 
-    if (host === 'youtu.be') {
-      return asText(parsed.pathname.split('/').filter(Boolean)[0]);
+    if (hostname === 'youtu.be') {
+      return text(
+        parsed.pathname.split('/').filter(Boolean)[0]
+      );
     }
 
     if (
-      host.endsWith('youtube.com') ||
-      host.endsWith('youtube-nocookie.com')
+      hostname === 'youtube.com' ||
+      hostname.endsWith('.youtube.com') ||
+      hostname === 'youtube-nocookie.com' ||
+      hostname.endsWith('.youtube-nocookie.com')
     ) {
-      var fromQuery = asText(parsed.searchParams.get('v'));
-      if (fromQuery) return fromQuery;
+      var queryId = text(parsed.searchParams.get('v'));
+      if (queryId) return queryId;
 
-      var parts = parsed.pathname.split('/').filter(Boolean);
-      var marker = ['embed', 'shorts', 'live'].indexOf(parts[0]);
+      var parts = parsed.pathname
+        .split('/')
+        .filter(Boolean);
 
-      if (marker !== -1 && parts[1]) {
-        return asText(parts[1]);
+      if (
+        ['embed', 'shorts', 'live'].indexOf(parts[0]) !== -1 &&
+        parts[1]
+      ) {
+        return text(parts[1]);
       }
     }
 
@@ -155,68 +201,104 @@
   function vimeoId(parsed) {
     if (!parsed) return '';
 
-    var host = parsed.hostname.toLowerCase().replace(/^www\./, '');
-    if (!host.endsWith('vimeo.com')) return '';
-
-    var parts = parsed.pathname.split('/').filter(Boolean);
-    var numeric = parts.slice().reverse().find(function (part) {
-      return /^\d+$/.test(part);
-    });
-
-    return numeric || '';
-  }
-
-  function driveFileId(parsed) {
-    if (!parsed) return '';
-
-    var host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    var hostname = parsed.hostname
+      .toLowerCase()
+      .replace(/^www\./, '');
 
     if (
-      !host.endsWith('drive.google.com') &&
-      !host.endsWith('docs.google.com')
+      hostname !== 'vimeo.com' &&
+      !hostname.endsWith('.vimeo.com')
     ) {
       return '';
     }
 
-    var match = parsed.pathname.match(/\/file\/d\/([^/]+)/i);
-    if (match && match[1]) return asText(match[1]);
+    var parts = parsed.pathname
+      .split('/')
+      .filter(Boolean)
+      .reverse();
 
-    match = parsed.pathname.match(/\/d\/([^/]+)/i);
-    if (match && match[1]) return asText(match[1]);
-
-    return asText(parsed.searchParams.get('id'));
+    return parts.find(function (part) {
+      return /^\d+$/.test(part);
+    }) || '';
   }
 
-  function providerFor(raw) {
-    var parsed = safeUrl(raw);
+  function driveId(parsed) {
+    if (!parsed) return '';
 
-    if (!parsed) {
+    var hostname = parsed.hostname
+      .toLowerCase()
+      .replace(/^www\./, '');
+
+    if (
+      hostname !== 'drive.google.com' &&
+      hostname !== 'docs.google.com'
+    ) {
+      return '';
+    }
+
+    var fileMatch = parsed.pathname.match(
+      /\/file\/d\/([^/]+)/i
+    );
+
+    if (fileMatch && fileMatch[1]) {
+      return text(fileMatch[1]);
+    }
+
+    var dMatch = parsed.pathname.match(
+      /\/d\/([^/]+)/i
+    );
+
+    if (dMatch && dMatch[1]) {
+      return text(dMatch[1]);
+    }
+
+    return text(parsed.searchParams.get('id'));
+  }
+
+  function provider(raw) {
+    var clean = safeHttpsUrl(raw);
+
+    if (!clean) {
       return {
-        kind: 'unsupported',
-        url: asText(raw),
-        label: 'External video'
+        kind: 'invalid',
+        sourceUrl: ''
       };
     }
 
-    if (directVideo(parsed.toString())) {
+    if (isDirectVideo(clean)) {
       return {
-        kind: 'native',
-        url: parsed.toString(),
+        kind: 'video',
+        playerUrl: clean,
+        sourceUrl: clean,
         label: 'Video'
       };
     }
 
-    var host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    var parsed;
+
+    try {
+      parsed = new URL(clean);
+    } catch (_) {
+      return {
+        kind: 'invalid',
+        sourceUrl: clean
+      };
+    }
+
+    var hostname = parsed.hostname
+      .toLowerCase()
+      .replace(/^www\./, '');
+
     var yt = youtubeId(parsed);
 
     if (yt) {
       return {
         kind: 'iframe',
-        url:
+        playerUrl:
           'https://www.youtube-nocookie.com/embed/' +
           encodeURIComponent(yt) +
           '?autoplay=1&rel=0&playsinline=1',
-        sourceUrl: parsed.toString(),
+        sourceUrl: clean,
         label: 'YouTube'
       };
     }
@@ -226,274 +308,239 @@
     if (vm) {
       return {
         kind: 'iframe',
-        url:
+        playerUrl:
           'https://player.vimeo.com/video/' +
           encodeURIComponent(vm) +
           '?autoplay=1&title=0&byline=0&portrait=0',
-        sourceUrl: parsed.toString(),
+        sourceUrl: clean,
         label: 'Vimeo'
       };
     }
 
-    var driveId = driveFileId(parsed);
+    var drive = driveId(parsed);
 
-    if (driveId) {
+    if (drive) {
       return {
         kind: 'iframe',
-        url:
+        playerUrl:
           'https://drive.google.com/file/d/' +
-          encodeURIComponent(driveId) +
+          encodeURIComponent(drive) +
           '/preview',
-        sourceUrl: parsed.toString(),
+        sourceUrl: clean,
         label: 'Google Drive'
       };
     }
 
     if (
-      host.endsWith('dropbox.com') ||
-      host.endsWith('dropboxusercontent.com')
+      hostname === 'dropbox.com' ||
+      hostname.endsWith('.dropbox.com') ||
+      hostname.endsWith('.dropboxusercontent.com')
     ) {
-      var dropbox = new URL(parsed.toString());
+      var dropbox = new URL(clean);
+
       dropbox.searchParams.delete('dl');
+      dropbox.searchParams.delete('raw');
       dropbox.searchParams.set('raw', '1');
 
       return {
-        kind: 'native',
-        url: dropbox.toString(),
-        sourceUrl: parsed.toString(),
+        kind: 'video',
+        playerUrl: dropbox.toString(),
+        sourceUrl: clean,
         label: 'Dropbox'
-      };
-    }
-
-    if (host.endsWith('veo.co') || host.endsWith('veo.live')) {
-      return {
-        kind: 'external',
-        url: parsed.toString(),
-        label: 'Veo'
-      };
-    }
-
-    if (host.endsWith('wyscout.com')) {
-      return {
-        kind: 'external',
-        url: parsed.toString(),
-        label: 'Wyscout'
-      };
-    }
-
-    if (host.endsWith('tonsser.com')) {
-      return {
-        kind: 'external',
-        url: parsed.toString(),
-        label: 'Tonsser'
       };
     }
 
     return {
       kind: 'external',
-      url: parsed.toString(),
-      label: 'External video'
+      sourceUrl: clean,
+      label:
+        hostname.indexOf('veo') !== -1
+          ? 'Veo'
+          : hostname.indexOf('wyscout') !== -1
+            ? 'Wyscout'
+            : hostname.indexOf('tonsser') !== -1
+              ? 'Tonsser'
+              : 'External video'
     };
   }
 
-  function overlay(shadow) {
-    return shadow
-      ? shadow.querySelector('.sl-overlay[aria-label="Video reel"]')
-      : null;
+  function currentOverlay(root) {
+    if (!root) return null;
+
+    var candidates = Array.from(
+      root.querySelectorAll(
+        '.sl-overlay-runtime,.sl-overlay,[role="dialog"]'
+      )
+    );
+
+    return candidates.find(function (overlay) {
+      return Boolean(
+        overlay.querySelector(
+          '[data-action="video-download"]'
+        )
+      ) ||
+      /video reel/i.test(
+        overlay.textContent || ''
+      );
+    }) || null;
   }
 
   function isCloseButton(button) {
-    var label = asText(
-      button &&
-      (
-        button.getAttribute('aria-label') ||
-        button.getAttribute('title') ||
-        button.textContent
-      )
+    if (!button) return false;
+
+    var label = text(
+      button.getAttribute('aria-label') ||
+      button.getAttribute('title') ||
+      button.textContent
     ).toLowerCase();
 
     return (
       label === 'close' ||
-      label === '×' ||
-      label === 'x'
+      label === 'x' ||
+      label === '×'
     );
   }
 
-  function isDownloadButton(button) {
+  function isSourceButton(button) {
     if (!button) return false;
 
     return (
-      button.getAttribute('data-action') === 'video-download' ||
-      /download clip|open source/i.test(button.textContent || '')
+      button.getAttribute('data-action') ===
+        'video-download' ||
+      /download clip|open source/i.test(
+        button.textContent || ''
+      )
     );
   }
 
-  function looksLikePlayButton(button) {
-    if (!button || isCloseButton(button) || isDownloadButton(button)) {
+  function isPlayLike(button) {
+    if (
+      !button ||
+      isCloseButton(button) ||
+      isSourceButton(button)
+    ) {
       return false;
     }
 
-    var label = asText(
+    var label = text(
       button.getAttribute('aria-label') ||
       button.getAttribute('title') ||
       button.textContent
     );
 
-    return (
-      /play/i.test(label) ||
-      /^[›>▶►→]$/.test(label)
-    );
+    if (/play/i.test(label)) return true;
+
+    return /^[›>▶►→]$/.test(label);
   }
 
-  function playButton(modal) {
-    if (!modal) return null;
+  function backgroundIsDark(node) {
+    if (!node) return false;
 
-    var buttons = Array.from(modal.querySelectorAll('button'));
+    var color =
+      window.getComputedStyle(node).backgroundColor;
 
-    return buttons.find(looksLikePlayButton) || null;
-  }
-
-  function darkBackground(element) {
-    if (!element) return false;
-
-    var value = window.getComputedStyle(element).backgroundColor;
-    var match = value.match(
+    var match = color.match(
       /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i
     );
 
     if (!match) return false;
 
-    var r = Number(match[1]);
-    var g = Number(match[2]);
-    var b = Number(match[3]);
+    var average =
+      (
+        Number(match[1]) +
+        Number(match[2]) +
+        Number(match[3])
+      ) / 3;
 
-    return (r + g + b) / 3 < 90;
+    return average < 100;
   }
 
-  function frameFromPlayButton(modal, button) {
-    if (!modal || !button) return null;
+  function playButton(overlay) {
+    if (!overlay) return null;
 
-    var modalRect = modal.getBoundingClientRect();
+    return Array.from(
+      overlay.querySelectorAll('button')
+    ).find(isPlayLike) || null;
+  }
+
+  function frameFromButton(overlay, button) {
+    if (!overlay || !button) return null;
+
+    var overlayRect = overlay.getBoundingClientRect();
     var node = button.parentElement;
-    var best = null;
+    var fallback = null;
 
-    while (node && node !== modal) {
+    while (node && node !== overlay) {
       var rect = node.getBoundingClientRect();
 
       if (
-        rect.width >= Math.min(280, modalRect.width * 0.58) &&
+        rect.width >= Math.min(
+          280,
+          overlayRect.width * 0.55
+        ) &&
         rect.height >= 150
       ) {
-        best = node;
-        if (darkBackground(node)) return node;
+        fallback = node;
+
+        if (backgroundIsDark(node)) {
+          return node;
+        }
       }
 
       node = node.parentElement;
     }
 
-    return best;
+    return fallback;
   }
 
-  function darkFrame(modal) {
-    var button = playButton(modal);
-    var fromButton = frameFromPlayButton(modal, button);
+  function findPlayerFrame(overlay) {
+    var button = playButton(overlay);
+    var fromButton = frameFromButton(
+      overlay,
+      button
+    );
 
     if (fromButton) {
       return {
         frame: fromButton,
-        playButton: button
+        button: button
       };
     }
 
-    var modalRect = modal.getBoundingClientRect();
+    var overlayRect = overlay.getBoundingClientRect();
 
     var candidates = Array.from(
-      modal.querySelectorAll('div,section,figure')
-    ).filter(function (node) {
-      var rect = node.getBoundingClientRect();
-
-      return (
-        rect.width >= modalRect.width * 0.65 &&
-        rect.height >= 150 &&
-        rect.width < modalRect.width * 0.99 &&
-        darkBackground(node)
-      );
-    }).sort(function (a, b) {
-      var ar = a.getBoundingClientRect();
-      var br = b.getBoundingClientRect();
-
-      return (
-        (br.width * br.height) -
-        (ar.width * ar.height)
-      );
-    });
-
-    return {
-      frame: candidates[0] || null,
-      playButton: button
-    };
-  }
-
-  function titleFromModal(modal) {
-    if (!modal) return '';
-
-    var candidates = Array.from(
-      modal.querySelectorAll('h2,h3,h4,strong,b')
+      overlay.querySelectorAll(
+        'div,section,figure'
+      )
     )
-      .map(function (node) {
-        return asText(node.textContent);
-      })
-      .filter(function (value) {
+      .filter(function (node) {
+        var rect = node.getBoundingClientRect();
+
         return (
-          value &&
-          !/^video reel$/i.test(value) &&
-          !/^download clip$/i.test(value)
+          rect.width >= overlayRect.width * 0.6 &&
+          rect.width < overlayRect.width * 0.99 &&
+          rect.height >= 150 &&
+          backgroundIsDark(node)
+        );
+      })
+      .sort(function (a, b) {
+        var ar = a.getBoundingClientRect();
+        var br = b.getBoundingClientRect();
+
+        return (
+          br.width * br.height -
+          ar.width * ar.height
         );
       });
 
-    return candidates[0] || '';
+    return {
+      frame: candidates[0] || null,
+      button: button
+    };
   }
 
-  function videoFromTitle(modal) {
-    var title = titleFromModal(modal).toLowerCase();
-    if (!title) return null;
-
-    return cachedVideos.find(function (video) {
-      var candidate = asText(
-        video.title ||
-        video.category ||
-        ''
-      ).toLowerCase();
-
-      return (
-        candidate &&
-        (
-          title === candidate ||
-          title.indexOf(candidate) !== -1 ||
-          candidate.indexOf(title) !== -1
-        )
-      );
-    }) || null;
-  }
-
-  function currentVideo(modal) {
-    if (activeVideo && videoUrl(activeVideo)) {
-      return activeVideo;
-    }
-
-    var matched = videoFromTitle(modal);
-    if (matched) activeVideo = matched;
-
-    return matched;
-  }
-
-  function sourceButton(modal) {
-    return Array.from(modal.querySelectorAll('button')).find(
-      isDownloadButton
-    ) || null;
-  }
-
-  function preserveRoundedFrame(frame) {
+  function ensureFrame(frame) {
     if (!frame) return;
 
     var computed = window.getComputedStyle(frame);
@@ -503,100 +550,61 @@
     }
 
     /*
-     * The existing modal already owns its border radius. We deliberately do
-     * not replace it. overflow:hidden simply ensures embedded media respects
-     * those same soft edges.
+     * No border radius is changed. This simply clips the provider player to
+     * the existing ScoutLink rounded frame.
      */
     frame.style.overflow = 'hidden';
   }
 
-  function removeMediaLayer(frame) {
+  function removeExistingPlayer(frame) {
     if (!frame) return;
 
     Array.from(
-      frame.querySelectorAll('.sl-video-embed-layer')
+      frame.querySelectorAll(
+        '.sl-inline-video-player'
+      )
     ).forEach(function (node) {
       node.remove();
     });
   }
 
-  function mediaLayer(frame) {
+  function createLayer(frame) {
     var layer = document.createElement('div');
 
-    layer.className = 'sl-video-embed-layer';
+    layer.className = 'sl-inline-video-player';
     layer.style.cssText = [
       'position:absolute',
       'inset:0',
-      'width:100%',
-      'height:100%',
       'z-index:20',
-      'overflow:hidden',
-      'border-radius:inherit',
-      'background:inherit'
-    ].join(';');
-
-    frame.appendChild(layer);
-    return layer;
-  }
-
-  function nativePlayer(layer, provider, frame) {
-    var video = document.createElement('video');
-
-    video.controls = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.preload = 'metadata';
-    video.src = provider.url;
-
-    video.style.cssText = [
-      'display:block',
       'width:100%',
       'height:100%',
-      'object-fit:cover',
-      'border:0',
+      'overflow:hidden',
       'border-radius:inherit',
       'background:#022e25'
     ].join(';');
 
-    video.addEventListener(
-      'error',
-      function () {
-        removeMediaLayer(frame);
+    frame.appendChild(layer);
 
-        if (provider.sourceUrl) {
-          window.open(
-            provider.sourceUrl,
-            '_blank',
-            'noopener,noreferrer'
-          );
-        }
-      },
-      { once: true }
-    );
-
-    layer.appendChild(video);
-
-    var playAttempt = video.play();
-    if (playAttempt && typeof playAttempt.catch === 'function') {
-      playAttempt.catch(function () {
-        /*
-         * Browser autoplay policies may require another user press.
-         * Controls remain visible, so the scout can start playback normally.
-         */
-      });
-    }
+    return layer;
   }
 
-  function iframePlayer(layer, provider) {
+  function iframePlayer(layer, result) {
     var iframe = document.createElement('iframe');
 
-    iframe.src = provider.url;
-    iframe.title = provider.label + ' video player';
-    iframe.loading = 'eager';
+    iframe.src = result.playerUrl;
+    iframe.title =
+      (result.label || 'External') +
+      ' football video';
     iframe.allow =
       'autoplay; encrypted-media; picture-in-picture; fullscreen';
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    iframe.setAttribute(
+      'allowfullscreen',
+      ''
+    );
+    iframe.setAttribute(
+      'referrerpolicy',
+      'strict-origin-when-cross-origin'
+    );
 
     iframe.style.cssText = [
       'display:block',
@@ -610,105 +618,209 @@
     layer.appendChild(iframe);
   }
 
-  function openExternally(provider) {
-    if (!provider || !provider.url) return;
+  function nativePlayer(layer, result, frame) {
+    var video = document.createElement('video');
+
+    video.src = result.playerUrl;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+
+    video.style.cssText = [
+      'display:block',
+      'width:100%',
+      'height:100%',
+      'object-fit:contain',
+      'border:0',
+      'border-radius:inherit',
+      'background:#022e25'
+    ].join(';');
+
+    video.addEventListener(
+      'error',
+      function () {
+        removeExistingPlayer(frame);
+
+        if (result.sourceUrl) {
+          window.open(
+            result.sourceUrl,
+            '_blank',
+            'noopener,noreferrer'
+          );
+        }
+      },
+      { once: true }
+    );
+
+    layer.appendChild(video);
+
+    var attempt = video.play();
+
+    if (
+      attempt &&
+      typeof attempt.catch === 'function'
+    ) {
+      attempt.catch(function () {});
+    }
+  }
+
+  function openSource(result) {
+    if (!result || !result.sourceUrl) return;
 
     window.open(
-      provider.url,
+      result.sourceUrl,
       '_blank',
       'noopener,noreferrer'
     );
   }
 
-  function playCurrent(modal) {
-    var video = currentVideo(modal);
-    var url = videoUrl(video);
+  function playSelectedVideo(overlay) {
+    var url = videoUrl(activeVideo);
 
     if (!url) return;
 
-    var provider = providerFor(url);
-    var frameInfo = darkFrame(modal);
-    var frame = frameInfo.frame;
-
-    if (!frame) {
-      openExternally(provider);
-      return;
-    }
+    var result = provider(url);
 
     if (
-      provider.kind === 'external' ||
-      provider.kind === 'unsupported'
+      result.kind === 'invalid' ||
+      result.kind === 'external'
     ) {
-      openExternally(provider);
+      openSource(result);
       return;
     }
 
-    preserveRoundedFrame(frame);
-    removeMediaLayer(frame);
+    var player = findPlayerFrame(overlay);
 
-    var layer = mediaLayer(frame);
-
-    if (provider.kind === 'iframe') {
-      iframePlayer(layer, provider);
+    if (!player.frame) {
+      openSource(result);
       return;
     }
 
-    if (provider.kind === 'native') {
-      nativePlayer(layer, provider, frame);
+    ensureFrame(player.frame);
+    removeExistingPlayer(player.frame);
+
+    var layer = createLayer(player.frame);
+
+    if (result.kind === 'iframe') {
+      iframePlayer(layer, result);
+      return;
     }
+
+    nativePlayer(
+      layer,
+      result,
+      player.frame
+    );
   }
 
-  function bindModal(modal) {
-    if (!modal) return;
+  function bindOverlay(overlay) {
+    if (!overlay) return;
 
-    requestAnimationFrame(function () {
-      var video = currentVideo(modal);
-      if (!video) return;
+    var player = findPlayerFrame(overlay);
+    var button = player.button;
 
-      var frameInfo = darkFrame(modal);
-      var frame = frameInfo.frame;
-      var button = frameInfo.playButton;
+    if (
+      !button ||
+      button.dataset.inlineVideoBound === '1'
+    ) {
+      return;
+    }
 
-      if (frame) preserveRoundedFrame(frame);
+    button.dataset.inlineVideoBound = '1';
 
-      if (button && !button.dataset.videoEmbedBound) {
-        button.dataset.videoEmbedBound = 'true';
+    button.addEventListener(
+      'click',
+      function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        event.stopPropagation();
 
-        button.addEventListener(
-          'click',
-          function (event) {
-            event.preventDefault();
-            event.stopPropagation();
-            playCurrent(modal);
-          },
-          true
-        );
-      }
+        playSelectedVideo(overlay);
+      },
+      true
+    );
+  }
 
-      /*
-       * Keep the existing lower action and styling exactly as supplied by
-       * ScoutLink. It remains a source/download fallback.
-       */
-      var lowerAction = sourceButton(modal);
-      if (lowerAction) {
-        lowerAction.dataset.videoEmbedSource = 'true';
-      }
-    });
+  function selectedVideoFromButton(button) {
+    var index = Number(
+      button.getAttribute('data-index')
+    );
+
+    if (
+      Number.isInteger(index) &&
+      index >= 0 &&
+      profileVideos[index]
+    ) {
+      return profileVideos[index];
+    }
+
+    return null;
+  }
+
+  function installShadowEvents(root) {
+    if (
+      !root ||
+      root.__scoutVideoEmbedEventsInstalled
+    ) {
+      return;
+    }
+
+    root.__scoutVideoEmbedEventsInstalled = true;
+
+    root.addEventListener(
+      'click',
+      function (event) {
+        var videoButton =
+          event.target.closest &&
+          event.target.closest(
+            '[data-action="profile-video"]'
+          );
+
+        if (videoButton) {
+          activeVideo =
+            selectedVideoFromButton(
+              videoButton
+            );
+          return;
+        }
+
+        var closeButton =
+          event.target.closest &&
+          event.target.closest(
+            '[data-action="overlay-close"]'
+          );
+
+        if (
+          closeButton ||
+          isCloseButton(
+            event.target.closest &&
+            event.target.closest('button')
+          )
+        ) {
+          activeVideo = null;
+        }
+      },
+      true
+    );
   }
 
   function refresh() {
-    var shadow = appShadow();
-    if (!shadow) return;
+    var root = shadow();
+    if (!root) return;
 
-    var modal = overlay(shadow);
+    installShadowEvents(root);
 
-    if (modal) {
-      bindModal(modal);
+    var overlay = currentOverlay(root);
+
+    if (overlay) {
+      bindOverlay(overlay);
     }
   }
 
   function scheduleRefresh() {
     if (refreshQueued) return;
+
     refreshQueued = true;
 
     queueMicrotask(function () {
@@ -717,90 +829,46 @@
     });
   }
 
-  function installShadowEvents(shadow) {
-    if (!shadow || shadow.__videoEmbedEventsInstalled) return;
+  function start() {
+    var attempts = 0;
 
-    shadow.__videoEmbedEventsInstalled = true;
+    var timer = setInterval(function () {
+      attempts += 1;
 
-    shadow.addEventListener(
-      'click',
-      function (event) {
-        var trigger = event.target.closest(
-          '[data-action="profile-video"]'
-        );
+      var root = shadow();
 
-        if (trigger) {
-          var index = Number(
-            trigger.getAttribute('data-index')
-          );
+      if (!root) {
+        if (attempts >= 300) {
+          clearInterval(timer);
+        }
+        return;
+      }
 
-          if (
-            Number.isInteger(index) &&
-            index >= 0 &&
-            cachedVideos[index]
-          ) {
-            activeVideo = cachedVideos[index];
-          } else {
-            activeVideo = null;
-          }
+      clearInterval(timer);
 
+      installShadowEvents(root);
+
+      shadowObserver =
+        new MutationObserver(function () {
           scheduleRefresh();
-          return;
-        }
+        });
 
-        var close = event.target.closest(
-          '[data-action="overlay-close"],[data-action="close-overlay"]'
-        );
-
-        if (close || isCloseButton(event.target.closest('button'))) {
-          activeVideo = null;
-        }
-      },
-      true
-    );
-  }
-
-  function begin() {
-    var host = document.getElementById('scoutExperienceApp');
-    if (!host) return;
-
-    observer = new MutationObserver(function () {
-      scheduleRefresh();
-    });
-
-    observer.observe(host, {
-      childList: true,
-      subtree: true
-    });
-
-    var poll = setInterval(function () {
-      var shadow = appShadow();
-      if (!shadow) return;
-
-      clearInterval(poll);
-
-      installShadowEvents(shadow);
-
-      observer.observe(shadow, {
+      shadowObserver.observe(root, {
         childList: true,
         subtree: true
       });
 
       refresh();
     }, 50);
-
-    setTimeout(function () {
-      clearInterval(poll);
-    }, 15000);
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener(
       'DOMContentLoaded',
-      begin,
+      start,
       { once: true }
     );
   } else {
-    begin();
+    start();
   }
 })();
