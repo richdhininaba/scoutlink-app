@@ -71,19 +71,18 @@ async function usageEventQuantity(context, eventType) {
 }
 
 /*
- * ScoutLink historically consumed Predictions/Exports/Coach interests by
- * writing their source tables directly, while the newer usage ledger writes
- * scout_usage_events as well. During the transition the authoritative "used"
- * value is the greater of the durable ledger and the source-table count.
+ * Predictions/Exports/Coach interests historically consumed allowance by
+ * writing their source tables directly, while the durable usage ledger was
+ * introduced later. The authoritative base usage therefore remains the
+ * greater of source rows and matching ledger quantity.
  *
- * This prevents:
- * - old usage disappearing because a ledger row was not written;
- * - pipeline usage becoming free again when an entry is later closed;
- * - seeded/demo ledger history being ignored;
- * - a new action being missed while a legacy route still writes only its
- *   source table.
+ * AI-enhanced predictions deliberately use a separate premium event:
+ *   - every prediction_log row = the first prediction credit;
+ *   - prediction_ai_premium quantity 7 = the extra AI cost;
+ *   - total AI prediction cost = 8 credits.
  *
- * Ask Radar is ledger-only because no Radar backend is active yet.
+ * Keeping the seven-credit premium separate prevents historical prediction
+ * rows from disappearing during the source-table/ledger transition.
  */
 async function getScoutUsageSnapshot(context) {
   const scout = context && context.scout;
@@ -104,6 +103,7 @@ async function getScoutUsageSnapshot(context) {
     exportRows,
     interestRows,
     predictionEvents,
+    predictionAiPremiumEvents,
     exportEvents,
     interestEvents,
     radarEvents
@@ -112,12 +112,14 @@ async function getScoutUsageSnapshot(context) {
     countUsageRows(context, 'scout_exports'),
     countUsageRows(context, 'recruitment_pipeline'),
     usageEventQuantity(context, 'prediction'),
+    usageEventQuantity(context, 'prediction_ai_premium'),
     usageEventQuantity(context, 'export'),
     usageEventQuantity(context, 'interest_request'),
     usageEventQuantity(context, 'ask_radar')
   ]);
 
-  const predictionsUsed = Math.max(predictionRows, predictionEvents);
+  const basePredictionsUsed = Math.max(predictionRows, predictionEvents);
+  const predictionsUsed = basePredictionsUsed + predictionAiPremiumEvents;
   const exportsUsed = Math.max(exportRows, exportEvents);
   const interestsUsed = Math.max(interestRows, interestEvents);
   const radarUsed = radarEvents;
@@ -136,7 +138,12 @@ async function getScoutUsageSnapshot(context) {
     interests: usageRow(interestsUsed, limits.interests),
     radar: usageRow(radarUsed, limits.radar),
     sources: {
-      predictions: { sourceRows: predictionRows, ledgerQuantity: predictionEvents },
+      predictions: {
+        sourceRows: predictionRows,
+        ledgerQuantity: predictionEvents,
+        baseUsed: basePredictionsUsed,
+        aiPremiumQuantity: predictionAiPremiumEvents
+      },
       exports: { sourceRows: exportRows, ledgerQuantity: exportEvents },
       interests: { sourceRows: interestRows, ledgerQuantity: interestEvents },
       radar: { ledgerQuantity: radarEvents }
