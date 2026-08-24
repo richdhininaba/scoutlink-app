@@ -1,6 +1,13 @@
 'use strict';
 
-/** Target path: backend/engines/evidenceConfidence.js */
+/**
+ * Target path: backend/engines/evidenceConfidence.js
+ * ScoutLink profile-first evidence confidence.
+ *
+ * A completed player assessment is the baseline evidence for a prediction.
+ * Match volume, recency and independent observations increase confidence and
+ * tighten ranges, but they never decide whether a valid player can be scored.
+ */
 
 const {
   CONFIDENCE_BANDS,
@@ -46,7 +53,11 @@ function latestEvidenceDate(player = {}, facts = [], observations = []) {
     player.updated_at,
     ...facts.map(fact => fact.matchDate),
     ...observations.map(observation => observation.observed_at || observation.observedAt || observation.created_at)
-  ].filter(Boolean).map(value => new Date(value)).filter(date => !Number.isNaN(date.getTime()));
+  ]
+    .filter(Boolean)
+    .map(value => new Date(value))
+    .filter(date => !Number.isNaN(date.getTime()));
+
   if (!dates.length) return null;
   return new Date(Math.max(...dates.map(date => date.getTime())));
 }
@@ -54,52 +65,96 @@ function latestEvidenceDate(player = {}, facts = [], observations = []) {
 function sourceCoverage(player = {}, facts = [], observations = []) {
   const sources = [];
   const attributeCount = Object.values(collectRatings(player)).filter(Number.isFinite).length;
+
   if (attributeCount) sources.push('coach assessment');
   if (facts.some(fact => fact.confirmed !== false)) sources.push('confirmed match facts');
   if (facts.some(fact => Object.keys(fact.ratings || {}).length)) sources.push('match-specific ratings');
+
   observations.forEach(observation => {
-    const type = String(observation.source_type || observation.sourceType || observation.method || 'independent observation').toLowerCase();
+    const type = String(
+      observation.source_type ||
+      observation.sourceType ||
+      observation.method ||
+      'independent observation'
+    ).toLowerCase();
     const observer = observation.observer_id || observation.observerId || observation.created_by || 'unknown';
     sources.push(`${type}:${observer}`);
   });
+
   const uniqueSources = unique(sources);
   const score = uniqueSources.length >= 4 ? 100
-    : uniqueSources.length === 3 ? 85
-      : uniqueSources.length === 2 ? 68
-        : uniqueSources.length === 1 ? 42
+    : uniqueSources.length === 3 ? 90
+      : uniqueSources.length === 2 ? 75
+        : uniqueSources.length === 1 ? 55
           : 0;
+
   return { score, sources: uniqueSources };
 }
 
 function agreementScore(player = {}, facts = [], observations = []) {
   const baseRatings = collectRatings(player);
   const differences = [];
+
   facts.forEach(fact => {
     Object.entries(fact.ratings || {}).forEach(([key, raw]) => {
       const base = isObservedScore(baseRatings[key]) ? Number(baseRatings[key]) : null;
       const match = normaliseRating(raw, 'auto');
-      if (isObservedScore(base) && isObservedScore(match)) differences.push(Math.abs(base - match));
+      if (isObservedScore(base) && isObservedScore(match)) {
+        differences.push(Math.abs(base - match));
+      }
     });
   });
+
   observations.forEach(observation => {
     const ratings = observation.attribute_ratings || observation.attributeRatings || observation.ratings || {};
     Object.entries(ratings).forEach(([key, raw]) => {
       const base = isObservedScore(baseRatings[key]) ? Number(baseRatings[key]) : null;
       const observed = normaliseRating(raw, 'auto');
-      if (isObservedScore(base) && isObservedScore(observed)) differences.push(Math.abs(base - observed));
+      if (isObservedScore(base) && isObservedScore(observed)) {
+        differences.push(Math.abs(base - observed));
+      }
     });
   });
+
   if (differences.length) {
     const meanDifference = average(differences);
-    return { score: clamp(100 - meanDifference * 1.65), comparisons: differences.length, method: 'attribute agreement' };
+    return {
+      score: clamp(100 - meanDifference * 1.5),
+      comparisons: differences.length,
+      method: 'attribute agreement'
+    };
   }
 
   const performanceScores = facts.map(fact => fact.performanceScore).filter(Number.isFinite);
   if (performanceScores.length >= 3) {
     const deviation = standardDeviation(performanceScores) || 0;
-    return { score: clamp(92 - deviation * 1.35), comparisons: performanceScores.length, method: 'match consistency' };
+    return {
+      score: clamp(92 - deviation * 1.25),
+      comparisons: performanceScores.length,
+      method: 'match consistency'
+    };
   }
-  return { score: performanceScores.length ? 45 : 25, comparisons: performanceScores.length, method: 'insufficient comparison evidence' };
+
+  return {
+    score: 50,
+    comparisons: performanceScores.length,
+    method: 'profile-led baseline'
+  };
+}
+
+function confidenceLabel(score, attributeCompleteness, hardFailures) {
+  if (hardFailures.length) return 'Profile incomplete';
+
+  const band = scoreBand(score, CONFIDENCE_BANDS);
+  const raw = String(band?.label || '').trim();
+
+  if (attributeCompleteness >= 90 && (!raw || /insufficient/i.test(raw))) {
+    return 'Profile-led';
+  }
+  if (attributeCompleteness >= 75 && (!raw || /insufficient/i.test(raw))) {
+    return 'Developing profile';
+  }
+  return raw || 'Profile-led';
 }
 
 function calculateEvidenceConfidence(player = {}, matchHistory = [], options = {}) {
@@ -133,47 +188,69 @@ function calculateEvidenceConfidence(player = {}, matchHistory = [], options = {
   const observations = Array.isArray(options.observations) ? options.observations : [];
   const latestDate = latestEvidenceDate(player, facts, observations);
   const halfLife = RECENCY_HALF_LIVES[agePhase?.label] || 180;
-  const recencyScore = latestDate ? recencyWeight(latestDate, halfLife, options.now || new Date()) * 100 : 0;
+  const recencyScore = latestDate
+    ? recencyWeight(latestDate, halfLife, options.now || new Date()) * 100
+    : 50;
 
   const sources = sourceCoverage(player, facts, observations);
   const agreement = agreementScore(player, facts, observations);
 
+  // Profile completeness is deliberately dominant. Match evidence and other
+  // sources are confidence boosters, not prerequisites for a prediction.
   let score = clamp(
-    coverageScore * 0.30 +
-    sampleScore * 0.20 +
-    recencyScore * 0.15 +
-    sources.score * 0.15 +
-    agreement.score * 0.20
+    coverageScore * 0.60 +
+    sampleScore * 0.12 +
+    recencyScore * 0.10 +
+    sources.score * 0.08 +
+    agreement.score * 0.10
   );
 
   const hardFailures = [];
   if (!ageGroup) hardFailures.push('Age group must be U7 to U16.');
   if (!expectedAttributes.length) hardFailures.push('The player position group is missing or invalid.');
-  if (attributeCompleteness < 50) hardFailures.push('Fewer than half of the required attributes have been observed.');
-  if (criticalAttributes.length && criticalFieldCoverage < 60) {
-    hardFailures.push('More than 40% of the critical evidence for this assessment is missing.');
-  }
-  if (hardFailures.length) score = Math.min(score, 49);
 
-  const band = scoreBand(score, CONFIDENCE_BANDS) || { label: 'Insufficient' };
+  // Completed profiles receive a minimum confidence floor. This prevents a
+  // low match sample from turning a complete assessment into a non-result.
+  if (!hardFailures.length) {
+    const profileFloor = attributeCompleteness >= 95 && criticalFieldCoverage >= 90 ? 68
+      : attributeCompleteness >= 85 && criticalFieldCoverage >= 75 ? 62
+        : attributeCompleteness >= 70 ? 55
+          : 45;
+    score = Math.max(score, profileFloor);
+  } else {
+    score = Math.min(score, 49);
+  }
+
+  const label = confidenceLabel(score, attributeCompleteness, hardFailures);
   const missingCriticalAttributes = criticalAttributes.filter(key => !isObservedScore(ratings[key]));
   const warnings = [];
-  if (effectiveMatches < sampleTarget) warnings.push(`Only ${effectiveMatches} effective match equivalents are available; ${sampleTarget} are preferred for this age phase.`);
-  if (sources.sources.length < 2) warnings.push('The result is supported by fewer than two independent evidence types.');
-  if (recencyScore < 50) warnings.push('The latest evidence is old or has no usable date.');
-  if (agreement.score < 50) warnings.push('Evidence agreement cannot yet be established reliably.');
+
+  if (attributeCompleteness < 90 && expectedAttributes.length) {
+    warnings.push(`The player profile is ${round(attributeCompleteness)}% complete; the projection uses the recorded profile and widens uncertainty around ungraded fields.`);
+  }
+  if (effectiveMatches < sampleTarget) {
+    warnings.push(`${effectiveMatches} effective match equivalents are recorded; additional matches will strengthen trend calibration and tighten the likely range.`);
+  }
+  if (sources.sources.length < 2) {
+    warnings.push('The assessed player profile is the primary evidence source; independent match or scout observations would add corroboration.');
+  }
+  if (agreement.score < 50) {
+    warnings.push('Cross-source agreement is still developing; the player profile remains the baseline assessment.');
+  }
 
   return {
     score: round(score),
-    label: band.label,
-    status: hardFailures.length ? 'Insufficient' : band.label,
+    label,
+    status: hardFailures.length ? 'Profile incomplete' : label,
     ageGroup,
     agePhase: agePhase?.label || null,
+    profileLed: true,
     attributeCompleteness: round(attributeCompleteness),
     criticalFieldCoverage: round(criticalFieldCoverage),
     effectiveMatchEquivalents: effectiveMatches,
     matchesRecorded: facts.length,
     sampleTarget,
+    matchSampleScore: round(sampleScore),
     recencyScore: round(recencyScore),
     latestEvidenceAt: latestDate ? latestDate.toISOString() : null,
     independentSourceScore: round(sources.score),
@@ -186,11 +263,12 @@ function calculateEvidenceConfidence(player = {}, matchHistory = [], options = {
     hardFailures,
     warnings,
     reasons: [
-      `Required attribute coverage contributes 30% and is ${round(coverageScore)}%.`,
-      `Effective role-specific match sample contributes 20% and is ${round(sampleScore)}%.`,
-      `Evidence recency contributes 15% and is ${round(recencyScore)}%.`,
-      `Independent source coverage contributes 15% and is ${round(sources.score)}%.`,
-      `Agreement and consistency contribute 20% and are ${round(agreement.score)}%.`
+      `Assessed player-profile coverage contributes 60% and is ${round(coverageScore)}%.`,
+      `Recorded match sample contributes up to 12% and is ${round(sampleScore)}%.`,
+      `Evidence recency contributes 10% and is ${round(recencyScore)}%.`,
+      `Independent source coverage contributes 8% and is ${round(sources.score)}%.`,
+      `Agreement and consistency contribute 10% and are ${round(agreement.score)}%.`,
+      'Match volume strengthens confidence and range calibration; it does not determine whether the player can be predicted.'
     ]
   };
 }
