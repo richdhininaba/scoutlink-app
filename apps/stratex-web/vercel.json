@@ -224,6 +224,14 @@
       "destination": "/pages/showcase-professional-registration"
     },
     {
+      "source": "/contracts/:secureToken/complete",
+      "destination": "/pages/contract-signing"
+    },
+    {
+      "source": "/contracts/:secureToken",
+      "destination": "/pages/contract-signing"
+    },
+    {
       "source": "/admin-demo",
       "destination": "/pages/stratex-company-admin"
     },
@@ -309,6 +317,19 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/contracts/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
         }
       ]
     },
