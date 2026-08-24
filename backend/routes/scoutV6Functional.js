@@ -50,119 +50,154 @@ const INPUT_STAGE_MAP = Object.freeze({
 });
 
 
-const LEGACY_SETUP_OPTIONS = Object.freeze({
-  teamNeeds: Object.freeze([
-    'Insufficient Game Pace & Speed',
-    'Physical Fragility & Injury Risk',
-    'Lack of Physical Presence',
-    'Weak Defensive Base',
-    'Poor Defensive Output',
-    'Low Team Chemistry & Leadership',
-    'Technical Deficiencies Under Pressure',
-    'Tactical Awareness Gaps',
-    'Poor Goal Output'
-  ]),
-  roleExpectations: Object.freeze([
-    'Aerial Dominance',
-    'Vision & Creativity',
-    'Speed & Agility',
-    'Tactical Intelligence',
-    'Ball Retention Under Pressure',
-    'Physical Resilience (Work Rate)',
-    'Defensive Impact',
-    'Offensive Impact',
-    'Progression & Carrying',
-    'Leadership & Communication'
-  ]),
-  playingStyles: Object.freeze([
-    'Possession-Based Play',
-    'Counter-Attacking',
-    'High Press',
-    'Low Block',
-    'Direct Play',
-    'Total Football',
-    'Compact Defence',
-    'Vertical Play'
-  ]),
-  formations: Object.freeze([
-    '4-3-3',
-    '4-4-2',
-    '4-2-3-1',
-    '3-5-2',
-    '3-4-3',
-    '5-3-2',
-    '4-1-4-1',
-    '5-4-1',
-    '4-1-2-1-2'
-  ]),
-  developmentPriorities: Object.freeze([
-    'Physical Growth Potential',
-    'Tactical Role Maturity',
-    'Leadership & Coachability',
-    'Injury Risk & Physical Resilience',
-    'Positional Depth Advantage',
-    'Goal Contribution Potential',
-    'Financial Viability'
-  ])
-});
-
-function catalogueLabels(catalogue) {
-  return Object.values(catalogue || {})
-    .map(item => clean(item && item.label, 180))
-    .filter(Boolean);
+/*
+ * Scout Setup options come directly from the active V4 scoring configuration.
+ * The UI is therefore never allowed to invent a formation, playing style,
+ * required role, team need or long-term development plan that the engine
+ * cannot consume.
+ */
+function catalogueOptions(catalogue, extra) {
+  return Object.entries(catalogue || {}).map(([value, item]) => ({
+    value,
+    label: clean(item?.label || value, 180),
+    ...(typeof extra === 'function' ? extra(value, item) : {})
+  }));
 }
 
-/*
- * Scout Setup keeps the supplied V6 wording while also exposing every option
- * from the active V4 scoring catalogue. This prevents the UI from silently
- * hiding a compatibility input merely because the scoring engine gained a new
- * style, team-need, role or development profile.
- */
-const SCOUT_SETUP_OPTIONS = Object.freeze({
-  teamNeeds: Object.freeze(unique([
-    ...LEGACY_SETUP_OPTIONS.teamNeeds,
-    ...catalogueLabels(config.TEAM_NEED_PROFILES)
-  ])),
-  roleExpectations: Object.freeze(unique([
-    ...LEGACY_SETUP_OPTIONS.roleExpectations,
-    ...catalogueLabels(config.ROLE_PROFILES)
-  ])),
-  playingStyles: Object.freeze(unique([
-    ...LEGACY_SETUP_OPTIONS.playingStyles,
-    ...catalogueLabels(config.STYLE_PROFILES)
-  ])),
-  formations: Object.freeze(unique([
-    ...LEGACY_SETUP_OPTIONS.formations,
-    ...Object.keys((config.FORMATION_POSITIONS || {})['11v11'] || {})
-  ])),
-  developmentPriorities: Object.freeze(unique([
-    ...LEGACY_SETUP_OPTIONS.developmentPriorities,
-    ...catalogueLabels(config.DEVELOPMENT_PLANS)
-  ]))
-});
+function optionValue(raw, options) {
+  const value = clean(raw, 180);
+  if (!value) return '';
+  const lower = value.toLowerCase();
+  const match = (options || []).find(option =>
+    String(option.value || '').toLowerCase() === lower ||
+    String(option.label || '').toLowerCase() === lower
+  );
+  return match ? match.value : '';
+}
 
-function setupOptionsFor(currentSetup = {}) {
+const TEAM_NEED_OPTIONS = Object.freeze(
+  catalogueOptions(config.TEAM_NEED_PROFILES)
+);
+
+const REQUIRED_ROLE_OPTIONS = Object.freeze(
+  catalogueOptions(config.ROLE_PROFILES, (_, item) => ({
+    positions: Array.isArray(item?.positions) ? item.positions : []
+  })).sort((a, b) => {
+    const aPos = (a.positions || [])[0] || '';
+    const bPos = (b.positions || [])[0] || '';
+    return aPos.localeCompare(bPos) || a.label.localeCompare(b.label);
+  })
+);
+
+const PLAYING_STYLE_OPTIONS = Object.freeze(
+  catalogueOptions(config.STYLE_PROFILES)
+);
+
+const DEVELOPMENT_PLAN_OPTIONS = Object.freeze(
+  catalogueOptions(config.DEVELOPMENT_PLANS)
+);
+
+const FORMATION_OPTIONS = Object.freeze((() => {
+  const seen = new Set();
+  const rows = [];
+  const formats = Object.keys(config.FORMATION_POSITIONS || {})
+    .sort((a, b) => {
+      if (a === '11v11') return -1;
+      if (b === '11v11') return 1;
+      return a.localeCompare(b);
+    });
+
+  formats.forEach(matchFormat => {
+    Object.keys(config.FORMATION_POSITIONS?.[matchFormat] || {}).forEach(value => {
+      if (seen.has(value)) return;
+      seen.add(value);
+      rows.push({
+        value,
+        label: value,
+        matchFormat
+      });
+    });
+  });
+
+  return rows;
+})());
+
+function formationMatchFormat(value) {
+  const direct = FORMATION_OPTIONS.find(option => option.value === value);
+  return direct?.matchFormat || '11v11';
+}
+
+function canonicalTeamNeed(value) {
+  const direct = optionValue(value, TEAM_NEED_OPTIONS);
+  if (direct) return direct;
+
+  const normalised = clean(value, 180)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+
+  const candidates = [
+    [/goal|finish|scor|offensive/, 'goal_output'],
+    [/chance|creativ|final_pass/, 'chance_creation'],
+    [/progress|carry|build/, 'ball_progression'],
+    [/retain|retention|pressure|technical/, 'pressure_resistance'],
+    [/one.*one|tackle|defensive_base|defensive_output/, 'defensive_one_v_one'],
+    [/defensive.*transition|recovery/, 'defensive_transition'],
+    [/aerial|physical_presence/, 'aerial_security'],
+    [/press/, 'press_effectiveness'],
+    [/goalkeeper.*distribution|distribution/, 'goalkeeper_distribution'],
+    [/goalkeeper.*command|commanding_goalkeeper/, 'goalkeeper_command'],
+    [/wide|pace|speed/, 'wide_threat']
+  ];
+
+  const mapped = candidates.find(([pattern]) => pattern.test(normalised));
+  return mapped && TEAM_NEED_OPTIONS.some(option => option.value === mapped[1])
+    ? mapped[1]
+    : '';
+}
+
+function canonicalRequiredRole(value) {
+  return optionValue(value, REQUIRED_ROLE_OPTIONS);
+}
+
+function canonicalPlayingStyle(value) {
+  return optionValue(value, PLAYING_STYLE_OPTIONS);
+}
+
+function canonicalDevelopmentPlan(value) {
+  const direct = optionValue(value, DEVELOPMENT_PLAN_OPTIONS);
+  if (direct) return direct;
+
+  const normalised = clean(value, 180).toLowerCase();
+  const candidates = [
+    [/goalkeeper|keeper/, 'goalkeeper_command'],
+    [/final|goal|attack/, 'final_third_output'],
+    [/defen|tactical/, 'defensive_intelligence'],
+    [/athletic|physical|transition/, 'athletic_transition'],
+    [/technical|possession/, 'technical_possession'],
+    [/balanced|growth/, 'balanced']
+  ];
+
+  const mapped = candidates.find(([pattern]) => pattern.test(normalised));
+  return mapped && DEVELOPMENT_PLAN_OPTIONS.some(option => option.value === mapped[1])
+    ? mapped[1]
+    : '';
+}
+
+function setupOptionsFor() {
   return {
-    teamNeeds: unique([
-      ...SCOUT_SETUP_OPTIONS.teamNeeds,
-      ...list(currentSetup.teamNeeds).map(value => clean(value, 180))
-    ]),
-    roleExpectations: unique([
-      ...SCOUT_SETUP_OPTIONS.roleExpectations,
-      ...list(currentSetup.roleExpectations).map(value => clean(value, 180))
-    ]),
-    playingStyles: unique([
-      ...SCOUT_SETUP_OPTIONS.playingStyles,
-      clean(currentSetup.playingStyle, 180)
-    ]),
-    formations: unique([
-      ...SCOUT_SETUP_OPTIONS.formations,
-      clean(currentSetup.formation, 80)
-    ]),
-    developmentPriorities: unique([
-      ...SCOUT_SETUP_OPTIONS.developmentPriorities,
-      ...list(currentSetup.developmentPriorities).map(value => clean(value, 180))
-    ])
+    teamNeeds: TEAM_NEED_OPTIONS,
+    requiredRoles: REQUIRED_ROLE_OPTIONS,
+    formations: FORMATION_OPTIONS,
+    playingStyles: PLAYING_STYLE_OPTIONS,
+    developmentPlans: DEVELOPMENT_PLAN_OPTIONS,
+    limits: {
+      teamNeedsMax: 3,
+      requiredRoleMax: 1,
+      formationMax: 1,
+      playingStyleMax: 1,
+      developmentPlanMax: 1
+    }
   };
 }
 
@@ -509,29 +544,55 @@ async function loadTeamsForPlayers(players) {
 
 function safeAnalysis(player, context, facts) {
   /*
-   * Scout Setup describes the recruiting team's target shape. It is not the
-   * player's current youth match format. Supplying an explicit 11v11 target
-   * context prevents a U7-U12 player's present-day format from incorrectly
-   * invalidating a perfectly legitimate recruitment formation such as 4-3-3.
-   *
-   * engines/index.js still performs all canonical style/need/role mapping and
-   * falls back to the player's recorded primary position plus the configured
-   * default role when the V6 Setup uses broad capability expectations.
+   * Compatibility is evaluated from the current Scout's canonical personal
+   * setup. The setup is normalised here so legacy demo preferences do not
+   * silently feed unsupported labels into the V4 engine.
    */
+  const resolved = personalSetupFromPrefs(
+    context.prefs || {},
+    context.team || {}
+  );
+
+  const canonicalSetup = {
+    ...((context.prefs && context.prefs.setup) || {}),
+    teamNeeds: resolved.teamNeeds,
+    teamWeaknesses: resolved.teamNeeds,
+    requiredRole: resolved.requiredRole,
+    roleExpectations: resolved.requiredRole ? [resolved.requiredRole] : [],
+    formation: resolved.formation,
+    playingStyle: resolved.playingStyle,
+    developmentPlan: resolved.developmentPlan,
+    longTermGoals: resolved.developmentPlan ? [resolved.developmentPlan] : [],
+    matchFormat: formationMatchFormat(resolved.formation)
+  };
+
   const prefs = {
     ...(context.prefs || {}),
-    matchFormat:
-      context.prefs?.matchFormat ||
-      context.prefs?.match_format ||
-      context.team?.scoring_setup?.matchFormat ||
-      context.team?.scoring_setup?.match_format ||
-      '11v11'
+    teamNeeds: resolved.teamNeeds,
+    teamWeaknesses: resolved.teamNeeds,
+    requiredRole: resolved.requiredRole,
+    roleExpectations: resolved.requiredRole ? [resolved.requiredRole] : [],
+    formation: resolved.formation,
+    playingStyle: resolved.playingStyle,
+    developmentPlan: resolved.developmentPlan,
+    longTermGoals: resolved.developmentPlan ? [resolved.developmentPlan] : [],
+    matchFormat: canonicalSetup.matchFormat,
+    setup: canonicalSetup
   };
 
   try {
-    return analysePlayer(player, context.team || {}, facts || [], prefs) || {};
+    return analysePlayer(
+      player,
+      context.team || {},
+      facts || [],
+      prefs
+    ) || {};
   } catch (error) {
-    console.warn('[Scout V6 analysis skipped]', player?.id, error.message);
+    console.warn(
+      '[Scout V6 analysis skipped]',
+      player?.id,
+      error.message
+    );
     return {
       compatibilityScore: null,
       compatibility: null,
@@ -540,8 +601,7 @@ function safeAnalysis(player, context, facts) {
       overallBreakdown: player?.overall_breakdown || {},
       positionRatings: player?.position_ratings || {},
       predictionDetails: player?.prediction_analysis || {},
-      valueAnalysis: player?.value_analysis || {},
-      footballValueIndex: player?.value_analysis?.footballValueIndex ?? null
+      valueAnalysis: player?.value_analysis || {}
     };
   }
 }
@@ -1215,47 +1275,59 @@ async function uniqueEmailAvailable(email, currentScoutId) {
 }
 
 function personalSetupFromPrefs(prefs = {}, team = {}) {
-  const setup = prefs.setup && typeof prefs.setup === 'object' ? prefs.setup : {};
+  const setup = prefs.setup && typeof prefs.setup === 'object'
+    ? prefs.setup
+    : {};
   const teamSetup = team?.scoring_setup && typeof team.scoring_setup === 'object'
     ? team.scoring_setup
     : {};
 
+  const rawNeeds = list(
+    setup.teamNeeds ||
+    setup.teamWeaknesses ||
+    prefs.teamNeeds ||
+    prefs.teamWeaknesses ||
+    teamSetup.teamNeeds ||
+    teamSetup.teamWeaknesses ||
+    teamSetup.team_needs ||
+    []
+  );
+
+  const rawRole =
+    setup.requiredRole ||
+    prefs.requiredRole ||
+    list(setup.roleExpectations || prefs.roleExpectations || teamSetup.roleExpectations || team.role_expectations || [])[0] ||
+    '';
+
+  const rawDevelopment =
+    setup.developmentPlan ||
+    prefs.developmentPlan ||
+    list(setup.longTermGoals || prefs.longTermGoals || teamSetup.longTermGoals || team.long_term_goals || [])[0] ||
+    '';
+
+  const formation = clean(
+    setup.formation ||
+    prefs.formation ||
+    teamSetup.formation ||
+    team.formation,
+    60
+  );
+
   return {
-    teamNeeds: list(
-      setup.teamWeaknesses ||
-      prefs.teamWeaknesses ||
-      teamSetup.teamWeaknesses ||
-      teamSetup.team_needs ||
-      []
-    ),
-    roleExpectations: list(
-      setup.roleExpectations ||
-      prefs.roleExpectations ||
-      teamSetup.roleExpectations ||
-      team.role_expectations ||
-      []
-    ),
-    formation: clean(
-      setup.formation ||
-      prefs.formation ||
-      teamSetup.formation ||
-      team.formation,
-      60
-    ),
-    playingStyle: clean(
+    teamNeeds: unique(
+      rawNeeds.map(canonicalTeamNeed).filter(Boolean)
+    ).slice(0, 3),
+    requiredRole: canonicalRequiredRole(rawRole),
+    formation: FORMATION_OPTIONS.some(option => option.value === formation)
+      ? formation
+      : '',
+    playingStyle: canonicalPlayingStyle(
       setup.playingStyle ||
       prefs.playingStyle ||
       teamSetup.playingStyle ||
-      team.playing_style,
-      120
+      team.playing_style
     ),
-    developmentPriorities: list(
-      setup.longTermGoals ||
-      prefs.longTermGoals ||
-      teamSetup.longTermGoals ||
-      team.long_term_goals ||
-      []
-    ),
+    developmentPlan: canonicalDevelopmentPlan(rawDevelopment),
     preferredPositions: list(
       setup.preferredPositions ||
       prefs.preferredPositions ||
@@ -1284,6 +1356,7 @@ function personalSetupFromPrefs(prefs = {}, team = {}) {
       team.min_appearances,
       0
     ),
+    matchFormat: formationMatchFormat(formation),
     updatedAt: prefs.updatedAt || setup.updatedAt || null
   };
 }
@@ -1338,8 +1411,39 @@ router.get('/global-search', async (req, res) => {
     const context = await loadContext(req.user.id);
     const q = clean(req.query.q, 180).toLowerCase();
 
+    const pageCatalogue = [
+      ['Dashboard', '/scout/dashboard', 'home overview usage compatible players'],
+      ['Player Search', '/scout/player-search', 'players discover search filters'],
+      ['Rankings', '/scout/rankings', 'rank players overall compatibility development value'],
+      ['Pipeline', '/scout/pipeline', 'recruitment watching monitoring shortlist trial'],
+      ['Compare Players', '/scout/compare-players', 'compare decision'],
+      ['Predictions', '/scout/predictions', 'forecast development position fit match scenario roi'],
+      ['Ask Radar', '/scout/radar', 'radar ai'],
+      ['Fixtures', '/scout/fixtures', 'calendar matches attendance'],
+      ['Events', '/scout/events', 'showcase events attendance'],
+      ['Add Usage', '/scout/usage', 'usage top up predictions exports coach interests'],
+      ['Exports', '/scout/exports', 'download export history pdf'],
+      ['Chat', '/scout/chat', 'messages coaches conversation'],
+      ['Notifications', '/scout/notifications', 'alerts unread'],
+      ['Settings', '/scout/settings', 'account team seats'],
+      ['Scout Setup', '/scout/setup', 'compatibility team needs role formation playing style long term goal'],
+      ['Report a Concern', '/scout/report-a-concern', 'support safeguarding concern']
+    ].map(([title, path, keywords]) => ({
+      id: path,
+      title,
+      path,
+      keywords
+    }));
+
     if (!q || q.length < 2) {
-      return res.json({ data: { players: [], fixtures: [], events: [] } });
+      return res.json({
+        data: {
+          pages: [],
+          players: [],
+          fixtures: [],
+          events: []
+        }
+      });
     }
 
     const [players, fixtureBundle, eventResult] = await Promise.all([
@@ -1354,6 +1458,10 @@ router.get('/global-search', async (req, res) => {
     ]);
     if (eventResult.error) throw eventResult.error;
 
+    const pageRows = pageCatalogue.filter(page =>
+      `${page.title} ${page.keywords}`.toLowerCase().includes(q)
+    ).slice(0, 8);
+
     const playerRows = players.filter(player => {
       const haystack = [
         playerName(player),
@@ -1364,7 +1472,7 @@ router.get('/global-search', async (req, res) => {
         player.position_group
       ].filter(Boolean).join(' ').toLowerCase();
       return haystack.includes(q);
-    }).slice(0, 8);
+    }).slice(0, 10);
 
     const fixtureRows = (fixtureBundle.fixtures || []).filter(fixture => {
       const haystack = [
@@ -1398,6 +1506,7 @@ router.get('/global-search', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json({
       data: {
+        pages: pageRows,
         players: playerRows,
         fixtures: fixtureRows,
         events: eventRows
@@ -2409,15 +2518,20 @@ router.patch('/settings', async (req, res) => {
 router.get('/setup', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
+    const personalSetup = personalSetupFromPrefs(
+      context.prefs,
+      context.team || {}
+    );
+
     res.set('Cache-Control', 'no-store');
-    const personalSetup = personalSetupFromPrefs(context.prefs, context.team || {});
     res.json({
       data: {
         personalSetup,
         scoutPreferences: context.prefs,
         team: context.team,
-        options: setupOptionsFor(personalSetup),
-        note: 'This is the current Scout’s personal compatibility setup. Formation and playing style are single-select; team needs, role expectations and development priorities are multi-select. Saving it does not overwrite another Scout’s personal setup.'
+        options: setupOptionsFor(),
+        note:
+          'Scout Setup uses five compatibility inputs. Team needs allow up to three selections. Required role, formation, playing style and long-term development plan are single-select.'
       }
     });
   } catch (error) {
@@ -2432,48 +2546,76 @@ router.patch('/setup', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
     const current = context.prefs || {};
-    const currentResolved = personalSetupFromPrefs(current, context.team || {});
-    const allowedOptions = setupOptionsFor(currentResolved);
+    const currentResolved = personalSetupFromPrefs(
+      current,
+      context.team || {}
+    );
 
-    if (Array.isArray(req.body.formation) || Array.isArray(req.body.playingStyle)) {
+    if (
+      Array.isArray(req.body.requiredRole) ||
+      Array.isArray(req.body.formation) ||
+      Array.isArray(req.body.playingStyle) ||
+      Array.isArray(req.body.developmentPlan)
+    ) {
       return res.status(400).json({
-        error: 'Formation and playing style each allow one selection only.'
+        error:
+          'Required role, formation, playing style and long-term goal each allow one selection only.'
       });
     }
 
-    const teamNeeds = unique(list(req.body.teamNeeds ?? currentResolved.teamNeeds)
-      .map(value => clean(value, 180)))
-      .filter(value => allowedOptions.teamNeeds.includes(value));
-    const roleExpectations = unique(list(req.body.roleExpectations ?? currentResolved.roleExpectations)
-      .map(value => clean(value, 180)))
-      .filter(value => allowedOptions.roleExpectations.includes(value));
-    const developmentPriorities = unique(list(req.body.developmentPriorities ?? currentResolved.developmentPriorities)
-      .map(value => clean(value, 180)))
-      .filter(value => allowedOptions.developmentPriorities.includes(value));
+    const teamNeeds = unique(
+      list(req.body.teamNeeds ?? currentResolved.teamNeeds)
+        .map(canonicalTeamNeed)
+        .filter(Boolean)
+    );
+
+    if (!teamNeeds.length) {
+      return res.status(400).json({
+        error: 'Choose at least one team weakness / recruitment need.'
+      });
+    }
+
+    if (teamNeeds.length > 3) {
+      return res.status(400).json({
+        error: 'Choose no more than three team weaknesses.'
+      });
+    }
+
+    const requiredRole = canonicalRequiredRole(
+      req.body.requiredRole ?? currentResolved.requiredRole
+    );
+    if (!requiredRole) {
+      return res.status(400).json({
+        error: 'Choose one supported required role.'
+      });
+    }
 
     const formation = clean(
       req.body.formation ?? currentResolved.formation,
       60
     );
-    const playingStyle = clean(
-      req.body.playingStyle ?? currentResolved.playingStyle,
-      120
-    );
+    if (!FORMATION_OPTIONS.some(option => option.value === formation)) {
+      return res.status(400).json({
+        error: 'Choose one formation supported by the compatibility engine.'
+      });
+    }
 
-    if (!teamNeeds.length) {
-      return res.status(400).json({ error: 'Choose at least one team need.' });
+    const playingStyle = canonicalPlayingStyle(
+      req.body.playingStyle ?? currentResolved.playingStyle
+    );
+    if (!playingStyle) {
+      return res.status(400).json({
+        error: 'Choose one playing style supported by the compatibility engine.'
+      });
     }
-    if (!roleExpectations.length) {
-      return res.status(400).json({ error: 'Choose at least one role expectation.' });
-    }
-    if (!allowedOptions.formations.includes(formation)) {
-      return res.status(400).json({ error: 'Choose one supported formation.' });
-    }
-    if (!allowedOptions.playingStyles.includes(playingStyle)) {
-      return res.status(400).json({ error: 'Choose one supported playing style.' });
-    }
-    if (!developmentPriorities.length) {
-      return res.status(400).json({ error: 'Choose at least one development priority.' });
+
+    const developmentPlan = canonicalDevelopmentPlan(
+      req.body.developmentPlan ?? currentResolved.developmentPlan
+    );
+    if (!developmentPlan) {
+      return res.status(400).json({
+        error: 'Choose one supported long-term development goal.'
+      });
     }
 
     const preferredPositions = unique(
@@ -2504,29 +2646,38 @@ router.patch('/setup', async (req, res) => {
       req.body.minimumAppearances ?? currentResolved.minimumAppearances,
       0
     );
+    const matchFormat = formationMatchFormat(formation);
     const updatedAt = new Date().toISOString();
 
     const setup = {
-      ...(current.setup && typeof current.setup === 'object' ? current.setup : {}),
+      ...(current.setup && typeof current.setup === 'object'
+        ? current.setup
+        : {}),
+      teamNeeds,
       teamWeaknesses: teamNeeds,
-      roleExpectations,
-      longTermGoals: developmentPriorities,
+      requiredRole,
+      roleExpectations: [requiredRole],
       formation,
       playingStyle,
+      developmentPlan,
+      longTermGoals: [developmentPlan],
       preferredPositions,
       ageGroups: priorityAgeGroups,
       scoutRegion,
-      matchFormat: '11v11',
+      matchFormat,
       updatedAt
     };
 
     const next = {
       ...current,
+      teamNeeds,
       teamWeaknesses: teamNeeds,
-      roleExpectations,
-      longTermGoals: developmentPriorities,
+      requiredRole,
+      roleExpectations: [requiredRole],
       formation,
       playingStyle,
+      developmentPlan,
+      longTermGoals: [developmentPlan],
       preferredPositions,
       priorityAgeGroups,
       scoutRegion,
@@ -2534,6 +2685,7 @@ router.patch('/setup', async (req, res) => {
       personalFocus,
       reportingStyle,
       minimumAppearances,
+      matchFormat,
       setup,
       updatedAt,
       compatibilityRecalculationRequired: true
@@ -2551,16 +2703,19 @@ router.patch('/setup', async (req, res) => {
       .single();
     if (error) throw error;
 
+    const saved = personalSetupFromPrefs(
+      data.scout_preferences || next,
+      context.team || {}
+    );
+
     res.json({
       data: {
-        personalSetup: personalSetupFromPrefs(
-          data.scout_preferences || next,
-          context.team || {}
-        ),
+        personalSetup: saved,
         scoutPreferences: data.scout_preferences || next,
-        options: setupOptionsFor(personalSetupFromPrefs(data.scout_preferences || next, context.team || {}))
+        options: setupOptionsFor()
       },
-      message: 'Your personal Scout Setup has been saved and will be used for Scout-specific compatibility.',
+      message:
+        'Your five-input Scout Setup has been saved and will be used for Scout-specific compatibility.',
       compatibilityRecalculationRequired: true
     });
   } catch (error) {
