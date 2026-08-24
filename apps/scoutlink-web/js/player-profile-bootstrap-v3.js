@@ -252,6 +252,16 @@
   async function startScout() {
     setupScoutHost();
 
+    /*
+     * Load the provider helper before Scout V9. This lets it observe the real
+     * /api/scout-v6/players/:id response and associate the selected reel with
+     * its YouTube / Vimeo / Drive / Dropbox URL before V9 renders the modal.
+     */
+    await addScript(
+      '/js/scout-video-embed-v1.js?v=20260824-video-embed-2',
+      'scoutVideoEmbedV1ProfileScript'
+    );
+
     await addScript(
       '/js/scout-experience-v9.js?v=20260822-predeploy-safety-1',
       'scoutExperienceV9ProfileScript'
