@@ -118,6 +118,38 @@
     @media(max-width:800px){.sl-toast{left:14px;right:14px;bottom:84px;max-width:none}.sl-modal-backdrop{align-items:flex-end;padding:0}.sl-modal{width:100%;max-height:86vh;border-radius:22px 22px 0 0}.sl-filter-grid,.sl-attr-grid{grid-template-columns:1fr}.sl-more-grid{grid-template-columns:1fr 1fr}.sl-result-grid{grid-template-columns:1fr 1fr}.sl-compat-row{grid-template-columns:1fr 1fr 44px}}
   `;
 
+  var RUNTIME_CSS = `
+    .sl-hidden{display:none!important}
+    .sl-global-search{position:relative;margin-bottom:14px}
+    .sl-global-search .rail-search{margin-bottom:0}
+    .sl-global-search input{width:100%;border:0;outline:0;background:transparent;font:inherit;font-size:12.5px;color:var(--ink);min-width:0}
+    .sl-global-search input::placeholder{color:var(--ink4)}
+    .sl-search-pop{position:absolute;left:0;right:0;top:46px;z-index:500;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-2);max-height:430px;overflow:auto;padding:8px}
+    .sl-search-group{padding:7px 8px 4px;font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink4)}
+    .sl-search-result{display:flex;gap:10px;align-items:center;width:100%;border:0;background:#fff;padding:10px;border-radius:10px;text-align:left;font:inherit;cursor:pointer;color:var(--ink)}
+    .sl-search-result:hover{background:var(--mist)}
+    .sl-search-result b{display:block;font-size:12px}.sl-search-result small{display:block;margin-top:2px;font-size:10.5px;color:var(--ink3)}
+    .sl-inline-metric{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--pitch)}
+    .sl-overlay-runtime{z-index:950!important}
+    .sl-overlay-runtime .sl-overlay-scroll{max-height:min(70vh,720px);overflow:auto}
+    .sl-game-list .list-row{padding:12px 0}
+    .sl-game-score{font-family:var(--display);font-size:19px;font-weight:400}
+    .sl-share-list{display:grid;gap:8px}.sl-share-choice{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}.sl-share-choice input{width:16px;height:16px}
+    .sl-chat-compose textarea{flex:1;min-height:46px;max-height:130px;resize:vertical;border:1.5px solid var(--line2);border-radius:16px;padding:11px 14px;font:inherit;font-size:13px}
+    .sl-bubble{position:relative;user-select:text}.sl-bubble[data-own-message="1"]{cursor:default}.sl-bubble.sl-hold{outline:2px solid var(--amber)}
+    .sl-radar-empty{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:42px 24px;color:rgba(255,255,255,.72);font-size:12.5px;line-height:1.6}
+    .sl-radar-empty b{display:block;color:#fff;margin-bottom:5px}
+    .sl-pred-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.m .sl-pred-input-grid{grid-template-columns:1fr}
+    .sl-result-section{margin-top:16px}.sl-result-section h3{font-size:14px;margin:0 0 9px}
+    .sl-result-table{display:grid;gap:8px}.sl-result-row{display:grid;grid-template-columns:minmax(130px,1.2fr) 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.sl-result-row b{text-align:right}
+    .sl-attr-rows{display:grid;grid-template-columns:1fr 1fr;gap:12px}.m .sl-attr-rows{grid-template-columns:1fr}
+    .sl-attr-row{border:1px solid var(--line);border-radius:14px;padding:13px 14px}.sl-attr-row-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.sl-attr-row-head b{font-size:11.5px}.sl-attr-row-head strong{font-family:var(--display);font-size:20px;font-weight:400}.sl-attr-row .bar-track{height:7px;margin-top:9px}
+    .sl-event-fixtures{margin-top:16px}
+    .sl-muted-link{border:0;background:transparent;padding:0;color:var(--pitch);font:700 11px var(--sans);cursor:pointer}
+    .sl-loading-button{opacity:.65;pointer-events:none}
+    @media(max-width:800px){.sl-search-pop{position:fixed;left:14px;right:14px;top:64px}.sl-result-row{grid-template-columns:1fr auto}.sl-overlay-runtime{padding-bottom:env(safe-area-inset-bottom)}}
+  `;
+
   var state = {
     route: routeName(),
     view: null,
@@ -129,17 +161,26 @@
     stripeReady: false,
     paymentLaunchAllowed: false,
     selectedPack: null,
+    selectedUsageType: '',
     preparedCheckout: null,
     players: [],
-    filterOptions: { regions:[], positions:[], ageGroups:[] },
+    playerTotal: 0,
+    systemTotal: 0,
+    filterOptions: { regions:[], positions:[], ageGroups:[], availability:[], feet:[] },
     filters: { q:'', position:'', ageGroup:'', region:'', availability:'', foot:'', minOverall:'' },
+    globalSearch: { query:'', results:{players:[],fixtures:[],events:[]}, open:false, timer:null },
     rankMetric: 'overall',
     rankAge: '',
     pipeline: [],
     activePipelineId: query('pipelineId') || '',
-    compareResult: null,
     compareMode: 'decision',
+    compareA: '',
+    compareB: '',
+    compareContext: 'Immediate starter',
+    comparePayload: null,
+    compareResult: null,
     predictions: [],
+    predictionMeta: null,
     scenarios: [],
     selectedPlayerId: query('playerId') || query('id') || '',
     selectedPredictionType: '',
@@ -152,7 +193,9 @@
     events: [],
     activeEventId: query('eventId') || '',
     eventDetail: null,
+    attendingFixtures: [],
     notifications: [],
+    notificationMeta: { unreadCount:0, filters:[] },
     notificationFilter: 'all',
     threads: [],
     activeThreadId: query('threadId') || '',
@@ -160,290 +203,1034 @@
     exports: [],
     settings: null,
     setup: null,
-    setupDraft: { teamNeeds:[], roleExpectations:[], developmentPriorities:[], formation:'', playingStyle:'' },
+    setupOptions: null,
+    setupDraft: { teamNeeds:[], roleExpectations:[], developmentPriorities:[], formation:'', playingStyle:'', _loaded:false },
     onboardingDraft: {},
     profileData: null,
-    profileShareTeam: true,
     profileAttributeMode: 'general',
-    activeVideo: null,
-    activeGame: null,
+    profileNoteVisibility: 'team',
+    overlay: null,
+    longPress: null,
+    busy: false,
     error: null
   };
 
-  function query(name){try{return new URLSearchParams(window.location.search).get(name)||'';}catch(_){return '';}}
+  function query(name){
+    try{return new URLSearchParams(window.location.search).get(name)||'';}catch(_){return '';}
+  }
+
   function routeName(){
     var path=window.location.pathname.replace(/\/+$/,'');
     if(path==='/player/profile'||/player-profile/i.test(path)) return 'profile';
     var explicit=document.body&&document.body.getAttribute('data-scout-route');
     if(explicit) explicit=explicit.replace(/^scout-/,'').replace(/_/g,'-');
     var slug=path.split('/').filter(Boolean).pop()||explicit||'dashboard';
-    var map={'dashboard':'dashboard','onboarding':'onboarding','player-search':'search','rankings':'rankings','pipeline':'pipeline','compare-players':'compare','predictions':'predictions','radar':'radar','fixtures':'fixtures','events':'events','usage':'usage','usage-requests':'usage','exports':'exports','chat':'chat','notifications':'notifications','settings':'settings','setup':'setup','report-a-concern':'concern','profile':'profile'};
+    var map={
+      'dashboard':'dashboard','onboarding':'onboarding','player-search':'search','rankings':'rankings',
+      'pipeline':'pipeline','compare-players':'compare','predictions':'predictions','radar':'radar',
+      'fixtures':'fixtures','events':'events','usage':'usage','usage-requests':'usage','exports':'exports',
+      'chat':'chat','notifications':'notifications','settings':'settings','setup':'setup',
+      'report-a-concern':'concern','profile':'profile'
+    };
     return map[slug]||map[explicit]||'dashboard';
   }
-  function defaultView(route){if(route==='onboarding')return'onboarding1';if(route==='setup')return'setup1';return route;}
+
+  function defaultView(route){
+    if(route==='onboarding') return 'onboarding1';
+    if(route==='setup') return 'setup1';
+    return route;
+  }
   function currentView(){return state.view||defaultView(state.route);}
-  function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+  function templateFor(view){
+    var item=SOURCE[view]||SOURCE[defaultView(state.route)]||SOURCE.dashboard;
+    return state.mode==='field'?item.field:item.desk;
+  }
+
+  function escapeHtml(value){
+    return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
   function number(value,fallback){var n=Number(value);return Number.isFinite(n)?n:(fallback==null?0:fallback);}
-  function pct(remaining,limit){return limit?Math.max(0,Math.min(100,Math.round(remaining/limit*100))):0;}
+  function nullableNumber(value){var n=Number(value);return Number.isFinite(n)?n:null;}
+  function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
+  function pct(remaining,limit){return limit?clamp(Math.round(number(remaining)/number(limit)*100),0,100):0;}
   function initials(name){return String(name||'Scout').split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x.charAt(0).toUpperCase();}).join('')||'SC';}
+  function list(value){return Array.isArray(value)?value.filter(Boolean):(value==null||value===''?[]:[value]);}
+  function unique(values){return Array.from(new Set((values||[]).filter(Boolean)));}
+  function byDateDesc(a,b){return new Date(b.created_at||b.run_at||b.updated_at||0)-new Date(a.created_at||a.run_at||a.updated_at||0);}
   function apiBase(){return window.API||localStorage.getItem('sl_api_url')||'https://scoutlink-api.vercel.app';}
   function authToken(){try{return(window.Auth&&window.Auth.token)||localStorage.getItem('sl_token')||'';}catch(_){return '';}}
+
   async function request(path,options){
-    options=options||{};var headers=Object.assign({},options.headers||{});var token=authToken();if(token)headers.Authorization='Bearer '+token;
-    if(options.body&&typeof options.body!=='string'){headers['Content-Type']='application/json';options.body=JSON.stringify(options.body);}
-    var res=await fetch(apiBase()+path,Object.assign({},options,{headers:headers}));var type=res.headers.get('content-type')||'';var payload=type.indexOf('application/json')!==-1?await res.json():await res.text();
-    if(!res.ok){var err=new Error(payload&&payload.error?payload.error:'Request failed ('+res.status+')');err.status=res.status;err.payload=payload;throw err;}return payload;
+    options=options||{};
+    var headers=Object.assign({},options.headers||{}),token=authToken();
+    if(token) headers.Authorization='Bearer '+token;
+    if(options.body&&typeof options.body!=='string'){
+      headers['Content-Type']='application/json';
+      options.body=JSON.stringify(options.body);
+    }
+    var res=await fetch(apiBase()+path,Object.assign({},options,{headers:headers}));
+    var type=res.headers.get('content-type')||'';
+    var payload=type.indexOf('application/json')!==-1?await res.json():await res.text();
+    if(!res.ok){
+      var err=new Error(payload&&payload.error?payload.error:'Request failed ('+res.status+')');
+      err.status=res.status;err.payload=payload;throw err;
+    }
+    return payload;
   }
   function unwrap(payload){return payload&&Object.prototype.hasOwnProperty.call(payload,'data')?payload.data:payload;}
-  async function safe(path,fallback){try{return unwrap(await request(path));}catch(error){console.warn('[Scout V6]',path,error);return fallback;}}
-  function normalizeRows(payload){if(Array.isArray(payload))return payload;if(payload&&Array.isArray(payload.data))return payload.data;if(payload&&Array.isArray(payload.players))return payload.players;if(payload&&Array.isArray(payload.results))return payload.results;return [];}
-  function relative(value){if(!value)return'';var t=new Date(value).getTime();if(!Number.isFinite(t))return'';var d=Math.max(0,Date.now()-t),m=Math.floor(d/60000);if(m<1)return'just now';if(m<60)return m+' min ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';var day=Math.floor(h/24);if(day<7)return day+'d ago';return new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
-  function dateLabel(value){if(!value)return'';var d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
-  function fullDateTime(fixture){var raw=fixture.fixture_date||fixture.event_date||fixture.date||'';var d=raw?new Date(raw):null;var date=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';return [date,fixture.fixture_time||fixture.time||'',fixture.venue_name||fixture.venue||fixture.location||fixture.address||''].filter(Boolean).join(' · ');}
-  function templateFor(view){var item=SOURCE[view]||SOURCE[defaultView(state.route)]||SOURCE.dashboard;return state.mode==='field'?item.field:item.desk;}
-  function render(){
-    var markup=templateFor(currentView());var mounted=state.mode==='field'?'<div class="m">'+markup+'</div>':markup;
-    shadow.innerHTML='<style>'+SOURCE_CSS+'\n'+PROD_CSS+'\n'+EXTRA_CSS+'</style><div id="slV6Mount">'+mounted+'</div>';
-    hydrateIdentity();hydrateCurrentRoute();wireNavigation();wireChromeControls();wireActions();
-    root.classList.remove('is-loading');root.removeAttribute('aria-busy');root.style.visibility='visible';
+  function normalizeRows(payload){
+    if(Array.isArray(payload))return payload;
+    if(payload&&Array.isArray(payload.data))return payload.data;
+    if(payload&&Array.isArray(payload.players))return payload.players;
+    if(payload&&Array.isArray(payload.results))return payload.results;
+    return [];
   }
-  function walkText(rootNode,replacements){if(!rootNode)return;var walker=document.createTreeWalker(rootNode,NodeFilter.SHOW_TEXT,null),node;while((node=walker.nextNode())){var next=node.nodeValue;Object.keys(replacements).forEach(function(from){next=next.split(from).join(replacements[from]);});node.nodeValue=next;}}
-  function workspaceParts(){var w=state.workspace||{};return{scout:w.scout||w.user||w.profile||w.me||(window.Auth&&window.Auth.user)||{},team:w.scoutTeam||w.team||w.scout_team||{}};}
-  function setRuntimeMessage(message,isError){if(!message)return;var body=shadow.querySelector('.body')||shadow.querySelector('.pbody')||shadow.querySelector('.wizard-body');if(!body)return;var note=document.createElement('div');note.className='sl-runtime-message'+(isError?' error':'');note.textContent=message;body.insertBefore(note,body.firstChild);}
-  function toast(message,isError){var old=shadow.querySelector('.sl-toast');if(old)old.remove();var node=document.createElement('div');node.className='sl-toast'+(isError?' error':'');node.textContent=message;shadow.appendChild(node);setTimeout(function(){if(node.parentNode)node.remove();},4200);}
-  function modal(title,body,footer){closeModal();var back=document.createElement('div');back.className='sl-modal-backdrop';back.innerHTML='<div class="sl-modal"><div class="sl-modal-h"><h3>'+escapeHtml(title)+'</h3><span class="sp"></span><button class="icon-btn" data-sl-modal-close style="width:34px;height:34px">×</button></div><div class="sl-modal-b">'+body+'</div>'+(footer?'<div class="sl-modal-f">'+footer+'</div>':'')+'</div>';shadow.appendChild(back);back.addEventListener('click',function(e){if(e.target===back||e.target.closest('[data-sl-modal-close]'))closeModal();});return back;}
+  async function safe(path,fallback){
+    try{return unwrap(await request(path));}catch(error){console.warn('[Scout V6]',path,error);return fallback;}
+  }
+
+  function relative(value){
+    if(!value)return'';var t=new Date(value).getTime();if(!Number.isFinite(t))return'';
+    var d=Math.max(0,Date.now()-t),m=Math.floor(d/60000);if(m<1)return'just now';if(m<60)return m+' min ago';
+    var h=Math.floor(m/60);if(h<24)return h+'h ago';var day=Math.floor(h/24);if(day<7)return day+'d ago';
+    return new Date(value).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  }
+  function dateLabel(value){
+    if(!value)return'';var d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
+  function monthDay(value){
+    var d=new Date(value);if(Number.isNaN(d.getTime()))return{day:'--',month:'---'};
+    return{day:String(d.getDate()).padStart(2,'0'),month:d.toLocaleDateString('en-GB',{month:'short'}).toUpperCase()};
+  }
+  function fullDateTime(item){
+    var raw=item.fixture_date||item.event_date||item.date||'';
+    var d=raw?new Date(raw):null;
+    var date=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+    return [date,item.fixture_time||item.time||'',item.venue_name||item.venue||item.location||item.address||''].filter(Boolean).join(' · ');
+  }
+  function score10(value){var n=nullableNumber(value);if(n===null)return null;return Math.round((n>10?n/10:n)*10)/10;}
+  function formatScore(value,suffix){var n=nullableNumber(value);return n===null?'—':(Math.round(n*10)/10)+(suffix||'');}
+  function normalizeExternalUrl(value){
+    var url=String(value||'').trim();if(!url)return'';
+    if(/^https?:\/\//i.test(url))return url;
+    return 'https://'+url.replace(/^\/+/, '');
+  }
+
+  function walkText(rootNode,replacements){
+    if(!rootNode)return;
+    var walker=document.createTreeWalker(rootNode,NodeFilter.SHOW_TEXT,null),node;
+    while((node=walker.nextNode())){
+      var next=node.nodeValue;
+      Object.keys(replacements).forEach(function(from){next=next.split(from).join(replacements[from]);});
+      node.nodeValue=next;
+    }
+  }
+  function workspaceParts(){
+    var w=state.workspace||{};
+    return{scout:w.scout||w.user||w.profile||w.me||(window.Auth&&window.Auth.user)||{},team:w.scoutTeam||w.team||w.scout_team||{}};
+  }
+  function currentScoutId(){return workspaceParts().scout.id||((window.Auth&&window.Auth.user)&&window.Auth.user.id)||'';}
+  function setRuntimeMessage(message,isError){
+    if(!message)return;var body=shadow.querySelector('.body')||shadow.querySelector('.pbody')||shadow.querySelector('.wizard-body');if(!body)return;
+    var note=document.createElement('div');note.className='sl-runtime-message'+(isError?' error':'');note.textContent=message;body.insertBefore(note,body.firstChild);
+  }
+  function toast(message,isError){
+    var old=shadow.querySelector('.sl-toast');if(old)old.remove();
+    var node=document.createElement('div');node.className='sl-toast'+(isError?' error':'');node.textContent=message;shadow.appendChild(node);
+    setTimeout(function(){if(node.parentNode)node.remove();},4200);
+  }
+  function modal(title,body,footer){
+    closeModal();var back=document.createElement('div');back.className='sl-modal-backdrop';
+    back.innerHTML='<div class="sl-modal"><div class="sl-modal-h"><h3>'+escapeHtml(title)+'</h3><span class="sp"></span><button class="icon-btn" data-action="modal-close" style="width:34px;height:34px">×</button></div><div class="sl-modal-b">'+body+'</div>'+(footer?'<div class="sl-modal-f">'+footer+'</div>':'')+'</div>';
+    shadow.appendChild(back);return back;
+  }
   function closeModal(){var node=shadow.querySelector('.sl-modal-backdrop');if(node)node.remove();}
   function navigate(path){window.location.href=path;}
-  function setView(view){state.view=view;render();}
-  function buttons(pattern){return Array.from(shadow.querySelectorAll('button,a')).filter(function(b){return pattern.test(b.textContent.trim());});}
-  function findField(label){var field=Array.from(shadow.querySelectorAll('.field')).find(function(x){var l=x.querySelector('label');return l&&l.textContent.toLowerCase().indexOf(String(label).toLowerCase())!==-1;});return field&&field.querySelector('input,select,textarea');}
-  function setOptions(select,items,selected,includeAny){if(!select)return;var options=[];if(includeAny)options.push(includeAny);(items||[]).forEach(function(item){options.push(item);});select.innerHTML=options.map(function(item){var value=typeof item==='object'?item.value:item;var label=typeof item==='object'?item.label:item;return'<option value="'+escapeHtml(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+escapeHtml(label)+'</option>';}).join('');}
-  function cardByHeading(text){return Array.from(shadow.querySelectorAll('.card')).find(function(card){var h=card.querySelector('.card-h h3');return h&&h.textContent.toLowerCase().indexOf(String(text).toLowerCase())!==-1;})||null;}
-  function cardBody(text){var card=cardByHeading(text);return card&&card.querySelector('.card-b');}
+  function setView(view){state.view=view;state.overlay=null;render();}
+  function setBusy(button,busy){if(button){button.disabled=!!busy;button.classList.toggle('sl-loading-button',!!busy);}}
+  function buttons(pattern,rootNode){return Array.from((rootNode||shadow).querySelectorAll('button,a')).filter(function(b){return pattern.test(b.textContent.trim());});}
+  function findField(label,rootNode){
+    var rootElement=rootNode||shadow;
+    var field=Array.from(rootElement.querySelectorAll('.field')).find(function(x){var l=x.querySelector('label');return l&&l.textContent.toLowerCase().indexOf(String(label).toLowerCase())!==-1;});
+    return field&&field.querySelector('input,select,textarea');
+  }
+  function setOptions(select,items,selected,placeholder){
+    if(!select)return;var options=[];
+    if(placeholder)options.push(typeof placeholder==='object'?placeholder:{value:'',label:placeholder});
+    (items||[]).forEach(function(item){options.push(typeof item==='object'?item:{value:item,label:item});});
+    select.innerHTML=options.map(function(item){return'<option value="'+escapeHtml(item.value)+'"'+(String(item.value)===String(selected)?' selected':'')+'>'+escapeHtml(item.label)+'</option>';}).join('');
+  }
+  function cardByHeading(text,rootNode){
+    return Array.from((rootNode||shadow).querySelectorAll('.card')).find(function(card){var h=card.querySelector('.card-h h3');return h&&h.textContent.toLowerCase().indexOf(String(text).toLowerCase())!==-1;})||null;
+  }
+  function cardBody(text,rootNode){var card=cardByHeading(text,rootNode);return card&&card.querySelector('.card-b');}
+
   function normalizePlayer(row){
-    if(!row)return null;var p=row.player||row.players||row;var attrs=p.attributeProfile||row.attributeProfile||{};var analysis=p.predictionDetails||p.prediction_analysis||{};
-    return{id:p.id||row.player_id||'',name:[p.first_name,p.last_name].filter(Boolean).join(' ')||p.name||'Unnamed player',ageGroup:p.age_group||'',position:p.specific_position||p.primary_position||p.position_group||'',team:p.team_name||p.team?.team_name||'',overall:number(p.overall_rating||p.overallRating,0),compatibility:p.compatibilityScore==null?number(row.compatibilityScore,0):number(p.compatibilityScore,0),potential:number(analysis.potentialOverall||p.potential_rating||p.overall_rating,0),valueIndex:number(p.footballValueIndex||p.valueAnalysis?.footballValueIndex||p.value_analysis?.footballValueIndex,0),availability:p.availability||'',foot:p.foot||'',region:p.team_city||p.team?.city||p.team?.county||'',attributes:attrs,raw:p,source:row};
+    if(!row)return null;var p=row.player||row.players||row;
+    var prediction=p.predictionDetails||p.prediction_analysis||{};
+    var overall=nullableNumber(p.overall_rating!=null?p.overall_rating:(p.overallBreakdown||{}).overallRating);
+    var compatibility=nullableNumber(p.compatibilityScore!=null?p.compatibilityScore:p.compatibility_score);
+    var valueIndex=nullableNumber(p.footballValueIndex!=null?p.footballValueIndex:(p.valueAnalysis||{}).footballValueIndex);
+    return{
+      id:p.id||row.player_id||'',
+      name:[p.first_name,p.last_name].filter(Boolean).join(' ')||p.name||'Unnamed player',
+      ageGroup:p.age_group||'',
+      position:p.specific_position||p.primary_position||p.position_group||'',
+      positionGroup:p.position_group||((p.attributeProfile||{}).group)||'',
+      team:p.team_name||(p.team&&p.team.team_name)||'',
+      region:p.team_city||(p.team&&p.team.city)||(p.team&&p.team.county)||'',
+      availability:p.availability||'',foot:p.foot||p.preferred_foot||'',
+      overall:overall,
+      compatibility:compatibility,
+      potential:nullableNumber(prediction.potentialOverall!=null?prediction.potentialOverall:prediction.potentialRating),
+      valueIndex:valueIndex,
+      goals:number(p.goals,0),assists:number(p.assists,0),appearances:number(p.appearances,0),cleanSheets:number(p.clean_sheets,0),
+      evidence:nullableNumber((p.evidenceConfidence||{}).score),
+      attributes:p.attributeProfile||{},
+      raw:p
+    };
   }
   function profilePlayer(){return state.profileData?normalizePlayer(state.profileData.player||state.profileData):null;}
-  function pipelinePlayer(row){return normalizePlayer(row.player||row.players||row);}
-  function stageLabel(value){var raw=String(value||'watching').toLowerCase().replace(/[ -]+/g,'_');if(raw==='trial_pending')return'Trial Pending';if(raw==='shortlisted')return'Shortlisted';if(raw==='interested'||raw==='monitoring')return'Monitoring';if(['approached','negotiating','signed'].indexOf(raw)!==-1)return'Progressed';if(['rejected','closed'].indexOf(raw)!==-1)return'Closed';return'Watching';}
+  function pipelinePlayer(row){return normalizePlayer((row&&row.player)||row);}
+  function stageLabel(value){
+    var raw=String(value||'watching').toLowerCase().replace(/[ -]+/g,'_');
+    if(raw==='trial_pending')return'Trial Pending';if(raw==='shortlisted')return'Shortlisted';
+    if(raw==='interested'||raw==='monitoring')return'Monitoring';if(['approached','negotiating','signed'].indexOf(raw)!==-1)return'Progressed';
+    if(['rejected','closed'].indexOf(raw)!==-1)return'Closed';return'Watching';
+  }
   function stageClass(value){var label=stageLabel(value);return label==='Shortlisted'?'g':label==='Trial Pending'?'a':label==='Closed'?'r':'n';}
-  function playerRow(player,action,label){return'<div class="list-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="avatar">'+escapeHtml(initials(player.name))+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.ageGroup,player.position,player.team].filter(Boolean).join(' · '))+'</span></span>'+(player.compatibility?'<span class="pill g">'+Math.round(player.compatibility)+'% fit</span>':'')+(player.overall?'<b style="font-family:var(--mono);font-size:11px">'+Math.round(player.overall)+'</b>':'')+(action?'<button class="btn outline sm" data-action="'+action+'" data-player-id="'+escapeHtml(player.id)+'">'+escapeHtml(label||'Open')+'</button>':'<span class="chev">›</span>')+'</div>';}
-  function rankRow(player,index,metric){var score=metric==='compatibility'?player.compatibility:metric==='potential'?player.potential:metric==='value'?player.valueIndex:player.overall;return'<div class="rank-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="rank-num '+(index===0?'n1':'')+'">'+(index+1)+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.position,player.ageGroup,player.team].filter(Boolean).join(' · '))+'</span></span><b style="font-family:var(--display);font-size:17px">'+Math.round(score||0)+(metric==='compatibility'?'%':'<small style="font-family:var(--mono);font-size:10px;color:var(--ink3)">/100</small>')+'</b><span class="chev">›</span></div>';}
+  function compatibilityPill(player){
+    return player.compatibility===null?'<span class="pill n" title="Compatibility could not be scored for the current setup">No score</span>':'<span class="pill g">'+escapeHtml(Math.round(player.compatibility))+'% fit</span>';
+  }
+  function playerRow(player,options){
+    options=options||{};
+    var action=options.action||'',label=options.label||'Open';
+    return'<div class="list-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="avatar">'+escapeHtml(initials(player.name))+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.position,player.ageGroup,player.team,player.availability].filter(Boolean).join(' · '))+'</span></span>'+compatibilityPill(player)+(player.overall===null?'':'<b style="font-family:var(--mono);font-size:11px">'+escapeHtml(Math.round(player.overall))+'/100</b>')+(action?'<button class="btn outline sm" data-action="'+action+'" data-player-id="'+escapeHtml(player.id)+'">'+escapeHtml(label)+'</button>':'<span class="chev">›</span>')+'</div>';
+  }
+  function metricValue(player,metric){
+    if(metric==='potential')return player.potential;
+    if(metric==='goals')return player.goals;
+    if(metric==='goals_per_game')return player.appearances?player.goals/player.appearances:0;
+    if(metric==='assists')return player.assists;
+    if(metric==='assists_per_game')return player.appearances?player.assists/player.appearances:0;
+    if(metric==='clean_sheets')return player.cleanSheets;
+    if(metric==='clean_sheets_per_game')return player.appearances?player.cleanSheets/player.appearances:0;
+    if(metric==='appearances')return player.appearances;
+    if(metric==='value')return player.valueIndex;
+    return player.overall;
+  }
+  function metricLabel(metric){
+    return {overall:'Overall rating',potential:'Development potential',goals:'Goals',goals_per_game:'Goals per game',assists:'Assists',assists_per_game:'Assists per game',clean_sheets:'Clean sheets',clean_sheets_per_game:'Clean sheets per game',appearances:'Appearances',value:'Financial value'}[metric]||'Overall rating';
+  }
+  function rankRow(player,index,metric){
+    var score=metricValue(player,metric),perGame=/_per_game$/.test(metric);
+    var shown=score===null?'—':(perGame?number(score).toFixed(2):(metric==='value'||metric==='overall'||metric==='potential'?Math.round(number(score)):Math.round(number(score)*10)/10));
+    var suffix=(metric==='value'||metric==='overall'||metric==='potential')?'<small style="font-family:var(--mono);font-size:10px;color:var(--ink3)">/100</small>':'';
+    return'<div class="rank-row sl-click" data-player-id="'+escapeHtml(player.id)+'"><span class="rank-num '+(index===0?'n1':'')+'">'+(index+1)+'</span><span class="who"><b>'+escapeHtml(player.name)+'</b><span>'+escapeHtml([player.position,player.ageGroup,player.team].filter(Boolean).join(' · '))+'</span></span><b style="font-family:var(--display);font-size:17px">'+escapeHtml(shown)+suffix+'</b><span class="chev">›</span></div>';
+  }
+
+  function render(){
+    var markup=templateFor(currentView()),mounted=state.mode==='field'?'<div class="m">'+markup+'</div>':markup;
+    shadow.innerHTML='<style>'+SOURCE_CSS+'\n'+PROD_CSS+'\n'+EXTRA_CSS+'\n'+RUNTIME_CSS+'</style><div id="slV6Mount">'+mounted+'</div>';
+    hydrateIdentity();hydrateCurrentRoute();hydrateGlobalSearch();markNavigation();
+    if(state.overlay) renderOverlay();
+    if(state.error)setRuntimeMessage(state.error.message||String(state.error),true);
+    root.classList.remove('is-loading');root.removeAttribute('aria-busy');root.style.visibility='visible';
+  }
+
+  function unreadNotificationCount(){
+    return state.notifications.filter(function(n){return !n.is_read&&!n.read_at&&['chat_message','chat_started'].indexOf(String(n.notification_type||n.type||''))===-1;}).length;
+  }
+  function unreadThreadCount(){return state.threads.reduce(function(total,t){return total+number(t.unreadCount,0);},0);}
+  function combinedUnreadCount(){return unreadThreadCount()+unreadNotificationCount();}
 
   function hydrateIdentity(){
-    var parts=workspaceParts(),scout=parts.scout,team=parts.team,user=(window.Auth&&window.Auth.user)||{};var name=[scout.first_name,scout.last_name].filter(Boolean).join(' ')||[user.first_name,user.last_name].filter(Boolean).join(' ')||user.name||'Scout';var org=team.team_name||team.club_name||scout.club_name||'Scout Workspace';var role=scout.scout_preferences?.scoutingRole||scout.scouting_role||(scout.is_super_user?'Lead Scout':'Scout');
-    walkText(shadow,{'Jordan Carty':name,'JC':initials(name),'AV Recruitment':org,'Lead Scout · AV Recruitment':role+' · '+org,'Lead Scout':role});
-    var unread=state.notifications.filter(function(n){return !n.is_read&&!n.read_at;}).length;Array.from(shadow.querySelectorAll('.icon-btn u')).forEach(function(u){u.textContent=unread;});
+    var parts=workspaceParts(),scout=parts.scout,team=parts.team,user=(window.Auth&&window.Auth.user)||{};
+    var name=[scout.first_name,scout.last_name].filter(Boolean).join(' ')||[user.first_name,user.last_name].filter(Boolean).join(' ')||user.name||'Scout';
+    var first=(scout.first_name||String(name).split(/\s+/)[0]||'Scout');
+    var org=team.team_name||team.club_name||scout.club_name||'Scout Workspace';
+    var role=(scout.scout_preferences&&scout.scout_preferences.scoutingRole)||scout.scouting_role||(scout.is_super_user?'Lead Scout':'Scout');
+    var hour=new Date().getHours(),greeting=hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+    walkText(shadow,{
+      'Jordan Carty':name,'JC':initials(name),'AV Recruitment':org,'Lead Scout · AV Recruitment':role+' · '+org,'Lead Scout':role,
+      'Good morning, Jordan':greeting+', '+first,'Good afternoon, Jordan':greeting+', '+first,'Good evening, Jordan':greeting+', '+first
+    });
+    Array.from(shadow.querySelectorAll('.icon-btn u')).forEach(function(u){u.textContent=combinedUnreadCount();});
   }
+
+  var NAV={
+    'Dashboard':'/scout/dashboard','Home':'/scout/dashboard','Player Search':'/scout/player-search','Search':'/scout/player-search','Rankings':'/scout/rankings','System Rankings':'/scout/rankings','Pipeline':'/scout/pipeline','Compare Players':'/scout/compare-players','Predictions':'/scout/predictions','Ask Radar':'/scout/radar','Fixtures':'/scout/fixtures','Events':'/scout/events','Add Usage':'/scout/usage','Exports':'/scout/exports','Chat':'/scout/chat','Notifications':'/scout/notifications','Settings':'/scout/settings','Scout Setup':'/scout/setup','Report a Concern':'/scout/report-a-concern'
+  };
+  function markNavigation(){
+    Array.from(shadow.querySelectorAll('.rail-item')).forEach(function(item){
+      var label=item.textContent.trim().replace(/\d+$/,'').trim();
+      var key=Object.keys(NAV).find(function(k){return label===k||label.indexOf(k)!==-1;});
+      if(key){item.setAttribute('data-nav',NAV[key]);item.setAttribute('role','link');item.setAttribute('tabindex','0');}
+    });
+    Array.from(shadow.querySelectorAll('.ptabs a')).forEach(function(a){var label=a.textContent.trim();if(label==='More')a.setAttribute('data-action','more-open');else if(NAV[label])a.setAttribute('data-nav',NAV[label]);});
+    Array.from(shadow.querySelectorAll('.qlink')).forEach(function(b){Object.keys(NAV).some(function(k){if(b.textContent.indexOf(k)!==-1){b.setAttribute('data-nav',NAV[k]);return true;}return false;});});
+    Array.from(shadow.querySelectorAll('button')).forEach(function(button){if(button.querySelector('u'))button.setAttribute('data-nav','/scout/notifications');});
+  }
+
+  function hydrateGlobalSearch(){
+    var rail=shadow.querySelector('.rail-search');if(!rail)return;
+    var wrap=document.createElement('div');wrap.className='sl-global-search';
+    rail.parentNode.insertBefore(wrap,rail);wrap.appendChild(rail);
+    rail.innerHTML='<span aria-hidden="true">⌕</span><input aria-label="Search ScoutLink" data-action="global-search-input" placeholder="Search players, fixtures..." value="'+escapeHtml(state.globalSearch.query)+'">';
+    if(!state.globalSearch.open||state.globalSearch.query.trim().length<2)return;
+    var pop=document.createElement('div');pop.className='sl-search-pop';
+    var r=state.globalSearch.results||{},html='';
+    function group(title,items,type){
+      if(!items||!items.length)return;
+      html+='<div class="sl-search-group">'+escapeHtml(title)+'</div>';
+      items.forEach(function(item){
+        var titleText=type==='player'?[item.first_name,item.last_name].filter(Boolean).join(' '):(type==='fixture'?(item.home_team_name||item.team_name||'Fixture')+' vs '+(item.opponent_name||item.away_team_name||item.opponent||'Opponent'):(item.event_name||item.name||item.title||'Event'));
+        var sub=type==='player'?[item.primary_position||item.specific_position,item.age_group,item.team_name].filter(Boolean).join(' · '):(type==='fixture'?fullDateTime(item):[dateLabel(item.event_date),item.venue||item.location].filter(Boolean).join(' · '));
+        html+='<button class="sl-search-result" data-action="global-search-open" data-result-type="'+type+'" data-result-id="'+escapeHtml(item.id)+'"><span class="avatar">'+escapeHtml(initials(titleText))+'</span><span><b>'+escapeHtml(titleText)+'</b><small>'+escapeHtml(sub)+'</small></span></button>';
+      });
+    }
+    group('Players',r.players,'player');group('Fixtures',r.fixtures,'fixture');group('Events',r.events,'event');
+    if(!html)html='<div class="sl-empty">No ScoutLink results.</div>';
+    pop.innerHTML=html;wrap.appendChild(pop);
+  }
+
+  async function runGlobalSearch(value){
+    state.globalSearch.query=value;clearTimeout(state.globalSearch.timer);
+    if(String(value).trim().length<2){state.globalSearch.results={players:[],fixtures:[],events:[]};state.globalSearch.open=false;render();return;}
+    state.globalSearch.open=true;
+    state.globalSearch.timer=setTimeout(async function(){
+      try{state.globalSearch.results=unwrap(await request('/api/scout-v6/global-search?q='+encodeURIComponent(value)))||{players:[],fixtures:[],events:[]};render();var input=shadow.querySelector('[data-action="global-search-input"]');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length);}}
+      catch(error){toast(error.message,true);}
+    },250);
+  }
+
+  function openMore(){
+    var old=shadow.querySelector('.sl-more-sheet');if(old)old.remove();
+    var sheet=document.createElement('div');sheet.className='sl-more-sheet';
+    sheet.innerHTML='<div class="sl-sheet-handle"></div><div style="font-family:var(--display);font-size:21px;margin:0 0 12px">More</div><div class="sl-more-grid">'+[
+      ['Rankings','/scout/rankings','System rankings'],['Compare Players','/scout/compare-players','Decision comparison'],['Predictions','/scout/predictions','Forecasting tools'],['Ask Radar','/scout/radar','AI workspace'],['Fixtures','/scout/fixtures','Calendar & attendance'],['Events','/scout/events','Showcases & events'],['Add Usage','/scout/usage','Top-up balances'],['Exports','/scout/exports','Files & history'],['Notifications','/scout/notifications','Alerts'],['Settings','/scout/settings','Account & team'],['Scout Setup','/scout/setup','Personal recruitment brief'],['Report a Concern','/scout/report-a-concern','Safeguarding & support']
+    ].map(function(x){return'<button class="sl-more-item" data-nav="'+x[1]+'"><span><b>'+escapeHtml(x[0])+'</b><small>'+escapeHtml(x[2])+'</small></span></button>';}).join('')+'</div>';
+    shadow.appendChild(sheet);
+  }
+
   function usageParts(){var u=state.usage||{};return[['Coach interests',u.interests],['Predictions',u.predictions],['Exports',u.exports],['Ask Radar',u.radar]];}
-  function hydrateUsageStrip(){var strip=Array.from(shadow.querySelectorAll('.usage-strip-item')),pairs=usageParts();strip.forEach(function(item,i){var pair=pairs[i];if(!pair||!pair[1])return;var x=pair[1],l=item.querySelector('.lbl'),s=item.querySelector('strong'),small=item.querySelector('small'),bar=item.querySelector('.bar-track i');if(l)l.textContent=pair[0];if(s)s.textContent=x.remaining;if(small)small.textContent='of '+x.limit+(pair[0]==='Ask Radar'?' credits left':' left');if(bar)bar.style.width=pct(x.remaining,x.limit)+'%';});}
+  function hydrateUsageStrip(){
+    var strip=Array.from(shadow.querySelectorAll('.usage-strip-item')),pairs=usageParts();
+    strip.forEach(function(item,i){
+      var pair=pairs[i];if(!pair||!pair[1])return;var x=pair[1],l=item.querySelector('.lbl'),s=item.querySelector('strong'),small=item.querySelector('small'),bar=item.querySelector('.bar-track i');
+      if(l)l.textContent=pair[0];if(s)s.textContent=x.remaining;if(small)small.textContent='of '+x.limit+(pair[0]==='Ask Radar'?' credits left':' left');if(bar)bar.style.width=pct(x.remaining,x.limit)+'%';
+    });
+  }
+
   function hydrateDashboard(){
-    hydrateUsageStrip();var shortlisted=state.pipeline.filter(function(r){return String(r.stage).toLowerCase()==='shortlisted';}).length,unread=state.notifications.filter(function(n){return !n.is_read&&!n.read_at;}).length;
-    Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),s=cell.querySelector('strong'),small=cell.querySelector('small');if(!l||!s)return;var t=l.textContent.toLowerCase();if(t.indexOf('pipeline')!==-1){s.textContent=state.pipeline.length;if(small)small.textContent=shortlisted+' shortlisted';}if(t.indexOf('unread')!==-1)s.textContent=unread;});
-    var body=cardBody('Top 5 compatible players');if(body){var top=state.players.slice().sort(function(a,b){return(b.compatibility||0)-(a.compatibility||0);}).slice(0,5);body.innerHTML=top.length?top.map(function(p,i){return rankRow(p,i,'compatibility');}).join(''):'<div class="sl-empty">No compatible players are available yet.</div>';}
+    hydrateUsageStrip();
+    var counts={watching:0,monitoring:0,shortlisted:0,trial:0};
+    state.pipeline.forEach(function(r){var s=stageLabel(r.stage);if(s==='Watching')counts.watching++;if(s==='Monitoring')counts.monitoring++;if(s==='Shortlisted')counts.shortlisted++;if(s==='Trial Pending')counts.trial++;});
+    var parts=workspaceParts(),seats=(state.workspace&&state.workspace.seats)||{},plan=(state.usage&&state.usage.plan)||parts.team.subscription_plan||parts.scout.subscription_plan||'—';
+    Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){
+      var l=cell.querySelector('.lbl'),s=cell.querySelector('strong'),small=cell.querySelector('small');if(!l||!s)return;var t=l.textContent.trim().toLowerCase();
+      if(t.indexOf('pipeline')!==-1){s.textContent=state.pipeline.length;if(small)small.textContent=counts.shortlisted+' shortlisted · '+counts.trial+' trial pending';}
+      else if(t.indexOf('players in the system')!==-1){s.textContent=Number(state.systemTotal||state.playerTotal||state.players.length).toLocaleString('en-GB');if(small)small.textContent='U7–U16 player records';}
+      else if(t.indexOf('unread')!==-1){s.textContent=combinedUnreadCount();if(small)small.textContent='Messages & notifications';}
+      else if(t==='plan'){s.textContent=plan;if(small)small.textContent=(seats.limit?seats.limit:'—')+' seats · team allowances';}
+    });
+    buttons(/^Add usage/i).forEach(function(b){b.setAttribute('data-nav','/scout/usage');});
+    var body=cardBody('Top 5 compatible players');
+    if(body){
+      var top=state.players.filter(function(p){return p.compatibility!==null;}).slice().sort(function(a,b){return number(b.compatibility,-1)-number(a.compatibility,-1);}).slice(0,5);
+      body.innerHTML=top.length?top.map(function(p,i){
+        return'<div class="rank-row sl-click" data-player-id="'+escapeHtml(p.id)+'"><span class="rank-num '+(i===0?'n1':'')+'">'+(i+1)+'</span><span class="who"><b>'+escapeHtml(p.name)+'</b><span>'+escapeHtml([p.position,p.ageGroup,p.team].filter(Boolean).join(' · '))+'</span></span><b style="font-family:var(--display);font-size:17px">'+Math.round(p.compatibility)+'%</b><span class="chev">›</span></div>';
+      }).join(''):'<div class="sl-empty">No players can be scored until your Scout Setup is complete.</div>';
+    }
+    buttons(/^Player Search$/i).forEach(function(b){b.setAttribute('data-nav','/scout/player-search');});
   }
-  function filteredPlayers(){var f=state.filters;return state.players.filter(function(p){var q=String(f.q||'').toLowerCase();if(q&&[p.name,p.team,p.position,p.ageGroup].join(' ').toLowerCase().indexOf(q)===-1)return false;if(f.position&&p.position!==f.position)return false;if(f.ageGroup&&p.ageGroup!==f.ageGroup)return false;if(f.region&&String(p.region)!==String(f.region))return false;if(f.availability&&String(p.availability).toLowerCase()!==String(f.availability).toLowerCase())return false;if(f.foot&&String(p.foot).toLowerCase()!==String(f.foot).toLowerCase())return false;if(f.minOverall&&p.overall<number(f.minOverall,0))return false;return true;});}
-  function populateSearchFields(){
-    var position=findField('Position'),age=findField('Age group'),region=findField('Region'),availability=findField('Availability'),foot=findField('Foot'),min=findField('Min. overall');
-    if(position)setOptions(position,state.filterOptions.positions,state.filters.position,{value:'',label:'Any position'});if(age)setOptions(age,state.filterOptions.ageGroups,state.filters.ageGroup,{value:'',label:'Any age group'});if(region)setOptions(region,state.filterOptions.regions,state.filters.region,{value:'',label:'Any region'});if(availability)setOptions(availability,['Available','Unavailable'],state.filters.availability,{value:'',label:'Any'});if(foot)setOptions(foot,['Right','Left','Both'],state.filters.foot,{value:'',label:'Any'});if(min)min.value=state.filters.minOverall||'';
+
+  function filteredPlayers(){
+    var f=state.filters;
+    return state.players.filter(function(p){
+      var q=String(f.q||'').trim().toLowerCase();if(q&&[p.name,p.team,p.position,p.ageGroup].join(' ').toLowerCase().indexOf(q)===-1)return false;
+      if(f.position&&String(p.position).toUpperCase()!==String(f.position).toUpperCase())return false;
+      if(f.ageGroup&&p.ageGroup!==f.ageGroup)return false;
+      if(f.region&&String(p.region||'').toLowerCase().indexOf(String(f.region).toLowerCase())===-1)return false;
+      if(f.availability&&String(p.availability||'').toLowerCase()!==String(f.availability).toLowerCase())return false;
+      if(f.foot&&String(p.foot||'').toLowerCase().indexOf(String(f.foot).toLowerCase())===-1)return false;
+      if(f.minOverall&&number(p.overall,-1)<number(f.minOverall,0))return false;
+      return true;
+    });
   }
-  function captureSearchFields(){var p=findField('Position'),a=findField('Age group'),r=findField('Region'),av=findField('Availability'),f=findField('Foot'),m=findField('Min. overall');state.filters.position=p?p.value:'';state.filters.ageGroup=a?a.value:'';state.filters.region=r?r.value:'';state.filters.availability=av?av.value:'';state.filters.foot=f?f.value:'';state.filters.minOverall=m?m.value:'';}
+  function populateSearchFields(rootNode){
+    var rootEl=rootNode||shadow;
+    var position=findField('Position',rootEl),age=findField('Age group',rootEl),region=findField('Region',rootEl),availability=findField('Availability',rootEl),foot=findField('Foot',rootEl),min=findField('Min. overall',rootEl);
+    if(position){setOptions(position,state.filterOptions.positions,state.filters.position,{value:'',label:'Any position'});position.dataset.filterKey='position';}
+    if(age){setOptions(age,state.filterOptions.ageGroups,state.filters.ageGroup,{value:'',label:'Any age group'});age.dataset.filterKey='ageGroup';}
+    if(region){setOptions(region,state.filterOptions.regions,state.filters.region,{value:'',label:'Any region'});region.dataset.filterKey='region';}
+    var avs=state.filterOptions.availability&&state.filterOptions.availability.length?state.filterOptions.availability:['Available','Injured','Unavailable'];
+    if(availability){setOptions(availability,avs,state.filters.availability,{value:'',label:'Any'});availability.dataset.filterKey='availability';}
+    var feet=state.filterOptions.feet&&state.filterOptions.feet.length?state.filterOptions.feet:['Right','Left','Both'];
+    if(foot){setOptions(foot,feet,state.filters.foot,{value:'',label:'Any'});foot.dataset.filterKey='foot';}
+    if(min){setOptions(min,[{value:'70',label:'70+'},{value:'80',label:'80+'},{value:'90',label:'90+'}],state.filters.minOverall,{value:'',label:'Any'});min.dataset.filterKey='minOverall';}
+  }
   function hydrateSearch(){
     populateSearchFields();var rows=filteredPlayers();
-    if(state.mode==='field'&&currentView()==='search'){var input=shadow.querySelector('.pbody > input.in');if(input){input.value=state.filters.q||'';input.setAttribute('data-action','search-query');}var pill=shadow.querySelector('.pbody > .flex .pill');if(pill)pill.textContent=rows.length+' results';var body=shadow.querySelector('.pbody .card .card-b');if(body)body.innerHTML=rows.length?rows.map(function(p){return playerRow(p);}).join(''):'<div class="sl-empty">No players match the current filters.</div>';return;}
-    if(currentView()==='searchFilters')return;
-    var target=Array.from(shadow.querySelectorAll('.card')).find(function(c){var h=c.querySelector('.card-h h3');return h&&/results/i.test(h.textContent);});if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent=rows.length+' results';if(b)b.innerHTML=rows.length?rows.map(function(p){var inPipe=state.pipeline.some(function(x){return String(x.player_id||x.player?.id)===String(p.id);});return playerRow(p,inPipe?'':'pipeline-add',inPipe?'':'Add to pipeline');}).join(''):'<div class="sl-empty">No players match the current filters.</div>';}
+    buttons(/^Search$/i).forEach(function(b){b.setAttribute('data-action','search-run');});
+    if(state.mode==='field'){
+      var input=shadow.querySelector('.pbody > input.in')||shadow.querySelector('.pbody input[type="search"]');
+      if(input){input.value=state.filters.q||'';input.setAttribute('data-action','player-search-query');}
+      buttons(/^Filters$/i).forEach(function(b){b.setAttribute('data-action','search-filters-open');});
+      var pill=shadow.querySelector('.pbody > .flex .pill')||shadow.querySelector('.pbody .pill');if(pill)pill.textContent=rows.length+' results';
+      var body=shadow.querySelector('.pbody .card .card-b');
+      if(body)body.innerHTML=rows.length?rows.map(function(p){return playerRow(p);}).join(''):'<div class="sl-empty">No players match the current filters.</div>';
+      return;
+    }
+    var target=Array.from(shadow.querySelectorAll('.card')).find(function(c){var h=c.querySelector('.card-h h3');return h&&/results/i.test(h.textContent);});
+    if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent=rows.length+' results';if(b)b.innerHTML=rows.length?rows.map(function(p){var inPipe=state.pipeline.some(function(x){return String(x.player_id||((x.player||{}).id))===String(p.id);});return playerRow(p,inPipe?{}:{action:'pipeline-add',label:'Add to pipeline'});}).join(''):'<div class="sl-empty">No players match the current filters.</div>';}
   }
-  function hydrateRankings(){var rank=findField('Rank by'),age=findField('Age group');if(rank){rank.value=state.rankMetric==='compatibility'?'Compatibility score':state.rankMetric==='potential'?'Development potential':state.rankMetric==='value'?'Football Value Index':'Overall rating';}if(age){setOptions(age,state.filterOptions.ageGroups,state.rankAge,{value:'',label:'Any age group'});}var rows=state.players.filter(function(p){return!state.rankAge||p.ageGroup===state.rankAge;}).sort(function(a,b){var av=state.rankMetric==='compatibility'?a.compatibility:state.rankMetric==='potential'?a.potential:state.rankMetric==='value'?a.valueIndex:a.overall;var bv=state.rankMetric==='compatibility'?b.compatibility:state.rankMetric==='potential'?b.potential:state.rankMetric==='value'?b.valueIndex:b.overall;return bv-av;});var target=cardByHeading('Ranked by');if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent='Ranked by '+(state.rankMetric==='compatibility'?'Compatibility':state.rankMetric==='potential'?'Development potential':state.rankMetric==='value'?'Football Value Index':'Overall rating')+' ('+rows.length+')';if(b)b.innerHTML=rows.length?rows.slice(0,100).map(function(p,i){return rankRow(p,i,state.rankMetric);}).join(''):'<div class="sl-empty">No players match the ranking criteria.</div>';}}
+
+  function hydrateRankings(){
+    var rank=findField('Rank by'),age=findField('Age group');
+    var options=[
+      {value:'overall',label:'Overall rating'},{value:'potential',label:'Development potential'},{value:'goals',label:'Goals'},{value:'goals_per_game',label:'Goals per game'},{value:'assists',label:'Assists'},{value:'assists_per_game',label:'Assists per game'},{value:'clean_sheets',label:'Clean sheets'},{value:'clean_sheets_per_game',label:'Clean sheets per game'},{value:'appearances',label:'Appearances'},{value:'value',label:'Financial value'}
+    ];
+    if(rank){setOptions(rank,options,state.rankMetric,null);rank.setAttribute('data-action','rank-metric');}
+    if(age){setOptions(age,state.filterOptions.ageGroups,state.rankAge,{value:'',label:'All ages'});age.setAttribute('data-action','rank-age');}
+    var rows=state.players.filter(function(p){return!state.rankAge||p.ageGroup===state.rankAge;}).slice().sort(function(a,b){return number(metricValue(b,state.rankMetric),-999)-number(metricValue(a,state.rankMetric),-999);});
+    var target=cardByHeading('Ranked by');if(target){var h=target.querySelector('.card-h h3'),b=target.querySelector('.card-b');if(h)h.textContent='Ranked by '+metricLabel(state.rankMetric)+' ('+rows.length+')';if(b)b.innerHTML=rows.length?rows.slice(0,100).map(function(p,i){return rankRow(p,i,state.rankMetric);}).join(''):'<div class="sl-empty">No players match the ranking criteria.</div>';}
+  }
+
   function hydratePipeline(){
-    var target=cardByHeading('All pipeline entries');if(!target)return;var h=target.querySelector('.card-h h3');if(h)h.textContent='All pipeline entries ('+state.pipeline.length+')';
-    if(state.mode==='field'){var counts={'Watching':0,'Monitoring':0,'Shortlisted':0,'Trial Pending':0};state.pipeline.forEach(function(row){var label=stageLabel(row.stage);if(Object.prototype.hasOwnProperty.call(counts,label))counts[label]+=1;});Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),s=cell.querySelector('strong');if(l&&s&&Object.prototype.hasOwnProperty.call(counts,l.textContent.trim()))s.textContent=counts[l.textContent.trim()];});}
-    var body=target.querySelector('.card-b');if(body)body.innerHTML=state.pipeline.length?state.pipeline.map(function(row){var p=pipelinePlayer(row);return'<div class="list-row sl-click" data-pipeline-id="'+escapeHtml(row.id)+'" data-player-id="'+escapeHtml(p.id)+'"><span class="avatar">'+escapeHtml(initials(p.name))+'</span><span class="who"><b>'+escapeHtml(p.name)+'</b><span>'+escapeHtml(row.notes||row.latestWorkflow?.content||[p.ageGroup,p.position,p.team].filter(Boolean).join(' · '))+'</span></span><span class="pill '+stageClass(row.stage)+'">'+escapeHtml(row.displayStage||stageLabel(row.stage))+'</span>'+(state.mode==='desk'?'<button class="btn outline sm" data-action="pipeline-update" data-pipeline-id="'+escapeHtml(row.id)+'">Update</button>':'<span class="chev">›</span>')+'</div>';}).join(''):'<div class="sl-empty">Your recruitment pipeline is empty.</div>';
+    var counts={'Watching':0,'Monitoring':0,'Shortlisted':0,'Trial Pending':0};state.pipeline.forEach(function(row){var label=stageLabel(row.stage);if(Object.prototype.hasOwnProperty.call(counts,label))counts[label]++;});
+    Array.from(shadow.querySelectorAll('.bento-cell')).forEach(function(cell){var l=cell.querySelector('.lbl'),s=cell.querySelector('strong');if(l&&s&&Object.prototype.hasOwnProperty.call(counts,l.textContent.trim()))s.textContent=counts[l.textContent.trim()];});
+    var target=cardByHeading('All pipeline entries');if(!target)return;var h=target.querySelector('.card-h h3'),body=target.querySelector('.card-b');if(h)h.textContent='All pipeline entries ('+state.pipeline.length+')';
+    if(body)body.innerHTML=state.pipeline.length?state.pipeline.map(function(row){var p=pipelinePlayer(row)||{name:'Player',id:row.player_id};return'<div class="list-row sl-click" data-action="pipeline-open" data-pipeline-id="'+escapeHtml(row.id)+'"><span class="avatar">'+escapeHtml(initials(p.name))+'</span><span class="who"><b>'+escapeHtml(p.name)+'</b><span>'+escapeHtml(row.notes||row.latestWorkflow&&row.latestWorkflow.content||[p.position,p.ageGroup,p.team].filter(Boolean).join(' · '))+'</span></span><span class="pill '+stageClass(row.stage)+'">'+escapeHtml(stageLabel(row.stage))+'</span><span style="font-size:10px;color:var(--ink3)">'+escapeHtml(relative(row.updated_at||row.created_at))+'</span></div>';}).join(''):'<div class="sl-empty">Your pipeline is empty. Add a player from Player Search.</div>';
   }
-  function hydratePipelineUpdate(){var row=state.pipeline.find(function(x){return String(x.id)===String(state.activePipelineId);});if(!row)return;var p=pipelinePlayer(row);walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name)});var stage=findField('Stage'),note=findField('Note');if(stage){var desired=stageLabel(row.stage);Array.from(stage.options).forEach(function(o){if(stageLabel(o.value)===desired||o.textContent.trim()===desired)stage.value=o.value;});}if(note)note.value=row.notes||'';}
-  function hydrateCompare(){var a=findField('Player A'),b=findField('Player B');if(a)setOptions(a,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.team};}),a.value||'',null);if(b)setOptions(b,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.team};}),b.value||'',null);if(!state.compareResult)return;var card=cardByHeading('Overall attributes comparison');if(!card)return;var h=card.querySelector('.card-h h3'),body=card.querySelector('.card-b');if(h)h.textContent=state.compareMode==='decision'?'Decision comparison':'Overall attributes comparison';if(body){var r=state.compareResult;body.innerHTML='<div class="sl-result-grid"><div class="sl-result-stat"><span>'+escapeHtml(r.playerA.name)+'</span><strong>'+escapeHtml(r.playerA.totalScore)+'</strong></div><div class="sl-result-stat"><span>'+escapeHtml(r.playerB.name)+'</span><strong>'+escapeHtml(r.playerB.totalScore)+'</strong></div><div class="sl-result-stat"><span>Margin</span><strong>'+escapeHtml(r.decisionScoreMargin)+'</strong></div></div><div style="margin-top:14px">'+r.categories.map(function(c){return'<div class="sl-compat-row"><b>'+escapeHtml(c.category)+'</b><div class="sl-score-bar"><i style="width:'+Math.max(c.playerA,c.playerB)+'%"></i></div><strong>'+escapeHtml(c.playerA)+' / '+escapeHtml(c.playerB)+'</strong></div>';}).join('')+'</div><p class="sl-result-copy" style="margin-top:14px">'+escapeHtml(r.recommendation)+'</p>';}}
-  function hydratePredictions(){var history=cardBody('Prediction history');if(history)history.innerHTML=state.predictions.length?state.predictions.map(function(row){var p=normalizePlayer(row.players||{});return'<div class="list-row"><span class="who"><b>'+escapeHtml(p.name||'Prediction')+'</b><span>'+escapeHtml([row.prediction_type,dateLabel(row.run_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="prediction-history" data-log-id="'+escapeHtml(row.id)+'">Open</button></div>';}).join(''):'<div class="sl-empty">No predictions have been run yet.</div>';}
-  function populatePredictionPlayer(){var select=findField('Player');if(select)setOptions(select,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.ageGroup+' · '+p.position};}),state.selectedPlayerId,null);}
-  function hydratePredictionWizard(){if(currentView()==='prediction1')populatePredictionPlayer();if(currentView()==='prediction3'){var p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);});if(p)walkText(shadow,{'Ruby Okafor':p.name,'Attribute Development':state.selectedPredictionType||'Attribute Development'});}}
-  function resultValue(value){return value===null||value===undefined||value===''?'—':value;}
-  function hydratePredictionResult(){if(!state.predictionResult)return;var r=state.predictionResult,p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);})||{name:'Player'};walkText(shadow,{'Ruby Okafor':p.name});var body=shadow.querySelector('.wizard-body')||shadow.querySelector('.pbody')||shadow.querySelector('.body');if(!body)return;var summary=body.querySelector('.callout')||body.querySelector('.card-b');if(summary&&r.summary)summary.setAttribute('title',r.summary);var marker=document.createElement('div');marker.className='sl-runtime-message';marker.innerHTML='<b>'+escapeHtml(r.summary||r.recommendation||'Prediction complete.')+'</b>'+(Array.isArray(r.paragraphs)?'<div style="margin-top:6px">'+r.paragraphs.map(escapeHtml).join('<br>')+'</div>':'');body.insertBefore(marker,body.firstChild);}
-  function usageItem(label,usage){usage=usage||{remaining:0,limit:0};return'<div><div class="flex" style="justify-content:space-between"><b style="font-size:13px">'+escapeHtml(label)+'</b><span style="font-family:var(--display);font-size:18px">'+escapeHtml(usage.remaining)+'<small style="font-family:var(--mono);font-size:11px;color:var(--ink3)"> / '+escapeHtml(usage.limit)+'</small></span></div><div class="bar-track" style="margin-top:8px"><i style="width:'+pct(usage.remaining,usage.limit)+'%;background:var(--pitch)"></i></div></div>';}
-  function hydrateUsage(){hydrateUsageStrip();if(!state.usage){setRuntimeMessage('Usage balances could not be loaded.',true);return;}var current=cardBody('Current balances');if(current)current.innerHTML=[usageItem('Exports',state.usage.exports),usageItem('Predictions',state.usage.predictions),usageItem('Coach interests',state.usage.interests),usageItem('Ask Radar credits',state.usage.radar)].map(function(x,i){return'<div style="'+(i?'margin-top:16px':'')+'">'+x+'</div>';}).join('');var buy=cardBody('Buy extra usage');if(buy){var reqType={predictions:'prediction',prediction:'prediction',exports:'export',export:'export',interests:'interest_request',interest_request:'interest_request',radar:'ask_radar',ask_radar:'ask_radar'}[query('type')]||(state.selectedPack&&state.selectedPack.type)||'prediction';var grouped={};state.packs.forEach(function(pack){(grouped[pack.type]||(grouped[pack.type]=[])).push(pack);});var tabs=[['prediction','Predictions'],['export','Exports'],['interest_request','Coach interests'],['ask_radar','Ask Radar']].filter(function(x){return grouped[x[0]]&&grouped[x[0]].length;});if(!grouped[reqType]&&tabs[0])reqType=tabs[0][0];var active=grouped[reqType]||[];if(!state.selectedPack||state.selectedPack.type!==reqType)state.selectedPack=active[0]||null;buy.innerHTML='<div style="margin-bottom:16px"><div class="seg">'+tabs.map(function(t){return'<a class="'+(t[0]===reqType?'on':'')+'" data-action="usage-tab" data-type="'+t[0]+'">'+escapeHtml(t[1])+'</a>';}).join('')+'</div></div><div class="pack-grid">'+active.map(function(pack){var on=state.selectedPack&&state.selectedPack.priceId===pack.priceId;return'<button class="pack-card '+(on?'on':'')+'" data-action="usage-pack" data-price-id="'+escapeHtml(pack.priceId)+'"><b>'+escapeHtml(Number(pack.quantity).toLocaleString('en-GB'))+'</b><span>'+escapeHtml(pack.label)+'</span><strong>'+escapeHtml(pack.priceLabel)+'</strong></button>';}).join('')+'</div>'+(state.selectedPack?'<div style="margin-top:14px"><div class="callout g"><span><b>'+escapeHtml(state.selectedPack.quantity+' '+state.selectedPack.label)+' · '+escapeHtml(state.selectedPack.priceLabel)+'</b><br>Validated against the ScoutLink live top-up catalogue.</span></div><div class="flex" style="margin-top:12px;justify-content:flex-end"><button class="btn volt" data-action="usage-prepare">Continue to checkout</button></div></div>':'<div class="sl-empty">No top-up packs are available.</div>')+(state.preparedCheckout?'<div class="sl-prepared"><b>Checkout handoff ready</b><br>'+escapeHtml(state.preparedCheckout.message||'The selected pack has passed the server-side checkout validation.')+(state.preparedCheckout.paymentLaunchAllowed?'<div style="margin-top:10px"><button class="btn volt" data-action="usage-launch">Launch Stripe Checkout</button></div>':'<br><span class="mut">Payment launch is paused until the live Stripe key is restored.</span>')+'</div>':'');}var history=cardBody('Purchase history');if(history)history.innerHTML=state.purchases.length?state.purchases.map(function(x){return'<div class="list-row"><span class="who"><b>'+escapeHtml(x.quantity+' '+x.label)+'</b><span>'+escapeHtml(dateLabel(x.paidAt))+'</span></span><b>'+escapeHtml(x.priceLabel||'')+'</b><span class="pill '+(x.status==='paid'?'g':'n')+'">'+escapeHtml(x.status)+'</span></div>';}).join(''):'<div class="sl-empty">No usage top-ups have been purchased yet.</div>';}
-  function hydrateRadar(){var body=shadow.querySelector('.pbody')||shadow.querySelector('.body');if(body){Array.from(body.querySelectorAll('.thread-row,.bubble,.radar-msg,.radar-history-item')).forEach(function(n){n.remove();});setRuntimeMessage('Ask Radar is intentionally empty for this release. We will connect the AI workflow next; no questions are sent and no Radar credits are consumed.',false);}Array.from(shadow.querySelectorAll('input,textarea')).forEach(function(i){i.disabled=true;i.placeholder='Ask Radar will be connected next';});buttons(/^Send$/i).forEach(function(b){b.disabled=true;});}
-  function fixtureTitle(f){var home=f.home_team_name||f.home_team||f.team_name||'',away=f.away_team_name||f.away_team||f.opponent_name||f.opponent||'';return home&&away?home+' vs '+away:(away||home||'Fixture');}
-  function fieldFixtureRow(f){var d=f.fixture_date?new Date(f.fixture_date):null,att=f.attendance?.status||'',priority=(f.plans&&f.plans.length)||f.priority;return'<div class="list-row sl-click" data-fixture-id="'+escapeHtml(f.id)+'"><div class="dateplate '+(priority?'g':'')+'"><b>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.getDate():'—')+'</b><span>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{month:'short'}).toUpperCase():'')+'</span></div><span class="who"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(fullDateTime(f))+'</span></span><span class="pill '+(att==='attending'?'g':priority?'a':'n')+'">'+escapeHtml(att==='attending'?'Attending':att==='maybe'?'Maybe':priority?'Priority':'Scheduled')+'</span></div>';}
-  function hydrateFixtureCalendar(){var grid=shadow.querySelector('.cal-grid');if(!grid)return;var base=new Date(),year=base.getFullYear(),month=base.getMonth();var first=new Date(year,month,1),days=new Date(year,month+1,0).getDate(),offset=(first.getDay()+6)%7;var html='';for(var i=0;i<offset;i++)html+='<div class="cal-day muted"></div>';for(var day=1;day<=days;day++){var date=new Date(year,month,day),key=date.toISOString().slice(0,10),events=state.fixtures.filter(function(f){return String(f.fixture_date||'').slice(0,10)===key;});html+='<div class="cal-day '+(key===new Date().toISOString().slice(0,10)?'today':'')+'"><b>'+day+'</b>'+events.map(function(f){return'<div class="cal-event '+((f.plans&&f.plans.length)?'priority':'')+'" data-fixture-id="'+escapeHtml(f.id)+'"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(f.fixture_time||'')+'</span></div>';}).join('')+'</div>';}grid.innerHTML=html;}
-  function hydrateFixtures(){var body=cardBody('Fixtures for your pipeline');if(!body)return;if(state.mode==='desk'){hydrateFixtureCalendar();return;}body.innerHTML=state.fixtures.length?state.fixtures.map(fieldFixtureRow).join(''):'<div class="sl-empty">No fixtures are connected to your pipeline yet.</div>';}
-  function hydrateFixtureDetail(){var f=state.fixtureDetail;if(!f)return;walkText(shadow,{'Chorlton Colts FC vs Fallowfield Rangers':fixtureTitle(f),'23 Aug 2026, 10:00 · Chorlton Community Ground, Manchester':fullDateTime(f),'Ruby Okafor':f.pipelinePlayers?.[0]?[f.pipelinePlayers[0].first_name,f.pipelinePlayers[0].last_name].filter(Boolean).join(' '):'Tracked player','Aaliyah Brennan':f.pipelinePlayers?.[1]?[f.pipelinePlayers[1].first_name,f.pipelinePlayers[1].last_name].filter(Boolean).join(' '):'Tracked player'});buttons(/Yes, attending/i).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','attending');});buttons(/No, can.?t attend/i).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','not_attending');});var heading=Array.from(shadow.querySelectorAll('h3')).find(function(h){return/Will you attend/i.test(h.textContent);});if(heading&&f.attendance)heading.textContent='Attendance · '+String(f.attendance.status||'').replace(/_/g,' ');}
+
+  function compareBodyRoot(){return shadow.querySelector('.body')||shadow.querySelector('.pbody');}
+  function hydrateCompare(){
+    var a=findField('Player A'),b=findField('Player B'),ctx=findField('Decision context');
+    var playerOpts=state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.team};});
+    if(a){setOptions(a,playerOpts,state.compareA,{value:'',label:'Choose Player A'});a.setAttribute('data-action','compare-a');}
+    if(b){setOptions(b,playerOpts,state.compareB,{value:'',label:'Choose Player B'});b.setAttribute('data-action','compare-b');}
+    if(ctx){ctx.value=state.compareContext;ctx.setAttribute('data-action','compare-context');}
+    buttons(/Run comparison/i).forEach(function(x){x.setAttribute('data-action','compare-run');});
+    buttons(/Export comparison PDF/i).forEach(function(x){x.setAttribute('data-action','compare-export');x.disabled=!state.compareResult;});
+    var rootEl=compareBodyRoot(),children=rootEl?Array.from(rootEl.children):[];
+    if(children.length>=6){
+      for(var i=2;i<children.length;i++)children[i].classList.toggle('sl-hidden',!state.compareResult);
+      if(state.compareResult){
+        var r=state.compareResult,payload=state.comparePayload||{};
+        children[2].innerHTML='<div class="two"><div class="bento-cell dark"><span class="lbl">'+escapeHtml(r.playerA.name)+'</span><strong>'+escapeHtml(r.playerA.totalScore)+'</strong><small>Weighted score</small></div><div class="bento-cell"><span class="lbl">'+escapeHtml(r.playerB.name)+'</span><strong>'+escapeHtml(r.playerB.totalScore)+'</strong><small>Weighted score</small></div></div>';
+        children[3].innerHTML='<div class="callout g"><span><b>'+escapeHtml((r.context&&r.context.label)||state.compareContext)+':</b> '+escapeHtml(r.recommendation||'Comparison complete.')+'</span></div>';
+        children[4].innerHTML='<div class="two">'+(r.categories||[]).map(function(c){return'<div class="card"><div class="card-b"><div class="flex"><b>'+escapeHtml(c.category)+'</b><span class="sp"></span><span class="lbl">'+escapeHtml(c.weight)+'% weight</span></div><div class="sl-result-row"><span>'+escapeHtml(r.playerA.name)+'</span><b>'+escapeHtml(c.playerA)+'</b></div><div class="sl-result-row"><span>'+escapeHtml(r.playerB.name)+'</span><b>'+escapeHtml(c.playerB)+'</b></div></div></div>';}).join('')+'</div>';
+        var pa=normalizePlayer(payload.playerA||{}),pb=normalizePlayer(payload.playerB||{});
+        function overallMetrics(p){var o=(p.raw&&p.raw.overallBreakdown)||{};return[{l:'Overall rating',v:p.overall},{l:'Technical',v:o.technicalScore},{l:'Tactical & cognitive',v:o.tacticalIQScore},{l:'Physical',v:o.physicalScore},{l:'Mental & development',v:o.mentalDevelopmentalScore}];}
+        var ma=overallMetrics(pa),mb=overallMetrics(pb);
+        children[5].innerHTML='<div class="card"><div class="card-h"><h3>Overall attributes comparison</h3><span class="hint">Current ability only</span></div><div class="card-b">'+ma.map(function(m,i){return'<div class="sl-result-row"><span>'+escapeHtml(m.l)+'</span><b>'+escapeHtml(formatScore(m.v))+' · '+escapeHtml(formatScore(mb[i].v))+'</b></div>';}).join('')+'</div></div>';
+        children[4].classList.toggle('sl-hidden',state.compareMode!=='decision');children[5].classList.toggle('sl-hidden',state.compareMode!=='overall');
+      }
+    }
+    var seg=shadow.querySelector('.seg');if(seg){Array.from(seg.querySelectorAll('a')).forEach(function(x){var isOverall=/Overall attributes/i.test(x.textContent);x.classList.toggle('on',isOverall?state.compareMode==='overall':state.compareMode==='decision');x.setAttribute('data-action',isOverall?'compare-mode-overall':'compare-mode-decision');});}
+  }
+
+  function hydratePredictions(){
+    var u=state.usage&&state.usage.predictions;
+    var first=Array.from(shadow.querySelectorAll('.card')).find(function(c){return /^Predictions/i.test(c.textContent.trim());});
+    if(first&&u){var strong=first.querySelector('strong');if(strong)strong.textContent=u.remaining;walkText(first,{'/ 300':'/ '+u.limit,'264':' '+u.remaining});}
+    buttons(/^Run a prediction$/i).forEach(function(b){b.setAttribute('data-action','prediction-start');});
+    var history=cardBody('Prediction history');if(history)history.innerHTML=state.predictions.length?state.predictions.slice().sort(byDateDesc).map(function(row){var p=normalizePlayer(row.players||{});return'<div class="list-row"><span class="who"><b>'+escapeHtml(row.prediction_type||'Prediction')+' · '+escapeHtml(p.name||'Player')+'</b><span>'+escapeHtml(dateLabel(row.run_at||row.created_at))+'</span></span><button class="btn outline sm" data-action="prediction-history" data-log-id="'+escapeHtml(row.id)+'">Open</button></div>';}).join(''):'<div class="sl-empty">No predictions have been run yet.</div>';
+  }
+
+  function predictionPlayerOptions(select){if(select)setOptions(select,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position+' · '+p.ageGroup};}),state.selectedPlayerId,{value:'',label:'Choose a player'});}
+  function modelFromText(text){if(/Attribute Development/i.test(text))return'Attribute Development';if(/Position Fit/i.test(text))return'Position Fit Projection';if(/Match Scenario/i.test(text))return'Match Scenario Prediction';if(/ROI Analysis/i.test(text))return'ROI Analysis';return'';}
+  function hydratePredictionStepOne(){
+    var p=findField('Player')||shadow.querySelector('select');predictionPlayerOptions(p);if(p)p.setAttribute('data-action','prediction-player');
+    Array.from(shadow.querySelectorAll('.pred-type-card,button')).forEach(function(b){var model=modelFromText(b.textContent||'');if(model){b.setAttribute('data-action','prediction-model');b.setAttribute('data-model',model);b.classList.toggle('on',state.selectedPredictionType===model);}});
+    buttons(/^Continue$/i).forEach(function(b){b.setAttribute('data-action','prediction-next-1');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-action','prediction-history-back');});
+  }
+  function predictionInputMarkup(){
+    var t=state.selectedPredictionType;
+    if(t==='Position Fit Projection'){
+      var positions=unique(state.players.flatMap(function(p){return[p.position];}).filter(Boolean)).sort();
+      return'<div class="sl-pred-input-grid"><div class="field"><label>Target position</label><select class="in" data-pred-field="targetPosition">'+positions.map(function(x){return'<option '+(state.predictionInput.targetPosition===x?'selected':'')+'>'+escapeHtml(x)+'</option>';}).join('')+'</select></div><div class="field"><label>Target role <em>Optional</em></label><input class="in" data-pred-field="targetRole" value="'+escapeHtml(state.predictionInput.targetRole||'')+'" placeholder="e.g. inverted winger"></div><div class="field"><label>Compare against <em>Optional</em></label><select class="in" data-pred-field="compareAgainst"><option>Your compatibility setup</option><option>Position average</option><option>Custom formation</option></select></div></div>';
+    }
+    if(t==='Match Scenario Prediction'){
+      return'<div class="field"><label>Match scenario</label><select class="in" data-pred-field="scenarioKey">'+state.scenarios.map(function(s){return'<option value="'+escapeHtml(s.key)+'" '+(state.predictionInput.scenarioKey===s.key?'selected':'')+'>'+escapeHtml(s.label)+'</option>';}).join('')+'</select></div>';
+    }
+    if(t==='ROI Analysis'){
+      return'<div class="sl-pred-input-grid"><div class="field"><label>Financial goal</label><input class="in" data-pred-field="financialGoal" value="'+escapeHtml(state.predictionInput.financialGoal||'')+'" placeholder="Evidence-led value review"></div><div class="field"><label>Acquisition cost <em>Optional</em></label><input class="in" type="number" min="0" data-pred-field="acquisitionCost" value="'+escapeHtml(state.predictionInput.acquisitionCost||'')+'"></div><div class="field"><label>Annual development cost <em>Optional</em></label><input class="in" type="number" min="0" data-pred-field="annualDevelopmentCost" value="'+escapeHtml(state.predictionInput.annualDevelopmentCost||'')+'"></div><div class="field"><label>Scouting cost <em>Optional</em></label><input class="in" type="number" min="0" data-pred-field="scoutingCost" value="'+escapeHtml(state.predictionInput.scoutingCost||'')+'"></div></div>';
+    }
+    return'<div class="field"><label>Development focus</label><select class="in" data-pred-field="focus"><option>Balanced</option><option>Technical possession</option><option>Defensive intelligence</option><option>Athletic transition</option><option>Final third output</option><option>Goalkeeper command</option></select></div>';
+  }
+  function hydratePredictionStepTwo(){
+    var body=shadow.querySelector('.wizard-body > div')||shadow.querySelector('.pbody');if(!body)return;
+    var stepper=body.querySelector('.stepper'),heading=body.querySelector('h1'),lede=heading&&heading.nextElementSibling;
+    if(heading)heading.textContent=state.selectedPredictionType||'Prediction inputs';if(lede&&lede.classList.contains('mut'))lede.textContent='Set the inputs for the selected model. Only fields supported by the prediction backend are sent.';
+    var nav=Array.from(body.children).find(function(c){return c.classList&&c.classList.contains('flex')&&/Back/.test(c.textContent);});
+    Array.from(body.children).forEach(function(c){if(c!==stepper&&c!==heading&&c!==lede&&c!==nav)c.remove();});
+    var wrap=document.createElement('div');wrap.innerHTML=predictionInputMarkup();if(nav)body.insertBefore(wrap,nav);else body.appendChild(wrap);
+    buttons(/^Back$/i).forEach(function(b){b.setAttribute('data-action','prediction-back-1');});buttons(/^Continue$/i).forEach(function(b){b.setAttribute('data-action','prediction-next-2');});
+  }
+  function hydratePredictionReview(){
+    var p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);});var body=shadow.querySelector('.wizard-body')||shadow.querySelector('.pbody');if(!body)return;
+    var card=body.querySelector('.card');if(card){var cb=card.querySelector('.card-b')||card;cb.innerHTML='<div class="sl-result-row"><span>Player</span><b>'+escapeHtml(p?p.name:'—')+'</b></div><div class="sl-result-row"><span>Model</span><b>'+escapeHtml(state.selectedPredictionType||'—')+'</b></div>'+Object.keys(state.predictionInput||{}).filter(function(k){return state.predictionInput[k]!==''&&state.predictionInput[k]!=null;}).map(function(k){return'<div class="sl-result-row"><span>'+escapeHtml(k.replace(/([A-Z])/g,' $1').replace(/^./,function(x){return x.toUpperCase();}))+'</span><b>'+escapeHtml(state.predictionInput[k])+'</b></div>';}).join('');}
+    buttons(/^Back$/i).forEach(function(b){b.setAttribute('data-action','prediction-back-2');});buttons(/Run prediction/i).forEach(function(b){b.setAttribute('data-action','prediction-run');});
+  }
+
+  function rangeText(range){return range&&range.minimum!=null&&range.maximum!=null?range.minimum+'–'+range.maximum:'—';}
+  function confidenceText(value){if(!value)return'—';return value.label||(value.score!=null?Math.round(value.score)+'/100':'—');}
+  function predictionResultMarkup(){
+    var r=state.predictionResult||{},p=state.players.find(function(x){return String(x.id)===String(state.selectedPlayerId);})||{name:'Player'};
+    var type=String(r.type||state.selectedPredictionType||'Prediction');
+    var heroTitle='',heroCopy='',tiles=[],sections='';
+    if(type==='Attribute Development'){
+      heroTitle=p.name+' · Development Outlook';heroCopy='A bounded development scenario generated from the current scoring engine and recorded evidence.';
+      tiles=[['Current overall',r.currentOverall],['Projected overall',r.potentialOverall],['Likely range',rangeText(r.likelyRange)],['Confidence',confidenceText(r.confidence)]];
+      if(Array.isArray(r.seasons)&&r.seasons.length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Projected overall by season</h3></div><div class="card-b">'+r.seasons.map(function(x){return'<div class="sl-result-row"><span>Year '+escapeHtml(x.year)+'</span><b>'+escapeHtml(formatScore(x.overall))+' / '+escapeHtml(rangeText(x.likelyRange))+'</b></div>';}).join('')+'</div></div>';
+      if(Array.isArray(r.attributeEffects)&&r.attributeEffects.length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Attribute movement</h3><span class="hint">Actual graded attributes</span></div><div class="card-b">'+r.attributeEffects.slice(0,12).map(function(x){return'<div class="sl-result-row"><span>'+escapeHtml(x.attribute)+'</span><b>'+escapeHtml((x.deltaFiveYear>=0?'+':'')+x.deltaFiveYear)+'</b></div>';}).join('')+'</div></div>';
+    }else if(type==='Position Fit Projection'){
+      heroTitle=p.name+' · '+(r.targetPosition||'Target Position')+' Conversion Review';heroCopy='A position-specific projection using the V4 current-position and role evidence model.';
+      tiles=[['Best current',r.bestCurrentPosition?String(r.bestCurrentPosition)+' · '+formatScore(r.bestCurrentScore):'—'],['Target position',r.targetPosition?String(r.targetPosition)+' · '+formatScore(r.targetScore):'—'],['Gap vs best',r.targetGapVsBest==null?'—':((r.targetGapVsBest>0?'+':'')+r.targetGapVsBest)],['Verdict',r.targetVerdict||'—']];
+      if(Array.isArray(r.topRoles)&&r.topRoles.length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Top '+escapeHtml(r.targetPosition||'target')+' role fits</h3></div><div class="card-b">'+r.topRoles.map(function(x){return'<div class="sl-result-row"><span>'+escapeHtml(x.role||x.position||'Role')+'</span><b>'+escapeHtml(formatScore(x.score))+'</b></div>';}).join('')+'</div></div>';
+      var ratings=r.positionRatings||{};if(Object.keys(ratings).length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Position rating comparison</h3></div><div class="card-b">'+Object.keys(ratings).sort(function(a,b){return number(ratings[b])-number(ratings[a]);}).map(function(k){return'<div class="sl-result-row"><span>'+escapeHtml(k)+'</span><b>'+escapeHtml(formatScore(ratings[k]))+'</b></div>';}).join('')+'</div></div>';
+    }else if(type==='Match Scenario Prediction'){
+      heroTitle=p.name+' · '+(r.scenario||'Match Scenario');heroCopy='A repeated tactical-demand prediction using the live V4 scenario engine.';
+      tiles=[['Scenario score',r.scenarioScore],['Likely range',rangeText(r.likelyRange)],['Confidence',confidenceText(r.confidence)],['Risk',r.risk||'—']];
+      if(Array.isArray(r.evidence)&&r.evidence.length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Scenario evidence</h3></div><div class="card-b">'+r.evidence.slice(0,12).map(function(x){var label=typeof x==='object'?(x.label||x.key||x.attribute):String(x),score=typeof x==='object'?(x.score!=null?x.score:x.value):null;return'<div class="sl-result-row"><span>'+escapeHtml(label||'Evidence')+'</span><b>'+escapeHtml(score==null?'Recorded':formatScore(score))+'</b></div>';}).join('')+'</div></div>';
+      if(r.predictedBehaviour)sections+='<div class="callout g sl-result-section"><span><b>Predicted behaviour</b><br>'+escapeHtml(r.predictedBehaviour)+'</span></div>';
+    }else{
+      heroTitle=p.name+' · Football Value Outlook';heroCopy='An index-first value report. Currency and ROI are shown only when the backend has verified anchors.';
+      var current=r.currentTransferValue||{};
+      tiles=[['Football Value Index',current.footballValueIndex!=null?current.footballValueIndex:(r.valueAnalysis||{}).footballValueIndex],['Current currency value',current.formatted||'—'],['Suitability',r.suitability||'—'],['Confidence',confidenceText(r.confidence)]];
+      if(Array.isArray(r.projection)&&r.projection.length)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Value projection</h3></div><div class="card-b">'+r.projection.map(function(x){return'<div class="sl-result-row"><span>'+escapeHtml(x.horizon||('Year '+x.year))+'</span><b>'+escapeHtml(x.projectedValueFormatted||('Index '+formatScore(x.footballValueIndex)))+(x.roiPercent==null?'':' · '+x.roiPercent+'% ROI')+'</b></div>';}).join('')+'</div></div>';
+      if(r.assumptions)sections+='<div class="card sl-result-section"><div class="card-h"><h3>Financial scenario readiness</h3></div><div class="card-b">'+Object.keys(r.assumptions).map(function(k){var v=r.assumptions[k];return'<div class="sl-result-row"><span>'+escapeHtml(k.replace(/([A-Z])/g,' $1'))+'</span><b>'+escapeHtml(v==null?'Not supplied':v)+'</b></div>';}).join('')+'</div></div>';
+    }
+    var summary=r.summary||r.recommendation||(Array.isArray(r.paragraphs)&&r.paragraphs[0])||'Prediction complete.';
+    var paragraphs=(r.paragraphs||[]).map(function(x){return'<p>'+escapeHtml(x)+'</p>';}).join('');
+    return'<div style="max-width:920px;width:100%"><h1 style="font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:24px;margin:0 0 6px">Result</h1><div class="profile-hero" style="margin-top:18px"><div><span class="lbl" style="color:rgba(255,255,255,.58)">ScoutLink Intelligence Report · '+escapeHtml(type)+'</span><h2 style="margin-top:8px">'+escapeHtml(heroTitle)+'</h2><p>'+escapeHtml(heroCopy)+'</p></div></div><div class="bento" style="margin-top:14px">'+tiles.map(function(t,i){return'<div class="bento-cell '+(i===0?'dark':'')+'"><span class="lbl">'+escapeHtml(t[0])+'</span><strong>'+escapeHtml(t[1]==null?'—':t[1])+'</strong></div>';}).join('')+'</div><div class="card sl-result-section"><div class="card-h"><h3>Executive summary</h3></div><div class="card-b"><p class="sl-result-copy">'+escapeHtml(summary)+'</p>'+paragraphs+'</div></div>'+sections+(r.disclaimer?'<div class="callout a sl-result-section"><span>'+escapeHtml(r.disclaimer)+'</span></div>':'')+'<div class="flex" style="justify-content:flex-end;margin-top:18px"><button class="btn outline" data-action="prediction-history-back">← Prediction history</button><button class="btn outline" data-action="prediction-run-another">Run another</button><button class="btn volt" data-action="prediction-export">Export PDF</button></div></div>';
+  }
+  function hydratePredictionResult(){
+    var body=shadow.querySelector('.wizard-body');if(body)body.innerHTML=predictionResultMarkup();
+    else{var pbody=shadow.querySelector('.pbody');if(pbody)pbody.innerHTML=predictionResultMarkup();}
+    buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-action','prediction-history-back');});
+  }
+  function hydratePredictionWizard(){var v=currentView();if(v==='prediction1')hydratePredictionStepOne();else if(v==='prediction2')hydratePredictionStepTwo();else if(v==='prediction3')hydratePredictionReview();}
+
+  function hydrateRadar(){
+    hydrateUsageStrip();
+    var shell=shadow.querySelector('.radar-shell');if(shell){
+      var head=shell.querySelector('.radar-shell-head');
+      Array.from(shell.children).forEach(function(c){if(c!==head)c.remove();});
+      var empty=document.createElement('div');empty.className='sl-radar-empty';empty.innerHTML='<div><b>No Ask Radar conversations yet.</b>Conversation history will stay empty until the AI service is connected.</div>';shell.appendChild(empty);
+      var row=document.createElement('div');row.className='radar-input-row';row.innerHTML='<input data-action="radar-input" value="'+escapeHtml(state.radarDraft||'')+'" placeholder="Type a question for the future Radar workflow"><button class="btn volt" data-action="radar-send-preview">Send</button>';shell.appendChild(row);
+    }
+    var previous=cardByHeading('Previous chats');if(previous){var b=previous.querySelector('.card-b');if(b)b.innerHTML='<div class="sl-empty">No previous Radar conversations.</div>';var newBtn=previous.querySelector('.card-h button');if(newBtn){newBtn.textContent='+ New';newBtn.setAttribute('data-action','radar-new');}}
+    buttons(/^Add more/i).forEach(function(b){b.setAttribute('data-nav','/scout/usage');});
+  }
+
+  function fixtureTitle(f){
+    var home=f.home_team_name||f.home_team||f.team_name||((f.pipelinePlayers||[])[0]&&((f.pipelinePlayers||[])[0].team_name))||'Team';
+    var away=f.away_team_name||f.away_team||f.opponent_name||f.opponent||'Opponent';return home+' vs '+away;
+  }
+  function calendarMarkup(fixtures){
+    var base=fixtures[0]&&fixtures[0].fixture_date?new Date(fixtures[0].fixture_date):new Date();if(Number.isNaN(base.getTime()))base=new Date();
+    var year=base.getFullYear(),month=base.getMonth(),first=new Date(year,month,1),last=new Date(year,month+1,0),offset=(first.getDay()+6)%7,total=offset+last.getDate(),cells=Math.ceil(total/7)*7;
+    var byDay={};fixtures.forEach(function(f){var d=new Date(f.fixture_date);if(!Number.isNaN(d.getTime())&&d.getFullYear()===year&&d.getMonth()===month){var day=d.getDate();(byDay[day]||(byDay[day]=[])).push(f);}});
+    var html='<div class="cal-head"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div><div class="cal-grid">';
+    for(var i=0;i<cells;i++){
+      var day=i-offset+1;if(day<1||day>last.getDate()){html+='<div class="cal-day"></div>';continue;}
+      var current=new Date(year,month,day),today=new Date(),isToday=current.toDateString()===today.toDateString();html+='<div class="cal-day '+(isToday?'today':'')+'"><b>'+day+'</b>';
+      (byDay[day]||[]).forEach(function(f){html+='<div class="cal-event '+((f.attendance&&f.attendance.status==='attending')?'priority':'')+' sl-click" data-action="fixture-open" data-fixture-id="'+escapeHtml(f.id)+'"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(f.fixture_time||'')+'</span></div>';});
+      html+='</div>';
+    }
+    return html+'</div>';
+  }
+  function fixtureListMarkup(fixtures){
+    return fixtures.map(function(f){
+      var md=monthDay(f.fixture_date),att=(f.attendance&&f.attendance.status)||'',plans=Array.isArray(f.plans)?f.plans:[];
+      var isPriority=plans.some(function(plan){return String(plan.priority||plan.status||'').toLowerCase()==='priority';});
+      var label=isPriority?'Priority':att==='attending'?'Attending':att==='maybe'?'Maybe':'Scheduled';
+      var pill=isPriority?'a':att==='attending'?'g':att==='maybe'?'a':'n';
+      var dateClass=(isPriority||att==='attending')?'dateplate g':'dateplate';
+      return '<div class="list-row sl-click" data-action="fixture-open" data-fixture-id="'+escapeHtml(f.id)+'"><div class="'+dateClass+'"><b>'+escapeHtml(md.day)+'</b><span>'+escapeHtml(md.month)+'</span></div><span class="who"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml([fullDateTime(f),f.venue_name||f.venue||f.address].filter(Boolean).join(' · '))+'</span></span><span class="pill '+pill+'">'+escapeHtml(label)+'</span></div>';
+    }).join('');
+  }
+  function hydrateFixtures(){
+    var card=cardByHeading('Fixtures for your pipeline');
+    if(!card)return;
+    var h=card.querySelector('.card-h h3'),hint=card.querySelector('.card-h .hint'),body=card.querySelector('.card-b');
+    if(h)h.textContent='Fixtures for your pipeline’s teams';
+    if(hint)hint.textContent=state.mode==='field'?'Tap a fixture for details & attendance':'Click a fixture for details & attendance';
+    if(body)body.innerHTML=state.fixtures.length?(state.mode==='field'?fixtureListMarkup(state.fixtures):calendarMarkup(state.fixtures)):'<div class="sl-empty">No fixtures are currently linked to players in your pipeline.</div>';
+  }
+
   function eventTitle(e){return e.event_name||e.name||e.title||'ScoutLink event';}
-  function hydrateEvents(){var body=Array.from(shadow.querySelectorAll('.card')).map(function(c){return c.querySelector('.card-b');}).find(Boolean);if(!body)return;body.innerHTML=state.events.length?state.events.map(function(e){var d=e.event_date?new Date(e.event_date):null;return'<div class="list-row sl-click" data-event-id="'+escapeHtml(e.id)+'"><div class="dateplate g"><b>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.getDate():'—')+'</b><span>'+escapeHtml(d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('en-GB',{month:'short'}).toUpperCase():'')+'</span></div><span class="who"><b>'+escapeHtml(eventTitle(e))+'</b><span>'+escapeHtml([e.venue||e.location,e.city].filter(Boolean).join(' · '))+'</span></span><span class="pill '+(e.attendance?.status==='confirmed'?'g':'n')+'">'+escapeHtml(e.attendance?.status==='confirmed'?'Attending':'Details')+'</span></div>';}).join(''):'<div class="sl-empty">No ScoutLink events are currently published.</div>';}
-  function hydrateEventDetail(){if(!state.eventDetail)return;var d=state.eventDetail,e=d.event||d;walkText(shadow,{'ScoutLink Showcase — Bluewater':eventTitle(e),'ScoutLink Showcase':eventTitle(e)});buttons(/Change attendance/i).forEach(function(b){b.setAttribute('data-action','event-attendance');});buttons(/Add to calendar/i).forEach(function(b){b.setAttribute('data-action','event-calendar');});var card=cardByHeading('Players you’re tracking')||cardByHeading("Players you're tracking");if(card){var body=card.querySelector('.card-b');if(body)body.innerHTML=(d.trackedPlayers||[]).length?(d.trackedPlayers||[]).map(function(p){return playerRow(normalizePlayer(p));}).join(''):'<div class="sl-empty">None of your tracked players are currently linked to this event.</div>';}}
-  function notificationRow(item){var unread=!item.is_read&&!item.read_at;return'<div class="list-row sl-click" data-notification-id="'+escapeHtml(item.id||'')+'"><span style="width:7px;height:7px;border-radius:99px;background:'+(unread?'var(--pitch)':'var(--line2)')+'"></span><span class="who"><b>'+escapeHtml(item.title||'Notification')+'</b><span>'+escapeHtml(item.body||item.message||'')+'</span></span>'+(unread?'<span class="pill g">New</span>':'')+'</div>';}
-  function hydrateNotifications(){var target=cardByHeading('All notifications');if(!target)return;var rows=state.notifications.filter(function(n){if(state.notificationFilter==='all')return true;var g=String(n.filterGroup||n.notification_type||n.type||'').toLowerCase();return g.indexOf(state.notificationFilter)!==-1;});var h=target.querySelector('.card-h h3'),body=target.querySelector('.card-b');if(h)h.textContent='All notifications ('+rows.length+')';if(body)body.innerHTML=rows.length?rows.map(notificationRow).join(''):'<div class="sl-empty">No notifications match this filter.</div>';buttons(/Mark all as read/i).forEach(function(b){b.setAttribute('data-action','notifications-read-all');});}
-  function threadName(thread){var coach=thread.coaches||thread.coach||{};return[coach.first_name,coach.last_name].filter(Boolean).join(' ')||thread.title||thread.coach_name||'Conversation';}
-  function hydrateChat(){var target=cardBody('Team messaging');if(!target)return;target.innerHTML=state.threads.length?state.threads.map(function(t){return'<div class="thread-row sl-click" data-thread-id="'+escapeHtml(t.id)+'"><span class="avatar">'+escapeHtml(initials(threadName(t)))+'</span><div class="tx"><b>'+escapeHtml(threadName(t))+'</b><div class="org">'+escapeHtml(t.coaches?.team_name||t.players?.team_name||'')+'</div><p class="pv">'+escapeHtml(t.lastMessagePreview||'')+'</p></div>'+(t.unreadCount?'<span class="badge">'+escapeHtml(t.unreadCount)+'</span>':'')+'</div>';}).join(''):'<div class="sl-empty">No conversations yet.</div>';buttons(/^New$/i).forEach(function(b){b.setAttribute('data-action','chat-new');});}
-  function hydrateChatOpen(){var thread=state.threads.find(function(t){return String(t.id)===String(state.activeThreadId);});if(thread)walkText(shadow,{'Dan Whitfield':threadName(thread)});var body=shadow.querySelector('.chat-body')||shadow.querySelector('.card-b')||shadow.querySelector('.pbody');if(!body)return;var host=document.createElement('div');host.className='sl-chat-shell';host.innerHTML='<div class="sl-chat-messages">'+state.messages.map(function(m){var me=String(m.sender_id)==String(workspaceParts().scout.id);return'<div class="sl-bubble '+(me?'me':'')+'">'+escapeHtml(m.body||'')+'<div style="font-size:9px;opacity:.7;margin-top:4px">'+escapeHtml(relative(m.created_at))+'</div></div>';}).join('')+'</div><div class="sl-chat-compose"><input class="in" data-sl-chat-input placeholder="Write a message"><button class="btn volt" data-action="chat-send">Send</button></div>';body.innerHTML='';body.appendChild(host);setTimeout(function(){var box=shadow.querySelector('.sl-chat-messages');if(box)box.scrollTop=box.scrollHeight;},0);}
-  function hydrateExports(){var target=cardByHeading('Export history');if(!target)return;var h=target.querySelector('.card-h h3'),body=target.querySelector('.card-b');if(h)h.textContent='Export history ('+state.exports.length+')';if(body)body.innerHTML=state.exports.length?state.exports.map(function(x){return'<div class="list-row"><span class="who"><b>'+escapeHtml(x.file_name||x.export_type||'ScoutLink export')+'</b><span>'+escapeHtml(dateLabel(x.created_at))+'</span></span><button class="btn outline sm" data-action="export-download" data-export-id="'+escapeHtml(x.id)+'">Download</button></div>';}).join(''):'<div class="sl-empty">No exports have been created yet.</div>';}
-  function hydrateExportNew(){var player=findField('Player'),format=findField('Export format');if(player)setOptions(player,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position};}),state.selectedPlayerId,null);if(format&&state.usage?.exports){var note=Array.from(shadow.querySelectorAll('.callout,.hint,p')).find(function(n){return/use 1/i.test(n.textContent);});if(note)note.textContent='This will use 1 of your remaining '+state.usage.exports.remaining+' exports.';}}
-  function hydrateSettings(){if(!state.settings)return;var s=state.settings,scout=s.scout||{},team=s.team||{};var full=findField('Full name'),email=findField('Email'),org=findField('Organisation');if(full)full.value=[scout.first_name,scout.last_name].filter(Boolean).join(' ');if(email)email.value=scout.email||'';if(org)org.value=team.team_name||scout.club_name||'';walkText(shadow,{'3 of 5 used':(s.seats?.used||0)+' of '+(s.seats?.limit||0)+' used'});var teamCard=cardByHeading('Team & seats');if(teamCard){var body=teamCard.querySelector('.card-b');if(body)body.innerHTML=(s.teamScouts||[]).map(function(member){return'<div class="list-row"><span class="avatar">'+escapeHtml(initials([member.first_name,member.last_name].filter(Boolean).join(' ')))+'</span><span class="who"><b>'+escapeHtml([member.first_name,member.last_name].filter(Boolean).join(' '))+'</b><span>'+escapeHtml(member.email||'')+'</span></span>'+(member.is_super_user?'<span class="pill g">Owner</span>':'<button class="btn outline sm" data-action="team-remove" data-scout-id="'+escapeHtml(member.id)+'">Remove user</button>')+'</div>';}).join('');}buttons(/Open Scout Setup/i).forEach(function(b){b.setAttribute('data-action','setup-open');});buttons(/Save changes/i).forEach(function(b){b.setAttribute('data-action','settings-save');});buttons(/Invite scout/i).forEach(function(b){b.setAttribute('data-action','team-invite');});buttons(/Manage billing|Cancel plan/i).forEach(function(b){b.setAttribute('data-action','billing-paused');});}
-  function selectedSetupOptions(){return Array.from(shadow.querySelectorAll('.setup-opt.on,.chip-option.on')).map(function(x){return x.querySelector('b')?x.querySelector('b').textContent.trim():x.textContent.trim();}).filter(Boolean);}
-  function hydrateSetup(){var setup=state.setup?.personalSetup||state.setup||{};if(!state.setupDraft._loaded){state.setupDraft={teamNeeds:(setup.teamNeeds||setup.teamWeaknesses||[]).slice(),roleExpectations:(setup.roleExpectations||[]).slice(),developmentPriorities:(setup.developmentPriorities||setup.longTermGoals||[]).slice(),formation:setup.formation||'',playingStyle:setup.playingStyle||'',_loaded:true};}var view=currentView(),selected=view==='setup1'?state.setupDraft.teamNeeds:view==='setup2'?state.setupDraft.roleExpectations:view==='setup4'?state.setupDraft.developmentPriorities:[];Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){var label=(opt.querySelector('b')?opt.querySelector('b').textContent:opt.textContent).trim();if(selected.indexOf(label)!==-1)opt.classList.add('on');});if(view==='setup3'){var f=findField('Formation'),p=findField('Playing style');if(f&&state.setupDraft.formation)f.value=state.setupDraft.formation;if(p&&state.setupDraft.playingStyle)p.value=state.setupDraft.playingStyle;}if(view==='setupReview'){var review=cardByHeading('Review');if(review){var body=review.querySelector('.card-b');if(body)body.innerHTML='<div class="sl-kv"><span>Team needs</span><b>'+escapeHtml(state.setupDraft.teamNeeds.join(', ')||'None')+'</b></div><div class="sl-kv"><span>Role expectations</span><b>'+escapeHtml(state.setupDraft.roleExpectations.join(', ')||'None')+'</b></div><div class="sl-kv"><span>Formation</span><b>'+escapeHtml(state.setupDraft.formation||'Not set')+'</b></div><div class="sl-kv"><span>Playing style</span><b>'+escapeHtml(state.setupDraft.playingStyle||'Not set')+'</b></div><div class="sl-kv"><span>Development priorities</span><b>'+escapeHtml(state.setupDraft.developmentPriorities.join(', ')||'None')+'</b></div>';}}}
-  function profileAttrRows(items){return(items||[]).map(function(a){return'<div class="sl-attr"><div class="flex"><b>'+escapeHtml(a.label)+'</b><strong>'+escapeHtml(a.value)+'/10</strong></div><div class="bar-track" style="margin-top:8px"><i style="width:'+Math.max(0,Math.min(100,number(a.value)*10))+'%"></i></div></div>';}).join('');}
+  function hydrateEvents(){
+    var card=cardByHeading('Stratex events');if(card){var h=card.querySelector('.card-h h3'),body=card.querySelector('.card-b');if(h)h.textContent='Stratex events ('+state.events.length+')';if(body)body.innerHTML=state.events.length?state.events.map(function(e){var att=e.attendance&&e.attendance.status;return'<div class="list-row"><span class="dateplate g"><b>'+escapeHtml(monthDay(e.event_date).day)+'</b><span>'+escapeHtml(monthDay(e.event_date).month)+'</span></span><span class="who"><b>'+escapeHtml(eventTitle(e))+'</b><span>'+escapeHtml([dateLabel(e.event_date),e.venue||e.location||e.city].filter(Boolean).join(' · '))+'</span></span>'+(att?'<span class="pill '+(att==='confirmed'?'g':att==='waitlisted'?'a':'n')+'">'+escapeHtml(att)+'</span>':'')+'<button class="btn outline sm" data-action="event-open" data-event-id="'+escapeHtml(e.id)+'">Details</button></div>';}).join(''):'<div class="sl-empty">No Stratex events are currently published.</div>';}
+    var bodyRoot=shadow.querySelector('.body')||shadow.querySelector('.pbody');if(bodyRoot&&state.attendingFixtures.length){var section=document.createElement('div');section.className='card sl-event-fixtures';section.innerHTML='<div class="card-h"><h3>My fixture attendance</h3><span class="hint">Fixtures you marked attending or maybe</span></div><div class="card-b">'+state.attendingFixtures.map(function(f){return'<div class="list-row sl-click" data-action="fixture-jump" data-fixture-id="'+escapeHtml(f.id)+'"><span class="dateplate"><b>'+escapeHtml(monthDay(f.fixture_date).day)+'</b><span>'+escapeHtml(monthDay(f.fixture_date).month)+'</span></span><span class="who"><b>'+escapeHtml(fixtureTitle(f))+'</b><span>'+escapeHtml(fullDateTime(f))+'</span></span><span class="pill g">'+escapeHtml((f.attendance&&f.attendance.status)||'attending')+'</span></div>';}).join('')+'</div>';bodyRoot.appendChild(section);}
+  }
+  function hydrateEventDetail(){
+    var d=state.eventDetail;if(!d)return;var e=d.event||d;
+    var hero=shadow.querySelector('.profile-hero');if(hero){var h=hero.querySelector('h2'),p=hero.querySelector('p');if(h)h.textContent=eventTitle(e);if(p)p.textContent=[fullDateTime(e),e.age_range||e.ageRange].filter(Boolean).join(' · ');var pill=hero.querySelector('.pill');if(pill)pill.textContent=(d.attendance&&d.attendance.status)||'Not attending';}
+    var tracked=Array.from((shadow.querySelector('.body')||shadow.querySelector('.pbody')).children).find(function(x){return /Players you’re tracking|Players you're tracking/.test(x.textContent);});
+    if(tracked){var rows=d.trackedPlayers||[];tracked.innerHTML='<div class="card"><div class="card-h"><h3>Players you’re tracking who may attend</h3><span class="hint">Based on your active pipeline</span></div><div class="card-b">'+(rows.length?rows.map(function(x){var p=normalizePlayer(x);return'<div class="list-row sl-click" data-player-id="'+escapeHtml(p.id)+'"><span class="avatar">'+escapeHtml(initials(p.name))+'</span><span class="who"><b>'+escapeHtml(p.name)+'</b><span>'+escapeHtml([p.position,p.ageGroup,p.team].filter(Boolean).join(' · '))+'</span></span><span class="pill n">'+escapeHtml(stageLabel((x.pipeline||{}).stage))+'</span></div>';}).join(''):'<div class="sl-empty">No pipeline players are linked to this event yet.</div>')+'</div></div>';}
+    buttons(/Change attendance/i).forEach(function(b){b.setAttribute('data-action','event-attendance-open');});buttons(/Add to calendar/i).forEach(function(b){b.setAttribute('data-action','event-calendar');});
+    var back=shadow.querySelector('.ptop > .icon-btn:first-child');if(back)back.setAttribute('data-action','event-back');
+  }
+
+  function usageItem(label,x,description){if(!x)return'';return'<div class="sl-result-row"><span><b>'+escapeHtml(label)+'</b><small style="display:block;color:var(--ink3);margin-top:3px">'+escapeHtml(description||'')+'</small></span><b>'+escapeHtml(x.remaining)+' / '+escapeHtml(x.limit)+'</b></div>';}
+  function hydrateUsage(){
+    if(!state.usage){setRuntimeMessage('Usage balances could not be loaded.',true);return;}
+    var current=cardBody('Current balances');if(current)current.innerHTML=usageItem('Exports',state.usage.exports,'Player evidence and comparison exports')+usageItem('Predictions',state.usage.predictions,'Position, development, scenario & value')+usageItem('Interests',state.usage.interests,'Coach-mediated interest registrations')+usageItem('Ask Radar credits',state.usage.radar,'Reserved for the future Radar service');
+    var rootEl=shadow.querySelector('.body')||shadow.querySelector('.pbody'),children=rootEl?Array.from(rootEl.children):[];
+    var buyContainer=children.find(function(x){return /Buy extra usage/i.test(x.textContent);});
+    if(buyContainer){
+      var grouped={};state.packs.forEach(function(pack){(grouped[pack.type]||(grouped[pack.type]=[])).push(pack);});
+      var requested={prediction:'prediction',predictions:'prediction',export:'export',exports:'export',interest_request:'interest_request',interests:'interest_request'}[state.selectedUsageType||query('type')]||'prediction';
+      if(!grouped[requested])requested=Object.keys(grouped)[0]||'';state.selectedUsageType=requested;
+      var active=grouped[requested]||[];if(!state.selectedPack||state.selectedPack.type!==requested)state.selectedPack=active[0]||null;
+      var tabs=[['prediction','Predictions'],['export','Exports'],['interest_request','Coach interests']].filter(function(x){return grouped[x[0]]&&grouped[x[0]].length;});
+      buyContainer.innerHTML='<div class="card"><div class="card-h"><h3>Buy extra usage</h3><span class="hint">Secure checkout by Stripe</span></div><div class="card-b"><div class="seg">'+tabs.map(function(t){return'<a class="'+(t[0]===requested?'on':'')+'" data-action="usage-type" data-usage-type="'+t[0]+'">'+escapeHtml(t[1])+'</a>';}).join('')+'</div><div class="pack-grid" style="margin-top:16px">'+active.map(function(pack){var on=state.selectedPack&&state.selectedPack.priceId===pack.priceId;return'<button class="pack-card '+(on?'on':'')+'" data-action="usage-pack" data-price-id="'+escapeHtml(pack.priceId)+'"><b>'+escapeHtml(Number(pack.quantity).toLocaleString('en-GB'))+'</b><span>'+escapeHtml(pack.label)+'</span><strong>'+escapeHtml(pack.priceLabel)+'</strong></button>';}).join('')+'</div>'+(state.selectedPack?'<div class="callout g" style="margin-top:16px"><span><b>'+escapeHtml(state.selectedPack.quantity+' '+state.selectedPack.label+' · '+state.selectedPack.priceLabel)+'</b><br>One-time top-up. Credits are only granted after Stripe confirms payment.</span></div><div class="flex" style="justify-content:flex-end;margin-top:12px"><button class="btn volt" data-action="usage-checkout">Continue to Stripe Checkout</button></div>':'<div class="sl-empty">No top-up packs are currently available.</div>')+(state.preparedCheckout?'<div class="sl-prepared"><b>Checkout handoff prepared.</b><br>'+escapeHtml(state.preparedCheckout.message||'The selected pack has been validated.')+'</div>':'')+'</div></div>';
+    }
+    var historyContainer=children.find(function(x){return /Purchase history/i.test(x.textContent);});if(historyContainer)historyContainer.innerHTML='<div class="card"><div class="card-h"><h3>Purchase history</h3></div><div class="card-b">'+(state.purchases.length?state.purchases.slice().sort(byDateDesc).map(function(p){return'<div class="list-row"><span class="who"><b>'+escapeHtml((p.quantity||'')+' '+(p.label||p.top_up_type||'usage'))+'</b><span>'+escapeHtml(dateLabel(p.created_at||p.paid_at))+' · Stripe Checkout</span></span><span class="pill '+(p.status==='paid'?'g':'n')+'">'+escapeHtml(p.status||'Recorded')+'</span></div>';}).join(''):'<div class="sl-empty">No paid top-ups yet.</div>')+'</div></div>';
+  }
+
+  function hydrateExports(){
+    var u=state.usage&&state.usage.exports;
+    var card=Array.from(shadow.querySelectorAll('.card')).find(function(c){return /Exports this year/i.test(c.textContent);});
+    if(card&&u){var strong=card.querySelector('strong');if(strong)strong.textContent=u.remaining;walkText(card,{'/ 100':'/ '+u.limit});}
+    buttons(/New export/i).forEach(function(b){b.setAttribute('data-action','export-new');});
+    var rootEl=shadow.querySelector('.body')||shadow.querySelector('.pbody'),history=Array.from(rootEl.children).find(function(x){return /Export history/i.test(x.textContent);});
+    if(history)history.innerHTML='<div class="card"><div class="card-h"><h3>Export history ('+state.exports.length+')</h3></div><div class="card-b">'+(state.exports.length?state.exports.slice().sort(byDateDesc).map(function(row){return'<div class="list-row"><span class="who"><b>'+escapeHtml(row.file_name||row.export_type||'ScoutLink export')+'</b><span>'+escapeHtml([row.source,dateLabel(row.created_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="export-download" data-export-id="'+escapeHtml(row.id)+'">Download</button></div>';}).join(''):'<div class="sl-empty">No exports have been generated yet.</div>')+'</div></div>';
+  }
+  function hydrateExportNew(){
+    var card=shadow.querySelector('.card');if(!card)return;var body=card.querySelector('.card-b')||card;
+    var player=findField('Player',card),fmt=findField('Export format',card);if(player){setOptions(player,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.position};}),'',{value:'',label:'Choose a player'});}if(fmt)fmt.removeAttribute('data-action');
+    buttons(/Generate export/i).forEach(function(b){b.setAttribute('data-action','export-generate');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-action','export-cancel');});
+  }
+
+  function threadName(t){var c=t.coaches||t.coach||{};return[c.first_name,c.last_name].filter(Boolean).join(' ')||'Coach';}
+  function threadMeta(t){var p=t.players||t.player||{};return[p.team_name||((t.coaches||{}).team_name),p.first_name&&p.last_name?'re: '+p.first_name+' '+p.last_name:''].filter(Boolean).join(' · ');}
+  function hydrateChat(){
+    buttons(/^New$/i).forEach(function(b){b.setAttribute('data-action','chat-new');});
+    var card=cardByHeading('Team messaging')||shadow.querySelector('.card');if(!card)return;var body=card.querySelector('.card-b')||card;
+    body.innerHTML=state.threads.length?state.threads.slice().sort(function(a,b){return new Date(b.lastMessageAt||b.updated_at||0)-new Date(a.lastMessageAt||a.updated_at||0);}).map(function(t){return'<div class="thread-row sl-click" data-action="chat-open" data-thread-id="'+escapeHtml(t.id)+'"><span class="avatar">'+escapeHtml(initials(threadName(t)))+'</span><span class="tx"><b>'+escapeHtml(threadName(t))+'</b><span class="org">'+escapeHtml(threadMeta(t))+'</span><p class="pv">'+escapeHtml(t.lastMessagePreview||'No messages yet')+'</p></span><span class="tm">'+escapeHtml(relative(t.lastMessageAt||t.updated_at))+(number(t.unreadCount)>0?'<br><span class="pill g">'+number(t.unreadCount)+' new</span>':'')+'</span></div>';}).join(''):'<div class="sl-empty">No coach conversations yet. Start from a player in your pipeline.</div>';
+  }
+  function hydrateChatOpen(){
+    var thread=state.threads.find(function(t){return String(t.id)===String(state.activeThreadId);})||{};
+    var rootEl=shadow.querySelector('.body')||shadow.querySelector('.pbody');if(!rootEl)return;
+    if(state.mode==='desk'){
+      var top=shadow.querySelector('.top');if(top){var back=document.createElement('button');back.className='btn outline sm';back.setAttribute('data-action','chat-back');back.textContent='← Back';top.insertBefore(back,top.firstChild);}
+    }else{
+      var go=rootEl.querySelector('.go-link');if(go){go.textContent='← Conversation history';go.setAttribute('data-action','chat-back');}
+    }
+    var messages=state.messages.slice().sort(function(a,b){return new Date(a.created_at)-new Date(b.created_at);});
+    var conversation='<div class="card"><div class="card-h"><span class="avatar">'+escapeHtml(initials(threadName(thread)))+'</span><div><h3>'+escapeHtml(threadName(thread))+'</h3><div class="hint">'+escapeHtml(threadMeta(thread))+'</div></div></div><div class="sl-chat-shell"><div class="sl-chat-messages">'+(messages.length?messages.map(function(m){var own=String(m.sender_id)===String(currentScoutId());return'<div class="sl-bubble '+(own?'me':'')+'" data-message-id="'+escapeHtml(m.id)+'" data-own-message="'+(own?'1':'0')+'">'+escapeHtml(m.body||'Shared item')+'<div style="font:600 9px var(--mono);opacity:.65;margin-top:5px">'+escapeHtml(relative(m.created_at))+'</div></div>';}).join(''):'<div class="sl-empty">No messages yet.</div>')+'</div><div class="sl-chat-compose"><textarea data-action="chat-input" data-chat-message placeholder="Write a message…"></textarea><button class="btn volt" data-action="chat-send">Send</button></div></div></div>';
+    rootEl.innerHTML=conversation;
+  }
+  function newChatModal(){
+    var pipeline=state.pipeline.filter(function(r){return pipelinePlayer(r)&&pipelinePlayer(r).id;});
+    modal('New conversation','<div class="field"><label>Pipeline player</label><select class="in" data-new-chat-player><option value="">Choose a player</option>'+pipeline.map(function(r){var p=pipelinePlayer(r);return'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name+' · '+p.team)+'</option>';}).join('')+'</select></div><p class="mut">ScoutLink opens the conversation with the coach connected to that pipeline player.</p>','<button class="btn outline" data-action="modal-close">Cancel</button><button class="btn volt" data-action="chat-create">Open conversation</button>');
+  }
+
+  function notificationGroup(row){return row.filterGroup||row.filter_group||String(row.notification_type||row.type||'system');}
+  function hydrateNotifications(){
+    state.notifications.sort(function(a,b){return new Date(b.created_at||0)-new Date(a.created_at||0);});
+    buttons(/Mark all as read/i).forEach(function(b){b.setAttribute('data-action','notifications-read-all');});
+    var map={'all':'all','scout interest':'scout_interest','match fact':'match_fact','recruitment':'recruitment','system':'system','chat':'messages','fixture attendance':'fixtures_events','admin':'messages','showcase event':'fixtures_events'};
+    Array.from(shadow.querySelectorAll('.filter-row button')).forEach(function(b){var k=map[b.textContent.trim().toLowerCase()];if(k){b.setAttribute('data-action','notification-filter');b.setAttribute('data-filter',k);b.classList.toggle('on',state.notificationFilter===k);}});
+    var filtered=state.notificationFilter==='all'?state.notifications:state.notifications.filter(function(n){return notificationGroup(n)===state.notificationFilter;});
+    var card=Array.from(shadow.querySelectorAll('.card')).find(function(c){return /notifications/i.test((c.querySelector('.card-h h3')||{}).textContent||'');});if(card){var h=card.querySelector('.card-h h3'),body=card.querySelector('.card-b');if(h)h.textContent=(state.notificationFilter==='all'?'All notifications':'Notifications')+' ('+filtered.length+')';if(body)body.innerHTML=filtered.length?filtered.map(function(n){var unread=!n.is_read&&!n.read_at;return'<div class="list-row sl-click" data-action="notification-open" data-notification-id="'+escapeHtml(n.id)+'"><span class="who"><b>'+escapeHtml(n.title||'ScoutLink notification')+'</b><span>'+escapeHtml(n.body||'')+' · '+escapeHtml(relative(n.created_at))+'</span></span>'+(unread?'<span class="pill g">New</span>':'')+'</div>';}).join(''):'<div class="sl-empty">No notifications in this category.</div>';}
+  }
+
+  function hydrateSettings(){
+    var s=state.settings;if(!s)return;var scout=s.scout||{},team=s.team||{},name=[scout.first_name,scout.last_name].filter(Boolean).join(' ');
+    var full=findField('Full name'),email=findField('Email'),org=findField('Organisation');if(full)full.value=name;if(email)email.value=scout.email||'';if(org)org.value=team.team_name||team.club_name||scout.club_name||'';
+    buttons(/Open Scout Setup/i).forEach(function(b){b.setAttribute('data-nav','/scout/setup');});buttons(/Save changes/i).forEach(function(b){b.setAttribute('data-action','settings-save');});buttons(/Invite scout/i).forEach(function(b){b.setAttribute('data-action','team-invite');});buttons(/Remove user/i).forEach(function(b,i){var members=(s.teamScouts||[]).filter(function(x){return !x.is_super_user;});if(members[i])b.setAttribute('data-scout-id',members[i].id);b.setAttribute('data-action','team-remove');});buttons(/Manage billing|Cancel plan/i).forEach(function(b){b.setAttribute('data-action','billing-paused');});
+    var teamCard=Array.from(shadow.querySelectorAll('.card')).find(function(c){return /Team & seats/i.test(c.textContent);});if(teamCard){var body=teamCard.querySelector('.card-b')||teamCard;body.innerHTML=(s.teamScouts||[]).map(function(member){var memberName=[member.first_name,member.last_name].filter(Boolean).join(' ');return'<div class="list-row"><span class="avatar">'+escapeHtml(initials(memberName))+'</span><span class="who"><b>'+escapeHtml(memberName)+'</b><span>'+escapeHtml(member.email||'')+'</span></span>'+(member.is_super_user?'<span class="pill g">Owner</span>':'<button class="btn outline sm" data-action="team-remove" data-scout-id="'+escapeHtml(member.id)+'">Remove user</button>')+'</div>';}).join('');}
+  }
+
+  function setupOptionMarkup(items,selected,kind){return(items||[]).map(function(label){var on=(selected||[]).indexOf(label)!==-1;return'<button type="button" class="setup-opt '+(on?'on':'')+'" data-action="setup-toggle" data-setup-kind="'+kind+'" data-value="'+escapeHtml(label)+'"><span class="check">'+(on?'✓':'')+'</span><span><b>'+escapeHtml(label)+'</b><small>'+escapeHtml(kind==='teamNeeds'?'Recruitment need':kind==='roleExpectations'?'Role requirement':'Development priority')+'</small></span></button>';}).join('');}
+  function ensureSetupDraft(){
+    var data=state.setup||{},setup=data.personalSetup||data;if(state.setupDraft._loaded)return;
+    state.setupOptions=data.options||state.setupOptions||{};
+    state.setupDraft={teamNeeds:list(setup.teamNeeds||setup.teamWeaknesses),roleExpectations:list(setup.roleExpectations),developmentPriorities:list(setup.developmentPriorities||setup.longTermGoals),formation:setup.formation||'',playingStyle:setup.playingStyle||'',_loaded:true};
+  }
+  function hydrateSetup(){
+    ensureSetupDraft();var opts=state.setupOptions||{},v=currentView();
+    var grid=shadow.querySelector('.setup-opt-grid');
+    if(grid&&v==='setup1')grid.innerHTML=setupOptionMarkup(opts.teamNeeds||[],state.setupDraft.teamNeeds,'teamNeeds');
+    if(grid&&v==='setup2')grid.innerHTML=setupOptionMarkup(opts.roleExpectations||[],state.setupDraft.roleExpectations,'roleExpectations');
+    if(grid&&v==='setup4')grid.innerHTML=setupOptionMarkup(opts.developmentPriorities||[],state.setupDraft.developmentPriorities,'developmentPriorities');
+    if(v==='setup3'){
+      var f=findField('Formation'),p=findField('Playing style');
+      if(f){setOptions(f,opts.formations||[],state.setupDraft.formation,{value:'',label:'Choose one formation'});f.setAttribute('data-action','setup-formation');}
+      if(p){setOptions(p,opts.playingStyles||[],state.setupDraft.playingStyle,{value:'',label:'Choose one playing style'});p.setAttribute('data-action','setup-style');}
+    }
+    if(v==='setupReview'){
+      var review=cardByHeading('Review');if(review){var b=review.querySelector('.card-b');if(b)b.innerHTML='<div class="sl-result-row"><span>Team needs</span><b>'+escapeHtml(state.setupDraft.teamNeeds.join(', ')||'None')+'</b></div><div class="sl-result-row"><span>Role</span><b>'+escapeHtml(state.setupDraft.roleExpectations.join(', ')||'None')+'</b></div><div class="sl-result-row"><span>Shape & style</span><b>'+escapeHtml([state.setupDraft.formation,state.setupDraft.playingStyle].filter(Boolean).join(' · ')||'Not set')+'</b></div><div class="sl-result-row"><span>Development</span><b>'+escapeHtml(state.setupDraft.developmentPriorities.join(', ')||'None')+'</b></div>';}
+    }
+    buttons(/^Continue$|^Review$/i).forEach(function(b){b.setAttribute('data-action','setup-next');});buttons(/^Back$/i).forEach(function(b){b.setAttribute('data-action','setup-back');});buttons(/Save setup/i).forEach(function(b){b.setAttribute('data-action','setup-save');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});
+  }
+
+  function profileAttrRows(attrs){
+    return (attrs||[]).map(function(a){
+      var v=score10(a.value);var width=v==null?0:clamp(v*10,0,100);
+      return '<div class="sl-attr-row"><div class="sl-attr-row-head"><b>'+escapeHtml(a.label||a.key||'Attribute')+'</b><strong>'+(v==null?'—':escapeHtml(v)+'/10')+'</strong></div><div class="bar-track"><i style="width:'+width+'%;background:var(--pitch)"></i></div></div>';
+    }).join('');
+  }
+
+  function profilePastMatches(){
+    var rows=(state.profileData&&state.profileData.recentMatches)||[];
+    var now=Date.now();
+    return rows.filter(function(m){var t=new Date(m.match_date||m.created_at||0).getTime();return !Number.isFinite(t)||t<=now;})
+      .slice().sort(function(a,b){return new Date(b.match_date||b.created_at||0)-new Date(a.match_date||a.created_at||0);});
+  }
+
+  function hydrateCompatibility(card,explanation){
+    if(!card||!explanation)return;
+    var score=nullableNumber(explanation.score),compat=card.querySelector('.compat-score strong');if(compat)compat.textContent=score==null?'—':Math.round(score);
+    var compatSpan=card.querySelector('.compat-score span');if(compatSpan)compatSpan.textContent=score==null?'no compatibility score':'headline compatibility';
+    var rows=Array.from(card.querySelectorAll('.breakdown-row'));
+    (explanation.components||[]).forEach(function(c,i){
+      var row=rows[i];if(!row)return;var label=row.querySelector('label'),track=row.querySelector('.track i'),strong=row.querySelector('strong');
+      if(label)label.textContent=c.label||c.key||'Component';if(track)track.style.width=(c.score==null?0:clamp(c.score,0,100))+'%';if(strong)strong.textContent=c.score==null?'—':Math.round(c.score);
+    });
+    rows.slice((explanation.components||[]).length).forEach(function(r){r.style.display='none';});
+    var hint=card.querySelector('.compat-viz + .callout')||card.querySelector('.callout');
+    if(hint){var text=explanation.summary||explanation.noScoreReason||'Compatibility is based on the current Scout Setup and recorded player evidence.';hint.innerHTML='<span><b>'+(score==null?'Why no score?':'Why '+Math.round(score)+'?')+'</b> '+escapeHtml(text)+'</span>';}
+  }
+
+  function hydrateAttributeCard(card,data){
+    if(!card||!data)return;
+    var body=card.querySelector('.card-b');if(!body)return;
+    var categories=data.categories||{};
+    var cells=Array.from(body.querySelectorAll('.bento-cell'));
+    var catValues=[['Technical',categories.technical],['Tactical',categories.tactical],['Physical',categories.physical],['Mental',categories.mental]];
+    cells.forEach(function(cell,i){var pair=catValues[i];if(!pair)return;var l=cell.querySelector('.lbl'),s=cell.querySelector('strong'),small=cell.querySelector('small');if(l)l.textContent=pair[0];if(s)s.textContent=pair[1]==null?'—':Math.round(pair[1]);if(small)small.textContent='Current position-specific category';});
+    var lower=Array.from(body.children).find(function(el){return el.querySelector&&el.querySelector('.seg');});
+    if(!lower){lower=document.createElement('div');lower.style.marginTop='18px';body.appendChild(lower);}
+    var seg=lower.querySelector('.seg');
+    if(!seg){seg=document.createElement('div');seg.className='seg';seg.innerHTML='<a>Overall attributes</a><a></a>';lower.insertBefore(seg,lower.firstChild);}
+    var links=Array.from(seg.querySelectorAll('a'));if(links[0]){links[0].textContent='Overall attributes';links[0].setAttribute('data-action','profile-attrs-general');links[0].classList.toggle('on',state.profileAttributeMode==='general');}
+    if(!links[1]){var a=document.createElement('a');seg.appendChild(a);links.push(a);}
+    if(links[1]){links[1].textContent=(data.positionGroup||'Position')+' attributes';links[1].setAttribute('data-action','profile-attrs-positional');links[1].classList.toggle('on',state.profileAttributeMode==='positional');}
+    Array.from(lower.children).forEach(function(child){if(child!==seg)child.remove();});
+    var attrs=state.profileAttributeMode==='positional'?(data.positional||[]):(data.general||[]);
+    var rows=document.createElement('div');rows.className='sl-attr-rows';rows.style.marginTop='14px';rows.innerHTML=attrs.length?profileAttrRows(attrs):'<div class="sl-empty">No assessed attributes are available in this group.</div>';
+    lower.appendChild(rows);
+    buttons(/See all attributes/i,card).forEach(function(b){b.setAttribute('data-action','profile-attrs-all');});
+    var allHint=card.querySelector('.card-h .hint');
+    if(allHint&&/See all attributes/i.test(allHint.textContent||'')){
+      allHint.setAttribute('data-action','profile-attrs-all');allHint.setAttribute('role','button');allHint.setAttribute('tabindex','0');allHint.classList.add('sl-muted-link');
+    }
+  }
+
+  function hydrateProfileNotes(card){
+    if(!card||!state.profileData)return;var body=card.querySelector('.card-b');if(!body)return;
+    var workflow=(state.profileData.workflow||[]).filter(function(x){return x.entry_type==='note'||!x.entry_type;});
+    var notes=workflow.map(function(n){var author=n.author||{};var name=[author.first_name,author.last_name].filter(Boolean).join(' ')||'Scout';var vis=(n.metadata&&n.metadata.visibility)==='private'?'Private':'Team';return '<div class="list-row" style="align-items:flex-start"><span class="avatar">'+escapeHtml(initials(name))+'</span><span class="who"><b>'+escapeHtml(name)+'</b><span>'+escapeHtml(relative(n.created_at))+' · '+escapeHtml(vis)+'</span><span style="color:var(--ink);margin-top:6px;white-space:normal;line-height:1.5">'+escapeHtml(n.content||'')+'</span></span></div>';}).join('');
+    body.innerHTML='<div class="field"><label>Add scouting note</label><textarea class="in" data-profile-note rows="3" placeholder="Add evidence, a decision note or a live observation..."></textarea></div><div class="flex" style="margin:10px 0 18px;align-items:center"><select class="in" data-action="profile-note-visibility" style="max-width:190px;height:38px"><option value="team"'+(state.profileNoteVisibility==='team'?' selected':'')+'>Visible to team</option><option value="private"'+(state.profileNoteVisibility==='private'?' selected':'')+'>Private to me</option></select><span class="sp"></span><button class="btn outline sm" data-action="profile-share">Share with scouts</button><button class="btn volt sm" data-action="profile-note-post">Post note</button></div><div class="lbl" style="margin-bottom:8px">Linked notes from other scouts</div>'+(notes||'<div class="sl-empty">No scouting notes have been posted yet.</div>');
+  }
+
+  function hydrateProfileMedia(){
+    var d=state.profileData;if(!d)return;
+    var videoCard=cardByHeading('Video reels');if(videoCard){var body=videoCard.querySelector('.card-b');if(body)body.innerHTML=(d.videos||[]).length?(d.videos||[]).slice(0,12).map(function(v,i){return '<div class="list-row"><span class="who"><b>'+escapeHtml(v.title||v.category||'Video evidence')+'</b><span>'+escapeHtml([v.description,dateLabel(v.created_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="profile-video" data-index="'+i+'">Play</button></div>';}).join(''):'<div class="sl-empty">No video evidence has been uploaded for this player.</div>';buttons(/^View all$/i,videoCard).forEach(function(b){b.setAttribute('data-action','profile-media-all');});}
+    var games=profilePastMatches(),recent=games.slice(0,5),gameCard=cardByHeading('Recent games');
+    if(gameCard){var gb=gameCard.querySelector('.card-b');if(gb)gb.innerHTML=recent.length?recent.map(function(m,i){var v=score10(m.performance_score??m.overall_rating??m.overall_score);return '<div class="list-row sl-click" data-action="profile-game" data-index="'+i+'"><span class="dateplate"><b>'+escapeHtml(monthDay(m.match_date).day)+'</b><span>'+escapeHtml(monthDay(m.match_date).month)+'</span></span><span class="who"><b>'+escapeHtml(m.opponent_name||m.opponent||'Recorded match')+'</b><span>'+escapeHtml([dateLabel(m.match_date),m.position_played].filter(Boolean).join(' · '))+'</span></span><span class="sl-game-score">'+(v==null?'—':escapeHtml(v))+'</span></div>';}).join(''):'<div class="sl-empty">No Match Facts have been recorded yet.</div>';buttons(/See all games/i,gameCard).forEach(function(b){b.setAttribute('data-action','profile-games-all');});}
+  }
+
   function hydrateProfile(){
     var d=state.profileData,p=profilePlayer();if(!d||!p)return;
-    walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name),'AM · U12 · Chorlton Colts FC · Right foot · Available':[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · '),'Chorlton Colts FC':p.team||'Team'});
-    if(currentView()==='profileVideo'){
-      var video=state.activeVideo||(d.videos||[])[0];if(!video){setRuntimeMessage('No video evidence is available for this player.',false);return;}
-      walkText(shadow,{'Chance creation':video.title||'Video evidence','Ruby Okafor · vs Sale United · 17 Aug 2026':[p.name,video.description||video.category,dateLabel(video.created_at)].filter(Boolean).join(' · '),'02:14':video.duration||video.duration_label||''});
-      buttons(/^Play$/i).forEach(function(b){b.setAttribute('data-action','video-play');});buttons(/Download clip/i).forEach(function(b){b.setAttribute('data-action','video-download');});return;
-    }
-    if(currentView()==='profileGame'){
-      var game=state.activeGame||(d.recentMatches||[])[0];if(!game){setRuntimeMessage('No Match Facts are available for this player.',false);return;}
-      walkText(shadow,{'vs Sale United':'vs '+(game.opponent_name||game.opponent||'Opponent'),'8.9 contextual performance':String(game.performance_score||game.overall_rating||'—')+' contextual performance','17 AUG':game.match_date?new Date(game.match_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase():'MATCH','AM · 82 minutes':[game.position_played||p.position,game.minutes_played?game.minutes_played+' minutes':''].filter(Boolean).join(' · ')});
-      buttons(/Open full Match Facts/i).forEach(function(b){b.setAttribute('data-action','game-facts');});return;
-    }
-    var tiles=shadow.querySelectorAll('.score-tile strong');if(tiles[0])tiles[0].textContent=Math.round(p.overall||0);if(tiles[1])tiles[1].textContent=p.compatibility?Math.round(p.compatibility):'—';if(tiles[2])tiles[2].textContent=p.valueIndex?Math.round(p.valueIndex):'—';var exp=d.compatibilityExplanation||p.raw.compatibilityExplanation;if(exp){walkText(shadow,{'87 headline compatibility':(exp.score==null?'No':Math.round(exp.score))+' headline compatibility','Why 87?':'Why '+(exp.score==null?'this score':Math.round(exp.score))+'?','Likely range 87–92 · Strong evidence':exp.uncertainty?.likelyRange?('Likely range '+exp.uncertainty.likelyRange.minimum+'–'+exp.uncertainty.likelyRange.maximum+' · evidence '+(exp.uncertainty.evidenceConfidence||'—')+'/100'):'Compatibility explanation available'});var labels=Array.from(shadow.querySelectorAll('label'));(exp.components||[]).forEach(function(c){var label=labels.find(function(l){return l.textContent.trim()===c.label;});if(label){var parent=label.parentElement;var value=parent&&parent.querySelector('b,strong,span:last-child');if(value)value.textContent=c.score==null?'—':Math.round(c.score)+'/100';}});buttons(/^Why /i).forEach(function(b){b.setAttribute('data-action','compatibility-why');});}
-    if(currentView()==='profileAttributes'||state.mode==='desk'){
-      var generalButton=buttons(/^Overall attributes$/i)[0],positionButton=buttons(/attributes$/i).find(function(b){return !/^Overall attributes$/i.test(b.textContent.trim());});
-      if(generalButton){generalButton.setAttribute('data-action','profile-attrs-general');if(state.profileAttributeMode==='general')generalButton.classList.add('on');}
-      if(positionButton){var positionGroup=d.attributes?.positionGroup||p.raw.position_group||'Position';positionButton.textContent=positionGroup+' attributes';positionButton.setAttribute('data-action','profile-attrs-positional');if(state.profileAttributeMode==='positional')positionButton.classList.add('on');}
-      var card=cardByHeading('Overall attribute profile');if(card){var body=card.querySelector('.card-b');if(body){var attrs=state.profileAttributeMode==='positional'?(d.attributes?.positional||[]):(d.attributes?.general||[]);if(!attrs.length)attrs=(d.attributes?.general||[]).concat(d.attributes?.positional||[]);body.innerHTML=attrs.length?'<div class="sl-attr-grid">'+profileAttrRows(attrs)+'</div>':'<div class="sl-empty">No assessed attributes are available for this player.</div>';}}
-    }
-    if(currentView()==='profileMedia'||state.mode==='desk'){
-      var videoCard=cardByHeading('Video reels');if(videoCard){var vb=videoCard.querySelector('.card-b');if(vb)vb.innerHTML=(d.videos||[]).length?(d.videos||[]).slice(0,12).map(function(v,index){return'<div class="list-row"><span class="who"><b>'+escapeHtml(v.title||'Video evidence')+'</b><span>'+escapeHtml(v.description||v.category||'')+'</span></span><button class="btn outline sm" data-action="video-overlay" data-video-index="'+index+'">Play</button></div>';}).join(''):'<div class="sl-empty">No video evidence has been uploaded for this player.</div>';}
-      buttons(/^View all$/i).forEach(function(b){b.setAttribute('data-action','media-view-all');});buttons(/See all games/i).forEach(function(b){b.setAttribute('data-action','games-view-all');});
-    }
-    var gameCard=cardByHeading('Recent games');if(gameCard){var gb=gameCard.querySelector('.card-b');if(gb)gb.innerHTML=(d.recentMatches||[]).length?(d.recentMatches||[]).slice(0,10).map(function(m,index){return'<div class="list-row sl-click" data-action="game-overlay" data-game-index="'+index+'"><span class="who"><b>'+escapeHtml(m.opponent_name||m.opponent||'Match')+'</b><span>'+escapeHtml([dateLabel(m.match_date),m.position_played].filter(Boolean).join(' · '))+'</span></span><b>'+escapeHtml(m.performance_score||m.overall_rating||'')+'</b><span class="chev">›</span></div>';}).join(''):'<div class="sl-empty">No Match Facts have been recorded yet.</div>';}
-    if(currentView()==='profileNotes'||state.mode==='desk'){var notesCard=cardByHeading('Team notes & discussion');if(notesCard){var nb=notesCard.querySelector('.card-b');if(nb){var entries=(d.workflow||[]);nb.innerHTML='<div class="field"><label>Add scouting note</label><textarea class="in" data-profile-note rows="3" placeholder="Add evidence, a decision note or a live observation..."></textarea></div><div class="flex" style="margin:10px 0"><button class="btn '+(state.profileShareTeam?'volt':'outline')+' sm" data-action="profile-share-toggle">'+(state.profileShareTeam?'Visible to team':'Private to me')+'</button><button class="btn outline sm" data-action="profile-note-post">Post note</button></div>'+entries.map(function(n){var name=[n.author?.first_name,n.author?.last_name].filter(Boolean).join(' ')||'Scout';return'<div class="sl-note"><div class="sl-note-head"><b>'+escapeHtml(name)+'</b><span>'+escapeHtml(relative(n.created_at))+'</span></div><p>'+escapeHtml(n.content||'')+'</p></div>';}).join('');}}}
-    buttons(/Add to pipeline/i).forEach(function(b){b.setAttribute('data-action','profile-pipeline-add');if(d.inPipeline){b.textContent='✓ In pipeline';b.disabled=true;}});buttons(/Run prediction/i).forEach(function(b){b.setAttribute('data-action','profile-predict');});buttons(/Export profile/i).forEach(function(b){b.setAttribute('data-action','profile-export');});buttons(/Share with scouts/i).forEach(function(b){b.setAttribute('data-action','profile-share');});buttons(/External matches/i).forEach(function(b){b.setAttribute('data-action','external-matches');if(!d.externalMatchesUrl)b.disabled=true;});
+    walkText(shadow,{'Ruby Okafor':p.name,'RO':initials(p.name),'Chorlton Colts FC':p.team||'Team','AM · U12 · Chorlton Colts FC · Right foot · Available':[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · ')});
+    var hero=shadow.querySelector('.profile-hero');if(hero){var name=hero.querySelector('h2');if(name)name.textContent=p.name;var meta=hero.querySelector('p');if(meta)meta.textContent=[p.position,p.ageGroup,p.team,p.foot?p.foot+' foot':'',p.availability].filter(Boolean).join(' · ');var av=hero.querySelector('.avatar');if(av)av.textContent=initials(p.name);var scores=Array.from(hero.querySelectorAll('.score-tile strong'));if(scores[0])scores[0].textContent=p.overall==null?'—':Math.round(p.overall);if(scores[1])scores[1].textContent=p.compatibility==null?'—':Math.round(p.compatibility);if(scores[2])scores[2].textContent=p.valueIndex==null?'—':Math.round(p.valueIndex);}
+    var compatCard=cardByHeading('Compatibility breakdown');if(compatCard)hydrateCompatibility(compatCard,d.compatibilityExplanation||{});
+    var attrCard=cardByHeading('Overall attribute profile');if(attrCard)hydrateAttributeCard(attrCard,d.attributes||{});
+    hydrateProfileMedia();
+    var noteCard=cardByHeading('Team notes & discussion');if(noteCard)hydrateProfileNotes(noteCard);
+    buttons(/Add to pipeline/i).forEach(function(b){b.setAttribute('data-action','profile-pipeline-add');if(d.inPipeline){b.textContent='✓ In pipeline';b.disabled=true;}});
+    buttons(/Run prediction/i).forEach(function(b){b.setAttribute('data-action','profile-predict');});
+    buttons(/Export profile/i).forEach(function(b){b.setAttribute('data-action','profile-export');});
+    buttons(/Share with scouts/i).forEach(function(b){b.setAttribute('data-action','profile-share');});
+    buttons(/External matches/i).forEach(function(b){b.setAttribute('data-action','profile-external');b.disabled=!d.externalMatchesUrl;});
+    Array.from(shadow.querySelectorAll('button,a')).forEach(function(b){var t=b.textContent.trim();if(t==='Overview')b.setAttribute('data-action','profile-tab-overview');if(t==='Attributes')b.setAttribute('data-action','profile-tab-attributes');if(t==='Media')b.setAttribute('data-action','profile-tab-media');if(t==='Notes')b.setAttribute('data-action','profile-tab-notes');});
   }
-  function hydrateConcern(){/* fields are intentionally left as the source design; actions are wired below */}
-  function hydrateCurrentRoute(){hydrateUsageStrip();var v=currentView();if(state.route==='dashboard')hydrateDashboard();if(state.route==='search')hydrateSearch();if(state.route==='rankings')hydrateRankings();if(state.route==='pipeline'){if(v==='pipelineUpdate')hydratePipelineUpdate();else hydratePipeline();}if(state.route==='compare')hydrateCompare();if(state.route==='predictions'){if(/^prediction(Attribute|Position|Scenario|Roi)$/.test(v))hydratePredictionResult();else if(v==='predictions')hydratePredictions();else hydratePredictionWizard();}if(state.route==='usage')hydrateUsage();if(state.route==='radar')hydrateRadar();if(state.route==='fixtures'){if(v==='fixtureDetail')hydrateFixtureDetail();else hydrateFixtures();}if(state.route==='events'){if(v==='eventDetail')hydrateEventDetail();else hydrateEvents();}if(state.route==='notifications')hydrateNotifications();if(state.route==='chat'){if(v==='chatOpen')hydrateChatOpen();else hydrateChat();}if(state.route==='exports'){if(v==='exportNew')hydrateExportNew();else hydrateExports();}if(state.route==='settings')hydrateSettings();if(state.route==='setup')hydrateSetup();if(state.route==='profile')hydrateProfile();if(state.route==='concern')hydrateConcern();if(state.error)setRuntimeMessage(state.error.message||String(state.error),true);}
 
-  var NAV={'Dashboard':'/scout/dashboard','Home':'/scout/dashboard','Player Search':'/scout/player-search','Search':'/scout/player-search','Rankings':'/scout/rankings','System Rankings':'/scout/rankings','Pipeline':'/scout/pipeline','Compare Players':'/scout/compare-players','Predictions':'/scout/predictions','Ask Radar':'/scout/radar','Fixtures':'/scout/fixtures','Events':'/scout/events','Add Usage':'/scout/usage','Exports':'/scout/exports','Chat':'/scout/chat','Notifications':'/scout/notifications','Settings':'/scout/settings','Scout Setup':'/scout/setup','Report a Concern':'/scout/report-a-concern'};
-  function openMore(){var old=shadow.querySelector('.sl-more-sheet');if(old)old.remove();var sheet=document.createElement('div');sheet.className='sl-more-sheet';sheet.innerHTML='<div class="sl-sheet-handle"></div><div style="font-family:var(--display);font-size:21px;margin:0 0 12px">More</div><div class="sl-more-grid">'+[['Rankings','/scout/rankings','System rankings'],['Compare Players','/scout/compare-players','Decision comparison'],['Predictions','/scout/predictions','Forecasting tools'],['Ask Radar','/scout/radar','AI workspace'],['Fixtures','/scout/fixtures','Calendar & attendance'],['Events','/scout/events','Showcases & events'],['Add Usage','/scout/usage','Top-up balances'],['Exports','/scout/exports','Files & history'],['Notifications','/scout/notifications','Alerts'],['Settings','/scout/settings','Account & team'],['Scout Setup','/scout/setup','Personal recruitment brief'],['Report a Concern','/scout/report-a-concern','Safeguarding & support']].map(function(x){return'<button class="sl-more-item" data-more-path="'+x[1]+'"><span><b>'+escapeHtml(x[0])+'</b><small>'+escapeHtml(x[2])+'</small></span></button>';}).join('')+'</div>';shadow.appendChild(sheet);Array.from(sheet.querySelectorAll('[data-more-path]')).forEach(function(b){b.addEventListener('click',function(){navigate(b.getAttribute('data-more-path'));});});setTimeout(function(){document.addEventListener('click',function close(e){if(!sheet.contains(e.target)){sheet.remove();document.removeEventListener('click',close);}},true);},0);}
-  function wireNavigation(){Array.from(shadow.querySelectorAll('.rail-item')).forEach(function(item){var label=item.textContent.trim().replace(/\d+$/,'').trim(),path=Object.keys(NAV).find(function(k){return label===k||label.indexOf(k)!==-1;});if(path){item.setAttribute('role','link');item.setAttribute('tabindex','0');item.addEventListener('click',function(){navigate(NAV[path]);});}});Array.from(shadow.querySelectorAll('.ptabs a')).forEach(function(a){var label=a.textContent.trim();if(label==='More')a.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openMore();});else if(NAV[label])a.addEventListener('click',function(){navigate(NAV[label]);});});Array.from(shadow.querySelectorAll('.qlink')).forEach(function(b){Object.keys(NAV).some(function(k){if(b.textContent.indexOf(k)!==-1){b.addEventListener('click',function(){navigate(NAV[k]);});return true;}return false;});});}
-  function wireChromeControls(){
-    Array.from(shadow.querySelectorAll('button')).forEach(function(button){
-      if(button.querySelector('u')){button.addEventListener('click',function(){navigate('/scout/notifications');});return;}
-      var path=button.querySelector('path'),d=path&&path.getAttribute('d')||'';
-      var text=button.textContent.trim();
-      if(text==='Exit'||/M6 6l12 12M18 6 6 18/.test(d)){
-        button.addEventListener('click',function(){
-          var view=currentView();
-          if(state.route==='onboarding'){navigate('/experience-select');return;}
-          if(state.route==='setup'){navigate('/scout/settings');return;}
-          if(state.route==='predictions'){setView('predictions');return;}
-          if(state.route==='pipeline'&&view==='pipelineUpdate'){setView('pipeline');return;}
-          if(state.route==='fixtures'&&view==='fixtureDetail'){setView('fixtures');return;}
-          if(state.route==='profile'&&view==='profileVideo'){state.activeVideo=null;setView('profileMedia');return;}
-          if(state.route==='profile'&&view==='profileGame'){state.activeGame=null;setView('profileMedia');return;}
-        });
-      }else if(/M19\.5 12h-15M11 18l-6-6 6-6/.test(d)){
-        button.addEventListener('click',function(){
-          var view=currentView();
-          if(state.route==='profile'&&view==='profile'){if(window.history.length>1)window.history.back();else navigate('/scout/player-search');return;}
-          if(state.route==='events'&&view==='eventDetail'){setView('events');return;}
-          if(state.route==='chat'&&view==='chatOpen'){setView('chat');return;}
-        });
+  function hydrateConcern(){
+    var person=findField('Player or person involved');if(person){setOptions(person,state.players.map(function(p){return{value:p.id,label:p.name+' · '+p.team};}),'',{value:'',label:'Not applicable'});}
+    buttons(/Submit report/i).forEach(function(b){b.setAttribute('data-action','concern-submit');});buttons(/^Cancel$/i).forEach(function(b){b.setAttribute('data-nav','/scout/settings');});
+  }
+
+  function onboardingSetupSelections(kind){
+    return Array.from(shadow.querySelectorAll('.setup-opt.on,.chip-option.on')).filter(function(x){return !kind||x.getAttribute('data-onboarding-kind')===kind;}).map(function(x){return x.getAttribute('data-value')||x.textContent.trim();});
+  }
+  function hydrateOnboarding(){
+    var v=currentView(),parts=workspaceParts(),scout=parts.scout,opts=(state.setupOptions||{});
+    if(v==='onboarding1'){
+      var fn=findField('Full name'),em=findField('Email address'),ph=findField('Phone number'),country=findField('Country'),role=findField('Scouting role');if(fn&&!fn.value)fn.value=[scout.first_name,scout.last_name].filter(Boolean).join(' ');if(em&&!em.value)em.value=scout.email||'';if(ph&&!ph.value)ph.value=scout.phone||'';if(country&&state.onboardingDraft.country)country.value=state.onboardingDraft.country;if(role&&state.onboardingDraft.role)role.value=state.onboardingDraft.role;
+    }
+    if(v==='onboarding2'){
+      var org=findField('Organisation name'),region=findField('Region covered'),website=findField('Website'),type=findField('Organisation type'),expected=findField('Expected number');if(org&&state.onboardingDraft.organisationName)org.value=state.onboardingDraft.organisationName;if(region&&state.onboardingDraft.region)region.value=state.onboardingDraft.region;if(website&&state.onboardingDraft.website)website.value=state.onboardingDraft.website;if(type&&state.onboardingDraft.organisationType)type.value=state.onboardingDraft.organisationType;if(expected&&state.onboardingDraft.expectedScouts)expected.value=state.onboardingDraft.expectedScouts;
+    }
+    if(v==='onboarding3'){
+      var style=findField('Playing style'),formation=findField('Formation');if(style){setOptions(style,opts.playingStyles||[],state.onboardingDraft.playingStyle,{value:'',label:'Choose one playing style'});}if(formation){setOptions(formation,opts.formations||[],state.onboardingDraft.formation,{value:'',label:'Choose one formation'});}
+      var grids=shadow.querySelectorAll('.setup-opt-grid');if(grids[0])grids[0].innerHTML=setupOptionMarkup(opts.teamNeeds||[],state.onboardingDraft.teamNeeds||[],'teamNeeds').replace(/data-action="setup-toggle"/g,'data-action="onboarding-toggle"').replace(/data-setup-kind/g,'data-onboarding-kind');if(grids[1])grids[1].innerHTML=setupOptionMarkup(opts.roleExpectations||[],state.onboardingDraft.roleExpectations||[],'roleExpectations').replace(/data-action="setup-toggle"/g,'data-action="onboarding-toggle"').replace(/data-setup-kind/g,'data-onboarding-kind');
+    }
+    if(v==='onboarding4'){
+      var grid=shadow.querySelector('.setup-opt-grid');if(grid)grid.innerHTML=setupOptionMarkup(opts.developmentPriorities||[],state.onboardingDraft.developmentPriorities||[],'developmentPriorities').replace(/data-action="setup-toggle"/g,'data-action="onboarding-toggle"').replace(/data-setup-kind/g,'data-onboarding-kind');
+    }
+    buttons(/^Continue$/i).forEach(function(b){b.setAttribute('data-action','onboarding-next');});buttons(/^Back$/i).forEach(function(b){b.setAttribute('data-action','onboarding-back');});buttons(/Create my workspace|Complete setup|Finish/i).forEach(function(b){b.setAttribute('data-action','onboarding-save');});buttons(/^Exit$/i).forEach(function(b){b.setAttribute('data-nav','/experience-select');});
+  }
+
+  function overlayNodeFromSource(view){
+    var html=templateFor(view),tpl=document.createElement('template');tpl.innerHTML=html;var nodes=Array.from(tpl.content.querySelectorAll('div[style*="position:absolute"]'));var node=nodes.find(function(n){return (n.getAttribute('style')||'').indexOf('inset:0')!==-1;})||nodes[nodes.length-1];return node?node.cloneNode(true):null;
+  }
+  function overlayHost(){var app=shadow.querySelector('.app')||shadow.querySelector('.scr')||shadow.querySelector('#slV6Mount');if(app&&window.getComputedStyle(app).position==='static')app.style.position='relative';return app;}
+  function closeOverlay(){state.overlay=null;var node=shadow.querySelector('.sl-overlay-runtime');if(node)node.remove();}
+  function renderOverlay(){
+    if(!state.overlay)return;var o=state.overlay,node,existing=shadow.querySelector('.sl-overlay-runtime');if(existing)existing.remove();
+    if(o.kind==='games-all'||o.kind==='attrs-all'||o.kind==='share')node=customOverlay(o);else node=overlayNodeFromSource(o.source||o.kind);
+    if(!node)return;node.classList.add('sl-overlay-runtime');overlayHost().appendChild(node);hydrateOverlay(node,o);
+  }
+  function customOverlay(o){
+    var wrap=document.createElement('div');wrap.style.cssText='position:absolute;inset:0;background:rgba(6,32,26,.6);display:flex;align-items:center;justify-content:center;z-index:10;padding:18px';
+    var title=o.kind==='games-all'?'All recorded games':o.kind==='attrs-all'?'All assessed attributes':'Share with scouts';
+    wrap.innerHTML='<div style="background:#fff;border-radius:18px;padding:22px;width:760px;max-width:94%;max-height:86vh;overflow:auto"><div class="flex" style="justify-content:space-between;margin-bottom:14px"><b style="font-size:16px">'+escapeHtml(title)+'</b><button class="btn outline sm" data-action="overlay-close">×</button></div><div class="sl-overlay-scroll" data-overlay-body></div></div>';
+    return wrap;
+  }
+  function hydrateOverlay(node,o){
+    buttons(/^Cancel$|^Close$/i,node).forEach(function(b){b.setAttribute('data-action','overlay-close');});
+    Array.from(node.querySelectorAll('button')).forEach(function(b){if(!b.textContent.trim()&&b.querySelector('svg'))b.setAttribute('data-action','overlay-close');});
+    if(o.kind==='pipeline'){
+      var row=state.pipeline.find(function(x){return String(x.id)===String(o.id);});if(!row)return;var p=pipelinePlayer(row)||{name:'Player'};walkText(node,{'Marcus Deveraux':p.name,'MD':initials(p.name),'ST · U14 · Northside Academy':[p.position,p.ageGroup,p.team].filter(Boolean).join(' · ')});var stage=findField('Stage',node),note=findField('Note',node);if(stage){var opts=['watching','interested','shortlisted','trial_pending','approached','negotiating','signed','rejected','closed'].map(function(x){return{value:x,label:stageLabel(x)};});setOptions(stage,opts,row.stage,null);stage.setAttribute('data-overlay-field','stage');}if(note){note.value=row.notes||'';note.setAttribute('data-overlay-field','notes');}buttons(/Save stage/i,node).forEach(function(b){b.setAttribute('data-action','pipeline-save');});
+    }
+    if(o.kind==='fixture'){
+      var f=state.fixtureDetail||state.fixtures.find(function(x){return String(x.id)===String(o.id);});if(!f)return;walkText(node,{'Chorlton Colts FC vs Manchester Elite':fixtureTitle(f),'Sat 29 Aug · 10:30 · Chorlton Sports Ground':fullDateTime(f)});var status=(f.attendance&&f.attendance.status)||'';buttons(/Yes, attending/i,node).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','attending');if(status==='attending')b.textContent='✓ Attending';});buttons(/No, can.t attend|No, can’t attend/i,node).forEach(function(b){b.setAttribute('data-action','fixture-attendance');b.setAttribute('data-status','not_attending');});var pbody=node.querySelector('.card-b');if(pbody&&Array.isArray(f.pipelinePlayers)){var existing=pbody.querySelector('.sl-fixture-players');if(existing)existing.remove();var section=document.createElement('div');section.className='sl-fixture-players';section.style.marginTop='16px';section.innerHTML='<div class="lbl" style="margin-bottom:8px">Your pipeline players in this fixture</div>'+(f.pipelinePlayers.length?f.pipelinePlayers.map(function(p){var np=normalizePlayer(p);return playerRow(np);}).join(''):'<div class="sl-empty">No pipeline players are linked to this fixture.</div>');pbody.appendChild(section);}
+    }
+    if(o.kind==='game'){
+      var m=o.data||{};var p=profilePlayer()||{name:'Player',team:'Team',position:''},md=monthDay(m.match_date),s=score10(m.performance_score??m.overall_rating??m.overall_score);walkText(node,{'17':' '+md.day,'AUG':md.month,'vs Sale United':'vs '+(m.opponent_name||m.opponent||'Opponent'),'Chorlton Colts FC 3–1 Sale United':[m.home_team_name||p.team,m.home_score!=null&&m.away_score!=null?(m.home_score+'–'+m.away_score):'',m.opponent_name||m.opponent].filter(Boolean).join(' '),'8.9':s==null?'—':String(s)});var summary=node.querySelector('.compat-viz p');if(summary)summary.textContent=m.notes||m.performance_notes||m.summary||'Contextual Match Facts rating recorded for this fixture.';buttons(/Open full Match Facts/i,node).forEach(function(b){b.setAttribute('data-action','game-facts-open');b.setAttribute('data-match-id',m.id||'');});
+    }
+    if(o.kind==='video'){
+      var v=o.data||{},p2=profilePlayer()||{name:'Player'};walkText(node,{'Chance creation':v.title||v.category||'Video evidence','Ruby Okafor · vs Sale United · 17 Aug 2026':[p2.name,v.description||v.category,dateLabel(v.created_at)].filter(Boolean).join(' · '),'02:14':v.duration||v.duration_label||''});buttons(/Download clip/i,node).forEach(function(b){b.setAttribute('data-action','video-download');});
+    }
+    if(o.kind==='games-all'){
+      var games=profilePastMatches(),body=node.querySelector('[data-overlay-body]');if(body)body.innerHTML='<div class="sl-game-list">'+(games.length?games.map(function(g,i){var s2=score10(g.performance_score??g.overall_rating??g.overall_score);return '<button class="list-row sl-click" style="width:100%;text-align:left;background:none;border:0" data-action="profile-game-all" data-index="'+i+'"><span class="who"><b>'+escapeHtml(g.opponent_name||g.opponent||'Recorded match')+'</b><span>'+escapeHtml([dateLabel(g.match_date),g.position_played].filter(Boolean).join(' · '))+'</span></span><span class="sl-game-score">'+(s2==null?'—':escapeHtml(s2))+'</span><span class="chev">›</span></button>';}).join(''):'<div class="sl-empty">No Match Facts have been recorded.</div>')+'</div>';
+    }
+    if(o.kind==='attrs-all'){
+      var a=state.profileData&&state.profileData.attributes||{},body2=node.querySelector('[data-overlay-body]'),all=(a.general||[]).concat(a.positional||[]);if(body2)body2.innerHTML='<div class="callout g" style="margin-bottom:14px"><span>Showing the actual ScoutLink graded Overall and '+escapeHtml(a.positionGroup||'position')+' attributes for this player.</span></div><div class="sl-attr-rows">'+profileAttrRows(all)+'</div>';
+    }
+    if(o.kind==='share'){
+      var team=(state.workspace&&state.workspace.teamScouts)||((state.settings&&state.settings.teamScouts)||[]);team=team.filter(function(s){return String(s.id)!==String(currentScoutId());});var body3=node.querySelector('[data-overlay-body]');if(body3)body3.innerHTML=team.length?'<div class="sl-share-list">'+team.map(function(s){var n=[s.first_name,s.last_name].filter(Boolean).join(' ');return '<label class="sl-share-choice"><input type="checkbox" data-share-scout value="'+escapeHtml(s.id)+'"><span class="avatar">'+escapeHtml(initials(n))+'</span><span><b>'+escapeHtml(n)+'</b><small style="display:block;color:var(--ink3)">'+escapeHtml(s.email||'Scout team member')+'</small></span></label>';}).join('')+'</div><div class="field" style="margin-top:14px"><label>Optional message</label><textarea class="in" data-share-message placeholder="Add context for the Scouts you are sharing with..."></textarea></div><button class="btn volt full" data-action="profile-share-submit">Share player</button>':'<div class="sl-empty">There are no other Scouts in this workspace to share with.</div>';
+    }
+  }
+
+  function hydrateCurrentRoute(){
+    hydrateUsageStrip();var v=currentView();
+    if(state.route==='onboarding')hydrateOnboarding();
+    if(state.route==='dashboard')hydrateDashboard();
+    if(state.route==='search')hydrateSearch();
+    if(state.route==='rankings')hydrateRankings();
+    if(state.route==='pipeline')hydratePipeline();
+    if(state.route==='compare')hydrateCompare();
+    if(state.route==='predictions'){if(/^prediction(Attribute|Position|Scenario|Roi)$/.test(v))hydratePredictionResult();else if(v==='predictions')hydratePredictions();else hydratePredictionWizard();}
+    if(state.route==='radar')hydrateRadar();
+    if(state.route==='fixtures')hydrateFixtures();
+    if(state.route==='events'){if(v==='eventDetail')hydrateEventDetail();else hydrateEvents();}
+    if(state.route==='usage')hydrateUsage();
+    if(state.route==='exports'){if(v==='exportNew')hydrateExportNew();else hydrateExports();}
+    if(state.route==='chat'){if(v==='chatOpen')hydrateChatOpen();else hydrateChat();}
+    if(state.route==='notifications')hydrateNotifications();
+    if(state.route==='settings')hydrateSettings();
+    if(state.route==='setup')hydrateSetup();
+    if(state.route==='profile')hydrateProfile();
+    if(state.route==='concern')hydrateConcern();
+  }
+
+  function downloadBase64(filename,mime,base64){
+    var bytes=atob(base64||''),arr=new Uint8Array(bytes.length);for(var i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);var blob=new Blob([arr],{type:mime||'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename||'scoutlink-download';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  }
+
+  async function addPipeline(playerId,button){
+    if(!playerId)return;setBusy(button,true);try{var result=await request('/api/scout-workflow-actions/interest',{method:'POST',body:{playerId:playerId,interestLevel:8}});toast(result.message||'Player added to your pipeline.');await Promise.all([loadPipeline(),loadUsage()]);if(state.route==='profile')await loadProfile();render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function savePipeline(button){
+    var row=state.pipeline.find(function(x){return String(x.id)===String(state.overlay&&state.overlay.id);});if(!row)return;var node=shadow.querySelector('.sl-overlay-runtime'),stage=node&&node.querySelector('[data-overlay-field="stage"]'),notes=node&&node.querySelector('[data-overlay-field="notes"]');setBusy(button,true);try{await request('/api/scout-v6/pipeline/'+encodeURIComponent(row.id),{method:'PATCH',body:{stage:stage?stage.value:row.stage,notes:notes?notes.value:row.notes||''}});toast('Pipeline updated.');await loadPipeline();closeOverlay();render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function runCompare(button){
+    if(!state.compareA||!state.compareB){toast('Choose two players before running the comparison.',true);return;}if(state.compareA===state.compareB){toast('Choose two different players.',true);return;}setBusy(button,true);try{var p=unwrap(await request('/api/scout-v6/compare',{method:'POST',body:{playerAId:state.compareA,playerBId:state.compareB,context:state.compareContext}}));state.comparePayload=p;state.compareResult=p.comparison;state.compareMode='decision';render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function exportComparison(button){
+    if(!state.compareResult)return;setBusy(button,true);try{var p=unwrap(await request('/api/scout-v6/compare/export',{method:'POST',body:{comparison:state.compareResult}}));if(p&&p.contentBase64)downloadBase64(p.filename,p.mime,p.contentBase64);await loadUsage();toast('Comparison PDF generated.');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function runPrediction(button){
+    if(!state.selectedPlayerId||!state.selectedPredictionType){toast('Choose a player and prediction type first.',true);return;}setBusy(button,true);try{var out=await request('/api/predictions/run',{method:'POST',body:{playerId:state.selectedPlayerId,predictionType:state.selectedPredictionType,inputParams:state.predictionInput||{}}});state.predictionResult=out.result;state.predictionLogId=out.logId;var type=state.selectedPredictionType;state.view=/ROI/i.test(type)?'predictionRoi':/Scenario/i.test(type)?'predictionScenario':/Position/i.test(type)?'predictionPosition':'predictionAttribute';await Promise.all([loadPredictions(),loadUsage()]);render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function exportPrediction(button){
+    if(!state.predictionLogId){toast('Run the prediction before exporting it.',true);return;}setBusy(button,true);try{var result=await request('/api/exports/player',{method:'POST',body:{playerId:state.selectedPlayerId,predictionLogId:state.predictionLogId,source:'prediction',format:'PDF'}});var d=unwrap(result)||result;if(d.contentBase64)downloadBase64(d.filename,d.mime,d.contentBase64);else if(d.file_url||d.fileUrl)window.open(normalizeExternalUrl(d.file_url||d.fileUrl),'_blank','noopener,noreferrer');await Promise.all([loadExports(),loadUsage()]);toast('Prediction export generated.');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function fixtureAttendance(status,button){
+    var id=state.overlay&&state.overlay.id;if(!id)return;setBusy(button,true);try{await request('/api/scout-v6/fixtures/'+encodeURIComponent(id)+'/attendance',{method:'POST',body:{status:status}});state.fixtureDetail=unwrap(await request('/api/scout-v6/fixtures/'+encodeURIComponent(id)));await loadFixtures();toast('Fixture attendance saved.');state.overlay={kind:'fixture',source:'fixtureDetail',id:id};render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function eventAttendance(status,button){
+    if(!state.activeEventId)return;setBusy(button,true);try{await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)+'/attendance',{method:'POST',body:{status:status}});state.eventDetail=unwrap(await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)));await loadEvents();toast('Event attendance updated.');render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function prepareCheckout(button){
+    var id=button.getAttribute('data-price-id')||(state.selectedPack&&state.selectedPack.priceId);if(!id){toast('Choose a usage pack.',true);return;}setBusy(button,true);try{var prepared=await request('/api/scout-usage/prepare',{method:'POST',body:{priceId:id}});state.preparedCheckout=prepared;var data=unwrap(prepared)||prepared;if(data.checkoutUrl||data.url){window.location.href=data.checkoutUrl||data.url;return;}if(state.paymentLaunchAllowed){var checkout=await request('/api/scout-usage/checkout',{method:'POST',body:{priceId:id}});var c=unwrap(checkout)||checkout;if(c.url||c.checkoutUrl){window.location.href=c.url||c.checkoutUrl;return;}}toast(data.message||'This pack is ready, but live Stripe Checkout is currently paused.',!state.paymentLaunchAllowed);}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function downloadHistoricalExport(id,button){
+    if(!id)return;setBusy(button,true);try{var row=state.exports.find(function(x){return String(x.id)===String(id);});if(row&&row.source==='comparison_v6_pdf'){var p=unwrap(await request('/api/scout-v6/exports/'+encodeURIComponent(id)+'/download',{method:'POST'}));if(p.contentBase64)downloadBase64(p.filename,p.mime,p.contentBase64);}
+      else{var result=await request('/api/exports/history/'+encodeURIComponent(id)+'/download',{method:'POST'});var d=unwrap(result)||result;if(d.contentBase64)downloadBase64(d.filename,d.mime,d.contentBase64);else if(d.file_url||d.fileUrl)window.open(normalizeExternalUrl(d.file_url||d.fileUrl),'_blank','noopener,noreferrer');}
+    }catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function generateExport(button){
+    var player=findField('Player'),format=findField('Export format'),playerId=player&&player.value;if(!playerId){toast('Choose a player for this export.',true);return;}setBusy(button,true);try{var type=format&&format.value||'Full profile PDF';var result=await request('/api/exports/player',{method:'POST',body:{playerId:playerId,exportType:type,format:'PDF'}});var d=unwrap(result)||result;if(d.contentBase64)downloadBase64(d.filename,d.mime,d.contentBase64);else if(d.file_url||d.fileUrl)window.open(normalizeExternalUrl(d.file_url||d.fileUrl),'_blank','noopener,noreferrer');await Promise.all([loadExports(),loadUsage()]);toast('Export generated.');setView('exports');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function openThread(id){state.activeThreadId=id;state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(id)+'/messages',[]));state.view='chatOpen';render();}
+  async function sendChat(button){
+    if(!state.activeThreadId)return;var input=shadow.querySelector('[data-chat-message],[data-action="chat-input"]'),body=input&&input.value;if(!String(body||'').trim())return;setBusy(button,true);try{await request('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',{method:'POST',body:{body:body}});if(input)input.value='';state.messages=normalizeRows(await request('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages'));await loadThreads();render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  async function deleteChatMessage(id){try{await request('/api/scout-v6/chat/messages/'+encodeURIComponent(id),{method:'DELETE'});state.messages=normalizeRows(await request('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages'));await loadThreads();toast('Message deleted.');render();}catch(e){toast(e.message,true);}}
+  async function createChat(playerId,button){setBusy(button,true);try{var p=await request('/api/chat/threads',{method:'POST',body:{playerId:playerId}});state.activeThreadId=(p.thread||p.data||{}).id||'';await loadThreads();if(state.activeThreadId)await openThread(state.activeThreadId);else render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function markNotification(id){try{await request('/api/notifications/'+encodeURIComponent(id)+'/read',{method:'PATCH'});await loadNotifications();render();}catch(e){toast(e.message,true);}}
+  async function markAllNotifications(){try{await request('/api/notifications/mark-all-read',{method:'PATCH'});await loadNotifications();render();}catch(e){toast(e.message,true);}}
+  async function saveSettings(button){var full=findField('Full name'),email=findField('Email'),org=findField('Organisation'),phone=findField('Phone');setBusy(button,true);try{await request('/api/scout-v6/settings',{method:'PATCH',body:{fullName:full&&full.value,email:email&&email.value,organisation:org&&org.value,phone:phone&&phone.value}});await Promise.all([loadSettings(),loadWorkspace()]);toast('Settings saved.');render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function removeTeamScout(id,button){if(!id)return;if(!window.confirm('Remove this Scout from the team?'))return;setBusy(button,true);try{await request('/api/scout-experience-v9/team/scouts/'+encodeURIComponent(id),{method:'DELETE'});await Promise.all([loadSettings(),loadWorkspace()]);toast('Scout removed.');render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  function inviteScoutModal(){modal('Invite Scout','<div class="two"><div class="field"><label>First name</label><input class="in" data-invite-first></div><div class="field"><label>Last name</label><input class="in" data-invite-last></div></div><div class="field"><label>Email address</label><input class="in" type="email" data-invite-email></div><div class="field"><label>Phone number <em>Optional</em></label><input class="in" type="tel" data-invite-phone></div>','<button class="btn outline" data-action="modal-close">Cancel</button><button class="btn volt" data-action="team-invite-submit">Send invite</button>');}
+  async function inviteScout(button){var first=(shadow.querySelector('[data-invite-first]')||{}).value||'',last=(shadow.querySelector('[data-invite-last]')||{}).value||'',email=(shadow.querySelector('[data-invite-email]')||{}).value||'',phone=(shadow.querySelector('[data-invite-phone]')||{}).value||'';if(!first.trim()||!last.trim()||!email.trim()){toast('First name, last name and email are required.',true);return;}setBusy(button,true);try{var result=await request('/api/scout-experience-v9/team/invite',{method:'POST',body:{firstName:first,lastName:last,email:email,phone:phone}});closeModal();await Promise.all([loadSettings(),loadWorkspace()]);toast(result.message||'Scout invite sent.');render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function saveSetup(button){
+    var d=state.setupDraft;if(!d.teamNeeds.length||!d.roleExpectations.length||!d.formation||!d.playingStyle||!d.developmentPriorities.length){toast('Complete all four Scout Setup steps before saving.',true);return;}setBusy(button,true);try{var p=unwrap(await request('/api/scout-v6/setup',{method:'PATCH',body:{teamNeeds:d.teamNeeds,roleExpectations:d.roleExpectations,formation:d.formation,playingStyle:d.playingStyle,developmentPriorities:d.developmentPriorities}}));state.setup=p;state.setupDraft._loaded=false;await Promise.all([loadSetup(),loadPlayers()]);toast('Scout Setup saved. Compatibility has been recalculated using your personal recruitment brief.');navigate('/scout/settings');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}
+  }
+  function collectOnboarding(){
+    var v=currentView(),d=state.onboardingDraft;
+    if(v==='onboarding1'){var n=findField('Full name'),em=findField('Email address'),ph=findField('Phone number'),country=findField('Country'),role=findField('Scouting role');d.fullName=n&&n.value;d.email=em&&em.value;d.phone=ph&&ph.value;d.country=country&&country.value;d.role=role&&role.value;}
+    if(v==='onboarding2'){var org=findField('Organisation name'),type=findField('Organisation type'),region=findField('Region covered'),website=findField('Website'),expected=findField('Expected number');d.organisationName=org&&org.value;d.organisationType=type&&type.value;d.region=region&&region.value;d.website=website&&website.value;d.expectedScouts=expected&&expected.value;}
+    if(v==='onboarding3'){var style=findField('Playing style'),formation=findField('Formation');d.playingStyle=style&&style.value;d.formation=formation&&formation.value;d.teamNeeds=onboardingSetupSelections('teamNeeds');d.roleExpectations=onboardingSetupSelections('roleExpectations');}
+    if(v==='onboarding4')d.developmentPriorities=onboardingSetupSelections('developmentPriorities');
+  }
+  async function saveOnboarding(button){collectOnboarding();var d=state.onboardingDraft;if(!d.fullName||!d.organisationName||!d.formation||!d.playingStyle){toast('Complete the required onboarding fields before creating the workspace.',true);return;}setBusy(button,true);try{var parts=String(d.fullName).trim().split(/\s+/),first=parts.shift()||'',last=parts.join(' ');await request('/api/onboarding/scout-wizard',{method:'POST',body:{person:{firstName:first,lastName:last,phone:d.phone,country:d.country,role:d.role},organisation:{name:d.organisationName,type:d.organisationType,region:d.region,website:d.website,expectedScouts:d.expectedScouts},compatibilitySetup:{teamWeaknesses:d.teamNeeds||[],roleExpectations:d.roleExpectations||[],playingStyle:d.playingStyle,formation:d.formation,developmentPathways:d.developmentPriorities||[],ageGroups:[]}}});navigate('/scout/dashboard');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function postProfileNote(button){var input=shadow.querySelector('[data-profile-note]'),content=input&&input.value;if(!String(content||'').trim()){toast('Write a note before posting.',true);return;}setBusy(button,true);try{var p=await request('/api/scout-v6/players/'+encodeURIComponent(state.selectedPlayerId)+'/notes',{method:'POST',body:{content:content,visibility:state.profileNoteVisibility}});toast(p.message||'Note posted.');await loadProfile();render();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function shareProfile(button){var ids=Array.from(shadow.querySelectorAll('[data-share-scout]:checked')).map(function(x){return x.value;}),message=(shadow.querySelector('[data-share-message]')||{}).value||'';if(!ids.length){toast('Choose at least one Scout.',true);return;}setBusy(button,true);try{var p=await request('/api/scout-v6/players/'+encodeURIComponent(state.selectedPlayerId)+'/share',{method:'POST',body:{scoutIds:ids,message:message}});toast(p.message||'Player shared.');closeOverlay();}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function exportProfile(button){setBusy(button,true);try{var result=await request('/api/exports/player',{method:'POST',body:{playerId:state.selectedPlayerId,exportType:'Full profile PDF',format:'PDF'}});var d=unwrap(result)||result;if(d.contentBase64)downloadBase64(d.filename,d.mime,d.contentBase64);else if(d.file_url||d.fileUrl)window.open(normalizeExternalUrl(d.file_url||d.fileUrl),'_blank','noopener,noreferrer');await Promise.all([loadUsage(),loadExports()]);toast('Profile export generated.');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+  async function submitConcern(button){var concerns=findField('This concerns'),subject=findField('Player or person involved'),details=findField('What happened'),urgency=findField('How urgent');if(!details||!details.value.trim()){toast('Describe what happened before submitting.',true);return;}setBusy(button,true);try{var p=await request('/api/scout-v6/concerns',{method:'POST',body:{concerns:concerns&&concerns.value,subjectId:subject&&subject.value,details:details.value,urgency:urgency&&urgency.value}});toast(p.message||'Concern submitted confidentially.');navigate('/scout/settings');}catch(e){toast(e.message,true);}finally{setBusy(button,false);}}
+
+  function capturePredictionInputs(){
+    var fields=shadow.querySelectorAll('[data-pred-field]');fields.forEach(function(x){state.predictionInput[x.getAttribute('data-pred-field')]=x.value;});
+  }
+  function setupStepIndex(){return['setup1','setup2','setup3','setup4','setupReview'].indexOf(currentView());}
+  function onboardingStepIndex(){return['onboarding1','onboarding2','onboarding3','onboarding4'].indexOf(currentView());}
+
+  function handleClick(event){
+    var target=event.target.closest('[data-action],[data-nav],.list-row[data-player-id],.rank-row[data-player-id]');if(!target)return;
+    var nav=target.getAttribute('data-nav');if(nav){event.preventDefault();navigate(nav);return;}
+    var action=target.getAttribute('data-action');
+    if(!action&&target.getAttribute('data-player-id')){navigate('/player/profile?id='+encodeURIComponent(target.getAttribute('data-player-id')));return;}
+    event.preventDefault();
+    if(action==='modal-close'){closeModal();return;}if(action==='more-open'){openMore();return;}if(action==='overlay-close'){closeOverlay();return;}
+    if(action==='global-search-open'){var type=target.getAttribute('data-result-type'),id=target.getAttribute('data-result-id');if(type==='player')navigate('/player/profile?id='+encodeURIComponent(id));if(type==='fixture')navigate('/scout/fixtures?fixtureId='+encodeURIComponent(id));if(type==='event')navigate('/scout/events?eventId='+encodeURIComponent(id));return;}
+    if(action==='search-filters-open'){setView('searchFilters');return;}if(action==='search-run'){if(currentView()==='searchFilters')setView('search');else render();return;}
+    if(action==='pipeline-add'){addPipeline(target.getAttribute('data-player-id'),target);return;}
+    if(action==='pipeline-open'){state.activePipelineId=target.getAttribute('data-pipeline-id');state.overlay={kind:'pipeline',source:'pipelineUpdate',id:state.activePipelineId};render();return;}
+    if(action==='pipeline-save'){savePipeline(target);return;}
+    if(action==='compare-run'){runCompare(target);return;}if(action==='compare-export'){exportComparison(target);return;}if(action==='compare-mode-overall'){state.compareMode='overall';render();return;}if(action==='compare-mode-decision'){state.compareMode='decision';render();return;}
+    if(action==='prediction-start'){state.selectedPredictionType='';state.predictionInput={};state.predictionResult=null;setView('prediction1');return;}
+    if(action==='prediction-model'){state.selectedPredictionType=target.getAttribute('data-model');render();return;}
+    if(action==='prediction-next-1'){if(!state.selectedPlayerId||!state.selectedPredictionType){toast('Choose a player and prediction type.',true);return;}setView('prediction2');return;}
+    if(action==='prediction-next-2'){capturePredictionInputs();setView('prediction3');return;}if(action==='prediction-back-1'){setView('prediction1');return;}if(action==='prediction-back-2'){setView('prediction2');return;}
+    if(action==='prediction-run'){capturePredictionInputs();runPrediction(target);return;}if(action==='prediction-run-another'){state.predictionResult=null;state.predictionLogId=null;state.predictionInput={};setView('prediction1');return;}if(action==='prediction-history-back'){setView('predictions');return;}if(action==='prediction-export'){exportPrediction(target);return;}
+    if(action==='prediction-history'){var id=target.getAttribute('data-log-id'),row=state.predictions.find(function(x){return String(x.id)===String(id);});if(row){state.selectedPlayerId=row.player_id;state.selectedPredictionType=row.prediction_type;state.predictionResult=row.result;state.predictionLogId=row.id;state.view=/ROI/i.test(row.prediction_type)?'predictionRoi':/Scenario/i.test(row.prediction_type)?'predictionScenario':/Position/i.test(row.prediction_type)?'predictionPosition':'predictionAttribute';render();}return;}
+    if(action==='radar-new'){state.radarDraft='';render();return;}if(action==='radar-send-preview'){toast('Ask Radar AI is not connected yet. No credits were used.');return;}
+    if(action==='fixture-open'){var fid=target.getAttribute('data-fixture-id');state.activeFixtureId=fid;safe('/api/scout-v6/fixtures/'+encodeURIComponent(fid),null).then(function(x){state.fixtureDetail=x;state.overlay={kind:'fixture',source:'fixtureDetail',id:fid};render();});return;}
+    if(action==='fixture-attendance'){fixtureAttendance(target.getAttribute('data-status'),target);return;}
+    if(action==='event-open'){state.activeEventId=target.getAttribute('data-event-id');safe('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId),null).then(function(x){state.eventDetail=x;setView('eventDetail');});return;}
+    if(action==='event-back'){state.eventDetail=null;state.activeEventId='';setView('events');return;}if(action==='event-attendance-open'){modal('Change attendance','<p class="mut">Choose your attendance status for this event.</p>','<button class="btn outline" data-action="modal-close">Cancel</button><button class="btn outline" data-action="event-attendance" data-status="cancelled">Not attending</button><button class="btn outline" data-action="event-attendance" data-status="waitlisted">Waitlist</button><button class="btn volt" data-action="event-attendance" data-status="confirmed">Attending</button>');return;}if(action==='event-attendance'){closeModal();eventAttendance(target.getAttribute('data-status'),target);return;}if(action==='event-calendar'){var e=(state.eventDetail&&state.eventDetail.event)||{};var dt=String(e.event_date||'').replace(/-/g,'');var content='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:'+dt+'\r\nSUMMARY:'+String(eventTitle(e)).replace(/[\r\n]/g,' ')+'\r\nLOCATION:'+String(e.venue||e.location||'').replace(/[\r\n]/g,' ')+'\r\nEND:VEVENT\r\nEND:VCALENDAR';var blob=new Blob([content],{type:'text/calendar'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='scoutlink-event.ics';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);return;}if(action==='fixture-jump'){navigate('/scout/fixtures?fixtureId='+encodeURIComponent(target.getAttribute('data-fixture-id')));return;}
+    if(action==='usage-type'){state.selectedUsageType=target.getAttribute('data-usage-type');render();return;}if(action==='usage-pack'){state.selectedPack=state.packs.find(function(p){return String(p.priceId)===String(target.getAttribute('data-price-id'));})||null;render();return;}if(action==='usage-checkout'){prepareCheckout(target);return;}
+    if(action==='export-new'){setView('exportNew');return;}if(action==='export-cancel'){setView('exports');return;}if(action==='export-generate'){generateExport(target);return;}if(action==='export-download'){downloadHistoricalExport(target.getAttribute('data-export-id'),target);return;}
+    if(action==='chat-open'){openThread(target.getAttribute('data-thread-id'));return;}if(action==='chat-create'){var sel=shadow.querySelector('[data-new-chat-player]');if(!sel||!sel.value){toast('Choose a pipeline player.',true);return;}closeModal();createChat(sel.value,target);return;}if(action==='chat-back'){state.activeThreadId='';state.messages=[];setView('chat');return;}if(action==='chat-send'){sendChat(target);return;}if(action==='chat-new'){newChatModal();return;}if(action==='chat-new-player'){createChat(target.getAttribute('data-player-id'),target);return;}
+    if(action==='notification-open'){markNotification(target.getAttribute('data-notification-id'));return;}if(action==='notifications-read-all'){markAllNotifications();return;}if(action==='notification-filter'){state.notificationFilter=target.getAttribute('data-filter')||'all';render();return;}
+    if(action==='settings-save'){saveSettings(target);return;}if(action==='team-invite'){inviteScoutModal();return;}if(action==='team-invite-submit'){inviteScout(target);return;}if(action==='team-remove'){removeTeamScout(target.getAttribute('data-scout-id'),target);return;}if(action==='billing-paused'){toast('Billing management is currently handled through the existing account workflow.');return;}
+    if(action==='setup-toggle'){var kind=target.getAttribute('data-setup-kind'),value=target.getAttribute('data-value'),arr=state.setupDraft[kind]||[],idx=arr.indexOf(value);if(idx===-1)arr.push(value);else arr.splice(idx,1);state.setupDraft[kind]=arr;render();return;}
+    if(action==='setup-next'){var si=setupStepIndex();if(si===0&&!state.setupDraft.teamNeeds.length){toast('Choose at least one team need.',true);return;}if(si===1&&!state.setupDraft.roleExpectations.length){toast('Choose at least one role expectation.',true);return;}if(si===2&&(!state.setupDraft.formation||!state.setupDraft.playingStyle)){toast('Choose one formation and one playing style.',true);return;}if(si===3&&!state.setupDraft.developmentPriorities.length){toast('Choose at least one development priority.',true);return;}if(si>=0&&si<4)setView(['setup1','setup2','setup3','setup4','setupReview'][si+1]);return;}
+    if(action==='setup-back'){var sb=setupStepIndex();if(sb>0)setView(['setup1','setup2','setup3','setup4','setupReview'][sb-1]);return;}if(action==='setup-save'){saveSetup(target);return;}
+    if(action==='onboarding-toggle'){var ok=target.getAttribute('data-onboarding-kind'),ov=target.getAttribute('data-value'),oa=state.onboardingDraft[ok]||[],oi=oa.indexOf(ov);if(oi===-1)oa.push(ov);else oa.splice(oi,1);state.onboardingDraft[ok]=oa;render();return;}
+    if(action==='onboarding-next'){collectOnboarding();var os=onboardingStepIndex();if(os>=0&&os<3)setView(['onboarding1','onboarding2','onboarding3','onboarding4'][os+1]);return;}if(action==='onboarding-back'){collectOnboarding();var ob=onboardingStepIndex();if(ob>0)setView(['onboarding1','onboarding2','onboarding3','onboarding4'][ob-1]);return;}if(action==='onboarding-save'){saveOnboarding(target);return;}
+    if(action==='profile-tab-overview'){setView('profile');return;}if(action==='profile-tab-attributes'){setView('profileAttributes');return;}if(action==='profile-tab-media'){setView('profileMedia');return;}if(action==='profile-tab-notes'){setView('profileNotes');return;}
+    if(action==='profile-attrs-general'){state.profileAttributeMode='general';render();return;}if(action==='profile-attrs-positional'){state.profileAttributeMode='positional';render();return;}if(action==='profile-attrs-all'){state.overlay={kind:'attrs-all'};render();return;}
+    if(action==='profile-media-all'){var vids=(state.profileData&&state.profileData.videos)||[];modal('All video evidence',vids.length?vids.map(function(v,i){return '<div class="list-row"><span class="who"><b>'+escapeHtml(v.title||v.category||'Video evidence')+'</b><span>'+escapeHtml([v.description,dateLabel(v.created_at)].filter(Boolean).join(' · '))+'</span></span><button class="btn outline sm" data-action="profile-video" data-index="'+i+'">Play</button></div>';}).join(''):'<div class="sl-empty">No video evidence available.</div>');return;}if(action==='profile-games-all'){state.overlay={kind:'games-all'};render();return;}if(action==='profile-game'||action==='profile-game-all'){var games=profilePastMatches(),idx=number(target.getAttribute('data-index'),0);state.overlay={kind:'game',source:'profileGame',data:games[idx]};render();return;}if(action==='profile-video'){var vids=(state.profileData&&state.profileData.videos)||[],vi=number(target.getAttribute('data-index'),0);state.overlay={kind:'video',source:'profileVideo',data:vids[vi]};render();return;}
+    if(action==='profile-pipeline-add'){addPipeline(state.selectedPlayerId,target);return;}if(action==='profile-predict'){navigate('/scout/predictions?playerId='+encodeURIComponent(state.selectedPlayerId));return;}if(action==='profile-export'){exportProfile(target);return;}if(action==='profile-share'){state.overlay={kind:'share'};render();return;}if(action==='profile-share-submit'){shareProfile(target);return;}if(action==='profile-note-post'){postProfileNote(target);return;}if(action==='profile-external'){var u=normalizeExternalUrl(state.profileData&&state.profileData.externalMatchesUrl);if(u)window.open(u,'_blank','noopener,noreferrer');return;}
+    if(action==='video-download'){var vv=state.overlay&&state.overlay.data||{},url=normalizeExternalUrl(vv.file_url||vv.video_url||vv.url||'');if(url)window.open(url,'_blank','noopener,noreferrer');else toast('No downloadable video URL is available for this clip.',true);return;}
+    if(action==='game-facts-open'){var mid=target.getAttribute('data-match-id');if(mid)window.open('/match-facts?id='+encodeURIComponent(mid),'_blank');else toast('The full Match Facts record is not linked to this game.',true);return;}
+    if(action==='concern-submit'){submitConcern(target);return;}
+  }
+
+  function handleChange(event){
+    var target=event.target,action=target.getAttribute('data-action'),filter=target.getAttribute('data-filter-key');if(filter){state.filters[filter]=target.value;render();return;}
+    if(action==='rank-metric'){state.rankMetric=target.value;render();return;}if(action==='rank-age'){state.rankAge=target.value;render();return;}if(action==='compare-a'){state.compareA=target.value;state.compareResult=null;render();return;}if(action==='compare-b'){state.compareB=target.value;state.compareResult=null;render();return;}if(action==='compare-context'){state.compareContext=target.value;state.compareResult=null;render();return;}
+    if(action==='prediction-player'){state.selectedPlayerId=target.value;return;}if(action==='profile-note-visibility'){state.profileNoteVisibility=target.value==='private'?'private':'team';return;}if(action==='setup-formation'){state.setupDraft.formation=target.value;return;}if(action==='setup-style'){state.setupDraft.playingStyle=target.value;return;}
+  }
+  function handleInput(event){
+    var target=event.target,action=target.getAttribute('data-action');if(action==='global-search-input'){state.globalSearch.query=target.value;clearTimeout(state.globalSearch.timer);state.globalSearch.timer=setTimeout(function(){runGlobalSearch(state.globalSearch.query);},220);return;}if(action==='player-search-query'){state.filters.q=target.value;return;}if(action==='radar-input'){state.radarDraft=target.value;return;}
+  }
+  function handleKeydown(event){
+    var target=event.target;if(target&&target.getAttribute('data-action')==='global-search-input'&&event.key==='Escape'){state.globalSearch.open=false;render();return;}
+    if(target&&target.matches('[data-chat-message]')&&event.key==='Enter'){
+      if(event.shiftKey)return;
+      if(event.metaKey||event.ctrlKey){
+        event.preventDefault();var start=target.selectionStart==null?target.value.length:target.selectionStart,end=target.selectionEnd==null?start:target.selectionEnd;target.value=target.value.slice(0,start)+'\n'+target.value.slice(end);target.selectionStart=target.selectionEnd=start+1;target.dispatchEvent(new Event('input',{bubbles:true}));return;
       }
-    });
+      event.preventDefault();var button=shadow.querySelector('[data-action="chat-send"]');sendChat(button);return;
+    }
+    var nav=event.target.closest&&event.target.closest('[data-nav]');if(nav&&(event.key==='Enter'||event.key===' ')){event.preventDefault();navigate(nav.getAttribute('data-nav'));}
   }
-
-  async function addToPipeline(playerId,button){try{if(button)button.disabled=true;await request('/api/scout-workflow-actions/interest',{method:'POST',body:{playerId:playerId}});toast('Player added to your recruitment pipeline.');await loadPipeline();if(state.route==='search'||state.route==='profile')render();}catch(error){toast(error.status===402?'Coach interest allowance reached. Add more Coach interests from Add Usage.':error.message,true);if(button)button.disabled=false;}}
-  async function savePipeline(){var stage=findField('Stage'),note=findField('Note');try{await request('/api/scout-v6/pipeline/'+encodeURIComponent(state.activePipelineId),{method:'PATCH',body:{stage:stage?stage.value:'Watching',note:note?note.value:''}});toast('Pipeline entry updated.');await loadPipeline();setView('pipeline');}catch(error){toast(error.message,true);}}
-  function capturePredictionStepOne(){var player=findField('Player')||shadow.querySelector('select');if(player&&player.value)state.selectedPlayerId=player.value;}
-  function selectedModelButton(eventTarget){var model=eventTarget.closest('button');if(!model)return;var text=model.textContent||'';if(/Attribute Development/i.test(text))state.selectedPredictionType='Attribute Development';else if(/Position Fit/i.test(text))state.selectedPredictionType='Position Fit Projection';else if(/Match Scenario/i.test(text))state.selectedPredictionType='Match Scenario Prediction';else if(/ROI Analysis/i.test(text))state.selectedPredictionType='ROI Analysis';}
-  function capturePredictionInputs(){var obj={};Array.from(shadow.querySelectorAll('.field')).forEach(function(field){var l=field.querySelector('label'),i=field.querySelector('input,select,textarea');if(!l||!i)return;var key=l.textContent.replace(/Optional/gi,'').trim().replace(/[^a-z0-9]+(.)/gi,function(_,c){return c?c.toUpperCase():'';});if(key)obj[key.charAt(0).toLowerCase()+key.slice(1)]=i.value;});state.predictionInput=obj;}
-  async function runPrediction(button){capturePredictionStepOne();capturePredictionInputs();if(!state.selectedPlayerId){toast('Choose a player before running the prediction.',true);return;}try{if(button)button.disabled=true;var payload=await request('/api/predictions/run',{method:'POST',body:{playerId:state.selectedPlayerId,predictionType:state.selectedPredictionType||'Attribute Development',inputParams:state.predictionInput||{}}});state.predictionResult=payload.result||unwrap(payload)||payload;state.predictionLogId=payload.logId||null;var type=String(state.predictionResult.type||state.selectedPredictionType);if(/ROI/i.test(type))setView('predictionRoi');else if(/Scenario/i.test(type))setView('predictionScenario');else if(/Position/i.test(type))setView('predictionPosition');else setView('predictionAttribute');}catch(error){toast(error.status===402?'Prediction allowance reached. Add more Predictions from Add Usage.':error.message,true);if(button)button.disabled=false;}}
-  async function prepareCheckout(){if(!state.selectedPack){toast('Choose a top-up pack first.',true);return;}try{state.preparedCheckout=unwrap(await request('/api/scout-usage/prepare',{method:'POST',body:{priceId:state.selectedPack.priceId}}));render();}catch(error){toast(error.message,true);}}
-  async function launchCheckout(){if(!state.selectedPack)return;try{var payload=unwrap(await request('/api/scout-usage/checkout',{method:'POST',body:{priceId:state.selectedPack.priceId}}));if(!payload?.url)throw new Error('Stripe Checkout URL was not returned.');window.location.assign(payload.url);}catch(error){toast(error.message,true);}}
-  function downloadPayload(payload){if(!payload||!payload.contentBase64)throw new Error('The file was not returned.');var bin=atob(payload.contentBase64),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);var blob=new Blob([bytes],{type:payload.mime||'application/octet-stream'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=payload.filename||'scoutlink-export';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
-  async function downloadExport(id){try{var row=state.exports.find(function(item){return String(item.id)===String(id);});var path=row&&row.source==='comparison_v6_pdf'?'/api/scout-v6/exports/'+encodeURIComponent(id)+'/download':'/api/exports/history/'+encodeURIComponent(id)+'/download';downloadPayload(unwrap(await request(path,{method:'POST'}))||{});}catch(error){toast(error.message,true);}}
-  async function runCompare(){var a=findField('Player A'),b=findField('Player B'),ctx=findField('Decision context');if(!a||!b||!a.value||!b.value){toast('Choose two players to compare.',true);return;}if(a.value===b.value){toast('Choose two different players.',true);return;}try{var response=unwrap(await request('/api/scout-v6/compare',{method:'POST',body:{playerAId:a.value,playerBId:b.value,context:ctx?ctx.value:'Immediate starter'}}));state.compareResult=response&&response.comparison?response.comparison:response;render();}catch(error){toast(error.message,true);}}
-  async function exportComparison(){if(!state.compareResult){toast('Run the comparison first.',true);return;}try{downloadPayload(unwrap(await request('/api/scout-v6/compare/export',{method:'POST',body:{comparison:state.compareResult}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
-  async function exportPrediction(){if(!state.predictionLogId){toast('Open or run a saved prediction first.',true);return;}try{downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:state.selectedPlayerId,format:'PDF',source:'prediction',predictionLogId:state.predictionLogId}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
-  async function exportProfile(){var p=profilePlayer();if(!p)return;try{downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:p.id,format:'PDF',source:'profile'}}))||{});await Promise.all([loadExports(),loadUsage()]);}catch(error){toast(error.status===402?'Export allowance reached. Add more Exports from Add Usage.':error.message,true);}}
-  async function generateExport(){var p=findField('Player'),fmt=findField('Export format');if(!p||!p.value){toast('Choose a player for this export.',true);return;}try{var label=fmt?fmt.value:'Full profile PDF';downloadPayload(unwrap(await request('/api/exports/player',{method:'POST',body:{playerId:p.value,format:'PDF',source:/Match Facts/i.test(label)?'match_facts':/Attribute/i.test(label)?'attributes':'profile'}}))||{});toast('Export generated.');await Promise.all([loadExports(),loadUsage()]);setView('exports');}catch(error){toast(error.message,true);}}
-  async function setFixtureAttendance(status){try{var data=unwrap(await request('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId)+'/attendance',{method:'POST',body:{status:status}}));state.fixtureDetail.attendance=data;toast('Fixture attendance saved.');render();}catch(error){toast(error.message,true);}}
-  async function toggleEventAttendance(){if(!state.eventDetail)return;var current=state.eventDetail.attendance?.status;var next=current==='confirmed'?'cancelled':'confirmed';try{var data=unwrap(await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)+'/attendance',{method:'POST',body:{status:next}}));state.eventDetail.attendance=data;toast(next==='confirmed'?'Attendance confirmed.':'Attendance cancelled.');render();}catch(error){toast(error.message,true);}}
-  function addEventCalendar(){var d=state.eventDetail;if(!d)return;var e=d.event||d,start=String(e.event_date||'').replace(/-/g,'')||new Date().toISOString().slice(0,10).replace(/-/g,'');var ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//ScoutLink//EN','BEGIN:VEVENT','UID:'+String(e.id||Date.now())+'@scoutlink.app','DTSTART;VALUE=DATE:'+start,'SUMMARY:'+eventTitle(e).replace(/[,;]/g,' '),'LOCATION:'+String(e.venue||e.location||'').replace(/[,;]/g,' '),'END:VEVENT','END:VCALENDAR'].join('\r\n');var blob=new Blob([ics],{type:'text/calendar'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='scoutlink-event.ics';a.click();URL.revokeObjectURL(url);}
-  async function markAllRead(){try{await request('/api/notifications/mark-all-read',{method:'PATCH'});await loadNotifications();render();}catch(error){toast(error.message,true);}}
-  async function markNotification(id){try{await request('/api/notifications/'+encodeURIComponent(id)+'/read',{method:'PATCH'});await loadNotifications();render();}catch(error){toast(error.message,true);}}
-  async function openThread(id){state.activeThreadId=id;state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(id)+'/messages',[]));setView('chatOpen');}
-  async function sendChat(){var input=shadow.querySelector('[data-sl-chat-input]');if(!input||!input.value.trim())return;try{await request('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',{method:'POST',body:{body:input.value.trim()}});state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',[]));render();}catch(error){toast(error.message,true);}}
-  function newChatModal(){var pipeline=state.pipeline.filter(function(r){return pipelinePlayer(r).id;});var body='<div class="field"><label>Pipeline player</label><select class="in" data-new-chat-player>'+pipeline.map(function(r){var p=pipelinePlayer(r);return'<option value="'+escapeHtml(p.id)+'">'+escapeHtml(p.name+' · '+p.team)+'</option>';}).join('')+'</select></div><p class="mut">ScoutLink will open the conversation with the coach connected to that pipeline player.</p>';var m=modal('New conversation',body,'<button class="btn outline" data-sl-modal-close>Cancel</button><button class="btn volt" data-action="chat-create">Open conversation</button>');}
-  async function createChat(){var select=shadow.querySelector('[data-new-chat-player]');if(!select||!select.value)return;try{var payload=await request('/api/chat/threads',{method:'POST',body:{playerId:select.value}});closeModal();await loadThreads();state.activeThreadId=payload.thread?.id||payload.id||'';if(state.activeThreadId)await openThread(state.activeThreadId);else render();}catch(error){toast(error.message,true);}}
-  async function saveSettings(){var full=findField('Full name'),email=findField('Email'),org=findField('Organisation');try{state.settings=unwrap(await request('/api/scout-v6/settings',{method:'PATCH',body:{fullName:full?full.value:'',email:email?email.value:'',organisation:org?org.value:''}}));toast('Settings saved.');render();}catch(error){toast(error.message,true);}}
-  function inviteScoutModal(){modal('Invite Scout','<div class="field"><label>First name</label><input class="in" data-invite-first></div><div class="field"><label>Last name</label><input class="in" data-invite-last></div><div class="field"><label>Email</label><input class="in" type="email" data-invite-email></div>','<button class="btn outline" data-sl-modal-close>Cancel</button><button class="btn volt" data-action="team-invite-send">Send invite</button>');}
-  async function inviteScout(){var f=shadow.querySelector('[data-invite-first]'),l=shadow.querySelector('[data-invite-last]'),e=shadow.querySelector('[data-invite-email]');try{await request('/api/scout-experience-v9/team/invite',{method:'POST',body:{firstName:f?.value||'',lastName:l?.value||'',emailAddr:e?.value||''}});closeModal();toast('Scout invite sent.');await loadSettings();render();}catch(error){toast(error.message,true);}}
-  async function removeScout(id){if(!window.confirm('Remove this Scout from the workspace?'))return;try{await request('/api/scout-experience-v9/team/scouts/'+encodeURIComponent(id),{method:'DELETE'});toast('Scout removed.');await loadSettings();render();}catch(error){toast(error.message,true);}}
-  function captureSetupStep(){var view=currentView(),selected=selectedSetupOptions();if(view==='setup1')state.setupDraft.teamNeeds=selected;if(view==='setup2')state.setupDraft.roleExpectations=selected;if(view==='setup4')state.setupDraft.developmentPriorities=selected;if(view==='setup3'){var f=findField('Formation'),p=findField('Playing style');state.setupDraft.formation=f?f.value:'';state.setupDraft.playingStyle=p?p.value:'';}}
-  async function saveSetup(){captureSetupStep();try{var payload=unwrap(await request('/api/scout-v6/setup',{method:'PATCH',body:state.setupDraft}));state.setup=payload;toast('Your personal Scout Setup has been saved.');setTimeout(function(){navigate('/scout/settings');},450);}catch(error){toast(error.message,true);}}
-  async function submitConcern(){var c=findField('This concerns'),person=findField('Player or person'),what=findField('What happened'),urgent=findField('How urgent');try{await request('/api/scout-v6/concerns',{method:'POST',body:{concerns:c?c.value:'Something else',subjectId:person?person.value:'',details:what?what.value:'',urgency:urgent?urgent.value:'No immediate risk'}});toast('Concern submitted confidentially.');setTimeout(function(){navigate('/scout/dashboard');},700);}catch(error){toast(error.message,true);}}
-  function whyCompatibility(){var exp=state.profileData?.compatibilityExplanation;if(!exp)return;modal('Why '+(exp.score==null?'this score':Math.round(exp.score))+'?', '<p class="sl-result-copy">'+escapeHtml(exp.summary||'')+'</p><div style="margin-top:14px">'+(exp.components||[]).map(function(c){return'<div class="sl-compat-row"><b>'+escapeHtml(c.label)+'</b><div class="sl-score-bar"><i style="width:'+Math.max(0,Math.min(100,number(c.score)))+'%"></i></div><strong>'+escapeHtml(c.score==null?'—':c.score+'/100')+'</strong></div>';}).join('')+'</div>'+(exp.watchouts?.length?'<div style="margin-top:14px"><b>Watchouts</b><ul>'+exp.watchouts.map(function(x){return'<li>'+escapeHtml(x)+'</li>';}).join('')+'</ul></div>':'')+'<p class="mut">Evidence confidence affects the likely range only. It does not add compatibility points.</p>');}
-  async function postProfileNote(){var p=profilePlayer(),text=shadow.querySelector('[data-profile-note]');if(!p||!text||!text.value.trim())return;var shared=[];if(state.profileShareTeam){var teamScouts=state.workspace?.teamScouts||state.settings?.teamScouts||[];shared=teamScouts.map(function(s){return s.id;}).filter(function(id){return String(id)!==String(workspaceParts().scout.id);});}try{await request('/api/scout-workflow-actions/players/'+encodeURIComponent(p.id)+'/workflow',{method:'POST',body:{entryType:'note',content:text.value.trim(),sharedWith:shared}});toast('Scouting note saved.');await loadProfile();render();}catch(error){toast(error.message,true);}}
-  function shareProfile(){var p=profilePlayer();if(!p)return;var teamScouts=state.workspace?.teamScouts||[];modal('Share '+p.name,'<p class="sl-result-copy">This player is already visible to your Scout team through the shared recruitment workspace. Use Team Notes to add evidence for specific teammates.</p><div>'+teamScouts.map(function(s){return'<div class="list-row"><span class="avatar">'+escapeHtml(initials([s.first_name,s.last_name].filter(Boolean).join(' ')))+'</span><span class="who"><b>'+escapeHtml([s.first_name,s.last_name].filter(Boolean).join(' '))+'</b><span>'+escapeHtml(s.email||'')+'</span></span></div>';}).join('')+'</div>');}
-  function openExternalMatches(){var url=state.profileData?.externalMatchesUrl;if(url)window.open(url,'_blank','noopener,noreferrer');}
-
-  function collectOnboarding(){var body=Object.assign({},state.onboardingDraft);Array.from(shadow.querySelectorAll('.field')).forEach(function(field){var l=field.querySelector('label'),i=field.querySelector('input,select,textarea');if(!l||!i)return;var key=l.textContent.toLowerCase(),value=i.value;if(/full name/.test(key)){var pieces=value.trim().split(/\s+/);body.firstName=pieces.shift()||'';body.lastName=pieces.join(' ');}else if(/phone/.test(key))body.phone=value;else if(/country/.test(key))body.scoutCountry=value;else if(/scouting role/.test(key))body.scoutingRole=value;else if(/organisation name/.test(key))body.organisationName=value;else if(/region/.test(key))body.scoutRegion=value;else if(/playing style/.test(key))body.playingStyle=value;else if(/formation/.test(key))body.formation=value;});var opts=selectedSetupOptions();if(currentView()==='onboarding3')body.teamWeaknesses=opts;state.onboardingDraft=body;return body;}
-  async function saveOnboarding(){try{collectOnboarding();await request('/api/onboarding/scout-wizard',{method:'POST',body:state.onboardingDraft});toast('Scout workspace created.');setTimeout(function(){navigate('/scout/dashboard');},500);}catch(error){toast(error.message,true);}}
-
-  function wireActions(){
-    shadow.addEventListener('click',function(event){var target=event.target.closest('[data-action]');if(!target)return;var action=target.getAttribute('data-action');
-      if(action==='pipeline-add'||action==='profile-pipeline-add')addToPipeline(target.getAttribute('data-player-id')||state.selectedPlayerId||profilePlayer()?.id,target);
-      if(action==='pipeline-update'){state.activePipelineId=target.getAttribute('data-pipeline-id');setView('pipelineUpdate');}
-      if(action==='usage-tab'){var type=target.getAttribute('data-type');state.selectedPack=state.packs.find(function(x){return x.type===type;})||null;state.preparedCheckout=null;render();}
-      if(action==='usage-pack'){state.selectedPack=state.packs.find(function(x){return x.priceId===target.getAttribute('data-price-id');})||null;state.preparedCheckout=null;render();}
-      if(action==='usage-prepare')prepareCheckout();if(action==='usage-launch')launchCheckout();if(action==='export-download')downloadExport(target.getAttribute('data-export-id'));if(action==='fixture-attendance')setFixtureAttendance(target.getAttribute('data-status'));if(action==='event-attendance')toggleEventAttendance();if(action==='event-calendar')addEventCalendar();if(action==='notifications-read-all')markAllRead();if(action==='chat-send')sendChat();if(action==='chat-new')newChatModal();if(action==='chat-create')createChat();if(action==='settings-save')saveSettings();if(action==='setup-open')navigate('/scout/setup');if(action==='team-invite')inviteScoutModal();if(action==='team-invite-send')inviteScout();if(action==='team-remove')removeScout(target.getAttribute('data-scout-id'));if(action==='billing-paused')toast('Billing management will be enabled when the live Stripe account is restored.');if(action==='compatibility-why')whyCompatibility();if(action==='profile-note-post')postProfileNote();if(action==='profile-share-toggle'){state.profileShareTeam=!state.profileShareTeam;render();}if(action==='profile-export')exportProfile();if(action==='profile-predict'){var p=profilePlayer();navigate('/scout/predictions?playerId='+encodeURIComponent(p?.id||''));}if(action==='profile-share')shareProfile();if(action==='external-matches')openExternalMatches();if(action==='profile-attrs-general'){state.profileAttributeMode='general';render();}if(action==='profile-attrs-positional'){state.profileAttributeMode='positional';render();}if(action==='video-overlay'){state.activeVideo=(state.profileData?.videos||[])[number(target.getAttribute('data-video-index'),0)]||null;setView('profileVideo');}if(action==='video-play'){var vu=state.activeVideo&&(state.activeVideo.video_url||state.activeVideo.url||state.activeVideo.file_url);if(vu)window.open(vu,'_blank','noopener,noreferrer');else toast('This video does not have a playable URL.',true);}if(action==='video-download'){var vd=state.activeVideo&&(state.activeVideo.video_url||state.activeVideo.url||state.activeVideo.file_url);if(vd)window.open(vd,'_blank','noopener,noreferrer');else toast('This video does not have a downloadable URL.',true);}if(action==='game-overlay'){state.activeGame=(state.profileData?.recentMatches||[])[number(target.getAttribute('data-game-index'),0)]||null;setView('profileGame');}if(action==='game-facts'){var g=state.activeGame;if(g)modal('Full Match Facts','<div class="sl-kv">'+Object.entries(g).filter(function(x){return x[1]!==null&&x[1]!==undefined&&typeof x[1]!=='object';}).slice(0,30).map(function(x){return'<span>'+escapeHtml(String(x[0]).replace(/_/g,' '))+'</span><b>'+escapeHtml(x[1])+'</b>';}).join('')+'</div>');}if(action==='media-view-all'){setView('profileMedia');}if(action==='games-view-all'){var games=state.profileData?.recentMatches||[];modal('All recorded games',games.length?games.map(function(g,index){return'<button class="list-row sl-click" data-action="game-overlay" data-game-index="'+index+'" style="width:100%;text-align:left"><span class="who"><b>'+escapeHtml(g.opponent_name||g.opponent||'Match')+'</b><span>'+escapeHtml(dateLabel(g.match_date))+'</span></span><b>'+escapeHtml(g.performance_score||'')+'</b></button>';}).join(''):'<p class="mut">No Match Facts recorded.</p>');}if(action==='prediction-history'){var row=state.predictions.find(function(x){return String(x.id)===String(target.getAttribute('data-log-id'));});if(row){state.selectedPlayerId=row.player_id;state.selectedPredictionType=row.prediction_type;state.predictionResult=row.result;state.predictionLogId=row.id;var type=String(row.prediction_type||'');setView(/ROI/i.test(type)?'predictionRoi':/Scenario/i.test(type)?'predictionScenario':/Position/i.test(type)?'predictionPosition':'predictionAttribute');}}if(action==='game-open'){state.view='profileGame';render();}
-    });
-
-    if(state.route==='search'){
-      buttons(/^Filters$/i).forEach(function(b){b.addEventListener('click',function(){setView('searchFilters');});});
-      if(currentView()==='searchFilters'){buttons(/^Search$/i).forEach(function(b){b.addEventListener('click',function(){captureSearchFields();setView('search');});});}
-      else {buttons(/^Search$/i).forEach(function(b){b.addEventListener('click',function(){captureSearchFields();render();});});var input=shadow.querySelector('.pbody > input.in');if(input){input.addEventListener('input',function(){state.filters.q=input.value;});input.addEventListener('keydown',function(e){if(e.key==='Enter')render();});}}
-    }
-    if(state.route==='rankings'){var rank=findField('Rank by'),age=findField('Age group');if(rank)rank.addEventListener('change',function(){var raw=rank.value.toLowerCase();state.rankMetric=/compat/.test(raw)?'compatibility':/potential/.test(raw)?'potential':/value/.test(raw)?'value':'overall';render();});if(age)age.addEventListener('change',function(){state.rankAge=age.value;render();});}
-    if(state.route==='pipeline'){
-      if(currentView()==='pipelineUpdate'){buttons(/Save stage|Save|Update/i).forEach(function(b){b.addEventListener('click',savePipeline);});buttons(/Cancel|Back/i).forEach(function(b){b.addEventListener('click',function(){setView('pipeline');});});}
-      Array.from(shadow.querySelectorAll('[data-pipeline-id]')).forEach(function(row){row.addEventListener('click',function(e){if(e.target.closest('button'))return;state.activePipelineId=row.getAttribute('data-pipeline-id');setView('pipelineUpdate');});});
-    }
-    if(state.route==='compare'){buttons(/^Run comparison$/i).forEach(function(b){b.addEventListener('click',runCompare);});buttons(/Export comparison/i).forEach(function(b){b.addEventListener('click',exportComparison);});buttons(/^Decision comparison$/i).forEach(function(b){b.addEventListener('click',function(){state.compareMode='decision';render();});});buttons(/^Overall attributes$/i).forEach(function(b){b.addEventListener('click',function(){state.compareMode='attributes';render();});});}
-    if(state.route==='predictions'){
-      buttons(/^Run a prediction$/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction1');});});
-      if(currentView()==='prediction1'){Array.from(shadow.querySelectorAll('button')).forEach(function(b){if(/Attribute Development|Position Fit Projection|Match Scenario Prediction|ROI Analysis/.test(b.textContent))b.addEventListener('click',function(e){selectedModelButton(e);Array.from(shadow.querySelectorAll('button')).forEach(function(x){x.classList.remove('on');});b.classList.add('on');});});buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){capturePredictionStepOne();if(!state.selectedPredictionType)state.selectedPredictionType='Attribute Development';setView('prediction2');});});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){setView('predictions');});});}
-      if(currentView()==='prediction2'){buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){capturePredictionInputs();setView('prediction3');});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction1');});});}
-      if(currentView()==='prediction3'){buttons(/Run prediction|Generate/i).forEach(function(b){b.addEventListener('click',function(){runPrediction(b);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){setView('prediction2');});});}
-      if(/^prediction(Attribute|Position|Scenario|Roi)$/.test(currentView())){buttons(/Export PDF/i).forEach(function(b){b.addEventListener('click',exportPrediction);});buttons(/Run another/i).forEach(function(b){b.addEventListener('click',function(){state.predictionResult=null;state.predictionLogId=null;setView('prediction1');});});buttons(/Prediction history|Done/i).forEach(function(b){b.addEventListener('click',function(){setView('predictions');});});}
-    }
-    if(state.route==='fixtures'){Array.from(shadow.querySelectorAll('[data-fixture-id]')).forEach(function(row){row.addEventListener('click',async function(e){e.stopPropagation();state.activeFixtureId=row.getAttribute('data-fixture-id');state.fixtureDetail=unwrap(await request('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId)));setView('fixtureDetail');});});}
-    if(state.route==='events'){Array.from(shadow.querySelectorAll('[data-event-id]')).forEach(function(row){row.addEventListener('click',async function(){state.activeEventId=row.getAttribute('data-event-id');state.eventDetail=unwrap(await request('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId)));setView('eventDetail');});});}
-    if(state.route==='notifications'){Array.from(shadow.querySelectorAll('[data-notification-id]')).forEach(function(row){row.addEventListener('click',function(){markNotification(row.getAttribute('data-notification-id'));});});Array.from(shadow.querySelectorAll('.seg a,button')).forEach(function(b){var t=b.textContent.trim().toLowerCase();if(['all','scout interest','match fact','recruitment','system','chat','fixture attendance','admin','showcase event'].indexOf(t)!==-1)b.addEventListener('click',function(){state.notificationFilter=t==='all'?'all':t.replace(/\s+/g,'_');render();});});}
-    if(state.route==='chat'&&currentView()==='chat'){Array.from(shadow.querySelectorAll('[data-thread-id]')).forEach(function(row){row.addEventListener('click',function(){openThread(row.getAttribute('data-thread-id'));});});}
-    if(state.route==='exports'){buttons(/New export/i).forEach(function(b){b.addEventListener('click',function(){setView('exportNew');});});if(currentView()==='exportNew'){buttons(/Generate export/i).forEach(function(b){b.addEventListener('click',generateExport);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){setView('exports');});});}}
-    if(state.route==='setup'){Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){opt.addEventListener('click',function(){opt.classList.toggle('on');});});var steps=['setup1','setup2','setup3','setup4','setupReview'],i=steps.indexOf(currentView());buttons(/Continue|Review/i).forEach(function(b){b.addEventListener('click',function(){captureSetupStep();if(i<steps.length-1)setView(steps[i+1]);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){captureSetupStep();if(i>0)setView(steps[i-1]);});});buttons(/Save setup/i).forEach(function(b){b.addEventListener('click',saveSetup);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){navigate('/scout/settings');});});}
-    if(state.route==='concern'){buttons(/Submit report/i).forEach(function(b){b.addEventListener('click',submitConcern);});buttons(/Cancel/i).forEach(function(b){b.addEventListener('click',function(){navigate('/scout/settings');});});}
-    if(state.route==='profile'){Array.from(shadow.querySelectorAll('button,a')).forEach(function(b){var t=b.textContent.trim();if(t==='Overview')b.addEventListener('click',function(){setView('profile');});if(t==='Attributes')b.addEventListener('click',function(){setView('profileAttributes');});if(t==='Media')b.addEventListener('click',function(){setView('profileMedia');});if(t==='Notes')b.addEventListener('click',function(){setView('profileNotes');});});}
-    if(state.route==='onboarding'){Array.from(shadow.querySelectorAll('.setup-opt,.chip-option')).forEach(function(opt){opt.addEventListener('click',function(){opt.classList.toggle('on');});});var os=['onboarding1','onboarding2','onboarding3','onboarding4'],oi=os.indexOf(currentView());buttons(/Continue/i).forEach(function(b){b.addEventListener('click',function(){collectOnboarding();if(oi<3)setView(os[oi+1]);});});buttons(/Back/i).forEach(function(b){b.addEventListener('click',function(){collectOnboarding();if(oi>0)setView(os[oi-1]);});});buttons(/Create my workspace|Finish|Complete setup/i).forEach(function(b){b.addEventListener('click',saveOnboarding);});}
-    Array.from(shadow.querySelectorAll('.list-row[data-player-id],.rank-row[data-player-id]')).forEach(function(row){row.addEventListener('click',function(e){if(e.target.closest('button'))return;var id=row.getAttribute('data-player-id');if(id)navigate('/player/profile?id='+encodeURIComponent(id));});});
-  }
+  function handlePointerDown(event){var bubble=event.target.closest&&event.target.closest('.sl-bubble[data-own-message="1"]');if(!bubble)return;clearTimeout(state.longPress);bubble.classList.add('sl-hold');state.longPress=setTimeout(function(){bubble.classList.remove('sl-hold');var id=bubble.getAttribute('data-message-id');if(id&&window.confirm('Delete this message?'))deleteChatMessage(id);},650);}
+  function clearLongPress(){clearTimeout(state.longPress);state.longPress=null;Array.from(shadow.querySelectorAll('.sl-hold')).forEach(function(x){x.classList.remove('sl-hold');});}
 
   async function loadWorkspace(){state.workspace=await safe('/api/scout-experience-v9/workspace',{});}
-  async function loadUsage(){try{var p=unwrap(await request('/api/scout-usage'))||{};state.usage=p.usage||null;state.packs=Array.isArray(p.packs)?p.packs:[];state.purchases=Array.isArray(p.purchases)?p.purchases:[];state.stripeReady=!!p.stripeReady;state.paymentLaunchAllowed=!!p.paymentLaunchAllowed;if(!state.selectedPack&&state.packs.length)state.selectedPack=state.packs[0];}catch(error){console.warn('[Scout usage]',error);state.usage=null;}}
-  async function loadPlayers(){try{var p=await request('/api/scout-v6/players?limit=200');state.players=normalizeRows(p).map(normalizePlayer).filter(function(x){return x&&x.id;});state.filterOptions=p&&p.filters?p.filters:{regions:[],positions:[],ageGroups:[]};}catch(error){console.warn('[Scout V6] players',error);state.players=[];state.filterOptions={regions:[],positions:[],ageGroups:[]};}}
+  async function loadUsage(){try{var p=await request('/api/scout-usage'),data=unwrap(p)||p;state.usage=data.usage||null;state.packs=Array.isArray(data.packs)?data.packs:[];state.purchases=Array.isArray(data.purchases)?data.purchases:[];state.stripeReady=!!data.stripeReady;state.paymentLaunchAllowed=!!data.paymentLaunchAllowed;if(!state.selectedUsageType){var first=state.packs[0];state.selectedUsageType=first&&first.type||'prediction';}if(!state.selectedPack)state.selectedPack=state.packs.find(function(x){return x.type===state.selectedUsageType;})||state.packs[0]||null;}catch(e){console.warn('[Scout usage]',e);state.usage=null;}}
+  async function loadPlayers(){try{var p=await request('/api/scout-v6/players?limit=200');state.players=normalizeRows(p).map(normalizePlayer).filter(function(x){return x&&x.id;});state.playerTotal=number(p.total,state.players.length);state.systemTotal=number(p.systemTotal,state.playerTotal);state.filterOptions=p.filters||state.filterOptions;}catch(e){console.warn('[Scout V6 players]',e);state.players=[];}}
   async function loadPipeline(){state.pipeline=normalizeRows(await safe('/api/scout-v6/pipeline',[]));}
-  async function loadPredictions(){state.predictions=normalizeRows(await safe('/api/predictions',[]));state.scenarios=normalizeRows(await safe('/api/predictions/scenarios',[]));}
-  async function loadFixtures(){state.fixtures=normalizeRows(await safe('/api/scout-v6/fixtures',[]));if(state.activeFixtureId)state.fixtureDetail=await safe('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId),null);}
+  async function loadPredictions(){var p=await safe('/api/predictions',{data:[]});state.predictions=normalizeRows(p);state.predictionMeta=p&&typeof p==='object'?p:null;state.scenarios=normalizeRows(await safe('/api/predictions/scenarios',[]));}
+  async function loadFixtures(){state.fixtures=normalizeRows(await safe('/api/scout-v6/fixtures',[]));if(state.activeFixtureId)state.fixtureDetail=await safe('/api/scout-v6/fixtures/'+encodeURIComponent(state.activeFixtureId),null);state.attendingFixtures=state.fixtures.filter(function(f){return f.attendance&&['attending','maybe'].indexOf(f.attendance.status)!==-1;});}
   async function loadEvents(){state.events=normalizeRows(await safe('/api/scout-v6/events',[]));if(state.activeEventId)state.eventDetail=await safe('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId),null);}
-  async function loadNotifications(){var p=await safe('/api/notifications?limit=100',{data:[]});state.notifications=normalizeRows(p);}
+  async function loadNotifications(){var p=await safe('/api/notifications?limit=100',{data:[],unreadCount:0});state.notifications=normalizeRows(p);state.notificationMeta={unreadCount:number(p&&p.unreadCount,0),filters:(p&&p.filters)||[]};}
   async function loadThreads(){state.threads=normalizeRows(await safe('/api/chat/threads',[]));if(state.activeThreadId)state.messages=normalizeRows(await safe('/api/chat/threads/'+encodeURIComponent(state.activeThreadId)+'/messages',[]));}
   async function loadExports(){state.exports=normalizeRows(await safe('/api/scout-experience-v9/exports',[]));}
   async function loadSettings(){state.settings=await safe('/api/scout-v6/settings',null);}
-  async function loadSetup(){state.setup=await safe('/api/scout-v6/setup',null);}
+  async function loadSetup(){state.setup=await safe('/api/scout-v6/setup',null);if(state.setup&&state.setup.options)state.setupOptions=state.setup.options;}
   async function loadProfile(){if(!state.selectedPlayerId)return;state.profileData=await safe('/api/scout-v6/players/'+encodeURIComponent(state.selectedPlayerId),null);}
-  async function load(){root.classList.add('is-loading');root.setAttribute('aria-busy','true');root.style.visibility='hidden';if(!authToken()){window.location.href='/login';return;}try{await loadWorkspace();await Promise.all([loadUsage(),loadNotifications()]);var jobs=[];if(['dashboard','search','rankings','compare','predictions','exports'].indexOf(state.route)!==-1)jobs.push(loadPlayers());if(['dashboard','search','pipeline','chat'].indexOf(state.route)!==-1)jobs.push(loadPipeline());if(state.route==='predictions')jobs.push(loadPredictions());if(state.route==='fixtures')jobs.push(loadFixtures());if(state.route==='events')jobs.push(loadEvents());if(state.route==='chat')jobs.push(loadThreads());if(state.route==='exports')jobs.push(loadExports());if(state.route==='settings')jobs.push(loadSettings());if(state.route==='setup')jobs.push(loadSetup());if(state.route==='profile')jobs.push(loadProfile());await Promise.all(jobs);}catch(error){console.error('[Scout V6 load]',error);state.error=error;}render();}
 
-  var media=window.matchMedia('(max-width:800px)'),resizeTimer=null;function mediaChanged(){clearTimeout(resizeTimer);resizeTimer=setTimeout(function(){var next=media.matches?'field':'desk';if(next!==state.mode){state.mode=next;render();}},100);}if(media.addEventListener)media.addEventListener('change',mediaChanged);else if(media.addListener)media.addListener(mediaChanged);
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
-}());
+  async function load(){
+    root.classList.add('is-loading');root.setAttribute('aria-busy','true');root.style.visibility='hidden';if(!authToken()){window.location.href='/login';return;}
+    try{
+      await Promise.all([loadWorkspace(),loadUsage(),loadNotifications()]);
+      var jobs=[];
+      if(['dashboard','search','rankings','compare','predictions','exports','concern'].indexOf(state.route)!==-1)jobs.push(loadPlayers());
+      if(['dashboard','search','pipeline','chat'].indexOf(state.route)!==-1)jobs.push(loadPipeline());
+      if(['dashboard','chat'].indexOf(state.route)!==-1)jobs.push(loadThreads());
+      if(state.route==='predictions')jobs.push(loadPredictions());
+      if(['fixtures','events'].indexOf(state.route)!==-1)jobs.push(loadFixtures());
+      if(state.route==='events')jobs.push(loadEvents());
+      if(state.route==='exports')jobs.push(loadExports());
+      if(state.route==='settings')jobs.push(loadSettings());
+      if(['setup','onboarding'].indexOf(state.route)!==-1)jobs.push(loadSetup());
+      if(state.route==='profile')jobs.push(loadProfile());
+      await Promise.all(jobs);
+      if(state.route==='events'&&state.activeEventId&&!state.eventDetail)state.eventDetail=await safe('/api/scout-v6/events/'+encodeURIComponent(state.activeEventId),null);if(state.route==='events'&&state.activeEventId&&state.eventDetail)state.view='eventDetail';
+      if(state.route==='fixtures'&&state.activeFixtureId&&state.fixtureDetail){state.overlay={kind:'fixture',source:'fixtureDetail',id:state.activeFixtureId};}
+      if(state.route==='chat'&&state.activeThreadId)state.view='chatOpen';
+    }catch(e){console.error('[Scout V6 load]',e);state.error=e;}
+    render();
+  }
+
+  shadow.addEventListener('click',handleClick);
+  shadow.addEventListener('change',handleChange);
+  shadow.addEventListener('input',handleInput);
+  shadow.addEventListener('keydown',handleKeydown);
+  shadow.addEventListener('pointerdown',handlePointerDown);
+  shadow.addEventListener('pointerup',clearLongPress);
+  shadow.addEventListener('pointercancel',clearLongPress);
+  shadow.addEventListener('pointerleave',clearLongPress);
+  document.addEventListener('click',function(event){if(!root.contains(event.target)&&state.globalSearch.open){state.globalSearch.open=false;render();}});
+  var media=window.matchMedia('(max-width:800px)');
+  function mediaChange(){var next=media.matches?'field':'desk';if(next!==state.mode){state.mode=next;state.view=null;state.overlay=null;render();}}
+  if(media.addEventListener)media.addEventListener('change',mediaChange);else if(media.addListener)media.addListener(mediaChange);
+
+  load();
+})();
