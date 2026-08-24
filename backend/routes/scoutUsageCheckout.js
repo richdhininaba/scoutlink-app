@@ -15,22 +15,19 @@ const { getScoutUsageSnapshot } = require('../utils/scoutUsage');
 const ALLOWED_TYPES = new Set([
   'prediction',
   'export',
-  'interest_request',
-  'ask_radar'
+  'interest_request'
 ]);
 
 const TYPE_TO_LIMIT = Object.freeze({
   prediction: 'predictions',
   export: 'exports',
-  interest_request: 'interests',
-  ask_radar: 'radar'
+  interest_request: 'interests'
 });
 
 const TYPE_LABELS = Object.freeze({
   prediction: 'Predictions',
   export: 'Exports',
-  interest_request: 'Coach interests',
-  ask_radar: 'Ask Radar credits'
+  interest_request: 'Coach interests'
 });
 
 /*
@@ -138,38 +135,6 @@ const VERIFIED_LIVE_PACKS = Object.freeze([
     currency: 'gbp',
     productName: 'Interest Request Pack - 100'
   },
-  {
-    priceId: 'price_1U7I38LzVSereCjW86L8werU',
-    type: 'ask_radar',
-    quantity: 50,
-    amount: 4900,
-    currency: 'gbp',
-    productName: 'Ask Radar Pack - 50'
-  },
-  {
-    priceId: 'price_1U7I3DLzVSereCjWW9wphaao',
-    type: 'ask_radar',
-    quantity: 150,
-    amount: 12900,
-    currency: 'gbp',
-    productName: 'Ask Radar Pack - 150'
-  },
-  {
-    priceId: 'price_1U7I3ILzVSereCjWOoH9Hk4A',
-    type: 'ask_radar',
-    quantity: 400,
-    amount: 29900,
-    currency: 'gbp',
-    productName: 'Ask Radar Pack - 400'
-  },
-  {
-    priceId: 'price_1U7I3PLzVSereCjWY6yKKK6O',
-    type: 'ask_radar',
-    quantity: 1000,
-    amount: 64900,
-    currency: 'gbp',
-    productName: 'Ask Radar Pack - 1000'
-  }
 ]);
 
 const PAYMENT_SURFACE_ENABLED = false;
