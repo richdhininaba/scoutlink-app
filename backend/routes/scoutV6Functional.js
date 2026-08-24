@@ -1877,77 +1877,11 @@ router.post('/compare', async (req, res) => {
   }
 });
 
-router.post('/compare/export', async (req, res) => {
-  try {
-    const context = await loadContext(req.user.id);
-    const supplied = req.body && req.body.comparison && req.body.comparison.comparison
-      ? req.body.comparison.comparison
-      : req.body?.comparison;
-    const playerAId = clean(supplied?.playerA?.id, 120);
-    const playerBId = clean(supplied?.playerB?.id, 120);
-    const contextLabel = clean(supplied?.context?.label || supplied?.context?.key, 100) || 'Immediate starter';
-
-    if (!playerAId || !playerBId || playerAId === playerBId) {
-      return res.status(400).json({ error: 'Run a valid two-player comparison before exporting.' });
-    }
-
-    const usageBefore = await getScoutUsageSnapshot(context);
-    if (!usageBefore.exports || usageBefore.exports.remaining <= 0) {
-      return res.status(402).json({
-        error: 'You have reached your export allowance.',
-        usage: usageBefore
-      });
-    }
-
-    const [playerA, playerB] = await Promise.all([
-      latestPlayerAnalysis(req, context, playerAId),
-      latestPlayerAnalysis(req, context, playerBId)
-    ]);
-    const comparison = buildComparison(playerA, playerB, contextLabel);
-    const buffer = buildComparisonPdf(comparison);
-    const filename = `scoutlink-comparison-${new Date().toISOString().slice(0, 10)}.pdf`;
-
-    const { data: log, error } = await supabase
-      .from('scout_exports')
-      .insert({
-        scout_id: context.scout.id,
-        scout_team_id: context.scout.scout_team_id || null,
-        player_id: null,
-        prediction_log_id: null,
-        export_type: 'PDF',
-        source: 'comparison_v6_pdf',
-        file_name: filename,
-        payload: {
-          playerAId: playerA.id,
-          playerBId: playerB.id,
-          comparison,
-          format: 'PDF',
-          source: 'comparison_v6_pdf'
-        }
-      })
-      .select()
-      .single();
-    if (error) throw error;
-
-    const usageAfter = await getScoutUsageSnapshot(context);
-    res.status(201).json({
-      data: {
-        exportId: log.id,
-        filename,
-        mime: 'application/pdf',
-        contentBase64: buffer.toString('base64'),
-        exportsRemaining: usageAfter.exports?.remaining ?? Math.max(0, usageBefore.exports.remaining - 1),
-        planLimit: usageAfter.exports?.limit ?? usageBefore.exports.limit
-      }
-    });
-  } catch (error) {
-    console.error('[Scout V6 compare export]', error);
-    res.status(error.status || 500).json({
-      error: error.message || 'Comparison PDF could not be created.'
-    });
-  }
+router.post('/compare/export', (req, res) => {
+  return res.status(410).json({
+    error: 'Comparison exports have been removed. ScoutLink only exports Player Profile and Prediction PDFs.'
+  });
 });
-
 router.post('/exports/:id/download', async (req, res) => {
   try {
     const context = await loadContext(req.user.id);
