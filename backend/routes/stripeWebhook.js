@@ -4,6 +4,10 @@ const Stripe = require('stripe');
 
 const { supabase } = require('../db/supabase');
 const { limitsForPlan } = require('../utils/scoutPlans');
+const {
+  activatePaidScoutRegistration,
+  syncSubscriptionLifecycle
+} = require('../services/scoutSubscriptionBilling');
 
 const ALLOWED_TYPES = new Set([
   'prediction',
@@ -138,15 +142,13 @@ async function checkoutLinePack(session) {
   return pack;
 }
 
-async function applyPaidCheckout(session, eventId) {
+async function applyPaidTopUp(session, eventId) {
   if (!session || !session.id) return;
   if (session.payment_status !== 'paid') return;
 
   const sessionMetadata = session.metadata || {};
   if (text(sessionMetadata.platform).toLowerCase() !== 'scoutlink') return;
-  if (text(sessionMetadata.purchase_type).toLowerCase() !== 'usage_top_up') {
-    return;
-  }
+  if (text(sessionMetadata.purchase_type).toLowerCase() !== 'usage_top_up') return;
 
   const scoutId = text(sessionMetadata.scout_id, 80);
   if (!scoutId) throw new Error('Paid ScoutLink top-up has no Scout ID.');
@@ -187,9 +189,7 @@ async function applyPaidCheckout(session, eventId) {
     p_top_up_type: pack.type,
     p_quantity: pack.quantity,
     p_base_limit: baseLimit(context, pack.type),
-    p_amount_total: session.amount_total == null
-      ? null
-      : integer(session.amount_total),
+    p_amount_total: session.amount_total == null ? null : integer(session.amount_total),
     p_currency: text(session.currency, 8).toLowerCase() || null,
     p_stripe_event_id: eventId,
     p_metadata: {
@@ -226,11 +226,33 @@ async function reverseByPaymentIntent(paymentIntentId, eventId, reason) {
   if (result.error) throw result.error;
 }
 
+async function handleCompletedCheckout(event) {
+  const session = event.data.object;
+  const metadata = session && session.metadata || {};
+  const purchaseType = text(metadata.purchase_type).toLowerCase();
+
+  if (text(metadata.platform).toLowerCase() !== 'scoutlink') return;
+
+  if (purchaseType === 'subscription_registration') {
+    await activatePaidScoutRegistration(session, event.id);
+    return;
+  }
+
+  if (purchaseType === 'usage_top_up') {
+    await applyPaidTopUp(session, event.id);
+  }
+}
+
 async function handleEvent(event) {
   switch (event.type) {
     case 'checkout.session.completed':
     case 'checkout.session.async_payment_succeeded':
-      await applyPaidCheckout(event.data.object, event.id);
+      await handleCompletedCheckout(event);
+      return;
+
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
+      await syncSubscriptionLifecycle(event.data.object, event.id);
       return;
 
     case 'charge.refunded': {
