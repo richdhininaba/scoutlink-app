@@ -1,0 +1,310 @@
+/* Stratex Admin Centre V7 — compact data/table/filter polish · 2026-08-25 */
+
+/* --------------------------------------------------------------------------
+   Compact table system
+   The CRM screenshot is the reference: one clean white data card, a quiet
+   pale-green header row, slim white records and no alternating green bands.
+   -------------------------------------------------------------------------- */
+body.stratex-admin-centre-v2 .data,
+body.stratex-admin-centre-v2 .v7-finance-table-wrap{
+  background:#fff;
+  border:1px solid rgba(12,32,26,.12)!important;
+  border-radius:18px!important;
+  box-shadow:0 10px 28px rgba(4,53,42,.055)!important;
+  overflow:hidden;
+}
+
+body.stratex-admin-centre-v2 .data-head{
+  min-height:78px!important;
+  padding:17px 22px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  background:#fff!important;
+  border-bottom:1px solid rgba(12,32,26,.10)!important;
+}
+
+body.stratex-admin-centre-v2 .data-head h3{
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+
+body.stratex-admin-centre-v2 .data-head p{
+  margin:4px 0 0!important;
+  font-size:10.5px!important;
+  line-height:1.45!important;
+  color:#71847A!important;
+}
+
+body.stratex-admin-centre-v2 .data-count{
+  min-width:54px!important;
+  height:54px!important;
+  padding:7px 10px!important;
+  border-radius:10px!important;
+  background:#EAF1EB!important;
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+}
+
+body.stratex-admin-centre-v2 .data-count b{
+  font-size:17px!important;
+  line-height:1!important;
+}
+
+body.stratex-admin-centre-v2 .data-count span{
+  margin-top:4px!important;
+  font:600 7.5px 'IBM Plex Mono',monospace!important;
+  letter-spacing:.06em!important;
+  text-transform:uppercase!important;
+  color:#71847A!important;
+}
+
+body.stratex-admin-centre-v2 .table-wrap{
+  width:100%!important;
+  margin:0!important;
+  overflow-x:auto!important;
+  background:#fff!important;
+}
+
+body.stratex-admin-centre-v2 table.data-table,
+body.stratex-admin-centre-v2 table.v7-slim-table{
+  width:100%!important;
+  border-collapse:collapse!important;
+  border-spacing:0!important;
+  background:#fff!important;
+  table-layout:auto!important;
+}
+
+body.stratex-admin-centre-v2 .data-table thead th{
+  height:42px!important;
+  padding:0 16px!important;
+  background:#EAF1EB!important;
+  border-bottom:1px solid rgba(12,32,26,.13)!important;
+  color:#71847A!important;
+  font:700 8px 'IBM Plex Mono',monospace!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+}
+
+body.stratex-admin-centre-v2 .data-table tbody td{
+  min-height:0!important;
+  height:58px!important;
+  padding:10px 16px!important;
+  background:#fff!important;
+  border-bottom:1px solid rgba(12,32,26,.085)!important;
+  color:#0C201A!important;
+  font-size:11.5px!important;
+  line-height:1.35!important;
+  vertical-align:middle!important;
+}
+
+body.stratex-admin-centre-v2 .data-table tbody tr:nth-child(even) td,
+body.stratex-admin-centre-v2 .data-table tbody tr:nth-child(odd) td{
+  background:#fff!important;
+}
+
+body.stratex-admin-centre-v2 .data-table tbody tr:last-child td{
+  border-bottom:0!important;
+}
+
+body.stratex-admin-centre-v2 .data-table tbody tr:hover td{
+  background:#F6F8F5!important;
+}
+
+body.stratex-admin-centre-v2 .record-cell{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  min-width:0!important;
+}
+
+body.stratex-admin-centre-v2 .record-cell .avatar-sm,
+body.stratex-admin-centre-v2 .data-table .avatar-sm{
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  border-radius:9px!important;
+  font-size:9px!important;
+}
+
+body.stratex-admin-centre-v2 .record-cell b{
+  display:block!important;
+  font-size:11.5px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+
+body.stratex-admin-centre-v2 .record-cell small{
+  display:block!important;
+  margin-top:2px!important;
+  color:#71847A!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  max-width:240px!important;
+}
+
+body.stratex-admin-centre-v2 .data-table .pill{
+  min-height:24px!important;
+  padding:0 9px!important;
+  border-radius:999px!important;
+  font-size:8.5px!important;
+  line-height:24px!important;
+  white-space:nowrap!important;
+}
+
+body.stratex-admin-centre-v2 .data-table .btn.small{
+  min-height:32px!important;
+  height:32px!important;
+  padding:0 12px!important;
+  font-size:9.5px!important;
+  border-radius:8px!important;
+}
+
+/* --------------------------------------------------------------------------
+   Compact filters
+   V5 fidelity inserts the fields directly inside .fidelity-filters. The V7
+   base stylesheet treated every .filters block as a vertical card, producing
+   the oversized empty panel in the screenshot. Force one slim horizontal bar.
+   -------------------------------------------------------------------------- */
+body.stratex-admin-centre-v2 .fidelity-tabs{
+  width:max-content!important;
+  max-width:100%!important;
+  margin:0 0 12px!important;
+  padding:4px!important;
+  border:1px solid rgba(12,32,26,.13)!important;
+  border-radius:13px!important;
+  background:#EAF1EB!important;
+  box-shadow:none!important;
+  display:flex!important;
+  gap:3px!important;
+  overflow-x:auto!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-tabs button{
+  min-height:38px!important;
+  padding:0 17px!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#41544A!important;
+  font-size:11px!important;
+  font-weight:750!important;
+  white-space:nowrap!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-tabs button.active{
+  background:#04352A!important;
+  color:#fff!important;
+  box-shadow:0 4px 10px rgba(4,53,42,.12)!important;
+}
+
+body.stratex-admin-centre-v2 .filters.fidelity-filters,
+body.stratex-admin-centre-v2 .fidelity-filters.v7-slim-filter-bar{
+  width:100%!important;
+  min-height:0!important;
+  padding:12px 14px!important;
+  margin:0 0 18px!important;
+  border:1px solid rgba(12,32,26,.12)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-end!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  flex-wrap:wrap!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-filters .field{
+  width:auto!important;
+  min-width:145px!important;
+  margin:0!important;
+  display:grid!important;
+  gap:5px!important;
+  flex:0 1 180px!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-filters .field:first-child{
+  flex:1 1 280px!important;
+  min-width:220px!important;
+  max-width:440px!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-filters .field>span{
+  font:700 8px 'IBM Plex Mono',monospace!important;
+  letter-spacing:.08em!important;
+  color:#71847A!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-filters .input,
+body.stratex-admin-centre-v2 .fidelity-filters .select{
+  width:100%!important;
+  height:40px!important;
+  min-height:40px!important;
+  padding:0 12px!important;
+  border:1px solid rgba(12,32,26,.18)!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  font-size:11.5px!important;
+}
+
+body.stratex-admin-centre-v2 .fidelity-filters [data-fidelity-apply]{
+  height:40px!important;
+  min-height:40px!important;
+  margin:0 0 0 auto!important;
+  padding:0 16px!important;
+  border-radius:9px!important;
+  font-size:9.5px!important;
+  flex:0 0 auto!important;
+}
+
+/* Remove the extra vertical whitespace previously left around list controls. */
+body.stratex-admin-centre-v2 #adminMain>.fidelity-tabs + .fidelity-filters,
+body.stratex-admin-centre-v2 #adminMain>.fidelity-filters{
+  margin-top:0!important;
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard reliability presentation
+   If the authenticated API ever fails, do not leave sibling widgets looking
+   like they are still loading forever.
+   -------------------------------------------------------------------------- */
+body.stratex-admin-centre-v2 .v7-empty{
+  min-height:54px!important;
+  padding:16px 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  color:#71847A!important;
+  font-size:11px!important;
+}
+
+body.stratex-admin-centre-v2 .people-compact .v7-empty,
+body.stratex-admin-centre-v2 .content-status .v7-empty{
+  min-height:72px!important;
+}
+
+/* The two legacy ScoutLink overview widgets are removed in the polish JS. */
+body.stratex-admin-centre-v2 .v7-legacy-overview-removed{
+  display:none!important;
+}
+
+@media (max-width:1100px){
+  body.stratex-admin-centre-v2 .fidelity-filters .field:first-child{
+    max-width:none!important;
+  }
+  body.stratex-admin-centre-v2 .data-table thead th,
+  body.stratex-admin-centre-v2 .data-table tbody td{
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+}
