@@ -6,25 +6,34 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Stratex Analytics | Admin Centre</title>
   <meta name="theme-color" content="#04352A">
-  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260825-admin-v7-1">
-  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260825-admin-v7-1">
+  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260825-admin-v7-polish-2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260825-admin-v7-polish-2">
 
   <script>
     (function () {
+      /*
+       * The Admin Centre frontend is hosted on stratexanalytics.co.uk, while
+       * its authenticated data API is hosted on scoutlink-api.vercel.app.
+       * Keep this explicit so V7 requests never fall back to the Stratex web
+       * origin and return a Vercel NOT_FOUND page.
+       */
+      window.API_BASE_URL = 'https://scoutlink-api.vercel.app';
+      window.API_URL = window.API_BASE_URL;
+
       var ua = navigator.userAgent || '';
       var isIpad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
       var uaMobile = navigator.userAgentData && navigator.userAgentData.mobile === true;
       var isPhone = !isIpad && (
         uaMobile ||
         /iPhone|iPod|Windows Phone|IEMobile|BlackBerry|BB10|Opera Mini/i.test(ua) ||
-        /Android/i.test(ua) && /Mobile/i.test(ua)
+        (/Android/i.test(ua) && /Mobile/i.test(ua))
       );
 
       window.__STRATEX_ADMIN_PHONE_BLOCKED__ = isPhone;
       if (isPhone) document.documentElement.classList.add('stratex-admin-phone-blocked');
 
       if (!isPhone) {
-        var path = (location.pathname || '/admin').replace(/\/+$/, '') || '/admin';
+        var currentPath = (location.pathname || '/admin').replace(/\/+$/, '') || '/admin';
         var allowed = [
           /^\/admin$/,
           /^\/admin\/login$/,
@@ -48,11 +57,13 @@
           /^\/admin\/trust-concerns$/,
           /^\/admin\/settings$/
         ];
-        if (!allowed.some(function (rule) { return rule.test(path); })) {
+
+        if (!allowed.some(function (rule) { return rule.test(currentPath); })) {
           location.replace('/admin');
           return;
         }
-        if (path === '/admin/org-charts') {
+
+        if (currentPath === '/admin/org-charts') {
           document.documentElement.classList.add('stratex-org-fidelity-pending');
         }
       }
@@ -64,6 +75,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/stratex-admin-v5.css?v=20260820-admin-org-no-flash-5">
   <link rel="stylesheet" href="/css/stratex-admin-v7.css?v=20260825-admin-v7-1">
+  <link rel="stylesheet" href="/css/stratex-admin-v7-polish.css?v=20260825-admin-v7-polish-2">
 
   <style>
     html,body{min-height:100%;margin:0;background:#04352A}
@@ -138,11 +150,14 @@
       load('/js/stratex-admin-v5.js?v=20260820-admin-org-no-flash-5', function () {
         load('/js/stratex-admin-v5-design-fidelity.js?v=20260820-admin-org-no-flash-5', function () {
           load('/js/stratex-admin-v7.js?v=20260825-admin-v7-1', function () {
-            load('/js/stratex-contract-workflow-v2.js?v=20260825-admin-v7-1');
+            load('/js/stratex-admin-v7-polish.js?v=20260825-admin-v7-polish-2', function () {
+              load('/js/stratex-contract-workflow-v2.js?v=20260825-admin-v7-1');
+            });
           });
         });
       });
-      load('/js/heap-analytics.js?v=20260825-admin-v7-1');
+
+      load('/js/heap-analytics.js?v=20260825-admin-v7-polish-2');
     }());
   </script>
 </body>
