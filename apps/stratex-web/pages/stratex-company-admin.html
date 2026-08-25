@@ -6,20 +6,65 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Stratex Analytics | Admin Centre</title>
   <meta name="theme-color" content="#04352A">
-  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260824-contract-showcase-v8-1">
-  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260824-contract-showcase-v8-1">
+  <link rel="icon" type="image/png" href="/stratex-favicon.png?v=20260825-admin-v7-1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/stratex-apple-touch-icon.png?v=20260825-admin-v7-1">
+
   <script>
     (function () {
-      var currentPath = (location.pathname || '/admin').replace(/\/+$/, '') || '/admin';
-      if (currentPath === '/admin/org-charts') {
-        document.documentElement.classList.add('stratex-org-fidelity-pending');
+      var ua = navigator.userAgent || '';
+      var isIpad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+      var uaMobile = navigator.userAgentData && navigator.userAgentData.mobile === true;
+      var isPhone = !isIpad && (
+        uaMobile ||
+        /iPhone|iPod|Windows Phone|IEMobile|BlackBerry|BB10|Opera Mini/i.test(ua) ||
+        /Android/i.test(ua) && /Mobile/i.test(ua)
+      );
+
+      window.__STRATEX_ADMIN_PHONE_BLOCKED__ = isPhone;
+      if (isPhone) document.documentElement.classList.add('stratex-admin-phone-blocked');
+
+      if (!isPhone) {
+        var path = (location.pathname || '/admin').replace(/\/+$/, '') || '/admin';
+        var allowed = [
+          /^\/admin$/,
+          /^\/admin\/login$/,
+          /^\/admin\/setup$/,
+          /^\/admin\/forgot-password$/,
+          /^\/admin\/registrations$/,
+          /^\/admin\/crm$/,
+          /^\/admin\/blog$/,
+          /^\/admin\/scoutlink$/,
+          /^\/admin\/scoutlink\/players$/,
+          /^\/admin\/scoutlink\/coaches$/,
+          /^\/admin\/scoutlink\/teams$/,
+          /^\/admin\/scoutlink\/scouts$/,
+          /^\/admin\/leadership$/,
+          /^\/admin\/org-charts$/,
+          /^\/admin\/admin-users$/,
+          /^\/admin\/users\/add$/,
+          /^\/admin\/permissions$/,
+          /^\/admin\/my-profile$/,
+          /^\/admin\/financials$/,
+          /^\/admin\/trust-concerns$/,
+          /^\/admin\/settings$/
+        ];
+        if (!allowed.some(function (rule) { return rule.test(path); })) {
+          location.replace('/admin');
+          return;
+        }
+        if (path === '/admin/org-charts') {
+          document.documentElement.classList.add('stratex-org-fidelity-pending');
+        }
       }
     }());
   </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/stratex-admin-v5.css?v=20260820-admin-org-no-flash-5">
+  <link rel="stylesheet" href="/css/stratex-admin-v7.css?v=20260825-admin-v7-1">
+
   <style>
     html,body{min-height:100%;margin:0;background:#04352A}
     html.stratex-org-fidelity-pending body.stratex-admin-centre-v2 #adminMain{visibility:hidden}
@@ -32,6 +77,7 @@
     .admin-v2-boot h1{margin:10px 0 0;font:400 30px Anton,Impact,sans-serif;letter-spacing:.01em;text-transform:uppercase}
     .admin-v2-boot p{margin:10px 0 0;color:rgba(247,246,240,.72);font-size:12px;line-height:1.6}
   </style>
+
   <script>
     (function () {
       try {
@@ -49,6 +95,15 @@
   </script>
 </head>
 <body class="stratex-admin-centre-v2">
+  <div class="admin-phone-gate" id="stratexAdminPhoneGate" role="main" aria-labelledby="adminPhoneTitle">
+    <div class="admin-phone-gate-card">
+      <div class="admin-phone-gate-logo" aria-label="Stratex Analytics"></div>
+      <span>Admin Centre</span>
+      <h1 id="adminPhoneTitle">Admin Centre can only be accessed on an iPad or desktop.</h1>
+      <p>Please reopen this secure workspace on an iPad, laptop or desktop computer.</p>
+    </div>
+  </div>
+
   <div class="admin-v2-boot" id="stratexAdminBoot" role="status" aria-live="polite">
     <div class="admin-v2-boot-inner">
       <div class="admin-v2-boot-logo" aria-label="Stratex Analytics"></div>
@@ -64,9 +119,31 @@
     </p>
   </noscript>
 
-  <script src="/js/stratex-admin-v5.js?v=20260820-admin-org-no-flash-5"></script>
-  <script src="/js/stratex-admin-v5-design-fidelity.js?v=20260820-admin-org-no-flash-5"></script>
-  <script src="/js/stratex-contract-workflow-v1.js?v=20260824-contract-showcase-v8-1"></script>
-  <script src="/js/heap-analytics.js?v=20260824-contract-showcase-v8-1"></script>
+  <script>
+    (function () {
+      if (window.__STRATEX_ADMIN_PHONE_BLOCKED__) {
+        var boot = document.getElementById('stratexAdminBoot');
+        if (boot) boot.remove();
+        return;
+      }
+
+      function load(src, callback) {
+        var script = document.createElement('script');
+        script.src = src;
+        script.defer = false;
+        if (callback) script.onload = callback;
+        document.body.appendChild(script);
+      }
+
+      load('/js/stratex-admin-v5.js?v=20260820-admin-org-no-flash-5', function () {
+        load('/js/stratex-admin-v5-design-fidelity.js?v=20260820-admin-org-no-flash-5', function () {
+          load('/js/stratex-admin-v7.js?v=20260825-admin-v7-1', function () {
+            load('/js/stratex-contract-workflow-v2.js?v=20260825-admin-v7-1');
+          });
+        });
+      });
+      load('/js/heap-analytics.js?v=20260825-admin-v7-1');
+    }());
+  </script>
 </body>
 </html>
