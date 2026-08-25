@@ -167,6 +167,19 @@ app.use(
   require('./routes/publicDemoSession')
 );
 
+/*
+ * Accepted Scout registrations now use a server-generated Stripe-hosted
+ * subscription Checkout Session. This route is intentionally mounted before
+ * the existing registration router so it shadows only the Scout payment
+ * approval/resend/manual-payment endpoints. Coach and legacy flows continue
+ * into registrations.js unchanged.
+ */
+app.use(
+  '/api/registrations',
+  publicFormLimiter,
+  require('./routes/scoutSubscriptionApprovalV1')
+);
+
 app.use(
   '/api/registrations',
   publicFormLimiter,
@@ -216,6 +229,16 @@ app.use(
 app.use(
   '/api/stratex-admin-centre',
   require('./routes/stratexAdminCentreV2')
+);
+
+/*
+ * V7 adds only the live dashboard, staff contract picker and Stripe-backed
+ * financial read models. Existing V2 Admin APIs remain the functionality
+ * source for the unchanged operational pages.
+ */
+app.use(
+  '/api/stratex-admin-centre',
+  require('./routes/stratexAdminCentreV7')
 );
 
 /*
