@@ -3,11 +3,17 @@
 /**
  * Target path: apps/scoutlink-web/js/scout-prediction-ai-v1.js
  *
- * Prediction mode, AI context and result-presentation layer.
+ * Prediction mode and result-presentation layer.
  *
- * This version intentionally DOES NOT remove optional prediction inputs.
- * ROI cost assumptions are useful inputs and must reach the backend.
- * Long narrative values are removed from metric tiles and shown full-width.
+ * Required-input rule:
+ * - Attribute Development: development focus only
+ * - Position Fit Projection: target position only
+ * - Match Scenario Prediction: match scenario only
+ * - ROI Analysis: analysis focus only
+ *
+ * Optional/free-text/cost inputs are removed from the wizard and stripped from
+ * the request payload. Long narrative values are moved out of metric tiles and
+ * shown full-width.
  */
 
 (function () {
@@ -25,8 +31,6 @@
   var observedShadow = null;
   var refreshQueued = false;
   var refreshing = false;
-  var analysisBrief = '';
-
   var ROI_FOCUS_OPTIONS = [
     'Evidence-led value review',
     'Long-term Football Value Index outlook',
@@ -36,6 +40,28 @@
     'Retention / progression value',
     'Downside / risk review'
   ];
+
+  var OPTIONAL_INPUT_KEYS = new Set([
+    'targetRole',
+    'compareAgainst',
+    'acquisitionCost',
+    'annualDevelopmentCost',
+    'scoutingCost',
+    'developmentCost',
+    'analysisBrief',
+    'goal'
+  ]);
+
+  var OPTIONAL_REVIEW_LABELS = new Set([
+    'target role',
+    'compare against',
+    'acquisition cost',
+    'annual development cost',
+    'scouting cost',
+    'development cost',
+    'scout question / context',
+    'analysis brief'
+  ]);
 
   var LONG_TILE_LABELS = new Set([
     'recommendation',
@@ -88,46 +114,64 @@
       .slice(0, max || 1200);
   }
 
+  function canonicalPredictionType(type) {
+    var value = String(type || '');
+
+    if (/Attribute Development|Attribute trajectory/i.test(value)) {
+      return 'Attribute Development';
+    }
+    if (/Position Fit|Positional ceiling|Role Readiness|Compatibility Projection/i.test(value)) {
+      return 'Position Fit Projection';
+    }
+    if (/Match Scenario|scenario simulation/i.test(value)) {
+      return 'Match Scenario Prediction';
+    }
+    if (/ROI Analysis|Return on Investment|Value \/ ROI|Value Projection|Transfer value trajectory/i.test(value)) {
+      return 'ROI Analysis';
+    }
+
+    return value;
+  }
+
+  function cleanPredictionInputParams(type, inputParams) {
+    var source = safeObject(inputParams);
+    var canonical = canonicalPredictionType(type);
+    var allowed = [];
+
+    if (canonical === 'Attribute Development') {
+      allowed = ['focus', 'developmentPlan', 'trainingFocus'];
+    } else if (canonical === 'Position Fit Projection') {
+      allowed = ['targetPosition', 'position'];
+    } else if (canonical === 'Match Scenario Prediction') {
+      allowed = ['scenarioKey', 'scenario'];
+    } else if (canonical === 'ROI Analysis') {
+      allowed = ['financialGoal'];
+    }
+
+    return allowed.reduce(function (cleaned, key) {
+      if (
+        Object.prototype.hasOwnProperty.call(source, key) &&
+        source[key] !== null &&
+        source[key] !== undefined &&
+        String(source[key]).trim() !== ''
+      ) {
+        cleaned[key] = source[key];
+      }
+      return cleaned;
+    }, {});
+  }
+
   function withModeInBody(bodyText) {
     if (!bodyText || typeof bodyText !== 'string') return bodyText;
 
     try {
       var body = JSON.parse(bodyText);
-      var params = safeObject(body.inputParams);
-      var brief = cleanText(params.analysisBrief || analysisBrief, 900);
-      var type = String(body.predictionType || '');
 
       body.analysisMode = selectedMode === 'ai' ? 'ai' : 'data';
-
-      /*
-       * Keep every legitimate ScoutLink input. The previous runtime stripped
-       * target-role and financial inputs before the request was sent, which
-       * prevented ROI scenarios and reduced AI personalisation.
-       */
-      body.inputParams = Object.assign({}, params);
-
-      if (brief) {
-        body.inputParams.analysisBrief = brief;
-
-        /*
-         * The current predictions route already forwards `goal`/`financialGoal`
-         * to the AI payload. Use that existing transport so the scout's open
-         * question reaches AI without changing any deterministic calculation.
-         */
-        if (/ROI Analysis|Return on Investment|Value \/ ROI/i.test(type)) {
-          var focus = cleanText(
-            body.inputParams.financialGoal ||
-            body.inputParams.goal ||
-            'Evidence-led value review',
-            220
-          );
-
-          body.inputParams.financialGoal =
-            focus + ' | Scout question: ' + brief;
-        } else {
-          body.inputParams.goal = brief;
-        }
-      }
+      body.inputParams = cleanPredictionInputParams(
+        body.predictionType,
+        body.inputParams
+      );
 
       return JSON.stringify(body);
     } catch (_) {
@@ -306,16 +350,6 @@
     var style = document.createElement('style');
     style.id = 'slPredictionAiV2Styles';
     style.textContent = `
-      .sl-analysis-brief-wrap{
-        margin-top:14px;
-      }
-
-      .sl-analysis-brief-wrap textarea{
-        min-height:104px;
-        resize:vertical;
-        line-height:1.5;
-      }
-
       .sl-long-output-zone{
         display:grid;
         grid-template-columns:1fr;
@@ -445,6 +479,8 @@
     var select = document.createElement('select');
     select.className = field.className || 'in';
     select.setAttribute('data-pred-field', 'financialGoal');
+    select.required = true;
+    select.setAttribute('aria-required', 'true');
 
     var values = ROI_FOCUS_OPTIONS.slice();
     if (current && values.indexOf(current) === -1) {
@@ -468,68 +504,47 @@
     return true;
   }
 
-  function ensureAnalysisBrief(shadow) {
-    var stepField = shadow.querySelector('[data-pred-field]');
-    if (!stepField) return false;
+  function removeOptionalPredictionInputs(shadow) {
+    var changed = false;
 
-    var wizardBody =
-      stepField.closest('.wizard-body > div') ||
-      stepField.closest('.wizard-body') ||
-      stepField.closest('.pbody');
-
-    if (!wizardBody) return false;
-
-    var existing = wizardBody.querySelector(
-      '[data-pred-field="analysisBrief"]'
-    );
-
-    if (existing) {
-      if (analysisBrief && existing.value !== analysisBrief) {
-        existing.value = analysisBrief;
-      }
-      return false;
-    }
-
-    /* Do not add this to the player/model selection step. */
-    var hasPredictionSpecificField = Array.from(
-      wizardBody.querySelectorAll('[data-pred-field]')
-    ).some(function (field) {
-      var key = field.getAttribute('data-pred-field');
-      return key && key !== 'playerId' && key !== 'predictionType';
+    OPTIONAL_INPUT_KEYS.forEach(function (key) {
+      Array.from(
+        shadow.querySelectorAll('[data-pred-field="' + key + '"]')
+      ).forEach(function (field) {
+        var container = field.closest('.field') || field;
+        container.remove();
+        changed = true;
+      });
     });
 
-    if (!hasPredictionSpecificField) return false;
-
-    var wrap = document.createElement('div');
-    wrap.className = 'field sl-analysis-brief-wrap';
-    wrap.innerHTML =
-      '<label>Scout question / context <em>Optional</em></label>' +
-      '<textarea class="in" data-pred-field="analysisBrief" ' +
-      'placeholder="e.g. Is this player a realistic fit for how we play, and what should I verify live?">' +
-      escapeHtml(analysisBrief) +
-      '</textarea>' +
-      '<small class="mut" style="display:block;margin-top:6px">AI enhanced uses this question together with the player profile, your selected prediction input and the Scout team setup.</small>';
-
-    var grid = wizardBody.querySelector('.sl-pred-input-grid');
-    if (grid && grid.parentElement) {
-      grid.parentElement.insertBefore(wrap, grid.nextSibling);
-    } else {
-      var nav = runButton(shadow);
-      var navigation = nav && (nav.closest('.flex') || nav.parentElement);
-      if (navigation && navigation.parentElement === wizardBody) {
-        wizardBody.insertBefore(wrap, navigation);
-      } else {
-        wizardBody.appendChild(wrap);
+    Array.from(
+      shadow.querySelectorAll('.sl-pred-input-grid')
+    ).forEach(function (grid) {
+      if (!grid.querySelector('.field')) {
+        grid.remove();
+        changed = true;
       }
-    }
+    });
 
-    return true;
-  }
+    Array.from(
+      shadow.querySelectorAll('.sl-result-row')
+    ).forEach(function (row) {
+      var labelNode = row.querySelector('span');
+      var label = cleanText(
+        labelNode && labelNode.textContent,
+        120
+      ).toLowerCase();
 
-  function rememberBriefFromDom(shadow) {
-    var field = shadow.querySelector('[data-pred-field="analysisBrief"]');
-    if (!field) return;
-    analysisBrief = cleanText(field.value, 900);
+      if (OPTIONAL_REVIEW_LABELS.has(label)) {
+        row.remove();
+        changed = true;
+      } else if (label === 'financial goal') {
+        labelNode.textContent = 'Analysis focus';
+        changed = true;
+      }
+    });
+
+    return changed;
   }
 
   function chooserMarkup() {
@@ -615,7 +630,7 @@
               AI_COST,
               aiUnavailable
                 ? 'You need at least ' + AI_COST + ' prediction credits. Data only remains available.'
-                : 'Uses the same fixed ScoutLink numbers, then writes a personalised football analysis around your team setup and the question you supplied.',
+                : 'Uses the same fixed ScoutLink numbers, then writes a personalised football analysis around the player profile, your team setup and the required prediction input.',
               aiUnavailable
             ) +
           '</div>' +
@@ -976,20 +991,6 @@
     if (shadow.__predictionAiV2EventsInstalled) return;
     shadow.__predictionAiV2EventsInstalled = true;
 
-    shadow.addEventListener('input', function (event) {
-      var field = event.target.closest &&
-        event.target.closest('[data-pred-field="analysisBrief"]');
-      if (!field) return;
-      analysisBrief = cleanText(field.value, 900);
-    }, true);
-
-    shadow.addEventListener('change', function (event) {
-      var field = event.target.closest &&
-        event.target.closest('[data-pred-field="analysisBrief"]');
-      if (!field) return;
-      analysisBrief = cleanText(field.value, 900);
-    }, true);
-
     shadow.addEventListener('click', function (event) {
       var choice =
         event.target.closest &&
@@ -1015,17 +1016,12 @@
         actionNode &&
         actionNode.getAttribute('data-action');
 
-      if (action === 'prediction-next-2' || action === 'prediction-run') {
-        rememberBriefFromDom(shadow);
-      }
-
       if (
         action === 'prediction-start' ||
         action === 'prediction-run-another'
       ) {
         selectedMode = 'data';
         lastRunMeta = null;
-        analysisBrief = '';
       }
     }, true);
   }
@@ -1052,8 +1048,8 @@
     try {
       ensureStyles(shadow);
       installShadowEvents(shadow);
+      removeOptionalPredictionInputs(shadow);
       replaceRoiFocusInput(shadow);
-      ensureAnalysisBrief(shadow);
       installChooser(shadow);
       normaliseLongBento(shadow);
       decorateResultBadge(shadow);
