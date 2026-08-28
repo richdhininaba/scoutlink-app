@@ -12,7 +12,19 @@
 
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_MODEL = 'gpt-5.6-sol';
-const DEFAULT_TIMEOUT_MS = 15000;
+
+/*
+ * Production was previously aborting the OpenAI call after 15 seconds.
+ * GPT-5.6 Sol structured analysis can legitimately need longer than that,
+ * especially when the deterministic prediction payload is substantial.
+ *
+ * Keep a firm upper bound so the request can never hang indefinitely, but
+ * also enforce a sensible minimum so an old 15s environment value cannot
+ * silently reintroduce the failure.
+ */
+const DEFAULT_TIMEOUT_MS = 35000;
+const MIN_TIMEOUT_MS = 30000;
+const MAX_TIMEOUT_MS = 55000;
 
 const ANALYSIS_SCHEMA = {
   type: 'object',
@@ -110,33 +122,58 @@ function compactObject(value, depth = 0) {
   if (value === null || value === undefined) return null;
   if (typeof value === 'string') return cleanString(value, 1500);
   if (typeof value === 'number' || typeof value === 'boolean') return value;
-  if (Array.isArray(value)) return value.slice(0, 30).map(item => compactObject(item, depth + 1));
+  if (Array.isArray(value)) {
+    return value.slice(0, 30).map(item => compactObject(item, depth + 1));
+  }
   if (typeof value !== 'object') return null;
 
-  return Object.entries(value).reduce((out, [key, child]) => {
+  return Object.entries(value).reduce((result, [key, child]) => {
     const compacted = compactObject(child, depth + 1);
-    if (compacted !== undefined) out[key] = compacted;
-    return out;
+    if (compacted !== undefined) result[key] = compacted;
+    return result;
   }, {});
 }
 
 function extractOutputText(response = {}) {
   return (response.output || [])
     .flatMap(item => Array.isArray(item.content) ? item.content : [])
-    .filter(part => part && part.type === 'output_text' && typeof part.text === 'string')
+    .filter(
+      part =>
+        part &&
+        part.type === 'output_text' &&
+        typeof part.text === 'string'
+    )
     .map(part => part.text)
     .join('')
     .trim();
 }
 
 function validateAnalysis(value) {
-  if (!value || typeof value !== 'object') throw new Error('OpenAI returned an invalid analysis object.');
+  if (!value || typeof value !== 'object') {
+    throw new Error('OpenAI returned an invalid analysis object.');
+  }
+
   const summary = cleanString(value.summary, 2000);
   const implication = cleanString(value.recruitmentImplication, 1000);
-  if (summary.length < 450) throw new Error('OpenAI returned a prediction summary that was too short.');
-  if (implication.length < 100) throw new Error('OpenAI returned an incomplete recruitment implication.');
-  if (!Array.isArray(value.keyDrivers) || value.keyDrivers.length < 3) throw new Error('OpenAI returned incomplete key drivers.');
-  if (!Array.isArray(value.liveChecks) || value.liveChecks.length < 3) throw new Error('OpenAI returned incomplete live checks.');
+
+  if (summary.length < 450) {
+    throw new Error('OpenAI returned a prediction summary that was too short.');
+  }
+
+  if (implication.length < 100) {
+    throw new Error(
+      'OpenAI returned an incomplete recruitment implication.'
+    );
+  }
+
+  if (!Array.isArray(value.keyDrivers) || value.keyDrivers.length < 3) {
+    throw new Error('OpenAI returned incomplete key drivers.');
+  }
+
+  if (!Array.isArray(value.liveChecks) || value.liveChecks.length < 3) {
+    throw new Error('OpenAI returned incomplete live checks.');
+  }
+
   return value;
 }
 
@@ -158,16 +195,37 @@ function systemInstructions(predictionType) {
   ].join('\n');
 }
 
+function resolveTimeout(options = {}) {
+  const requested = Number(
+    process.env.OPENAI_PREDICTION_TIMEOUT_MS ||
+    options.timeoutMs ||
+    DEFAULT_TIMEOUT_MS
+  );
+
+  const safeRequested = Number.isFinite(requested)
+    ? requested
+    : DEFAULT_TIMEOUT_MS;
+
+  return Math.max(
+    MIN_TIMEOUT_MS,
+    Math.min(MAX_TIMEOUT_MS, safeRequested)
+  );
+}
+
 async function analysePredictionWithAi(payload, options = {}) {
   const apiKey = process.env.OPENAI_API_KEY;
+
   if (!apiKey) {
     const error = new Error('OPENAI_API_KEY is not configured.');
     error.code = 'OPENAI_NOT_CONFIGURED';
     throw error;
   }
 
-  const model = process.env.OPENAI_PREDICTION_MODEL || DEFAULT_MODEL;
-  const timeoutMs = Math.max(5000, Number(process.env.OPENAI_PREDICTION_TIMEOUT_MS || options.timeoutMs || DEFAULT_TIMEOUT_MS));
+  const model =
+    process.env.OPENAI_PREDICTION_MODEL ||
+    DEFAULT_MODEL;
+
+  const timeoutMs = resolveTimeout(options);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -182,7 +240,20 @@ async function analysePredictionWithAi(payload, options = {}) {
       body: JSON.stringify({
         model,
         store: false,
-        instructions: systemInstructions(payload.predictionType || 'ScoutLink prediction'),
+
+        /*
+         * Prediction enrichment is interpretation of already-calculated
+         * ScoutLink numbers, not a deep open-ended reasoning task. Low
+         * reasoning reduces avoidable latency while keeping structured,
+         * evidence-grounded football analysis.
+         */
+        reasoning: {
+          effort: 'low'
+        },
+
+        instructions: systemInstructions(
+          payload.predictionType || 'ScoutLink prediction'
+        ),
         input: JSON.stringify(compactObject(payload)),
         max_output_tokens: 1800,
         text: {
@@ -195,12 +266,16 @@ async function analysePredictionWithAi(payload, options = {}) {
         },
         metadata: {
           feature: 'scoutlink_prediction_analysis',
-          prediction_type: cleanString(payload.predictionType || 'prediction', 64)
+          prediction_type: cleanString(
+            payload.predictionType || 'prediction',
+            64
+          )
         }
       })
     });
 
     const bodyText = await response.text();
+
     let body;
     try {
       body = bodyText ? JSON.parse(bodyText) : {};
@@ -209,16 +284,26 @@ async function analysePredictionWithAi(payload, options = {}) {
     }
 
     if (!response.ok) {
-      const message = cleanString(body?.error?.message || `OpenAI request failed with status ${response.status}.`, 500);
-      const error = new Error(message || 'OpenAI prediction analysis failed.');
+      const message = cleanString(
+        body?.error?.message ||
+          `OpenAI request failed with status ${response.status}.`,
+        500
+      );
+
+      const error = new Error(
+        message || 'OpenAI prediction analysis failed.'
+      );
       error.code = 'OPENAI_REQUEST_FAILED';
       error.status = response.status;
       throw error;
     }
 
     const outputText = extractOutputText(body);
+
     if (!outputText) {
-      const error = new Error('OpenAI returned no structured prediction analysis.');
+      const error = new Error(
+        'OpenAI returned no structured prediction analysis.'
+      );
       error.code = 'OPENAI_EMPTY_OUTPUT';
       throw error;
     }
@@ -227,7 +312,9 @@ async function analysePredictionWithAi(payload, options = {}) {
     try {
       analysis = JSON.parse(outputText);
     } catch (_) {
-      const error = new Error('OpenAI returned prediction analysis that could not be parsed.');
+      const error = new Error(
+        'OpenAI returned prediction analysis that could not be parsed.'
+      );
       error.code = 'OPENAI_INVALID_JSON';
       throw error;
     }
@@ -241,11 +328,18 @@ async function analysePredictionWithAi(payload, options = {}) {
       usage: body.usage || null
     };
   } catch (error) {
-    if (error && error.name === 'AbortError') {
-      const timeoutError = new Error('OpenAI prediction analysis timed out.');
+    if (
+      error &&
+      (error.name === 'AbortError' ||
+       error.name === 'TimeoutError')
+    ) {
+      const timeoutError = new Error(
+        'OpenAI prediction analysis timed out.'
+      );
       timeoutError.code = 'OPENAI_TIMEOUT';
       throw timeoutError;
     }
+
     throw error;
   } finally {
     clearTimeout(timeout);
