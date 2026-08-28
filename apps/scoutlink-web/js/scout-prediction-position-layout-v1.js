@@ -6,6 +6,12 @@
  *
  * Position Fit result-only layout refinement.
  *
+ * IMPORTANT:
+ * This version is deliberately idempotent. The previous implementation
+ * observed the prediction Shadow DOM and then used appendChild() on every
+ * refresh. Those moves created fresh childList mutations, which invoked the
+ * observer again and could trap the Position Fit result in a render loop.
+ *
  * - Verdict becomes a full-width card beneath the green result hero.
  * - Best current position, target position and gap vs best stay beneath it.
  * - Top position role fits are capped at five and rendered using the same
@@ -14,13 +20,13 @@
  */
 
 (function () {
-  if (window.__SCOUTLINK_PREDICTION_POSITION_LAYOUT_V1__) return;
-  window.__SCOUTLINK_PREDICTION_POSITION_LAYOUT_V1__ = true;
+  if (window.__SCOUTLINK_PREDICTION_POSITION_LAYOUT_V2__) return;
+  window.__SCOUTLINK_PREDICTION_POSITION_LAYOUT_V2__ = true;
 
+  var observer = null;
+  var observedShadow = null;
   var refreshQueued = false;
-  var observer = new MutationObserver(function () {
-    scheduleRefresh();
-  });
+  var refreshing = false;
 
   function appShadow() {
     var host = document.getElementById('scoutExperienceApp');
@@ -47,14 +53,21 @@
     var heroText = text(heroHeading && heroHeading.textContent);
 
     return /conversion review/i.test(heroText) &&
-      Boolean(cardByHeading(shadow, /^Position rating comparison$/i));
+      Boolean(
+        cardByHeading(
+          shadow,
+          /^Position rating comparison$/i
+        )
+      );
   }
 
   function ensureStyles(shadow) {
-    if (shadow.getElementById('slPredictionPositionLayoutV1Style')) return;
+    if (shadow.getElementById('slPredictionPositionLayoutV2Style')) {
+      return;
+    }
 
     var style = document.createElement('style');
-    style.id = 'slPredictionPositionLayoutV1Style';
+    style.id = 'slPredictionPositionLayoutV2Style';
     style.textContent = `
       .sl-position-verdict-wide{
         width:100%;
@@ -100,6 +113,7 @@
         }
       }
     `;
+
     shadow.appendChild(style);
   }
 
@@ -111,57 +125,126 @@
   function findPositionMetricsGrid(shadow) {
     return Array.from(shadow.querySelectorAll('.bento')).find(function (grid) {
       var labels = Array.from(grid.children).map(tileLabel);
+
       return labels.indexOf('best current position') !== -1 &&
         labels.indexOf('target position') !== -1 &&
         labels.indexOf('gap vs best') !== -1 &&
         labels.indexOf('verdict') !== -1;
-    }) || null;
+    }) || shadow.querySelector('.bento.sl-position-metrics-grid');
+  }
+
+  function indexInParent(node) {
+    if (!node || !node.parentElement) return -1;
+    return Array.prototype.indexOf.call(
+      node.parentElement.children,
+      node
+    );
+  }
+
+  function placeBefore(node, reference) {
+    if (
+      !node ||
+      !reference ||
+      !reference.parentElement ||
+      node === reference
+    ) {
+      return false;
+    }
+
+    if (
+      node.parentElement === reference.parentElement &&
+      node.nextElementSibling === reference
+    ) {
+      return false;
+    }
+
+    reference.parentElement.insertBefore(node, reference);
+    return true;
   }
 
   function arrangeVerdictAndMetrics(shadow) {
     var grid = findPositionMetricsGrid(shadow);
+    if (!grid) return false;
 
-    if (!grid) {
-      grid = shadow.querySelector('.bento.sl-position-metrics-grid');
+    var changed = false;
+
+    if (!grid.classList.contains('sl-position-metrics-grid')) {
+      grid.classList.add('sl-position-metrics-grid');
+      changed = true;
     }
-    if (!grid) return;
-
-    grid.classList.add('sl-position-metrics-grid');
 
     var children = Array.from(grid.children);
+
     var best = children.find(function (tile) {
       return tileLabel(tile) === 'best current position';
     });
+
     var target = children.find(function (tile) {
       return tileLabel(tile) === 'target position';
     });
+
     var gap = children.find(function (tile) {
       return tileLabel(tile) === 'gap vs best';
     });
+
     var verdict = children.find(function (tile) {
       return tileLabel(tile) === 'verdict';
-    });
+    }) || shadow.querySelector('.sl-position-verdict-wide');
 
-    [best, target, gap].forEach(function (tile) {
-      if (tile && tile.parentElement === grid) {
-        grid.appendChild(tile);
+    if (verdict) {
+      if (!verdict.classList.contains('sl-position-verdict-wide')) {
+        verdict.classList.add('sl-position-verdict-wide');
+        changed = true;
       }
-    });
 
-    if (!verdict) {
-      verdict = shadow.querySelector('.sl-position-verdict-wide');
+      if (verdict.parentElement === grid) {
+        var hero = shadow.querySelector('.profile-hero');
+
+        if (
+          hero &&
+          hero.parentElement &&
+          grid.parentElement === hero.parentElement
+        ) {
+          /*
+           * Only move the verdict when it is genuinely still inside the
+           * metrics grid. Once outside, later refreshes leave it alone.
+           */
+          hero.parentElement.insertBefore(verdict, grid);
+          changed = true;
+        }
+      }
     }
 
-    if (verdict && verdict.parentElement === grid) {
-      verdict.classList.add('sl-position-verdict-wide');
+    /*
+     * Keep the three metric tiles in a deterministic order without repeatedly
+     * appendChild()-ing nodes that are already in that order.
+     */
+    var ordered = [best, target, gap].filter(Boolean);
 
-      var hero = shadow.querySelector('.profile-hero');
-      if (hero && hero.parentElement) {
-        hero.parentElement.insertBefore(verdict, grid);
+    if (ordered.length) {
+      var currentOrdered = Array.from(grid.children)
+        .filter(function (tile) {
+          var label = tileLabel(tile);
+          return label === 'best current position' ||
+            label === 'target position' ||
+            label === 'gap vs best';
+        });
+
+      var sameOrder =
+        currentOrdered.length === ordered.length &&
+        currentOrdered.every(function (tile, index) {
+          return tile === ordered[index];
+        });
+
+      if (!sameOrder) {
+        ordered.forEach(function (tile) {
+          grid.appendChild(tile);
+        });
+        changed = true;
       }
-    } else if (verdict) {
-      verdict.classList.add('sl-position-verdict-wide');
     }
+
+    return changed;
   }
 
   function parseRoleRow(row) {
@@ -175,7 +258,9 @@
     var raw = text(bold && bold.textContent);
     if (!raw) return null;
 
-    var match = raw.match(/^(.*?)(?:\s*[·•]\s*)(-?\d+(?:\.\d+)?)$/);
+    var match = raw.match(
+      /^(.*?)(?:\s*[·•]\s*)(-?\d+(?:\.\d+)?)$/
+    );
 
     if (match) {
       return {
@@ -212,7 +297,10 @@
       /^Position rating comparison$/i
     );
 
-    var body = comparisonCard && comparisonCard.querySelector('.card-b');
+    var body =
+      comparisonCard &&
+      comparisonCard.querySelector('.card-b');
+
     return body && body.firstElementChild
       ? body.firstElementChild
       : null;
@@ -244,34 +332,51 @@
   }
 
   function cleanRoleFits(shadow) {
-    var roleCard = Array.from(shadow.querySelectorAll('.card')).find(
-      function (card) {
-        return /^Top .* role fits$/i.test(cardHeading(card));
-      }
-    );
+    var roleCard = Array.from(
+      shadow.querySelectorAll('.card')
+    ).find(function (card) {
+      return /^Top .* role fits$/i.test(
+        cardHeading(card)
+      );
+    });
 
-    if (!roleCard) return;
-    if (roleCard.dataset.positionRoleLayout === 'clean') return;
+    if (!roleCard) return false;
+
+    if (
+      roleCard.dataset.positionRoleLayout ===
+      'clean-v2'
+    ) {
+      return false;
+    }
 
     var roles = roleRows(roleCard);
-    if (!roles.length) return;
+    if (!roles.length) return false;
 
     var body = roleCard.querySelector('.card-b');
-    if (!body) return;
+    if (!body) return false;
 
     var template = comparisonRowTemplate(shadow);
 
-    body.innerHTML = '';
+    /*
+     * Build off-DOM first. This means the body is replaced once rather than
+     * repeatedly mutating it while the observer is active.
+     */
+    var fragment = document.createDocumentFragment();
 
     roles.forEach(function (role) {
       var row;
 
       if (template) {
         row = template.cloneNode(true);
-        row = setRowContent(row, role.label, role.score);
+        row = setRowContent(
+          row,
+          role.label,
+          role.score
+        );
       } else {
         row = document.createElement('div');
-        row.className = 'sl-result-row sl-position-role-row';
+        row.className =
+          'sl-result-row sl-position-role-row';
 
         var left = document.createElement('span');
         left.textContent = role.label;
@@ -283,63 +388,119 @@
         row.appendChild(right);
       }
 
-      body.appendChild(row);
+      fragment.appendChild(row);
     });
 
-    roleCard.classList.add('sl-position-role-fits-clean');
-    roleCard.dataset.positionRoleLayout = 'clean';
+    body.replaceChildren(fragment);
+
+    roleCard.classList.add(
+      'sl-position-role-fits-clean'
+    );
+    roleCard.dataset.positionRoleLayout =
+      'clean-v2';
+
+    return true;
+  }
+
+  function observeShadow(shadow) {
+    if (!observer || !shadow) return;
+
+    if (observedShadow === shadow) return;
+
+    observer.disconnect();
+    observedShadow = shadow;
+
+    observer.observe(shadow, {
+      childList: true,
+      subtree: true
+    });
   }
 
   function refresh() {
     var shadow = appShadow();
     if (!shadow) return;
-    if (!isPositionResult(shadow)) return;
 
-    ensureStyles(shadow);
-    arrangeVerdictAndMetrics(shadow);
-    cleanRoleFits(shadow);
+    observeShadow(shadow);
+
+    if (!isPositionResult(shadow)) return;
+    if (refreshing) return;
+
+    refreshing = true;
+
+    /*
+     * Disconnect while we make our own layout mutations. This is the central
+     * fix for the production blank/frozen result screen.
+     */
+    if (observer) observer.disconnect();
+
+    try {
+      ensureStyles(shadow);
+      arrangeVerdictAndMetrics(shadow);
+      cleanRoleFits(shadow);
+    } catch (error) {
+      /*
+       * This script is visual enhancement only. A layout error must never
+       * prevent the underlying prediction result from remaining usable.
+       */
+      console.warn(
+        '[ScoutLink Position Fit layout]',
+        error && error.message
+          ? error.message
+          : error
+      );
+    } finally {
+      refreshing = false;
+      observedShadow = null;
+      observeShadow(shadow);
+    }
   }
 
   function scheduleRefresh() {
     if (refreshQueued) return;
     refreshQueued = true;
 
-    queueMicrotask(function () {
+    requestAnimationFrame(function () {
       refreshQueued = false;
       refresh();
     });
   }
 
   function begin() {
-    var host = document.getElementById('scoutExperienceApp');
-    if (!host) return;
-
-    observer.observe(host, {
-      childList: true,
-      subtree: true
+    observer = new MutationObserver(function () {
+      if (!refreshing) scheduleRefresh();
     });
+
+    var startedAt = Date.now();
 
     var poll = setInterval(function () {
       var shadow = appShadow();
-      if (!shadow) return;
 
-      clearInterval(poll);
+      if (shadow) {
+        observeShadow(shadow);
+        scheduleRefresh();
+      }
 
-      observer.observe(shadow, {
-        childList: true,
-        subtree: true
-      });
+      /*
+       * The observer is sufficient once the Shadow DOM exists. The bounded
+       * poll only covers late initialisation and never runs forever.
+       */
+      if (
+        shadow ||
+        Date.now() - startedAt > 15000
+      ) {
+        clearInterval(poll);
+      }
+    }, 100);
 
-      refresh();
-    }, 50);
-
-    setTimeout(function () {
-      clearInterval(poll);
-    }, 15000);
+    scheduleRefresh();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', begin, { once: true });
+    document.addEventListener(
+      'DOMContentLoaded',
+      begin,
+      { once: true }
+    );
   } else {
     begin();
   }
